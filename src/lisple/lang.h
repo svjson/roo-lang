@@ -1,0 +1,218 @@
+
+#ifndef __LANG_H_
+#define __LANG_H_
+
+#include <cstdint>
+
+#include "exec.h"
+#include "form.h"
+#include "namespace.h"
+#include "type.h"
+
+namespace Lisple
+{
+  class Context;
+
+  Namespace make_language_namespace();
+
+  MACRO_DECL(NsMacro, switch_ns);
+
+  MACRO_DECL(DefMacro, define_obj)
+  MACRO_DECL(DefunMacro, define_fun)
+  MACRO_DECL(LambdaMacro, make_lambda)
+  MACRO_DECL(LetMacro, make_let)
+  MACRO_DECL(DoMacro, make_do)
+  MACRO_DECL(WhileMacro, make_while)
+  MACRO_DECL(IfMacro, make_if)
+  /*!
+   * WhenMacro - optionally execute forms if conditional expression evaluates
+   * to a truthy value.
+   *
+   * If multiple forms are provided after the conditional, they are evaluated as
+   * if implicitly wrapped in a (do form1 form2 ...) form.
+   *
+   * Usage: (when (condition) (prn "It's true!"))
+   *        (when (condition) (prn "It's true!") {:result "successful"})
+   *        (when my-var (my-fun))
+   *
+   * Param 0: A conditional form - anything that can be considered truthy
+   *          or falsy
+   * Param 1: (vararg) Any number of forms to be evaluated if the conditional
+   *          evaluates to a truthy value
+   */
+  MACRO_DECL(WhenMacro, make_when)
+  MACRO_DECL(ThreadFirstMacro, make_thread_first)
+  MACRO_DECL(ForMacro, make_for)
+
+  FUNC_DECL(PrintFunction, do_print)
+
+  MACRO_DECL(SetBangMacro, do_set_member)
+
+  /*!
+  * NilPredicateFunction - test if the result of an expression is NIL
+  *
+  * Usage: (nil? (:key1 {:key2 "value"})) ==> true
+  *
+  * Param 0: The expression, value or identifier to test
+  */
+  FUNC_DECL(NilPredicateFunction, is_nil)
+  FUNC_DECL(NotFunction, invert_boolean)
+
+  FUNC_DECL(IncludeFunction, include_file)
+  FUNC_DECL(ApplyFunction, apply_fn)
+
+  FUNC_DECL(IntFunction, to_int)
+  FUNC_DECL(PlusFunction, do_addition)
+  FUNC_DECL(MinusFunction, do_subtraction)
+  FUNC_DECL(DivideFunction, do_division)
+  FUNC_DECL(MultiplyFunction, do_multiplication)
+  FUNC_DECL(LessThanFunction, lt_fn)
+  FUNC_DECL(GreaterThanFunction, gt_fn)
+
+  FUNC_DECL(RangeFunction, make_range)
+  FUNC_DECL(ThresholdFunction, cap_value)
+
+  class MinMaxFunction : public Lisple::Function
+  {
+    const bool min;
+
+   public:
+    MinMaxFunction(bool min);
+
+    Lisple::sptr_sobject select_min_or_max(Lisple::Context&, Lisple::sptr_sobject_v& args);
+  };
+
+  FUNC_DECL(AndFunction, logical_and)
+  MACRO_DECL(OrMacro, logical_or)
+
+  FUNC_DECL(HeadFunction, head)
+  FUNC_DECL(TailFunction, tail)
+  FUNC_DECL(LastFunction, last)
+  FUNC_DECL(RandNthFunction, rand_nth)
+  FUNC_DECL(CountFunction, count)
+
+  /*!
+   * \brief ContainsPredicateFunction - query if a Seq contains a specific value
+   *
+   * Usage: (contains? my-array "a value")
+   *
+   * Param 0 - The Seq to test
+   * Param 1 - The value to test for
+   */
+  FUNC_DECL(ContainsPredicateFunction, contains)
+  FUNC_DECL(TakeFunction, take_fn)
+
+  FUNC_DECL(GetFunction, get);
+  FUNC_DECL(NthFunction, get_nth);
+
+  /*!
+  * \brief AssocFunction - set or replace a key in a map, creating a copy of it.
+  *
+  * Usage: (assoc my-map key value)
+  *
+  * Param 0 - The map to create a copy of
+  * Param 1 - The key to set
+  * Param 2 - The value to associate with the key
+  */
+  FUNC_DECL(AssocFunction, assoc)
+
+  /*!
+  * \brief AssocBangFunction - set or replace a key in a map or map-like
+  * structure, mutating it.
+  *
+  * Usage: (assoc my-map key value)
+  *
+  * Param 0 - The map to mutate
+  * Param 1 - The key to set
+  * Param 2 - The value to associate with the key
+  */
+  FUNC_DECL(AssocBangFunction, assoc_bang)
+
+  FUNC_DECL(VectorFunction, make_vector)
+  FUNC_DECL(JoinFunction, join_str)
+  FUNC_DECL(StrFunction, concat_str)
+  FUNC_DECL(ConcatFunction, concat_array)
+  FUNC_DECL(FlattenFunction, flatten_array)
+
+  /*!
+   * \brief MapFunction - transform elements of a Seq by applying a
+   * function/executable to each element, creating a new Seq containing
+   * the transformed elements. The original Seq is not mutated.
+   *
+   * Usage: (map my-seq exec)
+   *        (map [1 2 3] (fn [n] (* 2 n))) ==> [2 4 6]
+   *
+   * Param 0 - The seq to create a transformed version of
+   * Param 1 - The function/executable to apply to each element
+   */
+  FUNC_DECL(MapFunction, map_seq)
+
+  /*!
+   * \brief FilterFunction - Keep only certain elements of a Seq by applying a
+   * function/executable to each element, creating a new Seq containing only
+   * those elements for which the predicate function returns a truthy value.
+   *
+   * Usage: (filter my-seq exec)
+   *        (filter [1 2 3 4] (fn [n] (even? n))) => [2 4]
+   *
+   * Param 0 - The seq to filter
+   * Param 1 - The function/executable to apply to each element
+   */
+  FUNC_DECL(FilterFunction, filter_seq)
+
+  /*!
+   * \brief RemoveFunction - Keep only certain elements of a Seq by applying a
+   * function/executable to each element, creating a new Seq without those
+   * elements for which the predicate function returns a truthy value.
+   * Effectively the inverse of "filter"
+   *
+   * Usage: (remove exec my-seq)
+   *        (remove (fn [n] (even? n)) [1 2 3 4]) => [1 3]
+   *        (remove nil? [1 2 nil 5 6 nil 8 nil]) => [1 2 4 5 8]
+   *
+   * Param 0 - The function/executable to apply to each element
+   * Param 1 - The seq to filter
+   */
+  FUNC_DECL(RemoveFunction, remove_seq)
+
+
+  FUNC_DECL(ReduceKeyValueFunction, reduce_kv)
+  FUNC_DECL(FindFirstFunction, find_first_in_seq)
+  FUNC_DECL(KeysFunction, keys_fn)
+  FUNC_DECL(SelectKeysFunction, select_keys_fn)
+
+  class EmptyPredicateFunction : public Lisple::Function
+  {
+   public:
+    EmptyPredicateFunction();
+
+    Lisple::sptr_sobject exec_emptyp_seq(Lisple::Context&, Lisple::sptr_sobject_v& args);
+    Lisple::sptr_sobject exec_emptyp_string(Lisple::Context&, Lisple::sptr_sobject_v& args);
+  };
+
+  FUNC_DECL(EqualsPredicateFunction, equals_any)
+  FUNC_DECL(NotEqualsFunction, not_equals_any)
+
+  class OddEvenPredicateFunction : public Lisple::Function
+  {
+    uint8_t modulus;
+
+   public:
+    OddEvenPredicateFunction(uint8_t modulus);
+
+    Lisple::sptr_sobject exec_oddevenp(Lisple::Context&, Lisple::sptr_sobject_v& args);
+  };
+
+  class EvalFunction : public Lisple::Function
+  {
+   public:
+    EvalFunction();
+
+    Lisple::sptr_sobject eval_string(Lisple::Context&, Lisple::sptr_sobject_v& args);
+    Lisple::sptr_sobject eval_seq(Lisple::Context&, Lisple::sptr_sobject_v& args);
+  };
+
+  FUNC_DECL(RndFunction, random_number)
+}
+
+#endif

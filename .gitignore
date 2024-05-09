@@ -1,0 +1,8 @@
+**/CMakeFiles
+**/Makefile
+**/*.cmake
+/CMakeCache.txt
+/compile_commands.json
+liblisple.a
+test/testlisple
+.cache
