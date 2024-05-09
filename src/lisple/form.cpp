@@ -204,6 +204,11 @@ namespace Lisple
     return "\"" + value + "\"";
   }
 
+  std::shared_ptr<String> String::make(const std::string& value)
+  {
+    return std::make_shared<String>(value);
+  }
+
   /**
    * Boolean form
    */
@@ -237,6 +242,12 @@ namespace Lisple
     return "'" + std::string {value} + "'";
   }
 
+  std::shared_ptr<Char> Char::make(char value)
+  {
+    return std::make_shared<Char>(value);
+  }
+
+
   /**
    * Key form
    */
@@ -267,6 +278,11 @@ namespace Lisple
         return args.front()->get_sptr_property(*this);
       }
     throw InvocationException("Get value by key requires a single argument.");
+  }
+
+  std::shared_ptr<Key> Key::make(const std::string& value)
+  {
+    return std::make_shared<Key>(value);
   }
 
   /**
@@ -303,6 +319,11 @@ namespace Lisple
   std::string Word::to_string() const
   {
     return this->value;
+  }
+
+  std::shared_ptr<Word> Word::make(const std::string& value)
+  {
+    return std::make_shared<Word>(value);
   }
 
   /**
@@ -359,6 +380,16 @@ namespace Lisple
       return std::to_string((int) value);
     }
     return std::to_string(value);
+  }
+
+  std::shared_ptr<Number> Number::make(int value)
+  {
+    return std::make_shared<Number>(value);
+  }
+
+  std::shared_ptr<Number> Number::make(float value)
+  {
+    return std::make_shared<Number>(value);
   }
 
   /**

@@ -118,6 +118,10 @@ namespace Lisple
     }
   };
 
+  /**
+   * @brief Abstract intermediate class from string values that may use recognized
+   * qualified, ie namespaced, identifiers, ie Keys and Words
+   */
   class QualifiableStringValue : public Value<std::string>
   {
     /*
@@ -161,6 +165,8 @@ namespace Lisple
     std::string to_string() const override;
 
     bool has_value(const std::string& value) const override;
+
+    static std::shared_ptr<String> make(const std::string& value);
   };
 
   class Char : public Value<char>
@@ -169,6 +175,8 @@ namespace Lisple
     Char(const char value);
 
     std::string to_string() const override;
+
+    static std::shared_ptr<Char> make(char value);
   };
 
   class Boolean : public Value<bool>
@@ -194,6 +202,8 @@ namespace Lisple
     std::shared_ptr<Lisple::Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
     bool operator<(const Key& other) const;
+
+    static std::shared_ptr<Key> make(const std::string& value);
   };
 
   enum class NumberType : uint8_t
@@ -220,6 +230,9 @@ namespace Lisple
 
     bool has_value(const int value) const override;
     bool has_value(const float value) const override;
+
+    static std::shared_ptr<Number> make(int value);
+    static std::shared_ptr<Number> make(float value);
   };
 
   class Word : public QualifiableStringValue
@@ -230,6 +243,8 @@ namespace Lisple
     std::string to_string() const override;
 
     bool has_value(const std::string& value) const override;
+
+    static std::shared_ptr<Word> make(const std::string& value);
   };
 
   class QSymbol : public Value<std::string>
