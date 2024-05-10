@@ -73,11 +73,6 @@
     : Function(SIGNATURE) { }
 
 #define FUNC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_sobject_v& args)
-/* FIXME: No longer required, since we're using [[maybe_unused]] */
-#define FUNC_BODY__NO_CTX(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME(Lisple::Context&, Lisple::sptr_sobject_v& args)
-/* FIXME: Same. Can be removed when we stop using it */
-#define FUNC_BODY__NO_CTX_NO_ARGS(FUNC_NAME, DISP_NAME) \
-  Lisple::sptr_sobject FUNC_NAME::DISP_NAME(Lisple::Context&, Lisple::sptr_sobject_v&)
 
 #define MACRO_DECL(MACRO_NAME, DISP_NAME)                                               \
   class MACRO_NAME : public Lisple::Macro                                               \

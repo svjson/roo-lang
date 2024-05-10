@@ -315,7 +315,7 @@ namespace Lisple
   FUNC_IMPL(PrintFunction, SIG((FN_ARGS((&VARARG, &Type::ANY, true)),
                                 EXEC_DISPATCH(&PrintFunction::do_print))))
 
-  FUNC_BODY__NO_CTX(PrintFunction, do_print)
+  FUNC_BODY(PrintFunction, do_print)
   {
     for (size_t i = 0; i < args.size(); i++)
     {
@@ -368,7 +368,7 @@ namespace Lisple
   FUNC_IMPL(NilPredicateFunction, SIG((FN_ARGS((&Lisple::Type::ANY)),
                                        EXEC_DISPATCH(&NilPredicateFunction::is_nil))))
 
-  FUNC_BODY__NO_CTX(NilPredicateFunction, is_nil)
+  FUNC_BODY(NilPredicateFunction, is_nil)
   {
     return *args.front() == *Lisple::NIL ? Lisple::B_TRUE : Lisple::B_FALSE;
   }
@@ -377,7 +377,7 @@ namespace Lisple
   FUNC_IMPL(NotFunction, SIG((FN_ARGS((&Lisple::Type::BOOL)),
                               EXEC_DISPATCH(&NotFunction::invert_boolean))))
 
-  FUNC_BODY__NO_CTX(NotFunction, invert_boolean)
+  FUNC_BODY(NotFunction, invert_boolean)
   {
     return *args.front() == *Lisple::B_TRUE ? Lisple::B_FALSE : Lisple::B_TRUE;
   }
@@ -579,7 +579,7 @@ namespace Lisple
   FUNC_IMPL(EqualsPredicateFunction, SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY)),
                                           EXEC_DISPATCH(&EqualsPredicateFunction::equals_any))))
 
-  FUNC_BODY__NO_CTX(EqualsPredicateFunction, equals_any)
+  FUNC_BODY(EqualsPredicateFunction, equals_any)
   {
     return *args.at(0) == *args.at(1) ? Lisple::B_TRUE : Lisple::B_FALSE;
   }
@@ -588,7 +588,7 @@ namespace Lisple
                                     EXEC_DISPATCH(&NotEqualsFunction::not_equals_any))))
 
 
-  FUNC_BODY__NO_CTX(NotEqualsFunction, not_equals_any)
+  FUNC_BODY(NotEqualsFunction, not_equals_any)
   {
     return *args.front() != *args.at(1) ? B_TRUE : B_FALSE;
   }
@@ -605,7 +605,7 @@ namespace Lisple
   FUNC_IMPL(IntFunction, SIG((FN_ARGS((&Type::ANY)),
                               EXEC_DISPATCH(&IntFunction::to_int))))
 
-  FUNC_BODY__NO_CTX(IntFunction, to_int)
+  FUNC_BODY(IntFunction, to_int)
   {
     sptr_sobject& obj = args.front();
 
@@ -624,7 +624,7 @@ namespace Lisple
   FUNC_IMPL(PlusFunction, SIG((FN_ARGS((VARARG, &Lisple::Type::NUMBER)),
                                EXEC_DISPATCH(&PlusFunction::do_addition))))
 
-  FUNC_BODY__NO_CTX(PlusFunction, do_addition)
+  FUNC_BODY(PlusFunction, do_addition)
   {
     if (args.size() == 0)
     {
@@ -646,7 +646,7 @@ namespace Lisple
 
 
 
-  FUNC_BODY__NO_CTX(MinusFunction, do_subtraction)
+  FUNC_BODY(MinusFunction, do_subtraction)
   {
     return box_number(Number::value_of(*args.at(0)) - Number::value_of(*args.at(1)));
   }
@@ -654,7 +654,7 @@ namespace Lisple
   FUNC_IMPL(DivideFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
                                  EXEC_DISPATCH(&DivideFunction::do_division))))
 
-  FUNC_BODY__NO_CTX(DivideFunction, do_division)
+  FUNC_BODY(DivideFunction, do_division)
   {
     return box_number(Number::value_of(*args.at(0)) / Number::value_of(*args.at(1)));
   }
@@ -662,7 +662,7 @@ namespace Lisple
   FUNC_IMPL(MultiplyFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
                                    EXEC_DISPATCH(&MultiplyFunction::do_multiplication))));
 
-  FUNC_BODY__NO_CTX(MultiplyFunction, do_multiplication)
+  FUNC_BODY(MultiplyFunction, do_multiplication)
   {
     return box_number(Number::value_of(*args.at(0)) * Number::value_of(*args.at(1)));
   }
@@ -670,7 +670,7 @@ namespace Lisple
   FUNC_IMPL(LessThanFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                    EXEC_DISPATCH(&LessThanFunction::lt_fn))))
 
-  FUNC_BODY__NO_CTX(LessThanFunction, lt_fn)
+  FUNC_BODY(LessThanFunction, lt_fn)
   {
     return Number::value_of(*args.at(0)) < Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
   }
@@ -678,7 +678,7 @@ namespace Lisple
   FUNC_IMPL(GreaterThanFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                    EXEC_DISPATCH(&GreaterThanFunction::gt_fn))))
 
-  FUNC_BODY__NO_CTX(GreaterThanFunction, gt_fn)
+  FUNC_BODY(GreaterThanFunction, gt_fn)
   {
     return Number::value_of(*args.at(0)) > Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
   }
@@ -686,7 +686,7 @@ namespace Lisple
   FUNC_IMPL(ThresholdFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
                                     EXEC_DISPATCH(&ThresholdFunction::cap_value))))
 
-  FUNC_BODY__NO_CTX(ThresholdFunction, cap_value)
+  FUNC_BODY(ThresholdFunction, cap_value)
   {
     int a = args.at(0)->as<Lisple::Number>().value;
     int b = args.at(1)->as<Lisple::Number>().value;
@@ -697,7 +697,7 @@ namespace Lisple
   FUNC_IMPL(RangeFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                 EXEC_DISPATCH(&RangeFunction::make_range))))
 
-  FUNC_BODY__NO_CTX(RangeFunction, make_range)
+  FUNC_BODY(RangeFunction, make_range)
   {
     float begin = args.front()->as<Number>().float_value();
     float end = args.back()->as<Number>().float_value();
@@ -722,7 +722,7 @@ namespace Lisple
   {
   }
 
-  FUNC_BODY__NO_CTX(MinMaxFunction, select_min_or_max)
+  FUNC_BODY(MinMaxFunction, select_min_or_max)
   {
     int a = args.at(0)->as<Lisple::Number>().value;
     int b = args.at(1)->as<Lisple::Number>().value;
@@ -733,7 +733,7 @@ namespace Lisple
   FUNC_IMPL(AndFunction, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::BOOL)),
                               EXEC_DISPATCH(&AndFunction::logical_and))))
 
-  FUNC_BODY__NO_CTX(AndFunction, logical_and)
+  FUNC_BODY(AndFunction, logical_and)
   {
     for (auto& arg : args)
     {
@@ -767,7 +767,7 @@ namespace Lisple
   FUNC_IMPL(GetFunction, SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
                               EXEC_DISPATCH(&GetFunction::get))))
 
-  FUNC_BODY__NO_CTX(GetFunction, get)
+  FUNC_BODY(GetFunction, get)
   {
     return args.front()->get_sptr_property(*args.back());
   }
@@ -775,7 +775,7 @@ namespace Lisple
   FUNC_IMPL(NthFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
                               EXEC_DISPATCH(&NthFunction::get_nth))))
 
-  FUNC_BODY__NO_CTX(NthFunction, get_nth)
+  FUNC_BODY(NthFunction, get_nth)
   {
     int n = args.back()->as<Number>().int_value();
     if (n >= static_cast<int>(args.front()->get_children().size()) || n < 0) return NIL;
@@ -788,7 +788,7 @@ namespace Lisple
   FUNC_IMPL(AssocFunction, SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
                                 EXEC_DISPATCH(&AssocFunction::assoc))))
 
-  FUNC_BODY__NO_CTX(AssocFunction, assoc)
+  FUNC_BODY(AssocFunction, assoc)
   {
     Map& map = args.front()->as<Map>();
     sptr_sobject_v new_content;
@@ -858,7 +858,7 @@ namespace Lisple
   FUNC_IMPL(ConcatFunction, SIG((FN_ARGS((&VARARG, &Lisple::Type::ARRAY)),
                                  EXEC_DISPATCH(&ConcatFunction::concat_array))))
 
-  FUNC_BODY__NO_CTX(ConcatFunction, concat_array)
+  FUNC_BODY(ConcatFunction, concat_array)
   {
     auto result = std::make_shared<Lisple::Array>();
 
@@ -902,7 +902,7 @@ namespace Lisple
   FUNC_IMPL(HeadFunction, SIG((FN_ARGS((&Type::SEQ)),
                                EXEC_DISPATCH(&HeadFunction::head))))
 
-  FUNC_BODY__NO_CTX(HeadFunction, head)
+  FUNC_BODY(HeadFunction, head)
   {
     return args.front()->as<Lisple::Sexpression>().head();
   }
@@ -910,7 +910,7 @@ namespace Lisple
   FUNC_IMPL(TailFunction, SIG((FN_ARGS((&Type::SEQ)),
                                EXEC_DISPATCH(&TailFunction::tail))))
 
-  FUNC_BODY__NO_CTX(TailFunction, tail)
+  FUNC_BODY(TailFunction, tail)
   {
     return std::make_shared<Lisple::Array>(args.front()->as<Lisple::Sexpression>().tail());
   }
@@ -918,7 +918,7 @@ namespace Lisple
   FUNC_IMPL(LastFunction, SIG((FN_ARGS((&Type::SEQ)),
                                EXEC_DISPATCH(&LastFunction::last))))
 
-  FUNC_BODY__NO_CTX(LastFunction, last)
+  FUNC_BODY(LastFunction, last)
   {
     return args.front()->as<Lisple::Sexpression>().get_children().back();
   }
@@ -928,7 +928,7 @@ namespace Lisple
                                      (FN_ARGS((&Type::STRING)),
                                        EXEC_DISPATCH(&CountFunction::count))));
 
-  FUNC_BODY__NO_CTX(CountFunction, count)
+  FUNC_BODY(CountFunction, count)
   {
     if (Lisple::Type::STRING.is_type_of(*args.front()))
     {
@@ -1084,7 +1084,7 @@ namespace Lisple
   FUNC_IMPL(KeysFunction, SIG((FN_ARGS((&Lisple::Type::ANY)),
                                EXEC_DISPATCH(&KeysFunction::keys_fn))))
 
-  FUNC_BODY__NO_CTX(KeysFunction, keys_fn)
+  FUNC_BODY(KeysFunction, keys_fn)
   {
     sptr_sobject_v result;
 
@@ -1106,7 +1106,7 @@ namespace Lisple
   FUNC_IMPL(SelectKeysFunction, SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::SEQ)),
                                      EXEC_DISPATCH(&SelectKeysFunction::select_keys_fn))));
 
-  FUNC_BODY__NO_CTX(SelectKeysFunction, select_keys_fn)
+  FUNC_BODY(SelectKeysFunction, select_keys_fn)
   {
     auto& obj = args.front()->as<Lisple::Object>();
 
@@ -1131,7 +1131,7 @@ namespace Lisple
   {
   }
 
-  FUNC_BODY__NO_CTX(OddEvenPredicateFunction, exec_oddevenp)
+  FUNC_BODY(OddEvenPredicateFunction, exec_oddevenp)
   {
     return args.front()->as<Lisple::Number>().int_value() % 2 == modulus ? Lisple::B_TRUE : Lisple::B_FALSE;
   }
@@ -1141,12 +1141,12 @@ namespace Lisple
                                               (FN_ARGS((&Lisple::Type::STRING)),
                                                EXEC_DISPATCH(&EmptyPredicateFunction::exec_emptyp_string))))
 
-  FUNC_BODY__NO_CTX(EmptyPredicateFunction, exec_emptyp_seq)
+  FUNC_BODY(EmptyPredicateFunction, exec_emptyp_seq)
   {
     return std::make_shared<Lisple::Boolean>(args.front()->get_children().empty());
   }
 
-  FUNC_BODY__NO_CTX(EmptyPredicateFunction, exec_emptyp_string)
+  FUNC_BODY(EmptyPredicateFunction, exec_emptyp_string)
   {
     return std::make_shared<Lisple::Boolean>(args.front()->as<Lisple::String>().value.empty());
   }
@@ -1190,7 +1190,7 @@ namespace Lisple
   FUNC_IMPL(RandNthFunction, SIG((FN_ARGS((&Lisple::Type::SEQ)),
                                   EXEC_DISPATCH(&RandNthFunction::rand_nth))))
 
-  FUNC_BODY__NO_CTX(RandNthFunction, rand_nth)
+  FUNC_BODY(RandNthFunction, rand_nth)
   {
     auto& seq = args.front();
     if (seq->get_children().size() == 0)
@@ -1205,7 +1205,7 @@ namespace Lisple
                                    (FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
                                     EXEC_DISPATCH(&RndFunction::random_number))))
 
-  FUNC_BODY__NO_CTX(RndFunction, random_number)
+  FUNC_BODY(RndFunction, random_number)
   {
     int min = args.size() == 1 ? 0 : args.at(0)->as<Lisple::Number>().value;
     int max = args.at(args.size() == 1 ? 0 : 1)->as<Lisple::Number>().value;
@@ -1216,7 +1216,7 @@ namespace Lisple
   FUNC_IMPL(VectorFunction, SIG((FN_ARGS((&VARARG, &Type::ANY)),
                                  EXEC_DISPATCH(&VectorFunction::make_vector))))
 
-  FUNC_BODY__NO_CTX(VectorFunction, make_vector)
+  FUNC_BODY(VectorFunction, make_vector)
   {
     sptr_sobject_v vector;
 
@@ -1234,7 +1234,7 @@ namespace Lisple
   FUNC_IMPL(ContainsPredicateFunction, SIG((FN_ARGS((&Type::ARRAY), (&Type::ANY)),
                                             EXEC_DISPATCH(&ContainsPredicateFunction::contains))))
 
-  FUNC_BODY__NO_CTX(ContainsPredicateFunction, contains)
+  FUNC_BODY(ContainsPredicateFunction, contains)
   {
     sptr_sobject_v vector = args.front()->as<Array>().get_children();
     return std::find_if(vector.begin(), vector.end(), [&args] (sptr_sobject lmnt) { return *lmnt == *args.back(); }) != vector.end()
@@ -1245,7 +1245,7 @@ namespace Lisple
   FUNC_IMPL(TakeFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
                                EXEC_DISPATCH(&TakeFunction::take_fn))))
 
-  FUNC_BODY__NO_CTX(TakeFunction, take_fn)
+  FUNC_BODY(TakeFunction, take_fn)
   {
     int amount = args.front()->as<Number>().int_value();
     sptr_sobject_v vector = args.back()->as<Sexpression>().get_children();
@@ -1262,7 +1262,7 @@ namespace Lisple
   FUNC_IMPL(StrFunction, SIG((FN_ARGS((VARARG, &Type::ANY)),
                               EXEC_DISPATCH(&StrFunction::concat_str))))
 
-  FUNC_BODY__NO_CTX(StrFunction, concat_str)
+  FUNC_BODY(StrFunction, concat_str)
   {
     std::string result = "";
 
@@ -1288,7 +1288,7 @@ namespace Lisple
   FUNC_IMPL(JoinFunction, SIG((FN_ARGS((VARARG, &Type::STRING)),
                                EXEC_DISPATCH(&JoinFunction::join_str))))
 
-  FUNC_BODY__NO_CTX(JoinFunction, join_str)
+  FUNC_BODY(JoinFunction, join_str)
   {
     if (args.size() < 2)
     {
