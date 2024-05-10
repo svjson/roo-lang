@@ -824,7 +824,7 @@ namespace Lisple
   FUNC_IMPL(AssocBangFunction, SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
                                 EXEC_DISPATCH(&AssocBangFunction::assoc_bang))))
 
-  FUNC_BODY__NO_CTX(AssocBangFunction, assoc_bang)
+  FUNC_BODY(AssocBangFunction, assoc_bang)
   {
     sptr_sobject assoc_key = args.at(1);
     sptr_sobject value = args.back();
@@ -845,7 +845,7 @@ namespace Lisple
     else if (Lisple::Type::HOST_OBJECT.is_type_of(*args.front()))
     {
       AbstractHostObject& ho = args.front()->as<AbstractHostObject>();
-      ho.set_property(*assoc_key, value);
+      ho.set_property(&ctx, *assoc_key, value);
     }
     else
     {
