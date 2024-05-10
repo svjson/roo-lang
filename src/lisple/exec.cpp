@@ -42,17 +42,23 @@ namespace Lisple
     scope.store(Word(arg_name), arg_val);
   }
 
+  const Key keys("keys");
+  const Key as("as");
+
   DestructuringArgumentBinding::DestructuringArgumentBinding(Map& destr_map)
     : ArgumentBinding()
     , destr_map(destr_map)
   {
+    if (!destr_map.has_key(keys) ||
+        destr_map.keys().size() > 2 ||
+        (destr_map.keys().size() == 2 && !destr_map.has_key(as)))
+    {
+      throw Lisple::TypeError("Invalid destructuring map: " + destr_map.to_string());
+    }
   }
 
   void DestructuringArgumentBinding::apply(Scope& scope, sptr_sobject& arg_val)
   {
-    Key keys("keys");
-    Key as("as");
-
     for (auto& key_obj : destr_map.get_sptr_property(keys)->as<Array>().get_children())
     {
       Word& key_name = key_obj->as<Word>();
