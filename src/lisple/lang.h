@@ -41,6 +41,45 @@ namespace Lisple
    *          evaluates to a truthy value
    */
   MACRO_DECL(WhenMacro, make_when)
+
+  /*! CaseMacro - branching construct based on testing a single value against
+   * an arbitrary number of constant values. The condition and expression pairs
+   * will be evaluated sequentially until a match is found.
+   * Optionally, :default can be provided as a last condition that will always
+   * evaluate to true if no other match has been made.
+   *
+   * Usage: (case x
+   *          10 "x is equal to 10"
+   *          20 "x is equal to 20"
+   *          :default "x is not 10 or 20")
+   *
+   * Param 0: The value to match
+   * Param 1: A value of expression to match against Param 0
+   * Param 2: An expression that will be evaluated if Param 1 matches Param 0
+   * Param 3...: Repetitions of 1-2
+   */
+  MACRO_DECL(CaseMacro, make_case)
+
+  /*! CondMacro - defines a sequence of condition and expression pairs that will
+   * be sequentially evaluated until a condition evaluates to a truthy, upon
+   * which the corresponding expression will be evaluated and returned.
+   *
+   * return nil if no condition evaluates to a truthy value
+   *
+   * Usage: (cond
+   *          (= x 10) "x is equal to 10"
+   *          (> x 10) "x is greater than 10"
+   *          :else "x is less than or equal to 10")
+   *
+   * In the example above, :else is a truthy value and can therefore be used
+   * as a last catch-all condition.
+   *
+   * Param 0: A conditional form
+   * Param 1: An expression that will, conditionally, be evaluated
+   * Param 2...: Repetitions of Params 0-1
+   */
+  MACRO_DECL(CondMacro, make_cond)
+
   MACRO_DECL(ThreadFirstMacro, make_thread_first)
   MACRO_DECL(ForMacro, make_for)
 

@@ -39,7 +39,9 @@ namespace Lisple
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang.emplace("assoc", std::make_shared<AssocFunction>());
     lang.emplace("assoc!", std::make_shared<AssocBangFunction>());
+    lang.emplace("case", std::make_shared<CaseMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
+    lang.emplace("cond", std::make_shared<CondMacro>());
     lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
     lang.emplace("count", std::make_shared<CountFunction>());
     lang.emplace("def", std::make_shared<DefMacro>());
@@ -453,16 +455,17 @@ namespace Lisple
     return retval;
   }
 
-  MACRO_IMPL(WhenMacro, SIG((FN_ARGS((&Lisple::Type::ANY, false), (Lisple::VARARG, &Lisple::Type::ANY, false)),
+  /* when */
+  MACRO_IMPL(WhenMacro, SIG((FN_ARGS((&Type::ANY, false), (VARARG, &Type::ANY, false)),
                              EXEC_DISPATCH(&WhenMacro::make_when))))
 
   MACRO_BODY(WhenMacro, make_when)
   {
-    Lisple::sptr_sobject retval = Lisple::NIL;
+    sptr_sobject retval = NIL;
 
     ctx.push_context(true);
     auto condition = ctx.eval(args.front());
-    if (*condition != *Lisple::B_FALSE && *condition != *Lisple::NIL)
+    if (*condition != *B_FALSE && *condition != *NIL)
     {
       for (size_t i=1; i<args.size(); i++)
       {
@@ -473,6 +476,75 @@ namespace Lisple
     return retval;
   }
 
+  /* case */
+  MACRO_IMPL(CaseMacro, SIG((FN_ARGS((&Type::ANY, false), (VARARG, &Type::ANY, false)),
+                             EXEC_DISPATCH(&CaseMacro::make_case))))
+
+  Key DEFAULT = Key("default");
+
+  MACRO_BODY(CaseMacro, make_case)
+  {
+    if ((args.size()-1) % 2 != 0)
+    {
+      throw InvocationException("Incomplete condition-expression pair passed to case");
+    }
+    else if (args.size() == 1)
+    {
+      throw InvocationException("Empty case-form");
+    }
+
+    sptr_sobject retval = NIL;
+
+    ctx.push_context(true);
+    sptr_sobject value = ctx.eval(args.front());
+
+    for (size_t i=1; i<args.size(); i+=2)
+    {
+      if (*ctx.eval(args.at(i)) == *value ||
+          *args.at(i) == DEFAULT)
+      {
+        retval = ctx.eval(args.at(i+1));
+        break;
+      }
+    }
+
+    ctx.pop_context();
+    return retval;
+  }
+
+  /* cond */
+  MACRO_IMPL(CondMacro, SIG((FN_ARGS((VARARG, &Type::ANY, false)),
+                             EXEC_DISPATCH(&CondMacro::make_cond))))
+
+  MACRO_BODY(CondMacro, make_cond)
+  {
+    if (args.size() % 2 != 0)
+    {
+      throw InvocationException("Uneven number of forms passed to cond");
+    }
+    else if (args.size() == 0)
+    {
+      throw InvocationException("Empty cond-form");
+    }
+
+    sptr_sobject retval = Lisple::NIL;
+
+    ctx.push_context(true);
+    for (size_t i=0; i<args.size(); i+=2)
+    {
+      sptr_sobject condition = ctx.eval(args.at(i));
+      if (*condition != *B_FALSE && *condition != *NIL)
+      {
+        retval = ctx.eval(args.at(i+1));
+        break;
+      }
+    }
+
+    ctx.pop_context();
+    return retval;
+  }
+
+  /* for */
   MACRO_IMPL(ForMacro, SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
                             EXEC_DISPATCH(&ForMacro::make_for))))
 

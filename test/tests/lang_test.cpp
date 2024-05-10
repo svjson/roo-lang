@@ -222,6 +222,89 @@ TEST(DefunMacro, define_no_arg_fun)
   EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front(), Lisple::Number(8));
 }
 
+TEST(CaseMacro, constants)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((case 20 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
+
+  // Then
+  ASSERT_EQ(*result, Lisple::String("Zwanzig"));
+}
+
+TEST(CaseMacro, expressions)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((case (- 20 10) (- 10 10) "Zilch" (+ 5 5) "Zen" :default "Zillions"))");
+  // Then
+  ASSERT_EQ(*result, Lisple::String("Zen"));
+}
+
+TEST(CaseMacro, no_match_with_default)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
+
+  // Then
+  ASSERT_EQ(*result, Lisple::String("Zillions"));
+}
+
+TEST(CaseMacro, no_match_without_default)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::NIL);
+}
+
+
+TEST(CondMacro, match_condition)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((let [x 20] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
+
+  // Then
+  ASSERT_EQ(*result, Lisple::String("Zwanzig"));
+}
+
+TEST(CondMacro, no_match_with_else)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
+  // Then
+  ASSERT_EQ(*result, Lisple::String("Zillions"));
+}
+
+TEST(CondMacro, no_match_without_else)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig")))");
+  // Then
+  ASSERT_EQ(*result, *Lisple::NIL);
+}
+
+
 TEST(FilterFunction, filter_array)
 {
   // Given
