@@ -1,6 +1,7 @@
 
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
+#include <gtest/gtest-matchers.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest_pred_impl.h>
@@ -13,6 +14,9 @@
 #include <lisple/lang.h>
 #include <lisple/type.h>
 
+#include "lisple/host.h"
+#include "lisple/lisp_reader.h"
+#include "test_host_objects.h"
 #include "lisp_reader_fixture.h"
 
 using namespace ::testing;
@@ -95,6 +99,55 @@ TEST(Signature, matches__leading_varargs)
   EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, ARRAY, FUNCTION }));
 
   EXPECT_FALSE(signature.matches({ FUNCTION, ARRAY }));
+}
+
+TEST(Signature, coerce_args__map_to_host_type)
+{
+  // Given
+  Lisple::LispReader reader;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
+  reader.get_current_namespace().store(Lisple::Word("prn-vehicle"), std::make_shared<Tests::PrnVehicle>());
+  reader.switch_namespace("user");
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((vehicle/prn-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
+
+  // Then
+  EXPECT_EQ(result->get_type(), Lisple::Form::HOST_OBJECT);
+  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*result));
+}
+
+TEST(Signature, coerce_args__no_coercion_available)
+{
+  // Given
+  Lisple::LispReader reader;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
+  reader.get_current_namespace().store(Lisple::Word("double-size-vehicle"), std::make_shared<Tests::DoubleSizeVehicle>());
+  reader.switch_namespace("user");
+
+  // When/Then
+  EXPECT_THAT([&reader]() {
+    reader.eval(R"((vehicle/double-size-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
+  }, ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching signature")));
+}
+
+TEST(Signature, coerce_args__coerce_array_elements)
+{
+  // Given
+  Lisple::LispReader reader;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
+  reader.get_current_namespace().store(Lisple::Word("count-seats"), std::make_shared<Tests::CountVehicleSeats>());
+  reader.switch_namespace("user");
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((vehicle/count-seats [{:model-name "Gonzo-mobile" :seats 8} {:model-name "Dreamy Boom-Boom" :seats 6}]))");
+
+  // Then
+  EXPECT_EQ(result->get_type(), Lisple::Form::NUMBER);
+  EXPECT_EQ(result->as<Lisple::Number>().int_value(), 14);
 }
 
 TEST(NamedArgument, apply)

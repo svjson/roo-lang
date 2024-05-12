@@ -1,8 +1,10 @@
 
 #include "host.h"
 
+#include "exec.h"
 #include "form.h"
 #include "type.h"
+#include "context.h"
 #include "lisple_exception.h"
 
 namespace Lisple
@@ -32,9 +34,10 @@ namespace Lisple
   /**
    * HostTypeRef implementation
    */
-  HostTypeRef::HostTypeRef(Lisple::HostObjectType host_type, const std::string& name)
+  HostTypeRef::HostTypeRef(Lisple::HostObjectType host_type, const std::string& name, const std::string& make_fn)
     : Lisple::TypeRef(Lisple::Form::HOST_OBJECT, name)
     , host_type(host_type)
+    , make_fn(make_fn.size() ? std::make_unique<std::string>(make_fn) : nullptr)
   {
   }
 
@@ -45,6 +48,32 @@ namespace Lisple
       return obj.as<Lisple::AbstractHostObject>().get_host_type() == host_type;
     }
     return false;
+  }
+
+  CoercionResult HostTypeRef::coerce(Context& ctx, sptr_sobject& obj) const
+  {
+    if (make_fn)
+    {
+      sptr_sobject function = ctx.lookup(*make_fn);
+      if (!Type::EXEC.is_type_of(*function))
+      {
+        throw InvocationException("Coercion failed. Review Host Object configuration - Make Function '" + *make_fn + "' is not executable: " + function->to_string());
+      }
+      auto& make_exec = function->as<Executable>();
+
+      for (auto& sig : make_exec.signatures)
+      {
+        if (sig->get_arguments().size() != 1) continue;
+
+        if (sig->get_arguments().front().matches(*obj))
+        {
+          sptr_sobject_v arg_list { obj };
+          return CoercionResult { true, sig->invoke(ctx, arg_list) };
+        }
+      }
+
+    }
+    return CoercionResult { false, nullptr };
   }
 
   /**

@@ -113,6 +113,11 @@ namespace Lisple
     return type->is_type_of(obj);
   }
 
+  CoercionResult Argument::coerce(Context& ctx, sptr_sobject& obj) const
+  {
+    return type->coerce(ctx, obj);
+  }
+
   bool Argument::evalp() const
   {
     return eval;
@@ -140,6 +145,41 @@ namespace Lisple
   {
     return arguments;
   }
+
+  sptr_sobject_v Signature::coerce_args(Context& ctx, sptr_sobject_v& args)
+  {
+    sptr_sobject_v coerced;
+
+    // Non-vararg signatures
+    if (args.size() == arguments.size())
+    {
+      for (size_t i = 0; i < arguments.size(); i++)
+      {
+        const Argument& arg = arguments.at(i);
+        if (arg.matches(*args.at(i)))
+        {
+          coerced.push_back(args.at(i));
+          continue;
+        }
+        else
+        {
+          CoercionResult coercion = arg.coerce(ctx, args.at(i));
+          if (coercion.success)
+          {
+            coerced.push_back(coercion.result);
+          }
+          else
+          {
+            coerced.clear();
+            return coerced;
+          }
+        }
+      }
+    }
+
+    return coerced;
+  }
+
 
   bool Signature::matches(const sptr_sobject_v& args) const
   {
@@ -258,6 +298,15 @@ namespace Lisple
       if (signature->matches(args))
       {
         return signature->invoke(ctx, args);
+      }
+    }
+
+    for (auto& signature : signatures)
+    {
+      sptr_sobject_v coerced_args = signature->coerce_args(ctx, args);
+      if (coerced_args.size())
+      {
+        return signature->invoke(ctx, coerced_args);
       }
     }
 

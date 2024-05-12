@@ -31,11 +31,19 @@ namespace Lisple
     DISCARD
   };
 
+  class Context;
   class Object;
 
   typedef std::shared_ptr<Lisple::Object> sptr_sobject;
   typedef std::vector<std::shared_ptr<Lisple::Object>> sptr_sobject_v;
 
+  struct CoercionResult
+  {
+    bool success;
+    sptr_sobject result;
+  };
+
+  /*! @brief Basic type reference and identifier for built-in Lisple types */
   class TypeRef
   {
    protected:
@@ -47,9 +55,14 @@ namespace Lisple
     virtual ~TypeRef() = default;
 
     virtual bool is_type_of(const Lisple::Object& obj) const;
+    virtual CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
+
     const std::string& to_string() const;
+
+    friend class SeqRef;
   };
 
+  /*! @brief Type reference wrapper for when two or more types are acceptable */
   class MultiRef : public TypeRef
   {
     std::vector<const Lisple::TypeRef*> types;
@@ -60,6 +73,7 @@ namespace Lisple
     bool is_type_of(const Lisple::Object& obj) const override;
   };
 
+  /*! @brief Type reference for when any type is acceptable */
   class AnyRef : public TypeRef
   {
    public:
@@ -67,6 +81,8 @@ namespace Lisple
     bool is_type_of(const Object& obj) const override;
   };
 
+  /*! @brief Type reference wrapper for sequence types holding a specific type,
+  *   ie, Array of Number */
   class SeqRef : public TypeRef
   {
     const TypeRef* seq_type;
@@ -76,6 +92,7 @@ namespace Lisple
     SeqRef(const TypeRef* seq_type, const TypeRef* child_type, const std::string& name);
 
     bool is_type_of(const Object& obj) const override;
+    CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
   };
 
   namespace Type

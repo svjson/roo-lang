@@ -355,10 +355,13 @@ namespace Lisple
   class HostTypeRef : public ::Lisple::TypeRef
   {
     Lisple::HostObjectType host_type;
+    std::unique_ptr<std::string> make_fn;
 
    public:
-    HostTypeRef(Lisple::HostObjectType host_type, const std::string& name);
+    HostTypeRef(Lisple::HostObjectType host_type, const std::string& name, const std::string& make_fn = "");
+
     bool is_type_of(const Lisple::Object& obj) const override;
+    CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
   };
 
   typedef std::map<std::string, Accessors> acc_map;

@@ -161,6 +161,7 @@ namespace Lisple
 
     bool is_vararg() const;
     bool matches(Lisple::Object&) const;
+    CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
     bool evalp() const;
     std::string to_string() const;
   };
@@ -169,33 +170,44 @@ namespace Lisple
 
   class Signature
   {
-  protected:
+   protected:
     const std::vector<Argument> arguments;
     exec_fn target_func;
 
-  public:
+   public:
     Signature(std::vector<Argument> arguments, exec_fn target_func);
 
     const std::vector<Argument>& get_arguments() const;
 
     bool matches(const sptr_sobject_v& args) const;
     bool should_eval_arg(std::size_t index) const;
+    /*
+     * @brief Attempt to coerce arguments list to fit the Signature by inspecting
+     * the signature types for possible conversions
+     */
+    sptr_sobject_v coerce_args(Context& ctx, sptr_sobject_v& args);
+
     sptr_sobject invoke(Context& ctx, sptr_sobject_v& args);
     std::string to_string() const;
   };
 
+  /*
+   * @brief Base class for all executable Lisple objects
+   */
   class Executable : public Lisple::Object
   {
-  protected:
+   protected:
     std::vector<std::unique_ptr<Signature>> signatures;
 
-  public:
+   public:
     Executable(Form type, std::unique_ptr<Signature> signature);
     Executable(Form type, std::vector<std::unique_ptr<Signature>> signatures);
 
     bool operator==(const Lisple::Object& other) const override;
 
     virtual Lisple::sptr_sobject execute(Context& ctx, sptr_sobject_v& args) override;
+
+    friend class HostTypeRef;
   };
 
   typedef Signature sig;
