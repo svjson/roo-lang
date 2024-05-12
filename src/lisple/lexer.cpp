@@ -55,6 +55,8 @@ namespace Lisple
 
     bool comment_context = false;
 
+    std::string line = "";
+
     unsigned int offset = 0;
     std::string val = "";
     std::string cs = "";
@@ -63,11 +65,17 @@ namespace Lisple
     {
       char c = input.at(offset++);
       cs = c;
+      line += cs;
 
       if (ct != Token::STRING && c == ';')
       {
         comment_context = true;
         continue;
+      }
+
+      if (c == '\n')
+      {
+        line = "";
       }
 
       if (comment_context && c == '\n')
@@ -141,7 +149,7 @@ namespace Lisple
       {
         if (offset == input.size())
         {
-          throw Lisple::ParseException("Unexpected token: '\\'");
+          throw Lisple::ParseException("Unexpected token: '\\': " + line + " <---");
         }
 
         val += input.at(offset++);
@@ -254,7 +262,7 @@ namespace Lisple
         continue;
       }
 
-      throw LispleException("Unexpected token: '" + cs + "'");
+      throw LispleException("Unexpected token: '" + cs + "': " + line + " <-----");
     }
 
     if (val.size())
