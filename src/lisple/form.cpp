@@ -228,6 +228,11 @@ namespace Lisple
     return "false";
   }
 
+  std::shared_ptr<Boolean> Boolean::wrap(bool value)
+  {
+    return value ? B_TRUE : B_FALSE;
+  }
+
   /**
    * Char form
    */

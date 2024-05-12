@@ -185,6 +185,8 @@ namespace Lisple
     Boolean(const bool value);
 
     std::string to_string() const override;
+
+    static std::shared_ptr<Boolean> wrap(bool value);
   };
 
   inline const std::shared_ptr<Lisple::Boolean> B_TRUE = std::make_shared<Lisple::Boolean>(true);
