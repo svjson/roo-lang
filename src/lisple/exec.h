@@ -101,9 +101,6 @@
     : MACRO_BASE(SIGNATURE) { }
 
 #define MACRO_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, Lisple::sptr_sobject_v& args)
-/* FIXME: Safe to remove when we stop using it. */
-#define MACRO_BODY__NO_CTX(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME(Lisple::Context&, Lisple::sptr_sobject_v& args)
-
 
 namespace Lisple
 {
