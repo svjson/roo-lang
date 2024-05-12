@@ -255,16 +255,22 @@
 #define ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
   __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_VECTOR__FIELD, __ADAPTER_PROP_GET_VECTOR__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
-#define ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM)  \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                     \
-  {                                                                          \
-    Lisple::sptr_sobject_v v;                                               \
-     for (auto obj : get_object().PROP_NAME)                                 \
-    {                                                                       \
-      v.push_back(std::make_shared<LISPLE_FORM>(*obj));                     \
-    }                                                                       \
-    return std::make_shared<Lisple::Array>(v);                              \
+#define __ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
+  {                                                                                      \
+    Lisple::sptr_sobject_v v;                                                            \
+     for (auto obj : get_object().FIELD_NAME)                                            \
+    {                                                                                    \
+      v.push_back(std::make_shared<LISPLE_FORM>(*obj));                                  \
+    }                                                                                    \
+    return std::make_shared<Lisple::Array>(v);                                           \
   }
+
+#define __ADAPTER_PROP_GET_VECTOR_P__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM) \
+  __ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+
+#define ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_VECTOR_P__FIELD, __ADAPTER_PROP_GET_VECTOR_P__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
 #define ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                   \
