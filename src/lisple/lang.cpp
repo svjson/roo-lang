@@ -79,6 +79,7 @@ namespace Lisple
     lang.emplace("prn", std::make_shared<PrintFunction>());
     lang.emplace("rand-nth", std::make_shared<RandNthFunction>());
     lang.emplace("range", std::make_shared<RangeFunction>());
+    lang.emplace("reduce", std::make_shared<ReduceFunction>());
     lang.emplace("reduce-kv", std::make_shared<ReduceKeyValueFunction>());
     lang.emplace("remove", std::make_shared<RemoveFunction>());
     lang.emplace("rnd", std::make_shared<RndFunction>());
@@ -991,6 +992,7 @@ namespace Lisple
   }
 
 
+  /* MapFunction - map */
   FUNC_IMPL(MapFunction, SIG((FN_ARGS((&VARARG, &Type::SEQ), (&Type::EXEC)),
                               EXEC_DISPATCH(&MapFunction::map_seq))))
 
@@ -1034,8 +1036,30 @@ namespace Lisple
     return std::make_shared<Array>(result);
   }
 
+  /* ReduceFunction - reduce */
+  FUNC_IMPL(ReduceFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::FUNCTION)),
+                                 EXEC_DISPATCH(&ReduceFunction::reduce))))
 
-  FUNC_IMPL(ReduceKeyValueFunction, SIG((FN_ARGS((&Lisple::Type::MAP), (&Lisple::Type::ANY), (&Lisple::Type::FUNCTION)),
+  FUNC_BODY(ReduceFunction, reduce)
+  {
+    sptr_sobject result = args.at(1);
+    Function& reducer = args.back()->as<Function>();
+
+    for (auto& lmnt : args.front()->get_children())
+    {
+      sptr_sobject_v reducer_args { result, lmnt };
+      sptr_sobject iter_result = reducer.execute(ctx, reducer_args);
+      if (iter_result.get() != result.get())
+      {
+        result.swap(iter_result);
+      }
+    }
+
+    return result;
+  }
+
+  /* ReduceKeyValueFunction - reduce-kv */
+  FUNC_IMPL(ReduceKeyValueFunction, SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::FUNCTION)),
                                          EXEC_DISPATCH(&ReduceKeyValueFunction::reduce_kv))))
 
   FUNC_BODY(ReduceKeyValueFunction, reduce_kv)
@@ -1059,20 +1083,20 @@ namespace Lisple
     return result;
   }
 
-  FUNC_IMPL(FindFirstFunction, SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::FUNCTION)),
+  FUNC_IMPL(FindFirstFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
                                     EXEC_DISPATCH(&FindFirstFunction::find_first_in_seq))))
 
   FUNC_BODY(FindFirstFunction, find_first_in_seq)
   {
     auto original = args.front();
-    Lisple::sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
+    sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
 
-    auto& filter_fn = args.back()->as<Lisple::Executable>();
+    auto& filter_fn = args.back()->as<Executable>();
 
     for (auto val : args.front()->get_children())
     {
-      Lisple::sptr_sobject_v val_args{ val };
-      if (*filter_fn.execute(ctx, val_args) == *Lisple::B_TRUE)
+      sptr_sobject_v val_args{ val };
+      if (*filter_fn.execute(ctx, val_args) == *B_TRUE)
       {
         return val;
       }

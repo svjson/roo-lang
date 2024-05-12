@@ -1191,6 +1191,18 @@ TEST(WhileMacro, loop_with_counter)
   EXPECT_EQ(*fixture.lisp_reader.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
 }
 
+TEST(ReduceFunction, reduce_simple)
+{
+  // Given
+  Lisple::LispReader reader;
+
+  // When
+  auto retval = reader.eval("(reduce [128 64 32 16 8 4 2 1] 0 +)");
+
+  // Then
+  EXPECT_EQ(*retval, Lisple::Number(255));
+}
+
 TEST(ReduceKeyValueFunction, recreate_map)
 {
   // Given

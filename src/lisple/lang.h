@@ -200,7 +200,7 @@ namespace Lisple
   FUNC_DECL(FilterFunction, filter_seq)
 
   /*!
-   * \brief RemoveFunction - Keep only certain elements of a Seq by applying a
+   * @brief RemoveFunction - Keep only certain elements of a Seq by applying a
    * function/executable to each element, creating a new Seq without those
    * elements for which the predicate function returns a truthy value.
    * Effectively the inverse of "filter"
@@ -214,7 +214,37 @@ namespace Lisple
    */
   FUNC_DECL(RemoveFunction, remove_seq)
 
+  /*!
+   * @brief ReduceFunction - Perform a functional reduce on a sequence
+   *
+   * Usage: (reduce sequence
+   *                {}
+   *                (fn [result element] (assoc result (:id element) element)))
+   *
+   * Param 0 - The sequence to reduce
+   * Param 1 - The initial value of result
+   * Param 2 - A function to apply for each element taking the accumulated
+   *           result and current element as arguments
+   */
+  FUNC_DECL(ReduceFunction, reduce)
 
+  /*!
+   * @brief ReduceKeyValueFunctino - Perform a functional reduce on all
+   * key-value pairs of a Map.
+   *
+   * Usage: (reduce {:a 1 :b 2}
+   *                {:total 0}
+   *                (fn [result k v] (assoc result
+   *                                        :total
+   *                                        (+ v (:total result)))))
+   *        => {:total 3}
+   *
+   * Param 0 - The map to reduce
+   * Param 1 - The initial value of result
+   * Param 2 - A function to apply for each key-value pair, taking the
+   *           accumulated result and the key and the value for each pair in
+   *           the map
+   */
   FUNC_DECL(ReduceKeyValueFunction, reduce_kv)
   FUNC_DECL(FindFirstFunction, find_first_in_seq)
   FUNC_DECL(KeysFunction, keys_fn)
