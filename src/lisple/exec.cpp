@@ -347,7 +347,6 @@ namespace Lisple
     return "<fn>";
   }
 
-
   DetachedFunction::DetachedFunction(std::shared_ptr<Context> ctx,
                                      std::shared_ptr<Function>& fun,
                                      sptr_sobject_v bound_args)

@@ -247,6 +247,18 @@ namespace Lisple
    */
   FUNC_DECL(ReduceKeyValueFunction, reduce_kv)
   FUNC_DECL(FindFirstFunction, find_first_in_seq)
+
+  /*!
+   * @brief SeqMatchFunction - Query a seq against a pattern in form of a
+   * partial map. Returns the first element that matches all defined keys
+   * in the pattern
+   *
+   * Usage: (seq-match seq {:id 2 :status {:desc "disabled"}})
+   *
+   * Param 0 - The sequence to query
+   * Param 1 - The partial map pattern to match
+   */
+  FUNC_DECL(SeqMatchFunction, match)
   FUNC_DECL(KeysFunction, keys_fn)
   FUNC_DECL(SelectKeysFunction, select_keys_fn)
 

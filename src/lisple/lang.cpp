@@ -84,6 +84,7 @@ namespace Lisple
     lang.emplace("remove", std::make_shared<RemoveFunction>());
     lang.emplace("rnd", std::make_shared<RndFunction>());
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
+    lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
     lang.emplace("set!", std::make_shared<SetBangMacro>());
     lang.emplace("str", std::make_shared<StrFunction>());
     lang.emplace("tail", std::make_shared<TailFunction>());
@@ -1083,6 +1084,7 @@ namespace Lisple
     return result;
   }
 
+  /* FindFirstFunction - find-first */
   FUNC_IMPL(FindFirstFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
                                     EXEC_DISPATCH(&FindFirstFunction::find_first_in_seq))))
 
@@ -1099,6 +1101,49 @@ namespace Lisple
       if (*filter_fn.execute(ctx, val_args) == *B_TRUE)
       {
         return val;
+      }
+    }
+
+    return NIL;
+  }
+
+  /* SeqMatchFunction - seq-match */
+  FUNC_IMPL(SeqMatchFunction, SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::MAP)),
+                                   EXEC_DISPATCH(&SeqMatchFunction::match))))
+
+  bool match_map_like(sptr_sobject& obj, sptr_sobject& pattern)
+  {
+    for (Object* key : pattern->as<Lisple::Map>().keys())
+    {
+      sptr_sobject prop = pattern->get_sptr_property(*key);
+      sptr_sobject value = obj->get_sptr_property(*key);
+
+      if (Type::MAP.is_type_of(*prop))
+      {
+        if (!match_map_like(value, prop))
+        {
+          return false;
+        }
+      }
+      else if (*prop != *value)
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  FUNC_BODY(SeqMatchFunction, match)
+  {
+    sptr_sobject& seq = args.front();
+    sptr_sobject& pattern = args.back();
+
+    for (auto& obj : seq->get_children())
+    {
+      if (match_map_like(obj, pattern))
+      {
+        return obj;
       }
     }
 
