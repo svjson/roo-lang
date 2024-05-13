@@ -137,7 +137,14 @@ namespace Lisple
   sptr_sobject Context::call(const std::string& fn_name, sptr_sobject& arg1)
   {
     sptr_sobject_v args = { arg1 };
-    return lookup(Lisple::Word(fn_name))->execute(*this, args);
+
+    sptr_sobject exec = lookup(Lisple::Word(fn_name));
+
+    if (*exec == *NIL)
+    {
+      throw InvocationException("Unknown identifier: " + fn_name);
+    }
+    return exec->execute(*this, args);
   }
 
   sptr_sobject Context::lookup(const Lisple::Word& identifier) const
