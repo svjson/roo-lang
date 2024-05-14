@@ -14,6 +14,13 @@
 
 #define __SELECT_MACRO__2(_1, _2, MACRO_NAME, ...) MACRO_NAME
 
+#define __HOST_TYPE(CONST, NAME, MAKE_FN) inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME, MAKE_FN);
+
+#define __HOST_TYPE__NO_MAKE_FN(CONST, NAME) inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME);
+
+#define HOST_TYPE(CONST, NAME, ...) __SELECT_MACRO__2(0, ##__VA_ARGS__, __HOST_TYPE, __HOST_TYPE__NO_MAKE_FN)(CONST, NAME, ##__VA_ARGS__)
+
+
 #define HOST_ADAPTER_STATIC_FACTORY(AD_CLASS)                                              \
     template <typename T, typename... Args>                                                \
     static std::shared_ptr<AD_CLASS> make(Args&&... args)                                  \
