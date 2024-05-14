@@ -367,21 +367,28 @@ namespace Lisple
   /**
    * NilPredicateFunction
    */
-  FUNC_IMPL(NilPredicateFunction, SIG((FN_ARGS((&Lisple::Type::ANY)),
+  FUNC_IMPL(NilPredicateFunction, SIG((FN_ARGS((&Type::ANY)),
                                        EXEC_DISPATCH(&NilPredicateFunction::is_nil))))
 
   FUNC_BODY(NilPredicateFunction, is_nil)
   {
-    return *args.front() == *Lisple::NIL ? Lisple::B_TRUE : Lisple::B_FALSE;
+    return *args.front() == *NIL ? B_TRUE : B_FALSE;
   }
 
 
-  FUNC_IMPL(NotFunction, SIG((FN_ARGS((&Lisple::Type::BOOL)),
-                              EXEC_DISPATCH(&NotFunction::invert_boolean))))
+  FUNC_IMPL(NotFunction, MULTI_SIG((FN_ARGS((&Type::BOOL)),
+                                    EXEC_DISPATCH(&NotFunction::invert_boolean)),
+                                   (FN_ARGS((&Type::ANY)),
+                                    EXEC_DISPATCH(&NotFunction::not_any))))
 
   FUNC_BODY(NotFunction, invert_boolean)
   {
-    return *args.front() == *Lisple::B_TRUE ? Lisple::B_FALSE : Lisple::B_TRUE;
+    return *args.front() == *B_TRUE ? B_FALSE : B_TRUE;
+  }
+
+  FUNC_BODY(NotFunction, not_any)
+  {
+    return *args.front() == *B_FALSE || *args.front() == *NIL ? B_TRUE : B_FALSE;
   }
 
   SetBangMacro::SetBangMacro()
@@ -857,6 +864,7 @@ namespace Lisple
     return args.front();
   }
 
+  /* ConcatFunction - concat */
   FUNC_IMPL(ConcatFunction, SIG((FN_ARGS((&VARARG, &Lisple::Type::ARRAY)),
                                  EXEC_DISPATCH(&ConcatFunction::concat_array))))
 

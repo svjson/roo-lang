@@ -95,7 +95,15 @@ namespace Lisple
   * Param 0: The expression, value or identifier to test
   */
   FUNC_DECL(NilPredicateFunction, is_nil)
-  FUNC_DECL(NotFunction, invert_boolean)
+  /*!
+  * NotFunction - invert boolean or truthy/falsy value
+  *
+  * Usage: (not true) => false
+  *        (not false) => true
+  *        (not {:key "value"}) => false
+  *        (not nil) => true
+  */
+  FUNC_DECL(NotFunction, invert_boolean, not_any)
 
   FUNC_DECL(IncludeFunction, include_file)
   FUNC_DECL(ApplyFunction, apply_fn)
@@ -131,7 +139,7 @@ namespace Lisple
   FUNC_DECL(CountFunction, count)
 
   /*!
-   * \brief ContainsPredicateFunction - query if a Seq contains a specific value
+   * @brief ContainsPredicateFunction - query if a Seq contains a specific value
    *
    * Usage: (contains? my-array "a value")
    *
@@ -145,7 +153,7 @@ namespace Lisple
   FUNC_DECL(NthFunction, get_nth);
 
   /*!
-  * \brief AssocFunction - set or replace a key in a map, creating a copy of it.
+  * @brief AssocFunction - set or replace a key in a map, creating a copy of it.
   *
   * Usage: (assoc my-map key value)
   *
@@ -156,7 +164,7 @@ namespace Lisple
   FUNC_DECL(AssocFunction, assoc)
 
   /*!
-  * \brief AssocBangFunction - set or replace a key in a map or map-like
+  * @brief AssocBangFunction - set or replace a key in a map or map-like
   * structure, mutating it.
   *
   * Usage: (assoc my-map key value)
@@ -170,11 +178,19 @@ namespace Lisple
   FUNC_DECL(VectorFunction, make_vector)
   FUNC_DECL(JoinFunction, join_str)
   FUNC_DECL(StrFunction, concat_str)
+
+  /*!
+  * @brief ConcatFunction - splice two or more Sequences together
+  *
+  * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
+  *
+  * Param 0... - The sequences to splice together
+  */
   FUNC_DECL(ConcatFunction, concat_array)
   FUNC_DECL(FlattenFunction, flatten_array)
 
   /*!
-   * \brief MapFunction - transform elements of a Seq by applying a
+   * @brief MapFunction - transform elements of a Seq by applying a
    * function/executable to each element, creating a new Seq containing
    * the transformed elements. The original Seq is not mutated.
    *
@@ -187,7 +203,7 @@ namespace Lisple
   FUNC_DECL(MapFunction, map_seq)
 
   /*!
-   * \brief FilterFunction - Keep only certain elements of a Seq by applying a
+   * @brief FilterFunction - Keep only certain elements of a Seq by applying a
    * function/executable to each element, creating a new Seq containing only
    * those elements for which the predicate function returns a truthy value.
    *

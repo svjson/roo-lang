@@ -882,13 +882,26 @@ TEST(NilPredicateFunction, nil)
   EXPECT_EQ(*fixture.ctx.eval("(nil? false)"), *Lisple::B_FALSE);
 }
 
-TEST(NotFunction, nil)
+TEST(NotFunction, booleans)
 {
   LispleTest::LispReaderFixture fixture;
   EXPECT_EQ(*fixture.ctx.eval("(not true)"), *Lisple::B_FALSE);
   EXPECT_EQ(*fixture.ctx.eval("(not false)"), *Lisple::B_TRUE);
   EXPECT_EQ(*fixture.ctx.eval("(not (odd? 2))"), *Lisple::B_TRUE);
   EXPECT_EQ(*fixture.ctx.eval("(not (odd? 1))"), *Lisple::B_FALSE);
+}
+
+TEST(NotFunction, values)
+{
+  // Given
+  Lisple::LispReader reader;
+  reader.eval("(def my-val 15)");
+  reader.eval("(def other-val nil)");
+
+  // Then
+  EXPECT_EQ(*reader.eval("(not my-val)"), *Lisple::B_FALSE);
+  EXPECT_EQ(*reader.eval("(not other-val)"), *Lisple::B_TRUE);
+  EXPECT_EQ(*reader.eval("(not 0)"), *Lisple::B_FALSE);
 }
 
 TEST(EqualsFunction, mixed_types)
