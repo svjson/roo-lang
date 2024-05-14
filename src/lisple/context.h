@@ -40,6 +40,7 @@ namespace Lisple
     LispReader& reader;
 
    public:
+    Context(const Context& other);
     Context(LispReader& reader);
     Context(LispReader& reader, frame_stack_t& frame_stack);
 

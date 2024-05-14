@@ -48,6 +48,16 @@ namespace Lisple
     push_context(true);
   }
 
+  Context::Context(const Context& other)
+    : reader(other.reader)
+  {
+    for (auto& frame : other.frame_stack)
+    {
+      Scope clone(frame->scope);
+      this->frame_stack.push_back(std::make_unique<ContextFrame>(frame->evaluation_mode, clone));
+    }
+  }
+
   Context::Context(LispReader& reader, frame_stack_t& frame_stack)
     : frame_stack(std::move(frame_stack))
     , reader(reader)
@@ -57,13 +67,7 @@ namespace Lisple
 
   std::shared_ptr<Context> Context::detach() const
   {
-    frame_stack_t detached_stack;
-    for (auto& frame : frame_stack)
-    {
-      Scope clone(frame->scope);
-      detached_stack.push_back(std::make_unique<ContextFrame>(frame->evaluation_mode, clone));
-    }
-    return std::make_shared<Context>(reader, detached_stack);
+    return std::make_shared<Context>(*this);
   }
 
   std::vector<std::unique_ptr<ContextFrame>>& Context::get_stack_frames()
