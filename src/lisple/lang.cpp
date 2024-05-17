@@ -88,6 +88,7 @@ namespace Lisple
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
     lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
     lang.emplace("set!", std::make_shared<SetBangMacro>());
+    lang.emplace("some?", std::make_shared<SomeFunction>());
     lang.emplace("str", std::make_shared<StrFunction>());
     lang.emplace("tail", std::make_shared<TailFunction>());
     lang.emplace("take", std::make_shared<TakeFunction>());
@@ -986,21 +987,21 @@ namespace Lisple
   }
 
   /* FilterFunction */
-  FUNC_IMPL(FilterFunction, SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::EXEC)),
+  FUNC_IMPL(FilterFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
                                  EXEC_DISPATCH(&FilterFunction::filter_seq))))
 
   FUNC_BODY(FilterFunction, filter_seq)
   {
     auto original = args.front();
-    Lisple::sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
+    sptr_sobject result = Sexpression::new_sequence(original->get_type());
 
-    auto& filter_fn = args.back()->as<Lisple::Executable>();
+    auto& filter_fn = args.back()->as<Executable>();
 
     for (auto val : original->get_children())
     {
-      // FIXME: Should this perhaps be... anything truthy?
-      Lisple::sptr_sobject_v val_args { val };
-      if (*filter_fn.execute(ctx, val_args) == *Lisple::B_TRUE)
+      sptr_sobject_v val_args { val };
+      sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
+      if (*pred_result != *NIL && *pred_result != *B_FALSE)
       {
         result->append(val);
       }
@@ -1009,8 +1010,26 @@ namespace Lisple
     return result;
   }
 
+  /* SomeFunction */
+  FUNC_IMPL(SomeFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                               EXEC_DISPATCH(&SomeFunction::some))))
+
+  FUNC_BODY(SomeFunction, some)
+  {
+    for (auto& element : args.front()->get_children())
+    {
+      sptr_sobject_v args = { element };
+      sptr_sobject result = args.back()->execute(ctx, args);
+      if (*result != *NIL && *result != *B_FALSE)
+      {
+        return B_TRUE;
+      }
+    }
+    return B_FALSE;
+  }
+
   /* RemoveFunction */
-  FUNC_IMPL(RemoveFunction, SIG((FN_ARGS((&Lisple::Type::EXEC), (&Lisple::Type::SEQ)),
+  FUNC_IMPL(RemoveFunction, SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
                                  EXEC_DISPATCH(&RemoveFunction::remove_seq))))
 
   FUNC_BODY(RemoveFunction, remove_seq)
@@ -1140,7 +1159,8 @@ namespace Lisple
     for (auto val : args.front()->get_children())
     {
       sptr_sobject_v val_args{ val };
-      if (*filter_fn.execute(ctx, val_args) == *B_TRUE)
+      sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
+      if (*pred_result != *B_FALSE && *pred_result != *NIL)
       {
         return val;
       }

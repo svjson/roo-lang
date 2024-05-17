@@ -229,6 +229,18 @@ namespace Lisple
   FUNC_DECL(FilterFunction, filter_seq)
 
   /*!
+   * @brief SomeFunction - Query if at least one element in a seq satisfies a
+   * predicate function.
+   *
+   * Usage: (some? [1 2 3 4] odd?) => true
+   *        (some? [2 4] odd?) => false
+   *
+   * Param 0 - The seq to query
+   * Param 1 - The predicate function.
+   */
+  FUNC_DECL(SomeFunction, some)
+
+  /*!
    * @brief RemoveFunction - Keep only certain elements of a Seq by applying a
    * function/executable to each element, creating a new Seq without those
    * elements for which the predicate function returns a truthy value.
@@ -275,6 +287,17 @@ namespace Lisple
    *           the map
    */
   FUNC_DECL(ReduceKeyValueFunction, reduce_kv)
+
+  /*!
+   * @brief FindFirstFunction - Returns the first element of a seq that matches
+   * a predicate function, or nil if no match is found
+   *
+   * Usage: (find-first [1 2 3 4 5] even?) => 2
+   *        (find-first [1 3 4] even?) = nil
+   *
+   * Param 0 - The sequence to query
+   * Param 1 - The predicate function
+   */
   FUNC_DECL(FindFirstFunction, find_first_in_seq)
 
   /*!
