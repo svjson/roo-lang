@@ -268,6 +268,31 @@
 #define ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
   __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET__FIELD, __ADAPTER_PROP_GET__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
+#define __ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)    \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                           \
+  {                                                                               \
+    return std::make_shared<LISPLE_FORM>(*get_object().METHOD());     \
+  }
+
+#define __ADAPTER_PROP_GET_P__METHOD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)    \
+  __ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+
+#define ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_P__METHOD, __ADAPTER_PROP_GET_P__METHOD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define __ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)    \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                               \
+  {                                                                   \
+    return std::make_shared<LISPLE_FORM>(*get_object().OBJ_FIELD);     \
+  }
+
+#define __ADAPTER_PROP_GET_P__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)    \
+  __ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+
+#define ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_P__FIELD, __ADAPTER_PROP_GET_P__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+
 #define ADAPTER_PROP_GET_VECTOR__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                \
   {                                                                                    \
@@ -302,7 +327,7 @@
     Lisple::sptr_sobject_v v;                                                              \
     for (auto& obj : get_object().METHOD_NAME())                                           \
     {                                                                                      \
-      v.push_back(std::make_shared<LISPLE_FORM>(*obj));                                    \
+      v.push_back(obj == nullptr ? Lisple::NIL : std::make_shared<LISPLE_FORM>(*obj));     \
     }                                                                                      \
     return std::make_shared<Lisple::Array>(v);                                             \
   }
