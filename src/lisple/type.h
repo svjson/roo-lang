@@ -71,6 +71,7 @@ namespace Lisple
     MultiRef(std::vector<const Lisple::TypeRef*> types, const std::string& name);
 
     bool is_type_of(const Lisple::Object& obj) const override;
+    CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
   };
 
   /*! @brief Type reference for when any type is acceptable */

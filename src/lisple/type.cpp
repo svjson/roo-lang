@@ -58,6 +58,19 @@ namespace Lisple
     return false;
   }
 
+  CoercionResult MultiRef::coerce(Context& ctx, sptr_sobject& obj) const
+  {
+    for (auto type : types)
+    {
+      CoercionResult result = type->coerce(ctx, obj);
+      if (result.success)
+      {
+        return result;
+      }
+    }
+    return TypeRef::coerce(ctx, obj);
+  }
+
   /* SeqRef */
   SeqRef::SeqRef(const TypeRef* seq_type, const TypeRef* child_type, const std::string& name)
     : TypeRef(Form::ANY, name)
