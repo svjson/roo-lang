@@ -73,6 +73,7 @@ namespace Lisple
     lang.emplace("nil?", std::make_shared<NilPredicateFunction>());
     lang.emplace("not", std::make_shared<NotFunction>());
     lang.emplace("not=", std::make_shared<NotEqualsFunction>());
+    lang.emplace("not-empty?", std::make_shared<NotEmptyPredicateFunction>());
     lang.emplace("ns", std::make_shared<NsMacro>());
     lang.emplace("nth", std::make_shared<NthFunction>());
     lang.emplace("odd?", std::make_shared<OddEvenPredicateFunction>(1));
@@ -1246,6 +1247,7 @@ namespace Lisple
     return args.front()->as<Lisple::Number>().int_value() % 2 == modulus ? Lisple::B_TRUE : Lisple::B_FALSE;
   }
 
+  /* EmptyPredicateFunction */
   FUNC_IMPL(EmptyPredicateFunction, MULTI_SIG((FN_ARGS((&Lisple::Type::SEQ)),
                                                EXEC_DISPATCH(&EmptyPredicateFunction::exec_emptyp_seq)),
                                               (FN_ARGS((&Lisple::Type::STRING)),
@@ -1253,12 +1255,28 @@ namespace Lisple
 
   FUNC_BODY(EmptyPredicateFunction, exec_emptyp_seq)
   {
-    return std::make_shared<Lisple::Boolean>(args.front()->get_children().empty());
+    return Lisple::Boolean::wrap(args.front()->get_children().empty());
   }
 
   FUNC_BODY(EmptyPredicateFunction, exec_emptyp_string)
   {
-    return std::make_shared<Lisple::Boolean>(args.front()->as<Lisple::String>().value.empty());
+    return Lisple::Boolean::wrap(args.front()->as<Lisple::String>().value.empty());
+  }
+
+  /* NotEmptyPredicateFunction */
+  FUNC_IMPL(NotEmptyPredicateFunction, MULTI_SIG((FN_ARGS((&Lisple::Type::SEQ)),
+                                                  EXEC_DISPATCH(&NotEmptyPredicateFunction::exec_not_emptyp_seq)),
+                                                 (FN_ARGS((&Lisple::Type::STRING)),
+                                                  EXEC_DISPATCH(&NotEmptyPredicateFunction::exec_not_emptyp_string))))
+
+  FUNC_BODY(NotEmptyPredicateFunction, exec_not_emptyp_seq)
+  {
+    return Lisple::Boolean::wrap(!args.front()->get_children().empty());
+  }
+
+  FUNC_BODY(NotEmptyPredicateFunction, exec_not_emptyp_string)
+  {
+    return Lisple::Boolean::wrap(!args.front()->as<Lisple::String>().value.empty());
   }
 
   FUNC_IMPL(IncludeFunction, SIG((FN_ARGS((&Lisple::Type::STRING)),

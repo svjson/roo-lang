@@ -291,14 +291,33 @@ namespace Lisple
   FUNC_DECL(KeysFunction, keys_fn)
   FUNC_DECL(SelectKeysFunction, select_keys_fn)
 
-  class EmptyPredicateFunction : public Lisple::Function
-  {
-   public:
-    EmptyPredicateFunction();
+  /*!
+   * @brief EmptyPredicateFunction - Query a seq or string(sequence of
+   * characters) for the presence of any elements.
+   * The inverse of not-empty?.
+   *
+   * Usage: (empty? []) => true
+   *        (empty? [1 2 3]) => false
+   *        (empty? "") => true
+   *        (empty? "content" => false)
+   *
+   * Param 0 - The seq or string to test
+   */
+  FUNC_DECL(EmptyPredicateFunction, exec_emptyp_seq, exec_emptyp_string)
 
-    Lisple::sptr_sobject exec_emptyp_seq(Lisple::Context&, Lisple::sptr_sobject_v& args);
-    Lisple::sptr_sobject exec_emptyp_string(Lisple::Context&, Lisple::sptr_sobject_v& args);
-  };
+  /*!
+   * @brief NotEmptyPredicateFunction - Query a seq or string(sequence of
+   * characters) for the presence of any elements.
+   * The inverse of empty?
+   *
+   * Usage: (not-empty? []) => false
+   *        (not-empty? [1 2 3]) => true
+   *        (not-empty? "") => false
+   *        (not-empty? "content" => true)
+   *
+   * Param 0 - The seq or string to test
+   */
+  FUNC_DECL(NotEmptyPredicateFunction, exec_not_emptyp_seq, exec_not_emptyp_string)
 
   FUNC_DECL(EqualsPredicateFunction, equals_any)
   FUNC_DECL(NotEqualsFunction, not_equals_any)
