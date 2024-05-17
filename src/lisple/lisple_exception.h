@@ -28,6 +28,12 @@ namespace Lisple
     IdentifierException(const std::string& message);
   };
 
+  class OutOfBoundsException : public LispleException
+  {
+   public:
+    OutOfBoundsException(const std::string& message);
+  };
+
   class InvocationException : public LispleException
   {
    public:

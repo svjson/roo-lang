@@ -23,6 +23,11 @@ namespace Lisple
   {
   }
 
+  OutOfBoundsException::OutOfBoundsException(const std::string& message)
+    : LispleException(message)
+  {
+  }
+
   InvocationException::InvocationException(const std::string& message)
     : LispleException(message)
   {
