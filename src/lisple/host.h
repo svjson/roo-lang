@@ -21,11 +21,15 @@
 #define HOST_TYPE(CONST, NAME, ...) __SELECT_MACRO__2(0, ##__VA_ARGS__, __HOST_TYPE, __HOST_TYPE__NO_MAKE_FN)(CONST, NAME, ##__VA_ARGS__)
 
 
-#define HOST_ADAPTER_STATIC_FACTORY(AD_CLASS)                                              \
+#define HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)                                     \
     template <typename T, typename... Args>                                                \
     static std::shared_ptr<AD_CLASS> make(Args&&... args)                                  \
     {                                                                                      \
       return std::make_shared<AD_CLASS>(std::make_unique<T>(std::forward<Args>(args)...)); \
+    }                                                                                      \
+    static std::shared_ptr<AD_CLASS> make_ref(const H_CLASS& ref)                          \
+    {                                                                                      \
+      return std::make_shared<AD_CLASS>(const_cast<H_CLASS&>(ref));                        \
     }
 
 #define HOST_ADAPTER_MAIN_DECL(AD_CLASS, H_CLASS)                                                                \
@@ -34,7 +38,7 @@
    public:                                                                                                       \
     AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS);  \
     AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS);                    \
-    HOST_ADAPTER_STATIC_FACTORY(AD_CLASS)
+    HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
 #define SUB_ADAPTER_MAIN_DECL(AD_CLASS, AD_SUP_CLASS, H_CLASS)                                \
   class AD_CLASS : public AD_SUP_CLASS                                                        \
@@ -42,7 +46,7 @@
    public:                                                                                    \
     AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access={});   \
     AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access={});                     \
-    HOST_ADAPTER_STATIC_FACTORY(AD_CLASS)
+    HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
 #define HOST_ADAPTER_END_DECL                        \
   }
