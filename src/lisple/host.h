@@ -367,19 +367,19 @@
 #define ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
   __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_HOST_OBJECT__FIELD, __ADAPTER_PROP_GET_HOST_OBJECT__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
-#define ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
-  {                                                                                        \
-    return std::make_shared<LISPLE_FORM>(get_object().OBJ_METHOD());                       \
+#define ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                \
+  {                                                                                    \
+    return std::make_shared<LISPLE_FORM>(get_object().METHOD());                       \
   }
 
 #define ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                  \
   void AD_CLASS::set_##PROP_NAME([[maybe_unused]]Lisple::Context* ctx, Lisple::Object& value)
 
-#define ADAPTER_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD) \
+#define ADAPTER_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)     \
   ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                        \
   {                                                                            \
-    get_object().OBJ_METHOD(value.as<LISPLE_FORM>().value);                    \
+    get_object().METHOD(value.as<LISPLE_FORM>().value);                        \
   }
 
 #define ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
