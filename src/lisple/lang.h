@@ -88,13 +88,14 @@ namespace Lisple
   MACRO_DECL(SetBangMacro, do_set_member)
 
   /*!
-  * NilPredicateFunction - test if the result of an expression is NIL
-  *
-  * Usage: (nil? (:key1 {:key2 "value"})) ==> true
-  *
-  * Param 0: The expression, value or identifier to test
-  */
+   * NilPredicateFunction - test if the result of an expression is NIL
+   *
+   * Usage: (nil? (:key1 {:key2 "value"})) ==> true
+   *
+   * Param 0: The expression, value or identifier to test
+   */
   FUNC_DECL(NilPredicateFunction, is_nil)
+
   /*!
   * NotFunction - invert boolean or truthy/falsy value
   *
@@ -153,39 +154,51 @@ namespace Lisple
   FUNC_DECL(NthFunction, get_nth);
 
   /*!
-  * @brief AssocFunction - set or replace a key in a map, creating a copy of it.
-  *
-  * Usage: (assoc my-map key value)
-  *
-  * Param 0 - The map to create a copy of
-  * Param 1 - The key to set
-  * Param 2 - The value to associate with the key
-  */
+   * @brief AssocFunction - set or replace a key in a map, creating a copy of it.
+   *
+   * Usage: (assoc my-map key value)
+   *
+   * Param 0 - The map to create a copy of
+   * Param 1 - The key to set
+   * Param 2 - The value to associate with the key
+   */
   FUNC_DECL(AssocFunction, assoc)
 
   /*!
-  * @brief AssocBangFunction - set or replace a key in a map or map-like
-  * structure, mutating it.
-  *
-  * Usage: (assoc my-map key value)
-  *
-  * Param 0 - The map to mutate
-  * Param 1 - The key to set
-  * Param 2 - The value to associate with the key
-  */
+   * @brief AssocBangFunction - set or replace a key in a map or map-like
+   * structure, mutating it.
+   *
+   * Usage: (assoc! my-map key value)
+   *
+   * Param 0 - The map to mutate
+   * Param 1 - The key to set
+   * Param 2 - The value to associate with the key
+   */
   FUNC_DECL(AssocBangFunction, assoc_bang)
+
+  /*!
+   * @brief AssocInBangFunction - set or replace a nested key in a map or
+   * map-like structure, mutating it.
+   *
+   * Usage: (assoc-in! my-nested-map [:key :nested-key] new-value)
+   *
+   * Param 0 - The map to mutate
+   * Param 1 - The path to the nested key to set
+   * Param 2 - The value to associate with the last key of the key path
+   */
+  FUNC_DECL(AssocInBangFunction, assoc_in_bang)
 
   FUNC_DECL(VectorFunction, make_vector)
   FUNC_DECL(JoinFunction, join_str)
   FUNC_DECL(StrFunction, concat_str)
 
   /*!
-  * @brief ConcatFunction - splice two or more Sequences together
-  *
-  * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
-  *
-  * Param 0... - The sequences to splice together
-  */
+   * @brief ConcatFunction - splice two or more Sequences together
+   *
+   * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
+   *
+   * Param 0... - The sequences to splice together
+   */
   FUNC_DECL(ConcatFunction, concat_array)
   FUNC_DECL(FlattenFunction, flatten_array)
 

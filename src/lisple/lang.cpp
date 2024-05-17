@@ -39,6 +39,7 @@ namespace Lisple
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang.emplace("assoc", std::make_shared<AssocFunction>());
     lang.emplace("assoc!", std::make_shared<AssocBangFunction>());
+    lang.emplace("assoc-in!", std::make_shared<AssocInBangFunction>());
     lang.emplace("case", std::make_shared<CaseMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
     lang.emplace("cond", std::make_shared<CondMacro>());
@@ -831,7 +832,7 @@ namespace Lisple
    * AssocBangFunction
    */
   FUNC_IMPL(AssocBangFunction, SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
-                                EXEC_DISPATCH(&AssocBangFunction::assoc_bang))))
+                                    EXEC_DISPATCH(&AssocBangFunction::assoc_bang))))
 
   FUNC_BODY(AssocBangFunction, assoc_bang)
   {
@@ -841,15 +842,47 @@ namespace Lisple
     if (Lisple::Type::MAP.is_type_of(*args.front()))
     {
       Map& map = args.front()->as<Map>();
-      if (map.has_key(*assoc_key))
-      {
-        map.set_property(*assoc_key, value);
-      }
-      else
-      {
-        map.append(assoc_key);
-        map.append(value);
-      }
+      map.set_property(assoc_key, value);
+    }
+    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args.front()))
+    {
+      AbstractHostObject& ho = args.front()->as<AbstractHostObject>();
+      ho.set_property(&ctx, *assoc_key, value);
+    }
+    else
+    {
+      throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " + args.front()->to_string());
+    }
+
+    return args.front();
+  }
+
+  /**
+   * AssocInBangFunction
+   */
+  FUNC_IMPL(AssocInBangFunction, SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
+                                      EXEC_DISPATCH(&AssocInBangFunction::assoc_in_bang))))
+
+  FUNC_BODY(AssocInBangFunction, assoc_in_bang)
+  {
+    sptr_sobject assoc_path = args.at(1);
+    if (assoc_path->get_children().empty())
+    {
+      throw InvocationException("Path for assoc-in! cannot be empty.");
+    }
+    sptr_sobject value = args.back();
+    sptr_sobject assoc_key = assoc_path->get_children().back();
+
+    sptr_sobject& target = args.front();
+    for (size_t i=0; i<assoc_path->get_children().size()-1; i++)
+    {
+      target = target->get_sptr_property(*assoc_path->get_children().at(i));
+    }
+
+    if (Lisple::Type::MAP.is_type_of(*args.front()))
+    {
+      Map& map = args.front()->as<Map>();
+      map.set_property(assoc_key, value);
     }
     else if (Lisple::Type::HOST_OBJECT.is_type_of(*args.front()))
     {
