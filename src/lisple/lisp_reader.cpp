@@ -293,6 +293,10 @@ namespace Lisple
   {
     Context ctx(*this);
     sptr_sobject inv = lookup(Lisple::Word(identifier));
+    if (!inv)
+    {
+      throw Lisple::InvocationException("Unknown identifier: " + identifier);
+    }
 
     try
     {
