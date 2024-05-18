@@ -69,7 +69,7 @@ namespace Lisple
    * Usage: (cond
    *          (= x 10) "x is equal to 10"
    *          (> x 10) "x is greater than 10"
-   *          :else "x is less than or equal to 10")
+   *          :else "x is less than 10")
    *
    * In the example above, :else is a truthy value and can therefore be used
    * as a last catch-all condition.
@@ -114,8 +114,44 @@ namespace Lisple
   FUNC_DECL(MinusFunction, do_subtraction)
   FUNC_DECL(DivideFunction, do_division)
   FUNC_DECL(MultiplyFunction, do_multiplication)
+
+  /*!
+   * LessThanFunction - Performs numerical comparison between two values.
+   *
+   * Usage: (< 5 10) => true
+   *        (< 10 5) => false
+   *        (< 10 10) => false
+   */
   FUNC_DECL(LessThanFunction, lt_fn)
+
+  /*!
+   * LessThanOrEqualsFunction - Performs numerical comparison between two
+   * values.
+   *
+   * Usage: (<= 5 10) => true
+   *        (<= 10 5) => false
+   *        (<= 10 10) => true
+   */
+  FUNC_DECL(LessThanOrEqualsFunction, lte_fn)
+
+  /*!
+   * GreaterThanFunction - Performs numerical comparison between two values.
+   *
+   * Usage: (> 5 10) => false
+   *        (> 10 5) => true
+   *        (> 10 10) => false
+   */
   FUNC_DECL(GreaterThanFunction, gt_fn)
+
+  /*!
+   * GreaterThanOrEqualsFunction - Performs numerical comparison between two
+   * values.
+   *
+   * Usage: (>= 5 10) => false
+   *        (>= 10 5) => true
+   *        (>= 10 10) => true
+   */
+  FUNC_DECL(GreaterThanOrEqualsFunction, gte_fn)
 
   FUNC_DECL(RangeFunction, make_range)
   FUNC_DECL(ThresholdFunction, cap_value)

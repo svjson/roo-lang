@@ -33,7 +33,9 @@ namespace Lisple
     lang.emplace("*", std::make_shared<MultiplyFunction>());
     lang.emplace("=", std::make_shared<EqualsPredicateFunction>());
     lang.emplace("<", std::make_shared<LessThanFunction>());
+    lang.emplace("<=", std::make_shared<LessThanOrEqualsFunction>());
     lang.emplace(">", std::make_shared<GreaterThanFunction>());
+    lang.emplace(">=", std::make_shared<GreaterThanOrEqualsFunction>());
     lang.emplace("->", std::make_shared<ThreadFirstMacro>());
     lang.emplace("and", std::make_shared<AndFunction>());
     lang.emplace("apply", std::make_shared<ApplyFunction>());
@@ -679,6 +681,7 @@ namespace Lisple
     return box_number(Number::value_of(*args.at(0)) * Number::value_of(*args.at(1)));
   }
 
+  /* LessThanFunction */
   FUNC_IMPL(LessThanFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                    EXEC_DISPATCH(&LessThanFunction::lt_fn))))
 
@@ -687,6 +690,16 @@ namespace Lisple
     return Number::value_of(*args.at(0)) < Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
   }
 
+  /* LessThanOrEqualsFunction */
+  FUNC_IMPL(LessThanOrEqualsFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                           EXEC_DISPATCH(&LessThanOrEqualsFunction::lte_fn))))
+
+  FUNC_BODY(LessThanOrEqualsFunction, lte_fn)
+  {
+    return Number::value_of(*args.at(0)) <= Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
+  }
+
+  /* GreaterThanFunction */
   FUNC_IMPL(GreaterThanFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                    EXEC_DISPATCH(&GreaterThanFunction::gt_fn))))
 
@@ -694,6 +707,16 @@ namespace Lisple
   {
     return Number::value_of(*args.at(0)) > Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
   }
+
+  /* GreaterThanOrEqualsFunction */
+  FUNC_IMPL(GreaterThanOrEqualsFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                   EXEC_DISPATCH(&GreaterThanOrEqualsFunction::gte_fn))))
+
+  FUNC_BODY(GreaterThanOrEqualsFunction, gte_fn)
+  {
+    return Number::value_of(*args.at(0)) >= Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
+  }
+
 
   FUNC_IMPL(ThresholdFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
                                     EXEC_DISPATCH(&ThresholdFunction::cap_value))))
