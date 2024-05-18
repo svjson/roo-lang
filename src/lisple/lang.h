@@ -224,6 +224,16 @@ namespace Lisple
    */
   FUNC_DECL(AssocInBangFunction, assoc_in_bang)
 
+  /*!
+   * @brief MergeFunction - merge keys and values from two or more maps into
+   * a new map containing all keys and values. Any duplicates will be
+   * overwritten with the last encountered value
+   *
+   * Usage: (merge {:a 1 :b 2} {:c 3 :d 4}) => {:a 1 :b 2 :c 3 :d 4}
+   *        (merge {:a 1} {:b 2} {:a 4 :c 3}) => {:a 4 :b 2 :c 3}
+   */
+  FUNC_DECL(MergeFunction, merge_maps)
+
   FUNC_DECL(VectorFunction, make_vector)
   FUNC_DECL(JoinFunction, join_str)
   FUNC_DECL(StrFunction, concat_str)

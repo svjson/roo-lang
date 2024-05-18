@@ -70,6 +70,7 @@ namespace Lisple
     lang.emplace("keys", std::make_shared<KeysFunction>());
     lang.emplace("map", std::make_shared<MapFunction>());
     lang.emplace("max", std::make_shared<MinMaxFunction>(false));
+    lang.emplace("merge", std::make_shared<MergeFunction>());
     lang.emplace("min", std::make_shared<MinMaxFunction>(true));
     lang.emplace("nil", Lisple::NIL);
     lang.emplace("nil?", std::make_shared<NilPredicateFunction>());
@@ -817,9 +818,7 @@ namespace Lisple
     return args.front()->get_children().at(n);
   }
 
-  /**
-   * AssocFunction
-   */
+  /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction, SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
                                 EXEC_DISPATCH(&AssocFunction::assoc))))
 
@@ -853,9 +852,7 @@ namespace Lisple
     return std::make_shared<Map>(new_content);
   }
 
-  /**
-   * AssocBangFunction
-   */
+  /* AssocBangFunction - assoc! */
   FUNC_IMPL(AssocBangFunction, SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
                                     EXEC_DISPATCH(&AssocBangFunction::assoc_bang))))
 
@@ -882,9 +879,7 @@ namespace Lisple
     return args.front();
   }
 
-  /**
-   * AssocInBangFunction
-   */
+  /* AssocInBangFunction - assoc-in! */
   FUNC_IMPL(AssocInBangFunction, SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
                                       EXEC_DISPATCH(&AssocInBangFunction::assoc_in_bang))))
 
@@ -922,8 +917,28 @@ namespace Lisple
     return args.front();
   }
 
+  /* MergeFunction - merge */
+  FUNC_IMPL(MergeFunction, SIG((FN_ARGS((&Type::MAP), (&VARARG, &Type::MAP)),
+                                EXEC_DISPATCH(&MergeFunction::merge_maps))))
+
+  FUNC_BODY(MergeFunction, merge_maps)
+  {
+    std::shared_ptr<Map> result = std::make_shared<Map>(args.front()->as<Map>());
+
+    for (size_t i=1; i<args.size(); i++)
+    {
+      for (auto& key : args.at(i)->as<Map>().key_ptrs())
+      {
+        result->set_property(key, args.at(i)->get_sptr_property(*key));
+      }
+    }
+
+    return result;
+  }
+
+
   /* ConcatFunction - concat */
-  FUNC_IMPL(ConcatFunction, SIG((FN_ARGS((&VARARG, &Lisple::Type::ARRAY)),
+  FUNC_IMPL(ConcatFunction, SIG((FN_ARGS((&VARARG, &Type::ARRAY)),
                                  EXEC_DISPATCH(&ConcatFunction::concat_array))))
 
   FUNC_BODY(ConcatFunction, concat_array)
