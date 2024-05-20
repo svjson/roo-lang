@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <functional>
 #include <iostream>
 #include <map>
 #include <math.h>
@@ -1491,9 +1490,10 @@ namespace Lisple
   FUNC_BODY(ContainsPredicateFunction, contains)
   {
     sptr_sobject_v vector = args.front()->as<Array>().get_children();
-    return std::find_if(vector.begin(), vector.end(), [&args] (sptr_sobject lmnt) { return *lmnt == *args.back(); }) != vector.end()
-      ? B_TRUE
-      : B_FALSE;
+    return std::find_if(vector.begin(),
+                        vector.end(),
+                        [&args](sptr_sobject lmnt)
+                        { return *lmnt == *args.back(); }) != vector.end() ? B_TRUE : B_FALSE;
   }
 
   FUNC_IMPL(TakeFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
