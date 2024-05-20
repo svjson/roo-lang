@@ -1025,13 +1025,15 @@ namespace Lisple
   FUNC_IMPL(FlattenFunction, SIG((FN_ARGS((&Type::SEQ)),
                                   EXEC_DISPATCH(&FlattenFunction::flatten_array))))
 
+  /* FlattenFunction - flatten */
   FUNC_BODY(FlattenFunction, flatten_array)
   {
     sptr_sobject_v result;
 
     for (auto obj : args.front()->get_children())
     {
-      if (Type::SEQ.is_type_of(*obj))
+      if (Type::ARRAY.is_type_of(*obj) ||
+          Type::LIST.is_type_of(*obj))
       {
         auto flat_args = sptr_sobject_v { obj };
         auto flattened = flatten_array(ctx, flat_args);
