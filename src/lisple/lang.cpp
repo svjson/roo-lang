@@ -623,6 +623,10 @@ namespace Lisple
     sptr_sobject_v& seq_expr = args.front()->as<Array>().get_children();
 
     sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
+    if (!Type::SEQ.is_type_of(*obj_iterable))
+    {
+      throw TypeError("For macro requires an iterable. Wrong type: " + obj_iterable->to_string());
+    }
     Array& iterable = obj_iterable->as<Array>();
 
     auto seq_binding = ArgumentBinding::create(*seq_expr.front());
