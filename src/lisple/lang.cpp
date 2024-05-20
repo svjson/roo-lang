@@ -99,6 +99,7 @@ namespace Lisple
     lang.emplace("true", Lisple::B_TRUE);
     lang.emplace("vector", std::make_shared<VectorFunction>());
     lang.emplace("when", std::make_shared<WhenMacro>());
+    lang.emplace("when-let", std::make_shared<WhenLetMacro>());
     lang.emplace("while", std::make_shared<WhileMacro>());
 
     return Namespace::make_lang(lang);
@@ -263,30 +264,31 @@ namespace Lisple
     return create_detached_function(ctx, *args.at(0), body);
   }
 
-  MACRO_IMPL(LetMacro, SIG((FN_ARGS((&Lisple::Type::ARRAY, false), (VARARG, &Lisple::Type::ANY, false)),
+  /* LetMacro */
+  MACRO_IMPL(LetMacro, SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
                             EXEC_DISPATCH(&LetMacro::make_let))))
 
   MACRO_BODY(LetMacro, make_let)
   {
-    Lisple::Array var_def_array = args.front()->as<Lisple::Array>();
+    Array var_def_array = args.front()->as<Array>();
 
     if (var_def_array.get_children().size() % 2 != 0)
     {
       throw LispleException("Wrong number of parameters to let-expression: " + var_def_array.to_string());
     }
 
-    for (size_t i=0; i < var_def_array.size() ; i+=2)
+    for (size_t i=0; i < var_def_array.size(); i+=2)
     {
       auto& var_name_obj = *var_def_array.get_children().at(i);
       auto var_val_obj = ctx.eval(var_def_array.get_children().at(i+1));
 
-      if (!Lisple::Type::WORD.is_type_of(var_name_obj))
+      if (!Type::WORD.is_type_of(var_name_obj))
       {
-        throw LispleException("Invalid variable identifier in let-expression: " + var_name_obj.to_string() + " in " + var_def_array.to_string());
+        throw TypeError("Invalid variable identifier in let-expression: " + var_name_obj.to_string() + " in " + var_def_array.to_string());
       }
 
-      Lisple::Scope var_scope;
-      var_scope.store(var_name_obj.as<Lisple::Word>(), var_val_obj);
+      Scope var_scope;
+      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
       ctx.push_context(true, var_scope);
     }
 
@@ -305,7 +307,60 @@ namespace Lisple
     return result;
   }
 
-  MACRO_IMPL(DoMacro, SIG((FN_ARGS((&Lisple::VARARG, &Lisple::Type::ANY, false)),
+  /* WhenLetMacro */
+  MACRO_IMPL(WhenLetMacro, SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                                EXEC_DISPATCH(&WhenLetMacro::make_when_let))))
+
+  MACRO_BODY(WhenLetMacro, make_when_let)
+  {
+    Array var_def_array = args.front()->as<Array>();
+
+    if (var_def_array.get_children().size() % 2 != 0)
+    {
+      throw LispleException("Wrong number of parameters to let-expression: " + var_def_array.to_string());
+    }
+
+    bool contains_nil = false;
+
+    for (size_t i=0; i < var_def_array.size(); i+=2)
+    {
+      auto& var_name_obj = *var_def_array.get_children().at(i);
+      auto var_val_obj = ctx.eval(var_def_array.get_children().at(i+1));
+
+      if (*var_val_obj == *NIL)
+      {
+        contains_nil = true;
+      }
+
+      if (!Type::WORD.is_type_of(var_name_obj))
+      {
+        throw TypeError("Invalid variable identifier in let-expression: " + var_name_obj.to_string() + " in " + var_def_array.to_string());
+      }
+
+      Scope var_scope;
+      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
+      ctx.push_context(true, var_scope);
+    }
+
+    sptr_sobject result = NIL;
+
+    if (!contains_nil)
+    {
+      for (size_t i=1; i < args.size(); i++)
+      {
+        result = ctx.eval(args.at(i));
+      }
+    }
+
+    for (size_t i=0; i < var_def_array.size() / 2; i++)
+    {
+      ctx.pop_context();
+    }
+
+    return result;
+  }
+
+  MACRO_IMPL(DoMacro, SIG((FN_ARGS((&VARARG, &Type::ANY, false)),
                            EXEC_DISPATCH(&DoMacro::make_do))))
 
   MACRO_BODY(DoMacro, make_do)

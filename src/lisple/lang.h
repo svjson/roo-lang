@@ -20,7 +20,31 @@ namespace Lisple
   MACRO_DECL(DefMacro, define_obj)
   MACRO_DECL(DefunMacro, define_fun)
   MACRO_DECL(LambdaMacro, make_lambda)
+
+  /*!
+  * LetMacro - Temporarily bind values to variables that will exist only within
+  * the scope of the body of the let macro
+  *
+  * Usage: (let [var-name (some-function)] body...)
+  *        (let [name "Cheech" age 54] body...)
+  *
+  * Param 0 - Array containing a variable name and variable value pairs
+  * Param 1... - Body forms to execute with the temporary bindings
+  */
   MACRO_DECL(LetMacro, make_let)
+
+  /*!
+   * WhenLetMacro - Temporarily bind values to variables that will exist only
+   * within the scope of the body of the when-let macro. The body will execute
+   * only if all the bound variables have non-nil values.
+   *
+   * Usage: (when-let [var value] body...)
+   *
+   * Param 0 - Array containing variable name and variable value pairs
+   * Param 1... - Body forms to execute with the temporary bindings
+   */
+  MACRO_DECL(WhenLetMacro, make_when_let)
+
   MACRO_DECL(DoMacro, make_do)
   MACRO_DECL(WhileMacro, make_while)
   MACRO_DECL(IfMacro, make_if)
