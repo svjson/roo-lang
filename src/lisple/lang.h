@@ -263,9 +263,12 @@ namespace Lisple
   FUNC_DECL(StrFunction, concat_str)
 
   /*!
-   * @brief ConcatFunction - splice two or more Sequences together
+   * @brief ConcatFunction - splice two or more forms together
+   * into an array. Any non sequence arguments will be treated
+   * as arrays of that argument
    *
    * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
+   *        (concat 1 2 [3 4]) => [1 2 3 4]
    *
    * Param 0... - The sequences to splice together
    */
