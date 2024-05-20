@@ -994,7 +994,6 @@ namespace Lisple
     return result;
   }
 
-
   /* ConcatFunction - concat */
   FUNC_IMPL(ConcatFunction, SIG((FN_ARGS((&VARARG, &Type::ANY)),
                                  EXEC_DISPATCH(&ConcatFunction::concat_array))))
@@ -1005,7 +1004,7 @@ namespace Lisple
 
     for (auto& vec : args)
     {
-      if (Type::SEQ.is_type_of(*vec) && *vec != *NIL)
+      if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) && *vec != *NIL)
       {
         for (auto& element : vec->get_children())
         {
