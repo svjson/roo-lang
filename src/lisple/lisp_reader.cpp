@@ -203,6 +203,8 @@ namespace Lisple
         return statement;
       case Lisple::Form::WORD:
         return ctx.evalp() ? ctx.lookup(dynamic_cast<Lisple::Word&>(*statement)) : statement;
+      case Lisple::Form::DISCARD:
+        return Lisple::NIL;
       default:
         break;
     }
