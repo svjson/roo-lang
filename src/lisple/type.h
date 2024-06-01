@@ -119,7 +119,7 @@ namespace Lisple
     inline const SeqRef ARRAY_OF_CHAR(&ARRAY, &CHAR, "[Char]");
     inline const SeqRef ARRAY_OF_STRING(&ARRAY, &STRING, "[String]");
     inline const SeqRef ARRAY_OF_SYMBOL(&ARRAY, &SYMBOL, "[Symbol]");
-    inline const SeqRef ARRAY_OF_MAP(&ARRAY, &SYMBOL, "[Map]");
+    inline const SeqRef ARRAY_OF_MAP(&ARRAY, &MAP, "[Map]");
 
     inline const MultiRef SEQ(std::vector<const TypeRef*>{ &LIST, &ARRAY, &MAP }, "Seq");
     inline const MultiRef EXEC(std::vector<const TypeRef*>{ &FUNCTION, &KEY }, "Exec");
