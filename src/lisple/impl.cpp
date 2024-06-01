@@ -50,6 +50,16 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to int");
   }
 
+  uint8_t uint8_val(const Object& obj)
+  {
+    if (Type::NUMBER.is_type_of(obj))
+    {
+      return obj.as<Number>().int_value();
+    }
+
+    throw LispleException("Cannot convert " + obj.to_string() + " to uint8_t");
+  }
+
   float float_val(const Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))

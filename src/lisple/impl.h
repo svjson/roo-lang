@@ -21,9 +21,8 @@ namespace Lisple
    * Get the unsigned int value of lisple symbol
    */
   unsigned int uint_val(const Object& obj);
-
+  uint8_t uint8_val(const Object& obj);
   int int_val(const Object& obj);
-
   float float_val(const Object& obj);
 
   /**
