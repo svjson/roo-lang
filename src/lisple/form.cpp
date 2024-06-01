@@ -421,7 +421,7 @@ namespace Lisple
       }
   }
 
-  Sexpression::Sexpression(Form form, sptr_sobject_v children)
+  Sexpression::Sexpression(Form form, const sptr_sobject_v& children)
     : Object(form)
     , children(children)
   {
@@ -533,7 +533,7 @@ namespace Lisple
   {
   }
 
-  List::List(sptr_sobject_v children, bool q)
+  List::List(const sptr_sobject_v& children, bool q)
     : Sexpression(Form::LIST, children)
     , q(q)
   {
@@ -588,7 +588,7 @@ namespace Lisple
   {
   }
 
-  Array::Array(sptr_sobject_v children)
+  Array::Array(const sptr_sobject_v& children)
     : Sexpression(Form::ARRAY, children)
   {
   }
@@ -633,7 +633,7 @@ namespace Lisple
   /**
    * Map
    */
-  Map::Map(sptr_sobject_v children)
+  Map::Map(const sptr_sobject_v& children)
     : Sexpression(Form::MAP, children)
   {
     this->validate_keys();

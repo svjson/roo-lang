@@ -265,7 +265,7 @@ namespace Lisple
     sptr_sobject_v children;
 
     Sexpression(Form form);
-    Sexpression(Form form, sptr_sobject_v children);
+    Sexpression(Form form, const sptr_sobject_v& children);
 
     static std::shared_ptr<Sexpression> new_sequence(Form type);
 
@@ -291,7 +291,7 @@ namespace Lisple
 
    public:
     List(bool q=false);
-    List(sptr_sobject_v children, bool q=false);
+    List(const sptr_sobject_v& children, bool q=false);
 
     static std::shared_ptr<List> from(sptr_sobject, sptr_sobject_v);
 
@@ -312,7 +312,7 @@ namespace Lisple
   {
    public:
     Array();
-    Array(sptr_sobject_v children);
+    Array(const sptr_sobject_v& children);
 
     const std::string lpar() const override;
     const std::string rpar() const override;
@@ -324,7 +324,7 @@ namespace Lisple
 
    public:
     Map();
-    Map(sptr_sobject_v children);
+    Map(const sptr_sobject_v& children);
 
     void set_property(const Object& key, sptr_sobject& value) override;
     void set_property(const sptr_sobject& key, const sptr_sobject& value);
