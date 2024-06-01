@@ -406,7 +406,7 @@
 #define __ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                     \
   {                                                                                         \
-    return std::make_shared<LISPLE_FORM>(get_object().OBJ_FIELD);                           \
+    return LISPLE_FORM::make_ref(get_object().OBJ_FIELD);                                   \
   }
 
 #define __ADAPTER_PROP_GET_HOST_OBJECT__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)  \
@@ -415,10 +415,23 @@
 #define ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
   __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_HOST_OBJECT__FIELD, __ADAPTER_PROP_GET_HOST_OBJECT__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
+#define __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)      \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                           \
+  {                                                                                               \
+    return get_object().OBJ_FIELD ? LISPLE_FORM::make_ref(*get_object().OBJ_FIELD) : Lisple::NIL; \
+  }
+
+#define __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)  \
+  __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+
+#define ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD, __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+
 #define ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                \
   {                                                                                    \
-    return std::make_shared<LISPLE_FORM>(get_object().METHOD());                       \
+    return LISPLE_FORM::make_ref(get_object().METHOD());                               \
   }
 
 #define ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                  \
@@ -545,6 +558,7 @@ namespace Lisple
     HostObjectType get_host_type() const;
 
     virtual const std::vector<Lisple::sptr_sobject> keys() const;
+
     bool has_key(const Lisple::Object& key) const override;
     Lisple::sptr_sobject get_sptr_property(const Lisple::Object& key) const override;
     void set_property(const Lisple::Object& key, sptr_sobject& value) override;
