@@ -493,10 +493,10 @@ namespace Lisple
 
   MACRO_BODY(WhileMacro, make_while)
   {
-    Lisple::sptr_sobject retval;
+    Lisple::sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    while (ctx.eval(args.front()) == Lisple::B_TRUE)
+    while (ctx.eval(args.front())->is_truthy())
     {
       retval = ctx.eval(args.back());
     }
