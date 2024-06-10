@@ -94,6 +94,7 @@ namespace Lisple
     lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
     lang.emplace("set!", std::make_shared<SetBangMacro>());
     lang.emplace("some?", std::make_shared<SomeFunction>());
+    lang.emplace("sort", std::make_shared<SortFunction>());
     lang.emplace("str", std::make_shared<StrFunction>());
     lang.emplace("tail", std::make_shared<TailFunction>());
     lang.emplace("take", std::make_shared<TakeFunction>());
@@ -1169,6 +1170,42 @@ namespace Lisple
     }
 
     return result;
+  }
+
+  /* SortFunction - sort */
+  FUNC_IMPL(SortFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                               EXEC_DISPATCH(&SortFunction::sort))))
+
+  FUNC_BODY(SortFunction, sort)
+  {
+    Lisple::sptr_sobject_v elements = args.front()->get_children();
+    if (elements.size() > 1)
+    {
+      Executable& comparator = args.back()->as<Executable>();
+      Lisple::sptr_sobject tmp;
+      bool modified = false;
+      do
+      {
+        modified = false;
+        for (size_t i=0; i<elements.size()-1; i++)
+        {
+          Lisple::sptr_sobject_v args = { elements.at(i), elements.at(i+1)};
+          Lisple::sptr_sobject_v args_reverse = { elements.at(i+1), elements.at(i) };
+
+          if (comparator.execute(ctx, args)->is_truthy() &&
+              !comparator.execute(ctx, args_reverse)->is_truthy())
+          {
+            tmp = elements.at(i);
+            elements.at(i) = elements.at(i+1);
+            elements.at(i+1) = tmp;
+            modified = true;
+          }
+        }
+      }
+      while (modified);
+    }
+
+    return std::make_shared<Array>(elements);
   }
 
   /* SomeFunction */

@@ -37,6 +37,11 @@ namespace Lisple
     return 0;
   }
 
+  bool Object::is_truthy() const
+  {
+    return true;
+  }
+
   bool Object::has_key(const Object&) const
   {
     return false;
@@ -102,6 +107,11 @@ namespace Lisple
   std::string Nil::to_string() const
   {
     return "nil";
+  }
+
+  bool Nil::is_truthy() const
+  {
+    return false;
   }
 
   std::shared_ptr<Object> Nil::execute(Context&, sptr_sobject_v&)
@@ -226,6 +236,11 @@ namespace Lisple
     }
 
     return "false";
+  }
+
+  bool Boolean::is_truthy() const
+  {
+    return value;
   }
 
   std::shared_ptr<Boolean> Boolean::wrap(bool value)

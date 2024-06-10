@@ -324,6 +324,16 @@ namespace Lisple
   FUNC_DECL(FilterFunction, filter_seq)
 
   /*!
+   * @brief SortFunction - sort a sequence according to a predicate function.
+   *
+   * Usage: (sort [5 3 7 2 8 1] <) => [1 2 3 5 7 8]
+   *
+   * Param 0 - The seq to sort
+   * Param 1 - The comparison function, a functiong taking 
+   */
+  FUNC_DECL(SortFunction, sort)
+
+  /*!
    * @brief SomeFunction - Query if at least one element in a seq satisfies a
    * predicate function.
    *

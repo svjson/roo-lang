@@ -36,6 +36,10 @@ namespace Lisple
     virtual Object& get_property(const Object& key) const;
     virtual sptr_sobject get_sptr_property(const Object& key) const;
 
+    /*
+     * Returns true for any non-nil or non-false value.
+     */
+    virtual bool is_truthy() const;
     virtual bool has_key(const Object& key) const;
     virtual void set_property(const Object& key, sptr_sobject& value);
     /**
@@ -82,6 +86,7 @@ namespace Lisple
     Nil();
 
     bool operator==(const Object&) const override;
+    bool is_truthy() const override;
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
@@ -186,6 +191,7 @@ namespace Lisple
 
     std::string to_string() const override;
 
+    bool is_truthy() const override;
     static std::shared_ptr<Boolean> wrap(bool value);
   };
 
