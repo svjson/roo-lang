@@ -409,6 +409,14 @@ namespace Lisple
   FUNC_DECL(KeysFunction, keys_fn)
   FUNC_DECL(SelectKeysFunction, select_keys_fn)
 
+  /*! @brief PartitionFunction - Partition a sequence into an array of
+   * equally sized arrays.
+   *
+   * Usage: (partition 2 [1 2 3 4 5 6]) => [[1 2] [3 4] [5 6]]
+   *        (partition 4 [1 2 3 4 5 6]) => [[1 2 3 4] [5 6]]
+   */
+  FUNC_DECL(PartitionFunction, partition)
+
   /*!
    * @brief EmptyPredicateFunction - Query a seq or string(sequence of
    * characters) for the presence of any elements.

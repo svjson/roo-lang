@@ -82,6 +82,7 @@ namespace Lisple
     lang.emplace("nth", std::make_shared<NthFunction>());
     lang.emplace("odd?", std::make_shared<OddEvenPredicateFunction>(1));
     lang.emplace("or", std::make_shared<OrMacro>());
+    lang.emplace("partition", std::make_shared<PartitionFunction>());
     lang.emplace("prn", std::make_shared<PrintFunction>());
     lang.emplace("rand-nth", std::make_shared<RandNthFunction>());
     lang.emplace("range", std::make_shared<RangeFunction>());
@@ -1416,6 +1417,34 @@ namespace Lisple
     return std::make_shared<Lisple::Map>(new_content);
   }
 
+  /* PartitionFunction */
+  FUNC_IMPL(PartitionFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::SEQ)),
+                                    EXEC_DISPATCH(&PartitionFunction::partition))))
+
+  FUNC_BODY(PartitionFunction, partition)
+  {
+    std::shared_ptr<Lisple::Array> result = std::make_shared<Lisple::Array>();
+    unsigned int part_size = Lisple::uint_val(*args.front());
+
+    std::shared_ptr<Lisple::Array> partition = std::make_shared<Lisple::Array>();
+    for (auto& child : args.back()->get_children())
+    {
+      partition->append(child);
+      if (partition->size() == part_size)
+      {
+        result->append(partition);
+        partition = std::make_shared<Lisple::Array>();
+      }
+    }
+    if (partition->size())
+    {
+      result->append(partition);
+    }
+
+    return result;
+  }
+
+  /* OddEvenPredicateFunction */
   OddEvenPredicateFunction::OddEvenPredicateFunction(uint8_t modulus)
     : Function(SIG((FN_ARGS((&Lisple::Type::NUMBER)),
                     EXEC_DISPATCH(&OddEvenPredicateFunction::exec_oddevenp))))
