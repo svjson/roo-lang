@@ -19,8 +19,9 @@ namespace Tests
 {
   inline Lisple::HostTypeRef VEHICLE_TYPE(Lisple::HostObjectType::VEHICLE, "vehicle", "vehicle/make-vehicle");
   inline Lisple::HostTypeRef VEHICLE_TYPE__NO_COERCE(Lisple::HostObjectType::VEHICLE, "vehicle");
-  
+
   inline Lisple::SeqRef ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &VEHICLE_TYPE, "[vehicle]");
+  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &ARRAY_OF_VEHICLE, "[[vehicle]]");
 
   class Vehicle
   {
@@ -43,6 +44,9 @@ namespace Tests
   FUNC_DECL(PrnVehicle, prn);
   FUNC_DECL(DoubleSizeVehicle, zoom);
   FUNC_DECL(CountVehicleSeats, count);
+
+  FUNC_DECL(ArrayOfArrayTaker, accept);
+
 }
 
 

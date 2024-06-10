@@ -202,8 +202,8 @@ TEST(Number, num_type_on_construction)
   ASSERT_TRUE(Lisple::Number(-1).is_num_type(Lisple::NumberType::INT));
   ASSERT_TRUE(Lisple::Number(45.0f).is_num_type(Lisple::NumberType::FLOAT));
   ASSERT_TRUE(Lisple::Number(1.0f).is_num_type(Lisple::NumberType::FLOAT));
-  ASSERT_TRUE(Lisple::Number("1").is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number("1.0").is_num_type(Lisple::NumberType::FLOAT));
+  ASSERT_TRUE(Lisple::Number::make("1")->is_num_type(Lisple::NumberType::INT));
+  ASSERT_TRUE(Lisple::Number::make("1.0")->is_num_type(Lisple::NumberType::FLOAT));
 }
 
 TEST(List, equality)

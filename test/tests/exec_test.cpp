@@ -133,6 +133,39 @@ TEST(Signature, coerce_args__no_coercion_available)
   }, ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching signature")));
 }
 
+TEST(Signature, coerce_args__coerce_array_of_array_of_host_object)
+{
+  // Given
+  Lisple::LispReader reader;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
+  reader.get_current_namespace().store(Lisple::Word("a-of-a-taker"), std::make_shared<Tests::ArrayOfArrayTaker>());
+
+  // When
+  Lisple::sptr_sobject result = reader.eval(R"((a-of-a-taker
+[[(make-vehicle {:model-name "Batmobile" :seats 1}) (make-vehicle {:model-name "Dreamy Boom-Boom" :seats 10})]
+ [(make-vehicle {:model-name "V8 Interceptor" :seats 2}) (make-vehicle {:model-name "Clown Car" :seats 1})]]
+))");
+
+  // Then
+  EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
+  EXPECT_EQ(result->size(), 2);
+
+  Lisple::sptr_sobject child1 = result->get_children().at(0);
+  EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*child1));
+  EXPECT_EQ(child1->size(), 2);
+
+  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child1->get_children().at(0)));
+  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child1->get_children().at(1)));
+
+  Lisple::sptr_sobject child2 = result->get_children().at(1);
+  EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*child2));
+  EXPECT_EQ(child2->size(), 2);
+
+  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child2->get_children().at(0)));
+  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child2->get_children().at(1)));
+}
+
 TEST(Signature, coerce_args__coerce_array_elements)
 {
   // Given

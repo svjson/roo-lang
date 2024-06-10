@@ -221,7 +221,6 @@ namespace Lisple
    public:
     Number(int value);
     Number(float value);
-    Number(const std::string& value);
 
     std::string to_string() const override;
 
@@ -235,6 +234,7 @@ namespace Lisple
 
     static std::shared_ptr<Number> make(int value);
     static std::shared_ptr<Number> make(float value);
+    static std::shared_ptr<Number> make(const std::string& value);
   };
 
   class Word : public QualifiableStringValue

@@ -88,4 +88,12 @@ namespace Tests
     return Lisple::Number::make(count);
   }
 
+  FUNC_IMPL(ArrayOfArrayTaker, SIG((FN_ARGS((&ARRAY_OF_ARRAY_OF_VEHICLE)),
+                                    EXEC_DISPATCH(&ArrayOfArrayTaker::accept))))
+
+  FUNC_BODY(ArrayOfArrayTaker, accept)
+  {
+    return args.front();
+  }
+
 }

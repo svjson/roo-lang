@@ -346,13 +346,6 @@ namespace Lisple
   {
   }
 
-  /* Use of this one should be restricted to internal use */
-  Number::Number(const std::string& value)
-    : Value(Form::NUMBER, std::stof(value))
-    , num_type(value.find(".") == std::string::npos ? NumberType::INT : NumberType::FLOAT)
-  {
-  }
-
   bool Number::is_num_type(NumberType type) const
   {
     return num_type == type;
@@ -396,6 +389,26 @@ namespace Lisple
   {
     return std::make_shared<Number>(value);
   }
+
+  std::shared_ptr<Number> Number::make(const std::string& str_value)
+  {
+    try
+    {
+      if (str_value.find(".") == std::string::npos)
+      {
+        return std::make_shared<Number>(stoi(str_value));
+      }
+      else
+      {
+        return std::make_shared<Number>(stof(str_value));
+      }
+    }
+    catch (std::runtime_error& error)
+    {
+      throw Lisple::TypeError("Not a valid number: \"" + str_value + "\"");
+    }
+  }
+
 
   /**
    * Sexpression - Abstract base for lists, arrays and maps

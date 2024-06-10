@@ -14,8 +14,7 @@
 
 namespace Lisple
 {
-  ArgumentBinding::ArgumentBinding()
-  {}
+  ArgumentBinding::ArgumentBinding() {}
 
   std::unique_ptr<ArgumentBinding> ArgumentBinding::create(Object& arg_declaration)
   {
