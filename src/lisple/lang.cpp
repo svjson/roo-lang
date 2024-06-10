@@ -13,6 +13,7 @@
 #include "context.h"
 #include "exec.h"
 #include "form.h"
+#include "impl.h"
 #include "scope.h"
 #include "type.h"
 #include "host.h"
@@ -59,6 +60,7 @@ namespace Lisple
     lang.emplace("find-first", std::make_shared<FindFirstFunction>());
     lang.emplace("fn", std::make_shared<LambdaMacro>());
     lang.emplace("for", std::make_shared<ForMacro>());
+    lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang.emplace("get", std::make_shared<GetFunction>());
     lang.emplace("head", std::make_shared<HeadFunction>());
     lang.emplace("int", std::make_shared<IntFunction>());
@@ -613,7 +615,7 @@ namespace Lisple
     return retval;
   }
 
-  /* for */
+  /* ForMacro - for */
   MACRO_IMPL(ForMacro, SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
                             EXEC_DISPATCH(&ForMacro::make_for))))
 
@@ -648,6 +650,60 @@ namespace Lisple
 
     return std::make_shared<Array>(result);
   }
+
+  /* ForIndexedMacro - for-indexed */
+  MACRO_IMPL(ForIndexedMacro, SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                                   EXEC_DISPATCH(&ForIndexedMacro::make_for))))
+
+  MACRO_BODY(ForIndexedMacro, make_for)
+  {
+    sptr_sobject_v& bind_form = args.front()->as<Array>().get_children();
+
+    if (bind_form.size() != 3)
+    {
+      throw InvocationException("Invalid number of elements in for-indexed bind form, expected 3: " + args.front()->to_string());
+    }
+
+    if (!Type::WORD.is_type_of(*bind_form.at(0)))
+    {
+      throw TypeError("for-indexed macro requires the index variable to be a word");
+    }
+
+    if (!Type::WORD.is_type_of(*bind_form.at(1)))
+    {
+      throw TypeError("for-indexed macro requires the iteration variable to be a word");
+    }
+
+    if (!Type::SEQ.is_type_of(*bind_form.at(2)))
+    {
+      throw TypeError("for-indexed macro requires an iterable. Wrong type: " + bind_form.at(2)->to_string());
+    }
+
+    auto index_binding = ArgumentBinding::create(*bind_form.at(0));
+    auto seq_binding = ArgumentBinding::create(*bind_form.at(1));
+
+    auto& seq = bind_form.at(2);
+    sptr_sobject_v result;
+
+    for (size_t i=0; i<seq->size(); i++)
+    {
+      auto& lmnt = seq->get_children().at(i);
+      Scope iter_scope;
+      sptr_sobject index = Number::make(static_cast<int>(i));
+      index_binding->apply(iter_scope, index);
+      seq_binding->apply(iter_scope, lmnt);
+      ctx.push_context(true, iter_scope);
+      sptr_sobject iter_result;
+      for (size_t e=1; e<args.size(); e++)
+      {
+        iter_result = ctx.eval(args.at(e));
+      }
+      result.push_back(iter_result);
+    }
+
+    return std::make_shared<Array>(result);
+  }
+
 
   FUNC_IMPL(EqualsPredicateFunction, SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY)),
                                           EXEC_DISPATCH(&EqualsPredicateFunction::equals_any))))
@@ -1338,6 +1394,7 @@ namespace Lisple
     return std::make_shared<Array>(result);
   }
 
+  /* SelectKeysFunction */
   FUNC_IMPL(SelectKeysFunction, SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::SEQ)),
                                      EXEC_DISPATCH(&SelectKeysFunction::select_keys_fn))));
 

@@ -105,7 +105,29 @@ namespace Lisple
   MACRO_DECL(CondMacro, make_cond)
 
   MACRO_DECL(ThreadFirstMacro, make_thread_first)
+
+  /*!
+   * ForMacro - executes a form for every element in a sequence,
+   * binding the element to the local scope. Returns an array with
+   * the return value for each iteration
+   *
+   * Usage: (for [num [1 2 3 4]] (* 2 num)) => [2 4 6 8]
+   *
+   * Param 0: Binding form, [<var-name> <seq>]
+   * Param 1: Form body to execute
+   */
   MACRO_DECL(ForMacro, make_for)
+
+  /*! ForIndexedMacro - executes a form for ever element in a sequence, just
+   * like (for ...), but takes a leading binding in the binding form containing
+   * the zero-based iteration index
+   *
+   * Usage (for-indexed [index num [1 2 3 4]] (* index num) => [0 2 6 12])
+   *
+   * Param 0: Binding form, [<index-var-name> <var-name> <seq>]
+   * Param 1: Form body to execute
+   */
+  MACRO_DECL(ForIndexedMacro, make_for)
 
   FUNC_DECL(PrintFunction, do_print)
 
