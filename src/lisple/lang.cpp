@@ -325,6 +325,7 @@ namespace Lisple
 
     bool contains_nil = false;
 
+    size_t scopes = 0;
     for (size_t i=0; i < var_def_array.size(); i+=2)
     {
       auto& var_name_obj = *var_def_array.get_children().at(i);
@@ -333,6 +334,7 @@ namespace Lisple
       if (*var_val_obj == *NIL)
       {
         contains_nil = true;
+        break;
       }
 
       if (!Type::WORD.is_type_of(var_name_obj))
@@ -343,6 +345,7 @@ namespace Lisple
       Scope var_scope;
       var_scope.store(var_name_obj.as<Word>(), var_val_obj);
       ctx.push_context(true, var_scope);
+      scopes = i;
     }
 
     sptr_sobject result = NIL;
@@ -355,7 +358,7 @@ namespace Lisple
       }
     }
 
-    for (size_t i=0; i < var_def_array.size() / 2; i++)
+    for (size_t i=0; i < scopes; i++)
     {
       ctx.pop_context();
     }
