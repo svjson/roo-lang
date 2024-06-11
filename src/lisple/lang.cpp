@@ -541,7 +541,7 @@ namespace Lisple
 
     ctx.push_context(true);
     auto condition = ctx.eval(args.front());
-    if (*condition != *B_FALSE && *condition != *NIL)
+    if (condition->is_truthy())
     {
       for (size_t i=1; i<args.size(); i++)
       {
