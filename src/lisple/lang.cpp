@@ -626,33 +626,33 @@ namespace Lisple
 
   MACRO_BODY(ForMacro, make_for)
   {
+    sptr_sobject_v result;
     sptr_sobject_v& seq_expr = args.front()->as<Array>().get_children();
 
     sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
-    if (!Type::SEQ.is_type_of(*obj_iterable))
+    if (*Lisple::NIL != *obj_iterable)
     {
-      throw TypeError("For macro requires an iterable. Wrong type: " + obj_iterable->to_string());
-    }
-    Array& iterable = obj_iterable->as<Array>();
-
-    auto seq_binding = ArgumentBinding::create(*seq_expr.front());
-
-    sptr_sobject_v result;
-
-    for (auto& lmnt : iterable.get_children())
-    {
-      Scope iter_scope;
-      seq_binding->apply(iter_scope, lmnt);
-      ctx.push_context(true, iter_scope);
-      sptr_sobject iter_result;
-      for (size_t i=1; i<args.size(); i++)
+      if (!Type::SEQ.is_type_of(*obj_iterable))
       {
-        iter_result = ctx.eval(args.at(i));
+        throw TypeError("For macro requires an iterable. Wrong type: " + obj_iterable->to_string());
       }
-      result.push_back(iter_result);
-      ctx.pop_context();
-    }
 
+      auto seq_binding = ArgumentBinding::create(*seq_expr.front());
+
+      for (auto& lmnt : obj_iterable->get_children())
+      {
+        Scope iter_scope;
+        seq_binding->apply(iter_scope, lmnt);
+        ctx.push_context(true, iter_scope);
+        sptr_sobject iter_result;
+        for (size_t i=1; i<args.size(); i++)
+        {
+          iter_result = ctx.eval(args.at(i));
+        }
+        result.push_back(iter_result);
+        ctx.pop_context();
+      }
+    }
     return std::make_shared<Array>(result);
   }
 
