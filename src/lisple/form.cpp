@@ -104,7 +104,7 @@ namespace Lisple
   {
   }
 
-  std::string Nil::to_string() const
+  std::string Nil::to_string(int) const
   {
     return "nil";
   }
@@ -136,7 +136,7 @@ namespace Lisple
     this->value = value;
   }
 
-  std::string Discard::to_string() const
+  std::string Discard::to_string(int) const
   {
     return "#_" + value->to_string();
   }
@@ -209,7 +209,7 @@ namespace Lisple
     return this->value == value;
   }
 
-  std::string String::to_string() const
+  std::string String::to_string(int) const
   {
     return "\"" + value + "\"";
   }
@@ -228,7 +228,7 @@ namespace Lisple
 
   }
 
-  std::string Boolean::to_string() const
+  std::string Boolean::to_string(int) const
   {
     if (value)
     {
@@ -257,7 +257,7 @@ namespace Lisple
 
   }
 
-  std::string Char::to_string() const
+  std::string Char::to_string(int) const
   {
     return "'" + std::string {value} + "'";
   }
@@ -281,7 +281,7 @@ namespace Lisple
     return this->value == value;
   }
 
-  std::string Key::to_string() const
+  std::string Key::to_string(int) const
   {
     return ":" + value;
   }
@@ -318,7 +318,7 @@ namespace Lisple
     return this->value == value;
   }
 
-  std::string QSymbol::to_string() const
+  std::string QSymbol::to_string(int) const
   {
     return "'" + value;
   }
@@ -336,7 +336,7 @@ namespace Lisple
     return this->value == value;
   }
 
-  std::string Word::to_string() const
+  std::string Word::to_string(int) const
   {
     return this->value;
   }
@@ -386,7 +386,7 @@ namespace Lisple
     return this->value == value;
   }
 
-  std::string Number::to_string() const
+  std::string Number::to_string(int) const
   {
     if (num_type == NumberType::INT)
     {
@@ -504,18 +504,25 @@ namespace Lisple
     return tail;
   }
 
-  std::string Sexpression::to_string() const
+  std::string Sexpression::to_string(int depth) const
   {
     std::string str;
-    for (auto& element : children)
+    if (depth == 0)
     {
-      if (!str.empty())
+      str = "...";
+    }
+    else
+    {
+      for (auto& element : children)
       {
-        str += " ";
-      }
-      if(element)
-      {
-        str += element->to_string();
+        if (!str.empty())
+        {
+          str += " ";
+        }
+        if(element)
+        {
+          str += element->to_string(depth == -1 ? -1 : depth-1);
+        }
       }
     }
     return this->lpar() + str + this->rpar();
@@ -655,7 +662,7 @@ namespace Lisple
 
   std::shared_ptr<Object> List::execute(Context&, sptr_sobject_v&)
   {
-    throw InvocationException("Illegal invocation of list: " + this->to_string());
+    throw InvocationException("Illegal invocation of list: " + this->to_string(2));
   }
 
   /**
@@ -671,7 +678,7 @@ namespace Lisple
   {
     if (this->children.size() % 2 != 0)
     {
-      throw TypeError("Odd number of symbols in Map form: " + this->to_string());
+      throw TypeError("Odd number of symbols in Map form: " + this->to_string(2));
     }
 
     std::vector<Object*> keys = this->keys();
@@ -685,7 +692,7 @@ namespace Lisple
                                 });
       if (count != 1)
       {
-        throw TypeError("Duplicate key " + key->to_string() + " in Map: " +this->to_string());
+        throw TypeError("Duplicate key " + key->to_string() + " in Map: " +this->to_string(2));
       }
     }
   }

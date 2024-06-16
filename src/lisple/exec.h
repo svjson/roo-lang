@@ -2,7 +2,6 @@
 #ifndef __SEXP_EXEC_H_
 #define __SEXP_EXEC_H_
 
-#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -224,7 +223,7 @@ namespace Lisple
 
     const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
   };
 
   class DetachedFunction : public Function
@@ -291,7 +290,7 @@ namespace Lisple
 
     Signature& get_signature(sptr_sobject_v& args);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
   };
 }
 

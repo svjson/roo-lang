@@ -57,7 +57,7 @@ namespace Lisple
       sptr_sobject function = ctx.lookup(*make_fn);
       if (!Type::EXEC.is_type_of(*function))
       {
-        throw InvocationException("Coercion failed. Review Host Object configuration - Make Function '" + *make_fn + "' is not executable: " + function->to_string());
+        throw InvocationException("Coercion failed. Review Host Object configuration - Make Function '" + *make_fn + "' is not executable: " + function->to_string(2));
       }
       auto& make_exec = function->as<Executable>();
 
@@ -118,7 +118,7 @@ namespace Lisple
   {
   }
 
-  std::string AbstractHostObject::to_string() const
+  std::string AbstractHostObject::to_string(int) const
   {
     return "<host-object>";
   }

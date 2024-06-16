@@ -323,7 +323,7 @@ namespace Lisple
       }
     }
 
-    throw InvocationException("No matching signature: " + Array(args).to_string() + ". " + expected);
+    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected);
   }
 
   Function::Function(uptr_sig signature)
@@ -341,7 +341,7 @@ namespace Lisple
     return signatures;
   }
 
-  std::string Function::to_string() const
+  std::string Function::to_string(int) const
   {
     return "<fn>";
   }
@@ -485,7 +485,7 @@ namespace Lisple
     throw InvocationException("No matching form for arguments: " + Lisple::Array(args).to_string());
   }
 
-  std::string Macro::to_string() const
+  std::string Macro::to_string(int) const
   {
     return "<macro>";
   }

@@ -553,7 +553,7 @@ namespace Lisple
     AbstractHostObject(HostObjectType type, const AccessorLookup& accessors);
 
     bool operator==(const Object& other) const override;
-    virtual std::string to_string() const override;
+    virtual std::string to_string(int depth=-1) const override;
 
     HostObjectType get_host_type() const;
 
@@ -729,11 +729,11 @@ namespace Lisple
       return __cached_children;
     }
 
-    std::string to_string() const override
+    std::string to_string(int depth=-1) const override
     {
       sptr_sobject_v kvs = const_cast<HostObject<T>&>(*this).get_children();
 
-      return Map(kvs).to_string();
+      return Map(kvs).to_string(depth);
     }
 
     std::unique_ptr<T>& get_object_ptr()

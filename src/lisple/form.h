@@ -63,7 +63,7 @@ namespace Lisple
      */
     virtual void set_property(Context* ctx, const Object& key, sptr_sobject& value);
 
-    virtual std::string to_string() const = 0;
+    virtual std::string to_string(int depth=-1) const = 0;
 
 
     virtual std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args);
@@ -90,7 +90,7 @@ namespace Lisple
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
   };
 
   inline std::shared_ptr<Object> NIL = std::make_shared<Nil>();
@@ -159,7 +159,7 @@ namespace Lisple
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
   };
 
   class String : public Value<std::string>
@@ -167,7 +167,7 @@ namespace Lisple
    public:
     String(const std::string& value);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     bool has_value(const std::string& value) const override;
 
@@ -179,7 +179,7 @@ namespace Lisple
   public:
     Char(const char value);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     static std::shared_ptr<Char> make(char value);
   };
@@ -189,7 +189,7 @@ namespace Lisple
    public:
     Boolean(const bool value);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     bool is_truthy() const override;
     static std::shared_ptr<Boolean> wrap(bool value);
@@ -205,7 +205,7 @@ namespace Lisple
 
     bool has_value(const std::string& value) const override;
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     std::shared_ptr<Lisple::Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
@@ -228,7 +228,7 @@ namespace Lisple
     Number(int value);
     Number(float value);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     int int_value() const;
     float float_value() const;
@@ -248,7 +248,7 @@ namespace Lisple
    public:
     Word(const std::string& value);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     bool has_value(const std::string& value) const override;
 
@@ -260,7 +260,7 @@ namespace Lisple
    public:
     QSymbol(const std::string& value);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     bool has_value(const std::string& value) const override;
   };
@@ -275,7 +275,7 @@ namespace Lisple
 
     static std::shared_ptr<Sexpression> new_sequence(Form type);
 
-    std::string to_string() const override;
+    std::string to_string(int depth=-1) const override;
 
     std::shared_ptr<Object>& head();
     sptr_sobject_v tail();
