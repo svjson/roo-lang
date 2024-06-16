@@ -347,7 +347,7 @@ namespace Lisple
       Scope var_scope;
       var_scope.store(var_name_obj.as<Word>(), var_val_obj);
       ctx.push_context(true, var_scope);
-      scopes = i;
+      scopes++;
     }
 
     sptr_sobject result = NIL;
