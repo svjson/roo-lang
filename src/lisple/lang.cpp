@@ -452,7 +452,7 @@ namespace Lisple
 
   FUNC_BODY(NotFunction, invert_boolean)
   {
-    return *args.front() == *B_TRUE ? B_FALSE : B_TRUE;
+    return args.front()->is_truthy() ? B_FALSE : B_TRUE;
   }
 
   FUNC_BODY(NotFunction, not_any)
@@ -911,14 +911,14 @@ namespace Lisple
     return (a < b) == min ? args.at(0) : args.at(1);
   }
 
-  FUNC_IMPL(AndFunction, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::BOOL)),
+  FUNC_IMPL(AndFunction, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY)),
                               EXEC_DISPATCH(&AndFunction::logical_and))))
 
   FUNC_BODY(AndFunction, logical_and)
   {
     for (auto& arg : args)
     {
-      if (*arg == *Lisple::B_FALSE)
+      if (!arg->is_truthy())
       {
         return Lisple::B_FALSE;
       }
@@ -935,10 +935,11 @@ namespace Lisple
     ctx.push_context(true);
     for (auto& arg : args)
     {
-      if (*ctx.eval(arg) == *Lisple::B_TRUE)
+      Lisple::sptr_sobject lmnt = ctx.eval(arg);
+      if (lmnt->is_truthy())
       {
         ctx.pop_context();
-        return Lisple::B_TRUE;
+        return lmnt;
       }
     }
     ctx.pop_context();
@@ -1107,10 +1108,10 @@ namespace Lisple
     return result;
   }
 
+  /* FlattenFunction - flatten */
   FUNC_IMPL(FlattenFunction, SIG((FN_ARGS((&Type::SEQ)),
                                   EXEC_DISPATCH(&FlattenFunction::flatten_array))))
 
-  /* FlattenFunction - flatten */
   FUNC_BODY(FlattenFunction, flatten_array)
   {
     sptr_sobject_v result;
@@ -1632,8 +1633,8 @@ namespace Lisple
     return std::make_shared<Array>(vector);
   }
 
-  /**
-   * ContainsPredicateFunction
+  /*
+   * ContainsPredicateFunction - contains?
    */
   FUNC_IMPL(ContainsPredicateFunction, SIG((FN_ARGS((&Type::ARRAY), (&Type::ANY)),
                                             EXEC_DISPATCH(&ContainsPredicateFunction::contains))))

@@ -155,6 +155,15 @@ namespace Lisple
   FUNC_DECL(IncludeFunction, include_file)
   FUNC_DECL(ApplyFunction, apply_fn)
 
+  /*!
+   * AbsFunction - returns the absolute value of a Number
+   *
+   * Usage: (abs -5) => 5
+   *        (abs 5) => 5
+   *        (abs -5.5) => 5.5
+   *        (abs 5.5) => 5.5
+   */
+  FUNC_DECL(AbsFunction, abs_value)
   FUNC_DECL(IntFunction, to_int)
   FUNC_DECL(PlusFunction, do_addition)
   FUNC_DECL(MinusFunction, do_subtraction)
@@ -199,6 +208,18 @@ namespace Lisple
    */
   FUNC_DECL(GreaterThanOrEqualsFunction, gte_fn)
 
+  /*!
+   * BetweenPredicateFucntion
+   *
+   * Usage: (between? 10 0 20) => true
+   *
+   * Param 0: Value to test
+   * Param 1: Lower bounds, exclusive
+   * Param 2: Upper bounds, inclusive
+   */
+  FUNC_DECL(BetweenPredicateFunction, between);
+
+
   FUNC_DECL(RangeFunction, make_range)
   FUNC_DECL(ThresholdFunction, cap_value)
 
@@ -212,6 +233,11 @@ namespace Lisple
     Lisple::sptr_sobject select_min_or_max(Lisple::Context&, Lisple::sptr_sobject_v& args);
   };
 
+  /*! @brief AndFunction - query if all arguments are truthy
+   *
+   * Usage: (and true [] "string") => true
+   *        (and true false nil) => false
+   */
   FUNC_DECL(AndFunction, logical_and)
   MACRO_DECL(OrMacro, logical_or)
 
@@ -295,6 +321,13 @@ namespace Lisple
    * Param 0... - The sequences to splice together
    */
   FUNC_DECL(ConcatFunction, concat_array)
+
+  /*!
+   * @brief FlattenFunction - flatten an array or arrays or objects
+   * into a single level array
+   *
+   * Usage: (flatten [[1 2 3] [4 5 6]]) => [1 2 3 4 5 6]
+   */
   FUNC_DECL(FlattenFunction, flatten_array)
 
   /*!
