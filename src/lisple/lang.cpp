@@ -689,7 +689,7 @@ namespace Lisple
     auto index_binding = ArgumentBinding::create(*bind_form.at(0));
     auto seq_binding = ArgumentBinding::create(*bind_form.at(1));
 
-    auto& seq = bind_form.at(2);
+    auto seq = ctx.eval(bind_form.at(2));
     sptr_sobject_v result;
 
     for (size_t i=0; i<seq->size(); i++)
