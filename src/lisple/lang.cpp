@@ -37,6 +37,7 @@ namespace Lisple
     lang.emplace(">", std::make_shared<GreaterThanFunction>());
     lang.emplace(">=", std::make_shared<GreaterThanOrEqualsFunction>());
     lang.emplace("->", std::make_shared<ThreadFirstMacro>());
+    lang.emplace("abs", std::make_shared<AbsFunction>());
     lang.emplace("and", std::make_shared<AndFunction>());
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang.emplace("assoc", std::make_shared<AssocFunction>());
@@ -736,6 +737,17 @@ namespace Lisple
     return std::make_shared<Number>(num);
   }
 
+  /* AbsFunction - abs */
+  FUNC_IMPL(AbsFunction, SIG((FN_ARGS((&Type::NUMBER)),
+                              EXEC_DISPATCH(&AbsFunction::abs_value))))
+
+  FUNC_BODY(AbsFunction, abs_value)
+  {
+    Number& num = args.front()->as<Number>();
+    return Number::make(std::abs(num.value));
+  }
+
+  /* IntFunction - int */
   FUNC_IMPL(IntFunction, SIG((FN_ARGS((&Type::ANY)),
                               EXEC_DISPATCH(&IntFunction::to_int))))
 
