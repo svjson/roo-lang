@@ -43,6 +43,7 @@ namespace Lisple
     lang.emplace("assoc", std::make_shared<AssocFunction>());
     lang.emplace("assoc!", std::make_shared<AssocBangFunction>());
     lang.emplace("assoc-in!", std::make_shared<AssocInBangFunction>());
+    lang.emplace("between?", std::make_shared<BetweenPredicateFunction>());
     lang.emplace("case", std::make_shared<CaseMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
     lang.emplace("cond", std::make_shared<CondMacro>());
@@ -849,7 +850,20 @@ namespace Lisple
     return Number::value_of(*args.at(0)) >= Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
   }
 
+  /* BetweenPredicateFunction - between? */
+  FUNC_IMPL(BetweenPredicateFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
+                                           EXEC_DISPATCH(&BetweenPredicateFunction::between))))
 
+  FUNC_BODY(BetweenPredicateFunction, between)
+  {
+    return Lisple::float_val(*args.front()) > Lisple::float_val(*args.at(1)) &&
+      Lisple::float_val(*args.front()) < Lisple::float_val(*args.at(2))
+      ? B_TRUE
+      : B_FALSE;
+  }
+
+
+  /* ThresholdFunction */
   FUNC_IMPL(ThresholdFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
                                     EXEC_DISPATCH(&ThresholdFunction::cap_value))))
 
