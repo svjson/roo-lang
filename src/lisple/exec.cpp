@@ -179,7 +179,6 @@ namespace Lisple
     return coerced;
   }
 
-
   bool Signature::matches(const sptr_sobject_v& args) const
   {
     if (arguments.empty() || (!arguments.back().is_vararg() && !arguments.front().is_vararg()))
@@ -187,6 +186,10 @@ namespace Lisple
       if (arguments.size() != args.size())
       {
         return false;
+      }
+      else if (arguments.empty())
+      {
+        return true;
       }
     }
 

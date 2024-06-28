@@ -239,6 +239,14 @@ namespace Lisple
    *        (and true false nil) => false
    */
   FUNC_DECL(AndFunction, logical_and)
+
+  /*! @brief OrFunction - query if any of the arguments are truthy, and return
+   * the first truthy argument. Otherwise, nil
+   *
+   * Usage: (or {:x 1 :y 12} false) => {:x 1 :y 12}
+   * Usage: (or nil false) => nil
+   * Usage: (or nil true) => true
+   **/
   MACRO_DECL(OrMacro, logical_or)
 
   FUNC_DECL(HeadFunction, head)
