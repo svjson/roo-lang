@@ -171,9 +171,26 @@
   HOST_ADAPTER_GETTER_DECL(PROP12)                                                           \
   HOST_ADAPTER_GETTER_DECL(PROP13)
 
+#define HOST_ADAPTER_GETTERS14(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10, PROP11, PROP12, PROP13, PROP14) \
+  HOST_ADAPTER_GETTER_DECL(PROP1)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP2)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP3)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP4)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP5)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP6)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP7)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP8)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP9)                                                            \
+  HOST_ADAPTER_GETTER_DECL(PROP10)                                                           \
+  HOST_ADAPTER_GETTER_DECL(PROP11)                                                           \
+  HOST_ADAPTER_GETTER_DECL(PROP12)                                                           \
+  HOST_ADAPTER_GETTER_DECL(PROP13)                                                           \
+  HOST_ADAPTER_GETTER_DECL(PROP14)
 
-#define SELECT_GETTERS_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, MACRO_NAME, ...) MACRO_NAME
-#define HOST_ADAPTER_GETTERS(...) SELECT_GETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_GETTERS13, HOST_ADAPTER_GETTERS12, HOST_ADAPTER_GETTERS11, HOST_ADAPTER_GETTERS10, HOST_ADAPTER_GETTERS9, HOST_ADAPTER_GETTERS8, HOST_ADAPTER_GETTERS7, HOST_ADAPTER_GETTERS6, HOST_ADAPTER_GETTERS5, HOST_ADAPTER_GETTERS4, HOST_ADAPTER_GETTERS3, HOST_ADAPTER_GETTERS2, HOST_ADAPTER_GETTERS1)(__VA_ARGS__)
+
+
+#define SELECT_GETTERS_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, MACRO_NAME, ...) MACRO_NAME
+#define HOST_ADAPTER_GETTERS(...) SELECT_GETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_GETTERS14, HOST_ADAPTER_GETTERS13, HOST_ADAPTER_GETTERS12, HOST_ADAPTER_GETTERS11, HOST_ADAPTER_GETTERS10, HOST_ADAPTER_GETTERS9, HOST_ADAPTER_GETTERS8, HOST_ADAPTER_GETTERS7, HOST_ADAPTER_GETTERS6, HOST_ADAPTER_GETTERS5, HOST_ADAPTER_GETTERS4, HOST_ADAPTER_GETTERS3, HOST_ADAPTER_GETTERS2, HOST_ADAPTER_GETTERS1)(__VA_ARGS__)
 
 #define HOST_ADAPTER_SETTER_DECL(PROP_NAME)       \
   void set_##PROP_NAME(Lisple::Context* ctx, Lisple::Object& value);
