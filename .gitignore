@@ -4,5 +4,6 @@
 /CMakeCache.txt
 /compile_commands.json
 liblisple.a
+liblisple.so
 test/testlisple
 .cache

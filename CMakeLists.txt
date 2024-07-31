@@ -40,7 +40,7 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/type.cpp
 )
 
-add_library(lisple STATIC ${lisple_SOURCES})
+add_library(lisple SHARED ${lisple_SOURCES})
 
 target_link_libraries(lisple)
 

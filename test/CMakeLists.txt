@@ -11,7 +11,7 @@ ADD_EXECUTABLE(testlisple ${TEST_SOURCES})
 target_link_libraries(testlisple
   gtest
   gmock
-  ${CMAKE_CURRENT_SOURCE_DIR}/../liblisple.a
+  lisple
 )
 
 # Enable Include What You Use analyzer with TESTS_USE_IWYU=true
