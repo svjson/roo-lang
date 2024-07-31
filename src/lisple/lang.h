@@ -18,7 +18,7 @@ namespace Lisple
   MACRO_DECL(NsMacro, switch_ns);
 
   MACRO_DECL(DefMacro, define_obj)
-  MACRO_DECL(DefunMacro, define_fun)
+  MACRO_DECL(DefunMacro, define_fun, define_fun_docstring)
   MACRO_DECL(LambdaMacro, make_lambda)
 
   /*!

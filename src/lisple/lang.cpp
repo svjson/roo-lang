@@ -237,10 +237,15 @@ namespace Lisple
     return args.at(1);
   }
 
-  MACRO_IMPL(DefunMacro, SIG((FN_ARGS((&Type::WORD, false),
-                                      (&Type::ARRAY, false),
-                                      (VARARG, &Type::ANY, false)),
-                              EXEC_DISPATCH(&DefunMacro::define_fun))))
+  MACRO_IMPL(DefunMacro, MULTI_SIG((FN_ARGS((&Type::WORD, false),
+                                            (&Type::ARRAY, false),
+                                            (VARARG, &Type::ANY, false)),
+                                    EXEC_DISPATCH(&DefunMacro::define_fun)),
+                                   (FN_ARGS((&Type::WORD, false),
+                                            (&Type::STRING, false),
+                                            (&Type::ARRAY, false),
+                                            (VARARG, &Type::ANY, false)),
+                                    EXEC_DISPATCH(&DefunMacro::define_fun_docstring))))
 
   MACRO_BODY(DefunMacro, define_fun)
   {
@@ -254,6 +259,12 @@ namespace Lisple
     ctx.store_namespace(fun_name, fn);
 
     return fn;
+  }
+
+  MACRO_BODY(DefunMacro, define_fun_docstring)
+  {
+    args.erase(args.begin() + 1);
+    return this->define_fun(ctx, args);
   }
 
   MACRO_IMPL(LambdaMacro, SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
@@ -406,6 +417,7 @@ namespace Lisple
     return NIL;
   }
 
+  /* ThreadFirstMacro */
   MACRO_IMPL(ThreadFirstMacro, SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, false)),
                                     EXEC_DISPATCH(&ThreadFirstMacro::make_thread_first))))
 
