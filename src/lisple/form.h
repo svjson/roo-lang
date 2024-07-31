@@ -226,6 +226,7 @@ namespace Lisple
 
    public:
     Number(int value);
+    Number(unsigned int value);
     Number(float value);
 
     std::string to_string(int depth=-1) const override;
@@ -240,6 +241,7 @@ namespace Lisple
 
     static std::shared_ptr<Number> make(int value);
     static std::shared_ptr<Number> make(float value);
+    static std::shared_ptr<Number> make(unsigned int value);
     static std::shared_ptr<Number> make(const std::string& value);
   };
 

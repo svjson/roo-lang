@@ -355,6 +355,11 @@ namespace Lisple
   {
   }
 
+  Number::Number(unsigned int value)
+    : Number(static_cast<int>(value))
+  {
+  }
+
   Number::Number(float value)
     : Value(Form::NUMBER, value)
     , num_type(NumberType::FLOAT)
@@ -396,6 +401,11 @@ namespace Lisple
   }
 
   std::shared_ptr<Number> Number::make(int value)
+  {
+    return std::make_shared<Number>(value);
+  }
+
+  std::shared_ptr<Number> Number::make(unsigned int value)
   {
     return std::make_shared<Number>(value);
   }
