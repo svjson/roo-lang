@@ -366,6 +366,12 @@ namespace Lisple
   {
   }
 
+  Number::Number(long value)
+    : Value(Form::NUMBER, value)
+    , num_type(NumberType::LONG)
+  {
+  }
+
   bool Number::is_num_type(NumberType type) const
   {
     return num_type == type;
@@ -377,6 +383,11 @@ namespace Lisple
   }
 
   float Number::float_value() const
+  {
+    return value;
+  }
+
+  long Number::long_value() const
   {
     return value;
   }
@@ -393,10 +404,16 @@ namespace Lisple
 
   std::string Number::to_string(int) const
   {
-    if (num_type == NumberType::INT)
+    switch (num_type)
     {
-      return std::to_string((int) value);
+    case NumberType::INT:
+      return std::to_string(static_cast<int>(value));
+    case NumberType::LONG:
+      return std::to_string(static_cast<long>(value));
+    case NumberType::FLOAT:
+      return std::to_string(value);
     }
+
     return std::to_string(value);
   }
 
@@ -411,6 +428,11 @@ namespace Lisple
   }
 
   std::shared_ptr<Number> Number::make(float value)
+  {
+    return std::make_shared<Number>(value);
+  }
+
+  std::shared_ptr<Number> Number::make(long value)
   {
     return std::make_shared<Number>(value);
   }

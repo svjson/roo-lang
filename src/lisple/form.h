@@ -217,9 +217,18 @@ namespace Lisple
   enum class NumberType : uint8_t
   {
     INT,
+    LONG,
     FLOAT
   };
 
+  /*!
+   * @brief Number - The only numeric type of Lisple.
+   *
+   * Internally always represented as a float.
+   * A better solution would be to have a class hierarchy here and wrap
+   * the actual native types and leave the static factory methods on this
+   * class, which would then be an abstract class.
+   */
   class Number : public Value<float>
   {
     NumberType num_type;
@@ -228,10 +237,12 @@ namespace Lisple
     Number(int value);
     Number(unsigned int value);
     Number(float value);
+    Number(long value);
 
     std::string to_string(int depth=-1) const override;
 
     int int_value() const;
+    long long_value() const;
     float float_value() const;
 
     bool is_num_type(NumberType type) const;
@@ -242,6 +253,7 @@ namespace Lisple
     static std::shared_ptr<Number> make(int value);
     static std::shared_ptr<Number> make(float value);
     static std::shared_ptr<Number> make(unsigned int value);
+    static std::shared_ptr<Number> make(long value);
     static std::shared_ptr<Number> make(const std::string& value);
   };
 
