@@ -36,36 +36,37 @@
 #define DISP_DECL(DISP_NAME) \
   Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args);
 
-#define FUNC_CLS_DECL_PRE(FUNC_NAME)                                                    \
-  class FUNC_NAME : public Lisple::Function                                             \
+#define EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                           \
+  class EXEC_NAME : public EXEC_TYPE                                                    \
   {                                                                                     \
    public:                                                                              \
-    FUNC_NAME();
+    EXEC_NAME();
 
-#define FUNC_CLS_DECL_POST                                                              \
+#define END_CLASS                                                                       \
   };
 
-#define FUNC_DECL1(FUNC_NAME, DISP_NAME1)                                               \
-  FUNC_CLS_DECL_PRE(FUNC_NAME)                                                          \
+#define EXEC_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                    \
+  EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   DISP_DECL(DISP_NAME1)                                                                 \
-  FUNC_CLS_DECL_POST
+  END_CLASS
 
-#define FUNC_DECL2(FUNC_NAME, DISP_NAME1, DISP_NAME2)                                   \
-  FUNC_CLS_DECL_PRE(FUNC_NAME)                                                          \
+#define EXEC_DECL2(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2)                        \
+  EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   DISP_DECL(DISP_NAME1)                                                                 \
   DISP_DECL(DISP_NAME2)                                                                 \
-  FUNC_CLS_DECL_POST
+  END_CLASS
 
-#define FUNC_DECL3(FUNC_NAME, DISP_NAME1, DISP_NAME2, DISP_NAME3)                       \
-  FUNC_CLS_DECL_PRE(FUNC_NAME)                                                          \
+#define EXEC_DECL3(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2, DISP_NAME3)            \
+  EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   DISP_DECL(DISP_NAME1)                                                                 \
   DISP_DECL(DISP_NAME2)                                                                 \
   DISP_DECL(DISP_NAME3)                                                                 \
-  FUNC_CLS_DECL_POST
+  END_CLASS
 
 
-#define SELECT_DECL_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
-#define FUNC_DECL(FUNC_NAME, ...) SELECT_DECL_MACRO(__VA_ARGS__, FUNC_DECL3, FUNC_DECL2, FUNC_DECL1)(FUNC_NAME, __VA_ARGS__)
+#define SELECT_EXEC_DECL_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
+
+#define FUNC_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
 
 #define FUNC_IMPL(FUNC_NAME, SIGNATURE)                                                 \
   FUNC_NAME::FUNC_NAME()                                                                \
@@ -73,14 +74,8 @@
 
 #define FUNC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_sobject_v& args)
 
-#define MACRO_DECL(MACRO_NAME, DISP_NAME)                                               \
-  class MACRO_NAME : public Lisple::Macro                                               \
-  {                                                                                     \
-   public:                                                                              \
-    MACRO_NAME();                                                                       \
-                                                                                        \
-    Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args); \
-  };
+
+#define MACRO_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
 
 #define MACRO_SUB_DECL(MACRO_BASE, MACRO_NAME, DISP_NAME)                               \
   class MACRO_NAME : public MACRO_BASE                                                  \
