@@ -357,6 +357,18 @@ namespace Lisple
   FUNC_DECL(ConcatFunction, concat_array)
 
   /*!
+   * @brief ConcatBangFunction - splice two or more forms together
+   * into an the first argument array. Any subsequent non-sequence arguments
+   * will be treated as arrays of that argument.
+   *
+   * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
+   *        (concat! [1] 2 [3 4]) => [1 2 3 4]
+   *
+   * Param 0... - The sequences to splice together
+   */
+  FUNC_DECL(ConcatBangFunction, concat_array)
+
+  /*!
    * @brief FlattenFunction - flatten an array or arrays or objects
    * into a single level array
    *

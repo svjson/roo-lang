@@ -47,6 +47,7 @@ namespace Lisple
     lang.emplace("between?", std::make_shared<BetweenPredicateFunction>());
     lang.emplace("case", std::make_shared<CaseMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
+    lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
     lang.emplace("cond", std::make_shared<CondMacro>());
     lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
     lang.emplace("count", std::make_shared<CountFunction>());
@@ -1136,6 +1137,33 @@ namespace Lisple
 
     for (auto& vec : args)
     {
+      if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) && *vec != *NIL)
+      {
+        for (auto& element : vec->get_children())
+        {
+          result->append(element);
+        }
+      }
+      else
+      {
+        result->append(vec);
+      }
+    }
+
+    return result;
+  }
+
+  /* ConcatBangFunction - concat */
+  FUNC_IMPL(ConcatBangFunction, SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
+                                 EXEC_DISPATCH(&ConcatBangFunction::concat_array))))
+
+  FUNC_BODY(ConcatBangFunction, concat_array)
+  {
+    auto result = args.front();
+
+    for (size_t i=1; i<args.size(); i++)
+    {
+      auto& vec = args.at(i);
       if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) && *vec != *NIL)
       {
         for (auto& element : vec->get_children())
