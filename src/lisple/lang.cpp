@@ -1011,8 +1011,10 @@ namespace Lisple
   }
 
   /* AssocBangFunction - assoc! */
-  FUNC_IMPL(AssocBangFunction, SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
-                                    EXEC_DISPATCH(&AssocBangFunction::assoc_bang))))
+  FUNC_IMPL(AssocBangFunction, MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
+                                          EXEC_DISPATCH(&AssocBangFunction::assoc_bang)),
+                                         (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY)),
+                                          EXEC_DISPATCH(&AssocBangFunction::assoc_seq_bang))))
 
   FUNC_BODY(AssocBangFunction, assoc_bang)
   {
@@ -1033,6 +1035,18 @@ namespace Lisple
     {
       throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " + args.front()->to_string());
     }
+
+    return args.front();
+  }
+
+  FUNC_BODY(AssocBangFunction, assoc_seq_bang)
+  {
+    Sexpression& seq = args.front()->as<Lisple::Sexpression>();
+    Number& index = args.at(1)->as<Lisple::Number>();
+
+    sptr_sobject& new_value = args.back();
+
+    seq.get_children().at(index.int_value()) = new_value;
 
     return args.front();
   }

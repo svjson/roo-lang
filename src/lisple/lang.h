@@ -308,7 +308,7 @@ namespace Lisple
    * Param 1 - The key to set
    * Param 2 - The value to associate with the key
    */
-  FUNC_DECL(AssocBangFunction, assoc_bang)
+  FUNC_DECL(AssocBangFunction, assoc_bang, assoc_seq_bang)
 
   /*!
    * @brief AssocInBangFunction - set or replace a nested key in a map or
