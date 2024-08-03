@@ -153,6 +153,16 @@ namespace Lisple
   FUNC_DECL(NotFunction, invert_boolean, not_any)
 
   FUNC_DECL(IncludeFunction, include_file)
+
+  /*!
+   * ApplyFunction - apply a function or executable form to a seq of
+   * arguments.
+   *
+   * Usage: (apply + [1 2 3]) => 6
+   *
+   * Param 0: The function to invoke
+   * Param 1: The seq of arguments
+   */
   FUNC_DECL(ApplyFunction, apply_fn)
 
   /*!
@@ -252,6 +262,14 @@ namespace Lisple
   FUNC_DECL(HeadFunction, head)
   FUNC_DECL(TailFunction, tail)
   FUNC_DECL(LastFunction, last)
+  /*!
+   * @brief RandNthFunction - get a random element from a sequence.
+   * Returns nil if the sequence is empty
+   *
+   * Usage: (rand-nth [0 1 2 3 4])
+   *
+   * Param 0 - The sequence to retrieve a random element from.
+   */
   FUNC_DECL(RandNthFunction, rand_nth)
   FUNC_DECL(CountFunction, count)
 
