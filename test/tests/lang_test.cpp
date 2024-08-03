@@ -1259,6 +1259,20 @@ TEST(WhileMacro, loop_with_counter)
   EXPECT_EQ(*fixture.lisp_reader.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
 }
 
+TEST(WhileMacro, multi_form_loop)
+{
+  // Given
+  LispleTest::LispReaderFixture fixture;
+  fixture.lisp_reader.eval("(def x 0)");
+
+  // When
+  auto retval = fixture.lisp_reader.eval("(while (not= x 10) (set! [x] (+ x 1)) (* x 2))");
+
+  // Then
+  EXPECT_EQ(*retval, Lisple::Number(20));
+  EXPECT_EQ(*fixture.lisp_reader.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
+}
+
 TEST(ReduceFunction, reduce_simple)
 {
   // Given

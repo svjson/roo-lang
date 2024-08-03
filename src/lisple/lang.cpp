@@ -503,7 +503,7 @@ namespace Lisple
   }
 
 
-  MACRO_IMPL(WhileMacro, SIG((FN_ARGS((&Lisple::Type::ANY, false), (&Lisple::Type::ANY, false)),
+  MACRO_IMPL(WhileMacro, SIG((FN_ARGS((&Lisple::Type::ANY, false), (VARARG, &Lisple::Type::ANY, false)),
                               EXEC_DISPATCH(&WhileMacro::make_while))))
 
   MACRO_BODY(WhileMacro, make_while)
@@ -513,7 +513,10 @@ namespace Lisple
     ctx.push_context(true);
     while (ctx.eval(args.front())->is_truthy())
     {
-      retval = ctx.eval(args.back());
+      for (size_t i=1; i<args.size(); i++)
+      {
+        retval = ctx.eval(args.at(i));
+      }
     }
     ctx.pop_context();
 
