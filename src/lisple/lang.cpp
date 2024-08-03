@@ -1589,21 +1589,11 @@ namespace Lisple
     return args.at(0);
   }
 
+  /* EvalFunction - eval */
   FUNC_IMPL(EvalFunction, MULTI_SIG((FN_ARGS((&Lisple::Type::STRING)),
                                      EXEC_DISPATCH(&EvalFunction::eval_string)),
                                     (FN_ARGS((&Lisple::Type::LIST)),
                                      EXEC_DISPATCH(&EvalFunction::eval_seq))))
-
-  FUNC_IMPL(ApplyFunction, SIG((FN_ARGS((&Lisple::Type::FUNCTION), (&Lisple::Type::ARRAY)),
-                                EXEC_DISPATCH(&ApplyFunction::apply_fn))))
-
-  FUNC_BODY(ApplyFunction, apply_fn)
-  {
-    auto& fn = *args.front();
-    auto& fn_args = args.back()->get_children();
-
-    return fn.execute(ctx, fn_args);
-  }
 
   FUNC_BODY(EvalFunction, eval_string)
   {
@@ -1616,17 +1606,31 @@ namespace Lisple
     return ctx.eval(args.at(0));
   }
 
+  /* ApplyFunction - apply */
+  FUNC_IMPL(ApplyFunction, SIG((FN_ARGS((&Lisple::Type::EXEC), (&Lisple::Type::SEQ)),
+                                EXEC_DISPATCH(&ApplyFunction::apply_fn))))
+
+
+  FUNC_BODY(ApplyFunction, apply_fn)
+  {
+    auto& fn = *args.front();
+    auto& fn_args = args.back()->get_children();
+
+    return fn.execute(ctx, fn_args);
+  }
+
+  /* RandNth - rand-nth */
   FUNC_IMPL(RandNthFunction, SIG((FN_ARGS((&Lisple::Type::SEQ)),
                                   EXEC_DISPATCH(&RandNthFunction::rand_nth))))
 
   FUNC_BODY(RandNthFunction, rand_nth)
   {
     auto& seq = args.front();
-    if (seq->get_children().size() == 0)
+    if (seq->get_children().empty())
     {
       return NIL;
     }
-    return seq->get_children().at(std::rand() % (seq->size()-1));
+    return seq->get_children().at(std::rand() % (seq->size()));
   }
 
   FUNC_IMPL(RndFunction, MULTI_SIG((FN_ARGS((&Lisple::Type::NUMBER)),
