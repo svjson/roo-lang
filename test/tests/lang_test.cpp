@@ -1079,6 +1079,36 @@ TEST(RndFunction, min_max)
   }
 }
 
+TEST(RandNth, all_elements_possible)
+{
+  Lisple::LispReader reader;
+
+  std::vector freq { 0, 0, 0, 0, 0 };
+
+  for (int i=0; i < 5000; i++)
+  {
+    int num = reader.eval("(rand-nth [0 1 2 3 4])")->as<Lisple::Number>().value;
+    freq[num]++;;
+  }
+
+  for (int num_freq : freq)
+  {
+    std::cout << "Freq: " << num_freq << std::endl;
+    EXPECT_NE(num_freq, 0);
+  }
+}
+
+TEST(RandNth, single_element)
+{
+  Lisple::LispReader reader;
+
+  for (int i=0; i<1000;i++)
+  {
+    int num = reader.eval("(rand-nth [8])")->as<Lisple::Number>().value;
+    EXPECT_EQ(num, 8);
+  }
+}
+
 TEST(GetFunction, get_from_map)
 {
   // Given
