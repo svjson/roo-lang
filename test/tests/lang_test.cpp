@@ -1273,6 +1273,22 @@ TEST(WhileMacro, multi_form_loop)
   EXPECT_EQ(*fixture.lisp_reader.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
 }
 
+TEST(RemoveBangFunction, remove_even)
+{
+  // Given
+  Lisple::LispReader reader;
+  reader.eval("(def my-seq [1 2 3 4])");
+
+  // When
+  reader.eval("(remove! (fn [n] (prn \"(even?  \" n (even? n) \")\") (even? n)) my-seq)");
+
+  // Then
+  Lisple::Array& my_seq = reader.lookup(Lisple::Word("my-seq"))->as<Lisple::Array>();
+  EXPECT_EQ(my_seq.get_children().size(), 2);
+  EXPECT_EQ(my_seq.get_children().at(0)->as<Lisple::Number>().int_value(), 1);
+  EXPECT_EQ(my_seq.get_children().at(1)->as<Lisple::Number>().int_value(), 3);
+}
+
 TEST(ReduceFunction, reduce_simple)
 {
   // Given

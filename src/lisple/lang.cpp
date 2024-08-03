@@ -93,6 +93,7 @@ namespace Lisple
     lang.emplace("reduce", std::make_shared<ReduceFunction>());
     lang.emplace("reduce-kv", std::make_shared<ReduceKeyValueFunction>());
     lang.emplace("remove", std::make_shared<RemoveFunction>());
+    lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
     lang.emplace("rnd", std::make_shared<RndFunction>());
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
     lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
@@ -1353,6 +1354,26 @@ namespace Lisple
     return result;
   }
 
+  /* RemoveBangFunction - remove! */
+  FUNC_IMPL(RemoveBangFunction, SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                                     EXEC_DISPATCH(&RemoveBangFunction::remove_seq))))
+
+  FUNC_BODY(RemoveBangFunction, remove_seq)
+  {
+    auto& remove_fn = args.front()->as<Lisple::Executable>();
+    auto& seq = args.back()->as<Lisple::Sexpression>();
+
+    auto it = std::remove_if(seq.get_children().begin(),
+                             seq.get_children().end(),
+                             [&] (const Lisple::sptr_sobject& element)
+                             {
+                               Lisple::sptr_sobject_v val_args { element };
+                               return remove_fn.execute(ctx, val_args)->is_truthy();
+                             });
+
+    seq.get_children().erase(it, seq.get_children().end());
+    return args.back();
+  }
 
   /* MapFunction - map */
   FUNC_IMPL(MapFunction, SIG((FN_ARGS((&VARARG, &Type::SEQ), (&Type::EXEC)),

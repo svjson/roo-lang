@@ -440,6 +440,20 @@ namespace Lisple
   FUNC_DECL(RemoveFunction, remove_seq)
 
   /*!
+   * @brief RemoveBangFunction - Remove elements from a Seq by applying a
+   * function/executable to each element, removing any element for which the
+   * predicate function returns a truthy value.
+   *
+   * Usage: (remove! exec seq)
+   *        (remove! (fn [n] (even? n)) [1 2 3 4] => [1 3])
+   *        (remove nil? [1 2 nil 5 6 nil 8 nil]) => [1 2 4 5 8]
+   *
+   * Param 0 - The function/executable to apply to each element
+   * Param 1 - The seq to modify
+   */
+  FUNC_DECL(RemoveBangFunction, remove_seq)
+
+  /*!
    * @brief ReduceFunction - Perform a functional reduce on a sequence
    *
    * Usage: (reduce sequence
