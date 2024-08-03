@@ -434,9 +434,7 @@ namespace Lisple
       }
       else
       {
-        sptr_sobject_v elements;
-        elements.push_back(ifn);
-        elements.push_back(value);
+        sptr_sobject_v elements { ifn, value };
         std::shared_ptr<List> realized = std::make_shared<List>(elements);
         value = ctx.eval(realized);
       }
