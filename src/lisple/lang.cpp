@@ -39,6 +39,7 @@ namespace Lisple
     lang.emplace("->", std::make_shared<ThreadFirstMacro>());
     lang.emplace("abs", std::make_shared<AbsFunction>());
     lang.emplace("and", std::make_shared<AndFunction>());
+    lang.emplace("append!", std::make_shared<AppendBangFunction>());
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang.emplace("assoc", std::make_shared<AssocFunction>());
     lang.emplace("assoc!", std::make_shared<AssocBangFunction>());
@@ -1107,6 +1108,22 @@ namespace Lisple
     }
 
     return result;
+  }
+
+  /* AppendBangFunction - append_bang */
+  FUNC_IMPL(AppendBangFunction, SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
+                                     EXEC_DISPATCH(&AppendBangFunction::append_bang))))
+
+  FUNC_BODY(AppendBangFunction, append_bang)
+  {
+    Lisple::Sexpression& seq = args.front()->as<Lisple::Sexpression>();
+
+    for (size_t i=1; i<args.size(); i++)
+    {
+      seq.append(args.at(i));
+    }
+
+    return args.front();
   }
 
   /* ConcatFunction - concat */

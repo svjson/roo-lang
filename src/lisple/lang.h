@@ -336,6 +336,14 @@ namespace Lisple
   FUNC_DECL(JoinFunction, join_str)
   FUNC_DECL(StrFunction, concat_str)
 
+  /*! @brief AppendBangFunction - append elements to the back of a seq,
+   * modifying the seq.
+   *
+   * Usage: (append! seq 3)
+   *        (append! seq 3 4)
+   */
+  FUNC_DECL(AppendBangFunction, append_bang)
+
   /*!
    * @brief ConcatFunction - splice two or more forms together
    * into an array. Any non sequence arguments will be treated
