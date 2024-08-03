@@ -615,15 +615,10 @@ namespace Lisple
 
   std::shared_ptr<List> List::insert(unsigned int index, sptr_sobject& element)
   {
-    sptr_sobject_v new_elements;
-    for (size_t i=0; i<children.size(); i++)
-    {
-      if (i == index)
-      {
-        new_elements.push_back(element);
-      }
-      new_elements.push_back(children.at(i));
-    }
+    sptr_sobject_v new_elements(children.size()+1);
+    std::copy(children.begin(), children.begin()+index, new_elements.begin());
+    new_elements[index] = element;
+    std::copy(children.begin()+index, children.end(), new_elements.begin()+index+1 );
     return std::make_shared<List>(new_elements, q);
   }
 
