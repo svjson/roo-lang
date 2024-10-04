@@ -1124,7 +1124,7 @@ TEST(EvalFunction, eval_list)
   Lisple::sptr_sobject_v args = fixture.parser.read_sexps("(+ 8 90)");
 
   // When
-  auto result = eval_fn.eval_seq(fixture.ctx, args);
+  auto result = eval_fn.eval_form(fixture.ctx, args);
 
   // Then
   EXPECT_EQ(*result, Lisple::Number(98));
@@ -1217,7 +1217,6 @@ TEST(AssocFunction, add_key_to_map)
   EXPECT_EQ(*result, *fixture.lisp_reader.eval("{:a 1 :b 2 :c 3}"));
   EXPECT_EQ(*fixture.lisp_reader.lookup(Lisple::Word("my-map")),
             *fixture.lisp_reader.eval("{:a 1 :b 2}"));
-
 }
 
 TEST(AssocFunction, replace_key_in_map)
@@ -1234,6 +1233,47 @@ TEST(AssocFunction, replace_key_in_map)
   EXPECT_EQ(*fixture.lisp_reader.lookup(Lisple::Word("my-map")), *fixture.lisp_reader.eval("{:a 1 :b 2}"));
 }
 
+TEST(AssocBangFunction, add_key_to_map)
+{
+  // Given
+  Lisple::LispReader runtime;
+  runtime.eval("(def my-map {:a 1 :b 2})");
+
+  // When
+  auto result = runtime.eval("(assoc! my-map :c 3)");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c 3}"));
+  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2 :c 3}"));
+}
+
+TEST(AssocBangFunction, replace_key_in_map)
+{
+  // Given
+  Lisple::LispReader runtime;
+  runtime.eval("(def my-map {:a 1 :b 2})");
+
+  // When
+  auto result = runtime.eval("(assoc! my-map :b 10)");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10}"));
+  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 10}"));
+}
+
+TEST(AssocBangFunction, add_and_replace_multiple)
+{
+  // Given
+  Lisple::LispReader runtime;
+  runtime.eval("(def my-map {:a 1 :b 2})");
+
+  // When
+  auto result = runtime.eval("(assoc! my-map :b 10 :c 3 :d \"some string\")");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
+  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
+}
 
 TEST(ContainsPredicateFunction, contains)
 {
@@ -1327,7 +1367,7 @@ TEST(SetBangMacro, set_global_map_value)
 
   // Then
   auto& global_map = *fixture.lisp_reader.get_current_namespace().lookup(Lisple::Word("global-map"));
-  auto expected_map = fixture.lisp_reader.eval("{ :key1 10 :key2 \"Number 0\"}");
+  auto expected_map = fixture.lisp_reader.eval("{:key1 10 :key2 \"Number 9\"}");
   ASSERT_EQ(global_map, *expected_map);
 }
 

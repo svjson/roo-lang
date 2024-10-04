@@ -1180,32 +1180,38 @@ namespace Lisple
   }
 
   /* AssocBangFunction - assoc! */
-  FUNC_IMPL(AssocBangFunction, MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
+  FUNC_IMPL(AssocBangFunction, MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                                           EXEC_DISPATCH(&AssocBangFunction::assoc_bang)),
                                          (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY)),
                                           EXEC_DISPATCH(&AssocBangFunction::assoc_seq_bang))))
 
   FUNC_BODY(AssocBangFunction, assoc_bang)
   {
-    sptr_sobject assoc_key = args.at(1);
-    sptr_sobject value = args.back();
+    if (args.size() % 2 == 0)
+    {
+      throw Lisple::InvocationException("No value given for key '" + args.back()->to_string() + "'");
+    }
 
     if (Lisple::Type::MAP.is_type_of(*args.front()))
     {
       Map& map = args.front()->as<Map>();
-      map.set_property(assoc_key, value);
+      for (size_t i=1; i<args.size()-1; i+=2)
+      {
+        map.set_property(args.at(i), args.at(i+1));
+      }
+      return args.front();
     }
     else if (Lisple::Type::HOST_OBJECT.is_type_of(*args.front()))
     {
       AbstractHostObject& ho = args.front()->as<AbstractHostObject>();
-      ho.set_property(&ctx, *assoc_key, value);
-    }
-    else
-    {
-      throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " + args.front()->to_string());
+      for (size_t i=1; i<args.size()-1; i+=2)
+      {
+        ho.set_property(&ctx, *args.at(i), args.at(i+1));
+      }
+      return args.front();
     }
 
-    return args.front();
+    throw Lisple::TypeError("Cannot mutate " + args.front()->to_string());
   }
 
   FUNC_BODY(AssocBangFunction, assoc_seq_bang)
