@@ -749,9 +749,9 @@ namespace Lisple
   {
     if (floorf(num) || num == 0.0)
     {
-      return std::make_shared<Number>(static_cast<int>(num));
+      return Number::make(static_cast<int>(num));
     }
-    return std::make_shared<Number>(num);
+    return Number::make(num);
   }
 
   /* AbsFunction - abs */
@@ -774,17 +774,17 @@ namespace Lisple
 
     if (Type::NUMBER.is_type_of(*obj))
     {
-      return std::make_shared<Number>(obj->as<Number>().int_value());
+      return Number::make(obj->as<Number>().int_value());
     }
     else if (Type::CHAR.is_type_of(*obj))
     {
-      return std::make_shared<Number>(static_cast<int>(obj->as<Char>().value));
+      return Number::make(static_cast<int>(obj->as<Char>().value));
     }
 
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
   }
 
-  FUNC_IMPL(PlusFunction, SIG((FN_ARGS((VARARG, &Lisple::Type::NUMBER)),
+  FUNC_IMPL(PlusFunction, SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                                EXEC_DISPATCH(&PlusFunction::do_addition))))
 
   FUNC_BODY(PlusFunction, do_addition)
@@ -794,40 +794,83 @@ namespace Lisple
       throw LispleException("No arguments given to +");
     }
 
-    float result = Lisple::Number::value_of(*args.at(0));
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result += Lisple::Number::value_of(*args.at(i));
+      result = *result + args.at(i)->as<Number>();
     }
 
-    return box_number(result);
+    return result;
   }
 
-  FUNC_IMPL(MinusFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
+  FUNC_IMPL(MinusFunction, SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                                 EXEC_DISPATCH(&MinusFunction::do_subtraction))))
 
 
 
   FUNC_BODY(MinusFunction, do_subtraction)
   {
-    return box_number(Number::value_of(*args.at(0)) - Number::value_of(*args.at(1)));
+    if (args.size() == 0)
+    {
+      throw LispleException("No arguments given to -");
+    }
+
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+
+    if (args.size() == 1)
+    {
+      result = result->flip_sign();
+    }
+    else
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        result = *result - args.at(i)->as<Number>();
+      }
+    }
+
+    return result;
   }
 
-  FUNC_IMPL(DivideFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
+  FUNC_IMPL(DivideFunction, SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                                  EXEC_DISPATCH(&DivideFunction::do_division))))
 
   FUNC_BODY(DivideFunction, do_division)
   {
-    return box_number(Number::value_of(*args.at(0)) / Number::value_of(*args.at(1)));
+    if (args.size() == 0)
+    {
+      throw LispleException("No arguments given to /");
+    }
+
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result = *result / args.at(i)->as<Number>();
+    }
+
+    return result;
   }
 
-  FUNC_IMPL(MultiplyFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
+  FUNC_IMPL(MultiplyFunction, SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                                    EXEC_DISPATCH(&MultiplyFunction::do_multiplication))));
 
   FUNC_BODY(MultiplyFunction, do_multiplication)
   {
-    return box_number(Number::value_of(*args.at(0)) * Number::value_of(*args.at(1)));
+    if (args.size() == 0)
+    {
+      throw LispleException("No arguments given to *");
+    }
+
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result = *result * args.at(i)->as<Number>();
+    }
+
+    return result;
   }
 
   /* LessThanFunction */
@@ -896,16 +939,38 @@ namespace Lisple
 
   FUNC_BODY(RangeFunction, make_range)
   {
-    float begin = args.front()->as<Number>().float_value();
-    float end = args.back()->as<Number>().float_value();
-
     sptr_sobject_v result;
 
-    for (float i = begin;
-         begin < end ? i <= end : i >= end;
-         begin < end ? i++ : i--)
+    Number& begin_num = args.front()->as<Number>();
+    Number& end_num = args.back()->as<Number>();
+
+
+    if (begin_num.is_num_type(NumberType::INT) &&
+        end_num.is_num_type(NumberType::INT))
     {
-      result.push_back(box_number(i));
+      int begin = begin_num.int_value();
+      int end = end_num.int_value();
+
+      result.reserve(std::abs(end-begin));
+
+      for (int i = begin;
+           begin < end ? i <= end : i >= end;
+           begin < end ? i++ : i--)
+      {
+        result.push_back(Number::make(i));
+      }
+    }
+    else
+    {
+      float begin = begin_num.float_value();
+      float end = end_num.float_value();
+
+      for (float i = begin;
+           begin < end ? i <= end : i >= end;
+           begin < end ? i++ : i--)
+      {
+        result.push_back(box_number(i));
+      }
     }
 
     return std::make_shared<Array>(result);
@@ -1712,7 +1777,7 @@ namespace Lisple
     int min = args.size() == 1 ? 0 : args.at(0)->as<Lisple::Number>().value;
     int max = args.at(args.size() == 1 ? 0 : 1)->as<Lisple::Number>().value;
 
-    return std::make_shared<Lisple::Number>((std::rand() % (max - min)) + min);
+    return Number::make((std::rand() % (max - min)) + min);
   }
 
   FUNC_IMPL(VectorFunction, SIG((FN_ARGS((&VARARG, &Type::ANY)),

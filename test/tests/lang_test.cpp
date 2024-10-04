@@ -812,6 +812,30 @@ TEST(MinusFunction, on_evaluated_numbers)
   EXPECT_EQ(*result, Lisple::Number(12));
 }
 
+TEST(MinusFunction, single_positive_flips_sign)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  auto result = runtime.eval("(- 25)");
+
+  // Then
+  ASSERT_EQ(*result, Lisple::Number(-25));
+}
+
+TEST(MinusFunction, single_negative_flips_sign)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  auto result = runtime.eval("(- -25)");
+
+  // Then
+  ASSERT_EQ(*result, Lisple::Number(25));
+}
+
 TEST(RangeFunction, rising_numbers)
 {
   LispleTest::LispReaderFixture fixture;

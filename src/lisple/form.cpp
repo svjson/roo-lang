@@ -13,6 +13,18 @@
 
 namespace Lisple
 {
+  const int INT_CONSTANTS_SIZE = 1001;
+  std::vector<std::shared_ptr<Number>> INT_CONSTANTS = []() {
+    std::vector<std::shared_ptr<Number>> ints(INT_CONSTANTS_SIZE);
+
+    for (int i=0; i<INT_CONSTANTS_SIZE; i++)
+    {
+      ints[i] = std::make_shared<Number>(i);
+    }
+
+    return ints;
+  }();
+
   /*
    * Object - abstract base class for all forms
    **/
@@ -392,6 +404,67 @@ namespace Lisple
     return value;
   }
 
+  std::shared_ptr<Number> Number::operator+(const Number& other)
+  {
+    if (num_type == NumberType::INT &&
+        other.num_type == NumberType::INT)
+    {
+      return make(static_cast<int>(value + other.value));
+    }
+
+    return make(value + other.value);
+  }
+
+  std::shared_ptr<Number> Number::operator-(const Number& other)
+  {
+    if (num_type == NumberType::INT &&
+        other.num_type == NumberType::INT)
+    {
+      return make(static_cast<int>(value - other.value));
+    }
+
+    return make(value - other.value);
+  }
+
+  std::shared_ptr<Number> Number::operator*(const Number& other)
+  {
+    if (num_type == NumberType::INT &&
+        other.num_type == NumberType::INT)
+    {
+      return make(static_cast<int>(value * other.value));
+    }
+
+    return make(value * other.value);
+  }
+
+  std::shared_ptr<Number> Number::operator/(const Number& other)
+  {
+    int int_result = value / other.value;
+    float float_result = value / other.value;
+    if (int_result == float_result)
+    {
+      return make(int_result);
+    }
+    return make(float_result);
+  }
+
+  std::shared_ptr<Number> Number::flip_sign()
+  {
+    float flipped = -value;
+
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return Number::make(static_cast<int>(flipped));
+    case NumberType::FLOAT:
+      return Number::make(flipped);
+    case NumberType::LONG:
+      return Number::make(static_cast<long>(flipped));
+    }
+
+    return Number::make(flipped);
+  }
+
   bool Number::has_value(const int value) const
   {
     return this->value == value;
@@ -419,6 +492,10 @@ namespace Lisple
 
   std::shared_ptr<Number> Number::make(int value)
   {
+    if (value >= 0 && value < INT_CONSTANTS_SIZE)
+    {
+      return INT_CONSTANTS[value];
+    }
     return std::make_shared<Number>(value);
   }
 
@@ -443,11 +520,11 @@ namespace Lisple
     {
       if (str_value.find(".") == std::string::npos)
       {
-        return std::make_shared<Number>(stoi(str_value));
+        return Number::make(stoi(str_value));
       }
       else
       {
-        return std::make_shared<Number>(stof(str_value));
+        return Number::make(stof(str_value));
       }
     }
     catch (std::runtime_error& error)

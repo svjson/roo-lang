@@ -131,7 +131,7 @@ namespace Lisple
         ctx.append(std::make_unique<Word>(sym.value));
         break;
       case Token::NUMBER:
-        ctx.append(std::make_unique<Number>(*Number::make(sym.value)));
+        ctx.append(Number::make(sym.value));
         break;
       case Token::SQUOT:
         eof_check(symbols, offset);

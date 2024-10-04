@@ -11,6 +11,10 @@
 namespace Lisple
 {
   class Context;
+  class Number;
+
+  extern const int INT_CONSTANTS_SIZE;
+  extern std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
 
   class Object
   {
@@ -249,6 +253,13 @@ namespace Lisple
 
     bool has_value(const int value) const override;
     bool has_value(const float value) const override;
+
+    std::shared_ptr<Number> operator+(const Number& other);
+    std::shared_ptr<Number> operator-(const Number& other);
+    std::shared_ptr<Number> operator*(const Number& other);
+    std::shared_ptr<Number> operator/(const Number& other);
+
+    std::shared_ptr<Number> flip_sign();
 
     static std::shared_ptr<Number> make(int value);
     static std::shared_ptr<Number> make(float value);
