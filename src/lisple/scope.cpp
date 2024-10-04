@@ -19,12 +19,17 @@ namespace Lisple
 
   void Scope::mutate(const Lisple::Word& name, const Lisple::sptr_sobject& obj)
   {
+    remove(name);
+    objects.emplace(name.value, obj);
+  }
+
+  void Scope::remove(const Lisple::Word& name)
+  {
     if (!objects.count(name.value))
     {
       throw Lisple::IdentifierException("Unknown identifier '" + name.value + "'");
     }
     objects.erase(name.value);
-    objects.emplace(name.value, obj);
   }
 
   bool Scope::has(const Lisple::Word& identifier) const
