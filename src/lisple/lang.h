@@ -293,8 +293,25 @@ namespace Lisple
    * Param 1 - The value to test for
    */
   FUNC_DECL(ContainsPredicateFunction, contains)
+
+  /*!
+   * @brief TakeFunction - Create a new sequence from the n first elements of
+   * a sequence. If n is larger than the size of the sequence, all elements are
+   * kept.
+   *
+   * Usage: (take 2 [1 2 3 4 5]) => [1 2]
+   */
   FUNC_DECL(TakeFunction, take_fn)
 
+  /*!
+   * @brief GetFunction - Get a property by value from a complex object, ie a map
+   * or a host object.
+   *
+   * Usage: (get {:a 1 :b 2} :a) => 1
+   *
+   * Param 0 - The map or complex object
+   * Param 1 - the property value, usually a key.
+   */
   FUNC_DECL(GetFunction, get);
   FUNC_DECL(NthFunction, get_nth);
 
