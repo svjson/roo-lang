@@ -629,7 +629,7 @@ namespace Lisple
 
   MACRO_BODY(IfMacro, make_if)
   {
-    Lisple::sptr_sobject retval = Lisple::NIL;
+    sptr_sobject retval = Lisple::NIL;
 
     ctx.push_context(true);
     auto condition = ctx.eval(args.front());
@@ -1074,7 +1074,7 @@ namespace Lisple
 
 
   MinMaxFunction::MinMaxFunction(bool min)
-    : Function(SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
+    : Function(SIG((FN_ARGS((&Lisple::Type::NUMBER), (VARARG, &Lisple::Type::NUMBER)),
                     EXEC_DISPATCH(&MinMaxFunction::select_min_or_max))))
     , min(min)
   {
@@ -1082,10 +1082,20 @@ namespace Lisple
 
   FUNC_BODY(MinMaxFunction, select_min_or_max)
   {
-    int a = args.at(0)->as<Lisple::Number>().value;
-    int b = args.at(1)->as<Lisple::Number>().value;
+    float result_val = args.front()->as<Lisple::Number>().value;
+    size_t result_index = 0;
 
-    return (a < b) == min ? args.at(0) : args.at(1);
+    for (size_t i=1; i<args.size(); i++)
+    {
+      float num = args.at(i)->as<Lisple::Number>().value;
+      if (min == (num < result_val))
+      {
+        result_val = num;
+        result_index = i;
+      }
+    }
+
+    return args.at(result_index);
   }
 
   MACRO_IMPL(AndMacro, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, false)),

@@ -1025,6 +1025,7 @@ TEST(MinMaxFunction, min)
   EXPECT_EQ(*fixture.ctx.eval("(min 1 10)"), Lisple::Number(1));
   EXPECT_EQ(*fixture.ctx.eval("(min 10 0)"), Lisple::Number(0));
   EXPECT_EQ(*fixture.ctx.eval("(min 0 10)"), Lisple::Number(0));
+  EXPECT_EQ(*fixture.ctx.eval("(min 4 10 2 8 200)"), Lisple::Number(2));
 }
 
 TEST(MinMaxFunction, max)
@@ -1039,6 +1040,7 @@ TEST(MinMaxFunction, max)
   EXPECT_EQ(*fixture.ctx.eval("(max 1 10)"), Lisple::Number(10));
   EXPECT_EQ(*fixture.ctx.eval("(max 10 0)"), Lisple::Number(10));
   EXPECT_EQ(*fixture.ctx.eval("(max 0 10)"), Lisple::Number(10));
+  EXPECT_EQ(*fixture.ctx.eval("(max 4 10 9 199 200 8 2)"), Lisple::Number(200));
 }
 
 TEST(ThresholdFunction, threshold)
