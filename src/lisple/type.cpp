@@ -30,6 +30,11 @@ namespace Lisple
     return this->coerce(ctx, obj);
   }
 
+  bool TypeRef::is_host_object() const
+  {
+    return false;
+  }
+
   const std::string& TypeRef::to_string() const
   {
     return name;

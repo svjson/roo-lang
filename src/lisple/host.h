@@ -524,7 +524,7 @@ namespace Lisple
   /**
    *
    */
-  class HostTypeRef : public ::Lisple::TypeRef
+  class HostTypeRef : public Lisple::TypeRef
   {
     Lisple::HostObjectType host_type;
     std::unique_ptr<std::string> make_fn;
@@ -534,6 +534,7 @@ namespace Lisple
 
     bool is_type_of(const Lisple::Object& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
+    bool is_host_object() const override;
   };
 
   typedef std::map<std::string, Accessors> acc_map;

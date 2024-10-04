@@ -59,6 +59,8 @@ namespace Lisple
     virtual CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
     CoercionResult coerce(LispReader& reader, sptr_sobject& obj) const;
 
+    virtual bool is_host_object() const;
+
     const std::string& to_string() const;
 
     friend class SeqRef;

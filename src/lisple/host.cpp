@@ -76,6 +76,10 @@ namespace Lisple
     return CoercionResult { false, nullptr };
   }
 
+  bool HostTypeRef::is_host_object() const
+  {
+    return true;
+  }
 
   /**
    * AccessorLookup implementation
