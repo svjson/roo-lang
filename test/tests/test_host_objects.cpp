@@ -8,6 +8,30 @@
 
 namespace Tests
 {
+  /* RegNumber */
+  RegNumber::RegNumber(const std::string& letters, const std::string& numbers)
+    : letters(letters)
+    , numbers(numbers)
+  {
+  }
+
+  const std::string& RegNumber::get_letters() const
+  {
+    return letters;
+  }
+
+  const std::string& RegNumber::get_numbers() const
+  {
+    return numbers;
+  }
+
+  bool RegNumber::operator<(const RegNumber& other) const
+  {
+    return this->letters < other.letters ||
+      (this->letters == other.letters && this->numbers < other.numbers);
+  }
+
+  /* Vehicle */
   Vehicle::Vehicle(const std::string& model_name, int seats)
     : model_name(model_name)
     , seats(seats)
@@ -29,16 +53,34 @@ namespace Tests
     this->seats = seats;
   }
 
-  SHKEY(MODEL_NAME, "model-name");
-  SHKEY(SEATS, "seats");
+  bool Vehicle::operator==(const Vehicle& other) const
+  {
+    return this->model_name == other.model_name &&
+      this->seats == other.seats;
+  }
 
+  SHKEY(MODEL_NAME, "model-name")
+  SHKEY(LETTERS, "letters")
+  SHKEY(NUMBERS, "numbers")
+  SHKEY(SEATS, "seats")
+
+  /* RegNumberAdapter */
+  HOST_ADAPTER_IMPL("regnum", RegNumberAdapter, RegNumber, REG_NUMBER, (
+                      { K_GET(RegNumberAdapter, LETTERS, letters),
+                        K_GET(RegNumberAdapter, NUMBERS, numbers) }));
+
+  ADAPTER_PROP_GET__METHOD(RegNumberAdapter, letters, Lisple::String, get_letters);
+  ADAPTER_PROP_GET__METHOD(RegNumberAdapter, numbers, Lisple::String, get_numbers);
+
+  /* VehicleAdapter */
   HOST_ADAPTER_IMPL("vehicle", VehicleAdapter, Vehicle, VEHICLE, (
                       { K_GET(VehicleAdapter, MODEL_NAME, model_name),
-                        K_GET(VehicleAdapter, SEATS, seats)}))
+                        K_GET(VehicleAdapter, SEATS, seats) }));
 
   ADAPTER_PROP_GET__METHOD(VehicleAdapter, model_name, Lisple::String, get_model_name);
   ADAPTER_PROP_GET__METHOD(VehicleAdapter, seats, Lisple::Number, get_seats);
 
+  /* Vehicle Make-function */
   FUNC_IMPL(VehicleMakeFunction, SIG((FN_ARGS((&Lisple::Type::MAP)),
                                       EXEC_DISPATCH(&VehicleMakeFunction::make))))
 

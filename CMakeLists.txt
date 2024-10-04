@@ -22,18 +22,19 @@ if (MSVC)
 endif()
 
 set(lisple_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/adapter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/context.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/dir_root_file_system.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/form.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/impl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lexer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lisp_reader.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/parser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lisple_exception.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/parser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/reader.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/scope.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/struct.cpp

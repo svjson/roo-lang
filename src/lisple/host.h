@@ -1033,6 +1033,17 @@
 #define DECL_SHKEY(CONSTNAME) extern const std::shared_ptr<Lisple::Key> CONSTNAME;
 #define SHKEY(CONSTNAME,KEYNAME) const std::shared_ptr<Lisple::Key> CONSTNAME = std::make_shared<Lisple::Key>(KEYNAME);
 
+// Helper to detect if a type has operator==
+template <typename T, typename = void>
+struct is_comparable : std::false_type {};
+
+template <typename T>
+struct is_comparable<T, std::void_t<decltype(std::declval<T>() == std::declval<T>())>> : std::true_type {};
+
+// Specialization for std::map<K, V> to check if both K and V are comparable
+template <typename K, typename V>
+struct is_comparable<std::map<K, V>>
+    : std::integral_constant<bool, is_comparable<K>::value && is_comparable<V>::value> {};
 
 namespace Lisple
 {
@@ -1268,6 +1279,30 @@ namespace Lisple
       }
       __cached_children = kvs;
       return __cached_children;
+    }
+
+    template <typename U = T>
+    typename std::enable_if<is_comparable<U>::value, bool>::type
+    compare_to(const HostObject<T>& other) const
+    {
+      auto equals = [&]() { return this->get_object() == other.get_object(); };
+      return equals();  // Only evaluated if T supports ==
+    }
+
+    template <typename U = T>
+    typename std::enable_if<!is_comparable<U>::value, bool>::type
+    compare_to(const HostObject<T>& other) const
+    {
+      return this->to_string() == other.to_string();
+    }
+
+
+    bool operator==(const Lisple::Object& other) const override
+    {
+      if (other.get_type() != Form::HOST_OBJECT) return false;
+      if (other.as<AbstractHostObject>().get_host_type() != this->get_host_type()) return false;
+
+      return compare_to(other.as<HostObject<T>>());
     }
 
     std::string to_string(int depth=-1) const override

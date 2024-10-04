@@ -107,4 +107,37 @@ namespace Lisple
     return subst_sexp_lmnt(list, 0, prepended);
   }
 
+  template <>
+  std::string unwrap_primitive<std::string>(const Lisple::Object& obj)
+  {
+    return const_cast<std::string&>(obj.as<Lisple::String>().value);
+  }
+
+  template <>
+  int unwrap_primitive<int>(const Lisple::Object& obj)
+  {
+    return obj.as<Lisple::Number>().value;
+  }
+
+  Lisple::sptr_sobject wrap_primitive(bool value)
+  {
+    return Lisple::Boolean::wrap(value);
+  }
+
+  Lisple::sptr_sobject wrap_primitive(int value)
+  {
+    return Lisple::Number::make(value);
+  }
+
+  Lisple::sptr_sobject wrap_primitive(long value)
+  {
+    return Lisple::Number::make(value);
+  }
+
+  Lisple::sptr_sobject wrap_primitive(std::string value)
+  {
+    return Lisple::String::make(value);
+  }
+
+
 }

@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "form.h"
 #include "type.h"
@@ -42,6 +43,23 @@ namespace Lisple
    * Prepend the string value of the head element of a list
    */
   std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val);
+
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value, T>::type unwrap_primitive(const Lisple::Object &obj)
+  {
+    return obj.as<Lisple::Number>().long_value();
+  }
+
+  template <typename T>
+  //  T unwrap_primitive(const Lisple::Object&);
+  typename std::enable_if<!std::is_integral<T>::value, T>::type unwrap_primitive(const Lisple::Object &obj);
+
+  Lisple::sptr_sobject wrap_primitive(bool value);
+  Lisple::sptr_sobject wrap_primitive(int value);
+  Lisple::sptr_sobject wrap_primitive(long value);
+  Lisple::sptr_sobject wrap_primitive(std::string value);
+
+
 }
 
 #endif
