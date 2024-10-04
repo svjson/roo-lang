@@ -94,6 +94,7 @@ TEST(Signature, matches__leading_varargs)
                                               Lisple::arg(&Lisple::Type::FUNCTION)},
     std::bind(&Lisple::MapFunction::map_seq, &dummy_func, std::placeholders::_1, std::placeholders::_2));
 
+  EXPECT_TRUE(signature.matches({ FUNCTION }));
   EXPECT_TRUE(signature.matches({ ARRAY, FUNCTION }));
   EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, FUNCTION }));
   EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, ARRAY, FUNCTION }));

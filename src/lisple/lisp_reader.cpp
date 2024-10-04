@@ -194,6 +194,7 @@ namespace Lisple
       case Lisple::Form::CHAR:
       case Lisple::Form::NUMBER:
       case Lisple::Form::SYMBOL:
+      case Lisple::Form::FUNCTION:
       case Lisple::Form::NIL:
       case Lisple::Form::KEY:
       case Lisple::Form::BOOLEAN:
