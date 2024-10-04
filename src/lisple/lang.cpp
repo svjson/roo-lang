@@ -299,26 +299,53 @@ namespace Lisple
 
   MACRO_BODY(LetMacro, make_let)
   {
-    Array var_def_array = args.front()->as<Array>();
+    Array bindings = args.front()->as<Array>();
 
-    if (var_def_array.get_children().size() % 2 != 0)
+    if (bindings.get_children().size() % 2 != 0)
     {
-      throw LispleException("Wrong number of parameters to let-expression: " + var_def_array.to_string());
+      throw LispleException("Wrong number of parameters in binding form of let expression: " + bindings.to_string());
     }
 
-    for (size_t i=0; i < var_def_array.size(); i+=2)
+    for (size_t i=0; i<bindings.size(); i+=2)
     {
-      auto& var_name_obj = *var_def_array.get_children().at(i);
-      auto var_val_obj = ctx.eval(var_def_array.get_children().at(i+1));
-
-      if (!Type::WORD.is_type_of(var_name_obj))
-      {
-        throw TypeError("Invalid variable identifier in let-expression: " + var_name_obj.to_string() + " in " + var_def_array.to_string());
-      }
+      auto& binding_form = *bindings.get_children().at(i);
+      auto init_expr = ctx.eval(bindings.get_children().at(i+1));
 
       Scope var_scope;
-      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
-      ctx.push_context(true, var_scope);
+      if (*Lisple::NIL == binding_form)
+      {
+        throw TypeError("Cannot bind value to nil");
+      }
+      else if (Type::ARRAY.is_type_of(binding_form))
+      {
+        if (!Type::SEQ.is_type_of(*init_expr))
+        {
+          throw TypeError("Invalid init expression in let-expression: " + init_expr->to_string() + ". Must be Seq for binding form: " + binding_form.to_string());
+        }
+
+        for (size_t b=0; b<binding_form.size(); b++)
+        {
+          Lisple::sptr_sobject& b_form = binding_form.get_children().at(b);
+          if (!Type::WORD.is_type_of(*b_form))
+          {
+            throw TypeError("Invalid binding form in let expression: " + b_form->to_string() + " in " + binding_form.to_string());
+          }
+          Lisple::sptr_sobject value = b < init_expr->size()
+            ? init_expr->get_children().at(b)
+            : Lisple::NIL;
+          var_scope.store(b_form->as<Word>(), value);
+        }
+        ctx.push_context(true, var_scope);
+      }
+      else if (Type::WORD.is_type_of(binding_form))
+      {
+        var_scope.store(binding_form.as<Word>(), init_expr);
+        ctx.push_context(true, var_scope);
+      }
+      else
+      {
+        throw TypeError("Invalid binding form in let expression: " + binding_form.to_string() + " in " + bindings.to_string());
+      }
     }
 
     sptr_sobject result;
@@ -328,7 +355,7 @@ namespace Lisple
       result = ctx.eval(args.at(i));
     }
 
-    for (size_t i=0; i < var_def_array.size() / 2; i++)
+    for (size_t i=0; i < bindings.size() / 2; i++)
     {
       ctx.pop_context();
     }
@@ -365,7 +392,7 @@ namespace Lisple
 
       if (!Type::WORD.is_type_of(var_name_obj))
       {
-        throw TypeError("Invalid variable identifier in let-expression: " + var_name_obj.to_string() + " in " + var_def_array.to_string());
+        throw TypeError("Invalid variable identifier in binding form of when-let expression: " + var_name_obj.to_string() + " in " + var_def_array.to_string());
       }
 
       Scope var_scope;

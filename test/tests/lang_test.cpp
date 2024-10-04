@@ -544,6 +544,18 @@ TEST(LetMacro, define_and_exec_let_with_dynamic_values)
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
+TEST(LetMacro, destructure_array)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  Lisple::sptr_sobject result = runtime.eval("(let [[a b] [10 25]] (+ a b))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Number::make(35));
+}
+
 TEST(ThreadFirstMacro, deep_map_traversal)
 {
   // Given
