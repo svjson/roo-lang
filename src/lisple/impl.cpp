@@ -14,6 +14,12 @@ namespace Lisple
 
   const std::string str_val(const Object& obj) noexcept
   {
+    if (Type::NUMBER.is_type_of(obj) ||
+        *NIL == obj)
+    {
+      return obj.to_string();
+    }
+
     if (Type::STRING.is_type_of(obj) ||
         Type::KEY.is_type_of(obj) ||
         Type::SYMBOL.is_type_of(obj) ||

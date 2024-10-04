@@ -7,6 +7,7 @@
 
 #include "form.h"
 #include "type.h"
+#include "lisple_exception.h"
 
 namespace Lisple
 {
