@@ -930,16 +930,19 @@ namespace Lisple
      * the __cached_children is needed.
      * This could give rise to all sorts of problems down the road, and
      * we should probably just own up to the fact that temporary copies
-     * of shared_ptr and vector aren't expensive and change the signature
-     * to always return the child array by copy.
+     * of shared_ptr and vector aren't that expensive and change the
+     * signature to always return the child array by copy.
      */
     sptr_sobject_v& get_children() override
     {
       sptr_sobject_v kvs;
       for (auto& k : keys())
       {
-        kvs.push_back(k);
-        kvs.push_back(get_sptr_property(*k));
+        if (*get_sptr_property(*k) != *Lisple::NIL)
+        {
+          kvs.push_back(k);
+          kvs.push_back(get_sptr_property(*k));
+        }
       }
       __cached_children = kvs;
       return __cached_children;
