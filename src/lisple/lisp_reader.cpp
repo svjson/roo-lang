@@ -297,7 +297,7 @@ namespace Lisple
     sptr_sobject inv = lookup(Lisple::Word(identifier));
     if (!inv)
     {
-      throw Lisple::InvocationException("Unknown identifier: " + identifier);
+      throw Lisple::IdentifierException("Unknown identifier: '" + identifier +"'");
     }
 
     try
@@ -333,7 +333,7 @@ namespace Lisple
       Lisple::sptr_sobject result = current_namespace->lookup(identifier);
       if (result) return result;
 
-      throw Lisple::IdentifierException("Unknown identifier: " + identifier.value);
+      throw Lisple::IdentifierException("Unknown identifier: '" + identifier.value + "'");
     }
 
     Lisple::sptr_sobject lang_obj = lang.lookup(identifier);
@@ -350,7 +350,7 @@ namespace Lisple
 
     if (!fallback)
     {
-      throw Lisple::IdentifierException("Unknown identifier: " + identifier.value);
+      throw Lisple::IdentifierException("Unknown identifier: '" + identifier.value + "'");
     }
     return fallback;
   }

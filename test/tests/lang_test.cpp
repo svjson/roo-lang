@@ -108,7 +108,7 @@ TEST(NsMacro, import_existing_namespace)
     message = e.what();
   }
 
-  EXPECT_THAT(message, HasSubstr("Unknown identifier: what-is-hot?"));
+  EXPECT_THAT(message, HasSubstr("Unknown identifier: 'what-is-hot?'"));
 }
 
 TEST(NsMacro, import_non_existing_aliased_namespace)
@@ -154,7 +154,7 @@ TEST(NsMacro, import_existing_aliased_namespace)
     message = e.what();
   }
 
-  EXPECT_THAT(message, HasSubstr("Unknown identifier: o/what-is-hot?"));
+  EXPECT_THAT(message, HasSubstr("Unknown identifier: 'o/what-is-hot?'"));
 }
 
 

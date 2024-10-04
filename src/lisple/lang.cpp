@@ -336,7 +336,7 @@ namespace Lisple
 
     if (var_def_array.get_children().size() % 2 != 0)
     {
-      throw LispleException("Wrong number of parameters to let-expression: " + var_def_array.to_string());
+      throw LispleException("Wrong number of parameters in binding form of when-let expression: " + var_def_array.to_string());
     }
 
     bool contains_nil = false;

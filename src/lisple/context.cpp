@@ -146,7 +146,7 @@ namespace Lisple
 
     if (*exec == *NIL)
     {
-      throw InvocationException("Unknown identifier: " + fn_name);
+      throw IdentifierException("Unknown identifier: '" + fn_name + "'");
     }
     return exec->execute(*this, args);
   }
