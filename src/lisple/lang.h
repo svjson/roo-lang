@@ -53,6 +53,9 @@ namespace Lisple
 
   MACRO_DECL(DoMacro, make_do)
   MACRO_DECL(WhileMacro, make_while)
+
+  MACRO_DECL(IfLetMacro, make_if_let)
+
   MACRO_DECL(IfMacro, make_if)
   /*!
    * WhenMacro - optionally execute forms if conditional expression evaluates

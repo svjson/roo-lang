@@ -581,6 +581,16 @@ TEST(LetMacro, destructure_array)
   ASSERT_EQ(*result, *Lisple::Number::make(35));
 }
 
+TEST(IfLetMacro, if_let)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // Then
+  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(), "10");
+  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(), "\"no value\"");
+}
+
 TEST(ThreadFirstMacro, deep_map_traversal)
 {
   // Given

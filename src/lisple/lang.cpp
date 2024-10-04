@@ -59,6 +59,7 @@ namespace Lisple
     lang.emplace("eval", std::make_shared<EvalFunction>());
     lang.emplace("even?", std::make_shared<OddEvenPredicateFunction>(0));
     lang.emplace("if", std::make_shared<IfMacro>());
+    lang.emplace("if-let", std::make_shared<IfLetMacro>());
     lang.emplace("false", Lisple::B_FALSE);
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
     lang.emplace("filter", std::make_shared<FilterFunction>());
@@ -413,6 +414,62 @@ namespace Lisple
       }
     }
 
+    for (size_t i=0; i < scopes; i++)
+    {
+      ctx.pop_context();
+    }
+
+    return result;
+  }
+
+  /* IfLetMacro */
+  MACRO_IMPL(IfLetMacro, SIG((FN_ARGS((&Type::ARRAY, false), (&Type::ANY, false), (&Type::ANY, false)),
+                                EXEC_DISPATCH(&IfLetMacro::make_if_let))))
+
+  MACRO_BODY(IfLetMacro, make_if_let)
+  {
+    Array binding_form = args.front()->as<Array>();
+
+    if (binding_form.get_children().size() % 2 != 0)
+    {
+      throw LispleException("Wrong number of parameters in binding form of if-let expression: " + binding_form.to_string());
+    }
+
+    bool contains_nil = false;
+
+    size_t scopes = 0;
+    for (size_t i=0; i < binding_form.size(); i+=2)
+    {
+      auto& var_name_obj = *binding_form.get_children().at(i);
+      auto var_val_obj = ctx.eval(binding_form.get_children().at(i+1));
+
+      if (*var_val_obj == *NIL)
+      {
+        contains_nil = true;
+        break;
+      }
+
+      if (!Type::WORD.is_type_of(var_name_obj))
+      {
+        throw TypeError("Invalid variable identifier in binding form of if-let expression: " + var_name_obj.to_string() + " in " + binding_form.to_string());
+      }
+
+      Scope var_scope;
+      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
+      ctx.push_context(true, var_scope);
+      scopes++;
+    }
+
+    sptr_sobject result = NIL;
+
+    if (!contains_nil)
+    {
+      result = ctx.eval(args.at(1));
+    }
+    else
+    {
+      result = ctx.eval(args.at(2));
+    }
     for (size_t i=0; i < scopes; i++)
     {
       ctx.pop_context();
