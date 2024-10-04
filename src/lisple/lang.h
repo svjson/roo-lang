@@ -328,15 +328,19 @@ namespace Lisple
   FUNC_DECL(NthFunction, get_nth);
 
   /*!
-   * @brief AssocFunction - set or replace a key in a map, creating a copy of it.
+   * @brief AssocFunction - set or replace a key in a map or complex object.
+   * This operation does not mutate the map/host object, but returns a
+   * copy that has been modified.
+   * Since there is currently no way to host objects, this will always return
+   * a map.
    *
    * Usage: (assoc my-map key value)
    *
-   * Param 0 - The map to create a copy of
+   * Param 0 - The object to create a copy of
    * Param 1 - The key to set
    * Param 2 - The value to associate with the key
    */
-  FUNC_DECL(AssocFunction, assoc)
+  FUNC_DECL(AssocFunction, assoc_map, assoc_ho)
 
   /*!
    * @brief AssocBangFunction - set or replace a key in a map or map-like

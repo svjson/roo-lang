@@ -1156,10 +1156,12 @@ namespace Lisple
   }
 
   /* AssocFunction - assoc */
-  FUNC_IMPL(AssocFunction, SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
-                                EXEC_DISPATCH(&AssocFunction::assoc))))
+  FUNC_IMPL(AssocFunction, MULTI_SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
+                                      EXEC_DISPATCH(&AssocFunction::assoc_map)),
+                                     (FN_ARGS((&Type::HOST_OBJECT), (&Type::ANY), (&Type::ANY)),
+                                      EXEC_DISPATCH(&AssocFunction::assoc_ho))))
 
-  FUNC_BODY(AssocFunction, assoc)
+  FUNC_BODY(AssocFunction, assoc_map)
   {
     Map& map = args.front()->as<Map>();
     sptr_sobject_v new_content;
@@ -1188,6 +1190,37 @@ namespace Lisple
 
     return std::make_shared<Map>(new_content);
   }
+
+  FUNC_BODY(AssocFunction, assoc_ho)
+  {
+    AbstractHostObject& source = args.front()->as<AbstractHostObject>();
+    sptr_sobject_v new_content;
+    sptr_sobject assoc_key = args.at(1);
+    sptr_sobject value = args.back();
+
+    for (auto key : source.keys())
+    {
+      new_content.push_back(key);
+      if (*key != *assoc_key)
+      {
+        new_content.push_back(source.get_sptr_property(*key));
+      }
+      else
+      {
+        new_content.push_back(value);
+        value.reset();
+      }
+    }
+
+    if (value.get())
+    {
+      new_content.push_back(assoc_key);
+      new_content.push_back(value);
+    }
+
+    return std::make_shared<Map>(new_content);
+  }
+
 
   /* AssocBangFunction - assoc! */
   FUNC_IMPL(AssocBangFunction, MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
