@@ -510,63 +510,100 @@
 
 #define HOST_ADAPTER_IMPL(TYPE_NAME, AD_CLASS, H_CLASS, HOBJ_T, ...) SELECT_ADAPTER_IMPL_MACRO(0, ##__VA_ARGS__, HOST_ADAPTER_IMPL__ACCESSORS, HOST_ADAPTER_IMPL__NO_ACCESSORS)(TYPE_NAME, AD_CLASS, H_CLASS, HOBJ_T, ##__VA_ARGS__)
 
+/* Field accessor macros */
+#define __ADAPTER_FIELD_ACCESSOR(ACCESSOR_MACRO, AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME) \
+  ACCESSOR_MACRO(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)
+
+#define __ADAPTER_FIELD_ACCESSOR__SAME_NAME(ACCESSOR_MACRO, AD_CLASS, PROP_NAME, LISPLE_FORM) \
+  ACCESSOR_MACRO(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+
+#define __ADAPTER_FIELD_ACCESSOR_MACROS(ACCESSOR_MACRO, AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_FIELD_ACCESSOR, __ADAPTER_FIELD_ACCESSOR__SAME_NAME)(ACCESSOR_MACRO, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+
+/* ADAPTER_PROP_GET
+ *
+ * Simply defines the method signature of a property getter. Should not be used
+ * directly by application code unless the  specialized macros, such as any of
+ * ADAPTER_PROP_GET__FIELD, ADAPTER_PROP_GET__METHOD or their variants do not
+ * apply for the use case.
+ *
+ * Usage:
+ * ADAPTER_PROP_GET(SomeHostAdapter, some_property)
+ * {
+ *   // actual getter code goes here
+ * }
+ */
 #define ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)           \
   Lisple::sptr_sobject AD_CLASS::get_##PROP_NAME() const
 
-#define ADAPTER_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD)   \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                               \
-  {                                                                   \
-    return std::make_shared<LISPLE_FORM>(get_object().OBJ_METHOD());  \
-  }
+/* ADAPTER_PROP_SET
+ *
+ * Simply defines the method signature of a property setter. Should not be used
+ * directly by application code unless the  specialized macros, such as any of
+ * ADAPTER_PROP_SET__FIELD, ADAPTER_PROP_SET__METHOD or their variants do not
+ * apply for the use case.
+ *
+ * Usage:
+ * ADAPTER_PROP_SET(SomeHostAdapter, some_property)
+ * {
+ *   // actual setter code goes here
+ * }
+ */
+#define ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                  \
+  void AD_CLASS::set_##PROP_NAME([[maybe_unused]]Lisple::Context* ctx, Lisple::Object& value)
 
+/* __ADAPTER_PROP_GET__FIELD
+ *
+ * For internal use only.
+ */
 #define __ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)    \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                               \
-  {                                                                   \
-    return std::make_shared<LISPLE_FORM>(get_object().OBJ_FIELD);     \
-  }
-
-#define __ADAPTER_PROP_GET__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)    \
-  __ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
-
-#define ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET__FIELD, __ADAPTER_PROP_GET__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
-#define __ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)    \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                           \
   {                                                                               \
-    return std::make_shared<LISPLE_FORM>(*get_object().METHOD());     \
+    return std::make_shared<LISPLE_FORM>(get_object().OBJ_FIELD);                 \
   }
 
-#define __ADAPTER_PROP_GET_P__METHOD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)    \
-  __ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+#define __ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                          \
+  {                                                                              \
+    get_object().OBJ_FIELD = value.as<LISPLE_FORM>().value;                      \
+  }
 
-#define ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_P__METHOD, __ADAPTER_PROP_GET_P__METHOD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
+/* __ADAPTER_PROP_GET_P__FIELD
+ *
+ * For internal use only
+ */
 #define __ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)    \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                               \
-  {                                                                   \
-    return std::make_shared<LISPLE_FORM>(*get_object().OBJ_FIELD);     \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                             \
+  {                                                                                 \
+    return std::make_shared<LISPLE_FORM>(*get_object().OBJ_FIELD);                  \
   }
 
-#define __ADAPTER_PROP_GET_P__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)    \
-  __ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
-
-#define ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_P__FIELD, __ADAPTER_PROP_GET_P__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
-
-#define ADAPTER_PROP_GET_VECTOR__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                \
-  {                                                                                    \
-    Lisple::sptr_sobject_v v;                                                          \
-    for (auto& obj : get_object().METHOD_NAME())                                       \
-    {                                                                                  \
-      v.push_back(std::make_shared<LISPLE_FORM>(obj));                                 \
-    }                                                                                  \
-    return std::make_shared<Lisple::Array>(v);                                         \
+/* __ADAPTER_PROP_GET_OPT__FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                            \
+  {                                                                                \
+    return get_object().OBJ_FIELD.has_value()                                      \
+      ? std::make_shared<LISPLE_FORM>(*get_object().OBJ_FIELD)                     \
+      : Lisple::NIL;                                                               \
   }
 
+#define __ADAPTER_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD) \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                            \
+  {                                                                                \
+    if (*Lisple::NIL == value)                                                     \
+      get_object().OBJ_FIELD = std::nullopt;                                       \
+    else                                                                           \
+      get_object().OBJ_FIELD = value.as<LISPLE_FORM>().value;                      \
+  }
+
+/* __ADAPTER_PROP_GET_VECTOR__FIELD
+ *
+ * For internal use only
+ */
 #define __ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                                      \
   {                                                                                                          \
@@ -578,29 +615,25 @@
     return std::make_shared<Lisple::Array>(v);                                                               \
   }
 
-#define __ADAPTER_PROP_GET_VECTOR__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM) \
-  __ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
-
-#define ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_VECTOR__FIELD, __ADAPTER_PROP_GET_VECTOR__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
-#define __ADAPTER_PROP_GET_VECTOR_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
-  {                                                                                        \
-    Lisple::sptr_sobject_v v;                                                              \
-    for (auto& obj : get_object().METHOD_NAME())                                           \
-    {                                                                                      \
-      v.push_back(obj == nullptr ? Lisple::NIL : std::make_shared<LISPLE_FORM>(*obj));     \
-    }                                                                                      \
-    return std::make_shared<Lisple::Array>(v);                                             \
+/* __ADAPTER_PROP_SET_VECTOR__FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                                      \
+  {                                                                                                          \
+    get_object().FIELD_NAME.clear();                                                                         \
+    for (auto& obj : value.get_children())                                                                   \
+    {                                                                                                        \
+      get_object().FIELD_NAME.push_back(obj->as<LISPLE_FORM>().value);                                       \
+    }                                                                                                        \
   }
 
-#define __ADAPTER_PROP_GET_VECTOR_P__METHOD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM) \
-  __ADAPTER_PROP_GET_VECTOR_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
 
-#define ADAPTER_PROP_GET_VECTOR_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_VECTOR_P__METHOD, __ADAPTER_PROP_GET_VECTOR_P__METHOD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
+/* __ADAPTER_PROP_GET_VECTOR_P__FIELD
+ *
+ * For internal use only
+ */
 #define __ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME) \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
   {                                                                                      \
@@ -612,77 +645,366 @@
     return std::make_shared<Lisple::Array>(v);                                           \
   }
 
-#define __ADAPTER_PROP_GET_VECTOR_P__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM) \
-  __ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
-
-#define ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_VECTOR_P__FIELD, __ADAPTER_PROP_GET_VECTOR_P__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
+/* __ADAPTER_PROP_GET_HOST_OBJECT__FIELD
+ *
+ * For internal use only
+ */
 #define __ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                     \
   {                                                                                         \
     return LISPLE_FORM::make_ref(get_object().OBJ_FIELD);                                   \
   }
 
-#define __ADAPTER_PROP_GET_HOST_OBJECT__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)  \
-  __ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+#define __ADAPTER_PROP_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                     \
+  {                                                                                         \
+    get_object().OBJ_FIELD = value.as<LISPLE_FORM>().get_object();                          \
+  }
 
-#define ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_HOST_OBJECT__FIELD, __ADAPTER_PROP_GET_HOST_OBJECT__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
+/* __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD
+ *
+ * For internal use only
+ */
 #define __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)      \
   ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                           \
   {                                                                                               \
     return get_object().OBJ_FIELD ? LISPLE_FORM::make_ref(*get_object().OBJ_FIELD) : Lisple::NIL; \
   }
 
-#define __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)  \
-  __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
-
-#define ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD, __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
-
-
-#define ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                \
-  {                                                                                    \
-    return LISPLE_FORM::make_ref(get_object().METHOD());                               \
+#define __ADAPTER_PROP_SET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)      \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                           \
+  {                                                                                               \
+    get_object().OBJ_FIELD = *Lisple::NIL == value                                                \
+      ? nullptr                                                                                   \
+      : value.as<LISPLE_FORM>().get_object_ptr().get();                                           \
   }
 
-#define ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                  \
-  void AD_CLASS::set_##PROP_NAME([[maybe_unused]]Lisple::Context* ctx, Lisple::Object& value)
-
-#define ADAPTER_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)     \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                        \
-  {                                                                            \
-    get_object().METHOD(value.as<LISPLE_FORM>().value);                        \
+/* __ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                          \
+  {                                                                                              \
+    return get_object().OBJ_FIELD.has_value()                                                    \
+      ? LISPLE_FORM::make_ref(*get_object().OBJ_FIELD)                                           \
+      : Lisple::NIL;                                                                             \
   }
 
-#define ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                        \
-  {                                                                            \
-    get_object().OBJ_FIELD = value.as<LISPLE_FORM>().value;                    \
+#define __ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
+  {                                                                                              \
+    if (*Lisple::NIL == value)                                                                   \
+      get_object().OBJ_FIELD = std::nullopt;                                                     \
+    else                                                                                         \
+      get_object().OBJ_FIELD = value.as<LISPLE_FORM>().get_object();                             \
   }
 
-#define ADAPTER_PROP_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                   \
-  {                                                                                       \
-    get_object().OBJ_FIELD = value.as<LISPLE_FORM>().get_object();                        \
+/* __ADAPTER_PROP_GET__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD)   \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                            \
+  {                                                                                \
+    return std::make_shared<LISPLE_FORM>(get_object().OBJ_METHOD());               \
   }
 
-#define __ADAPTER_PROP_GET_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
-  ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)               \
-  ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)
+#define __ADAPTER_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)     \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                          \
+  {                                                                              \
+    get_object().METHOD(value.as<LISPLE_FORM>().value);                          \
+  }
 
-#define __ADAPTER_PROP_GET_SET__FIELD__SAME_NAME(AD_CLASS, PROP_NAME, LISPLE_FORM)   \
-  __ADAPTER_PROP_GET_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, PROP_NAME)
+/* __ADAPTER_PROP_GET_P__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)    \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                           \
+  {                                                                               \
+    return std::make_shared<LISPLE_FORM>(*get_object().METHOD());                 \
+  }
+
+/* __ADAPTER_PROP_GET_VECTOR__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_VECTOR__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
+  {                                                                                      \
+    Lisple::sptr_sobject_v v;                                                            \
+    for (auto& obj : get_object().METHOD_NAME())                                         \
+    {                                                                                    \
+      v.push_back(std::make_shared<LISPLE_FORM>(obj));                                   \
+    }                                                                                    \
+    return std::make_shared<Lisple::Array>(v);                                           \
+  }
+
+/* __ADAPTER_PROP_GET_VECTOR_P__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_VECTOR_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
+  {                                                                                        \
+    Lisple::sptr_sobject_v v;                                                              \
+    for (auto& obj : get_object().METHOD_NAME())                                           \
+    {                                                                                      \
+      v.push_back(obj == nullptr ? Lisple::NIL : std::make_shared<LISPLE_FORM>(*obj));     \
+    }                                                                                      \
+    return std::make_shared<Lisple::Array>(v);                                             \
+  }
+
+/* __ADAPTER_PROP_GET_HOST_OBJECT__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
+  {                                                                                      \
+    return LISPLE_FORM::make_ref(get_object().METHOD());                                 \
+  }
+
+/* __ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                      \
+  {                                                                                          \
+    return get_object().METHOD().has_value()                                                 \
+      ? LISPLE_FORM::make_ref(*get_object().METHOD())                                        \
+      : Lisple::NIL;                                                                         \
+  }
+
+/* ADAPTER_PROP_GET__FIELD - get value by field
+ *
+ * Generates a property getter implementation that retrieves the property value
+ * directly via the object field. This means that the field in question needs to
+ * be public, or otherwise accessible from the adapter class.
+ *
+ * The Lisple Form class needs to be supplied to construct the return value.
+ *
+ * Usage:
+ * ADAPER_PROP_GET__FIELD(SomeHostAdapter, some_string, Lisple::String);
+ */
+#define ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
 #define ADAPTER_PROP_GET_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
-  __SELECT_MACRO__2(0, ##__VA_ARGS__, __ADAPTER_PROP_GET_SET__FIELD, __ADAPTER_PROP_GET_SET__FIELD__SAME_NAME)(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+  ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)   \
+  ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
-#define ADAPTER_PROP_GET_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
-  ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)            \
-  ADAPTER_PROP_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)
+/* ADAPTER_PROP_GET_OPT__FIELD - get std::optional value by field
+ *
+ * Generates a property getter implementation that retrieves the property value
+ * of an std::optional member field. This means that the field in question
+ * needs to be public, or otherwise accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_OPT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_OPT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
+  ADAPTER_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)   \
+  ADAPTER_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_P__FIELD - get pointer by field
+ *
+ * Generates a property getter implementation that retrives the property value
+ * of a pointer member field. This means that the field in question needs
+ * to be public, or otherwise accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_P__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_P__FIELD - get vector by field
+ *
+ * Generates a property getter implementation that retrives the property values
+ * of a vectormember field and generates a Lisple::Array. This means that the
+ * field in question needs to be public, or otherwise accessible from the adapter
+ * class.
+ */
+#define ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_VECTOR__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_VECTOR__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_VECTOR_P__FIELD - get vector of pointers by field
+ *
+ * Generates a property getter implementation that retrives the property values
+ * of a vector member field and generates a Lisple::Array. This means that the
+ * field in question needs to be public, or otherwise accessible from the adapter
+ * class.
+ */
+#define ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_VECTOR_P__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT__FIELD - get host object instance by field
+ *
+ * Generates a property getter implementation that retrieves the property value
+ * of a member field containing a host object that needs to be wrapped in an
+ * adapter.
+
+ * This means that the field in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)  \
+  ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD - get host object pointer by field
+ *
+ * Generates a property getter implementation that retrieves the property value
+ * of a member field containing a host object pointer that needs to be wrapped
+ * in an adapter.
+
+ * This means that the field in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT_P__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
+  ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD - get host object by optional field
+ *
+ * Generates a property getter implementation that retrives the property value
+ * of an std::optional member field containing a host object that needs to be
+ * wrapped in a host adapter.
+ *
+ * This means that the field in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
+  ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET__METHOD - get value by field
+ *
+ * Generates a property getter implementation that retrives the property value
+ * using a member function. This means that the field in question needs to be
+ * public, or otherwise accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_P__METHOD - get pointer by method
+ *
+ * Generates a property getter implementation that retrives the property value
+ * using a member function that returns a pointer. This means that the field in
+ * question needs to be public, or otherwise accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_P__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_VECTOR__METHOD - get vector by method
+ *
+ * Generates a property getter implementation that retrives the property values
+ * of a vector member function and generates a Lisple::Array. This means that the
+ * field in question needs to be public, or otherwise accessible from the adapter
+ * class.
+ */
+#define ADAPTER_PROP_GET_VECTOR__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_VECTOR__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_VECTOR_P__METHOD - get vector of pointers by method
+ *
+ * Generates a property getter implementation that retrives the property values
+ * of a vector member function and generates a Lisple::Array. This means that the
+ * field in question needs to be public, or otherwise accessible from the adapter
+ * class.
+ */
+#define ADAPTER_PROP_GET_VECTOR_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_VECTOR_P__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT__METHOD - get host object by method
+ *
+ * Generates a property getter implementation that retrieves the property using
+ * a member function returning a host object reference that needs to be wrapped
+ * in an adapter.
+
+ * This means that the field in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
+  ADAPTER_PROP_GET_HOST_OBJECT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+
+/* ADAPTER_PROP_GET_HOST_OBJECT_P__METHOD - get host object pointer by method
+ *
+ * Generates a property getter implementation that retrieves the property using
+ * a member function returning a host object pointer that needs to be wrapped
+ * in an adapter.
+
+ * This means that the method in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT_P__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT_P__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
+  ADAPTER_PROP_GET_HOST_OBJECT_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD - get optional host object by method
+ *
+ * Generates a property getter implementation that retrieves an optional property
+ * using a member function
+ *
+ * This means that the method in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)        \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT_OPT__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
+  ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
 
 #define P_GETTER(AD_CLASS, FN) [](const Lisple::AbstractHostObject* adapter) { return dynamic_cast<const AD_CLASS*>(adapter)->FN(); }
 #define P_SETTER(AD_CLASS, FN) [](Lisple::AbstractHostObject* adapter, Lisple::Context* ctx, Lisple::Object& value) { dynamic_cast<AD_CLASS*>(adapter)->FN(ctx, value); }
