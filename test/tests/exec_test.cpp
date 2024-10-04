@@ -255,7 +255,7 @@ TEST(DestructuringArgumentBinding, apply__keys_and_alias)
   ASSERT_EQ(*scope.lookup(Lisple::Word("context")), *map); 
 }
 
-TEST(Execuable, invocation_with_incorrect_argument_types_throws_exception)
+TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
 {
   // Given
   LispleTest::LispReaderFixture fixture;
