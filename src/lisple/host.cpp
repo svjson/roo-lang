@@ -43,7 +43,7 @@ namespace Lisple
 
   bool HostTypeRef::is_type_of(const Lisple::Object& obj) const
   {
-    if (TypeRef::is_type_of(obj))
+    if (*NIL != obj && TypeRef::is_type_of(obj))
     {
       return obj.as<Lisple::AbstractHostObject>().get_host_type() == host_type;
     }
