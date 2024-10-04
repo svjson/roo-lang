@@ -38,7 +38,7 @@ namespace Lisple
     lang.emplace(">=", std::make_shared<GreaterThanOrEqualsFunction>());
     lang.emplace("->", std::make_shared<ThreadFirstMacro>());
     lang.emplace("abs", std::make_shared<AbsFunction>());
-    lang.emplace("and", std::make_shared<AndFunction>());
+    lang.emplace("and", std::make_shared<AndMacro>());
     lang.emplace("append!", std::make_shared<AppendBangFunction>());
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang.emplace("assoc", std::make_shared<AssocFunction>());
@@ -992,18 +992,22 @@ namespace Lisple
     return (a < b) == min ? args.at(0) : args.at(1);
   }
 
-  FUNC_IMPL(AndFunction, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY)),
-                              EXEC_DISPATCH(&AndFunction::logical_and))))
+  MACRO_IMPL(AndMacro, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, false)),
+                            EXEC_DISPATCH(&AndMacro::logical_and))))
 
-  FUNC_BODY(AndFunction, logical_and)
+  FUNC_BODY(AndMacro, logical_and)
   {
+    ctx.push_context(true);
     for (auto& arg : args)
     {
-      if (!arg->is_truthy())
+      Lisple::sptr_sobject lmnt = ctx.eval(arg);
+      if (!lmnt->is_truthy())
       {
+        ctx.pop_context();
         return Lisple::B_FALSE;
       }
     }
+    ctx.pop_context();
     return Lisple::B_TRUE;
   }
 

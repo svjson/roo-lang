@@ -901,7 +901,7 @@ TEST(NotEqualsFunction, string)
 }
 
 
-TEST(AndFunction, logical_and)
+TEST(AndMacro, logical_and)
 {
   LispleTest::LispReaderFixture fixture;
   EXPECT_EQ(*fixture.ctx.eval("(and (odd? 1) (odd? 3))"), *Lisple::B_TRUE);

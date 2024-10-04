@@ -243,12 +243,17 @@ namespace Lisple
     Lisple::sptr_sobject select_min_or_max(Lisple::Context&, Lisple::sptr_sobject_v& args);
   };
 
-  /*! @brief AndFunction - query if all arguments are truthy
+  /*! @brief AndMacro - query if all arguments are truthy
+   *
+   * Returns true if all arguments evaluate as true/truthy, or false if any
+   * argument evaluates as false/falsy.
+   *
+   * Arguments are not evaluated before evaluation.
    *
    * Usage: (and true [] "string") => true
    *        (and true false nil) => false
    */
-  FUNC_DECL(AndFunction, logical_and)
+  MACRO_DECL(AndMacro, logical_and)
 
   /*! @brief OrFunction - query if any of the arguments are truthy, and return
    * the first truthy argument. Otherwise, nil

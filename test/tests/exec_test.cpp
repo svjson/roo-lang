@@ -26,7 +26,7 @@ namespace SignatureTest
   Lisple::sptr_sobject STRING = std::make_shared<Lisple::String>("str");
   Lisple::sptr_sobject NUMBER = std::make_shared<Lisple::Number>(5);
   Lisple::sptr_sobject ARRAY = std::make_shared<Lisple::Array>();
-  Lisple::sptr_sobject FUNCTION = std::make_shared<Lisple::AndFunction>();
+  Lisple::sptr_sobject FUNCTION = std::make_shared<Lisple::MapFunction>();
 }
 
 using SignatureTest::STRING;
@@ -37,9 +37,9 @@ using SignatureTest::FUNCTION;
 TEST(Signature, matches_arguments)
 {
   // Given
-  Lisple::AndFunction dummy_func;
+  Lisple::AndMacro dummy_func;
   Lisple::Signature signature(Lisple::arg_v { Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-                              std::bind(&Lisple::AndFunction::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
+                              std::bind(&Lisple::AndMacro::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
 
   // Then
   EXPECT_TRUE(signature.matches({ STRING, NUMBER }));
@@ -52,9 +52,9 @@ TEST(Signature, matches_arguments)
 TEST(Signature, no_arg_signature_matches_only_empty_arglist)
 {
   // Given
-  Lisple::AndFunction dummy_func;
+  Lisple::AndMacro dummy_func;
   Lisple::Signature signature(Lisple::arg_v{ },
-                              std::bind(&Lisple::AndFunction::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
+                              std::bind(&Lisple::AndMacro::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
 
   // Then
   EXPECT_TRUE(signature.matches({ }));
@@ -68,9 +68,9 @@ TEST(Signature, no_arg_signature_matches_only_empty_arglist)
 TEST(Signature, matches_varargs)
 {
   // Given
-  Lisple::AndFunction dummy_func;
+  Lisple::AndMacro dummy_func;
   Lisple::Signature signature(Lisple::arg_v{ Lisple::arg(Lisple::VARARG, &Lisple::Type::STRING) },
-                              std::bind(&Lisple::AndFunction::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
+                              std::bind(&Lisple::AndMacro::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
 
   // Then
   EXPECT_TRUE(signature.matches({ STRING }));
