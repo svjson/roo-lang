@@ -10,15 +10,14 @@
 
 using namespace ::testing;
 
+/*
+ * ===================================
+ * std::map<int, string>
+ * ===================================
+ */
+
 TEST(StdMapAdapter_int_string, get_sptr_property)
 {
-
-  /*
-   * ===================================
-   * std::map<int, string>
-   * ===================================
-   */
-
   // Given
   std::map<int, std::string> std_map = {
     {1, "one"},
@@ -273,6 +272,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, to_string)
             std::string( R"({:letters "SMK" :numbers "847"} {:model-name "Snail" :seats 5}})"));
 }
 
+
 /*
  * ===================================
  * std::map<long, Vehicle>
@@ -381,6 +381,7 @@ TEST(StdMapAdapter_long_Vehicle, to_string)
             std::string( R"(3 {:model-name "Comfort" :seats 4}})"));
 }
 
+
 /*
  * ===================================
  * std::map<RegNumber, short>
@@ -487,4 +488,154 @@ TEST(StdMapAdapter_RegNumber_short, to_string)
             std::string(R"({{:letters "ABC" :numbers "123"} 10 )") +
             std::string( R"({:letters "EMP" :numbers "443"} 193 )") +
             std::string( R"({:letters "SMK" :numbers "847"} 32123})"));
+}
+
+
+/*
+ * ===================================
+ * std::map<int, const string>
+ * ===================================
+ */
+TEST(StdMapAdapter_int_const_string, get_sptr_property)
+{
+
+
+  // Given
+  std::map<int, const std::string> std_map = {
+    {1, "one"},
+    {2, "two"},
+    {3, "three"}
+  };
+
+  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
+                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+                                                        std_map,
+                                                        &Lisple::Type::NUMBER,
+                                                        &Lisple::Type::STRING);
+
+  // Then
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(1)), Lisple::String("one"));
+  EXPECT_EQ(Lisple::str_val(*adapter.get_sptr_property(*Lisple::Number::make(1))), "one");
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(2)), Lisple::String("two"));
+  EXPECT_EQ(Lisple::str_val(*adapter.get_sptr_property(*Lisple::Number::make(2))), "two");
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(3)), Lisple::String("three"));
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(4)), *Lisple::NIL);
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(5)), *Lisple::NIL);
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(0)), *Lisple::NIL);
+
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::String::make("one")), *Lisple::NIL);
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::NIL), *Lisple::NIL);
+}
+
+TEST(StdMapAdapter_int_const_string, set_property)
+{
+  // Given
+  std::map<int, const std::string> std_map = {};
+
+  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
+                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+                                                        std_map,
+                                                        &Lisple::Type::NUMBER,
+                                                        &Lisple::Type::STRING);
+
+  // When
+  Lisple::sptr_sobject value = Lisple::String::make("five");
+  adapter.set_property(*Lisple::Number::make(5), value);
+
+  // Then
+  ASSERT_EQ(std_map.count(5), 1);
+  ASSERT_EQ(std_map.at(5), "five");
+}
+
+TEST(StdMapAdapter_int_const_string, keys)
+{
+  // Given
+  std::map<int, const std::string> std_map = {
+    {1, "one"},
+    {2, "two"},
+    {3, "three"}
+  };
+
+  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
+                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+                                                        std_map,
+                                                        &Lisple::Type::NUMBER,
+                                                        &Lisple::Type::STRING);
+
+  // Then
+  EXPECT_THAT(adapter.keys(), (Lisple::sptr_sobject_v {
+        Lisple::Number::make(1),
+        Lisple::Number::make(2),
+        Lisple::Number::make(3)}));
+}
+
+TEST(StdMapAdapter_int_const_string, to_string)
+{
+  // Given
+  std::map<int, const std::string> std_map = {
+    {1, "one"},
+    {2, "two"},
+    {3, "three"}
+  };
+
+  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
+                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+                                                        std_map,
+                                                        &Lisple::Type::NUMBER,
+                                                        &Lisple::Type::STRING);
+
+  // Then
+  EXPECT_THAT(adapter.to_string(), R"({1 "one" 2 "two" 3 "three"})");
+}
+
+TEST(StdMapAdapter_int_const_string, script_usage)
+{
+  // Given
+  std::map<int, const std::string> std_map = {
+    {1, "one"},
+    {2, "two"},
+    {3, "three"}
+  };
+
+  std::shared_ptr<Lisple::StdMapAdapter<int, const std::string>> adapter =
+    std::make_shared<Lisple::StdMapAdapter<int, const std::string>>("map<int, string>",
+                                                                    Lisple::HostObjectType::STD_MAP_INT_STRING,
+                                                                    std_map,
+                                                                    &Lisple::Type::NUMBER,
+                                                                    &Lisple::Type::STRING);
+
+  Lisple::LispReader runtime;
+  runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
+
+  // Then
+  EXPECT_EQ(runtime.eval("my-map"), adapter);
+
+  EXPECT_EQ(*runtime.eval("(str my-map)"), *Lisple::String::make(R"({1 "one" 2 "two" 3 "three"})")) << "Why though?";
+  EXPECT_EQ(runtime.eval("(str my-map)")->to_string(),
+            R"("{1 "one" 2 "two" 3 "three"}")");
+
+  /* Get keys */
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::String::make("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::NIL);
+
+  /* assoc and count */
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(3));
+  runtime.eval(R"((def updated-map (assoc my-map 4 "four")))");
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::Number::make(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(3));
+
+  std::cout << runtime.eval("updated-map")->to_string() << std::endl;
+
+  /* assoc! and count */
+  runtime.eval(R"((assoc! my-map 8 "eight"))");
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::Number::make(4)); // Map counts both keys and values for now
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(4));
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::String::make("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::String::make("eight"));
 }

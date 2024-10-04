@@ -2,8 +2,6 @@
 #include "host.h"
 #include "impl.h"
 
-#include <iostream>
-
 namespace Lisple
 {
   template <typename K, typename V, class A1=K, class A2=V>
@@ -43,6 +41,11 @@ namespace Lisple
             this->get_object().insert_or_assign(unwrap_primitive<K>(key),
                                                 unwrap_primitive<V>(*value));
           }
+          else if constexpr (std::is_arithmetic<V>::value || std::is_same<std::remove_const_t<V>, std::string>::value)
+          {
+            this->get_object().emplace(unwrap_primitive<K>(key),
+                                       unwrap_primitive<std::remove_const_t<V>>(*value));
+          }
           else
           {
             if (this->has_key(key))
@@ -79,7 +82,7 @@ namespace Lisple
       {
         if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
         {
-          if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
+          if constexpr (std::is_arithmetic<V>::value || std::is_same<std::remove_const_t<V>, std::string>::value)
           {
             return wrap_primitive(this->get_object().at(unwrap_primitive<K>(key)));
           }

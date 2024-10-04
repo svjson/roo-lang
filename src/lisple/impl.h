@@ -57,7 +57,7 @@ namespace Lisple
   Lisple::sptr_sobject wrap_primitive(bool value);
   Lisple::sptr_sobject wrap_primitive(int value);
   Lisple::sptr_sobject wrap_primitive(long value);
-  Lisple::sptr_sobject wrap_primitive(std::string value);
+  Lisple::sptr_sobject wrap_primitive(const std::string& value);
 
 
 }

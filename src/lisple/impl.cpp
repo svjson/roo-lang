@@ -134,7 +134,7 @@ namespace Lisple
     return Lisple::Number::make(value);
   }
 
-  Lisple::sptr_sobject wrap_primitive(std::string value)
+  Lisple::sptr_sobject wrap_primitive(const std::string& value)
   {
     return Lisple::String::make(value);
   }
