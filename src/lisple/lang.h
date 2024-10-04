@@ -304,6 +304,15 @@ namespace Lisple
   FUNC_DECL(TakeFunction, take_fn)
 
   /*!
+   * @brief RepeatFunction - Repeat a value or series of values n times into an
+   * array.
+   *
+   * Usage: (repeat 3 "value") => ["value" "value" "value"]
+   *        (repeat 3 :a :b) => [:a :b :a :b :a :b]
+   */
+  FUNC_DECL(RepeatFunction, repeat)
+
+  /*!
    * @brief GetFunction - Get a property by value from a complex object, ie a map
    * or a host object.
    *

@@ -95,6 +95,7 @@ namespace Lisple
     lang.emplace("reduce-kv", std::make_shared<ReduceKeyValueFunction>());
     lang.emplace("remove", std::make_shared<RemoveFunction>());
     lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
+    lang.emplace("repeat", std::make_shared<RepeatFunction>());
     lang.emplace("resolve", std::make_shared<ResolveFunction>());
     lang.emplace("rnd", std::make_shared<RndFunction>());
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
@@ -1861,6 +1862,30 @@ namespace Lisple
                         { return *lmnt == *args.back(); }) != vector.end() ? B_TRUE : B_FALSE;
   }
 
+  /*
+   * RepeatFunction - repeat
+   */
+  FUNC_IMPL(RepeatFunction, SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::ANY)),
+                                 EXEC_DISPATCH(&RepeatFunction::repeat))))
+
+  FUNC_BODY(RepeatFunction, repeat)
+  {
+    int n = Lisple::int_val(*args.front());
+    Lisple::sptr_sobject_v array(n*(args.size()-1));
+    for (int ni=0; ni < n; ni++)
+    {
+      for (size_t i=1; i<args.size(); i++)
+      {
+        array.push_back(args.at(i));
+      }
+    }
+
+    return std::make_shared<Lisple::Array>(array);
+  }
+
+  /*
+   * TakeFunction - take
+   */
   FUNC_IMPL(TakeFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
                                EXEC_DISPATCH(&TakeFunction::take_fn))))
 
@@ -1878,6 +1903,9 @@ namespace Lisple
     return std::make_shared<Array>(result);
   }
 
+  /*
+   * StrFunction - str
+   */
   FUNC_IMPL(StrFunction, SIG((FN_ARGS((VARARG, &Type::ANY)),
                               EXEC_DISPATCH(&StrFunction::concat_str))))
 
