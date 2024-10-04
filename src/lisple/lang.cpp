@@ -1447,22 +1447,12 @@ namespace Lisple
     return args.front()->as<Lisple::Sexpression>().get_children().back();
   }
 
-  FUNC_IMPL(CountFunction, MULTI_SIG((FN_ARGS((&Type::SEQ)),
-                                       EXEC_DISPATCH(&CountFunction::count)),
-                                     (FN_ARGS((&Type::STRING)),
-                                       EXEC_DISPATCH(&CountFunction::count))));
+  FUNC_IMPL(CountFunction, SIG((FN_ARGS((&Type::ANY)),
+                                EXEC_DISPATCH(&CountFunction::count))));
 
   FUNC_BODY(CountFunction, count)
   {
-    if (Lisple::Type::STRING.is_type_of(*args.front()))
-    {
-      return std::make_shared<Lisple::Number>((int) args.front()->as<Lisple::String>().value.length());
-    }
-    else if (Lisple::Type::SEQ.is_type_of(*args.front()))
-    {
-      return std::make_shared<Lisple::Number>((int) args.front()->get_children().size());
-    }
-    throw LispleException(args.front()->to_string() + " is not something that can be counted");
+    return Number::make(args.front()->size());
   }
 
   /* FilterFunction */

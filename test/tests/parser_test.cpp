@@ -67,7 +67,7 @@ TEST(Parser, parse_map_with_char_key)
   ASSERT_EQ(sexps.size(), 1);
 
   Object& form = *sexps.at(0);
-  ASSERT_EQ(form.size(), 4);
+  ASSERT_EQ(form.size(), 2);
 
   ASSERT_EQ(form.get_type(), Form::MAP);
   EXPECT_EQ(*form.get_children().at(0), Char('A'));

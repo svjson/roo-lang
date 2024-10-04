@@ -54,7 +54,7 @@ namespace Lisple
     }
 
     // Do we really want to automatically add a NIL value for unmatched k/v pairs?
-    if (end_token == Token::RCURLY && stack.back()->size() % 2 == 1)
+    if (end_token == Token::RCURLY && stack.back()->get_children().size() % 2 == 1)
     {
       append(NIL);
       // We don't validate keys here, because nothing has actually been evaluated yet.

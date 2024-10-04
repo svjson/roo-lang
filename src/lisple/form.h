@@ -119,9 +119,9 @@ namespace Lisple
     bool operator==(const Object& other) const override
     {
       if (this->type != other.get_type())
-        {
-          return false;
-        }
+      {
+        return false;
+      }
       auto& other_val = dynamic_cast<const Value<T>&>(other);
       return other_val.value == value;
     }
@@ -173,6 +173,7 @@ namespace Lisple
 
     std::string to_string(int depth=-1) const override;
 
+    unsigned int size() const override;
     bool has_value(const std::string& value) const override;
 
     static std::shared_ptr<String> make(const std::string& value);
@@ -365,6 +366,8 @@ namespace Lisple
 
     const std::vector<Object*> keys() const;
     Lisple::sptr_sobject_v key_ptrs() const;
+
+    unsigned int size() const override;
 
     bool has_key(const Object& key) const override;
   };

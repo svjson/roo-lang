@@ -46,7 +46,7 @@ namespace Lisple
 
   unsigned int Object::size() const
   {
-    return 0;
+    return 1;
   }
 
   bool Object::is_truthy() const
@@ -224,6 +224,11 @@ namespace Lisple
   std::string String::to_string(int) const
   {
     return "\"" + value + "\"";
+  }
+
+  unsigned int String::size() const
+  {
+    return this->value.size();
   }
 
   std::shared_ptr<String> String::make(const std::string& value)
@@ -833,9 +838,14 @@ namespace Lisple
     return false;
   }
 
+  unsigned int Map::size() const
+  {
+    return Sexpression::size() / 2;
+  }
+
   void Map::set_property(const Object& key, sptr_sobject& value)
   {
-    for (size_t i=0; i<size(); i+=2)
+    for (size_t i=0; i<children.size(); i+=2)
     {
       if (*children.at(i) == key)
       {
@@ -864,4 +874,5 @@ namespace Lisple
   template class Value<bool>;
   template class Value<char>;
   template class Value<float>;
+
 }

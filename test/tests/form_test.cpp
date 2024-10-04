@@ -138,6 +138,25 @@ TEST(Map, get_property___from_map_multiple_entries)
   EXPECT_EQ(value, Lisple::String("somevalue"));
 }
 
+TEST(Map, has_key)
+{
+  Lisple::sptr_sobject_v map_elements
+  {
+    std::make_shared<Lisple::Key>("akey"),
+    std::make_shared<Lisple::String>("avalue"),
+    std::make_shared<Lisple::Key>("somekey"),
+    std::make_shared<Lisple::String>("somevalue")
+  };
+  Lisple::Map map(map_elements);
+
+  // Then
+  EXPECT_TRUE(map.has_key(Lisple::Key("akey")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("somekey")));
+
+  EXPECT_FALSE(map.has_key(Lisple::Key("some-random-key")));
+  EXPECT_FALSE(map.has_key(Lisple::String("avalue")));
+  EXPECT_FALSE(map.has_key(Lisple::String("somevalue")));
+}
 
 TEST(Symbol, equality)
 {

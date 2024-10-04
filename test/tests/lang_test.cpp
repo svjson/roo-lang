@@ -708,6 +708,7 @@ TEST(CountFunction, count_str_length)
   EXPECT_EQ(*fixture.lisp_reader.eval("(count \"abc\")"), Lisple::Number(3));
   EXPECT_EQ(*fixture.lisp_reader.eval("(count \"Where is my garmonbozia?\")"), Lisple::Number(24));
   EXPECT_EQ(*fixture.lisp_reader.eval("(count \"0123456789\")"), Lisple::Number(10));
+  EXPECT_EQ(*fixture.lisp_reader.eval("(count {:a 1 :b 2})"), Lisple::Number(2));
 }
 
 TEST(CountFunction, count_array_length)
