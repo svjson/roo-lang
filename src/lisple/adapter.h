@@ -53,15 +53,21 @@ namespace Lisple
               this->get_object().erase(unwrap_primitive<K>(key));
             }
             this->get_object().emplace(unwrap_primitive<K>(key),
-                                       value->as<HostObject<V>>().get_object());
+                                       value->as<HostObject<std::remove_const_t<V>>>().get_object());
           }
         }
         else
         {
-          if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
+          if constexpr ((!std::is_const<V>::value && std::is_arithmetic<V>::value) ||
+                        std::is_same<V, std::string>::value)
           {
-            this->get_object().insert_or_assign(key.as<HostObject<K>>().get_object(),
+            this->get_object().insert_or_assign(key.as<HostObject<std::remove_const_t<K>>>().get_object(),
                                                 unwrap_primitive<V>(*value));
+          }
+          else if constexpr (std::is_arithmetic<V>::value || std::is_same<std::remove_const_t<V>, std::string>::value)
+          {
+            this->get_object().emplace(key.as<HostObject<std::remove_const_t<K>>>().get_object(),
+                                       unwrap_primitive<std::remove_const_t<V>>(*value));
           }
           else
           {
@@ -70,7 +76,7 @@ namespace Lisple
               this->get_object().erase(key.as<HostObject<K>>().get_object());
             }
             this->get_object().emplace(key.as<HostObject<K>>().get_object(),
-                                       value->as<HostObject<V>>().get_object());
+                                       value->as<HostObject<std::remove_const_t<V>>>().get_object());
           }
         }
       }
