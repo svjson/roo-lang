@@ -22,12 +22,17 @@ namespace Lisple
       return obj.as<Value<std::string>>().value;
     }
 
+    return EMPTY_STRING;
+  }
+
+  short short_val(const Object& obj)
+  {
     if (Type::NUMBER.is_type_of(obj))
     {
-      return obj.to_string();
+      return obj.as<Number>().int_value();
     }
 
-    return EMPTY_STRING;
+    throw LispleException("Cannot convert " + obj.to_string() + " to short");
   }
 
   unsigned int uint_val(const Object& obj)
