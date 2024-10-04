@@ -572,14 +572,14 @@ namespace Lisple
     Lisple::sptr_sobject exec_oddevenp(Lisple::Context&, Lisple::sptr_sobject_v& args);
   };
 
-  class EvalFunction : public Lisple::Function
-  {
-   public:
-    EvalFunction();
-
-    Lisple::sptr_sobject eval_string(Lisple::Context&, Lisple::sptr_sobject_v& args);
-    Lisple::sptr_sobject eval_seq(Lisple::Context&, Lisple::sptr_sobject_v& args);
-  };
+  /*!
+   * @brief EvalFunction - Evaluate a lisple form or a string containing lisple
+   * code
+   *
+   * Usage: (eval '(+ 1 1)) => 2
+   *        (eval "(+ 1 1)") => 2
+   */
+  FUNC_DECL(EvalFunction, eval_string, eval_form);
 
   FUNC_DECL(RndFunction, random_number)
 }

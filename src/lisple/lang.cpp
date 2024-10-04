@@ -1767,8 +1767,8 @@ namespace Lisple
   /* EvalFunction - eval */
   FUNC_IMPL(EvalFunction, MULTI_SIG((FN_ARGS((&Lisple::Type::STRING)),
                                      EXEC_DISPATCH(&EvalFunction::eval_string)),
-                                    (FN_ARGS((&Lisple::Type::LIST)),
-                                     EXEC_DISPATCH(&EvalFunction::eval_seq))))
+                                    (FN_ARGS((&Lisple::Type::ANY)),
+                                     EXEC_DISPATCH(&EvalFunction::eval_form))))
 
   FUNC_BODY(EvalFunction, eval_string)
   {
@@ -1776,9 +1776,9 @@ namespace Lisple
     return ctx.eval(str);
   }
 
-  FUNC_BODY(EvalFunction, eval_seq)
+  FUNC_BODY(EvalFunction, eval_form)
   {
-    return ctx.eval(args.at(0));
+    return ctx.eval(args.front());
   }
 
   /* ApplyFunction - apply */
