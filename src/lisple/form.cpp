@@ -641,7 +641,7 @@ namespace Lisple
   {
     if (type != other.get_type())
     {
-        return false;
+      return false;
     }
     auto& other_sexp = dynamic_cast<const Sexpression&>(other);
     if (children.size() != other_sexp.children.size())
@@ -650,7 +650,7 @@ namespace Lisple
     }
     for (size_t i=0; i<children.size(); i++)
     {
-      if (*children.at(0) != *other_sexp.children.at(0))
+      if (*children.at(i) != *other_sexp.children.at(i))
       {
         return false;
       }

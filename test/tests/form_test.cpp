@@ -223,6 +223,44 @@ TEST(List, equality)
   };
   Lisple::List list2(list2_elements);
 
+  Lisple::sptr_sobject_v list3_elements
+  {
+    Lisple::Number::make(10),
+    Lisple::String::make("ten")
+  };
+  Lisple::List list3(list3_elements);
+
+  Lisple::sptr_sobject_v list4_elements
+  {
+    Lisple::Number::make(10),
+    Lisple::String::make("Macaroni")
+  };
+  Lisple::List list4(list4_elements);
+
+  Lisple::sptr_sobject_v list5_elements
+  {
+    Lisple::Number::make(10),
+    Lisple::String::make("Macaroni"),
+    Lisple::Word::make("trait"),
+    std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")
+  };
+  Lisple::List list5(list5_elements);
+
   // Then
   EXPECT_EQ(list1, list2);
+  EXPECT_EQ(list2, list1);
+
+  EXPECT_NE(list1, list3);
+  EXPECT_NE(list3, list1);
+
+  EXPECT_NE(list2, list3);
+  EXPECT_NE(list3, list2);
+
+  EXPECT_EQ(list3, list3);
+
+  EXPECT_NE(list3, list4);
+  EXPECT_NE(list4, list3);
+
+  EXPECT_NE(list5, list4);
+  EXPECT_NE(list4, list5);
 }
