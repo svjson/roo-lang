@@ -1,6 +1,7 @@
 
 #include "type.h"
 
+#include "context.h"
 #include "form.h"
 
 namespace Lisple
@@ -21,6 +22,12 @@ namespace Lisple
   CoercionResult TypeRef::coerce(Context&, sptr_sobject&) const
   {
     return CoercionResult { false, nullptr };
+  }
+
+  CoercionResult TypeRef::coerce(LispReader& reader, sptr_sobject& obj) const
+  {
+    Context ctx(reader);
+    return this->coerce(ctx, obj);
   }
 
   const std::string& TypeRef::to_string() const

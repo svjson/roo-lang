@@ -32,6 +32,7 @@ namespace Lisple
   };
 
   class Context;
+  class LispReader;
   class Object;
 
   typedef std::shared_ptr<Lisple::Object> sptr_sobject;
@@ -56,6 +57,7 @@ namespace Lisple
 
     virtual bool is_type_of(const Lisple::Object& obj) const;
     virtual CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
+    CoercionResult coerce(LispReader& reader, sptr_sobject& obj) const;
 
     const std::string& to_string() const;
 
