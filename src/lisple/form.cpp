@@ -597,7 +597,7 @@ namespace Lisple
 
   std::shared_ptr<Object>& Sexpression::head()
   {
-    return children.front();
+    return children.empty() ? Lisple::NIL : children.front();
   }
 
   sptr_sobject_v Sexpression::tail()
