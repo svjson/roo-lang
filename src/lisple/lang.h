@@ -598,6 +598,13 @@ namespace Lisple
    */
   FUNC_DECL(EvalFunction, eval_string, eval_form);
 
+  /*!
+   * @brief ResolveFunction - Resolve the value of a symbol programmatically
+   *
+   * Usage: (resolve '+) => <fn>
+   */
+  FUNC_DECL(ResolveFunction, resolve);
+
   FUNC_DECL(RndFunction, random_number)
 }
 

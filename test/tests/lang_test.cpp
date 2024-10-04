@@ -440,6 +440,31 @@ TEST(ApplyFunction, apply_concat)
   ASSERT_EQ(retval->to_string(), "[1 2 3 4 5 6]");
 }
 
+TEST(ResolveFunction, resolve)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  auto result = runtime.eval("(resolve 'concat)");
+
+  // Then
+  ASSERT_EQ(result, runtime.lookup(Lisple::Word("concat")));
+}
+
+TEST(ApplyFunction, apply_dynamic)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  runtime.eval("(def function-name 'max)");
+  auto result = runtime.eval("(apply (resolve function-name) [10 8 17 4 0])");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "17");
+}
+
 TEST(FindFirstFunction, find_first_array)
 {
   // Given

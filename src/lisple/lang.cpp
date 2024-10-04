@@ -95,6 +95,7 @@ namespace Lisple
     lang.emplace("reduce-kv", std::make_shared<ReduceKeyValueFunction>());
     lang.emplace("remove", std::make_shared<RemoveFunction>());
     lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
+    lang.emplace("resolve", std::make_shared<ResolveFunction>());
     lang.emplace("rnd", std::make_shared<RndFunction>());
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
     lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
@@ -1779,6 +1780,15 @@ namespace Lisple
   FUNC_BODY(EvalFunction, eval_form)
   {
     return ctx.eval(args.front());
+  }
+
+  /* ResolveFunction - resolve */
+  FUNC_IMPL(ResolveFunction, SIG((FN_ARGS((&Lisple::Type::SYMBOL)),
+                                  EXEC_DISPATCH(&ResolveFunction::resolve))));
+
+  FUNC_BODY(ResolveFunction, resolve)
+  {
+    return ctx.lookup(args.front()->as<Value<std::string>>().value);
   }
 
   /* ApplyFunction - apply */
