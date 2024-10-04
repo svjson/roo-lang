@@ -94,7 +94,7 @@
   MACRO_NAME::MACRO_NAME()                                \
     : MACRO_BASE(SIGNATURE) { }
 
-#define MACRO_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, Lisple::sptr_sobject_v& args)
+#define MACRO_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_sobject_v& args)
 
 namespace Lisple
 {

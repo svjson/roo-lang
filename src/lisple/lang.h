@@ -17,6 +17,12 @@ namespace Lisple
 
   MACRO_DECL(NsMacro, switch_ns);
 
+  /*!
+   * CommentMacro - Allows retaining code in a source file without risk of
+   * evaluation in runtime.
+   */
+  MACRO_DECL(CommentMacro, comment);
+
   MACRO_DECL(DefMacro, define_obj)
   MACRO_DECL(DefunMacro, define_fun, define_fun_docstring)
   MACRO_DECL(LambdaMacro, make_lambda)

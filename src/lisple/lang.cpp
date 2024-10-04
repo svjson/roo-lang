@@ -46,6 +46,7 @@ namespace Lisple
     lang.emplace("assoc-in!", std::make_shared<AssocInBangFunction>());
     lang.emplace("between?", std::make_shared<BetweenPredicateFunction>());
     lang.emplace("case", std::make_shared<CaseMacro>());
+    lang.emplace("comment", std::make_shared<CommentMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
     lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
     lang.emplace("cond", std::make_shared<CondMacro>());
@@ -204,6 +205,15 @@ namespace Lisple
       }
     }
 
+    return NIL;
+  }
+
+  /* CommentMacro */
+  MACRO_IMPL(CommentMacro, SIG((FN_ARGS((VARARG, &Type::ANY, false)),
+                                EXEC_DISPATCH(&CommentMacro::comment))))
+
+  MACRO_BODY(CommentMacro, comment)
+  {
     return NIL;
   }
 
