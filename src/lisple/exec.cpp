@@ -50,9 +50,10 @@ namespace Lisple
   {
     if (!destr_map.has_key(keys) ||
         destr_map.keys().size() > 2 ||
-        (destr_map.keys().size() == 2 && !destr_map.has_key(as)))
+        (destr_map.keys().size() == 2 && !destr_map.has_key(as)) ||
+        !Type::ARRAY.is_type_of(destr_map.get_property(keys)))
     {
-      throw Lisple::TypeError("Invalid destructuring map: " + destr_map.to_string());
+      throw Lisple::TypeError("Invalid destructuring form: " + destr_map.to_string());
     }
   }
 

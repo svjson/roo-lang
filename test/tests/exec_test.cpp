@@ -13,9 +13,11 @@
 #include <lisple/form.h>
 #include <lisple/lang.h>
 #include <lisple/type.h>
+#include <stdexcept>
 
 #include "lisple/host.h"
 #include "lisple/lisp_reader.h"
+#include "lisple/lisple_exception.h"
 #include "test_host_objects.h"
 #include "lisp_reader_fixture.h"
 
@@ -198,6 +200,37 @@ TEST(NamedArgument, apply)
   ASSERT_EQ(scope.get_keys()->size(), 1);
   ASSERT_TRUE(scope.has(Lisple::Word("muffin")));
   ASSERT_EQ(*scope.lookup(Lisple::Word("muffin")), Lisple::Key("blooper") );
+}
+
+TEST(DestructuringArgumentBinding, invalid_binding_form_throws_exception)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  auto arg_form = Lisple::Map::make({
+    Lisple::sptr_sobject_v {
+      Lisple::Key::make("keys"),
+      Lisple::Map::make({ // Invalid - this should be Array
+          Lisple::Word::make("var1"),
+          Lisple::Word::make("var2")
+        })
+    }});
+
+  // When / Then
+  try
+  {
+    Lisple::DestructuringArgumentBinding binding { *arg_form };
+
+    FAIL() << "Expected TypeError to be thrown for destructuring binding: " << arg_form->to_string();
+  }
+  catch (Lisple::TypeError& e)
+  {
+    EXPECT_THAT(std::string {e.what()}, HasSubstr("Invalid destructuring form: {:keys {var1 var2}}"));
+  }
+  catch (std::runtime_error& e)
+  {
+    FAIL() << "Expected TypeError exception, but got something else: " << e.what();
+  }
 }
 
 TEST(DestructuringArgumentBinding, apply__keys_only)
