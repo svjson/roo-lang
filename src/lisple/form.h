@@ -346,6 +346,8 @@ namespace Lisple
     Array();
     Array(const sptr_sobject_v& children);
 
+    static std::shared_ptr<Array> make(const sptr_sobject_v& children);
+
     const std::string lpar() const override;
     const std::string rpar() const override;
   };
@@ -368,6 +370,8 @@ namespace Lisple
     Lisple::sptr_sobject_v key_ptrs() const;
 
     unsigned int size() const override;
+
+    static std::shared_ptr<Map> make(const sptr_sobject_v& children);
 
     bool has_key(const Object& key) const override;
   };

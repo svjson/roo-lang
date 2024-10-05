@@ -714,6 +714,18 @@ namespace Lisple
     return std::make_shared<List>(children, !q);
   }
 
+  std::shared_ptr<Object> List::execute(Context& ctx)
+  {
+    auto head = this->head();
+    auto tail = this->tail();
+    return head->execute(ctx, tail);
+  }
+
+  std::shared_ptr<Object> List::execute(Context&, sptr_sobject_v&)
+  {
+    throw InvocationException("Illegal invocation of list: " + this->to_string(2));
+  }
+
   const std::string List::lpar() const
   {
     return q ? "'(" : "(";
@@ -747,36 +759,19 @@ namespace Lisple
     return "]";
   }
 
-  Map::Map()
-    : Sexpression(Form::MAP)
+  std::shared_ptr<Array> Array::make(const sptr_sobject_v& children)
   {
-  }
-
-  const std::string Map::lpar() const
-  {
-    return "{";
-  }
-
-  const std::string Map::rpar() const
-  {
-    return "}";
-  }
-
-  std::shared_ptr<Object> List::execute(Context& ctx)
-  {
-    auto head = this->head();
-    auto tail = this->tail();
-    return head->execute(ctx, tail);
-  }
-
-  std::shared_ptr<Object> List::execute(Context&, sptr_sobject_v&)
-  {
-    throw InvocationException("Illegal invocation of list: " + this->to_string(2));
+    return std::make_shared<Array>(children);
   }
 
   /**
    * Map
    */
+  Map::Map()
+    : Sexpression(Form::MAP)
+  {
+  }
+
   Map::Map(const sptr_sobject_v& children)
     : Sexpression(Form::MAP, children)
   {
@@ -868,6 +863,21 @@ namespace Lisple
       this->append(key);
       this->append(value);
     }
+  }
+
+  const std::string Map::lpar() const
+  {
+    return "{";
+  }
+
+  const std::string Map::rpar() const
+  {
+    return "}";
+  }
+
+  std::shared_ptr<Map> Map::make(const sptr_sobject_v& children)
+  {
+    return std::make_shared<Map>(children);
   }
 
   template class Value<std::string>;
