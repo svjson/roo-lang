@@ -1167,7 +1167,6 @@ TEST(RandNth, all_elements_possible)
 
   for (int num_freq : freq)
   {
-    std::cout << "Freq: " << num_freq << std::endl;
     EXPECT_NE(num_freq, 0);
   }
 }

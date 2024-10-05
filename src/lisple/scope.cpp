@@ -32,6 +32,11 @@ namespace Lisple
     objects.erase(name.value);
   }
 
+  void Scope::clear()
+  {
+    this->objects.clear();
+  }
+
   bool Scope::has(const Lisple::Word& identifier) const
   {
     return objects.count(identifier.value);

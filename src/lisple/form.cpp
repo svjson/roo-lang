@@ -610,9 +610,10 @@ namespace Lisple
     sptr_sobject_v tail;
     if (children.size() < 2) return tail;
 
+    tail.reserve(children.size()-1);
     for (size_t i=1; i<children.size(); i++)
     {
-      tail.push_back(children.at(i));
+      tail.push_back(children[i]);
     }
 
     return tail;
@@ -655,7 +656,7 @@ namespace Lisple
     }
     for (size_t i=0; i<children.size(); i++)
     {
-      if (*children.at(i) != *other_sexp.children.at(i))
+      if (*children[i] != *other_sexp.children[i])
       {
         return false;
       }
@@ -804,9 +805,10 @@ namespace Lisple
   const std::vector<Object*> Map::keys() const
   {
     std::vector<Object*> keys;
+    keys.reserve(size());
     for (size_t i = 0; i<children.size(); i+=2)
     {
-      keys.push_back(children.at(i).get());
+      keys.push_back(children[i].get());
     }
     return keys;
   }
@@ -814,9 +816,10 @@ namespace Lisple
   Lisple::sptr_sobject_v Map::key_ptrs() const
   {
     Lisple::sptr_sobject_v keys;
+    keys.reserve(size());
     for (size_t i=0; i<children.size(); i+=2)
     {
-      keys.push_back(children.at(i));
+      keys.push_back(children[i]);
     }
     return keys;
   }
@@ -825,7 +828,7 @@ namespace Lisple
   {
     for (size_t i = 0; i < children.size(); i += 2)
     {
-      if (*children.at(i) == key)
+      if (*children[i] == key)
       {
         return true;
       }
@@ -842,9 +845,9 @@ namespace Lisple
   {
     for (size_t i=0; i<children.size(); i+=2)
     {
-      if (*children.at(i) == key)
+      if (*children[i] == key)
       {
-        children.at(i+1) = value;
+        children[i+1] = value;
         return;
       }
     }

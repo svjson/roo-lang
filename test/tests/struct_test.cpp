@@ -5,10 +5,7 @@
 #include <gtest/gtest_pred_impl.h>
 
 #include <exception>
-#include <iostream>
-#include <memory>
 #include <string>
-#include <vector>
 
 #include <lisple/lisp_reader.h>
 #include <lisple/struct.h>
@@ -26,7 +23,6 @@ bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& m
   }
   catch (std::exception& e)
   {
-    std::cout << e.what() << std::endl;
     caught = true;
   }
 

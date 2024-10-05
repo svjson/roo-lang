@@ -64,33 +64,11 @@ namespace Lisple
 
   bool Namespace::has(const Lisple::Word& identifier) const
   {
-    // if (identifier.is_qualified())
-    // {
-    //   if (aliased_namespaces.count(identifier.get_qualifier()))
-    //   {
-    //     return aliased_namespaces
-    //       .at(identifier.get_qualifier())
-    //       ->has(identifier.get_identifier());
-    //   }
-    //   return false;
-    // }
-
     return this->find(identifier) != nullptr;
   }
 
   sptr_sobject Namespace::lookup(const Lisple::Word& identifier) const
   {
-    // if (identifier.is_qualified())
-    // {
-    //   if (aliased_namespaces.count(identifier.get_qualifier()))
-    //   {
-    //     if (aliased_namespaces
-    //       .at(identifier.get_qualifier())
-    //       ->has(identifier.get_identifier());
-    //   }
-    //   return false;
-    // }
-
     sptr_sobject value = this->find(identifier);
     if (value)
     {

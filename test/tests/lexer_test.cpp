@@ -175,7 +175,6 @@ TEST(Lexer, parse_bare_string_with_escaped_quote)
 {
   // Given
   std::string input = R"("the \"REAL\" deal")";
-  std::cout << input << std::endl;
 
   // When
   auto symbols = lexer.read_symbols(input);

@@ -56,6 +56,7 @@ namespace Lisple
     Lisple::sptr_sobject eval(const std::string& str);
     Lisple::sptr_sobject eval(const Lisple::sptr_sobject& list);
 
+    Scope& current_scope();
     Scope& get_scope_of(const Lisple::Word& identifier) const;
 
     void read_file(const std::string& file_name);

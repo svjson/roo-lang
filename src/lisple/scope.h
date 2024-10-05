@@ -22,6 +22,7 @@ namespace Lisple
     void store(const Lisple::Word& identifier, const Lisple::sptr_sobject& obj);
     virtual void mutate(const Lisple::Word& identifier, const Lisple::sptr_sobject& obj);
     void remove(const Lisple::Word& identifier);
+    void clear();
     virtual bool has(const Lisple::Word& identifier) const;
     virtual std::shared_ptr<Lisple::Object> lookup(const Lisple::Word& identifier) const;
     std::shared_ptr<Lisple::Array> get_keys();

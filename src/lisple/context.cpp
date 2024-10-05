@@ -171,6 +171,11 @@ namespace Lisple
     return reader.lookup(identifier);
   }
 
+  Scope& Context::current_scope()
+  {
+    return frame_stack.back()->scope;
+  }
+
   Scope& Context::get_scope_of(const Lisple::Word& identifier) const
   {
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)

@@ -131,7 +131,7 @@ namespace Lisple
     std::string ns_decl = "(ns " + ns.value;;
     for (size_t i=0; i< req_list.get_children().size(); i++)
     {
-      ns_decl += " " + req_list.get_children().at(i)->to_string();
+      ns_decl += " " + req_list.get_children()[i]->to_string();
     }
     ns_decl += ")";
 
@@ -140,12 +140,12 @@ namespace Lisple
 
   MACRO_BODY(NsMacro, switch_ns)
   {
-    Word& ns_word = args.front()->as<Word>();
+    Word& ns_word = args[0]->as<Word>();
     Lisple::sptr_sobject_v imports;
     if (args.size() == 2)
     {
       Lisple::List& list = args.back()->as<List>();
-      if (list.size() < 2 || (list.size() > 0 && *list.get_children().front() != KEY_REQUIRE))
+      if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
       {
         throw_ns_exception(ns_word, list);
       }
@@ -169,7 +169,7 @@ namespace Lisple
             throw_ns_exception(ns_word, list, ". Invalid require-entry: " + imp->to_string());
           }
 
-          if (*imp->get_children().at(1) == KEY_AS)
+          if (*imp->get_children()[1] == KEY_AS)
           {
             if (!Type::WORD.is_type_of(*imp->get_children().back()) ||
                 imp->get_children().back()->as<Word>().is_qualified())
@@ -228,6 +228,8 @@ namespace Lisple
   {
     std::vector<Argument> arg_types;
     std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
+    arg_types.reserve(arg_array.size());
+    arg_bindings.reserve(arg_array.size());
     for (auto& arg : arg_array.as<Array>().get_children())
     {
       if (arg->get_type() != Form::WORD &&
@@ -238,7 +240,7 @@ namespace Lisple
       arg_types.push_back(Lisple::arg(&Type::ANY));
       arg_bindings.push_back(ArgumentBinding::create(*arg));
     }
-    return std::make_shared<UserFunction>(home_ns, arg_types, arg_bindings, body);
+    return std::make_shared<UserFunction>(home_ns, std::move(arg_types), arg_bindings, body);
   }
 
   std::shared_ptr<DetachedFunction> create_detached_function(Lisple::Context& ctx, Lisple::Object& arg_array, Lisple::sptr_sobject_v& body)
@@ -249,8 +251,8 @@ namespace Lisple
 
   MACRO_BODY(DefMacro, define_obj)
   {
-    ctx.store_namespace(args.at(0)->as<Lisple::Word>(), args.at(1));
-    return args.at(1);
+    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[1]);
+    return args[1];
   }
 
   MACRO_IMPL(DefunMacro, MULTI_SIG((FN_ARGS((&Type::WORD, false),
@@ -265,13 +267,14 @@ namespace Lisple
 
   MACRO_BODY(DefunMacro, define_fun)
   {
-    std::string fun_name = Lisple::Value<std::string>::value_of(*args.at(0));
+    std::string fun_name = Lisple::Value<std::string>::value_of(*args[0]);
     sptr_sobject_v body;
+    body.reserve(args.size()-2);
     for (size_t i=2; i<args.size(); i++)
     {
-      body.push_back(args.at(i));
+      body.push_back(args[i]);
     }
-    auto fn = create_function(ctx.get_current_namespace(), *args.at(1), body);
+    auto fn = create_function(ctx.get_current_namespace(), *args[1], body);
     ctx.store_namespace(fun_name, fn);
 
     return fn;
@@ -289,11 +292,12 @@ namespace Lisple
   MACRO_BODY(LambdaMacro, make_lambda)
   {
     sptr_sobject_v body;
+    body.reserve(args.size()-1);
     for (size_t i=1; i < args.size(); i++)
     {
-      body.push_back(args.at(i));
+      body.push_back(args[i]);
     }
-    return create_detached_function(ctx, *args.at(0), body);
+    return create_detached_function(ctx, *args[0], body);
   }
 
   /* LetMacro */
@@ -302,7 +306,7 @@ namespace Lisple
 
   MACRO_BODY(LetMacro, make_let)
   {
-    Array bindings = args.front()->as<Array>();
+    Array& bindings = args[0]->as<Array>();
 
     if (bindings.get_children().size() % 2 != 0)
     {
@@ -311,8 +315,8 @@ namespace Lisple
 
     for (size_t i=0; i<bindings.size(); i+=2)
     {
-      auto& binding_form = *bindings.get_children().at(i);
-      auto init_expr = ctx.eval(bindings.get_children().at(i+1));
+      auto& binding_form = *bindings.get_children()[i];
+      auto init_expr = ctx.eval(bindings.get_children()[i+1]);
 
       Scope var_scope;
       if (*Lisple::NIL == binding_form)
@@ -328,13 +332,13 @@ namespace Lisple
 
         for (size_t b=0; b<binding_form.size(); b++)
         {
-          Lisple::sptr_sobject& b_form = binding_form.get_children().at(b);
+          Lisple::sptr_sobject& b_form = binding_form.get_children()[b];
           if (!Type::WORD.is_type_of(*b_form))
           {
             throw TypeError("Invalid binding form in let expression: " + b_form->to_string() + " in " + binding_form.to_string());
           }
           Lisple::sptr_sobject value = b < init_expr->size()
-            ? init_expr->get_children().at(b)
+            ? init_expr->get_children()[b]
             : Lisple::NIL;
           var_scope.store(b_form->as<Word>(), value);
         }
@@ -355,7 +359,7 @@ namespace Lisple
 
     for (size_t i=1; i < args.size(); i++)
     {
-      result = ctx.eval(args.at(i));
+      result = ctx.eval(args[i]);
     }
 
     for (size_t i=0; i < bindings.size() / 2; i++)
@@ -372,7 +376,7 @@ namespace Lisple
 
   MACRO_BODY(WhenLetMacro, make_when_let)
   {
-    Array var_def_array = args.front()->as<Array>();
+    Array var_def_array = args[0]->as<Array>();
 
     if (var_def_array.get_children().size() % 2 != 0)
     {
@@ -384,8 +388,8 @@ namespace Lisple
     size_t scopes = 0;
     for (size_t i=0; i < var_def_array.size(); i+=2)
     {
-      auto& var_name_obj = *var_def_array.get_children().at(i);
-      auto var_val_obj = ctx.eval(var_def_array.get_children().at(i+1));
+      auto& var_name_obj = *var_def_array.get_children()[i];
+      auto var_val_obj = ctx.eval(var_def_array.get_children()[i+1]);
 
       if (*var_val_obj == *NIL)
       {
@@ -410,7 +414,7 @@ namespace Lisple
     {
       for (size_t i=1; i < args.size(); i++)
       {
-        result = ctx.eval(args.at(i));
+        result = ctx.eval(args[i]);
       }
     }
 
@@ -428,7 +432,7 @@ namespace Lisple
 
   MACRO_BODY(IfLetMacro, make_if_let)
   {
-    Array binding_form = args.front()->as<Array>();
+    Array binding_form = args[0]->as<Array>();
 
     if (binding_form.get_children().size() % 2 != 0)
     {
@@ -440,8 +444,8 @@ namespace Lisple
     size_t scopes = 0;
     for (size_t i=0; i < binding_form.size(); i+=2)
     {
-      auto& var_name_obj = *binding_form.get_children().at(i);
-      auto var_val_obj = ctx.eval(binding_form.get_children().at(i+1));
+      auto& var_name_obj = *binding_form.get_children()[i];
+      auto var_val_obj = ctx.eval(binding_form.get_children()[i+1]);
 
       if (*var_val_obj == *NIL)
       {
@@ -464,11 +468,11 @@ namespace Lisple
 
     if (!contains_nil)
     {
-      result = ctx.eval(args.at(1));
+      result = ctx.eval(args[1]);
     }
     else
     {
-      result = ctx.eval(args.at(2));
+      result = ctx.eval(args[2]);
     }
     for (size_t i=0; i < scopes; i++)
     {
@@ -500,7 +504,7 @@ namespace Lisple
   {
     for (size_t i = 0; i < args.size(); i++)
     {
-      auto obj = args.at(i);
+      auto obj = args[i];
       if (i > 0) std::cout << " ";
       if (obj->get_type() == Form::STRING)
       {
@@ -522,10 +526,10 @@ namespace Lisple
 
   MACRO_BODY(ThreadFirstMacro, make_thread_first)
   {
-    sptr_sobject value = args.at(0);
+    sptr_sobject value = args[0];
     for (size_t i=1; i<args.size(); i++)
     {
-      sptr_sobject ifn = args.at(i);
+      sptr_sobject ifn = args[i];
       if (ifn->get_type() == Form::LIST)
       {
         std::shared_ptr<List> realized = ifn->as<List>().insert(1, value);
@@ -550,7 +554,7 @@ namespace Lisple
 
   FUNC_BODY(NilPredicateFunction, is_nil)
   {
-    return *args.front() == *NIL ? B_TRUE : B_FALSE;
+    return *args[0] == *NIL ? B_TRUE : B_FALSE;
   }
 
 
@@ -561,12 +565,12 @@ namespace Lisple
 
   FUNC_BODY(NotFunction, invert_boolean)
   {
-    return args.front()->is_truthy() ? B_FALSE : B_TRUE;
+    return args[0]->is_truthy() ? B_FALSE : B_TRUE;
   }
 
   FUNC_BODY(NotFunction, not_any)
   {
-    return *args.front() == *B_FALSE || *args.front() == *NIL ? B_TRUE : B_FALSE;
+    return *args[0] == *B_FALSE || *args[0] == *NIL ? B_TRUE : B_FALSE;
   }
 
   SetBangMacro::SetBangMacro()
@@ -577,18 +581,18 @@ namespace Lisple
 
   MACRO_BODY(SetBangMacro, do_set_member)
   {
-    Lisple::Array& member_ref = args.front()->as<Lisple::Array>();
+    Lisple::Array& member_ref = args[0]->as<Lisple::Array>();
 
     if (member_ref.size() == 1)
     {
-      auto identifier = member_ref.get_children().front()->as<Lisple::Word>();
+      auto identifier = member_ref.get_children()[0]->as<Lisple::Word>();
       Scope& scope = ctx.get_scope_of(identifier);
       scope.mutate(identifier, args.back());
     }
     else if (member_ref.size() == 2)
     {
-      auto actual_mem_ref = ctx.eval(args.at(0));
-      Lisple::Object& prop = *actual_mem_ref->get_children().front();
+      auto actual_mem_ref = ctx.eval(args[0]);
+      Lisple::Object& prop = *actual_mem_ref->get_children()[0];
       Lisple::Object& owner = *actual_mem_ref->get_children().back();
 
       owner.set_property(&ctx, prop, args.back());
@@ -610,11 +614,11 @@ namespace Lisple
     Lisple::sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    while (ctx.eval(args.front())->is_truthy())
+    while (ctx.eval(args[0])->is_truthy())
     {
       for (size_t i=1; i<args.size(); i++)
       {
-        retval = ctx.eval(args.at(i));
+        retval = ctx.eval(args[i]);
       }
     }
     ctx.pop_context();
@@ -632,14 +636,14 @@ namespace Lisple
     sptr_sobject retval = Lisple::NIL;
 
     ctx.push_context(true);
-    auto condition = ctx.eval(args.front());
+    auto condition = ctx.eval(args[0]);
     if (*condition != *Lisple::B_FALSE && *condition != *Lisple::NIL)
     {
-      retval = ctx.eval(args.at(1));
+      retval = ctx.eval(args[1]);
     }
     else if (args.size() == 3)
     {
-      retval = ctx.eval(args.at(2));
+      retval = ctx.eval(args[2]);
     }
     ctx.pop_context();
     return retval;
@@ -654,12 +658,12 @@ namespace Lisple
     sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    auto condition = ctx.eval(args.front());
+    auto condition = ctx.eval(args[0]);
     if (condition->is_truthy())
     {
       for (size_t i=1; i<args.size(); i++)
       {
-        retval = ctx.eval(args.at(i));
+        retval = ctx.eval(args[i]);
       }
     }
     ctx.pop_context();
@@ -686,14 +690,14 @@ namespace Lisple
     sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    sptr_sobject value = ctx.eval(args.front());
+    sptr_sobject value = ctx.eval(args[0]);
 
     for (size_t i=1; i<args.size(); i+=2)
     {
-      if (*ctx.eval(args.at(i)) == *value ||
-          *args.at(i) == DEFAULT)
+      if (*ctx.eval(args[i]) == *value ||
+          *args[i] == DEFAULT)
       {
-        retval = ctx.eval(args.at(i+1));
+        retval = ctx.eval(args[i+1]);
         break;
       }
     }
@@ -722,10 +726,10 @@ namespace Lisple
     ctx.push_context(true);
     for (size_t i=0; i<args.size(); i+=2)
     {
-      sptr_sobject condition = ctx.eval(args.at(i));
+      sptr_sobject condition = ctx.eval(args[i]);
       if (*condition != *B_FALSE && *condition != *NIL)
       {
-        retval = ctx.eval(args.at(i+1));
+        retval = ctx.eval(args[i+1]);
         break;
       }
     }
@@ -740,8 +744,9 @@ namespace Lisple
 
   MACRO_BODY(ForMacro, make_for)
   {
+    size_t n_args = args.size();
     sptr_sobject_v result;
-    sptr_sobject_v& seq_expr = args.front()->as<Array>().get_children();
+    sptr_sobject_v& seq_expr = args[0]->as<Array>().get_children();
 
     sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
     if (*Lisple::NIL != *obj_iterable)
@@ -751,23 +756,27 @@ namespace Lisple
         throw TypeError("For macro requires an iterable. Wrong type: " + obj_iterable->to_string());
       }
 
-      auto seq_binding = ArgumentBinding::create(*seq_expr.front());
+      auto seq_binding = ArgumentBinding::create(*seq_expr[0]);
 
-      for (auto& lmnt : obj_iterable->get_children())
+      result.reserve(obj_iterable->size());
+      auto& iter_elements = obj_iterable->get_children();
+
+      ctx.push_context(true);
+      Scope& iter_scope = ctx.current_scope();
+      for (auto it = iter_elements.begin(); it != iter_elements.end(); ++it)
       {
-        Scope iter_scope;
-        seq_binding->apply(iter_scope, lmnt);
-        ctx.push_context(true, iter_scope);
+        seq_binding->apply(iter_scope, *it);
         sptr_sobject iter_result;
-        for (size_t i=1; i<args.size(); i++)
+        for (size_t i=1; i<n_args; i++)
         {
-          iter_result = ctx.eval(args.at(i));
+          iter_result = ctx.eval(args[i]);
         }
-        result.push_back(iter_result);
-        ctx.pop_context();
+        result.push_back(std::move(iter_result));
+        iter_scope.clear();
       }
+      ctx.pop_context();
     }
-    return std::make_shared<Array>(result);
+    return std::make_shared<Array>(std::move(result));
   }
 
   /* ForIndexedMacro - for-indexed */
@@ -776,51 +785,54 @@ namespace Lisple
 
   MACRO_BODY(ForIndexedMacro, make_for)
   {
-    sptr_sobject_v& bind_form = args.front()->as<Array>().get_children();
+    sptr_sobject_v& bind_form = args[0]->as<Array>().get_children();
 
     if (bind_form.size() != 3)
     {
-      throw InvocationException("Invalid number of elements in for-indexed bind form, expected 3: " + args.front()->to_string());
+      throw InvocationException("Invalid number of elements in for-indexed bind form, expected 3: " + args[0]->to_string());
     }
 
-    if (!Type::WORD.is_type_of(*bind_form.at(0)))
+    if (!Type::WORD.is_type_of(*bind_form[0]))
     {
       throw TypeError("for-indexed macro requires the index variable to be a word");
     }
 
-    if (!Type::WORD.is_type_of(*bind_form.at(1)))
+    if (!Type::WORD.is_type_of(*bind_form[1]))
     {
       throw TypeError("for-indexed macro requires the iteration variable to be a word");
     }
 
-    if (!Type::SEQ.is_type_of(*bind_form.at(2)))
+    if (!Type::SEQ.is_type_of(*bind_form[2]))
     {
-      throw TypeError("for-indexed macro requires an iterable. Wrong type: " + bind_form.at(2)->to_string());
+      throw TypeError("for-indexed macro requires an iterable. Wrong type: " + bind_form[2]->to_string());
     }
 
-    auto index_binding = ArgumentBinding::create(*bind_form.at(0));
-    auto seq_binding = ArgumentBinding::create(*bind_form.at(1));
+    auto index_binding = ArgumentBinding::create(*bind_form[0]);
+    auto seq_binding = ArgumentBinding::create(*bind_form[1]);
 
-    auto seq = ctx.eval(bind_form.at(2));
+    auto seq = ctx.eval(bind_form[2]);
     sptr_sobject_v result;
+    result.reserve(seq->size());
 
+    ctx.push_context(true);
+    Scope& iter_scope = ctx.current_scope();
     for (size_t i=0; i<seq->size(); i++)
     {
-      auto& lmnt = seq->get_children().at(i);
-      Scope iter_scope;
+      auto& lmnt = seq->get_children()[i];
       sptr_sobject index = Number::make(static_cast<int>(i));
       index_binding->apply(iter_scope, index);
       seq_binding->apply(iter_scope, lmnt);
-      ctx.push_context(true, iter_scope);
       sptr_sobject iter_result;
       for (size_t e=1; e<args.size(); e++)
       {
-        iter_result = ctx.eval(args.at(e));
+        iter_result = ctx.eval(args[e]);
       }
-      result.push_back(iter_result);
+      result.push_back(std::move(iter_result));
+      iter_scope.clear();
     }
+    ctx.pop_context();
 
-    return std::make_shared<Array>(result);
+    return std::make_shared<Array>(std::move(result));
   }
 
 
@@ -829,7 +841,7 @@ namespace Lisple
 
   FUNC_BODY(EqualsPredicateFunction, equals_any)
   {
-    return *args.at(0) == *args.at(1) ? Lisple::B_TRUE : Lisple::B_FALSE;
+    return *args[0] == *args[1] ? Lisple::B_TRUE : Lisple::B_FALSE;
   }
 
   FUNC_IMPL(NotEqualsFunction, SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
@@ -838,7 +850,7 @@ namespace Lisple
 
   FUNC_BODY(NotEqualsFunction, not_equals_any)
   {
-    return *args.front() != *args.at(1) ? B_TRUE : B_FALSE;
+    return *args[0] != *args[1] ? B_TRUE : B_FALSE;
   }
 
   std::shared_ptr<Number> box_number(float num)
@@ -856,7 +868,7 @@ namespace Lisple
 
   FUNC_BODY(AbsFunction, abs_value)
   {
-    Number& num = args.front()->as<Number>();
+    Number& num = args[0]->as<Number>();
     return Number::make(std::abs(num.value));
   }
 
@@ -866,7 +878,7 @@ namespace Lisple
 
   FUNC_BODY(IntFunction, to_int)
   {
-    sptr_sobject& obj = args.front();
+    sptr_sobject& obj = args[0];
 
     if (Type::NUMBER.is_type_of(*obj))
     {
@@ -880,6 +892,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
   }
 
+  /* PlusFunction - + */
   FUNC_IMPL(PlusFunction, SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                                EXEC_DISPATCH(&PlusFunction::do_addition))))
 
@@ -890,20 +903,19 @@ namespace Lisple
       throw LispleException("No arguments given to +");
     }
 
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = *result + args.at(i)->as<Number>();
+      result = *result + args[i]->as<Number>();
     }
 
     return result;
   }
 
+  /* MinusFunction - - */
   FUNC_IMPL(MinusFunction, SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                                 EXEC_DISPATCH(&MinusFunction::do_subtraction))))
-
-
 
   FUNC_BODY(MinusFunction, do_subtraction)
   {
@@ -912,7 +924,7 @@ namespace Lisple
       throw LispleException("No arguments given to -");
     }
 
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
 
     if (args.size() == 1)
     {
@@ -922,7 +934,7 @@ namespace Lisple
     {
       for (size_t i = 1; i < args.size(); i++)
       {
-        result = *result - args.at(i)->as<Number>();
+        result = *result - args[i]->as<Number>();
       }
     }
 
@@ -939,11 +951,11 @@ namespace Lisple
       throw LispleException("No arguments given to /");
     }
 
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = *result / args.at(i)->as<Number>();
+      result = *result / args[i]->as<Number>();
     }
 
     return result;
@@ -959,11 +971,11 @@ namespace Lisple
       throw LispleException("No arguments given to *");
     }
 
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args.front());
+    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = *result * args.at(i)->as<Number>();
+      result = *result * args[i]->as<Number>();
     }
 
     return result;
@@ -975,7 +987,7 @@ namespace Lisple
 
   FUNC_BODY(LessThanFunction, lt_fn)
   {
-    return Number::value_of(*args.at(0)) < Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
+    return Number::value_of(*args[0]) < Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
   /* LessThanOrEqualsFunction */
@@ -984,7 +996,7 @@ namespace Lisple
 
   FUNC_BODY(LessThanOrEqualsFunction, lte_fn)
   {
-    return Number::value_of(*args.at(0)) <= Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
+    return Number::value_of(*args[0]) <= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
   /* GreaterThanFunction */
@@ -993,7 +1005,7 @@ namespace Lisple
 
   FUNC_BODY(GreaterThanFunction, gt_fn)
   {
-    return Number::value_of(*args.at(0)) > Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
+    return Number::value_of(*args[0]) > Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
   /* GreaterThanOrEqualsFunction */
@@ -1002,7 +1014,7 @@ namespace Lisple
 
   FUNC_BODY(GreaterThanOrEqualsFunction, gte_fn)
   {
-    return Number::value_of(*args.at(0)) >= Number::value_of(*args.at(1)) ? B_TRUE : B_FALSE;
+    return Number::value_of(*args[0]) >= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
   /* BetweenPredicateFunction - between? */
@@ -1011,8 +1023,8 @@ namespace Lisple
 
   FUNC_BODY(BetweenPredicateFunction, between)
   {
-    return Lisple::float_val(*args.front()) > Lisple::float_val(*args.at(1)) &&
-      Lisple::float_val(*args.front()) < Lisple::float_val(*args.at(2))
+    return Lisple::float_val(*args[0]) > Lisple::float_val(*args[1]) &&
+      Lisple::float_val(*args[0]) < Lisple::float_val(*args[2])
       ? B_TRUE
       : B_FALSE;
   }
@@ -1024,10 +1036,10 @@ namespace Lisple
 
   FUNC_BODY(ThresholdFunction, cap_value)
   {
-    int a = args.at(0)->as<Lisple::Number>().value;
-    int b = args.at(1)->as<Lisple::Number>().value;
+    int a = args[0]->as<Lisple::Number>().value;
+    int b = args[1]->as<Lisple::Number>().value;
 
-    return b > a ? args.at(0) : args.at(1);
+    return b > a ? args[0] : args[1];
   }
 
   FUNC_IMPL(RangeFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
@@ -1037,7 +1049,7 @@ namespace Lisple
   {
     sptr_sobject_v result;
 
-    Number& begin_num = args.front()->as<Number>();
+    Number& begin_num = args[0]->as<Number>();
     Number& end_num = args.back()->as<Number>();
 
 
@@ -1069,7 +1081,7 @@ namespace Lisple
       }
     }
 
-    return std::make_shared<Array>(result);
+    return std::make_shared<Array>(std::move(result));
   }
 
 
@@ -1082,12 +1094,12 @@ namespace Lisple
 
   FUNC_BODY(MinMaxFunction, select_min_or_max)
   {
-    float result_val = args.front()->as<Lisple::Number>().value;
+    float result_val = args[0]->as<Lisple::Number>().value;
     size_t result_index = 0;
 
     for (size_t i=1; i<args.size(); i++)
     {
-      float num = args.at(i)->as<Lisple::Number>().value;
+      float num = args[i]->as<Lisple::Number>().value;
       if (min == (num < result_val))
       {
         result_val = num;
@@ -1095,7 +1107,7 @@ namespace Lisple
       }
     }
 
-    return args.at(result_index);
+    return args[result_index];
   }
 
   MACRO_IMPL(AndMacro, SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, false)),
@@ -1142,7 +1154,7 @@ namespace Lisple
 
   FUNC_BODY(GetFunction, get)
   {
-    return args.front()->get_sptr_property(*args.back());
+    return args[0]->get_sptr_property(*args.back());
   }
 
   FUNC_IMPL(NthFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
@@ -1151,8 +1163,8 @@ namespace Lisple
   FUNC_BODY(NthFunction, get_nth)
   {
     int n = args.back()->as<Number>().int_value();
-    if (n >= static_cast<int>(args.front()->get_children().size()) || n < 0) return NIL;
-    return args.front()->get_children().at(n);
+    if (n >= static_cast<int>(args[0]->get_children().size()) || n < 0) return NIL;
+    return args[0]->get_children()[n];
   }
 
   /* AssocFunction - assoc */
@@ -1163,9 +1175,9 @@ namespace Lisple
 
   FUNC_BODY(AssocFunction, assoc_map)
   {
-    Map& map = args.front()->as<Map>();
+    Map& map = args[0]->as<Map>();
     sptr_sobject_v new_content;
-    sptr_sobject assoc_key = args.at(1);
+    sptr_sobject assoc_key = args[1];
     sptr_sobject value = args.back();
 
     for (auto key : map.key_ptrs())
@@ -1188,14 +1200,14 @@ namespace Lisple
       new_content.push_back(value);
     }
 
-    return std::make_shared<Map>(new_content);
+    return std::make_shared<Map>(std::move(new_content));
   }
 
   FUNC_BODY(AssocFunction, assoc_ho)
   {
-    AbstractHostObject& source = args.front()->as<AbstractHostObject>();
+    AbstractHostObject& source = args[0]->as<AbstractHostObject>();
     sptr_sobject_v new_content;
-    sptr_sobject assoc_key = args.at(1);
+    sptr_sobject assoc_key = args[1];
     sptr_sobject value = args.back();
 
     for (auto key : source.keys())
@@ -1218,7 +1230,7 @@ namespace Lisple
       new_content.push_back(value);
     }
 
-    return std::make_shared<Map>(new_content);
+    return std::make_shared<Map>(std::move(new_content));
   }
 
 
@@ -1235,38 +1247,38 @@ namespace Lisple
       throw Lisple::InvocationException("No value given for key '" + args.back()->to_string() + "'");
     }
 
-    if (Lisple::Type::MAP.is_type_of(*args.front()))
+    if (Lisple::Type::MAP.is_type_of(*args[0]))
     {
-      Map& map = args.front()->as<Map>();
+      Map& map = args[0]->as<Map>();
       for (size_t i=1; i<args.size()-1; i+=2)
       {
-        map.set_property(args.at(i), args.at(i+1));
+        map.set_property(args[i], args[i+1]);
       }
-      return args.front();
+      return args[0];
     }
-    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args.front()))
+    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args[0]))
     {
-      AbstractHostObject& ho = args.front()->as<AbstractHostObject>();
+      AbstractHostObject& ho = args[0]->as<AbstractHostObject>();
       for (size_t i=1; i<args.size()-1; i+=2)
       {
-        ho.set_property(&ctx, *args.at(i), args.at(i+1));
+        ho.set_property(&ctx, *args[i], args[i+1]);
       }
-      return args.front();
+      return args[0];
     }
 
-    throw Lisple::TypeError("Cannot mutate " + args.front()->to_string());
+    throw Lisple::TypeError("Cannot mutate " + args[0]->to_string());
   }
 
   FUNC_BODY(AssocBangFunction, assoc_seq_bang)
   {
-    Sexpression& seq = args.front()->as<Lisple::Sexpression>();
-    Number& index = args.at(1)->as<Lisple::Number>();
+    Sexpression& seq = args[0]->as<Lisple::Sexpression>();
+    Number& index = args[1]->as<Lisple::Number>();
 
     sptr_sobject& new_value = args.back();
 
-    seq.get_children().at(index.int_value()) = new_value;
+    seq.get_children()[index.int_value()] = new_value;
 
-    return args.front();
+    return args[0];
   }
 
   /* AssocInBangFunction - assoc-in! */
@@ -1275,7 +1287,7 @@ namespace Lisple
 
   FUNC_BODY(AssocInBangFunction, assoc_in_bang)
   {
-    sptr_sobject assoc_path = args.at(1);
+    sptr_sobject assoc_path = args[1];
     if (assoc_path->get_children().empty())
     {
       throw InvocationException("Path for assoc-in! cannot be empty.");
@@ -1283,28 +1295,28 @@ namespace Lisple
     sptr_sobject value = args.back();
     sptr_sobject assoc_key = assoc_path->get_children().back();
 
-    sptr_sobject& target = args.front();
+    sptr_sobject& target = args[0];
     for (size_t i=0; i<assoc_path->get_children().size()-1; i++)
     {
-      target = target->get_sptr_property(*assoc_path->get_children().at(i));
+      target = target->get_sptr_property(*assoc_path->get_children()[i]);
     }
 
-    if (Lisple::Type::MAP.is_type_of(*args.front()))
+    if (Lisple::Type::MAP.is_type_of(*args[0]))
     {
-      Map& map = args.front()->as<Map>();
+      Map& map = args[0]->as<Map>();
       map.set_property(assoc_key, value);
     }
-    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args.front()))
+    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args[0]))
     {
-      AbstractHostObject& ho = args.front()->as<AbstractHostObject>();
+      AbstractHostObject& ho = args[0]->as<AbstractHostObject>();
       ho.set_property(&ctx, *assoc_key, value);
     }
     else
     {
-      throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " + args.front()->to_string());
+      throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " + args[0]->to_string());
     }
 
-    return args.front();
+    return args[0];
   }
 
   /* MergeFunction - merge */
@@ -1313,13 +1325,13 @@ namespace Lisple
 
   FUNC_BODY(MergeFunction, merge_maps)
   {
-    std::shared_ptr<Map> result = std::make_shared<Map>(args.front()->as<Map>());
+    std::shared_ptr<Map> result = std::make_shared<Map>(args[0]->as<Map>());
 
     for (size_t i=1; i<args.size(); i++)
     {
-      for (auto& key : args.at(i)->as<Map>().key_ptrs())
+      for (auto& key : args[i]->as<Map>().key_ptrs())
       {
-        result->set_property(key, args.at(i)->get_sptr_property(*key));
+        result->set_property(key, args[i]->get_sptr_property(*key));
       }
     }
 
@@ -1332,14 +1344,14 @@ namespace Lisple
 
   FUNC_BODY(AppendBangFunction, append_bang)
   {
-    Lisple::Sexpression& seq = args.front()->as<Lisple::Sexpression>();
+    Lisple::Sexpression& seq = args[0]->as<Lisple::Sexpression>();
 
     for (size_t i=1; i<args.size(); i++)
     {
-      seq.append(args.at(i));
+      seq.append(args[i]);
     }
 
-    return args.front();
+    return args[0];
   }
 
   /* ConcatFunction - concat */
@@ -1374,11 +1386,11 @@ namespace Lisple
 
   FUNC_BODY(ConcatBangFunction, concat_array)
   {
-    auto result = args.front();
+    auto result = args[0];
 
     for (size_t i=1; i<args.size(); i++)
     {
-      auto& vec = args.at(i);
+      auto& vec = args[i];
       if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) && *vec != *NIL)
       {
         for (auto& element : vec->get_children())
@@ -1403,7 +1415,7 @@ namespace Lisple
   {
     sptr_sobject_v result;
 
-    for (auto obj : args.front()->get_children())
+    for (auto obj : args[0]->get_children())
     {
       if (Type::ARRAY.is_type_of(*obj) ||
           Type::LIST.is_type_of(*obj))
@@ -1420,7 +1432,7 @@ namespace Lisple
       }
     }
 
-    return std::make_shared<Array>(result);
+    return std::make_shared<Array>(std::move(result));
   }
 
   FUNC_IMPL(HeadFunction, SIG((FN_ARGS((&Type::SEQ)),
@@ -1428,7 +1440,7 @@ namespace Lisple
 
   FUNC_BODY(HeadFunction, head)
   {
-    return args.front()->as<Lisple::Sexpression>().head();
+    return args[0]->as<Lisple::Sexpression>().head();
   }
 
   FUNC_IMPL(TailFunction, SIG((FN_ARGS((&Type::SEQ)),
@@ -1436,7 +1448,7 @@ namespace Lisple
 
   FUNC_BODY(TailFunction, tail)
   {
-    return std::make_shared<Lisple::Array>(args.front()->as<Lisple::Sexpression>().tail());
+    return std::make_shared<Lisple::Array>(args[0]->as<Lisple::Sexpression>().tail());
   }
 
   FUNC_IMPL(LastFunction, SIG((FN_ARGS((&Type::SEQ)),
@@ -1444,7 +1456,7 @@ namespace Lisple
 
   FUNC_BODY(LastFunction, last)
   {
-    return args.front()->as<Lisple::Sexpression>().get_children().back();
+    return args[0]->as<Lisple::Sexpression>().get_children().back();
   }
 
   FUNC_IMPL(CountFunction, SIG((FN_ARGS((&Type::ANY)),
@@ -1452,7 +1464,7 @@ namespace Lisple
 
   FUNC_BODY(CountFunction, count)
   {
-    return Number::make(args.front()->size());
+    return Number::make(args[0]->size());
   }
 
   /* FilterFunction */
@@ -1461,7 +1473,7 @@ namespace Lisple
 
   FUNC_BODY(FilterFunction, filter_seq)
   {
-    auto original = args.front();
+    auto original = args[0];
     sptr_sobject result = Sexpression::new_sequence(original->get_type());
 
     auto& filter_fn = args.back()->as<Executable>();
@@ -1485,7 +1497,7 @@ namespace Lisple
 
   FUNC_BODY(SortFunction, sort)
   {
-    Lisple::sptr_sobject_v elements = args.front()->get_children();
+    Lisple::sptr_sobject_v elements = args[0]->get_children();
     if (elements.size() > 1)
     {
       Executable& comparator = args.back()->as<Executable>();
@@ -1496,15 +1508,15 @@ namespace Lisple
         modified = false;
         for (size_t i=0; i<elements.size()-1; i++)
         {
-          Lisple::sptr_sobject_v args = { elements.at(i), elements.at(i+1)};
-          Lisple::sptr_sobject_v args_reverse = { elements.at(i+1), elements.at(i) };
+          Lisple::sptr_sobject_v args = { elements[i], elements[i+1]};
+          Lisple::sptr_sobject_v args_reverse = { elements[i+1], elements[i] };
 
           if (comparator.execute(ctx, args)->is_truthy() &&
               !comparator.execute(ctx, args_reverse)->is_truthy())
           {
-            tmp = elements.at(i);
-            elements.at(i) = elements.at(i+1);
-            elements.at(i+1) = tmp;
+            tmp = elements[i];
+            elements[i] = elements[i+1];
+            elements[i+1] = tmp;
             modified = true;
           }
         }
@@ -1512,7 +1524,7 @@ namespace Lisple
       while (modified);
     }
 
-    return std::make_shared<Array>(elements);
+    return std::make_shared<Array>(std::move(elements));
   }
 
   /* SomeFunction */
@@ -1521,7 +1533,7 @@ namespace Lisple
 
   FUNC_BODY(SomeFunction, some)
   {
-    for (auto& element : args.front()->get_children())
+    for (auto& element : args[0]->get_children())
     {
       sptr_sobject_v args = { element };
       sptr_sobject result = args.back()->execute(ctx, args);
@@ -1542,7 +1554,7 @@ namespace Lisple
     auto original = args.back();
     Lisple::sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
 
-    auto& remove_fn = args.front()->as<Lisple::Executable>();
+    auto& remove_fn = args[0]->as<Lisple::Executable>();
 
     for (auto val : original->get_children())
     {
@@ -1564,7 +1576,7 @@ namespace Lisple
 
   FUNC_BODY(RemoveBangFunction, remove_seq)
   {
-    auto& remove_fn = args.front()->as<Lisple::Executable>();
+    auto& remove_fn = args[0]->as<Lisple::Executable>();
     auto& seq = args.back()->as<Lisple::Sexpression>();
 
     auto it = std::remove_if(seq.get_children().begin(),
@@ -1591,7 +1603,7 @@ namespace Lisple
 
     for (size_t i=0; i<args.size()-1; i++)
     {
-      seqs.push_back(args.at(i));
+      seqs.push_back(args[i]);
     }
 
     auto max_lmnts_it = std::max_element(seqs.begin(), seqs.end(),
@@ -1603,9 +1615,9 @@ namespace Lisple
       sptr_sobject_v iter_args;
       for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
       {
-        if (i < seqs.at(seq_i)->size())
+        if (i < seqs[seq_i]->size())
         {
-          iter_args.push_back(seqs.at(seq_i)->get_children().at(i));
+          iter_args.push_back(seqs[seq_i]->get_children()[i]);
         }
       }
 
@@ -1620,7 +1632,7 @@ namespace Lisple
       }
     }
 
-    return std::make_shared<Array>(result);
+    return std::make_shared<Array>(std::move(result));
   }
 
   /* ReduceFunction - reduce */
@@ -1629,10 +1641,10 @@ namespace Lisple
 
   FUNC_BODY(ReduceFunction, reduce)
   {
-    sptr_sobject result = args.at(1);
+    sptr_sobject result = args[1];
     Function& reducer = args.back()->as<Function>();
 
-    for (auto& lmnt : args.front()->get_children())
+    for (auto& lmnt : args[0]->get_children())
     {
       sptr_sobject_v reducer_args { result, lmnt };
       sptr_sobject iter_result = reducer.execute(ctx, reducer_args);
@@ -1651,14 +1663,14 @@ namespace Lisple
 
   FUNC_BODY(ReduceKeyValueFunction, reduce_kv)
   {
-    sptr_sobject result = args.at(1);
+    sptr_sobject result = args[1];
     Function& reducer = args.back()->as<Function>();
 
-    for (auto key : args.front()->as<Map>().key_ptrs())
+    for (auto key : args[0]->as<Map>().key_ptrs())
     {
       sptr_sobject_v reducer_args { result,
                                     key,
-                                    args.front()->get_sptr_property(*key) };
+                                    args[0]->get_sptr_property(*key) };
 
       sptr_sobject new_result = reducer.execute(ctx, reducer_args);
       if (new_result.get() != result.get())
@@ -1676,12 +1688,12 @@ namespace Lisple
 
   FUNC_BODY(FindFirstFunction, find_first_in_seq)
   {
-    auto original = args.front();
+    auto original = args[0];
     sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
 
     auto& filter_fn = args.back()->as<Executable>();
 
-    for (auto val : args.front()->get_children())
+    for (auto val : args[0]->get_children())
     {
       sptr_sobject_v val_args{ val };
       sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
@@ -1723,7 +1735,7 @@ namespace Lisple
 
   FUNC_BODY(SeqMatchFunction, match)
   {
-    sptr_sobject& seq = args.front();
+    sptr_sobject& seq = args[0];
     sptr_sobject& pattern = args.back();
 
     for (auto& obj : seq->get_children())
@@ -1744,16 +1756,16 @@ namespace Lisple
   {
     sptr_sobject_v result;
 
-    if (args.front()->get_type() == Form::HOST_OBJECT)
+    if (args[0]->get_type() == Form::HOST_OBJECT)
     {
-      for (auto& k : args.front()->as<Lisple::AbstractHostObject>().keys())
+      for (auto& k : args[0]->as<Lisple::AbstractHostObject>().keys())
       {
         result.push_back(k);
       }
     }
-    else if (args.front()->get_type() == Form::MAP)
+    else if (args[0]->get_type() == Form::MAP)
     {
-      result = args.front()->as<Map>().key_ptrs();
+      result = args[0]->as<Map>().key_ptrs();
     }
 
     return std::make_shared<Array>(result);
@@ -1765,7 +1777,7 @@ namespace Lisple
 
   FUNC_BODY(SelectKeysFunction, select_keys_fn)
   {
-    auto& obj = args.front()->as<Lisple::Object>();
+    auto& obj = args[0]->as<Lisple::Object>();
 
     sptr_sobject_v new_content;
     for (auto& key : args.back()->as<Lisple::Sexpression>().get_children())
@@ -1788,7 +1800,7 @@ namespace Lisple
   FUNC_BODY(PartitionFunction, partition)
   {
     std::shared_ptr<Lisple::Array> result = std::make_shared<Lisple::Array>();
-    unsigned int part_size = Lisple::uint_val(*args.front());
+    unsigned int part_size = Lisple::uint_val(*args[0]);
 
     std::shared_ptr<Lisple::Array> partition = std::make_shared<Lisple::Array>();
     for (auto& child : args.back()->get_children())
@@ -1818,7 +1830,7 @@ namespace Lisple
 
   FUNC_BODY(OddEvenPredicateFunction, exec_oddevenp)
   {
-    return args.front()->as<Lisple::Number>().int_value() % 2 == modulus ? Lisple::B_TRUE : Lisple::B_FALSE;
+    return args[0]->as<Lisple::Number>().int_value() % 2 == modulus ? Lisple::B_TRUE : Lisple::B_FALSE;
   }
 
   /* EmptyPredicateFunction */
@@ -1829,12 +1841,12 @@ namespace Lisple
 
   FUNC_BODY(EmptyPredicateFunction, exec_emptyp_seq)
   {
-    return Lisple::Boolean::wrap(args.front()->get_children().empty());
+    return Lisple::Boolean::wrap(args[0]->get_children().empty());
   }
 
   FUNC_BODY(EmptyPredicateFunction, exec_emptyp_string)
   {
-    return Lisple::Boolean::wrap(args.front()->as<Lisple::String>().value.empty());
+    return Lisple::Boolean::wrap(args[0]->as<Lisple::String>().value.empty());
   }
 
   /* NotEmptyPredicateFunction */
@@ -1845,12 +1857,12 @@ namespace Lisple
 
   FUNC_BODY(NotEmptyPredicateFunction, exec_not_emptyp_seq)
   {
-    return Lisple::Boolean::wrap(!args.front()->get_children().empty());
+    return Lisple::Boolean::wrap(!args[0]->get_children().empty());
   }
 
   FUNC_BODY(NotEmptyPredicateFunction, exec_not_emptyp_string)
   {
-    return Lisple::Boolean::wrap(!args.front()->as<Lisple::String>().value.empty());
+    return Lisple::Boolean::wrap(!args[0]->as<Lisple::String>().value.empty());
   }
 
   FUNC_IMPL(IncludeFunction, SIG((FN_ARGS((&Lisple::Type::STRING)),
@@ -1858,8 +1870,8 @@ namespace Lisple
 
   FUNC_BODY(IncludeFunction, include_file)
   {
-    ctx.read_file(Lisple::Value<std::string>::value_of(*args.at(0)));
-    return args.at(0);
+    ctx.read_file(Lisple::Value<std::string>::value_of(*args[0]));
+    return args[0];
   }
 
   /* EvalFunction - eval */
@@ -1870,13 +1882,13 @@ namespace Lisple
 
   FUNC_BODY(EvalFunction, eval_string)
   {
-    const std::string& str = args.at(0)->as<Lisple::String>().value;
+    const std::string& str = args[0]->as<Lisple::String>().value;
     return ctx.eval(str);
   }
 
   FUNC_BODY(EvalFunction, eval_form)
   {
-    return ctx.eval(args.front());
+    return ctx.eval(args[0]);
   }
 
   /* ResolveFunction - resolve */
@@ -1885,7 +1897,7 @@ namespace Lisple
 
   FUNC_BODY(ResolveFunction, resolve)
   {
-    return ctx.lookup(args.front()->as<Value<std::string>>().value);
+    return ctx.lookup(args[0]->as<Value<std::string>>().value);
   }
 
   /* ApplyFunction - apply */
@@ -1895,7 +1907,7 @@ namespace Lisple
 
   FUNC_BODY(ApplyFunction, apply_fn)
   {
-    auto& fn = *args.front();
+    auto& fn = *args[0];
     auto& fn_args = args.back()->get_children();
 
     return fn.execute(ctx, fn_args);
@@ -1907,12 +1919,12 @@ namespace Lisple
 
   FUNC_BODY(RandNthFunction, rand_nth)
   {
-    auto& seq = args.front();
+    auto& seq = args[0];
     if (seq->get_children().empty())
     {
       return NIL;
     }
-    return seq->get_children().at(std::rand() % (seq->size()));
+    return seq->get_children()[std::rand() % (seq->size())];
   }
 
   FUNC_IMPL(RndFunction, MULTI_SIG((FN_ARGS((&Lisple::Type::NUMBER)),
@@ -1922,8 +1934,8 @@ namespace Lisple
 
   FUNC_BODY(RndFunction, random_number)
   {
-    int min = args.size() == 1 ? 0 : args.at(0)->as<Lisple::Number>().value;
-    int max = args.at(args.size() == 1 ? 0 : 1)->as<Lisple::Number>().value;
+    int min = args.size() == 1 ? 0 : args[0]->as<Lisple::Number>().value;
+    int max = args[args.size() == 1 ? 0 : 1]->as<Lisple::Number>().value;
 
     return Number::make((std::rand() % (max - min)) + min);
   }
@@ -1951,7 +1963,7 @@ namespace Lisple
 
   FUNC_BODY(ContainsPredicateFunction, contains)
   {
-    sptr_sobject_v vector = args.front()->as<Array>().get_children();
+    sptr_sobject_v vector = args[0]->as<Array>().get_children();
     return std::find_if(vector.begin(),
                         vector.end(),
                         [&args](sptr_sobject lmnt)
@@ -1966,17 +1978,18 @@ namespace Lisple
 
   FUNC_BODY(RepeatFunction, repeat)
   {
-    int n = Lisple::int_val(*args.front());
-    Lisple::sptr_sobject_v array(n*(args.size()-1));
+    int n = Lisple::int_val(*args[0]);
+    Lisple::sptr_sobject_v array;
+    array.reserve(n*(args.size()-1));
     for (int ni=0; ni < n; ni++)
     {
       for (size_t i=1; i<args.size(); i++)
       {
-        array.push_back(args.at(i));
+        array.push_back(args[i]);
       }
     }
 
-    return std::make_shared<Lisple::Array>(array);
+    return std::make_shared<Lisple::Array>(std::move(array));
   }
 
   /*
@@ -1987,16 +2000,17 @@ namespace Lisple
 
   FUNC_BODY(TakeFunction, take_fn)
   {
-    int amount = args.front()->as<Number>().int_value();
-    sptr_sobject_v vector = args.back()->as<Sexpression>().get_children();
+    int amount = args[0]->as<Number>().int_value();
+    sptr_sobject_v vector = args.back()->get_children();
 
     sptr_sobject_v result;
+    result.reserve(vector.size());
     for (int i=0; i < std::min(amount, static_cast<int>(vector.size())); i++)
     {
-      result.push_back(vector.at(i));
+      result.push_back(vector[i]);
     }
 
-    return std::make_shared<Array>(result);
+    return std::make_shared<Array>(std::move(result));
   }
 
   /*
@@ -2025,7 +2039,7 @@ namespace Lisple
       }
     }
 
-    return std::make_shared<String>(result);
+    return std::make_shared<String>(std::move(result));
   }
 
   FUNC_IMPL(JoinFunction, SIG((FN_ARGS((VARARG, &Type::STRING)),
@@ -2038,12 +2052,12 @@ namespace Lisple
       return std::make_shared<Lisple::String>("");
     }
 
-    std::string joiner = args.at(0)->as<Lisple::String>().value;
-    std::string result = args.at(1)->as<Lisple::String>().value;
+    std::string joiner = args[0]->as<Lisple::String>().value;
+    std::string result = args[1]->as<Lisple::String>().value;
 
     for (size_t i=2; i < args.size(); i++)
     {
-      result += joiner + args.at(i)->as<Lisple::String>().value;
+      result += joiner + args[i]->as<Lisple::String>().value;
     }
     return std::make_shared<Lisple::String>(result);
   }

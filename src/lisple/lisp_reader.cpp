@@ -217,12 +217,13 @@ namespace Lisple
   {
     Lisple::sptr_sobject_v elements;
     auto& children = sexp.get_children();
+    elements.reserve(children.size());
 
     Lisple::Signature* sig = nullptr;
 
     for (size_t i=0; i < children.size(); i++)
     {
-      if (children.at(i)->get_type() == Lisple::Form::DISCARD)
+      if (children[i]->get_type() == Lisple::Form::DISCARD)
       {
         continue;
       }
@@ -230,9 +231,9 @@ namespace Lisple
       if (ctx.evalp() &&
           i == 0 &&
           sexp.get_type() == Lisple::Form::LIST &&
-          children.at(i)->get_type() == Lisple::Form::WORD)
+          children[i]->get_type() == Lisple::Form::WORD)
       {
-        auto head = this->eval(ctx, children.at(i));
+        auto head = this->eval(ctx, children[i]);
         if (head->get_type() == Lisple::Form::MACRO)
         {
           auto tail = sexp.tail();
@@ -243,12 +244,12 @@ namespace Lisple
       else if (sig)
       {
         ctx.push_context(sig->should_eval_arg(i - 1));
-        elements.push_back(this->eval(ctx, children.at(i)));
+        elements.push_back(this->eval(ctx, children[i]));
         ctx.pop_context();
       }
       else
       {
-        elements.push_back(this->eval(ctx, children.at(i)));
+        elements.push_back(this->eval(ctx, children[i]));
       }
     }
 

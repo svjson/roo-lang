@@ -149,21 +149,22 @@ namespace Lisple
   sptr_sobject_v Signature::coerce_args(Context& ctx, sptr_sobject_v& args)
   {
     sptr_sobject_v coerced;
+    coerced.reserve(args.size());
 
     // Non-vararg signatures
     if (args.size() == arguments.size())
     {
       for (size_t i = 0; i < arguments.size(); i++)
       {
-        const Argument& arg = arguments.at(i);
-        if (arg.matches(*args.at(i)))
+        const Argument& arg = arguments[i];
+        if (arg.matches(*args[i]))
         {
-          coerced.push_back(args.at(i));
+          coerced.push_back(args[i]);
           continue;
         }
         else
         {
-          CoercionResult coercion = arg.coerce(ctx, args.at(i));
+          CoercionResult coercion = arg.coerce(ctx, args[i]);
           if (coercion.success)
           {
             coerced.push_back(coercion.result);
@@ -182,7 +183,7 @@ namespace Lisple
 
   bool Signature::matches(const sptr_sobject_v& args) const
   {
-    if (arguments.empty() || (!arguments.back().is_vararg() && !arguments.front().is_vararg()))
+    if (arguments.empty() || (!arguments.back().is_vararg() && !arguments[0].is_vararg()))
     {
       if (arguments.size() != args.size())
       {
@@ -194,13 +195,13 @@ namespace Lisple
       }
     }
 
-    if (arguments.front().is_vararg() && arguments.size() != args.size() && arguments.size() > 1)
+    if (arguments[0].is_vararg() && arguments.size() != args.size() && arguments.size() > 1)
     {
       bool vararg_end = false;
       size_t arg_pos = 0;
 
       for (size_t i = 0; i < args.size(); i++) {
-        if (!arguments.at(arg_pos).matches(*args.at(i)))
+        if (!arguments[arg_pos].matches(*args[i]))
         {
           if (vararg_end)
           {
@@ -219,7 +220,7 @@ namespace Lisple
 
     for (size_t i = 0; i < arguments.size() && i < args.size(); i++)
     {
-      if (!arguments.at(i).matches(*args.at(i)))
+      if (!arguments[i].matches(*args[i]))
       {
         return false;
       }
@@ -229,7 +230,7 @@ namespace Lisple
     {
       for (size_t i = arguments.size(); i < args.size(); i++)
       {
-        if (!arguments.back().matches(*args.at(i)))
+        if (!arguments.back().matches(*args[i]))
         {
           return false;
         }
@@ -243,7 +244,7 @@ namespace Lisple
   {
     if (index < arguments.size())
     {
-      return arguments.at(index).evalp();
+      return arguments[index].evalp();
     }
     else if (arguments.back().is_vararg())
     {
@@ -268,7 +269,7 @@ namespace Lisple
       {
         ss << ", ";
       }
-      ss << arguments.at(i).to_string();
+      ss << arguments[i].to_string();
     }
 
     ss << "]";
@@ -316,7 +317,7 @@ namespace Lisple
     std::string expected;
     if (signatures.size() == 1)
     {
-      expected = "Expected: " + signatures.front()->to_string();
+      expected = "Expected: " + signatures[0]->to_string();
     }
     else
     {
@@ -443,7 +444,7 @@ namespace Lisple
     Lisple::Scope fn_scope;
     for (size_t i=0; i<args.size(); i++)
     {
-      arg_bindings.at(i)->apply(fn_scope, args.at(i));
+      arg_bindings[i]->apply(fn_scope, args[i]);
     }
     ctx.push_context(true, fn_scope);
     sptr_sobject retval = body.empty() ? Lisple::NIL : nullptr;
