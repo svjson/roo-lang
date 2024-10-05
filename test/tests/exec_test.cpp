@@ -283,3 +283,21 @@ TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
   EXPECT_FALSE(result.get());
   EXPECT_THAT(msg, HasSubstr("No matching signature"));
 }
+
+TEST(UserFunction, invocation_of_empty_function_returns_nil)
+{
+  // Given
+  LispleTest::LispReaderFixture fixture;
+  fixture.lisp_reader.eval("(defun my-fn [arg])");
+
+  auto fn_sptr = fixture.lisp_reader.lookup(Lisple::Word("my-fn"));
+  Lisple::UserFunction& user_fn = fn_sptr->as<Lisple::UserFunction>();
+
+  Lisple::sptr_sobject_v args = { Lisple::String::make("A string!")};
+
+  // When
+  auto retval = user_fn.execute(fixture.ctx, args);
+
+  // Then
+  ASSERT_EQ(*retval, *Lisple::NIL);
+}

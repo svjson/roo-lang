@@ -445,13 +445,15 @@ namespace Lisple
       arg_bindings.at(i)->apply(fn_scope, args.at(i));
     }
     ctx.push_context(true, fn_scope);
-    sptr_sobject retval;
+    sptr_sobject retval = body.empty() ? Lisple::NIL : nullptr;
+
     for (auto& form : body)
     {
       retval = ctx.eval(form);
     }
     ctx.pop_context();
     ctx.switch_namespace(current_namespace->get_name());
+
     return retval;
   }
 
