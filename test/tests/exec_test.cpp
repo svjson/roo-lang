@@ -75,6 +75,7 @@ TEST(Signature, matches_varargs)
                               std::bind(&Lisple::AndMacro::logical_and, &dummy_func, std::placeholders::_1, std::placeholders::_2));
 
   // Then
+  EXPECT_TRUE(signature.matches({ }));
   EXPECT_TRUE(signature.matches({ STRING }));
   EXPECT_TRUE(signature.matches({ STRING, STRING }));
   EXPECT_TRUE(signature.matches({ STRING, STRING, STRING }));
@@ -101,7 +102,51 @@ TEST(Signature, matches__leading_varargs)
   EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, FUNCTION }));
   EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, ARRAY, FUNCTION }));
 
+  EXPECT_FALSE(signature.matches({ }));
+  EXPECT_FALSE(signature.matches({ STRING }));
   EXPECT_FALSE(signature.matches({ FUNCTION, ARRAY }));
+}
+
+TEST(Signature, matches__trailing_varargs)
+{
+  // Given
+  Lisple::MapFunction dummy_func;
+  Lisple::Signature signature(Lisple::arg_v { Lisple::arg(&Lisple::Type::FUNCTION),
+                                              Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY)},
+    std::bind(&Lisple::MapFunction::map_seq, &dummy_func, std::placeholders::_1, std::placeholders::_2));
+
+  EXPECT_TRUE(signature.matches({ FUNCTION }));
+  EXPECT_TRUE(signature.matches({ FUNCTION, ARRAY }));
+  EXPECT_TRUE(signature.matches({ FUNCTION, ARRAY, ARRAY }));
+  EXPECT_TRUE(signature.matches({ FUNCTION, ARRAY, ARRAY, ARRAY }));
+
+  EXPECT_FALSE(signature.matches({ }));
+  EXPECT_FALSE(signature.matches({ STRING }));
+  EXPECT_FALSE(signature.matches({ ARRAY }));
+  EXPECT_FALSE(signature.matches({ ARRAY, FUNCTION }));
+  EXPECT_FALSE(signature.matches({ FUNCTION, FUNCTION, ARRAY }));
+  EXPECT_FALSE(signature.matches({ ARRAY, FUNCTION, ARRAY }));
+}
+
+TEST(Signature, matches__trailing_varargs_of_same_type)
+{
+  // Given
+  Lisple::MapFunction dummy_func;
+  Lisple::Signature signature(Lisple::arg_v { Lisple::arg(&Lisple::Type::ARRAY),
+                                              Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY)},
+    std::bind(&Lisple::MapFunction::map_seq, &dummy_func, std::placeholders::_1, std::placeholders::_2));
+
+  EXPECT_TRUE(signature.matches({ ARRAY }));
+  EXPECT_TRUE(signature.matches({ ARRAY, ARRAY }));
+  EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, ARRAY }));
+  EXPECT_TRUE(signature.matches({ ARRAY, ARRAY, ARRAY, ARRAY }));
+
+  EXPECT_FALSE(signature.matches({ }));
+  EXPECT_FALSE(signature.matches({ ARRAY, STRING }));
+  EXPECT_FALSE(signature.matches({ STRING, ARRAY }));
+  EXPECT_FALSE(signature.matches({ ARRAY, FUNCTION }));
+  EXPECT_FALSE(signature.matches({ FUNCTION, FUNCTION, ARRAY }));
+  EXPECT_FALSE(signature.matches({ ARRAY, FUNCTION, ARRAY }));
 }
 
 TEST(Signature, coerce_args__map_to_host_type)

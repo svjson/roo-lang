@@ -162,11 +162,20 @@ namespace Lisple
 
   typedef std::function<std::shared_ptr<Object>(Context&, sptr_sobject_v&)> exec_fn;
 
+  /*!
+   * @brief Signature
+   */
   class Signature
   {
    protected:
     const std::vector<Argument> arguments;
     exec_fn target_func;
+
+    /*!
+     * @brief flag signalling if arguments contains a vararg Argument.
+     * Pre-calculated at construction for performance
+     */
+    bool vararg = false;
 
    public:
     Signature(std::vector<Argument> arguments, exec_fn target_func);

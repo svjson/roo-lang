@@ -135,10 +135,19 @@ namespace Lisple
       : type->to_string();
   }
 
+  /* Signature */
   Signature::Signature(arg_v args, exec_fn target_func)
     : arguments(args)
     , target_func(target_func)
   {
+    for (auto& arg : arguments)
+    {
+      if (arg.is_vararg())
+      {
+        this->vararg = true;
+        break;
+      }
+    }
   }
 
   const std::vector<Argument>& Signature::get_arguments() const
@@ -183,54 +192,41 @@ namespace Lisple
 
   bool Signature::matches(const sptr_sobject_v& args) const
   {
-    if (arguments.empty() || (!arguments.back().is_vararg() && !arguments[0].is_vararg()))
+    size_t args_size = args.size();
+    size_t arguments_size = arguments.size();
+    if (this->vararg)
     {
-      if (arguments.size() != args.size())
+      size_t i = 0;
+      size_t a = 0;
+      while (i < args_size && a < arguments_size)
       {
-        return false;
-      }
-      else if (arguments.empty())
-      {
-        return true;
-      }
-    }
-
-    if (arguments[0].is_vararg() && arguments.size() != args.size() && arguments.size() > 1)
-    {
-      bool vararg_end = false;
-      size_t arg_pos = 0;
-
-      for (size_t i = 0; i < args.size(); i++) {
-        if (!arguments[arg_pos].matches(*args[i]))
+        if (arguments[a].is_vararg())
         {
-          if (vararg_end)
-          {
-            return false;
-          }
+          if (arguments[a].matches(*args[i]))
+            i++;
           else
-          {
-            vararg_end = true;
-            arg_pos++;
-            i--;
-          }
+            a++;
+        }
+        else
+        {
+          if (!arguments[a].matches(*args[i])) return false;
+          i++;
+          a++;
         }
       }
-      return true;
-    }
 
-    for (size_t i = 0; i < arguments.size() && i < args.size(); i++)
+      if (a < arguments_size-1 || i < args_size) return false;
+    }
+    else
     {
-      if (!arguments[i].matches(*args[i]))
+      if (arguments_size != args_size)
       {
         return false;
       }
-    }
 
-    if (!args.empty() && !arguments.empty() && arguments.back().is_vararg())
-    {
-      for (size_t i = arguments.size(); i < args.size(); i++)
+      for (size_t i = 0; i < args_size; i++)
       {
-        if (!arguments.back().matches(*args[i]))
+        if (!arguments[i].matches(*args[i]))
         {
           return false;
         }
@@ -328,7 +324,7 @@ namespace Lisple
       }
     }
 
-    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected);
+    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected + ", but got: " + Lisple::Array(args).to_string() + ".");
   }
 
   Function::Function(uptr_sig signature)
