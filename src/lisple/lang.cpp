@@ -54,6 +54,7 @@ namespace Lisple
     lang.emplace("count", std::make_shared<CountFunction>());
     lang.emplace("def", std::make_shared<DefMacro>());
     lang.emplace("defun", std::make_shared<DefunMacro>());
+    lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang.emplace("do", std::make_shared<DoMacro>());
     lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
     lang.emplace("eval", std::make_shared<EvalFunction>());
@@ -1337,6 +1338,20 @@ namespace Lisple
     }
 
     return args[0];
+  }
+
+  /* DissocBangFunction */
+  FUNC_IMPL(DissocBangFunction, SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
+                                     EXEC_DISPATCH(&DissocBangFunction::dissoc_bang))))
+
+  FUNC_BODY(DissocBangFunction, dissoc_bang)
+  {
+    if (*NIL == *args[0])
+    {
+      return NIL;
+    }
+
+    return args[0]->as<Lisple::Map>().remove_key(*args[1]);
   }
 
   /* MergeFunction - merge */

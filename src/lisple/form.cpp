@@ -868,6 +868,30 @@ namespace Lisple
     }
   }
 
+  sptr_sobject Map::remove_key(const Object& key)
+  {
+    sptr_sobject removed_val = NIL;
+
+    int index = -1;
+
+    for (size_t i=0; i<children.size(); i+=2)
+    {
+      if (*children[i] == key)
+      {
+        index = i;
+        break;
+      }
+    }
+
+    if (index != -1)
+    {
+      removed_val = children[index+1];
+      children.erase(children.begin() + index, children.begin() + index+2);
+    }
+
+    return removed_val;
+  }
+
   const std::string Map::lpar() const
   {
     return "{";

@@ -1287,6 +1287,34 @@ TEST(AssocBangFunction, add_and_replace_multiple)
   EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
 }
 
+TEST(DissocBangFunction, removal_of_non_existing_key_returns_nil)
+{
+  // Given
+  Lisple::LispReader runtime;
+  runtime.eval("(def my-map {:a 1 :b 2 :c 3})");
+
+  // When
+  auto result = runtime.eval("(dissoc! my-map :d)");
+
+  // Then
+  EXPECT_EQ(*result, *Lisple::NIL);
+  EXPECT_EQ(runtime.eval("my-map")->to_string(), "{:a 1 :b 2 :c 3}");
+}
+
+TEST(DissocBangFunction, removal_of_key_returns_value)
+{
+  // Given
+  Lisple::LispReader runtime;
+  runtime.eval("(def my-map {:a 1 :b 2 :c 3})");
+
+  // When
+  auto result = runtime.eval("(dissoc! my-map :b)");
+
+  // Then
+  EXPECT_EQ(*result, *Lisple::Number::make(2));
+  EXPECT_EQ(runtime.eval("my-map")->to_string(), "{:a 1 :c 3}");
+}
+
 TEST(ContainsPredicateFunction, contains)
 {
   // Given

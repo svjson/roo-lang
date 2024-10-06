@@ -158,6 +158,106 @@ TEST(Map, has_key)
   EXPECT_FALSE(map.has_key(Lisple::String("somevalue")));
 }
 
+TEST(Map, remove_key__existing_front_key)
+{
+  Lisple::sptr_sobject_v map_elements
+  {
+    std::make_shared<Lisple::Key>("a-key"),
+    std::make_shared<Lisple::String>("a value"),
+    std::make_shared<Lisple::Key>("some-key"),
+    std::make_shared<Lisple::String>("some value"),
+    std::make_shared<Lisple::Key>("another-key"),
+    std::make_shared<Lisple::String>("another-value")
+  };
+  Lisple::Map map(map_elements);
+
+  // When
+  auto result = map.remove_key(Lisple::Key("a-key"));
+
+  // Then
+  EXPECT_EQ(*result, Lisple::String("a value"));
+  EXPECT_EQ(map.size(), 2);
+  EXPECT_FALSE(map.has_key(Lisple::Key("a-key")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("some-key")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("another-key")));
+  EXPECT_EQ(map.to_string(), R"({:some-key "some value" :another-key "another-value"})");
+}
+
+TEST(Map, remove_key__existing_middle_key)
+{
+  Lisple::sptr_sobject_v map_elements
+  {
+    std::make_shared<Lisple::Key>("a-key"),
+    std::make_shared<Lisple::String>("a value"),
+    std::make_shared<Lisple::Key>("some-key"),
+    std::make_shared<Lisple::String>("some value"),
+    std::make_shared<Lisple::Key>("another-key"),
+    std::make_shared<Lisple::String>("another-value")
+  };
+  Lisple::Map map(map_elements);
+
+  // When
+  auto result = map.remove_key(Lisple::Key("some-key"));
+
+  // Then
+  EXPECT_EQ(*result, Lisple::String("some value"));
+  EXPECT_EQ(map.size(), 2);
+  EXPECT_TRUE(map.has_key(Lisple::Key("a-key")));
+  EXPECT_FALSE(map.has_key(Lisple::Key("some-key")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("another-key")));
+  EXPECT_EQ(map.to_string(), R"({:a-key "a value" :another-key "another-value"})");
+}
+
+TEST(Map, remove_key__existing_back_key)
+{
+  Lisple::sptr_sobject_v map_elements
+  {
+    std::make_shared<Lisple::Key>("a-key"),
+    std::make_shared<Lisple::String>("a value"),
+    std::make_shared<Lisple::Key>("some-key"),
+    std::make_shared<Lisple::String>("some value"),
+    std::make_shared<Lisple::Key>("another-key"),
+    std::make_shared<Lisple::String>("another-value")
+  };
+  Lisple::Map map(map_elements);
+
+  // When
+  auto result = map.remove_key(Lisple::Key("another-key"));
+
+  // Then
+  EXPECT_EQ(*result, Lisple::String("another-value"));
+  EXPECT_EQ(map.size(), 2);
+  EXPECT_TRUE(map.has_key(Lisple::Key("a-key")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("some-key")));
+  EXPECT_FALSE(map.has_key(Lisple::Key("another-key")));
+  EXPECT_EQ(map.to_string(), R"({:a-key "a value" :some-key "some value"})");
+}
+
+TEST(Map, remove_key__non_existing_key)
+{
+  Lisple::sptr_sobject_v map_elements
+  {
+    std::make_shared<Lisple::Key>("a-key"),
+    std::make_shared<Lisple::String>("a value"),
+    std::make_shared<Lisple::Key>("some-key"),
+    std::make_shared<Lisple::String>("some value"),
+    std::make_shared<Lisple::Key>("another-key"),
+    std::make_shared<Lisple::String>("another-value")
+  };
+  Lisple::Map map(map_elements);
+
+  // When
+  auto result = map.remove_key(Lisple::Key("wildcard-key"));
+
+  // Then
+  EXPECT_EQ(*result, *Lisple::NIL);
+  EXPECT_EQ(map.size(), 3);
+  EXPECT_TRUE(map.has_key(Lisple::Key("a-key")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("some-key")));
+  EXPECT_TRUE(map.has_key(Lisple::Key("another-key")));
+  EXPECT_EQ(map.to_string(), R"({:a-key "a value" :some-key "some value" :another-key "another-value"})");
+}
+
 TEST(Symbol, equality)
 {
   // Given

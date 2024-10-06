@@ -363,6 +363,8 @@ namespace Lisple
     void set_property(const Object& key, sptr_sobject& value) override;
     void set_property(const sptr_sobject& key, const sptr_sobject& value);
 
+    sptr_sobject remove_key(const Object& key);
+
     const std::string lpar() const override;
     const std::string rpar() const override;
 
