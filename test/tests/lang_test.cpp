@@ -649,6 +649,28 @@ TEST(ThreadFirstMacro, functions)
   ASSERT_EQ(retval->to_string(), Lisple::Number(8).to_string());
 }
 
+TEST(ThreadFirstMacro, retrieved_map_is_same_instance)
+{
+  // Given
+  LispleTest::LispReaderFixture fixture;
+  fixture.lisp_reader.eval("(def deep_map {:file {:metadata {:size {:mb 1200}}}})");
+
+  // When
+  auto tf_size = fixture.lisp_reader.eval("(-> deep_map :file :metadata :size)");
+  auto tf_fn_size = fixture.lisp_reader.eval("(-> deep_map (get :file) :metadata (get :size))");
+  auto size = fixture.lisp_reader.eval("(:size (:metadata (:file deep_map)))");
+
+  // Then
+  EXPECT_EQ(*tf_size, *size);
+  EXPECT_EQ(*tf_fn_size, *size);
+
+  EXPECT_EQ(tf_size.get(), size.get());
+  EXPECT_EQ(tf_size->to_string(), size->to_string());
+
+  EXPECT_EQ(tf_fn_size.get(), size.get());
+  EXPECT_EQ(tf_fn_size->to_string(), size->to_string());
+}
+
 TEST(EmptyPredicateFunction, emptyp_seqs)
 {
   // Given

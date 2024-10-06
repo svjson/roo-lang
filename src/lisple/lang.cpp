@@ -533,23 +533,32 @@ namespace Lisple
       sptr_sobject ifn = args[i];
       if (ifn->get_type() == Form::LIST)
       {
-        std::shared_ptr<List> realized = ifn->as<List>().insert(1, value);
-        value = ctx.eval(realized);
+        sptr_sobject_v ifn_children = ifn->get_children();
+        size_t ifn_size = ifn_children.size();
+        sptr_sobject_v fn_list;
+
+        fn_list.reserve(ifn->size()+1);
+        if (ifn_size) fn_list.push_back(ctx.eval(ifn_children[0]));
+
+        fn_list.push_back(value);
+
+        for (size_t n=1; n<ifn_size; n++)
+        {
+          fn_list.push_back(ctx.eval(ifn_children[n]));
+        }
+
+        value = List(fn_list).execute(ctx);
       }
       else
       {
-        sptr_sobject_v elements { ifn, value };
-        std::shared_ptr<List> realized = std::make_shared<List>(elements);
-        value = ctx.eval(realized);
+        value = List({ctx.eval(ifn), value}).execute(ctx);
       }
     }
 
     return value;
   }
 
-  /**
-   * NilPredicateFunction
-   */
+  /* NilPredicateFunction */
   FUNC_IMPL(NilPredicateFunction, SIG((FN_ARGS((&Type::ANY)),
                                        EXEC_DISPATCH(&NilPredicateFunction::is_nil))))
 
