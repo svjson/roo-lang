@@ -440,7 +440,7 @@ namespace Lisple
       throw LispleException("Wrong number of parameters in binding form of if-let expression: " + binding_form.to_string());
     }
 
-    bool contains_nil = false;
+    bool contains_non_truthy = false;
 
     size_t scopes = 0;
     for (size_t i=0; i < binding_form.size(); i+=2)
@@ -448,9 +448,9 @@ namespace Lisple
       auto& var_name_obj = *binding_form.get_children()[i];
       auto var_val_obj = ctx.eval(binding_form.get_children()[i+1]);
 
-      if (*var_val_obj == *NIL)
+      if (!var_val_obj->is_truthy())
       {
-        contains_nil = true;
+        contains_non_truthy = true;
         break;
       }
 
@@ -467,7 +467,7 @@ namespace Lisple
 
     sptr_sobject result = NIL;
 
-    if (!contains_nil)
+    if (!contains_non_truthy)
     {
       result = ctx.eval(args[1]);
     }
