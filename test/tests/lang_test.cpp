@@ -452,6 +452,18 @@ TEST(ResolveFunction, resolve)
   ASSERT_EQ(result, runtime.lookup(Lisple::Word("concat")));
 }
 
+TEST(ResolveFunction, nil_resolves_to_nil)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  auto result = runtime.eval("(resolve nil)");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::NIL);
+}
+
 TEST(ApplyFunction, apply_dynamic)
 {
   // Given

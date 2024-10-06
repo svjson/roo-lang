@@ -1933,6 +1933,7 @@ namespace Lisple
 
   FUNC_BODY(ResolveFunction, resolve)
   {
+    if (*args[0] == *NIL) return NIL;
     return ctx.lookup(args[0]->as<Value<std::string>>().value);
   }
 
