@@ -987,6 +987,10 @@ namespace Lisple
 
   FUNC_BODY(LessThanFunction, lt_fn)
   {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
     return Number::value_of(*args[0]) < Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
@@ -996,6 +1000,10 @@ namespace Lisple
 
   FUNC_BODY(LessThanOrEqualsFunction, lte_fn)
   {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
     return Number::value_of(*args[0]) <= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
@@ -1005,6 +1013,10 @@ namespace Lisple
 
   FUNC_BODY(GreaterThanFunction, gt_fn)
   {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
     return Number::value_of(*args[0]) > Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
@@ -1014,6 +1026,10 @@ namespace Lisple
 
   FUNC_BODY(GreaterThanOrEqualsFunction, gte_fn)
   {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
     return Number::value_of(*args[0]) >= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
@@ -1028,7 +1044,6 @@ namespace Lisple
       ? B_TRUE
       : B_FALSE;
   }
-
 
   /* ThresholdFunction */
   FUNC_IMPL(ThresholdFunction, SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
@@ -1247,6 +1262,11 @@ namespace Lisple
       throw Lisple::InvocationException("No value given for key '" + args.back()->to_string() + "'");
     }
 
+    if (*NIL == *args[0])
+    {
+      throw Lisple::TypeError("Cannot mutate nil");
+    }
+
     if (Lisple::Type::MAP.is_type_of(*args[0]))
     {
       Map& map = args[0]->as<Map>();
@@ -1440,6 +1460,7 @@ namespace Lisple
 
   FUNC_BODY(HeadFunction, head)
   {
+    if (*NIL == *args[0]) return NIL;
     return args[0]->as<Lisple::Sexpression>().head();
   }
 
