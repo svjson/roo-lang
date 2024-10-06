@@ -913,10 +913,18 @@ namespace Lisple
       throw LispleException("No arguments given to +");
     }
 
+    if (*NIL == *args[0])
+    {
+      throw TypeError("Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
+    }
     std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
 
     for (size_t i = 1; i < args.size(); i++)
     {
+      if (*NIL == *args[i])
+      {
+        throw TypeError("Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
+      }
       result = *result + args[i]->as<Number>();
     }
 
@@ -934,6 +942,10 @@ namespace Lisple
       throw LispleException("No arguments given to -");
     }
 
+    if (*NIL == *args[0])
+    {
+      throw TypeError("Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
+    }
     std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
 
     if (args.size() == 1)
@@ -944,6 +956,10 @@ namespace Lisple
     {
       for (size_t i = 1; i < args.size(); i++)
       {
+        if (*NIL == *args[i])
+        {
+          throw TypeError("Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
+        }
         result = *result - args[i]->as<Number>();
       }
     }
