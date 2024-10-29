@@ -865,6 +865,17 @@
     return LISPLE_FORM::make_ref(get_object().METHOD());                                 \
   }
 
+/* __ADAPTER_PROP_GET_HOST_OBJECT__METHOD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_SET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                  \
+  {                                                                                      \
+    return get_object().METHOD(value.as<LISPLE_FORM>().get_object());                    \
+  }
+
+
 /* __ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD
  *
  * For internal use only
