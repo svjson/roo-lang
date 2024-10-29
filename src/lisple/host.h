@@ -756,6 +756,10 @@
       : Lisple::NIL;                                                                             \
   }
 
+/* __ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD
+ *
+ * For internal use only
+ */
 #define __ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
   ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
   {                                                                                              \
@@ -763,6 +767,36 @@
       get_object().OBJ_FIELD = std::nullopt;                                                     \
     else                                                                                         \
       get_object().OBJ_FIELD = value.as<LISPLE_FORM>().get_object();                             \
+  }
+
+/* __ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, OBJ_FIELD) \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                          \
+  {                                                                                              \
+    return get_object().OBJ_FIELD.count(MAP_KEY)                                                 \
+      ? LISPLE_FORM::make_ref(*get_object().OBJ_FIELD.at(MAP_KEY))                               \
+      : Lisple::NIL;                                                                             \
+  }
+
+/* __ADAPTER_PROP_SET_HOST_OBJECT_OPT__MAP_FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_SET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, OBJ_FIELD) \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
+  {                                                                                              \
+    if (get_object().OBJ_FIELD.count(MAP_KEY))                                                   \
+    {                                                                                            \
+      get_object().OBJ_FIELD.erase(MAP_KEY);                                                     \
+    }                                                                                            \
+                                                                                                 \
+    if (*Lisple::NIL != value)                                                                   \
+    {                                                                                            \
+      get_object().OBJ_FIELD.emplace(MAP_KEY, value.as<LISPLE_FORM>().get_object());             \
+    }                                                                                            \
   }
 
 /* __ADAPTER_PROP_GET__METHOD
@@ -972,6 +1006,26 @@
 #define ADAPTER_PROP_GET_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
   ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
   ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD - get optional host object
+ * from an std::map of the underlying object
+ *
+ * Generates a property getter implementation that retrives the property value
+ * of an std::optional value of a member std::map field containing a host object
+ * that needs to be wrapped in a host adapter.
+ *
+ * This means that the map field in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD) \
+  __ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD) \
+  __ADAPTER_PROP_SET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD) \
+  ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD) \
+  ADAPTER_PROP_SET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, MAP_FIELD)
 
 /* ADAPTER_PROP_GET__METHOD - get value by field
  *
