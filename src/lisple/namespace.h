@@ -4,11 +4,12 @@
 
 #include <cstdint>
 #include <map>
-#include <memory>
 #include <string>
+#include <vector>
 
-#include "scope.h"
 #include "form.h"
+#include "scope.h"
+#include "type.h"
 
 namespace Lisple
 {

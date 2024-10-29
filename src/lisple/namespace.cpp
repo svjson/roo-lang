@@ -1,7 +1,14 @@
 
 #include "namespace.h"
 
+#include <algorithm>
+#include <memory>
+#include <utility>
+
+#include "form.h"
 #include "lisple_exception.h"
+#include "scope.h"
+#include "type.h"
 
 #include <regex>
 

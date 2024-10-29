@@ -2,6 +2,7 @@
 #include "form.h"
 
 #include <algorithm>
+#include <compare>
 #include <iterator>
 #include <cmath>
 #include <stddef.h>

@@ -2,21 +2,24 @@
 #include "lang.h"
 
 #include <algorithm>
+#include <bits/std_abs.h>
 #include <cstdlib>
 #include <iostream>
 #include <map>
 #include <math.h>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "context.h"
 #include "exec.h"
 #include "form.h"
+#include "host.h"
 #include "impl.h"
+#include "namespace.h"
 #include "scope.h"
 #include "type.h"
-#include "host.h"
 #include "lisple_exception.h"
 
 namespace Lisple

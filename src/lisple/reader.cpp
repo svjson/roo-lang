@@ -1,6 +1,8 @@
 
 #include "reader.h"
 
+#include <vector>
+
 #include "lexer.h"
 #include "parser.h"
 #include "type.h"

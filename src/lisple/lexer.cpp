@@ -2,7 +2,6 @@
 
 #include <sstream>
 #include <regex>
-#include <stdexcept>
 #include <string>
 
 #include "lisple_exception.h"

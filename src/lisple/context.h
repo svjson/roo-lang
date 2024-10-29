@@ -2,7 +2,6 @@
 #ifndef __LISPLE_CONTEXT_H_
 #define __LISPLE_CONTEXT_H_
 
-#include <algorithm>
 #include <memory>
 #include <stddef.h>
 #include <string>

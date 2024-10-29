@@ -2,13 +2,13 @@
 #ifndef __LISPLE__IMPL_H_
 #define __LISPLE__IMPL_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <type_traits>
 
 #include "form.h"
 #include "type.h"
-#include "lisple_exception.h"
 
 namespace Lisple
 {

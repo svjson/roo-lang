@@ -1,9 +1,19 @@
 
+#include <map>
+#include <memory>
+#include <string>
+#include <type_traits>
+
+#include "form.h"
 #include "host.h"
 #include "impl.h"
+#include "type.h"
 
 namespace Lisple
 {
+  class Context;
+  enum class HostObjectType : short;
+
   template <typename K, typename V, class A1=K, class A2=V>
   class StdMapAdapter : public HostObject<std::map<K, V>>
   {

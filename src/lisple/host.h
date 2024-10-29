@@ -6,8 +6,11 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
+#include "context.h"
 #include "form.h"
 #include "type.h"
 #include "lisple_exception.h"
