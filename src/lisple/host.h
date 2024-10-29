@@ -262,8 +262,51 @@
   HOST_ADAPTER_GETTER_DECL(P16)                                                                            \
   HOST_ADAPTER_GETTER_DECL(P17)
 
-#define SELECT_GETTERS_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, MACRO_NAME, ...) MACRO_NAME
-#define HOST_ADAPTER_GETTERS(...) SELECT_GETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_GETTERS17, HOST_ADAPTER_GETTERS16, HOST_ADAPTER_GETTERS15, HOST_ADAPTER_GETTERS14, HOST_ADAPTER_GETTERS13, HOST_ADAPTER_GETTERS12, HOST_ADAPTER_GETTERS11, HOST_ADAPTER_GETTERS10, HOST_ADAPTER_GETTERS9, HOST_ADAPTER_GETTERS8, HOST_ADAPTER_GETTERS7, HOST_ADAPTER_GETTERS6, HOST_ADAPTER_GETTERS5, HOST_ADAPTER_GETTERS4, HOST_ADAPTER_GETTERS3, HOST_ADAPTER_GETTERS2, HOST_ADAPTER_GETTERS1)(__VA_ARGS__)
+#define HOST_ADAPTER_GETTERS18(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18) \
+  HOST_ADAPTER_GETTER_DECL(P1)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P2)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P3)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P4)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P5)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P6)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P7)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P8)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P9)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P10)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P11)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P12)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P13)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P14)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P15)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P16)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P17)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P18)
+
+#define HOST_ADAPTER_GETTERS19(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19) \
+  HOST_ADAPTER_GETTER_DECL(P1)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P2)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P3)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P4)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P5)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P6)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P7)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P8)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P9)                                                                                  \
+  HOST_ADAPTER_GETTER_DECL(P10)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P11)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P12)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P13)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P14)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P15)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P16)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P17)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P18)                                                                                 \
+  HOST_ADAPTER_GETTER_DECL(P19)
+
+
+
+#define SELECT_GETTERS_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, MACRO_NAME, ...) MACRO_NAME
+#define HOST_ADAPTER_GETTERS(...) SELECT_GETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_GETTERS19, HOST_ADAPTER_GETTERS18, HOST_ADAPTER_GETTERS17, HOST_ADAPTER_GETTERS16, HOST_ADAPTER_GETTERS15, HOST_ADAPTER_GETTERS14, HOST_ADAPTER_GETTERS13, HOST_ADAPTER_GETTERS12, HOST_ADAPTER_GETTERS11, HOST_ADAPTER_GETTERS10, HOST_ADAPTER_GETTERS9, HOST_ADAPTER_GETTERS8, HOST_ADAPTER_GETTERS7, HOST_ADAPTER_GETTERS6, HOST_ADAPTER_GETTERS5, HOST_ADAPTER_GETTERS4, HOST_ADAPTER_GETTERS3, HOST_ADAPTER_GETTERS2, HOST_ADAPTER_GETTERS1)(__VA_ARGS__)
 
 #define HOST_ADAPTER_SETTER_DECL(PROP_NAME)       \
   DOXYGEN(Set the value of PROP_NAME using Lisple Object value)  \
