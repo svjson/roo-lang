@@ -115,6 +115,7 @@ namespace Lisple
     inline const TypeRef FUNCTION(Form::FUNCTION, "Function");
     inline const TypeRef MACRO(Form::MACRO, "Macro");
     inline const TypeRef HOST_OBJECT(Form::HOST_OBJECT, "HostObject");
+    inline const TypeRef NIL(Form::NIL, "nil");
 
     inline const SeqRef ARRAY_OF_ARRAY(&ARRAY, &ARRAY, "[Array]");
     inline const SeqRef ARRAY_OF_KEY(&ARRAY, &KEY, "[Key]");
