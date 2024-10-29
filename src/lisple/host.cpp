@@ -55,7 +55,7 @@ namespace Lisple
     if (make_fn)
     {
       sptr_sobject function = ctx.lookup(*make_fn);
-      if (!Type::EXEC.is_type_of(*function))
+      if (*function == *NIL || !Type::EXEC.is_type_of(*function))
       {
         throw InvocationException("Coercion failed. Review Host Object configuration - Make Function '" + *make_fn + "' is not executable: " + function->to_string(2));
       }
