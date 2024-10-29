@@ -331,7 +331,7 @@ namespace Lisple
       {
         if (!Type::SEQ.is_type_of(*init_expr))
         {
-          throw TypeError("Invalid init expression in let-expression: " + init_expr->to_string() + ". Must be Seq for binding form: " + binding_form.to_string());
+          throw TypeError("Invalid init expression in let-expression: " + init_expr->to_string(2) + ". Must be Seq for binding form: " + binding_form.to_string(2));
         }
 
         for (size_t b=0; b<binding_form.size(); b++)

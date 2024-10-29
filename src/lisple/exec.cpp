@@ -28,7 +28,7 @@ namespace Lisple
       return std::make_unique<DestructuringArgumentBinding>(arg_declaration.as<Map>());
     }
 
-    throw LispleException("Invalid argument declaration: " + arg_declaration.to_string());
+    throw LispleException("Invalid argument declaration: " + arg_declaration.to_string(2));
   }
 
   NamedArgumentBinding::NamedArgumentBinding(const std::string& name)
@@ -53,7 +53,7 @@ namespace Lisple
         (destr_map.keys().size() == 2 && !destr_map.has_key(as)) ||
         !Type::ARRAY.is_type_of(destr_map.get_property(keys)))
     {
-      throw Lisple::TypeError("Invalid destructuring form: " + destr_map.to_string());
+      throw Lisple::TypeError("Invalid destructuring form: " + destr_map.to_string(2));
     }
   }
 
@@ -78,7 +78,7 @@ namespace Lisple
       Object& alias = destr_map.get_property(as);
       if (alias.get_type() != Form::WORD)
       {
-        throw LispleException("Invalid alias destructuring form: " + destr_map.to_string());
+        throw LispleException("Invalid alias destructuring form: " + destr_map.to_string(2));
       }
       Word& alias_word = alias.as<Word>();
       scope.store(alias_word, arg_val);
@@ -324,7 +324,7 @@ namespace Lisple
       }
     }
 
-    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected + ", but got: " + Lisple::Array(args).to_string() + ".");
+    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected + ", but got: " + Lisple::Array(args).to_string(2) + ".");
   }
 
   Function::Function(uptr_sig signature)

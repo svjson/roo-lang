@@ -72,7 +72,7 @@ namespace Lisple
 
   void Object::set_property(const Object &key, sptr_sobject&)
   {
-    throw Lisple::InvocationException("Cannot set property '" + key.to_string() + "' of " + this->to_string());
+    throw Lisple::InvocationException("Cannot set property '" + key.to_string() + "' of " + this->to_string(2));
   }
 
   void Object::set_property(Context*, const Object& key, sptr_sobject& value)
@@ -82,12 +82,12 @@ namespace Lisple
 
   std::shared_ptr<Object> Object::execute(Context&, sptr_sobject_v&)
   {
-    throw Lisple::InvocationException(this->to_string() + " cannot be executed");
+    throw Lisple::InvocationException(this->to_string(2) + " cannot be executed");
   }
 
   sptr_sobject_v& Object::get_children()
   {
-    throw Lisple::InvocationException(this->to_string() + " is not a sequence");
+    throw Lisple::InvocationException(this->to_string(2) + " is not a sequence");
   }
 
   bool Object::has_value(const std::string&) const
