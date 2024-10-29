@@ -300,7 +300,7 @@ namespace Lisple
     sptr_sobject inv = lookup(Lisple::Word(identifier));
     if (!inv)
     {
-      throw Lisple::IdentifierException("Unknown identifier: '" + identifier +"'");
+      throw Lisple::IdentifierException("Unknown identifier: '" + identifier + "'");
     }
 
     try
