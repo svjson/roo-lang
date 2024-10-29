@@ -15,21 +15,34 @@
 #include "type.h"
 #include "lisple_exception.h"
 
+/* FIXME: The idea here is that we can enable/disable default Doxygen comments
+ * with flags in the build */
+#define DOXYGEN(...)                           \
+/*! \
+ * @brief __VA_ARGS__ \
+ */
+
 #define __SELECT_MACRO__2(_1, _2, MACRO_NAME, ...) MACRO_NAME
 
-#define __HOST_TYPE(CONST, NAME, MAKE_FN) inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME, MAKE_FN);
+#define __HOST_TYPE(CONST, NAME, MAKE_FN) \
+  DOXYGEN(HostTypeRef definition of CONST / NAME, with registered Make-function MAKE_FN which enables argument coercion) \
+  inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME, MAKE_FN);
 
-#define __HOST_TYPE__NO_MAKE_FN(CONST, NAME) inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME);
+#define __HOST_TYPE__NO_MAKE_FN(CONST, NAME) \
+  DOXYGEN(HostTypeRef definition of CONST / NAME, with no provided Make-function. Coercion is therefore not enabled) \
+  inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME);
 
 #define HOST_TYPE(CONST, NAME, ...) __SELECT_MACRO__2(0, ##__VA_ARGS__, __HOST_TYPE, __HOST_TYPE__NO_MAKE_FN)(CONST, NAME, ##__VA_ARGS__)
 
 
 #define HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)                                     \
+    DOXYGEN(Static factory method that constructs a new instance of H_CLASS and wraps it in an instance of AD_CLASS) \
     template <typename T, typename... Args>                                                \
     static std::shared_ptr<AD_CLASS> make(Args&&... args)                                  \
     {                                                                                      \
       return std::make_shared<AD_CLASS>(std::make_unique<T>(std::forward<Args>(args)...)); \
     }                                                                                      \
+    DOXYGEN(Static factory method that constructs an instance of AD_CLASS holding a reference to the underlying H_CLASS object) \
     static std::shared_ptr<AD_CLASS> make_ref(const H_CLASS& ref)                          \
     {                                                                                      \
       return std::make_shared<AD_CLASS>(const_cast<H_CLASS&>(ref));                        \
@@ -39,7 +52,9 @@
   class AD_CLASS : public Lisple::HostObject<H_CLASS>                                                            \
   {                                                                                                              \
    public:                                                                                                       \
+    DOXYGEN(Constructs a new instance of AD_CLASS and assumes ownership of the unique pointer) \
     AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS);  \
+    DOXYGEN(Constructs a new instance of AD_CLASS hold a reference to supplied H_CLASS) \
     AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS);                    \
     HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
@@ -47,7 +62,9 @@
   class AD_CLASS : public AD_SUP_CLASS                                                        \
   {                                                                                           \
    public:                                                                                    \
+    DOXYGEN(Constructs a new instance of AD_CLASS and assumes ownership of the unique pointer) \
     AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access={});   \
+    DOXYGEN(Constructs a new instance of AD_CLASS hold a reference to supplied H_CLASS) \
     AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access={});                     \
     HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
@@ -55,6 +72,7 @@
   }
 
 #define HOST_ADAPTER_GETTER_DECL(PROP_NAME)          \
+  DOXYGEN(Get the value of PROP_NAME as Lisple Object) \
   Lisple::sptr_sobject get_##PROP_NAME() const;
 
 #define HOST_ADAPTER_GETTERS1(PROP1)                 \
@@ -248,6 +266,7 @@
 #define HOST_ADAPTER_GETTERS(...) SELECT_GETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_GETTERS17, HOST_ADAPTER_GETTERS16, HOST_ADAPTER_GETTERS15, HOST_ADAPTER_GETTERS14, HOST_ADAPTER_GETTERS13, HOST_ADAPTER_GETTERS12, HOST_ADAPTER_GETTERS11, HOST_ADAPTER_GETTERS10, HOST_ADAPTER_GETTERS9, HOST_ADAPTER_GETTERS8, HOST_ADAPTER_GETTERS7, HOST_ADAPTER_GETTERS6, HOST_ADAPTER_GETTERS5, HOST_ADAPTER_GETTERS4, HOST_ADAPTER_GETTERS3, HOST_ADAPTER_GETTERS2, HOST_ADAPTER_GETTERS1)(__VA_ARGS__)
 
 #define HOST_ADAPTER_SETTER_DECL(PROP_NAME)       \
+  DOXYGEN(Set the value of PROP_NAME using Lisple Object value)  \
   void set_##PROP_NAME(Lisple::Context* ctx, Lisple::Object& value);
 
 #define HOST_ADAPTER_SETTERS1(PROP1)                 \
@@ -1033,8 +1052,12 @@
 #define K_GET_SET(AD_CLASS, KEY, FN) {KEY, Lisple::Accessors(P_GETTER(AD_CLASS, P_GET_SINGLE(FN)), \
                                                              P_SETTER(AD_CLASS, P_SET_SINGLE(FN))) }
 
-#define DECL_SHKEY(CONSTNAME) extern const std::shared_ptr<Lisple::Key> CONSTNAME;
-#define SHKEY(CONSTNAME,KEYNAME) const std::shared_ptr<Lisple::Key> CONSTNAME = std::make_shared<Lisple::Key>(KEYNAME);
+#define DECL_SHKEY(CONSTNAME) \
+  DOXYGEN(Lisple key constant CONSTNAME) \
+  extern const std::shared_ptr<Lisple::Key> CONSTNAME;
+#define SHKEY(CONSTNAME,KEYNAME) \
+  DOXYGEN(Lisple key constant with value KEYNAME)                          \
+  const std::shared_ptr<Lisple::Key> CONSTNAME = std::make_shared<Lisple::Key>(KEYNAME);
 
 // Helper to detect if a type has operator==
 template <typename T, typename = void>
