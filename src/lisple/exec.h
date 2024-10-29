@@ -265,13 +265,14 @@ namespace Lisple
   };
 
   /*!
-   * \brief A user defined function, ie a function defined at run-time using
+   * @brief A user defined function, ie a function defined at run-time using
    * the defun-macro.
    */
   class UserFunction : public Function
   {
    private:
-    /*! \brief The namespace in which the function is defined. When execution occurs,
+    /*!
+     * @brief The namespace in which the function is defined. When execution occurs,
      * the Context will effectively switch temporarily to this namespace so that any
      * bindings and aliased namespaces are available
      *

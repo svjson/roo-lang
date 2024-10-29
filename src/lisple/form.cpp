@@ -26,9 +26,6 @@ namespace Lisple
     return ints;
   }();
 
-  /*
-   * Object - abstract base class for all forms
-   **/
   Object::Object(Form form)
     : type(form)
   {
@@ -179,7 +176,7 @@ namespace Lisple
     switch (tokens.size())
     {
      case 0:
-      throw IdentifierException("Invalid synbol. Cannot be empty.");
+      throw IdentifierException("Invalid symbol. Cannot be empty.");
      case 1:
       this->ns_qualifier = "";
       this->identifier = tokens.front();

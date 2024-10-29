@@ -16,6 +16,10 @@ namespace Lisple
   extern const int INT_CONSTANTS_SIZE;
   extern std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
 
+
+  /*!
+   * @brief Abstract base class for all form implementations
+   */
   class Object
   {
    protected:
@@ -40,8 +44,10 @@ namespace Lisple
     virtual Object& get_property(const Object& key) const;
     virtual sptr_sobject get_sptr_property(const Object& key) const;
 
-    /*
-     * Returns true for any non-nil or non-false value.
+    /*!
+     * @brief Check truthiness of the object/form.
+     *
+     * @return true for any non-nil or non-false value, otherwise false
      */
     virtual bool is_truthy() const;
     virtual bool has_key(const Object& key) const;
@@ -127,18 +133,20 @@ namespace Lisple
     }
   };
 
-  /**
+  /*!
    * @brief Abstract intermediate class from string values that may use recognized
    * qualified, ie namespaced, identifiers, ie Keys and Words
    */
   class QualifiableStringValue : public Value<std::string>
   {
-    /*
-     * The namespace qualifier, if any. ie, "some.namespace" from "some.namespace/an-identifier"
+    /*!
+     * @brief The namespace qualifier, if any. ie, "some.namespace" from
+     * "some.namespace/an-identifier"
      */
     std::string ns_qualifier;
-    /*
-     * The actual identifier(word), ie, "an-identifier" from "some.namespace/an-identifier"
+    /*!
+     * @brief The actual identifier(word), ie, "an-identifier" from
+     * "some.namespace/an-identifier"
      */
     std::string identifier;
 
@@ -227,12 +235,13 @@ namespace Lisple
   };
 
   /*!
-   * @brief Number - The only numeric type of Lisple.
+   * @brief The only numeric type of Lisple.
    *
    * Internally always represented as a float.
-   * A better solution would be to have a class hierarchy here and wrap
-   * the actual native types and leave the static factory methods on this
-   * class, which would then be an abstract class.
+   *
+   * FIXME: A better solution would be to have a class hierarchy here and
+   * wrap the actual native types and leave the static factory methods on
+   * this class, which would then be an abstract class.
    */
   class Number : public Value<float>
   {

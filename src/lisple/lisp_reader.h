@@ -30,14 +30,14 @@ namespace Lisple
     Namespace* current_namespace = nullptr;
 
    public:
-    /**
-     * Creates a vanilla Lisple context with only the language built-in
+    /*!
+     * @brief Creates a vanilla Lisple context with only the language built-in
      * functions and no file system access.
      */
     LispReader();
 
-    /**
-     * Creates a vanilla Lisple context with only the language built-in
+    /*!
+     * @brief Creates a vanilla Lisple context with only the language built-in
      * functions and file system access via the provided FileSystem
      * implementation
      *
@@ -46,8 +46,8 @@ namespace Lisple
      */
     LispReader(FileSystem* fs);
 
-    /**
-     * Creates a Lisple context with a host-provided namespace in
+    /*!
+     * @brief Creates a Lisple context with a host-provided namespace in
      * addition to the language built-in functions and no file system access.
      *
      * The provided namespace will typically be the host application namespace.
@@ -55,8 +55,8 @@ namespace Lisple
      */
     LispReader(Namespace& ns);
 
-    /**
-     * Creates a Lisple context with a host-provided namespace in
+    /*!
+     * @brief Creates a Lisple context with a host-provided namespace in
      * addition to the language built-in functions and file system access via
      * the provided FileSystem implementation.
      *
@@ -68,8 +68,8 @@ namespace Lisple
      */
     LispReader(Namespace& host_namespace, FileSystem* fs);
 
-    /**
-     * Creates a Lisple context with a host-provided namespaces in
+    /*!
+     * @brief Creates a Lisple context with a host-provided namespaces in
      * addition to the language built-in functions and no file system access.
      *
      * The provided namespaces will typically be the host application
@@ -80,8 +80,8 @@ namespace Lisple
     LispReader(const std::string& main_ns,
                std::map<const std::string, Namespace> namespaces);
 
-    /**
-     * Creates a Lisple context with a host-provided namespaces in
+    /*!
+     * @brief Creates a Lisple context with a host-provided namespaces in
      * addition to the language built-in functions and file system access via
      * the provided FileSystem implementation.
      *
@@ -97,16 +97,16 @@ namespace Lisple
                std::map<const std::string, Namespace> namespaces,
                FileSystem* fs);
 
-    /**
-     * Switch the namespace in which the lisple engine currently operates.
+    /*!
+     * @brief Switch the namespace in which the lisple engine currently operates.
      * If the namespace does not currently exist, it will be created.
      *
      * If the previous namespace is empty, it will be discarded.
      */
     void switch_namespace(const std::string& ns);
 
-    /*
-     * Returns a reference to a namespace without switching the namespace
+    /*!
+     * @brief Returns a reference to a namespace without switching the namespace
      * within the reader.
      *
      * Optionally, create it if it exists. If this is done, it is up to
@@ -116,13 +116,13 @@ namespace Lisple
      */
     Namespace* ns(const std::string& name, bool create_if_absent=false);
 
-    /*
-     * Returns a reference to the current namespace of the reader context
+    /*!
+     * @brief Returns a reference to the current namespace of the reader context
      */
     Namespace& get_current_namespace();
 
-    /**
-     * Queries if this LispReader instance may access any file system
+    /*!
+     * @brief Tests if this LispReader instance may access any file system
      * abstraction, and thus can read files from disk or virtual a file system.
      */
     bool has_file_system_access() const;
@@ -135,13 +135,13 @@ namespace Lisple
     sptr_sobject eval(const sptr_sobject& sexp);
     sptr_sobject eval(Context& ctx, const sptr_sobject& sexp);
 
-    /**
-     * Call a Lisple function by name with the provided arguments
+    /*!
+     * @brief Call a Lisple function by name with the provided arguments
      */
     sptr_sobject call_fn(const std::string& identifier, Lisple::sptr_sobject_v& args);
 
-    /**
-     * Call a lisple function by name with a single argument
+    /*!
+     * @brief Call a lisple function by name with a single argument
      */
     sptr_sobject call_fn(const std::string& identifier, Lisple::sptr_sobject& arg);
 
@@ -157,8 +157,8 @@ namespace Lisple
     Namespace& get_ns_of(const Word& identifier);
 
    private:
-    /**
-     * \brief Import another namespace into the current namespace, making all
+    /*!
+     * @brief Import another namespace into the current namespace, making all
      * identifiers of that namespace available to the current.
      *
      * This does not copy anything into the current namespace, but the
@@ -174,8 +174,8 @@ namespace Lisple
      */
     void import_namespace(const std::string& namespace_name);
 
-    /**
-     * \brief Define an alias for another namespace within the current
+    /*!
+     * @brief Define an alias for another namespace within the current
      * namespace.
      */
     void define_namespace_alias(const std::string& ns_name, const std::string& alias);

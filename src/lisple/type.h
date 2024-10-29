@@ -86,8 +86,10 @@ namespace Lisple
     bool is_type_of(const Object& obj) const override;
   };
 
-  /*! @brief Type reference wrapper for sequence types holding a specific type,
-  *   ie, Array of Number */
+  /*!
+   * @brief Type reference wrapper for sequence types holding a specific type,
+   * ie, Array of Number
+   */
   class SeqRef : public TypeRef
   {
     const TypeRef* seq_type;

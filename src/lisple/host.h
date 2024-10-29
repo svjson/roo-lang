@@ -1250,21 +1250,24 @@ namespace Lisple
     const key_acc_map& get_accessors() const;
   };
 
-  /*! \brief Convenience type definition for GETTER function references */
+  /*! @brief Convenience type definition for GETTER function references */
   typedef std::function<Lisple::sptr_sobject(const AbstractHostObject*)> acc_get_t;
-  /*! \brief Convenience type definition for SETTER function references */
+  /*! @brief Convenience type definition for SETTER function references */
   typedef std::function<void(AbstractHostObject*, Lisple::Context*, Lisple::Object&)> acc_set_t;
 
-  /*! \brief Stock getter-implementation for non-gettable properties that
-   * returns Lisple::NIL */
+  /*!
+   * @brief Stock getter-implementation for non-gettable properties that will
+   * always return NIL
+   */
   extern const acc_get_t no_getter;
-  /*! \brief Stock setter-implementation for non-settable properties that always
-   * throws InvocationException
-   * */
+  /*!
+   * @brief Stock setter-implementation for non-settable properties that will
+   * always throw InvocationException
+   */
   extern const acc_set_t no_setter;
 
-  /**
-   * \brief Holds function references to getters and setters for a specific
+  /*!
+   * @brief Holds function references to getters and setters for a specific
    * field. Both must be defined for every field, but they may optionally refer
    * to no_getter / no_setter.
    */
@@ -1277,10 +1280,9 @@ namespace Lisple
     Accessors(const acc_get_t& getter, const acc_set_t& setter);
   };
 
-  /**
-   * \brief Abstract base class for wrapping the object held by a Host Object
+  /*!
+   * @brief Abstract base class for wrapping the object held by a Host Object
    * Adapter.
-   *
    */
   template<class T>
   class ValueHolder
@@ -1292,8 +1294,8 @@ namespace Lisple
     virtual std::unique_ptr<T>& get_object_ptr() = 0;
   };
 
-  /**
-   * \brief ValueHolder-implementation that owns the Host Object instance,
+  /*!
+   * @brief ValueHolder-implementation that owns the Host Object instance,
    * containing it in a std::unique_ptr
    */
   template<class T>
@@ -1307,8 +1309,8 @@ namespace Lisple
     std::unique_ptr<T>& get_object_ptr() override { return object; }
   };
 
-  /**
-   * \brief ValueHolder-implementation that holds a reference to the Host Object
+  /*!
+   * @brief ValueHolder-implementation that holds a reference to the Host Object
    * for cases where ownership cannot be given to the Adapter.
    */
   template<class T>
@@ -1325,7 +1327,7 @@ namespace Lisple
     }
   };
 
-  /**
+  /*!
    * Template base class for Host Object Adapters. Concrete adapters will
    * typically be derived directly from this class, using the HOST_ADAPTER and
    * HOST_ADAPTER_IMPL macros for convenience.
@@ -1336,21 +1338,21 @@ namespace Lisple
    protected:
     const std::string type_name;
     std::unique_ptr<ValueHolder<T>> object;
-    /*! Internally cached list of Lisple/HostObject children */
+    /*! @brief Internally cached list of Lisple/HostObject children */
     sptr_sobject_v __cached_children;
 
    public:
-    /**
-     * \brief Creates a HostObject instance holding a UNIQUE POINTER to a host
+    /*!
+     * @brief Creates a HostObject instance holding a UNIQUE POINTER to a host
      * object.
      *
      * This is to be used when the HostObject will own the underlying object
      * instance.
      *
-     * \param type_name The name of the object type
-     * \param type Enum type value of the Object
-     * \param object The actual object
-     * \param accessors Description of setters and getters and how they are
+     * @param type_name The name of the object type
+     * @param type Enum type value of the Object
+     * @param object The actual object
+     * @param accessors Description of setters and getters and how they are
      *        invoked
      */
     HostObject(const std::string& type_name, Lisple::HostObjectType type, std::unique_ptr<T>& object, const AccessorLookup& accessors = {})
@@ -1360,8 +1362,8 @@ namespace Lisple
     {
     }
 
-    /**
-     *  \brief Creates a HostObject instance holding a REFERENCE to a host
+    /*!
+     *  @brief Creates a HostObject instance holding a REFERENCE to a host
      *  object.
      *
      *  This is to be used only when the HostObject adapter cannot "own"
@@ -1372,10 +1374,10 @@ namespace Lisple
      *  Typical usage is for objects that will be "lent" out to the Lisple
      *  engine for quick calculatons or operations.
      *
-     *  \param type_name The name of the object type
-     *  \param type Enum type value of the object
-     *  \param object The actual object reference
-     *  \param accessors Description of getters and setters, and how they
+     *  @param type_name The name of the object type
+     *  @param type Enum type value of the object
+     *  @param object The actual object reference
+     *  @param accessors Description of getters and setters, and how they
      *         are invoked
      */
     HostObject(const std::string& type_name, Lisple::HostObjectType type, T& object, const AccessorLookup& accessors = {})
@@ -1390,11 +1392,13 @@ namespace Lisple
       return object->get_object();
     }
 
-    /**
-     * Returns the properties of the HostObject with :key and value
-     * interspersed, as if a Map. Because Object::get_children() assumes
-     * ownership of the child vector we return by reference, which is why
-     * the __cached_children is needed.
+    /*!
+     * @brief Returns the properties of the HostObject with :key and value
+     * interspersed, as if a Map.
+     *
+     * Because Object::get_children() assumes  ownership of the child vector we
+     * return by reference, which is why the __cached_children is needed.
+     *
      * This could give rise to all sorts of problems down the road, and
      * we should probably just own up to the fact that temporary copies
      * of shared_ptr and vector aren't that expensive and change the

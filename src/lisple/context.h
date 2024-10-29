@@ -61,8 +61,8 @@ namespace Lisple
     void read_file(const std::string& file_name);
     void store_namespace(Lisple::Word key, Lisple::sptr_sobject value);
 
-    /**
-     * *brief Switch the underlying namespace in which execution and unqualified
+    /*!
+     * @brief Switch the underlying namespace in which execution and unqualified
      * identifier lookup occurs.
      *
      * This switches the current namespace of lisp reader instance, and any code
@@ -73,8 +73,8 @@ namespace Lisple
      */
     void switch_namespace(const std::string& namespace_name);
 
-    /**
-     * *brief Get a pointer to the currently active namespace of the underlying
+    /*!
+     * @brief Get a pointer to the currently active namespace of the underlying
      * lisp reader instance.
      */
     Namespace* get_current_namespace();
@@ -88,16 +88,16 @@ namespace Lisple
     void pop_context();
 
    private:
-    /**
-     * *brief Import another namespace into the current namespace, making all
+    /*!
+     * @brief Import another namespace into the current namespace, making all
      * identifiers of that namespace available to the current.
      *
      * @see LispReader::import_namespace for more information.
      */
     void import_namespace(const std::string& ns_name);
 
-    /**
-     * *brief Define an alias for another namespace within the current
+    /*!
+     * @brief Define an alias for another namespace within the current
      * namespace.
      *
      * @see LispReader::define_namespace_alias for more information.

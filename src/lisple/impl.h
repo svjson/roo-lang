@@ -14,13 +14,21 @@ namespace Lisple
 {
   extern const std::string EMPTY_STRING;
 
-  /**
-   * Get the string value of lisple symbol
+  /*!
+   * @brief Extracts the string value of a lisple symbol, discarding
+   * the Lisple syntax it is wrapped in.
+   *
+   * For example,
+   * @code "a string" @endcode yields @code a string @endcode
+   * @code :some-key @endcode yields @code some-key @endcode
+   *
+   * Complex objects are not considered to have a string value, and
+   * will return an empty string
    */
   const std::string str_val(const Object& obj) noexcept;
 
-  /**
-   * Get the unsigned int value of lisple symbol
+  /*!
+   * @brief Get the unsigned int value of lisple symbol
    */
   unsigned int uint_val(const Object& obj);
   uint8_t uint8_val(const Object& obj);
@@ -29,8 +37,8 @@ namespace Lisple
   unsigned short ushort_val(const Object& obj);
   float float_val(const Object& obj);
 
-  /**
-   * Create a copy of a sexp form with a substituted child element
+  /*!
+   * @brief Create a copy of a sexp form with a substituted child element
    */
   template <class T>
   std::shared_ptr<T> subst_sexp_lmnt(const T& sexp, unsigned int index, sptr_sobject subst)
@@ -40,8 +48,8 @@ namespace Lisple
     return std::make_shared<T>(nchildren);
   }
 
-  /**
-   * Prepend the string value of the head element of a list
+  /*!
+   * @brief Prepend the string value of the head element of a list
    */
   std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val);
 
@@ -52,7 +60,6 @@ namespace Lisple
   }
 
   template <typename T>
-  //  T unwrap_primitive(const Lisple::Object&);
   typename std::enable_if<!std::is_integral<T>::value, T>::type unwrap_primitive(const Lisple::Object &obj);
 
   Lisple::sptr_sobject wrap_primitive(bool value);
