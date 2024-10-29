@@ -1393,6 +1393,7 @@ namespace Lisple
 
     for (size_t i=1; i<args.size(); i++)
     {
+      if (*args[i] == *NIL) continue;
       for (auto& key : args[i]->as<Map>().key_ptrs())
       {
         result->set_property(key, args[i]->get_sptr_property(*key));
