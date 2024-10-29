@@ -41,6 +41,16 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to short");
   }
 
+  unsigned short ushort_val(const Object& obj)
+  {
+    if (Type::NUMBER.is_type_of(obj))
+    {
+      return obj.as<Number>().int_value();
+    }
+
+    throw LispleException("Cannot convert " + obj.to_string() + " to short");
+  }
+
   unsigned int uint_val(const Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))

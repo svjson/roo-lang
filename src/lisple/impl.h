@@ -26,6 +26,7 @@ namespace Lisple
   uint8_t uint8_val(const Object& obj);
   int int_val(const Object& obj);
   short short_val(const Object& obj);
+  unsigned short ushort_val(const Object& obj);
   float float_val(const Object& obj);
 
   /**
