@@ -73,12 +73,13 @@ namespace Lisple
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang.emplace("get", std::make_shared<GetFunction>());
     lang.emplace("head", std::make_shared<HeadFunction>());
+    lang.emplace("include", std::make_shared<IncludeFunction>());
     lang.emplace("int", std::make_shared<IntFunction>());
     lang.emplace("join", std::make_shared<JoinFunction>());
-    lang.emplace("include", std::make_shared<IncludeFunction>());
+    lang.emplace("keep", std::make_shared<KeepFunction>());
+    lang.emplace("keys", std::make_shared<KeysFunction>());
     lang.emplace("last", std::make_shared<LastFunction>());
     lang.emplace("let", std::make_shared<LetMacro>());
-    lang.emplace("keys", std::make_shared<KeysFunction>());
     lang.emplace("map", std::make_shared<MapFunction>());
     lang.emplace("max", std::make_shared<MinMaxFunction>(false));
     lang.emplace("merge", std::make_shared<MergeFunction>());
@@ -1813,7 +1814,29 @@ namespace Lisple
     return NIL;
   }
 
-  FUNC_IMPL(KeysFunction, SIG((FN_ARGS((&Lisple::Type::ANY)),
+  /* KeepFunction - keep */
+  FUNC_IMPL(KeepFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                               EXEC_DISPATCH(&KeepFunction::keep))))
+
+  FUNC_BODY(KeepFunction, keep)
+  {
+    sptr_sobject_v values = args[0]->get_children();
+    sptr_sobject exec = args[1];
+
+    sptr_sobject_v result;
+
+    for (auto& v : values)
+    {
+      sptr_sobject_v arg { v };
+      sptr_sobject r = exec->execute(ctx, arg);
+      if (*r != *NIL) result.push_back(r);
+    }
+
+    return Array::make(result);
+  }
+
+  /* KeysFunction - keys */
+  FUNC_IMPL(KeysFunction, SIG((FN_ARGS((&Type::ANY)),
                                EXEC_DISPATCH(&KeysFunction::keys_fn))))
 
   FUNC_BODY(KeysFunction, keys_fn)

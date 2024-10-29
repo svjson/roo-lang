@@ -563,6 +563,30 @@ namespace Lisple
    * Param 1 - The partial map pattern to match
    */
   FUNC_DECL(SeqMatchFunction, match)
+
+  /*!
+   * @brief Essentially functions as a combination of map and filter, but
+   * determines if an element is to be kept based on non-nil/nil instead
+   * of truthiness, like map.
+   *
+   * Usage:
+   * @code
+   * (keep [1 2 3 4] (fn [x]
+   *                   (when (even? nil) (str "Number " x))))
+   *   => ["Number 2" "Number 4"]
+   * @endcode
+   */
+  FUNC_DECL(KeepFunction, keep)
+
+  /*!
+   * @brief Extracts an array of all keys present in a complex type, ie a
+   * map.
+   *
+   * Usage:
+   * @code
+   * (keys {:name "A name" :age 23}) => [:name :age]
+   * @endcode
+   */
   FUNC_DECL(KeysFunction, keys_fn)
   FUNC_DECL(SelectKeysFunction, select_keys_fn)
 

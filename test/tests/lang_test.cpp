@@ -401,6 +401,20 @@ TEST(MapFunction, map_using_keyword)
   ASSERT_EQ(result->to_string(), "[10 9 \"How rare! A string!\"]");
 }
 
+TEST(KeepFunction, transform_even)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  auto result = runtime.eval("(keep [1 2 3 4] (fn [x] (when (even? x) (str \"Number \" x))))");
+
+  // Then
+  ASSERT_EQ(*result, Lisple::Array({
+        Lisple::String::make("Number 2"),
+        Lisple::String::make("Number 4")}));
+}
+
 TEST(SelectKeysFunction, all_keys_present)
 {
   // Given
