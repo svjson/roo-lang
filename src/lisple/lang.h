@@ -254,6 +254,25 @@ namespace Lisple
    * @endcode
    */
   FUNC_DECL(AbsFunction, abs_value)
+
+  /*!
+   * @brief Rounds a number up to the nearest integer
+   *
+   * Usage:
+   * @code
+   * (ceil 10.2)
+   * => 11
+   *
+   * (ceil 10.0)
+   * => 10
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to round up                                           |
+   */
+  FUNC_DECL(CeilFunction, ceil)
+
   FUNC_DECL(IntFunction, to_int)
   FUNC_DECL(PlusFunction, do_addition)
   FUNC_DECL(MinusFunction, do_subtraction)

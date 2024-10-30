@@ -876,6 +876,18 @@ TEST(IntFunction, float_to_int)
   EXPECT_EQ(*fixture.lisp_reader.eval("(int 15.5)"), Lisple::Number(16));
 }
 
+TEST(CeilFunction, ceil)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // Then
+  EXPECT_EQ(*runtime.eval("(ceil 10.2)"), Lisple::Number(11));
+  EXPECT_EQ(*runtime.eval("(ceil 10.0)"), Lisple::Number(10));
+  EXPECT_EQ(*runtime.eval("(ceil 5)"), Lisple::Number(5));
+  EXPECT_EQ(*runtime.eval("(ceil 19.1)"), Lisple::Number(20));
+}
+
 TEST(PlusFunction, simple_addition)
 {
   // Given
@@ -1004,6 +1016,19 @@ TEST(NotEqualsFunction, ints)
   EXPECT_EQ(*fixture.ctx.eval("(not= 50 (+ 25 25))"), *Lisple::B_FALSE);
   EXPECT_EQ(*fixture.ctx.eval("(not= 999 999)"), *Lisple::B_FALSE);
 }
+
+TEST(NotEqualsFunction, chars)
+{
+  LispleTest::LispReaderFixture fixture;
+  EXPECT_EQ(*fixture.ctx.eval("(not= 'a' 'b')"), *Lisple::B_TRUE);
+  EXPECT_EQ(*fixture.ctx.eval("(not= '-' ':')"), *Lisple::B_TRUE);
+  EXPECT_EQ(*fixture.ctx.eval("(not= '.' ',')"), *Lisple::B_TRUE);
+
+  EXPECT_EQ(*fixture.ctx.eval("(not= 'a' 'a')"), *Lisple::B_FALSE);
+  EXPECT_EQ(*fixture.ctx.eval("(not= '-' '-')"), *Lisple::B_FALSE);
+  EXPECT_EQ(*fixture.ctx.eval("(not= '.' '.')"), *Lisple::B_FALSE);
+}
+
 
 TEST(NotEqualsFunction, string)
 {

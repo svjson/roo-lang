@@ -49,6 +49,7 @@ namespace Lisple
     lang.emplace("assoc-in!", std::make_shared<AssocInBangFunction>());
     lang.emplace("between?", std::make_shared<BetweenPredicateFunction>());
     lang.emplace("case", std::make_shared<CaseMacro>());
+    lang.emplace("ceil", std::make_shared<CeilFunction>());
     lang.emplace("comment", std::make_shared<CommentMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
     lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
@@ -884,6 +885,16 @@ namespace Lisple
   {
     Number& num = args[0]->as<Number>();
     return Number::make(std::abs(num.value));
+  }
+
+  /* CeilFunction - ceil */
+  FUNC_IMPL(CeilFunction, SIG((FN_ARGS((&Type::NUMBER)),
+                               EXEC_DISPATCH(&CeilFunction::ceil))))
+
+  FUNC_BODY(CeilFunction, ceil)
+  {
+    Number& num = args[0]->as<Number>();
+    return Number::make(static_cast<int>(std::ceil(num.float_value())));
   }
 
   /* IntFunction - int */
