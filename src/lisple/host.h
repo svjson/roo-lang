@@ -24,6 +24,111 @@
 
 #define __SELECT_MACRO__2(_1, _2, MACRO_NAME, ...) MACRO_NAME
 
+
+#define __VA_REP_1(M_NAME, PROP)                \
+  M_NAME(PROP)
+
+#define __VA_REP_2(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_1(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_3(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_2(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_4(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_3(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_5(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_4(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_6(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_5(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_7(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_6(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_8(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_7(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_9(M_NAME, PROP, ...)           \
+  M_NAME(PROP)                                  \
+  __VA_REP_8(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_10(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_9(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_11(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_10(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_12(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_11(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_13(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_12(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_14(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_13(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_15(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_14(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_16(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_15(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_17(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_16(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_18(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_17(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_19(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_18(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_20(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_19(M_NAME,__VA_ARGS__)
+
+#define __VA_SELECT_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, MACRO_NAME, ...) MACRO_NAME
+
+#define __VA_MACRO(M_NAME, ...) __VA_SELECT_MACRO(__VA_ARGS__,  \
+                                                  __VA_REP_20,  \
+                                                  __VA_REP_19,  \
+                                                  __VA_REP_18,  \
+                                                  __VA_REP_17,  \
+                                                  __VA_REP_16,  \
+                                                  __VA_REP_15,  \
+                                                  __VA_REP_14,  \
+                                                  __VA_REP_13,  \
+                                                  __VA_REP_12,  \
+                                                  __VA_REP_11,  \
+                                                  __VA_REP_10,  \
+                                                  __VA_REP_9,   \
+                                                  __VA_REP_8,   \
+                                                  __VA_REP_7,   \
+                                                  __VA_REP_6,   \
+                                                  __VA_REP_5,   \
+                                                  __VA_REP_4,   \
+                                                  __VA_REP_3,   \
+                                                  __VA_REP_2,   \
+                                                  __VA_REP_1)   \
+  (M_NAME, __VA_ARGS__)
+
 #define __HOST_TYPE(CONST, NAME, MAKE_FN) \
   DOXYGEN(HostTypeRef definition of CONST / NAME, with registered Make-function MAKE_FN which enables argument coercion) \
   inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME, MAKE_FN);
@@ -68,441 +173,36 @@
     AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access={});                     \
     HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
-#define HOST_ADAPTER_END_DECL                        \
+#define HOST_ADAPTER_END_DECL                   \
   }
 
-#define HOST_ADAPTER_GETTER_DECL(PROP_NAME)          \
-  DOXYGEN(Get the value of PROP_NAME as Lisple Object) \
+/* HOST_ADAPTER_GETTER_DECL
+ *
+ * Declares a single host adapter getter accessor function
+ */
+#define HOST_ADAPTER_GETTER_DECL(PROP_NAME)             \
+  DOXYGEN(Get the value of PROP_NAME as Lisple Object)  \
   Lisple::sptr_sobject get_##PROP_NAME() const;
 
-#define HOST_ADAPTER_GETTERS1(PROP1)                 \
-  HOST_ADAPTER_GETTER_DECL(PROP1)
+/* __HOST_ADAPTER_GETTERS
+ *
+ * Wrapper around __VA_MACRO to declare a variadic number of getters
+ */
+#define __HOST_ADAPTER_GETTERS(...) __VA_MACRO(HOST_ADAPTER_GETTER_DECL, __VA_ARGS__)
 
-#define HOST_ADAPTER_GETTERS2(PROP1, PROP2) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)           \
-  HOST_ADAPTER_GETTER_DECL(PROP2)
-
-#define HOST_ADAPTER_GETTERS3(PROP1, PROP2, PROP3)  \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                   \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                   \
-  HOST_ADAPTER_GETTER_DECL(PROP3)
-
-#define HOST_ADAPTER_GETTERS4(PROP1, PROP2, PROP3, PROP4) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                         \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                         \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                         \
-  HOST_ADAPTER_GETTER_DECL(PROP4)
-
-#define HOST_ADAPTER_GETTERS5(PROP1, PROP2, PROP3, PROP4, PROP5)  \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                 \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                 \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                 \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                 \
-  HOST_ADAPTER_GETTER_DECL(PROP5)
-
-#define HOST_ADAPTER_GETTERS6(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                       \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                       \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                       \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                       \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                       \
-  HOST_ADAPTER_GETTER_DECL(PROP6)
-
-#define HOST_ADAPTER_GETTERS7(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                              \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                              \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                              \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                              \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                              \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                              \
-  HOST_ADAPTER_GETTER_DECL(PROP7)
-
-#define HOST_ADAPTER_GETTERS8(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP7)                                                     \
-  HOST_ADAPTER_GETTER_DECL(PROP8)
-
-#define HOST_ADAPTER_GETTERS9(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP7)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP8)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP9)
-
-#define HOST_ADAPTER_GETTERS10(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP7)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP8)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP9)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP10)
-
-#define HOST_ADAPTER_GETTERS11(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10, PROP11) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP7)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP8)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP9)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP10)                                                           \
-  HOST_ADAPTER_GETTER_DECL(PROP11)
-
-#define HOST_ADAPTER_GETTERS12(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10, PROP11, PROP12) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP7)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP8)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP9)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP10)                                                           \
-  HOST_ADAPTER_GETTER_DECL(PROP11)                                                           \
-  HOST_ADAPTER_GETTER_DECL(PROP12)
-
-#define HOST_ADAPTER_GETTERS13(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10, PROP11, PROP12, PROP13) \
-  HOST_ADAPTER_GETTER_DECL(PROP1)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP2)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP3)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP4)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP5)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP6)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP7)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP8)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP9)                                                            \
-  HOST_ADAPTER_GETTER_DECL(PROP10)                                                           \
-  HOST_ADAPTER_GETTER_DECL(PROP11)                                                           \
-  HOST_ADAPTER_GETTER_DECL(PROP12)                                                           \
-  HOST_ADAPTER_GETTER_DECL(PROP13)
-
-#define HOST_ADAPTER_GETTERS14(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14) \
-  HOST_ADAPTER_GETTER_DECL(P1)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P2)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P3)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P4)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P5)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P6)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P7)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P8)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P9)                                                              \
-  HOST_ADAPTER_GETTER_DECL(P10)                                                             \
-  HOST_ADAPTER_GETTER_DECL(P11)                                                             \
-  HOST_ADAPTER_GETTER_DECL(P12)                                                             \
-  HOST_ADAPTER_GETTER_DECL(P13)                                                             \
-  HOST_ADAPTER_GETTER_DECL(P14)
-
-#define HOST_ADAPTER_GETTERS15(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15) \
-  HOST_ADAPTER_GETTER_DECL(P1)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P2)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P3)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P4)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P5)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P6)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P7)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P8)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P9)                                                                   \
-  HOST_ADAPTER_GETTER_DECL(P10)                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P11)                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P12)                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P13)                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P14)                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P15)
-
-#define HOST_ADAPTER_GETTERS16(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16) \
-  HOST_ADAPTER_GETTER_DECL(P1)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P2)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P3)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P4)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P5)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P6)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P7)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P8)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P9)                                                                        \
-  HOST_ADAPTER_GETTER_DECL(P10)                                                                       \
-  HOST_ADAPTER_GETTER_DECL(P11)                                                                       \
-  HOST_ADAPTER_GETTER_DECL(P12)                                                                       \
-  HOST_ADAPTER_GETTER_DECL(P13)                                                                       \
-  HOST_ADAPTER_GETTER_DECL(P14)                                                                       \
-  HOST_ADAPTER_GETTER_DECL(P15)                                                                       \
-  HOST_ADAPTER_GETTER_DECL(P16)
-
-#define HOST_ADAPTER_GETTERS17(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17) \
-  HOST_ADAPTER_GETTER_DECL(P1)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P2)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P3)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P4)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P5)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P6)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P7)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P8)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P9)                                                                             \
-  HOST_ADAPTER_GETTER_DECL(P10)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P11)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P12)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P13)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P14)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P15)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P16)                                                                            \
-  HOST_ADAPTER_GETTER_DECL(P17)
-
-#define HOST_ADAPTER_GETTERS18(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18) \
-  HOST_ADAPTER_GETTER_DECL(P1)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P2)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P3)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P4)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P5)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P6)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P7)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P8)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P9)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P10)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P11)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P12)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P13)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P14)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P15)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P16)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P17)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P18)
-
-#define HOST_ADAPTER_GETTERS19(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19) \
-  HOST_ADAPTER_GETTER_DECL(P1)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P2)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P3)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P4)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P5)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P6)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P7)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P8)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P9)                                                                                  \
-  HOST_ADAPTER_GETTER_DECL(P10)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P11)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P12)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P13)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P14)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P15)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P16)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P17)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P18)                                                                                 \
-  HOST_ADAPTER_GETTER_DECL(P19)
-
-
-
-#define SELECT_GETTERS_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, MACRO_NAME, ...) MACRO_NAME
-#define HOST_ADAPTER_GETTERS(...) SELECT_GETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_GETTERS19, HOST_ADAPTER_GETTERS18, HOST_ADAPTER_GETTERS17, HOST_ADAPTER_GETTERS16, HOST_ADAPTER_GETTERS15, HOST_ADAPTER_GETTERS14, HOST_ADAPTER_GETTERS13, HOST_ADAPTER_GETTERS12, HOST_ADAPTER_GETTERS11, HOST_ADAPTER_GETTERS10, HOST_ADAPTER_GETTERS9, HOST_ADAPTER_GETTERS8, HOST_ADAPTER_GETTERS7, HOST_ADAPTER_GETTERS6, HOST_ADAPTER_GETTERS5, HOST_ADAPTER_GETTERS4, HOST_ADAPTER_GETTERS3, HOST_ADAPTER_GETTERS2, HOST_ADAPTER_GETTERS1)(__VA_ARGS__)
-
-#define HOST_ADAPTER_SETTER_DECL(PROP_NAME)       \
+/* HOST_ADAPTER_SETTER_DECL
+ *
+ * Declares a single host adapter setter accessor function
+ */
+#define HOST_ADAPTER_SETTER_DECL(PROP_NAME)                      \
   DOXYGEN(Set the value of PROP_NAME using Lisple Object value)  \
   void set_##PROP_NAME(Lisple::Context* ctx, Lisple::Object& value);
 
-#define HOST_ADAPTER_SETTERS1(PROP1)                 \
-  HOST_ADAPTER_SETTER_DECL(PROP1)
-
-#define HOST_ADAPTER_SETTERS2(PROP1, PROP2) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)           \
-  HOST_ADAPTER_SETTER_DECL(PROP2)
-
-#define HOST_ADAPTER_SETTERS3(PROP1, PROP2, PROP3)  \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                   \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                   \
-  HOST_ADAPTER_SETTER_DECL(PROP3)
-
-#define HOST_ADAPTER_SETTERS4(PROP1, PROP2, PROP3, PROP4) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                         \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                         \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                         \
-  HOST_ADAPTER_SETTER_DECL(PROP4)
-
-#define HOST_ADAPTER_SETTERS5(PROP1, PROP2, PROP3, PROP4, PROP5)  \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                 \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                 \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                 \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                 \
-  HOST_ADAPTER_SETTER_DECL(PROP5)
-
-#define HOST_ADAPTER_SETTERS6(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                       \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                       \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                       \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                       \
-  HOST_ADAPTER_SETTER_DECL(PROP5)                                       \
-  HOST_ADAPTER_SETTER_DECL(PROP6)
-
-#define HOST_ADAPTER_SETTERS7(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                              \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                              \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                              \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                              \
-  HOST_ADAPTER_SETTER_DECL(PROP5)                                              \
-  HOST_ADAPTER_SETTER_DECL(PROP6)                                              \
-  HOST_ADAPTER_SETTER_DECL(PROP7)
-
-#define HOST_ADAPTER_SETTERS8(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP5)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP6)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP7)                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP8)
-
-#define HOST_ADAPTER_SETTERS9(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP5)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP6)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP7)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP8)                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP9)
-
-#define HOST_ADAPTER_SETTERS10(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP5)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP6)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP7)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP8)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP9)                                                                     \
-  HOST_ADAPTER_SETTER_DECL(PROP10)
-
-#define HOST_ADAPTER_SETTERS11(PROP1, PROP2, PROP3, PROP4, PROP5, PROP6, PROP7, PROP8, PROP9, PROP10, PROP11) \
-  HOST_ADAPTER_SETTER_DECL(PROP1)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP2)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP3)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP4)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP5)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP6)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP7)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP8)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP9)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(PROP10)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(PROP11)
-
-#define HOST_ADAPTER_SETTERS12(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12) \
-  HOST_ADAPTER_SETTER_DECL(P1)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P2)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P3)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P4)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P5)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P6)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P7)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P8)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P9)                                                    \
-  HOST_ADAPTER_SETTER_DECL(P10)                                                   \
-  HOST_ADAPTER_SETTER_DECL(P11)                                                   \
-  HOST_ADAPTER_SETTER_DECL(P12)
-
-#define HOST_ADAPTER_SETTERS13(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13) \
-  HOST_ADAPTER_SETTER_DECL(P1)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P2)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P3)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P4)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P5)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P6)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P7)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P8)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P9)                                                         \
-  HOST_ADAPTER_SETTER_DECL(P10)                                                        \
-  HOST_ADAPTER_SETTER_DECL(P11)                                                        \
-  HOST_ADAPTER_SETTER_DECL(P12)                                                        \
-  HOST_ADAPTER_SETTER_DECL(P13)
-
-#define HOST_ADAPTER_SETTERS14(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14) \
-  HOST_ADAPTER_SETTER_DECL(P1)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P2)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P3)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P4)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P5)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P6)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P7)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P8)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P9)                                                              \
-  HOST_ADAPTER_SETTER_DECL(P10)                                                             \
-  HOST_ADAPTER_SETTER_DECL(P11)                                                             \
-  HOST_ADAPTER_SETTER_DECL(P12)                                                             \
-  HOST_ADAPTER_SETTER_DECL(P13)                                                             \
-  HOST_ADAPTER_SETTER_DECL(P14)
-
-#define HOST_ADAPTER_SETTERS15(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15) \
-  HOST_ADAPTER_SETTER_DECL(P1)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P2)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P3)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P4)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P5)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P6)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P7)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P8)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P9)                                                                   \
-  HOST_ADAPTER_SETTER_DECL(P10)                                                                  \
-  HOST_ADAPTER_SETTER_DECL(P11)                                                                  \
-  HOST_ADAPTER_SETTER_DECL(P12)                                                                  \
-  HOST_ADAPTER_SETTER_DECL(P13)                                                                  \
-  HOST_ADAPTER_SETTER_DECL(P14)                                                                  \
-  HOST_ADAPTER_SETTER_DECL(P15)                                                                  \
-  HOST_ADAPTER_SETTER_DECL(P16)
-
-#define HOST_ADAPTER_SETTERS16(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16) \
-  HOST_ADAPTER_SETTER_DECL(P1)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P2)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P3)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P4)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P5)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P6)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P7)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P8)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P9)                                                                        \
-  HOST_ADAPTER_SETTER_DECL(P10)                                                                       \
-  HOST_ADAPTER_SETTER_DECL(P11)                                                                       \
-  HOST_ADAPTER_SETTER_DECL(P12)                                                                       \
-  HOST_ADAPTER_SETTER_DECL(P13)                                                                       \
-  HOST_ADAPTER_SETTER_DECL(P14)                                                                       \
-  HOST_ADAPTER_SETTER_DECL(P15)                                                                       \
-  HOST_ADAPTER_SETTER_DECL(P16)
-
-#define HOST_ADAPTER_SETTERS17(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17) \
-  HOST_ADAPTER_SETTER_DECL(P1)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P2)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P3)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P4)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P5)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P6)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P7)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P8)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P9)                                                                             \
-  HOST_ADAPTER_SETTER_DECL(P10)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P11)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P12)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P13)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P14)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P15)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P16)                                                                            \
-  HOST_ADAPTER_SETTER_DECL(P17)
-
-
-#define SELECT_SETTERS_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, MACRO_NAME, ...) MACRO_NAME
-#define HOST_ADAPTER_SETTERS(...) SELECT_SETTERS_MACRO(__VA_ARGS__, HOST_ADAPTER_SETTERS17, HOST_ADAPTER_SETTERS16, HOST_ADAPTER_SETTERS15, HOST_ADAPTER_SETTERS14, HOST_ADAPTER_SETTERS13, HOST_ADAPTER_SETTERS12, HOST_ADAPTER_SETTERS11, HOST_ADAPTER_SETTERS10, HOST_ADAPTER_SETTERS9, HOST_ADAPTER_SETTERS8, HOST_ADAPTER_SETTERS7, HOST_ADAPTER_SETTERS6, HOST_ADAPTER_SETTERS5, HOST_ADAPTER_SETTERS4, HOST_ADAPTER_SETTERS3, HOST_ADAPTER_SETTERS2, HOST_ADAPTER_SETTERS1)(__VA_ARGS__)
+/* __HOST_ADAPTER_GETTERS
+ *
+ * Wrapper around __VA_MACRO to declare a variadic number of setters
+ */
+#define __HOST_ADAPTER_SETTERS(...) __VA_MACRO(HOST_ADAPTER_SETTER_DECL, __VA_ARGS__)
 
 #define SUB_ADAPTER__NO_PROPS(AD_CLASS, SUP_AD_CLASS, H_CLASS)  \
   SUB_ADAPTER_MAIN_DECL(AD_CLASS, SUP_AD_CLASS, H_CLASS)        \
@@ -510,13 +210,13 @@
 
 #define SUB_ADAPTER__WITH_GETTERS(AD_CLASS, SUP_AD_CLASS, H_CLASS, GET_PROPS) \
   SUB_ADAPTER_MAIN_DECL(AD_CLASS, SUP_AD_CLASS, H_CLASS)                \
-  HOST_ADAPTER_GETTERS GET_PROPS                                        \
+  __HOST_ADAPTER_GETTERS GET_PROPS                                        \
   HOST_ADAPTER_END_DECL
 
 #define SUB_ADAPTER__WITH_PROPS(AD_CLASS, SUP_AD_CLASS, H_CLASS, GET_PROPS, SET_PROPS) \
   SUB_ADAPTER_MAIN_DECL(AD_CLASS, SUP_AD_CLASS, H_CLASS)                \
-  HOST_ADAPTER_GETTERS GET_PROPS                                        \
-  HOST_ADAPTER_SETTERS SET_PROPS                                        \
+  __HOST_ADAPTER_GETTERS GET_PROPS                                        \
+  __HOST_ADAPTER_SETTERS SET_PROPS                                        \
   HOST_ADAPTER_END_DECL
 
 #define HOST_ADAPTER__NO_PROPS(AD_CLASS, H_CLASS)    \
@@ -525,13 +225,13 @@
 
 #define HOST_ADAPTER__WITH_GETTERS(AD_CLASS, H_CLASS, GET_PROPS) \
   HOST_ADAPTER_MAIN_DECL(AD_CLASS, H_CLASS)                      \
-  HOST_ADAPTER_GETTERS GET_PROPS                                 \
+  __HOST_ADAPTER_GETTERS GET_PROPS                                 \
   HOST_ADAPTER_END_DECL
 
 #define HOST_ADAPTER__WITH_PROPS(AD_CLASS, H_CLASS, GET_PROPS, SET_PROPS) \
   HOST_ADAPTER_MAIN_DECL(AD_CLASS, H_CLASS)                               \
-  HOST_ADAPTER_GETTERS GET_PROPS                                          \
-  HOST_ADAPTER_SETTERS SET_PROPS                                          \
+  __HOST_ADAPTER_GETTERS GET_PROPS                                          \
+  __HOST_ADAPTER_SETTERS SET_PROPS                                        \
   HOST_ADAPTER_END_DECL
 
 #define SELECT_ADAPTER_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
