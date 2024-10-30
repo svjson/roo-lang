@@ -227,8 +227,25 @@ namespace Lisple
   }
 
   /* DefMacro */
-  MACRO_IMPL(DefMacro, SIG((FN_ARGS((&Type::WORD, false), (&Lisple::Type::ANY, true)),
-                            EXEC_DISPATCH(&DefMacro::define_obj))))
+  MACRO_IMPL(DefMacro, MULTI_SIG((FN_ARGS((&Type::WORD, false),
+                                          (&Type::ANY)),
+                                  EXEC_DISPATCH(&DefMacro::define_obj)),
+                                 (FN_ARGS((&Type::WORD, false),
+                                          (&Type::STRING),
+                                          (&Type::ANY)),
+                                  EXEC_DISPATCH(&DefMacro::define_obj_docstring))))
+
+  MACRO_BODY(DefMacro, define_obj)
+  {
+    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[1]);
+    return args[1];
+  }
+
+  MACRO_BODY(DefMacro, define_obj_docstring)
+  {
+    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[2]);
+    return args[1];
+  }
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns, Object& arg_array, sptr_sobject_v& body)
   {
@@ -255,12 +272,6 @@ namespace Lisple
     return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
   }
 
-  MACRO_BODY(DefMacro, define_obj)
-  {
-    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[1]);
-    return args[1];
-  }
-
   MACRO_IMPL(DefunMacro, MULTI_SIG((FN_ARGS((&Type::WORD, false),
                                             (&Type::ARRAY, false),
                                             (VARARG, &Type::ANY, false)),
@@ -271,6 +282,7 @@ namespace Lisple
                                             (VARARG, &Type::ANY, false)),
                                     EXEC_DISPATCH(&DefunMacro::define_fun_docstring))))
 
+  /* DefunMacro */
   MACRO_BODY(DefunMacro, define_fun)
   {
     std::string fun_name = Lisple::Value<std::string>::value_of(*args[0]);
