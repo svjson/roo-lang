@@ -104,9 +104,59 @@
   M_NAME(PROP)                                  \
   __VA_REP_19(M_NAME,__VA_ARGS__)
 
-#define __VA_SELECT_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, MACRO_NAME, ...) MACRO_NAME
+#define __VA_REP_21(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_20(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_22(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_21(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_23(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_22(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_24(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_23(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_25(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_24(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_26(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_25(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_27(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_26(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_28(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_27(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_29(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_28(M_NAME,__VA_ARGS__)
+
+#define __VA_REP_30(M_NAME, PROP, ...)          \
+  M_NAME(PROP)                                  \
+  __VA_REP_29(M_NAME,__VA_ARGS__)
+
+#define __VA_SELECT_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, MACRO_NAME, ...) MACRO_NAME
 
 #define __VA_MACRO(M_NAME, ...) __VA_SELECT_MACRO(__VA_ARGS__,  \
+                                                  __VA_REP_30,  \
+                                                  __VA_REP_29,  \
+                                                  __VA_REP_28,  \
+                                                  __VA_REP_27,  \
+                                                  __VA_REP_26,  \
+                                                  __VA_REP_25,  \
+                                                  __VA_REP_24,  \
+                                                  __VA_REP_23,  \
+                                                  __VA_REP_22,  \
+                                                  __VA_REP_21,  \
                                                   __VA_REP_20,  \
                                                   __VA_REP_19,  \
                                                   __VA_REP_18,  \
