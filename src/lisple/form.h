@@ -8,6 +8,8 @@
 
 #include "type.h"
 
+#define __ESCAPE(...) __VA_ARGS__
+
 namespace Lisple
 {
   class Context;
