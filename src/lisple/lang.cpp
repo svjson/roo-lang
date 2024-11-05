@@ -253,7 +253,7 @@ namespace Lisple
     std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
     arg_types.reserve(arg_array.size());
     arg_bindings.reserve(arg_array.size());
-    for (auto& arg : arg_array.as<Array>().get_children())
+    for (auto& arg : arg_array.get_children())
     {
       if (arg->get_type() != Form::WORD &&
           arg->get_type() != Form::MAP)
@@ -324,7 +324,7 @@ namespace Lisple
 
   MACRO_BODY(LetMacro, make_let)
   {
-    Array& bindings = args[0]->as<Array>();
+    Object& bindings = *args[0];
 
     if (bindings.get_children().size() % 2 != 0)
     {
@@ -394,7 +394,7 @@ namespace Lisple
 
   MACRO_BODY(WhenLetMacro, make_when_let)
   {
-    Array var_def_array = args[0]->as<Array>();
+    Object& var_def_array = *args[0];
 
     if (var_def_array.get_children().size() % 2 != 0)
     {
@@ -450,7 +450,7 @@ namespace Lisple
 
   MACRO_BODY(IfLetMacro, make_if_let)
   {
-    Array binding_form = args[0]->as<Array>();
+    Object& binding_form = *args[0];
 
     if (binding_form.get_children().size() % 2 != 0)
     {
@@ -773,7 +773,7 @@ namespace Lisple
   {
     size_t n_args = args.size();
     sptr_sobject_v result;
-    sptr_sobject_v& seq_expr = args[0]->as<Array>().get_children();
+    sptr_sobject_v& seq_expr = args[0]->get_children();
 
     sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
     if (*Lisple::NIL != *obj_iterable)
@@ -812,7 +812,7 @@ namespace Lisple
 
   MACRO_BODY(ForIndexedMacro, make_for)
   {
-    sptr_sobject_v& bind_form = args[0]->as<Array>().get_children();
+    sptr_sobject_v& bind_form = args[0]->get_children();
 
     if (bind_form.size() != 3)
     {
@@ -829,7 +829,8 @@ namespace Lisple
       throw TypeError("for-indexed macro requires the iteration variable to be a word");
     }
 
-    if (!Type::SEQ.is_type_of(*bind_form[2]))
+    auto seq = ctx.eval(bind_form[2]);
+    if (!Type::SEQ.is_type_of(*seq))
     {
       throw TypeError("for-indexed macro requires an iterable. Wrong type: " + bind_form[2]->to_string());
     }
@@ -837,7 +838,6 @@ namespace Lisple
     auto index_binding = ArgumentBinding::create(*bind_form[0]);
     auto seq_binding = ArgumentBinding::create(*bind_form[1]);
 
-    auto seq = ctx.eval(bind_form[2]);
     sptr_sobject_v result;
     result.reserve(seq->size());
 
@@ -2075,7 +2075,7 @@ namespace Lisple
 
   FUNC_BODY(ContainsPredicateFunction, contains)
   {
-    sptr_sobject_v vector = args[0]->as<Array>().get_children();
+    sptr_sobject_v vector = args[0]->get_children();
     return std::find_if(vector.begin(),
                         vector.end(),
                         [&args](sptr_sobject lmnt)
