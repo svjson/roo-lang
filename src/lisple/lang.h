@@ -280,7 +280,7 @@ namespace Lisple
   FUNC_DECL(MultiplyFunction, do_multiplication)
 
   /*!
-   * @brief Performs numerical comparison between two values.
+   * @brief Performs numerical or lexical comparison between two values.
    *
    * Usage:
    * @code
@@ -294,10 +294,10 @@ namespace Lisple
    * => false
    * @endcode
    */
-  FUNC_DECL(LessThanFunction, lt_fn)
+  FUNC_DECL(LessThanFunction, lt_num, lt_str)
 
   /*!
-   * @brief Performs numerical comparison between two
+   * @brief Performs numerical or lexical comparison between two
    * values.
    *
    * Usage:
@@ -311,10 +311,10 @@ namespace Lisple
    * => true
    * @endcode
    */
-  FUNC_DECL(LessThanOrEqualsFunction, lte_fn)
+  FUNC_DECL(LessThanOrEqualsFunction, lte_num, lte_str)
 
   /*!
-   * @brief Performs numerical comparison between two values.
+   * @brief Performs numerical or lexical comparison between two values.
    *
    * Usage:
    * @code
@@ -326,12 +326,16 @@ namespace Lisple
    *
    * (> 10 10)
    * => false
+   *
+   * (> "hat" "cat")
+   * => true
+   *
    * @endcode
    */
-  FUNC_DECL(GreaterThanFunction, gt_fn)
+  FUNC_DECL(GreaterThanFunction, gt_num, gt_str)
 
   /*!
-   * @brief Performs numerical comparison between two values.
+   * @brief Performs numerical or lexical comparison between two values.
    *
    * Usage:
    * @code
@@ -345,7 +349,7 @@ namespace Lisple
    * => true
    * @endcode
    */
-  FUNC_DECL(GreaterThanOrEqualsFunction, gte_fn)
+  FUNC_DECL(GreaterThanOrEqualsFunction, gte_num, gte_str)
 
   /*!
    * @brief Tests if a numeric value has a value that is between

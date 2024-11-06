@@ -1035,10 +1035,12 @@ namespace Lisple
   }
 
   /* LessThanFunction */
-  FUNC_IMPL(LessThanFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                                   EXEC_DISPATCH(&LessThanFunction::lt_fn))))
+  FUNC_IMPL(LessThanFunction, MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                         EXEC_DISPATCH(&LessThanFunction::lt_num)),
+                                        (FN_ARGS((&Type::STRING), (&Type::STRING)),
+                                         EXEC_DISPATCH(&LessThanFunction::lt_str))))
 
-  FUNC_BODY(LessThanFunction, lt_fn)
+  FUNC_BODY(LessThanFunction, lt_num)
   {
     if (*args[0] == *NIL || *args[1] == *NIL)
     {
@@ -1047,11 +1049,24 @@ namespace Lisple
     return Number::value_of(*args[0]) < Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
-  /* LessThanOrEqualsFunction */
-  FUNC_IMPL(LessThanOrEqualsFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                                           EXEC_DISPATCH(&LessThanOrEqualsFunction::lte_fn))))
+  FUNC_BODY(LessThanFunction, lt_str)
+  {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
 
-  FUNC_BODY(LessThanOrEqualsFunction, lte_fn)
+    return str_val(*args[0]) < str_val(*args[1]) ? B_TRUE : B_FALSE;
+  }
+
+
+  /* LessThanOrEqualsFunction */
+  FUNC_IMPL(LessThanOrEqualsFunction, MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                                 EXEC_DISPATCH(&LessThanOrEqualsFunction::lte_num)),
+                                                (FN_ARGS((&Type::STRING), (&Type::STRING)),
+                                                 EXEC_DISPATCH(&LessThanOrEqualsFunction::lte_str))))
+
+  FUNC_BODY(LessThanOrEqualsFunction, lte_num)
   {
     if (*args[0] == *NIL || *args[1] == *NIL)
     {
@@ -1060,11 +1075,23 @@ namespace Lisple
     return Number::value_of(*args[0]) <= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
-  /* GreaterThanFunction */
-  FUNC_IMPL(GreaterThanFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                                   EXEC_DISPATCH(&GreaterThanFunction::gt_fn))))
+  FUNC_BODY(LessThanOrEqualsFunction, lte_str)
+  {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
 
-  FUNC_BODY(GreaterThanFunction, gt_fn)
+    return str_val(*args[0]) <= str_val(*args[1]) ? B_TRUE : B_FALSE;
+  }
+
+  /* GreaterThanFunction */
+  FUNC_IMPL(GreaterThanFunction, MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                            EXEC_DISPATCH(&GreaterThanFunction::gt_num)),
+                                           (FN_ARGS((&Type::STRING), (&Type::STRING)),
+                                            EXEC_DISPATCH(&GreaterThanFunction::gt_str))))
+
+  FUNC_BODY(GreaterThanFunction, gt_num)
   {
     if (*args[0] == *NIL || *args[1] == *NIL)
     {
@@ -1073,17 +1100,38 @@ namespace Lisple
     return Number::value_of(*args[0]) > Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
-  /* GreaterThanOrEqualsFunction */
-  FUNC_IMPL(GreaterThanOrEqualsFunction, SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                                   EXEC_DISPATCH(&GreaterThanOrEqualsFunction::gte_fn))))
+  FUNC_BODY(GreaterThanFunction, gt_str)
+  {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
 
-  FUNC_BODY(GreaterThanOrEqualsFunction, gte_fn)
+    return str_val(*args[0]) > str_val(*args[1]) ? B_TRUE : B_FALSE;
+  }
+
+  /* GreaterThanOrEqualsFunction */
+  FUNC_IMPL(GreaterThanOrEqualsFunction, MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                                    EXEC_DISPATCH(&GreaterThanOrEqualsFunction::gte_num)),
+                                                   (FN_ARGS((&Type::STRING), (&Type::STRING)),
+                                                    EXEC_DISPATCH(&GreaterThanOrEqualsFunction::gte_str))))
+
+  FUNC_BODY(GreaterThanOrEqualsFunction, gte_num)
   {
     if (*args[0] == *NIL || *args[1] == *NIL)
     {
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
     }
     return Number::value_of(*args[0]) >= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
+  }
+
+  FUNC_BODY(GreaterThanOrEqualsFunction, gte_str)
+  {
+    if (*args[0] == *NIL || *args[1] == *NIL)
+    {
+      throw TypeError("Cannot compare " + args[0]->to_string() + " and " + args[1]->to_string());
+    }
+    return str_val(*args[0]) >= str_val(*args[1]) ? B_TRUE : B_FALSE;
   }
 
   /* BetweenPredicateFunction - between? */
