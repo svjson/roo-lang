@@ -478,6 +478,20 @@ TEST(ResolveFunction, nil_resolves_to_nil)
   ASSERT_EQ(*result, *Lisple::NIL);
 }
 
+TEST(ResolveFunction, resolve_other_namespace)
+{
+  // Given
+  Lisple::LispReader runtime;
+  runtime.ns("some.nested.space", true)->store(Lisple::Word("magic-number"), Lisple::Number::make(3));
+
+  // When
+  auto result = runtime.eval("(resolve 'some.nested.space/magic-number)");
+
+  // Then
+  EXPECT_EQ(*result, Lisple::Number(3));
+  EXPECT_EQ(result->to_string(), "3");
+}
+
 TEST(ApplyFunction, apply_dynamic)
 {
   // Given
