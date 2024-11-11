@@ -452,6 +452,34 @@
     }                                                                                                        \
   }
 
+/* __ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
+  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                                      \
+  {                                                                                                          \
+    Lisple::sptr_sobject_v v;                                                                                \
+    for (auto& obj : get_object().FIELD_NAME)                                                                \
+    {                                                                                                        \
+      v.push_back(std::make_shared<LISPLE_FORM>(obj));                                                       \
+    }                                                                                                        \
+    return std::make_shared<Lisple::Array>(v);                                                               \
+  }
+
+/* __ADAPTER_PROP_SET_HOST_OBJECT_VECTOR__FIELD
+ *
+ * For internal use only
+ */
+#define __ADAPTER_PROP_SET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
+  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                                      \
+  {                                                                                                          \
+    get_object().FIELD_NAME.clear();                                                                         \
+    for (auto& obj : value.get_children())                                                                   \
+    {                                                                                                        \
+      get_object().FIELD_NAME.push_back(obj->as<LISPLE_FORM>().get_object());                                \
+    }                                                                                                        \
+  }
 
 /* __ADAPTER_PROP_GET_VECTOR_P__FIELD
  *
@@ -692,12 +720,12 @@
 #define ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
   __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_P__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
-/* ADAPTER_PROP_GET_P__FIELD - get vector by field
+/* ADAPTER_PROP_GET_VECTOR__FIELD - get vector by field
  *
  * Generates a property getter implementation that retrives the property values
- * of a vectormember field and generates a Lisple::Array. This means that the
- * field in question needs to be public, or otherwise accessible from the adapter
- * class.
+ * of an std::vector or std::list member field and generates a Lisple::Array.
+ * This means that the field in question needs to be public, or otherwise
+ * accessible from the adapter class.
  */
 #define ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
   __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_VECTOR__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
@@ -708,6 +736,25 @@
 #define ADAPTER_PROP_GET_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
   ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
   ADAPTER_PROP_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD - get vector by field
+ *
+ * Generates a property getter implementation that retrives the property values
+ * of an std::vector or std::list member field and generates a Lisple::Array.
+ * This meagns that the field in question needs to be public, or otherwise
+ * accessible from the adapter class.
+ */
+#define ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_SET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)      \
+  __ADAPTER_FIELD_ACCESSOR_MACROS(__ADAPTER_PROP_SET_HOST_OBJECT_VECTOR__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__) \
+  ADAPTER_PROP_SET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+
 
 /* ADAPTER_PROP_GET_VECTOR_P__FIELD - get vector of pointers by field
  *
