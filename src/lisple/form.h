@@ -292,7 +292,7 @@ namespace Lisple
     static std::shared_ptr<Word> make(const std::string& value);
   };
 
-  class QSymbol : public Value<std::string>
+  class QSymbol : public QualifiableStringValue
   {
    public:
     QSymbol(const std::string& value);

@@ -324,7 +324,7 @@ namespace Lisple
    * QSymbol - a quoted word
    */
   QSymbol::QSymbol(const std::string& value)
-    : Value(Form::SYMBOL, value)
+    : QualifiableStringValue(Form::SYMBOL, value)
   {
   }
 

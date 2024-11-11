@@ -182,6 +182,9 @@ namespace Lisple
 
   FUNC_DECL(PrintFunction, do_print)
 
+  /*!
+   * @brief Set a new value for a symbol in the lexical scope
+   */
   MACRO_DECL(SetBangMacro, do_set_member)
 
   /*!
@@ -596,6 +599,33 @@ namespace Lisple
   FUNC_DECL(VectorFunction, make_vector)
   FUNC_DECL(JoinFunction, join_str)
   FUNC_DECL(StrFunction, concat_str)
+
+
+  /*!
+   * @brief Extracts the name part of an qualified identifier as a string.
+   *
+   * Usage:
+   * @code
+   * (name :accept/ok) => "ok"
+   * (name :ok) => "ok"
+   * (name 'my-app/some-function) => "some-function"
+   * (name 'some-function) => "some-function"
+   * @endcode
+   */
+  FUNC_DECL(NameFunction, extract_name)
+
+  /*!
+   * @brief Extracts the namespace part of an qualified identifier as a string.
+   *
+   * Usage:
+   * @code
+   * (namespace :accept/ok) => "accept""
+   * (namespace :ok) => nil
+   * (namespace 'my-app/some-function) => "my-app"
+   * (namespace 'some-function) => nil
+   * @endcode
+   */
+  FUNC_DECL(NamespaceFunction, extract_namespace)
 
   /*!
    * @brief Appends elements to the back of a seq,

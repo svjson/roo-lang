@@ -85,6 +85,8 @@ namespace Lisple
     lang.emplace("max", std::make_shared<MinMaxFunction>(false));
     lang.emplace("merge", std::make_shared<MergeFunction>());
     lang.emplace("min", std::make_shared<MinMaxFunction>(true));
+    lang.emplace("name", std::make_shared<NameFunction>());
+    lang.emplace("namespace", std::make_shared<NamespaceFunction>());
     lang.emplace("nil", Lisple::NIL);
     lang.emplace("nil?", std::make_shared<NilPredicateFunction>());
     lang.emplace("not", std::make_shared<NotFunction>());
@@ -2202,6 +2204,41 @@ namespace Lisple
     return std::make_shared<String>(std::move(result));
   }
 
+  /*
+   * NameFunction - name
+   */
+  FUNC_IMPL(NameFunction, SIG((FN_ARGS((&Type::QUALIFIABLE)),
+                               EXEC_DISPATCH(&NameFunction::extract_name))));
+
+  FUNC_BODY(NameFunction, extract_name)
+  {
+    sptr_sobject& arg = args[0];
+    if (*NIL == *arg) return NIL;
+    return String::make(arg->as<QualifiableStringValue>().get_identifier());
+  }
+
+  /*
+   * NamespaceFunction - namespace
+   */
+  FUNC_IMPL(NamespaceFunction, SIG((FN_ARGS((&Type::QUALIFIABLE)),
+                                    EXEC_DISPATCH(&NamespaceFunction::extract_namespace))));
+
+  FUNC_BODY(NamespaceFunction, extract_namespace)
+  {
+    sptr_sobject& arg = args[0];
+    if (*NIL == *arg) return NIL;
+
+    if (const std::string& val = arg->as<QualifiableStringValue>().get_qualifier();
+        !val.empty())
+    {
+      return String::make(val);
+    }
+    return NIL;
+  }
+
+  /*
+   * JoinFunction - join
+   */
   FUNC_IMPL(JoinFunction, SIG((FN_ARGS((VARARG, &Type::STRING)),
                                EXEC_DISPATCH(&JoinFunction::join_str))))
 
