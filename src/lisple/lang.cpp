@@ -63,8 +63,6 @@ namespace Lisple
     lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
     lang.emplace("eval", std::make_shared<EvalFunction>());
     lang.emplace("even?", std::make_shared<OddEvenPredicateFunction>(0));
-    lang.emplace("if", std::make_shared<IfMacro>());
-    lang.emplace("if-let", std::make_shared<IfLetMacro>());
     lang.emplace("false", Lisple::B_FALSE);
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
     lang.emplace("filter", std::make_shared<FilterFunction>());
@@ -74,6 +72,8 @@ namespace Lisple
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang.emplace("get", std::make_shared<GetFunction>());
     lang.emplace("head", std::make_shared<HeadFunction>());
+    lang.emplace("if", std::make_shared<IfMacro>());
+    lang.emplace("if-let", std::make_shared<IfLetMacro>());
     lang.emplace("include", std::make_shared<IncludeFunction>());
     lang.emplace("int", std::make_shared<IntFunction>());
     lang.emplace("join", std::make_shared<JoinFunction>());
@@ -81,6 +81,7 @@ namespace Lisple
     lang.emplace("keys", std::make_shared<KeysFunction>());
     lang.emplace("last", std::make_shared<LastFunction>());
     lang.emplace("let", std::make_shared<LetMacro>());
+    lang.emplace("lower-case", std::make_shared<LowerCaseFunction>());
     lang.emplace("map", std::make_shared<MapFunction>());
     lang.emplace("max", std::make_shared<MinMaxFunction>(false));
     lang.emplace("merge", std::make_shared<MergeFunction>());
@@ -117,6 +118,7 @@ namespace Lisple
     lang.emplace("take", std::make_shared<TakeFunction>());
     lang.emplace("threshold", std::make_shared<ThresholdFunction>());
     lang.emplace("true", Lisple::B_TRUE);
+    lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
     lang.emplace("vector", std::make_shared<VectorFunction>());
     lang.emplace("when", std::make_shared<WhenMacro>());
     lang.emplace("when-let", std::make_shared<WhenLetMacro>());
@@ -2202,6 +2204,38 @@ namespace Lisple
     }
 
     return std::make_shared<String>(std::move(result));
+  }
+
+  /*
+   * UpperCaseFunction - upper-case
+   */
+  FUNC_IMPL(UpperCaseFunction, SIG((FN_ARGS((&Type::ANY)),
+                                    EXEC_DISPATCH(&UpperCaseFunction::uppercase))));
+
+  FUNC_BODY(UpperCaseFunction, uppercase)
+  {
+    Object& arg = *args[0];
+    std::string str = (arg != *NIL && Type::STRING.is_type_of(arg))
+      ? str_val(*args[0])
+      : arg.to_string();
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    return String::make(str);
+  }
+
+  /*
+   * LowerCaseFunction - lower-case
+   */
+  FUNC_IMPL(LowerCaseFunction, SIG((FN_ARGS((&Type::ANY)),
+                                    EXEC_DISPATCH(&LowerCaseFunction::lowercase))));
+
+  FUNC_BODY(LowerCaseFunction, lowercase)
+  {
+    Object& arg = *args[0];
+    std::string str = (arg != *NIL && Type::STRING.is_type_of(arg))
+      ? str_val(*args[0])
+      : arg.to_string();
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return String::make(str);
   }
 
   /*

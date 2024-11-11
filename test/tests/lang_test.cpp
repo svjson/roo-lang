@@ -789,6 +789,32 @@ TEST(StrFunction, concat_strings)
   EXPECT_EQ(fixture.lisp_reader.eval(R"((str :key " " nil))")->to_string(), R"(":key nil")");
 }
 
+TEST(UpperCaseFunction, uppercase)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // Then
+  EXPECT_EQ(*runtime.eval("(upper-case \"mIxEd-CaSe!\")"), Lisple::String("MIXED-CASE!"));
+  EXPECT_EQ(*runtime.eval("(upper-case \"The King is dead.\")"), Lisple::String("THE KING IS DEAD."));
+  EXPECT_EQ(*runtime.eval("(upper-case :regular-key)"), Lisple::String(":REGULAR-KEY"));
+  EXPECT_EQ(*runtime.eval("(upper-case {:x 10 :y 8})"), Lisple::String("{:X 10 :Y 8}"));
+  EXPECT_EQ(*runtime.eval("(upper-case nil)"), Lisple::String("NIL"));
+}
+
+TEST(LowerCaseFunction, lowercase)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // Then
+  EXPECT_EQ(*runtime.eval("(lower-case \"mIxEd-CaSe!\")"), Lisple::String("mixed-case!"));
+  EXPECT_EQ(*runtime.eval("(lower-case \"The King is dead.\")"), Lisple::String("the king is dead."));
+  EXPECT_EQ(*runtime.eval("(lower-case :UPCASE-KEY)"), Lisple::String(":upcase-key"));
+  EXPECT_EQ(*runtime.eval("(lower-case {:X 10 :Y 8})"), Lisple::String("{:x 10 :y 8}"));
+  EXPECT_EQ(*runtime.eval("(lower-case nil)"), Lisple::String("nil"));
+}
+
 TEST(JoinFunction, join_strs)
 {
   // Given
