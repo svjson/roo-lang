@@ -2127,6 +2127,8 @@ namespace Lisple
 
   FUNC_BODY(ContainsPredicateFunction, contains)
   {
+    if (*NIL == *args[0]) return B_FALSE;
+
     sptr_sobject_v vector = args[0]->get_children();
     return std::find_if(vector.begin(),
                         vector.end(),
