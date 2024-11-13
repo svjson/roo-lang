@@ -8,7 +8,7 @@
 
 namespace Lisple
 {
-  class LispReader;
+  class Runtime;
 
   namespace Server
   {
@@ -29,10 +29,10 @@ namespace Lisple
        * @brief The Lisple runtime that the Server is exposing for remote
        * access.
        */
-      LispReader& runtime;
+      Runtime& runtime;
 
     public:
-      Dispatcher(const ServerConfig& config, LispReader& runtime);
+      Dispatcher(const ServerConfig& config, Runtime& runtime);
 
       /*!
        * @brief Analyze and dispatch an incoming message to the appropriate

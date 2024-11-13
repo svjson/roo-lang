@@ -6,6 +6,7 @@
 #include <map>
 #include <optional>
 #include <stack>
+#include <stddef.h>
 #include <string>
 #include <variant>
 

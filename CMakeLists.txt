@@ -40,12 +40,13 @@ if(DEFINED ENV{USE_IWYU})
   if(NOT iwyu_path)
     message(FATAL_ERROR "Could not find the program include-what-you-use")
   endif()
-  set_property(TARGET crawler PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+  set_property(TARGET lisple-server-lib PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
 
 find_package(PkgConfig)
 
 include_directories(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/lisple-server"
   "${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple/src"
 )

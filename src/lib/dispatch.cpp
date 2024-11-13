@@ -1,7 +1,15 @@
 
 #include "lisple-server/dispatch.h"
 
-#include <lisple/lisp_reader.h>
+#include <exception>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include <lisple/form.h>
+#include <lisple/runtime.h>
+#include <lisple/namespace.h>
 
 #include "lisple-server/server.h"
 
@@ -16,7 +24,7 @@ namespace Lisple
     const std::string _APP_NAME = "APPLICATION_NAME";
     const std::string _APP_VERSION = "APPLICATION_VERSION";
 
-    Dispatcher::Dispatcher(const ServerConfig& config, LispReader& runtime)
+    Dispatcher::Dispatcher(const ServerConfig& config, Runtime& runtime)
       : config(config)
       , runtime(runtime)
     {

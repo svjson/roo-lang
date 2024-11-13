@@ -1,7 +1,7 @@
 #ifndef __SERVER_H_
 #define __SERVER_H_
 
-#include <sys/poll.h>
+#include <poll.h>
 #include <string>
 #include <vector>
 
@@ -11,9 +11,9 @@
 namespace Lisple
 {
   /*!
-   * @brief Forward-declaration of the Lisple LispReader
+   * @brief Forward-declaration of the Lisple Runtime
    */
-  class LispReader;
+  class Runtime;
 
   /*!
    * @namespace Lisple::Server
@@ -41,7 +41,7 @@ namespace Lisple
      *
      * This can be overriden by any application that embeds a Lisple Server.
      */
-    inline constexpr std::string __VERSION = "0.1";
+    inline constexpr const char __VERSION[] = "0.1";
 
     /*!
      * @brief Type-alias used to signify a Server Status Code.
@@ -139,7 +139,7 @@ namespace Lisple
        * @brief A reference to the Lisple runtime that remote users will be
        * able to connect to.
        */
-      LispReader &reader;
+      Runtime &reader;
       /*!
        * @brief A collection of active socket file descriptors, containing
        * all active connections. The server socket will always be stored at
@@ -165,7 +165,7 @@ namespace Lisple
        * @brief Creates a new Server instance with the provided configuration
        * and Lisple runtime.
        */
-      Server(const ServerConfig& config, LispReader& runtime);
+      Server(const ServerConfig& config, Runtime& runtime);
       /*!
        * @brief Start the server, ie bind to the specified port and start
        * listening for messages.

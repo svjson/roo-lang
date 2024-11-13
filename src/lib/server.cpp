@@ -4,12 +4,10 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <sys/socket.h>
-#include <sys/poll.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
+#include <netinet/in.h>
 #include <unistd.h>
 #include <string.h>
-
-#include <lisple/lisp_reader.h>
 
 #include "lisple-server/dispatch.h"
 
@@ -31,7 +29,7 @@ namespace Lisple
       }
     }
 
-    Server::Server(const ServerConfig& config, LispReader& runtime)
+    Server::Server(const ServerConfig& config, Runtime& runtime)
       : config(config)
       , reader(runtime)
       , dispatcher(this->config, runtime)

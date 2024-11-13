@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include <lisple/lisp_reader.h>
+#include <lisple/runtime.h>
 #include <lisple/lang.h>
 #include <lisple/type.h>
 #include <lisple/dir_root_file_system.h>
@@ -12,7 +12,7 @@ int main(int, char**)
 {
   Lisple::Namespace lisple_lang = Lisple::make_language_namespace();
   Lisple::DirRootFileSystem lisple_fs(".");
-  Lisple::LispReader runtime(&lisple_fs);
+  Lisple::Runtime runtime(&lisple_fs);
 
   Lisple::Server::Server server(
     {.application_name = "Lisple Stand-alone REPL Server", .application_version = "0.1",
