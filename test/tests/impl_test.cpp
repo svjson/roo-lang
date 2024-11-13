@@ -3,8 +3,7 @@
 
 #include <lisple/impl.h>
 #include <lisple/form.h>
-
-#include "lisp_reader_fixture.h"
+#include <lisple/runtime.h>
 
 TEST(str_val, returns_value_of_string_based_forms)
 {
@@ -23,8 +22,8 @@ TEST(str_val, returns_value_of_number_as_string)
 TEST(subst_sexp_lmnt, substitute_first_element_of_array)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
-  Lisple::Array array = fixture.lisp_reader.eval("[1 2 3 4]")->as<Lisple::Array>();
+  Lisple::Runtime runtime;;
+  Lisple::Array array = runtime.eval("[1 2 3 4]")->as<Lisple::Array>();
 
   // When
   auto result = Lisple::subst_sexp_lmnt(array, 0, std::make_shared<Lisple::String>("one"));

@@ -379,14 +379,14 @@ namespace Lisple
   FUNC_DECL(RangeFunction, make_range)
   FUNC_DECL(ThresholdFunction, cap_value)
 
-  class MinMaxFunction : public Lisple::Function
+  class MinMaxFunction : public Function
   {
     const bool min;
 
    public:
     MinMaxFunction(bool min);
 
-    Lisple::sptr_sobject select_min_or_max(Lisple::Context&, Lisple::sptr_sobject_v& args);
+    sptr_sobject select_min_or_max(Context&, sptr_sobject_v& args);
   };
 
   /*!
@@ -997,14 +997,14 @@ namespace Lisple
   FUNC_DECL(EqualsPredicateFunction, equals_any)
   FUNC_DECL(NotEqualsFunction, not_equals_any)
 
-  class OddEvenPredicateFunction : public Lisple::Function
+  class OddEvenPredicateFunction : public Function
   {
     uint8_t modulus;
 
    public:
     OddEvenPredicateFunction(uint8_t modulus);
 
-    Lisple::sptr_sobject exec_oddevenp(Lisple::Context&, Lisple::sptr_sobject_v& args);
+    sptr_sobject exec_oddevenp(Context&, sptr_sobject_v& args);
   };
 
   /*!

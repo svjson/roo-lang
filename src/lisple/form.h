@@ -68,7 +68,7 @@ namespace Lisple
      * then see if there is support from transformation.
      *
      * A simplistic solution would be to add a registry/map of type->function
-     * where the function would be a C++ or Lisple::function that does the
+     * where the function would be a C++ or function that does the
      * conversion. This would also lift the responsibility from regular make
      * functions and remove the need for a lot of MultiRef constructs and type
      * checks there.
@@ -119,7 +119,7 @@ namespace Lisple
     {
     }
 
-    static T value_of(const Lisple::Object& obj)
+    static T value_of(const Object& obj)
     {
       return dynamic_cast<const Value<T>&>(obj).value;
     }
@@ -210,8 +210,8 @@ namespace Lisple
     static std::shared_ptr<Boolean> wrap(bool value);
   };
 
-  inline const std::shared_ptr<Lisple::Boolean> B_TRUE = std::make_shared<Lisple::Boolean>(true);
-  inline const std::shared_ptr<Lisple::Boolean> B_FALSE = std::make_shared<Lisple::Boolean>(false);
+  inline const std::shared_ptr<Boolean> B_TRUE = std::make_shared<Boolean>(true);
+  inline const std::shared_ptr<Boolean> B_FALSE = std::make_shared<Boolean>(false);
 
   class Key : public QualifiableStringValue
   {
@@ -222,7 +222,7 @@ namespace Lisple
 
     std::string to_string(int depth=-1) const override;
 
-    std::shared_ptr<Lisple::Object> execute(Context& ctx, sptr_sobject_v& args) override;
+    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
     bool operator<(const Key& other) const;
 
@@ -347,8 +347,8 @@ namespace Lisple
 
     std::shared_ptr<List> quot_toggle() const;
 
-    std::shared_ptr<Object> execute(Lisple::Context& ctx);
-    std::shared_ptr<Object> execute(Lisple::Context& ctx, sptr_sobject_v& args) override;
+    std::shared_ptr<Object> execute(Context& ctx);
+    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
   };
 
   class Array : public Sexpression
@@ -380,7 +380,7 @@ namespace Lisple
     const std::string rpar() const override;
 
     const std::vector<Object*> keys() const;
-    Lisple::sptr_sobject_v key_ptrs() const;
+    sptr_sobject_v key_ptrs() const;
 
     unsigned int size() const override;
 

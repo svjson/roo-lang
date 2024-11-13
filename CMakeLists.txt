@@ -31,11 +31,11 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/impl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lexer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lisp_reader.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lisple_exception.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exception.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/parser.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/reader.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/scope.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/struct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/type.cpp

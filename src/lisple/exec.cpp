@@ -10,7 +10,7 @@
 #include "namespace.h"
 #include "scope.h"
 #include "type.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
@@ -56,7 +56,7 @@ namespace Lisple
         (binding_form.keys().size() == 2 && !binding_form.has_key(as)) ||
         !Type::ARRAY.is_type_of(binding_form.get_property(keys)))
     {
-      throw Lisple::TypeError("Invalid destructuring form: " + binding_form.to_string(2));
+      throw TypeError("Invalid destructuring form: " + binding_form.to_string(2));
     }
   }
 
@@ -103,14 +103,14 @@ namespace Lisple
 
     for (size_t b=0; b<binding_form.size(); b++)
     {
-      Lisple::sptr_sobject& b_form = binding_form.get_children()[b];
+      sptr_sobject& b_form = binding_form.get_children()[b];
       if (!Type::WORD.is_type_of(*b_form))
       {
         throw TypeError("Invalid binding form: " + b_form->to_string() + " in " + binding_form.to_string());
       }
-      Lisple::sptr_sobject value = b < init_expr->size()
+      sptr_sobject value = b < init_expr->size()
         ? init_expr->get_children()[b]
-        : Lisple::NIL;
+        : NIL;
       scope.store(b_form->as<Word>(), value);
     }
   }
@@ -316,12 +316,12 @@ namespace Lisple
     signatures.push_back(std::move(signature));
   }
 
-  bool Executable::operator==(const Lisple::Object& other) const
+  bool Executable::operator==(const Object& other) const
   {
     return this == &other;
   }
 
-  Lisple::sptr_sobject Executable::execute(Context& ctx, sptr_sobject_v& args)
+  sptr_sobject Executable::execute(Context& ctx, sptr_sobject_v& args)
   {
     for (auto& signature : signatures)
     {
@@ -354,7 +354,7 @@ namespace Lisple
       }
     }
 
-    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected + ", but got: " + Lisple::Array(args).to_string(2) + ".");
+    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected + ", but got: " + Array(args).to_string(2) + ".");
   }
 
   Function::Function(uptr_sig signature)
@@ -452,10 +452,10 @@ namespace Lisple
   }
 
   UserFunction::UserFunction(const Namespace* home_ns,
-                             Lisple::arg_v args,
+                             arg_v args,
                              std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
-                             Lisple::sptr_sobject_v& body)
-    : Function(std::make_unique<Lisple::sig>(args, EXEC_DISPATCH(&UserFunction::exec_body)))
+                             sptr_sobject_v& body)
+    : Function(std::make_unique<sig>(args, EXEC_DISPATCH(&UserFunction::exec_body)))
     , home_ns(home_ns)
     , arg_bindings(std::move(arg_bindings))
     , body(body)
@@ -463,17 +463,17 @@ namespace Lisple
 
   }
 
-  Lisple::sptr_sobject UserFunction::exec_body(Lisple::Context& ctx, Lisple::sptr_sobject_v& args)
+  sptr_sobject UserFunction::exec_body(Context& ctx, sptr_sobject_v& args)
   {
     Namespace* current_namespace = ctx.get_current_namespace();
     ctx.switch_namespace(home_ns->get_name());
-    Lisple::Scope fn_scope;
+    Scope fn_scope;
     for (size_t i=0; i<args.size(); i++)
     {
       arg_bindings[i]->apply(fn_scope, args[i]);
     }
     ctx.push_context(true, fn_scope);
-    sptr_sobject retval = body.empty() ? Lisple::NIL : nullptr;
+    sptr_sobject retval = body.empty() ? NIL : nullptr;
 
     for (auto& form : body)
     {
@@ -506,7 +506,7 @@ namespace Lisple
 
   }
 
-  Signature& Macro::get_signature(Lisple::sptr_sobject_v& args)
+  Signature& Macro::get_signature(sptr_sobject_v& args)
   {
     for (auto& sig : signatures)
     {
@@ -515,7 +515,7 @@ namespace Lisple
         return *sig;
       }
     }
-    throw InvocationException("No matching form for arguments: " + Lisple::Array(args).to_string());
+    throw InvocationException("No matching form for arguments: " + Array(args).to_string());
   }
 
   std::string Macro::to_string(int) const

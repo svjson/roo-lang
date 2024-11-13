@@ -1,5 +1,5 @@
 
-#include "lisp_reader.h"
+#include "runtime.h"
 
 #include <exception>
 #include <iostream>
@@ -17,31 +17,31 @@
 #include "type.h"
 
 #include "file_system.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
   const std::string DEFAULT_NAMESPACE = "user";
 
-  LispReader::LispReader()
-    : LispReader(nullptr)
+  Runtime::Runtime()
+    : Runtime(nullptr)
   {
   }
 
-  LispReader::LispReader(FileSystem* fs)
-    : lang(Lisple::make_language_namespace())
+  Runtime::Runtime(FileSystem* fs)
+    : lang(make_language_namespace())
     , fs(fs)
   {
     switch_namespace(DEFAULT_NAMESPACE);
   }
 
-  LispReader::LispReader(Namespace& ns)
-    : LispReader(ns, nullptr)
+  Runtime::Runtime(Namespace& ns)
+    : Runtime(ns, nullptr)
   {
   }
 
-  LispReader::LispReader(Namespace& ns, FileSystem* fs)
-    : LispReader(fs)
+  Runtime::Runtime(Namespace& ns, FileSystem* fs)
+    : Runtime(fs)
   {
     if (ns.get_type() != Namespace::Type::USER)
     {
@@ -53,15 +53,15 @@ namespace Lisple
     switch_namespace(ns_name);
   }
 
-  LispReader::LispReader(const std::string& main_ns, std::map<const std::string, Namespace> namespaces)
-    : LispReader(main_ns, namespaces, nullptr)
+  Runtime::Runtime(const std::string& main_ns, std::map<const std::string, Namespace> namespaces)
+    : Runtime(main_ns, namespaces, nullptr)
   {
   }
 
-  LispReader::LispReader(const std::string& main_ns,
+  Runtime::Runtime(const std::string& main_ns,
                          std::map<const std::string, Namespace> namespaces,
                          FileSystem* fs)
-    : LispReader(fs)
+    : Runtime(fs)
   {
     for (auto& [name, ns] : namespaces)
     {
@@ -79,7 +79,7 @@ namespace Lisple
    * Switching to a non-existent namespace will create it and store it the namespace map.
    * It is still empty when switched out, it will be evicted from the map.
    */
-  void LispReader::switch_namespace(const std::string& namespace_name)
+  void Runtime::switch_namespace(const std::string& namespace_name)
   {
     if (current_namespace && current_namespace->empty() && namespaces.count(current_namespace->get_name()))
     {
@@ -92,7 +92,7 @@ namespace Lisple
   /**
    *
    */
-  void LispReader::import_namespace(const std::string& namespace_name)
+  void Runtime::import_namespace(const std::string& namespace_name)
   {
     if (!namespaces.count(namespace_name))
     {
@@ -105,7 +105,7 @@ namespace Lisple
   /**
    *
    */
-  void LispReader::define_namespace_alias(const std::string& namespace_name, const std::string& alias)
+  void Runtime::define_namespace_alias(const std::string& namespace_name, const std::string& alias)
   {
     if (!namespaces.count(namespace_name))
     {
@@ -114,7 +114,7 @@ namespace Lisple
     get_current_namespace().import_aliased(namespaces.at(namespace_name), alias);
   }
 
-  Namespace* LispReader::ns(const std::string& namespace_name, bool create_if_absent)
+  Namespace* Runtime::ns(const std::string& namespace_name, bool create_if_absent)
   {
     if (!namespaces.count(namespace_name))
     {
@@ -125,23 +125,23 @@ namespace Lisple
     return &namespaces.at(namespace_name);
   }
 
-  bool LispReader::has_file_system_access() const
+  bool Runtime::has_file_system_access() const
   {
     return fs != nullptr;
   }
 
-  Namespace& LispReader::get_current_namespace()
+  Namespace& Runtime::get_current_namespace()
   {
     return *current_namespace;
   }
 
-  void LispReader::read_file(const std::string& file_name)
+  void Runtime::read_file(const std::string& file_name)
   {
-    Lisple::Context ctx = Lisple::Context(*this);
+    Context ctx = Context(*this);
     read_file(ctx, file_name);
   }
 
-  void LispReader::read_file(Lisple::Context& ctx, const std::string& file_name)
+  void Runtime::read_file(Context& ctx, const std::string& file_name)
   {
     if (!fs)
     {
@@ -156,11 +156,11 @@ namespace Lisple
     switch_namespace(current_ns); // Revert any namespace changes from evaluating the file
   }
 
-  Lisple::sptr_sobject LispReader::eval(Lisple::Context& ctx, const std::string& str)
+  sptr_sobject Runtime::eval(Context& ctx, const std::string& str)
   {
-    Lisple::sptr_sobject_v script = sexp_reader.read_sexps(str);
+    sptr_sobject_v script = sexp_reader.read_sexps(str);
 
-    Lisple::sptr_sobject result;
+    sptr_sobject result;
 
     for (auto& sexp : script)
     {
@@ -169,76 +169,76 @@ namespace Lisple
     return result;
   }
 
-  Lisple::sptr_sobject LispReader::eval(const std::string& str)
+  sptr_sobject Runtime::eval(const std::string& str)
   {
-    Lisple::Context ctx(*this);
+    Context ctx(*this);
     return this->eval(ctx, str);
   }
 
-  Lisple::sptr_sobject LispReader::eval(const Lisple::sptr_sobject& statement)
+  sptr_sobject Runtime::eval(const sptr_sobject& statement)
   {
-    Lisple::Context ctx(*this);
+    Context ctx(*this);
     return this->eval(ctx, statement);
   }
 
-  Lisple::sptr_sobject LispReader::eval(Lisple::Context& ctx, const Lisple::sptr_sobject& statement)
+  sptr_sobject Runtime::eval(Context& ctx, const sptr_sobject& statement)
   {
     switch (statement->get_type())
     {
-      case Lisple::Form::LIST:
-        return eval_list(ctx, dynamic_cast<Lisple::List&>(*statement));
-      case Lisple::Form::ARRAY:
-        return eval_array(ctx, dynamic_cast<Lisple::Array&>(*statement));
-      case Lisple::Form::MAP:
-        return eval_map(ctx, dynamic_cast<Lisple::Map&>(*statement));
-      case Lisple::Form::STRING:
-      case Lisple::Form::CHAR:
-      case Lisple::Form::NUMBER:
-      case Lisple::Form::SYMBOL:
-      case Lisple::Form::FUNCTION:
-      case Lisple::Form::NIL:
-      case Lisple::Form::KEY:
-      case Lisple::Form::BOOLEAN:
-      case Lisple::Form::B_TRUE:
-      case Lisple::Form::B_FALSE:
-      case Lisple::Form::HOST_OBJECT:
+      case Form::LIST:
+        return eval_list(ctx, dynamic_cast<List&>(*statement));
+      case Form::ARRAY:
+        return eval_array(ctx, dynamic_cast<Array&>(*statement));
+      case Form::MAP:
+        return eval_map(ctx, dynamic_cast<Map&>(*statement));
+      case Form::STRING:
+      case Form::CHAR:
+      case Form::NUMBER:
+      case Form::SYMBOL:
+      case Form::FUNCTION:
+      case Form::NIL:
+      case Form::KEY:
+      case Form::BOOLEAN:
+      case Form::B_TRUE:
+      case Form::B_FALSE:
+      case Form::HOST_OBJECT:
         return statement;
-      case Lisple::Form::WORD:
-        return ctx.evalp() ? ctx.lookup(dynamic_cast<Lisple::Word&>(*statement)) : statement;
-      case Lisple::Form::DISCARD:
-        return Lisple::NIL;
+      case Form::WORD:
+        return ctx.evalp() ? ctx.lookup(dynamic_cast<Word&>(*statement)) : statement;
+      case Form::DISCARD:
+        return NIL;
       default:
         break;
     }
 
-    throw Lisple::LispleException("Encountered unimplemented form: " + statement->to_string());
+    throw LispleException("Encountered unimplemented form: " + statement->to_string());
  }
 
-  Lisple::sptr_sobject_v LispReader::eval_sexpression(Lisple::Context& ctx, Lisple::Sexpression& sexp)
+  sptr_sobject_v Runtime::eval_sexpression(Context& ctx, Sexpression& sexp)
   {
-    Lisple::sptr_sobject_v elements;
+    sptr_sobject_v elements;
     auto& children = sexp.get_children();
     elements.reserve(children.size());
 
-    Lisple::Signature* sig = nullptr;
+    Signature* sig = nullptr;
 
     for (size_t i=0; i < children.size(); i++)
     {
-      if (children[i]->get_type() == Lisple::Form::DISCARD)
+      if (children[i]->get_type() == Form::DISCARD)
       {
         continue;
       }
 
       if (ctx.evalp() &&
           i == 0 &&
-          sexp.get_type() == Lisple::Form::LIST &&
-          children[i]->get_type() == Lisple::Form::WORD)
+          sexp.get_type() == Form::LIST &&
+          children[i]->get_type() == Form::WORD)
       {
         auto head = this->eval(ctx, children[i]);
-        if (head->get_type() == Lisple::Form::MACRO)
+        if (head->get_type() == Form::MACRO)
         {
           auto tail = sexp.tail();
-          sig = &head->as<Lisple::Macro>().get_signature(tail);
+          sig = &head->as<Macro>().get_signature(tail);
         }
         elements.push_back(head);
       }
@@ -257,14 +257,14 @@ namespace Lisple
     return elements;
   }
 
-  Lisple::sptr_sobject LispReader::eval_list(Lisple::Context& ctx, Lisple::List& list)
+  sptr_sobject Runtime::eval_list(Context& ctx, List& list)
   {
     if (list.is_quoted())
     {
-      return std::make_shared<Lisple::List>(list.get_children(), true);
+      return std::make_shared<List>(list.get_children(), true);
     }
     auto elements = eval_sexpression(ctx, list);
-    auto lobj = std::make_shared<Lisple::List>(elements);
+    auto lobj = std::make_shared<List>(elements);
 
     if (ctx.evalp())
     {
@@ -274,7 +274,7 @@ namespace Lisple
       }
       catch (std::exception& e)
       {
-        throw Lisple::InvocationException("Error while invoking " + list.get_children().front()->to_string() + ":\n" +
+        throw InvocationException("Error while invoking " + list.get_children().front()->to_string() + ":\n" +
                                           list.to_string() + "\n" + e.what());
       }
     }
@@ -282,25 +282,25 @@ namespace Lisple
     return lobj;
   }
 
-  Lisple::sptr_sobject LispReader::eval_array(Lisple::Context& ctx, Lisple::Array& array)
+  sptr_sobject Runtime::eval_array(Context& ctx, Array& array)
   {
     auto elements = eval_sexpression(ctx, array);
-    return std::make_shared<Lisple::Array>(elements);
+    return std::make_shared<Array>(elements);
   }
 
-  Lisple::sptr_sobject LispReader::eval_map(Lisple::Context& ctx, Lisple::Map& map)
+  sptr_sobject Runtime::eval_map(Context& ctx, Map& map)
   {
     auto elements = eval_sexpression(ctx, map);
-    return std::make_shared<Lisple::Map>(elements);
+    return std::make_shared<Map>(elements);
   }
 
-  sptr_sobject LispReader::call_fn(const std::string& identifier, sptr_sobject_v& args)
+  sptr_sobject Runtime::call_fn(const std::string& identifier, sptr_sobject_v& args)
   {
     Context ctx(*this);
-    sptr_sobject inv = lookup(Lisple::Word(identifier));
+    sptr_sobject inv = lookup(Word(identifier));
     if (!inv)
     {
-      throw Lisple::IdentifierException("Unknown identifier: '" + identifier + "'");
+      throw IdentifierException("Unknown identifier: '" + identifier + "'");
     }
 
     try
@@ -309,43 +309,43 @@ namespace Lisple
     }
     catch (std::exception& e)
     {
-      throw Lisple::InvocationException("Error while invoking " + identifier + ":\n" + inv->to_string() + "\n" + e.what());
+      throw InvocationException("Error while invoking " + identifier + ":\n" + inv->to_string() + "\n" + e.what());
     }
 
-    return Lisple::NIL;
+    return NIL;
   }
 
-  sptr_sobject LispReader::call_fn(const std::string& identifier, sptr_sobject& arg)
+  sptr_sobject Runtime::call_fn(const std::string& identifier, sptr_sobject& arg)
   {
     sptr_sobject_v args = sptr_sobject_v { arg };
     return call_fn(identifier, args);
   }
 
-  Lisple::sptr_sobject LispReader::lookup(const Lisple::Word& identifier)
+  sptr_sobject Runtime::lookup(const Word& identifier)
   {
     return lookup(identifier, nullptr);
   }
 
-  Lisple::sptr_sobject LispReader::lookup(const Lisple::Word& identifier, Lisple::sptr_sobject fallback)
+  sptr_sobject Runtime::lookup(const Word& identifier, sptr_sobject fallback)
   {
     if (identifier.is_qualified())
     {
       Namespace* _ns = ns(identifier.get_qualifier());
-      if (_ns) return _ns->lookup(Lisple::Word(identifier.get_identifier()));
+      if (_ns) return _ns->lookup(Word(identifier.get_identifier()));
 
-      Lisple::sptr_sobject result = current_namespace->lookup(identifier);
+      sptr_sobject result = current_namespace->lookup(identifier);
       if (result) return result;
 
-      throw Lisple::IdentifierException("Unknown identifier: '" + identifier.value + "'");
+      throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
     }
 
-    Lisple::sptr_sobject lang_obj = lang.lookup(identifier);
+    sptr_sobject lang_obj = lang.lookup(identifier);
     if (lang_obj.get())
     {
       return lang_obj;
     }
 
-    Lisple::sptr_sobject ns_obj = current_namespace->lookup(identifier);
+    sptr_sobject ns_obj = current_namespace->lookup(identifier);
     if (ns_obj.get())
     {
       return ns_obj;
@@ -353,12 +353,12 @@ namespace Lisple
 
     if (!fallback)
     {
-      throw Lisple::IdentifierException("Unknown identifier: '" + identifier.value + "'");
+      throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
     }
     return fallback;
   }
 
-  Lisple::Namespace& LispReader::get_ns_of(const Lisple::Word& identifier)
+  Namespace& Runtime::get_ns_of(const Word& identifier)
   {
     if (current_namespace->has(identifier))
     {
@@ -369,7 +369,7 @@ namespace Lisple
       return lang;
     }
 
-    throw Lisple::IdentifierException("Unknown identifier: " + identifier.value);
+    throw IdentifierException("Unknown identifier: " + identifier.value);
   }
 
 }

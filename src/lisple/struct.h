@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "form.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {

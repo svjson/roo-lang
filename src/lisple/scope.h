@@ -14,18 +14,18 @@ namespace Lisple
   class Scope
   {
    protected:
-    std::map<std::string, Lisple::sptr_sobject> objects;
+    std::map<std::string, sptr_sobject> objects;
 
   public:
     virtual ~Scope() = default;
 
-    void store(const Lisple::Word& identifier, const Lisple::sptr_sobject& obj);
-    virtual void mutate(const Lisple::Word& identifier, const Lisple::sptr_sobject& obj);
-    void remove(const Lisple::Word& identifier);
+    void store(const Word& identifier, const sptr_sobject& obj);
+    virtual void mutate(const Word& identifier, const sptr_sobject& obj);
+    void remove(const Word& identifier);
     void clear();
-    virtual bool has(const Lisple::Word& identifier) const;
-    virtual std::shared_ptr<Lisple::Object> lookup(const Lisple::Word& identifier) const;
-    std::shared_ptr<Lisple::Array> get_keys();
+    virtual bool has(const Word& identifier) const;
+    virtual std::shared_ptr<Object> lookup(const Word& identifier) const;
+    std::shared_ptr<Array> get_keys();
   };
 }
 

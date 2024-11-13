@@ -6,7 +6,7 @@
 
 #include "form.h"
 #include "type.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
@@ -21,11 +21,11 @@ namespace Lisple
   {
   }
 
-  void MapStruct::validate(const std::string& ctx_str, Lisple::Object& map_obj) const
+  void MapStruct::validate(const std::string& ctx_str, Object& map_obj) const
   {
-    Lisple::Map& map = map_obj.as<Lisple::Map>();
+    Map& map = map_obj.as<Map>();
 
-    for (Lisple::Object* key : map.keys())
+    for (Object* key : map.keys())
     {
       if (!valid_keys.count(key->to_string()))
       {

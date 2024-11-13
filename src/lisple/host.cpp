@@ -5,47 +5,48 @@
 #include "form.h"
 #include "type.h"
 #include "context.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
-  /**
-   * Empty constant AccessorLookup that is spliced in by HOST_ADAPTER_IMPL
-   * whenever a Host Object Adapter object without accessors is constructed.
+  /*!
+   * @brief Empty constant AccessorLookup that is spliced in by
+   * HOST_ADAPTER_IMPL whenever a Host Object Adapter object without accessors
+   * is constructed.
    */
   const AccessorLookup NO_ACCESSORS = AccessorLookup();
 
-  /**
-   * Default function that is spliced in by accessor macros when a property is
-   * defined without a getter.
+  /*!
+   * @brief Default function that is spliced in by accessor macros when a property
+   * is defined without a getter.
    */
-  const acc_get_t no_getter = [](const AbstractHostObject*) { return Lisple::NIL; };
+  const acc_get_t no_getter = [](const AbstractHostObject*) { return NIL; };
 
-  /**
-   * Default function that is sliced in by accessor macros when a property is
-   * defined without a setter. Invariably raises an exception, as it should
-   * never be invoked.
+  /*!
+   * @brief Default function that is sliced in by accessor macros when a
+   * property is defined without a setter. Invariably raises an exception, as it
+   * should never be invoked.
    */
   const acc_set_t no_setter = [](AbstractHostObject*, Context*, Object&)
   {
-    throw Lisple::InvocationException("Property not mutable");
+    throw InvocationException("Property not mutable");
   };
 
   /**
    * HostTypeRef implementation
    */
-  HostTypeRef::HostTypeRef(Lisple::HostObjectType host_type, const std::string& name, const std::string& make_fn)
-    : Lisple::TypeRef(Lisple::Form::HOST_OBJECT, name)
+  HostTypeRef::HostTypeRef(HostObjectType host_type, const std::string& name, const std::string& make_fn)
+    : TypeRef(Form::HOST_OBJECT, name)
     , host_type(host_type)
     , make_fn(make_fn.size() ? std::make_unique<std::string>(make_fn) : nullptr)
   {
   }
 
-  bool HostTypeRef::is_type_of(const Lisple::Object& obj) const
+  bool HostTypeRef::is_type_of(const Object& obj) const
   {
     if (*NIL != obj && TypeRef::is_type_of(obj))
     {
-      return obj.as<Lisple::AbstractHostObject>().get_host_type() == host_type;
+      return obj.as<AbstractHostObject>().get_host_type() == host_type;
     }
     return false;
   }
@@ -110,14 +111,14 @@ namespace Lisple
   /**
    * AbstractHostObject base implementation for all Host Object Adapters
    */
-  AbstractHostObject::AbstractHostObject(Lisple::HostObjectType type)
-    : Lisple::Object(Lisple::Form::HOST_OBJECT)
+  AbstractHostObject::AbstractHostObject(HostObjectType type)
+    : Object(Form::HOST_OBJECT)
     , host_type(type)
   {
   }
 
-  AbstractHostObject::AbstractHostObject(Lisple::HostObjectType type, const AccessorLookup& accessors)
-    : Lisple::Object(Lisple::Form::HOST_OBJECT)
+  AbstractHostObject::AbstractHostObject(HostObjectType type, const AccessorLookup& accessors)
+    : Object(Form::HOST_OBJECT)
     , host_type(type)
     , accessors(accessors)
   {
@@ -128,7 +129,7 @@ namespace Lisple
     return "<host-object>";
   }
 
-  Lisple::HostObjectType AbstractHostObject::get_host_type() const
+  HostObjectType AbstractHostObject::get_host_type() const
   {
     return host_type;
   }
@@ -143,7 +144,7 @@ namespace Lisple
     return accessors.has_key(key);
   }
 
-  Lisple::sptr_sobject AbstractHostObject::get_sptr_property(const Object& key) const
+  sptr_sobject AbstractHostObject::get_sptr_property(const Object& key) const
   {
     if (accessors.has_key(key))
     {
@@ -164,10 +165,10 @@ namespace Lisple
       accessors.lookup(key).setter(this, ctx, *value);
       return;
     }
-    throw Lisple::InvocationException("No such property: " + key.to_string());
+    throw InvocationException("No such property: " + key.to_string());
   }
 
-  bool AbstractHostObject::operator==(const Lisple::Object& other) const
+  bool AbstractHostObject::operator==(const Object& other) const
   {
     return this == &other;
   }

@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <lisple/lisp_reader.h>
+#include <lisple/runtime.h>
 #include <lisple/adapter.h>
 #include <lisple/impl.h>
 
@@ -122,7 +122,7 @@ TEST(StdMapAdapter_int_string, script_usage)
                                                               &Lisple::Type::NUMBER,
                                                               &Lisple::Type::STRING);
 
-  Lisple::LispReader runtime;
+  Lisple::Runtime runtime;
   runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
 
   // Then
@@ -601,7 +601,7 @@ TEST(StdMapAdapter_int_const_string, script_usage)
                                                                     &Lisple::Type::NUMBER,
                                                                     &Lisple::Type::STRING);
 
-  Lisple::LispReader runtime;
+  Lisple::Runtime runtime;
   runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
 
   // Then

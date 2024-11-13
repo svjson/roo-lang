@@ -32,11 +32,11 @@ namespace Lisple
   };
 
   class Context;
-  class LispReader;
+  class Runtime;
   class Object;
 
-  typedef std::shared_ptr<Lisple::Object> sptr_sobject;
-  typedef std::vector<std::shared_ptr<Lisple::Object>> sptr_sobject_v;
+  typedef std::shared_ptr<Object> sptr_sobject;
+  typedef std::vector<std::shared_ptr<Object>> sptr_sobject_v;
 
   struct CoercionResult
   {
@@ -48,16 +48,16 @@ namespace Lisple
   class TypeRef
   {
    protected:
-    const Lisple::Form form_type;
+    const Form form_type;
     const std::string name;
 
    public:
-    TypeRef(Lisple::Form form_type, const std::string& name);
+    TypeRef(Form form_type, const std::string& name);
     virtual ~TypeRef() = default;
 
-    virtual bool is_type_of(const Lisple::Object& obj) const;
+    virtual bool is_type_of(const Object& obj) const;
     virtual CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
-    CoercionResult coerce(LispReader& reader, sptr_sobject& obj) const;
+    CoercionResult coerce(Runtime& reader, sptr_sobject& obj) const;
 
     virtual bool is_host_object() const;
 
@@ -69,12 +69,12 @@ namespace Lisple
   /*! @brief Type reference wrapper for when two or more types are acceptable */
   class MultiRef : public TypeRef
   {
-    std::vector<const Lisple::TypeRef*> types;
+    std::vector<const TypeRef*> types;
 
    public:
-    MultiRef(std::vector<const Lisple::TypeRef*> types, const std::string& name);
+    MultiRef(std::vector<const TypeRef*> types, const std::string& name);
 
-    bool is_type_of(const Lisple::Object& obj) const override;
+    bool is_type_of(const Object& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
   };
 

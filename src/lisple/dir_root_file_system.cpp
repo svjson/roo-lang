@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {

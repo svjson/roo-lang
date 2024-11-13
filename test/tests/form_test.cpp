@@ -8,7 +8,7 @@
 
 #include <lisple/form.h>
 #include <lisple/type.h>
-#include <lisple/lisple_exception.h>
+#include <lisple/exception.h>
 
 TEST(nil, equality)
 {

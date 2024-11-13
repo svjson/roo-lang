@@ -22,7 +22,7 @@
 #include "namespace.h"
 #include "scope.h"
 #include "type.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {

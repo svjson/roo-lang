@@ -1,6 +1,6 @@
 
-#ifndef __LISP_READER_H_
-#define __LISP_READER_H_
+#ifndef __RUNTIME_H_
+#define __RUNTIME_H_
 
 #include <map>
 #include <string>
@@ -19,8 +19,12 @@ namespace Lisple
   class Word;
   class FileSystem;
 
-  class LispReader
+  class Runtime
   {
+    /*!
+     * @brief The Lisple language namespace, containing all language built-in
+     * functions and identifiers
+     */
     Namespace lang;
     FileSystem* fs;
     Reader sexp_reader;
@@ -31,71 +35,71 @@ namespace Lisple
 
    public:
     /*!
-     * @brief Creates a vanilla Lisple context with only the language built-in
+     * @brief Creates a vanilla Lisple runtime with only the language built-in
      * functions and no file system access.
      */
-    LispReader();
+    Runtime();
 
     /*!
-     * @brief Creates a vanilla Lisple context with only the language built-in
+     * @brief Creates a vanilla Lisple runtime with only the language built-in
      * functions and file system access via the provided FileSystem
      * implementation
      *
      * It is up to the host application to manage the life-cycle of the provided
      * FileSystem object and avoid leaving any dangling pointers to it.
      */
-    LispReader(FileSystem* fs);
+    Runtime(FileSystem* fs);
 
     /*!
-     * @brief Creates a Lisple context with a host-provided namespace in
+     * @brief Creates a Lisple runtime with a host-provided namespace in
      * addition to the language built-in functions and no file system access.
      *
      * The provided namespace will typically be the host application namespace.
-     * The LispReader instance will assume ownership of the Namespace instance
+     * The Runtime instance will assume ownership of the Namespace instance
      */
-    LispReader(Namespace& ns);
+    Runtime(Namespace& ns);
 
     /*!
-     * @brief Creates a Lisple context with a host-provided namespace in
+     * @brief Creates a Lisple runtime with a host-provided namespace in
      * addition to the language built-in functions and file system access via
      * the provided FileSystem implementation.
      *
      * The provided namespace will typically be the host application namespace.
-     * The LispReader instance will assume ownership of the Namespace instance
+     * The Runtime instance will assume ownership of the Namespace instance
      *
      * It is up to the host application to manage the life-cycle of the provided
      * FileSystem object and avoid leaving any dangling pointers to it.
      */
-    LispReader(Namespace& host_namespace, FileSystem* fs);
+    Runtime(Namespace& host_namespace, FileSystem* fs);
 
     /*!
-     * @brief Creates a Lisple context with a host-provided namespaces in
+     * @brief Creates a Lisple runtime with a host-provided namespaces in
      * addition to the language built-in functions and no file system access.
      *
      * The provided namespaces will typically be the host application
      * namespaces.
-     * The LispReader instance will assume ownership of the provided std::map
+     * The Runtime instance will assume ownership of the provided std::map
      * of namespaces.
      */
-    LispReader(const std::string& main_ns,
-               std::map<const std::string, Namespace> namespaces);
+    Runtime(const std::string& main_ns,
+            std::map<const std::string, Namespace> namespaces);
 
     /*!
-     * @brief Creates a Lisple context with a host-provided namespaces in
+     * @brief Creates a Lisple runtime with a host-provided namespaces in
      * addition to the language built-in functions and file system access via
      * the provided FileSystem implementation.
      *
      * The provided namespaces will typically be the host application
      * namespaces.
-     * The LispReader instance will assume ownership of the provided std::map
+     * The Runtime instance will assume ownership of the provided std::map
      * of namespaces.
      *
      * It is up to the host application to manage the life-cycle of the provided
      * FileSystem object and avoid leaving any dangling pointers to it.
      */
-    LispReader(const std::string& main_ns,
-               std::map<const std::string, Namespace> namespaces,
-               FileSystem* fs);
+    Runtime(const std::string& main_ns,
+            std::map<const std::string, Namespace> namespaces,
+            FileSystem* fs);
 
     /*!
      * @brief Switch the namespace in which the lisple engine currently operates.
@@ -122,7 +126,7 @@ namespace Lisple
     Namespace& get_current_namespace();
 
     /*!
-     * @brief Tests if this LispReader instance may access any file system
+     * @brief Tests if this Runtime instance may access any file system
      * abstraction, and thus can read files from disk or virtual a file system.
      */
     bool has_file_system_access() const;
@@ -138,12 +142,12 @@ namespace Lisple
     /*!
      * @brief Call a Lisple function by name with the provided arguments
      */
-    sptr_sobject call_fn(const std::string& identifier, Lisple::sptr_sobject_v& args);
+    sptr_sobject call_fn(const std::string& identifier, sptr_sobject_v& args);
 
     /*!
      * @brief Call a lisple function by name with a single argument
      */
-    sptr_sobject call_fn(const std::string& identifier, Lisple::sptr_sobject& arg);
+    sptr_sobject call_fn(const std::string& identifier, sptr_sobject& arg);
 
     sptr_sobject_v eval_sexpression(Context& ctx, Sexpression& sexp);
 
@@ -180,7 +184,7 @@ namespace Lisple
      */
     void define_namespace_alias(const std::string& ns_name, const std::string& alias);
 
-    friend class Lisple::Context;
+    friend class Context;
   };
 }
 

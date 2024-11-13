@@ -13,7 +13,7 @@
 #include <lisple/form.h>
 #include <lisple/type.h>
 
-#include "lisp_reader_fixture.h"
+#include "runtime_fixture.h"
 
 namespace Lisple { class Context; }
 
@@ -46,7 +46,7 @@ TEST(FunctionSignature, matches__two_strings)
 TEST(Function, execute__delegate)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
+  LispleTest::RuntimeFixture fixture;
   Lisple::uptr_sig_v signatures;
 
   signatures.push_back(std::make_unique<Lisple::sig>

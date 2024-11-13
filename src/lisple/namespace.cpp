@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "form.h"
-#include "lisple_exception.h"
+#include "exception.h"
 #include "scope.h"
 #include "type.h"
 
@@ -22,7 +22,7 @@ namespace Lisple
   {
   }
 
-  Namespace::Namespace(Type type, const std::string& name, std::map<std::string, Lisple::sptr_sobject> lang)
+  Namespace::Namespace(Type type, const std::string& name, std::map<std::string, sptr_sobject> lang)
     : type(type)
     , name(name)
   {
@@ -38,7 +38,7 @@ namespace Lisple
     }
   }
 
-  sptr_sobject Namespace::find(const Lisple::Word& identifier) const
+  sptr_sobject Namespace::find(const Word& identifier) const
   {
     if (identifier.is_qualified())
     {
@@ -69,12 +69,12 @@ namespace Lisple
     return nullptr;
   }
 
-  bool Namespace::has(const Lisple::Word& identifier) const
+  bool Namespace::has(const Word& identifier) const
   {
     return this->find(identifier) != nullptr;
   }
 
-  sptr_sobject Namespace::lookup(const Lisple::Word& identifier) const
+  sptr_sobject Namespace::lookup(const Word& identifier) const
   {
     sptr_sobject value = this->find(identifier);
     if (value)
@@ -106,11 +106,11 @@ namespace Lisple
     return objects.empty();
   }
 
-  void Namespace::mutate(const Lisple::Word& identifier, const Lisple::sptr_sobject& obj)
+  void Namespace::mutate(const Word& identifier, const sptr_sobject& obj)
   {
     if (this->type == Type::LANG)
     {
-      throw Lisple::NamespaceException("Cannnot override language identifier: '" + identifier.value + "'.");
+      throw NamespaceException("Cannnot override language identifier: '" + identifier.value + "'.");
     }
 
     Scope::mutate(identifier, obj);
@@ -133,7 +133,7 @@ namespace Lisple
     }
     else if (aliased_namespaces.at(alias) != &ns)
     {
-      throw Lisple::NamespaceException("Cannot define alias '" + alias + "' for namespace '" + ns.get_name() + "' " +
+      throw NamespaceException("Cannot define alias '" + alias + "' for namespace '" + ns.get_name() + "' " +
                                        "because '" + alias + "' is already an alias for '" +
                                        aliased_namespaces.at(alias)->get_name() + "' within namespace '" +
                                        get_name() + "'");

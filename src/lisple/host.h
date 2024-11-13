@@ -13,7 +13,7 @@
 #include "context.h"
 #include "form.h"
 #include "type.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 /* FIXME: The idea here is that we can enable/disable default Doxygen comments
  * with flags in the build */
@@ -994,21 +994,21 @@ namespace Lisple
   /**
    *
    */
-  class HostTypeRef : public Lisple::TypeRef
+  class HostTypeRef : public TypeRef
   {
-    Lisple::HostObjectType host_type;
+    HostObjectType host_type;
     std::unique_ptr<std::string> make_fn;
 
    public:
-    HostTypeRef(Lisple::HostObjectType host_type, const std::string& name, const std::string& make_fn = "");
+    HostTypeRef(HostObjectType host_type, const std::string& name, const std::string& make_fn = "");
 
-    bool is_type_of(const Lisple::Object& obj) const override;
+    bool is_type_of(const Object& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
     bool is_host_object() const override;
   };
 
   typedef std::map<std::string, Accessors> acc_map;
-  typedef std::map<Lisple::sptr_sobject, Accessors> key_acc_map;
+  typedef std::map<sptr_sobject, Accessors> key_acc_map;
 
   /**
    *
@@ -1016,7 +1016,7 @@ namespace Lisple
   class AccessorLookup
   {
    public:
-    std::vector<Lisple::sptr_sobject> keys;
+    std::vector<sptr_sobject> keys;
     acc_map accessor_map;
 
     AccessorLookup();
@@ -1031,7 +1031,7 @@ namespace Lisple
   /**
    *
    */
-  class AbstractHostObject : public Lisple::Object
+  class AbstractHostObject : public Object
   {
     HostObjectType host_type;
     AccessorLookup accessors;
@@ -1045,20 +1045,20 @@ namespace Lisple
 
     HostObjectType get_host_type() const;
 
-    virtual const std::vector<Lisple::sptr_sobject> keys() const;
+    virtual const std::vector<sptr_sobject> keys() const;
 
-    bool has_key(const Lisple::Object& key) const override;
-    Lisple::sptr_sobject get_sptr_property(const Lisple::Object& key) const override;
-    void set_property(const Lisple::Object& key, sptr_sobject& value) override;
-    void set_property(Context* ctx, const Lisple::Object& key, sptr_sobject& value) override;
+    bool has_key(const Object& key) const override;
+    sptr_sobject get_sptr_property(const Object& key) const override;
+    void set_property(const Object& key, sptr_sobject& value) override;
+    void set_property(Context* ctx, const Object& key, sptr_sobject& value) override;
 
     const key_acc_map& get_accessors() const;
   };
 
   /*! @brief Convenience type definition for GETTER function references */
-  typedef std::function<Lisple::sptr_sobject(const AbstractHostObject*)> acc_get_t;
+  typedef std::function<sptr_sobject(const AbstractHostObject*)> acc_get_t;
   /*! @brief Convenience type definition for SETTER function references */
-  typedef std::function<void(AbstractHostObject*, Lisple::Context*, Lisple::Object&)> acc_set_t;
+  typedef std::function<void(AbstractHostObject*, Context*, Object&)> acc_set_t;
 
   /*!
    * @brief Stock getter-implementation for non-gettable properties that will
@@ -1128,7 +1128,7 @@ namespace Lisple
     T& get_object() override { return object_reference; }
     std::unique_ptr<T>& get_object_ptr() override
     {
-      throw Lisple::InvocationException("Cannot give up ownership of Object Reference");
+      throw InvocationException("Cannot give up ownership of Object Reference");
     }
   };
 
@@ -1138,7 +1138,7 @@ namespace Lisple
    * HOST_ADAPTER_IMPL macros for convenience.
    */
   template<class T>
-  class HostObject : public Lisple::AbstractHostObject
+  class HostObject : public AbstractHostObject
   {
    protected:
     const std::string type_name;
@@ -1160,7 +1160,7 @@ namespace Lisple
      * @param accessors Description of setters and getters and how they are
      *        invoked
      */
-    HostObject(const std::string& type_name, Lisple::HostObjectType type, std::unique_ptr<T>& object, const AccessorLookup& accessors = {})
+    HostObject(const std::string& type_name, HostObjectType type, std::unique_ptr<T>& object, const AccessorLookup& accessors = {})
       : AbstractHostObject(type, accessors)
       , type_name(type_name)
       , object(std::make_unique<HostObjectValue<T>>(object))
@@ -1185,7 +1185,7 @@ namespace Lisple
      *  @param accessors Description of getters and setters, and how they
      *         are invoked
      */
-    HostObject(const std::string& type_name, Lisple::HostObjectType type, T& object, const AccessorLookup& accessors = {})
+    HostObject(const std::string& type_name, HostObjectType type, T& object, const AccessorLookup& accessors = {})
       : AbstractHostObject(type, accessors)
       , type_name(type_name)
       , object(std::make_unique<HostObjectRef<T>>(object))
@@ -1214,7 +1214,7 @@ namespace Lisple
       sptr_sobject_v kvs;
       for (auto& k : keys())
       {
-        if (*get_sptr_property(*k) != *Lisple::NIL)
+        if (*get_sptr_property(*k) != *NIL)
         {
           kvs.push_back(k);
           kvs.push_back(get_sptr_property(*k));
@@ -1240,7 +1240,7 @@ namespace Lisple
     }
 
 
-    bool operator==(const Lisple::Object& other) const override
+    bool operator==(const Object& other) const override
     {
       if (other.get_type() != Form::HOST_OBJECT) return false;
       if (other.as<AbstractHostObject>().get_host_type() != this->get_host_type()) return false;

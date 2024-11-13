@@ -6,7 +6,7 @@
 
 #include "form.h"
 #include "type.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
@@ -93,60 +93,60 @@ namespace Lisple
 
   std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val)
   {
-    List& list = list_obj.as<Lisple::List>();
+    List& list = list_obj.as<List>();
     sptr_sobject prepended;
 
-    if (Lisple::Type::STRING.is_type_of(*list.head()) ||
-        Lisple::Type::NUMBER.is_type_of(*list.head()))
+    if (Type::STRING.is_type_of(*list.head()) ||
+        Type::NUMBER.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Lisple::String>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<String>(prepend_val + str_val(*list.head()));
     }
-    else if (Lisple::Type::WORD.is_type_of(*list.head()))
+    else if (Type::WORD.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Lisple::Word>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<Word>(prepend_val + str_val(*list.head()));
     }
-    else if (Lisple::Type::SYMBOL.is_type_of(*list.head()))
+    else if (Type::SYMBOL.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Lisple::QSymbol>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<QSymbol>(prepend_val + str_val(*list.head()));
     }
-    else if (Lisple::Type::KEY.is_type_of(*list.head()))
+    else if (Type::KEY.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Lisple::Key>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<Key>(prepend_val + str_val(*list.head()));
     }
 
     return subst_sexp_lmnt(list, 0, prepended);
   }
 
   template <>
-  std::string unwrap_primitive<std::string>(const Lisple::Object& obj)
+  std::string unwrap_primitive<std::string>(const Object& obj)
   {
-    return const_cast<std::string&>(obj.as<Lisple::String>().value);
+    return const_cast<std::string&>(obj.as<String>().value);
   }
 
   template <>
-  int unwrap_primitive<int>(const Lisple::Object& obj)
+  int unwrap_primitive<int>(const Object& obj)
   {
-    return obj.as<Lisple::Number>().value;
+    return obj.as<Number>().value;
   }
 
-  Lisple::sptr_sobject wrap_primitive(bool value)
+  sptr_sobject wrap_primitive(bool value)
   {
-    return Lisple::Boolean::wrap(value);
+    return Boolean::wrap(value);
   }
 
-  Lisple::sptr_sobject wrap_primitive(int value)
+  sptr_sobject wrap_primitive(int value)
   {
-    return Lisple::Number::make(value);
+    return Number::make(value);
   }
 
-  Lisple::sptr_sobject wrap_primitive(long value)
+  sptr_sobject wrap_primitive(long value)
   {
-    return Lisple::Number::make(value);
+    return Number::make(value);
   }
 
-  Lisple::sptr_sobject wrap_primitive(const std::string& value)
+  sptr_sobject wrap_primitive(const std::string& value)
   {
-    return Lisple::String::make(value);
+    return String::make(value);
   }
 
 

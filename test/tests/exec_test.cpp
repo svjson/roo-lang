@@ -16,10 +16,11 @@
 #include <stdexcept>
 
 #include "lisple/host.h"
-#include "lisple/lisp_reader.h"
-#include "lisple/lisple_exception.h"
+#include "lisple/runtime.h"
+#include "lisple/exception.h"
+
 #include "test_host_objects.h"
-#include "lisp_reader_fixture.h"
+#include "runtime_fixture.h"
 
 using namespace ::testing;
 
@@ -152,7 +153,7 @@ TEST(Signature, matches__trailing_varargs_of_same_type)
 TEST(Signature, coerce_args__map_to_host_type)
 {
   // Given
-  Lisple::LispReader reader;
+  Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("prn-vehicle"), std::make_shared<Tests::PrnVehicle>());
@@ -169,7 +170,7 @@ TEST(Signature, coerce_args__map_to_host_type)
 TEST(Signature, coerce_args__no_coercion_available)
 {
   // Given
-  Lisple::LispReader reader;
+  Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("double-size-vehicle"), std::make_shared<Tests::DoubleSizeVehicle>());
@@ -184,7 +185,7 @@ TEST(Signature, coerce_args__no_coercion_available)
 TEST(Signature, coerce_args__coerce_array_of_array_of_host_object)
 {
   // Given
-  Lisple::LispReader reader;
+  Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("a-of-a-taker"), std::make_shared<Tests::ArrayOfArrayTaker>());
@@ -217,7 +218,7 @@ TEST(Signature, coerce_args__coerce_array_of_array_of_host_object)
 TEST(Signature, coerce_args__coerce_array_elements)
 {
   // Given
-  Lisple::LispReader reader;
+  Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"), std::make_shared<Tests::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("count-seats"), std::make_shared<Tests::CountVehicleSeats>());
@@ -250,7 +251,7 @@ TEST(NamedArgument, apply)
 TEST(DestructuringArgumentBinding, invalid_binding_form_throws_exception)
 {
   // Given
-  Lisple::LispReader runtime;
+  Lisple::Runtime runtime;
 
   auto arg_form = Lisple::Map::make({
     Lisple::sptr_sobject_v {
@@ -337,7 +338,7 @@ TEST(DestructuringArgumentBinding, apply__keys_and_alias)
 TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
+  LispleTest::RuntimeFixture fixture;
   Lisple::PlusFunction plus_func;
   Lisple::sptr_sobject_v args;
 
@@ -365,16 +366,17 @@ TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
 TEST(UserFunction, invocation_of_empty_function_returns_nil)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
-  fixture.lisp_reader.eval("(defun my-fn [arg])");
+  Lisple::Runtime runtime;
+  runtime.eval("(defun my-fn [arg])");
 
-  auto fn_sptr = fixture.lisp_reader.lookup(Lisple::Word("my-fn"));
+  auto fn_sptr = runtime.lookup(Lisple::Word("my-fn"));
   Lisple::UserFunction& user_fn = fn_sptr->as<Lisple::UserFunction>();
 
   Lisple::sptr_sobject_v args = { Lisple::String::make("A string!")};
+  Lisple::Context ctx(runtime);
 
   // When
-  auto retval = user_fn.execute(fixture.ctx, args);
+  auto retval = user_fn.execute(ctx, args);
 
   // Then
   ASSERT_EQ(*retval, *Lisple::NIL);

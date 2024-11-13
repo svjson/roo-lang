@@ -7,12 +7,10 @@
 #include <exception>
 #include <string>
 
-#include <lisple/lisp_reader.h>
+#include <lisple/runtime.h>
 #include <lisple/struct.h>
 #include <lisple/type.h>
 #include <lisple/form.h>
-
-#include "lisp_reader_fixture.h"
 
 bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& map)
 {
@@ -35,8 +33,8 @@ TEST(MapStruct, validate_map_with_string_values)
   Lisple::MapStruct map_struct({{ ":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false) },
                                 { ":description", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  LispleTest::LispReaderFixture fixture;
-  Lisple::sptr_sobject map = fixture.lisp_reader.eval("{ :name \"mystring\" :description \"contains text\"}");
+  Lisple::Runtime runtime;
+  Lisple::sptr_sobject map = runtime.eval("{ :name \"mystring\" :description \"contains text\"}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -50,8 +48,8 @@ TEST(MapStruct, validate_map_with_unknown_key)
   // Given
   Lisple::MapStruct map_struct({{ ":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  LispleTest::LispReaderFixture fixture;
-  Lisple::sptr_sobject map = fixture.lisp_reader.eval("{ :name \"mystring\" :description \"contains text\"}");
+  Lisple::Runtime runtime;
+  Lisple::sptr_sobject map = runtime.eval("{ :name \"mystring\" :description \"contains text\"}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -66,8 +64,8 @@ TEST(MapStruct, validate_map_with_wrong_value_type)
   Lisple::MapStruct map_struct({ { ":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false) },
                                  { ":description", Lisple::MapEntryReq(&Lisple::Type::STRING, false) } });
 
-  LispleTest::LispReaderFixture fixture;
-  Lisple::sptr_sobject map = fixture.lisp_reader.eval("{ :name \"mystring\" :description \"contains text\"}");
+  Lisple::Runtime runtime;
+  Lisple::sptr_sobject map = runtime.eval("{ :name \"mystring\" :description \"contains text\"}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -81,8 +79,8 @@ TEST(MapStruct, validate_map_with_array_of_string_value)
   // Given
   Lisple::MapStruct map_struct({ { ":values", Lisple::MapEntryReq(&Lisple::Type::ARRAY_OF_STRING, false)}});
 
-  LispleTest::LispReaderFixture fixture;
-  Lisple::sptr_sobject map = fixture.lisp_reader.eval("{ :values [\"A\" \"B\" \"C\"]}");
+  Lisple::Runtime runtime;
+  Lisple::sptr_sobject map = runtime.eval("{ :values [\"A\" \"B\" \"C\"]}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -96,8 +94,8 @@ TEST(MapStruct, get_property_from_map)
   // Given
   Lisple::MapStruct map_struct({ { ":value", Lisple::MapEntryReq(&Lisple::Type::STRING, true)}});
 
-  LispleTest::LispReaderFixture fixture;
-  Lisple::sptr_sobject map = fixture.lisp_reader.eval("{ :value \"A fine string!\"}");
+  Lisple::Runtime runtime;
+  Lisple::sptr_sobject map = runtime.eval("{ :value \"A fine string!\"}");
   Lisple::Key key = Lisple::Key("value");
 
   // When

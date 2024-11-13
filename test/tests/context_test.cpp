@@ -13,15 +13,15 @@
 #include <lisple/scope.h>
 #include <lisple/type.h>
 
-#include <lisple/lisp_reader.h>
+#include <lisple/runtime.h>
 
-#include "lisp_reader_fixture.h"
+#include "runtime_fixture.h"
 
 TEST(Context, lang_lookup)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
-  Lisple::Context ctx(fixture.lisp_reader);
+  LispleTest::RuntimeFixture fixture;
+  Lisple::Context ctx(fixture.runtime);
   Lisple::Word def_sym("def");
   Lisple::Word defun_sym("defun");
   Lisple::Word include_sym("include");
@@ -40,8 +40,8 @@ TEST(Context, lang_lookup)
 TEST(Context, scope_lookup)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
-  Lisple::Context ctx(fixture.lisp_reader);
+  LispleTest::RuntimeFixture fixture;
+  Lisple::Context ctx(fixture.runtime);
 
   Lisple::Word ns_var_sym = Lisple::Word("my-ns-var");
   Lisple::Word local_var_sym = Lisple::Word("my-local-var");
@@ -58,7 +58,7 @@ TEST(Context, scope_lookup)
   // When
   auto global_ctx_ref = ctx.lookup(ns_var_sym);
   auto local_ctx_ref = ctx.lookup(local_var_sym);
-  auto non_global_ctx_ref = fixture.lisp_reader.get_current_namespace().lookup(local_var_sym);
+  auto non_global_ctx_ref = fixture.runtime.get_current_namespace().lookup(local_var_sym);
 
   // Then
   EXPECT_EQ(*global_ctx_ref, *ns_string);
@@ -69,8 +69,8 @@ TEST(Context, scope_lookup)
 TEST(Context, scoped_vars_go_away_when_context_is_popped)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
-  Lisple::Context ctx(fixture.lisp_reader);
+  LispleTest::RuntimeFixture fixture;
+  Lisple::Context ctx(fixture.runtime);
 
   Lisple::Word local_var_sym = Lisple::Word("my-local-var");
   Lisple::sptr_sobject local_string = std::make_shared<Lisple::String>("this is a local shop for local people");
@@ -101,7 +101,7 @@ TEST(Context, scoped_vars_go_away_when_context_is_popped)
 TEST(Context, detached_context_preserves_scope)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
+  LispleTest::RuntimeFixture fixture;
 
   Lisple::Word identifier1("thing");
   Lisple::Word identifier2("swamp-thing");

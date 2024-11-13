@@ -8,7 +8,7 @@
 #include "lexer.h"
 #include "type.h"
 
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
@@ -34,7 +34,7 @@ namespace Lisple
       closing_tokens.push_back(Token::RCURLY);
       break;
     default:
-      throw Lisple::ParseException("Invalid list type");
+      throw ParseException("Invalid list type");
     }
 
     stack.push_back(std::move(list));

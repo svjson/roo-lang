@@ -6,13 +6,13 @@
 
 #include <memory>
 
-#include <lisple/lisp_reader.h>
+#include <lisple/runtime.h>
 
 #include <lisple/context.h>
 #include <lisple/form.h>
 #include <lisple/type.h>
 
-#include "lisp_reader_fixture.h"
+#include "runtime_fixture.h"
 
 TEST(TypeRef, is_type_of)
 {
@@ -73,16 +73,16 @@ TEST(AnyRef, is_type_of)
 TEST(SeqRef, Array_of_String__is_type_of)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
+  LispleTest::RuntimeFixture fixture;
 
-  auto array_of_string = fixture.lisp_reader.eval("[\"string1\" \"string2\" \"string3\"]");
-  auto array_of_mixed = fixture.lisp_reader.eval("[\"string1\" :key1 'sym1]");
+  auto array_of_string = fixture.runtime.eval("[\"string1\" \"string2\" \"string3\"]");
+  auto array_of_mixed = fixture.runtime.eval("[\"string1\" :key1 'sym1]");
   Lisple::String string("string");
   Lisple::Key key("string");
   Lisple::QSymbol symbol("symbol");
   Lisple::Word word("word");
   fixture.ctx.push_context(false);
-  auto list_of_string = fixture.lisp_reader.eval(fixture.ctx, "(\"stringA\" \"stringB\" \"stringC\")");
+  auto list_of_string = fixture.runtime.eval(fixture.ctx, "(\"stringA\" \"stringB\" \"stringC\")");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*array_of_string));
@@ -98,11 +98,11 @@ TEST(SeqRef, Array_of_String__is_type_of)
 TEST(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
 {
   // Given
-  LispleTest::LispReaderFixture fixture;
+  LispleTest::RuntimeFixture fixture;
 
-  auto array_of_char  = fixture.lisp_reader.eval("['A' 'B' 'C' 'D' 'E']");
-  auto array_of_char_with_nils = fixture.lisp_reader.eval("['A' 'B' 'C' nil 'E']");
-  auto array_of_mixed = fixture.lisp_reader.eval("['A' 'B' 3 \"D\" 'E']");
+  auto array_of_char  = fixture.runtime.eval("['A' 'B' 'C' 'D' 'E']");
+  auto array_of_char_with_nils = fixture.runtime.eval("['A' 'B' 'C' nil 'E']");
+  auto array_of_mixed = fixture.runtime.eval("['A' 'B' 3 \"D\" 'E']");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_char));

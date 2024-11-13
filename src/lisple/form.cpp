@@ -10,7 +10,7 @@
 #include <sstream>
 
 #include "type.h"
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
@@ -69,7 +69,7 @@ namespace Lisple
 
   void Object::set_property(const Object &key, sptr_sobject&)
   {
-    throw Lisple::InvocationException("Cannot set property '" + key.to_string() + "' of " + this->to_string(2));
+    throw InvocationException("Cannot set property '" + key.to_string() + "' of " + this->to_string(2));
   }
 
   void Object::set_property(Context*, const Object& key, sptr_sobject& value)
@@ -79,12 +79,12 @@ namespace Lisple
 
   std::shared_ptr<Object> Object::execute(Context&, sptr_sobject_v&)
   {
-    throw Lisple::InvocationException(this->to_string(2) + " cannot be executed");
+    throw InvocationException(this->to_string(2) + " cannot be executed");
   }
 
   sptr_sobject_v& Object::get_children()
   {
-    throw Lisple::InvocationException(this->to_string(2) + " is not a sequence");
+    throw InvocationException(this->to_string(2) + " is not a sequence");
   }
 
   bool Object::has_value(const std::string&) const
@@ -126,7 +126,7 @@ namespace Lisple
 
   std::shared_ptr<Object> Nil::execute(Context&, sptr_sobject_v&)
   {
-    throw Lisple::InvocationException("Execution of nil");
+    throw InvocationException("Execution of nil");
   }
 
   bool Nil::operator==(const Object& other) const
@@ -153,7 +153,7 @@ namespace Lisple
 
   std::shared_ptr<Object> Discard::execute(Context&, sptr_sobject_v&)
   {
-    throw Lisple::InvocationException("Execution of form comment");
+    throw InvocationException("Execution of form comment");
   }
 
   bool Discard::operator==(const Object& other) const
@@ -210,7 +210,7 @@ namespace Lisple
    * String form
    */
   String::String(const std::string& value)
-    : Value(Lisple::Form::STRING, value)
+    : Value(Form::STRING, value)
   {
   }
 
@@ -306,7 +306,7 @@ namespace Lisple
     return this->value < other.value;
   }
 
-  std::shared_ptr<Lisple::Object> Key::execute(Lisple::Context&, sptr_sobject_v& args)
+  std::shared_ptr<Object> Key::execute(Context&, sptr_sobject_v& args)
   {
     if (args.size() == 1)
       {
@@ -532,7 +532,7 @@ namespace Lisple
     }
     catch (std::runtime_error& error)
     {
-      throw Lisple::TypeError("Not a valid number: \"" + str_value + "\"");
+      throw TypeError("Not a valid number: \"" + str_value + "\"");
     }
   }
 
@@ -546,16 +546,16 @@ namespace Lisple
 
   }
 
-  std::shared_ptr<Lisple::Sexpression> Sexpression::new_sequence(Form type)
+  std::shared_ptr<Sexpression> Sexpression::new_sequence(Form type)
   {
     switch(type)
       {
       case Form::LIST:
-        return std::make_shared<Lisple::List>();
+        return std::make_shared<List>();
       case Form::ARRAY:
-        return std::make_shared<Lisple::Array>();
+        return std::make_shared<Array>();
       case Form::MAP:
-        return std::make_shared<Lisple::Map>();
+        return std::make_shared<Map>();
       default:
         throw LispleException("Type is not a sequence");
       }
@@ -567,7 +567,7 @@ namespace Lisple
   {
   }
 
-  sptr_sobject Sexpression::get_sptr_property(const Lisple::Object& form) const
+  sptr_sobject Sexpression::get_sptr_property(const Object& form) const
   {
     for (auto i = this->children.begin(); i < this->children.end(); i+= 2)
     {
@@ -596,7 +596,7 @@ namespace Lisple
 
   std::shared_ptr<Object>& Sexpression::head()
   {
-    return children.empty() ? Lisple::NIL : children.front();
+    return children.empty() ? NIL : children.front();
   }
 
   sptr_sobject_v Sexpression::tail()
@@ -807,9 +807,9 @@ namespace Lisple
     return keys;
   }
 
-  Lisple::sptr_sobject_v Map::key_ptrs() const
+  sptr_sobject_v Map::key_ptrs() const
   {
-    Lisple::sptr_sobject_v keys;
+    sptr_sobject_v keys;
     keys.reserve(size());
     for (size_t i=0; i<children.size(); i+=2)
     {
@@ -845,7 +845,7 @@ namespace Lisple
         return;
       }
     }
-    throw Lisple::InvocationException("No key " + key.to_string() + " in " + this->to_string());
+    throw InvocationException("No key " + key.to_string() + " in " + this->to_string());
   }
 
   void Map::set_property(const sptr_sobject& key, const sptr_sobject& value)

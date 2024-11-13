@@ -3,18 +3,18 @@
 
 #include <utility>
 
-#include "lisp_reader.h"
+#include "runtime.h"
 
 #include "form.h"
 #include "namespace.h"
 #include "scope.h"
 #include "type.h"
 
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
-  ContextFrame::ContextFrame(bool evaluation_mode, Lisple::Scope& scope)
+  ContextFrame::ContextFrame(bool evaluation_mode, Scope& scope)
     : evaluation_mode(evaluation_mode)
     , scope(std::move(scope))
   {
@@ -32,17 +32,17 @@ namespace Lisple
     return evaluation_mode;
   }
 
-  sptr_sobject ContextFrame::lookup(const Lisple::Word& word) const
+  sptr_sobject ContextFrame::lookup(const Word& word) const
   {
     return scope.lookup(word);
   }
 
-  bool ContextFrame::has(const Lisple::Word& word) const
+  bool ContextFrame::has(const Word& word) const
   {
     return scope.has(word);
   }
 
-  Context::Context(LispReader& reader)
+  Context::Context(Runtime& reader)
     : reader(reader)
   {
     push_context(true);
@@ -58,7 +58,7 @@ namespace Lisple
     }
   }
 
-  Context::Context(LispReader& reader, frame_stack_t& frame_stack)
+  Context::Context(Runtime& reader, frame_stack_t& frame_stack)
     : frame_stack(std::move(frame_stack))
     , reader(reader)
   {
@@ -75,9 +75,9 @@ namespace Lisple
     return frame_stack;
   }
 
-  std::shared_ptr<Lisple::Array> Context::get_scope_identifiers()
+  std::shared_ptr<Array> Context::get_scope_identifiers()
   {
-    auto array = std::make_shared<Lisple::Array>();
+    auto array = std::make_shared<Array>();
     for (auto& frame : frame_stack)
     {
       for (auto& key : frame->scope.get_keys()->get_children())
@@ -98,12 +98,12 @@ namespace Lisple
     return frame_stack.size();
   }
 
-  Lisple::sptr_sobject Context::eval(const sptr_sobject& form)
+  sptr_sobject Context::eval(const sptr_sobject& form)
   {
     return reader.eval(*this, form);
   }
 
-  Lisple::sptr_sobject Context::eval(const std::string& str)
+  sptr_sobject Context::eval(const std::string& str)
   {
     return reader.eval(str);
   }
@@ -133,7 +133,7 @@ namespace Lisple
     reader.define_namespace_alias(namespace_name, alias);
   }
 
-  void Context::store_namespace(Lisple::Word key, sptr_sobject value)
+  void Context::store_namespace(Word key, sptr_sobject value)
   {
     reader.get_current_namespace().store(key.value, value);
   }
@@ -142,7 +142,7 @@ namespace Lisple
   {
     sptr_sobject_v args = { arg1 };
 
-    sptr_sobject exec = lookup(Lisple::Word(fn_name));
+    sptr_sobject exec = lookup(Word(fn_name));
 
     if (*exec == *NIL)
     {
@@ -151,7 +151,7 @@ namespace Lisple
     return exec->execute(*this, args);
   }
 
-  sptr_sobject Context::lookup(const Lisple::Word& identifier) const
+  sptr_sobject Context::lookup(const Word& identifier) const
   {
     if (identifier.is_qualified())
     {
@@ -161,7 +161,7 @@ namespace Lisple
 
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {
-      Lisple::sptr_sobject res = i->get()->lookup(identifier);
+      sptr_sobject res = i->get()->lookup(identifier);
       if (res.get())
       {
         return res;
@@ -176,7 +176,7 @@ namespace Lisple
     return frame_stack.back()->scope;
   }
 
-  Scope& Context::get_scope_of(const Lisple::Word& identifier) const
+  Scope& Context::get_scope_of(const Word& identifier) const
   {
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {
@@ -194,7 +194,7 @@ namespace Lisple
     frame_stack.push_back(std::make_unique<ContextFrame>(evaluation_mode));
   }
 
-  void Context::push_context(bool evaluation_mode, Lisple::Scope& scope)
+  void Context::push_context(bool evaluation_mode, Scope& scope)
   {
     frame_stack.push_back(std::make_unique<ContextFrame>(evaluation_mode, scope));
   }

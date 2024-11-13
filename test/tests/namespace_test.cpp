@@ -8,7 +8,7 @@
 
 #include <lisple/namespace.h>
 #include <lisple/form.h>
-#include <lisple/lisp_reader.h>
+#include <lisple/runtime.h>
 
 TEST(Namespace, store_and_lookup)
 {
@@ -30,13 +30,13 @@ TEST(Namespace, store_and_lookup)
 TEST(Namespace, access_identifier_from_other_ns)
 {
   // Given
-  Lisple::LispReader reader;
-  reader.switch_namespace("test-ns.number-one");
-  reader.get_current_namespace().store(Lisple::Word("my-value"), std::make_shared<Lisple::Number>(123));
+  Lisple::Runtime runtime;
+  runtime.switch_namespace("test-ns.number-one");
+  runtime.get_current_namespace().store(Lisple::Word("my-value"), std::make_shared<Lisple::Number>(123));
 
   // When
-  reader.switch_namespace("test-ns.number-two");
-  Lisple::sptr_sobject result = reader.lookup(Lisple::Word("test-ns.number-one/my-value"));
+  runtime.switch_namespace("test-ns.number-two");
+  Lisple::sptr_sobject result = runtime.lookup(Lisple::Word("test-ns.number-one/my-value"));
 
   // Then
   ASSERT_EQ(result->to_string(), "123");

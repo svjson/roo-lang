@@ -4,7 +4,7 @@
 #include <regex>
 #include <string>
 
-#include "lisple_exception.h"
+#include "exception.h"
 
 namespace Lisple
 {
@@ -127,7 +127,7 @@ namespace Lisple
       {
         if (val.empty() || val.size() > 1)
         {
-          throw Lisple::ParseException("Invalid char token: '" + val + "'. Chars must have a size of exactly 1 character.");
+          throw ParseException("Invalid char token: '" + val + "'. Chars must have a size of exactly 1 character.");
         }
         ct = Token::NONE;
         tokens.push_back(Symbol(Token::CHAR, val));
@@ -148,7 +148,7 @@ namespace Lisple
       {
         if (offset == input.size())
         {
-          throw Lisple::ParseException("Unexpected token: '\\': " + line + " <---");
+          throw ParseException("Unexpected token: '\\': " + line + " <---");
         }
 
         val += input.at(offset++);
