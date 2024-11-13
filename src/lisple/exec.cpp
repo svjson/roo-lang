@@ -14,8 +14,6 @@
 
 namespace Lisple
 {
-  ArgumentBinding::ArgumentBinding() {}
-
   std::unique_ptr<ArgumentBinding> ArgumentBinding::create(Object& arg_declaration)
   {
     if (arg_declaration.get_type() == Form::WORD)
@@ -28,12 +26,17 @@ namespace Lisple
       return std::make_unique<DestructuringArgumentBinding>(arg_declaration.as<Map>());
     }
 
+    if (arg_declaration.get_type() == Form::ARRAY)
+    {
+      return std::make_unique<ArrayArgumentBinding>(arg_declaration.as<Array>());
+    }
+
     throw LispleException("Invalid argument declaration: " + arg_declaration.to_string(2));
   }
 
+  /* NamedArgumentBinding */
   NamedArgumentBinding::NamedArgumentBinding(const std::string& name)
-    : ArgumentBinding()
-    , arg_name(name)
+    : arg_name(name)
   {}
 
   void NamedArgumentBinding::apply(Scope& scope, sptr_sobject& arg_val)
@@ -44,22 +47,22 @@ namespace Lisple
   const Key keys("keys");
   const Key as("as");
 
-  DestructuringArgumentBinding::DestructuringArgumentBinding(Map& destr_map)
-    : ArgumentBinding()
-    , destr_map(destr_map)
+  /* DestructuringArgumentBinding */
+  DestructuringArgumentBinding::DestructuringArgumentBinding(const Map& binding_form)
+    : binding_form(binding_form)
   {
-    if (!destr_map.has_key(keys) ||
-        destr_map.keys().size() > 2 ||
-        (destr_map.keys().size() == 2 && !destr_map.has_key(as)) ||
-        !Type::ARRAY.is_type_of(destr_map.get_property(keys)))
+    if (!binding_form.has_key(keys) ||
+        binding_form.keys().size() > 2 ||
+        (binding_form.keys().size() == 2 && !binding_form.has_key(as)) ||
+        !Type::ARRAY.is_type_of(binding_form.get_property(keys)))
     {
-      throw Lisple::TypeError("Invalid destructuring form: " + destr_map.to_string(2));
+      throw Lisple::TypeError("Invalid destructuring form: " + binding_form.to_string(2));
     }
   }
 
   void DestructuringArgumentBinding::apply(Scope& scope, sptr_sobject& arg_val)
   {
-    for (auto& key_obj : destr_map.get_sptr_property(keys)->as<Array>().get_children())
+    for (auto& key_obj : binding_form.get_sptr_property(keys)->as<Array>().get_children())
     {
       Word& key_name = key_obj->as<Word>();
       Key key(key_name.to_string());
@@ -73,15 +76,42 @@ namespace Lisple
       }
     }
 
-    if (destr_map.has_key(as))
+    if (binding_form.has_key(as))
     {
-      Object& alias = destr_map.get_property(as);
+      Object& alias = binding_form.get_property(as);
       if (alias.get_type() != Form::WORD)
       {
-        throw LispleException("Invalid alias destructuring form: " + destr_map.to_string(2));
+        throw LispleException("Invalid alias destructuring form: " + binding_form.to_string(2));
       }
       Word& alias_word = alias.as<Word>();
       scope.store(alias_word, arg_val);
+    }
+  }
+
+  /* ArrayArgumentBinding */
+  ArrayArgumentBinding::ArrayArgumentBinding(const Array& binding_form)
+    : binding_form(binding_form)
+  {
+  }
+
+  void ArrayArgumentBinding::apply(Scope& scope, sptr_sobject& init_expr)
+  {
+    if (!Type::SEQ.is_type_of(*init_expr))
+    {
+      throw TypeError("Invalid init expression: " + init_expr->to_string(2) + ". Must be Seq for binding form: " + binding_form.to_string(2));
+    }
+
+    for (size_t b=0; b<binding_form.size(); b++)
+    {
+      Lisple::sptr_sobject& b_form = binding_form.get_children()[b];
+      if (!Type::WORD.is_type_of(*b_form))
+      {
+        throw TypeError("Invalid binding form: " + b_form->to_string() + " in " + binding_form.to_string());
+      }
+      Lisple::sptr_sobject value = b < init_expr->size()
+        ? init_expr->get_children()[b]
+        : Lisple::NIL;
+      scope.store(b_form->as<Word>(), value);
     }
   }
 

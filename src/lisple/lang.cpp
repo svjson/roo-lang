@@ -3,10 +3,12 @@
 
 #include <algorithm>
 #include <bits/std_abs.h>
+#include <cmath>
+#include <compare>
 #include <cstdlib>
+#include <ctype.h>
 #include <iostream>
 #include <map>
-#include <math.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -337,44 +339,11 @@ namespace Lisple
 
     for (size_t i=0; i<bindings.size(); i+=2)
     {
-      auto& binding_form = *bindings.get_children()[i];
-      auto init_expr = ctx.eval(bindings.get_children()[i+1]);
-
       Scope var_scope;
-      if (*Lisple::NIL == binding_form)
-      {
-        throw TypeError("Cannot bind value to nil");
-      }
-      else if (Type::ARRAY.is_type_of(binding_form))
-      {
-        if (!Type::SEQ.is_type_of(*init_expr))
-        {
-          throw TypeError("Invalid init expression in let-expression: " + init_expr->to_string(2) + ". Must be Seq for binding form: " + binding_form.to_string(2));
-        }
-
-        for (size_t b=0; b<binding_form.size(); b++)
-        {
-          Lisple::sptr_sobject& b_form = binding_form.get_children()[b];
-          if (!Type::WORD.is_type_of(*b_form))
-          {
-            throw TypeError("Invalid binding form in let expression: " + b_form->to_string() + " in " + binding_form.to_string());
-          }
-          Lisple::sptr_sobject value = b < init_expr->size()
-            ? init_expr->get_children()[b]
-            : Lisple::NIL;
-          var_scope.store(b_form->as<Word>(), value);
-        }
-        ctx.push_context(true, var_scope);
-      }
-      else if (Type::WORD.is_type_of(binding_form))
-      {
-        var_scope.store(binding_form.as<Word>(), init_expr);
-        ctx.push_context(true, var_scope);
-      }
-      else
-      {
-        throw TypeError("Invalid binding form in let expression: " + binding_form.to_string() + " in " + bindings.to_string());
-      }
+      auto binding = ArgumentBinding::create(*bindings.get_children()[i]);
+      auto init_expr = ctx.eval(bindings.get_children()[i+1]);
+      binding->apply(var_scope, init_expr);
+      ctx.push_context(true, var_scope);
     }
 
     sptr_sobject result;

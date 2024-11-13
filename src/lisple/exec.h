@@ -120,7 +120,6 @@ namespace Lisple
   class ArgumentBinding
   {
    public:
-    ArgumentBinding();
     virtual ~ArgumentBinding() = default;
 
     virtual void apply(Scope& scope, sptr_sobject& arg_val) = 0;
@@ -140,10 +139,20 @@ namespace Lisple
 
   class DestructuringArgumentBinding : public ArgumentBinding
   {
-    Map destr_map;
+    Map binding_form;
 
    public:
-    DestructuringArgumentBinding(Map& destr_map);
+    DestructuringArgumentBinding(const Map& destr_map);
+
+    void apply(Scope& scope, sptr_sobject& arg_val) override;
+  };
+
+  class ArrayArgumentBinding : public ArgumentBinding
+  {
+    Array binding_form;
+
+   public:
+    ArrayArgumentBinding(const Lisple::Array& array);
 
     void apply(Scope& scope, sptr_sobject& arg_val) override;
   };

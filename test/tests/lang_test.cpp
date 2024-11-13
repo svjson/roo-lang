@@ -645,6 +645,19 @@ TEST(LetMacro, destructure_array)
   ASSERT_EQ(*result, *Lisple::Number::make(35));
 }
 
+TEST(LetMacro, destructure_map)
+{
+  // Given
+  Lisple::LispReader runtime;
+
+  // When
+  Lisple::sptr_sobject result = runtime.eval("(let [{:keys [a b]} {:a 10 :b 25}] (+ a b))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Number::make(35));
+
+}
+
 TEST(IfLetMacro, if_let)
 {
   // Given
