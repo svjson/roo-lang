@@ -138,6 +138,20 @@ TEST(Map, get_property___from_map_multiple_entries)
   EXPECT_EQ(value, Lisple::String("somevalue"));
 }
 
+TEST(Map, map_with_numeric_keys)
+{
+  Lisple::Map map = Lisple::Map({
+      Lisple::Number::make(17), Lisple::Number::make(18),
+      Lisple::Number::make(18), Lisple::Number::make(6)
+    });
+
+  EXPECT_EQ(map.to_string(), "{17 18 18 6}");
+  EXPECT_EQ(map.get_property(Lisple::Number(17)).to_string(), "18");
+  EXPECT_EQ(map.get_property(Lisple::Number(18)).to_string(), "6");
+  EXPECT_EQ(map.get_property(Lisple::Number(17)), Lisple::Number(18));
+  EXPECT_EQ(map.get_property(Lisple::Number(18)), Lisple::Number(6));
+}
+
 TEST(Map, has_key)
 {
   Lisple::sptr_sobject_v map_elements

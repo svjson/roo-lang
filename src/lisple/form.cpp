@@ -569,23 +569,19 @@ namespace Lisple
 
   sptr_sobject Sexpression::get_sptr_property(const Lisple::Object& form) const
   {
-    auto it = std::find_if(this->children.begin(),
-                           this->children.end(), [&]
-                           (const Lisple::sptr_sobject& item) { return *item == form; });
-
-    if (it == this->children.end())
+    for (auto i = this->children.begin(); i < this->children.end(); i+= 2)
     {
-      return NIL;
+      if (**i == form)
+      {
+        if (i == this->children.end())
+        {
+          return NIL;
+        }
+        return *std::next(i);
+      }
     }
 
-    it = std::next(it);
-
-    if (it == this->children.end())
-    {
-      return NIL;
-    }
-
-    return const_cast<sptr_sobject&>(*it);
+    return NIL;
   }
 
   void Sexpression::set_property(const Object&, sptr_sobject&)
