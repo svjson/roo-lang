@@ -288,12 +288,12 @@ namespace Lisple
      * Should possibly be ubiquitous for all executables and reside in the abstract
      * Executable base class
      */
-    const Namespace* home_ns;
+    const std::string home_ns;
     std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
     sptr_sobject_v body;
 
    public:
-    UserFunction(const Namespace* home_ns,
+    UserFunction(const std::string& home_ns,
                  Lisple::arg_v,
                  std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
                  sptr_sobject_v& body);

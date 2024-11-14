@@ -355,10 +355,10 @@ TEST(FilterFunction, filter_array)
 TEST(MapFunction, map_single_vec_of_numbers)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
+  Lisple::Runtime runtime;
 
   // When
-  auto retval = fixture.runtime.eval("(map [1 2 3] (fn [num] (* num 2)))");
+  auto retval = runtime.eval("(map [1 2 3] (fn [num] (* num 2)))");
 
   // Then
   ASSERT_EQ(retval->to_string(), "[2 4 6]");

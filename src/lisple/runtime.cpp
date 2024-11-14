@@ -53,14 +53,15 @@ namespace Lisple
     switch_namespace(ns_name);
   }
 
-  Runtime::Runtime(const std::string& main_ns, std::map<const std::string, Namespace> namespaces)
+  Runtime::Runtime(const std::string& main_ns,
+                   std::map<const std::string, Namespace> namespaces)
     : Runtime(main_ns, namespaces, nullptr)
   {
   }
 
   Runtime::Runtime(const std::string& main_ns,
-                         std::map<const std::string, Namespace> namespaces,
-                         FileSystem* fs)
+                   std::map<const std::string, Namespace> namespaces,
+                   FileSystem* fs)
     : Runtime(fs)
   {
     for (auto& [name, ns] : namespaces)
@@ -69,9 +70,9 @@ namespace Lisple
       {
         throw LispleException("Provided namespace '" + ns.get_name() + "' is of an invalid type.");
       }
+      this->namespaces.emplace(name, std::move(ns));
     }
 
-    this->namespaces = std::move(namespaces);
     switch_namespace(main_ns);
   }
 
@@ -81,7 +82,10 @@ namespace Lisple
    */
   void Runtime::switch_namespace(const std::string& namespace_name)
   {
-    if (current_namespace && current_namespace->empty() && namespaces.count(current_namespace->get_name()))
+    if (current_namespace &&
+        current_namespace->empty() &&
+        namespaces.count(current_namespace->get_name()) &&
+        current_namespace->name != namespace_name)
     {
       namespaces.erase(current_namespace->get_name());
     }

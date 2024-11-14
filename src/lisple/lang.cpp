@@ -269,7 +269,7 @@ namespace Lisple
       arg_types.push_back(Lisple::arg(&Type::ANY));
       arg_bindings.push_back(ArgumentBinding::create(*arg));
     }
-    return std::make_shared<UserFunction>(home_ns, std::move(arg_types), arg_bindings, body);
+    return std::make_shared<UserFunction>(home_ns->get_name(), std::move(arg_types), arg_bindings, body);
   }
 
   std::shared_ptr<DetachedFunction> create_detached_function(Lisple::Context& ctx, Lisple::Object& arg_array, Lisple::sptr_sobject_v& body)

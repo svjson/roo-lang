@@ -451,7 +451,7 @@ namespace Lisple
     return fun->execute(*ctx, args);
   }
 
-  UserFunction::UserFunction(const Namespace* home_ns,
+  UserFunction::UserFunction(const std::string& home_ns,
                              arg_v args,
                              std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
                              sptr_sobject_v& body)
@@ -465,8 +465,8 @@ namespace Lisple
 
   sptr_sobject UserFunction::exec_body(Context& ctx, sptr_sobject_v& args)
   {
-    Namespace* current_namespace = ctx.get_current_namespace();
-    ctx.switch_namespace(home_ns->get_name());
+    const std::string current_namespace = ctx.get_current_namespace()->get_name();
+    ctx.switch_namespace(home_ns);
     Scope fn_scope;
     for (size_t i=0; i<args.size(); i++)
     {
@@ -480,7 +480,7 @@ namespace Lisple
       retval = ctx.eval(form);
     }
     ctx.pop_context();
-    ctx.switch_namespace(current_namespace->get_name());
+    ctx.switch_namespace(current_namespace);
 
     return retval;
   }
