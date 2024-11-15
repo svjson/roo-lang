@@ -124,7 +124,7 @@ namespace Lisple
       struct StackFrame
       {
         /*! @brief The name of the target block */
-        const std::string& name;
+        const std::string name;
         /*! @brief The target block */
         Block* block;
       };
