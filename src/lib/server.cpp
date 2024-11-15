@@ -31,7 +31,6 @@ namespace Lisple
 
     Server::Server(const ServerConfig& config, Runtime& runtime)
       : config(config)
-      , reader(runtime)
       , dispatcher(this->config, runtime)
     {}
 

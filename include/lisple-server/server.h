@@ -136,11 +136,6 @@ namespace Lisple
        */
       ServerConfig config;
       /*!
-       * @brief A reference to the Lisple runtime that remote users will be
-       * able to connect to.
-       */
-      Runtime &reader;
-      /*!
        * @brief A collection of active socket file descriptors, containing
        * all active connections. The server socket will always be stored at
        * position 0.
