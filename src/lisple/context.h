@@ -65,7 +65,9 @@ namespace Lisple
      * @brief Switch the underlying namespace in which execution and unqualified
      * identifier lookup occurs.
      *
-     * This switches the current namespace of lisp reader instance, and any code
+     * @param namespace_name The name of the namespace to switch to.
+     *
+     * This switches the current namespace of  instance, and any code
      * that uses this function to temporarily switch namespace implicitly takes
      * on the responsibility of switching it back.
      *
@@ -76,10 +78,41 @@ namespace Lisple
     /*!
      * @brief Get a pointer to the currently active namespace of the underlying
      * lisp reader instance.
+     *
+     * @return A pointer to the current namespace
      */
     Namespace* get_current_namespace();
 
-    sptr_sobject call(const std::string& fn_name, sptr_sobject& args);
+    /*!
+     * @brief Call a named function with a single argument
+     *
+     * @param fn_name The name of the function to look up and execute
+     *
+     * @return The execution result as a shared object.
+     *
+     * The lookup of the named function occurs in the current namespace of
+     * the context, which means that aliased namespaces in the current
+     * namespace will be honored.
+     *
+     * If the identifier is qualified with a known global namespace, the
+     * current namespace will be ignored.
+     */
+    sptr_sobject call(const std::string& fn_name, sptr_sobject& arg);
+    /*!
+     * @brief Call a named function with a list of arguments.
+     *
+     * @param fn_name The name of the function to look up and execute
+     *
+     * @return The execution result as a shared object.
+     *
+     * The lookup of the named function occurs in the current namespace of
+     * the context, which means that aliased namespaces in the current
+     * namespace will be honored.
+     *
+     * If the identifier is qualified with a known global namespace, the
+     * current namespace will be ignored.
+     */
+    sptr_sobject call(const std::string& fn_name, const sptr_sobject_v& args);
     sptr_sobject lookup(const Word& word) const;
 
     void push_context(bool evaluation_mode);
