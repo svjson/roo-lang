@@ -15,15 +15,7 @@
 #include "type.h"
 #include "exception.h"
 
-/* FIXME: The idea here is that we can enable/disable default Doxygen comments
- * with flags in the build */
-#define DOXYGEN(...)                           \
-/*! \
- * @brief __VA_ARGS__ \
- */
-
 #define __SELECT_MACRO__2(_1, _2, MACRO_NAME, ...) MACRO_NAME
-
 
 #define __VA_REP_1(M_NAME, PROP)                \
   M_NAME(PROP)
@@ -180,46 +172,63 @@
   (M_NAME, __VA_ARGS__)
 
 #define __HOST_TYPE(CONST, NAME, MAKE_FN) \
-  DOXYGEN(HostTypeRef definition of CONST / NAME, with registered Make-function MAKE_FN which enables argument coercion) \
+  /*!                                                                   \
+   * @brief Type definition for a Lisple HostObject Adapter with a registered \
+   * make function for automatic coercion.                              \
+   */                                                                   \
   inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME, MAKE_FN);
 
 #define __HOST_TYPE__NO_MAKE_FN(CONST, NAME) \
-  DOXYGEN(HostTypeRef definition of CONST / NAME, with no provided Make-function. Coercion is therefore not enabled) \
+  /*!                                                       \
+   * @brief Type definition for a Lisple HostObject Adapter \
+   */                                                                   \
   inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME);
 
 #define HOST_TYPE(CONST, NAME, ...) __SELECT_MACRO__2(0, ##__VA_ARGS__, __HOST_TYPE, __HOST_TYPE__NO_MAKE_FN)(CONST, NAME, ##__VA_ARGS__)
 
 
-#define HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)                                     \
-    DOXYGEN(Static factory method that constructs a new instance of H_CLASS and wraps it in an instance of AD_CLASS) \
-    template <typename T, typename... Args>                                                \
-    static std::shared_ptr<AD_CLASS> make(Args&&... args)                                  \
-    {                                                                                      \
-      return std::make_shared<AD_CLASS>(std::make_unique<T>(std::forward<Args>(args)...)); \
-    }                                                                                      \
-    DOXYGEN(Static factory method that constructs an instance of AD_CLASS holding a reference to the underlying H_CLASS object) \
-    static std::shared_ptr<AD_CLASS> make_ref(const H_CLASS& ref)                          \
-    {                                                                                      \
-      return std::make_shared<AD_CLASS>(const_cast<H_CLASS&>(ref));                        \
-    }
+#define HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)                  \
+  /*!                                                                   \
+   * @brief Static factor method the constructs a new instance of the   \
+   * underlying object and wraps it in an adapter instance              \
+   */                                                                   \
+  template <typename T, typename... Args>                               \
+  static std::shared_ptr<AD_CLASS> make(Args&&... args)                 \
+  {                                                                     \
+    return std::make_shared<AD_CLASS>(std::make_unique<T>(std::forward<Args>(args)...)); \
+  }                                                                     \
+  /*!                                                                   \
+   * @brief Static factor method the wraps an instance of the underlying \
+   * object in an adapter instance                                      \
+   */                                                                   \
+  static std::shared_ptr<AD_CLASS> make_ref(const H_CLASS& ref)         \
+  {                                                                     \
+    return std::make_shared<AD_CLASS>(const_cast<H_CLASS&>(ref));       \
+  }
 
 #define HOST_ADAPTER_MAIN_DECL(AD_CLASS, H_CLASS)                                                                \
   class AD_CLASS : public Lisple::HostObject<H_CLASS>                                                            \
   {                                                                                                              \
    public:                                                                                                       \
-    DOXYGEN(Constructs a new instance of AD_CLASS and assumes ownership of the unique pointer) \
-    AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS);  \
-    DOXYGEN(Constructs a new instance of AD_CLASS hold a reference to supplied H_CLASS) \
-    AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS);                    \
+   /*!                                                                  \
+    * @brief Constructs a new instance of the adapter class and takes   \
+    * ownership of the unique pointer.                                  \
+    */                                                                  \
+    AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS); \
+   /*!                                                                  \
+    * @brief Constructs a new instance of the adapter class that holds  \
+    * the supplied reference. This effectively means that the adapter   \
+    * object is not responsible for the life-cycle of the referenced    \
+    * object and may end up with a dangling pointer                     \
+    */                                                                  \
+    AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access = Lisple::NO_ACCESSORS); \
     HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
 #define SUB_ADAPTER_MAIN_DECL(AD_CLASS, AD_SUP_CLASS, H_CLASS)                                \
   class AD_CLASS : public AD_SUP_CLASS                                                        \
   {                                                                                           \
    public:                                                                                    \
-    DOXYGEN(Constructs a new instance of AD_CLASS and assumes ownership of the unique pointer) \
     AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access={});   \
-    DOXYGEN(Constructs a new instance of AD_CLASS hold a reference to supplied H_CLASS) \
     AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access={});                     \
     HOST_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
@@ -231,7 +240,7 @@
  * Declares a single host adapter getter accessor function
  */
 #define HOST_ADAPTER_GETTER_DECL(PROP_NAME)             \
-  DOXYGEN(Get the value of PROP_NAME as Lisple Object)  \
+  /*! @brief Auto-generated getter */ \
   Lisple::sptr_sobject get_##PROP_NAME() const;
 
 /* __HOST_ADAPTER_GETTERS
@@ -245,7 +254,7 @@
  * Declares a single host adapter setter accessor function
  */
 #define HOST_ADAPTER_SETTER_DECL(PROP_NAME)                      \
-  DOXYGEN(Set the value of PROP_NAME using Lisple Object value)  \
+  /*! @brief Auto-generated setter */ \
   void set_##PROP_NAME(Lisple::Context* ctx, Lisple::Object& value);
 
 /* __HOST_ADAPTER_GETTERS
@@ -966,10 +975,10 @@
                                                              P_SETTER(AD_CLASS, P_SET_SINGLE(FN))) }
 
 #define DECL_SHKEY(CONSTNAME) \
-  DOXYGEN(Lisple key constant CONSTNAME) \
+  /*! @brief Constant Lisple::Key */ \
   extern const std::shared_ptr<Lisple::Key> CONSTNAME;
 #define SHKEY(CONSTNAME,KEYNAME) \
-  DOXYGEN(Lisple key constant with value KEYNAME)                          \
+  /*! @brief Constant Lisple::Key */ \
   const std::shared_ptr<Lisple::Key> CONSTNAME = std::make_shared<Lisple::Key>(KEYNAME);
 
 // Helper to detect if a type has operator==

@@ -11,13 +11,6 @@
 #include "form.h"
 #include "type.h"
 
-/* FIXME: The idea here is that we can enable/disable default Doxygen comments
- * with flags in the build */
-#define DOXYGEN(...)                           \
-/*! \
- * @brief __VA_ARGS__ \
- */
-
 #define SIG_PREAMBLE Lisple::arg_v
 #define FN_ARGS1(A1) SIG_PREAMBLE{ Lisple::arg A1 }
 #define FN_ARGS2(A1,A2) SIG_PREAMBLE{ Lisple::arg A1, Lisple::arg A2 }
@@ -41,7 +34,7 @@
 #define EXEC_DISPATCH(METHOD_REF) std::bind(METHOD_REF, this, std::placeholders::_1, std::placeholders::_2)
 
 #define DISP_DECL(DISP_NAME) \
-  DOXYGEN(Native executable implementation) \
+  /*! @brief Native executable implementation */                        \
   Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args);
 
 #define EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                           \

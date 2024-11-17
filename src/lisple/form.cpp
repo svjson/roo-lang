@@ -309,9 +309,9 @@ namespace Lisple
   std::shared_ptr<Object> Key::execute(Context&, sptr_sobject_v& args)
   {
     if (args.size() == 1)
-      {
-        return args.front()->get_sptr_property(*this);
-      }
+    {
+      return args.front()->get_sptr_property(*this);
+    }
     throw InvocationException("Get value by key requires a single argument.");
   }
 
