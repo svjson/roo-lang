@@ -65,7 +65,7 @@ namespace Tests
   SHKEY(SEATS, "seats")
 
   /* RegNumberAdapter */
-  HOST_ADAPTER_IMPL("regnum", RegNumberAdapter, RegNumber, REG_NUMBER, (
+  HOST_ADAPTER_IMPL(RegNumberAdapter, RegNumber, &REGNUM_TYPE, (
                       { K_GET(RegNumberAdapter, LETTERS, letters),
                         K_GET(RegNumberAdapter, NUMBERS, numbers) }));
 
@@ -73,7 +73,7 @@ namespace Tests
   ADAPTER_PROP_GET__METHOD(RegNumberAdapter, numbers, Lisple::String, get_numbers);
 
   /* VehicleAdapter */
-  HOST_ADAPTER_IMPL("vehicle", VehicleAdapter, Vehicle, VEHICLE, (
+  HOST_ADAPTER_IMPL(VehicleAdapter, Vehicle, &VEHICLE_TYPE, (
                       { K_GET(VehicleAdapter, MODEL_NAME, model_name),
                         K_GET(VehicleAdapter, SEATS, seats) }));
 

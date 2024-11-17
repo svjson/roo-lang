@@ -5,6 +5,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -176,13 +177,13 @@
    * @brief Type definition for a Lisple HostObject Adapter with a registered \
    * make function for automatic coercion.                              \
    */                                                                   \
-  inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME, MAKE_FN);
+  inline const Lisple::HostTypeRef CONST = Lisple::HostTypeRef(NAME, MAKE_FN);
 
 #define __HOST_TYPE__NO_MAKE_FN(CONST, NAME) \
   /*!                                                       \
    * @brief Type definition for a Lisple HostObject Adapter \
    */                                                                   \
-  inline const HostTypeRef CONST = HostTypeRef(HostObjectType::CONST, NAME);
+  inline const Lisple::HostTypeRef CONST = Lisple::HostTypeRef(NAME);
 
 #define HOST_TYPE(CONST, NAME, ...) __SELECT_MACRO__2(0, ##__VA_ARGS__, __HOST_TYPE, __HOST_TYPE__NO_MAKE_FN)(CONST, NAME, ##__VA_ARGS__)
 
@@ -323,24 +324,24 @@
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access)     \
     : SUP_AD_CLASS(obj_ref, Lisple::merge_acc(_access, ESC ACCESSOR_MAP)) {}
 
-#define HOST_ADAPTER_IMPL__NO_ACCESSORS(TYPE_NAME, AD_CLASS, H_CLASS, HOBJ_T)            \
+#define HOST_ADAPTER_IMPL__NO_ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T)            \
   AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access) \
-    : HostObject(TYPE_NAME, Lisple::HostObjectType::HOBJ_T, obj_ptr, _access) { }        \
+    : HostObject(HOBJ_T, obj_ptr, _access) { }        \
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access) \
-    : HostObject(TYPE_NAME, Lisple::HostObjectType::HOBJ_T, obj_ref, _access) { }
+    : HostObject(HOBJ_T, obj_ref, _access) { }
 
-#define HOST_ADAPTER_IMPL__ACCESSORS(TYPE_NAME, AD_CLASS, H_CLASS, HOBJ_T, ACCESSOR_MAP)   \
+#define HOST_ADAPTER_IMPL__ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T, ACCESSOR_MAP)   \
   AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr, const Lisple::AccessorLookup& _access) \
-  : HostObject(TYPE_NAME, Lisple::HostObjectType::HOBJ_T, obj_ptr, Lisple::merge_acc(_access, ESC ACCESSOR_MAP)) {} \
+  : HostObject(HOBJ_T, obj_ptr, Lisple::merge_acc(_access, ESC ACCESSOR_MAP)) {} \
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref, const Lisple::AccessorLookup& _access)          \
-    : HostObject(TYPE_NAME, Lisple::HostObjectType::HOBJ_T, obj_ref, Lisple::merge_acc(_access, ESC ACCESSOR_MAP)) {}
+    : HostObject(HOBJ_T, obj_ref, Lisple::merge_acc(_access, ESC ACCESSOR_MAP)) {}
 
 #define SELECT_SUB_ADAPTER_IMPL_MACRO(_1, _2, MACRO_NAME, ...) MACRO_NAME
 #define SELECT_ADAPTER_IMPL_MACRO(_1, _2, MACRO_NAME, ...) MACRO_NAME
 
 #define HOST_SUB_ADAPTER_IMPL(SUP_AD_CLASS, AD_CLASS, H_CLASS, ...) SELECT_SUB_ADAPTER_IMPL_MACRO(0, ##__VA_ARGS__, HOST_SUB_ADAPTER_IMPL__ACCESSORS, HOST_SUB_ADAPTER_IMPL__NO_ACCESSORS)(SUP_AD_CLASS, AD_CLASS, H_CLASS, ##__VA_ARGS__)
 
-#define HOST_ADAPTER_IMPL(TYPE_NAME, AD_CLASS, H_CLASS, HOBJ_T, ...) SELECT_ADAPTER_IMPL_MACRO(0, ##__VA_ARGS__, HOST_ADAPTER_IMPL__ACCESSORS, HOST_ADAPTER_IMPL__NO_ACCESSORS)(TYPE_NAME, AD_CLASS, H_CLASS, HOBJ_T, ##__VA_ARGS__)
+#define HOST_ADAPTER_IMPL(AD_CLASS, H_CLASS, HOBJ_T, ...) SELECT_ADAPTER_IMPL_MACRO(0, ##__VA_ARGS__, HOST_ADAPTER_IMPL__ACCESSORS, HOST_ADAPTER_IMPL__NO_ACCESSORS)(AD_CLASS, H_CLASS, HOBJ_T, ##__VA_ARGS__)
 
 /* Field accessor macros */
 #define __ADAPTER_FIELD_ACCESSOR(ACCESSOR_MACRO, AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME) \
@@ -997,19 +998,23 @@ namespace Lisple
 {
   class AccessorLookup;
   class Accessors;
-  enum class HostObjectType : short;
   extern const AccessorLookup NO_ACCESSORS;
 
-  /**
+  /*!
+   * @brief TypeRef implementation specialized for HostObject adapters
    *
+   * Optionally contains a qualified name of a make-function, assisting in
+   * coercion from raw lisple data structures to object instances.
    */
   class HostTypeRef : public TypeRef
   {
-    HostObjectType host_type;
-    std::unique_ptr<std::string> make_fn;
+    /*!
+     * @brief Optional reference to make-function
+     */
+    std::optional<std::string> make_fn = std::nullopt;
 
    public:
-    HostTypeRef(HostObjectType host_type, const std::string& name, const std::string& make_fn = "");
+    HostTypeRef(const std::string& name, const std::optional<std::string>& make_fn = std::nullopt);
 
     bool is_type_of(const Object& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
@@ -1037,22 +1042,22 @@ namespace Lisple
 
   AccessorLookup merge_acc(const AccessorLookup& al1, const key_acc_map& kam2);
 
-  /**
-   *
+  /*!
+   * @brief Abstract untyped/non-template base class for Host Object adapters.
    */
   class AbstractHostObject : public Object
   {
-    HostObjectType host_type;
+    const HostTypeRef* host_type;
     AccessorLookup accessors;
 
    public:
-    AbstractHostObject(HostObjectType type);
-    AbstractHostObject(HostObjectType type, const AccessorLookup& accessors);
+    AbstractHostObject(const HostTypeRef* type);
+    AbstractHostObject(const HostTypeRef* type, const AccessorLookup& accessors);
 
     bool operator==(const Object& other) const override;
     virtual std::string to_string(int depth=-1) const override;
 
-    HostObjectType get_host_type() const;
+    const HostTypeRef* get_host_type() const;
 
     virtual const std::vector<sptr_sobject> keys() const;
 
@@ -1163,15 +1168,13 @@ namespace Lisple
      * This is to be used when the HostObject will own the underlying object
      * instance.
      *
-     * @param type_name The name of the object type
-     * @param type Enum type value of the Object
+     * @param type The type of the Object
      * @param object The actual object
      * @param accessors Description of setters and getters and how they are
      *        invoked
      */
-    HostObject(const std::string& type_name, HostObjectType type, std::unique_ptr<T>& object, const AccessorLookup& accessors = {})
+    HostObject(const HostTypeRef* type, std::unique_ptr<T>& object, const AccessorLookup& accessors = {})
       : AbstractHostObject(type, accessors)
-      , type_name(type_name)
       , object(std::make_unique<HostObjectValue<T>>(object))
     {
     }
@@ -1188,15 +1191,13 @@ namespace Lisple
      *  Typical usage is for objects that will be "lent" out to the Lisple
      *  engine for quick calculatons or operations.
      *
-     *  @param type_name The name of the object type
-     *  @param type Enum type value of the object
+     *  @param type The type of the object.
      *  @param object The actual object reference
      *  @param accessors Description of getters and setters, and how they
      *         are invoked
      */
-    HostObject(const std::string& type_name, HostObjectType type, T& object, const AccessorLookup& accessors = {})
+    HostObject(const HostTypeRef* type, T& object, const AccessorLookup& accessors = {})
       : AbstractHostObject(type, accessors)
-      , type_name(type_name)
       , object(std::make_unique<HostObjectRef<T>>(object))
     {
     }

@@ -12,7 +12,6 @@
 namespace Lisple
 {
   class Context;
-  enum class HostObjectType : short;
 
   template <typename K, typename V, class A1=K, class A2=V>
   class StdMapAdapter : public HostObject<std::map<K, V>>
@@ -21,12 +20,11 @@ namespace Lisple
     const TypeRef* value_type;
 
    public:
-    StdMapAdapter(const std::string& type_name,
-                  Lisple::HostObjectType type,
+    StdMapAdapter(const HostTypeRef* type,
                   std::map<K, V>& map,
                   const TypeRef* key_type,
                   const TypeRef* value_type)
-      : HostObject<std::map<K, V>>(type_name, type, map)
+      : HostObject<std::map<K, V>>(type, map)
       , key_type(key_type)
       , value_type(value_type)
     {

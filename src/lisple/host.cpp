@@ -35,10 +35,9 @@ namespace Lisple
   /**
    * HostTypeRef implementation
    */
-  HostTypeRef::HostTypeRef(HostObjectType host_type, const std::string& name, const std::string& make_fn)
+  HostTypeRef::HostTypeRef(const std::string& name, const std::optional<std::string>& make_fn)
     : TypeRef(Form::HOST_OBJECT, name)
-    , host_type(host_type)
-    , make_fn(make_fn.size() ? std::make_unique<std::string>(make_fn) : nullptr)
+    , make_fn(make_fn)
   {
   }
 
@@ -46,7 +45,7 @@ namespace Lisple
   {
     if (*NIL != obj && TypeRef::is_type_of(obj))
     {
-      return obj.as<AbstractHostObject>().get_host_type() == host_type;
+      return obj.as<AbstractHostObject>().get_host_type() == this;
     }
     return false;
   }
@@ -111,13 +110,13 @@ namespace Lisple
   /**
    * AbstractHostObject base implementation for all Host Object Adapters
    */
-  AbstractHostObject::AbstractHostObject(HostObjectType type)
+  AbstractHostObject::AbstractHostObject(const HostTypeRef* type)
     : Object(Form::HOST_OBJECT)
     , host_type(type)
   {
   }
 
-  AbstractHostObject::AbstractHostObject(HostObjectType type, const AccessorLookup& accessors)
+  AbstractHostObject::AbstractHostObject(const HostTypeRef* type, const AccessorLookup& accessors)
     : Object(Form::HOST_OBJECT)
     , host_type(type)
     , accessors(accessors)
@@ -129,7 +128,7 @@ namespace Lisple
     return "<host-object>";
   }
 
-  HostObjectType AbstractHostObject::get_host_type() const
+  const HostTypeRef* AbstractHostObject::get_host_type() const
   {
     return host_type;
   }

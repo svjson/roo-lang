@@ -25,8 +25,7 @@ TEST(StdMapAdapter_int_string, get_sptr_property)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, std::string> adapter("map<int, string>",
-                                                  Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
                                                   std_map,
                                                   &Lisple::Type::NUMBER,
                                                   &Lisple::Type::STRING);
@@ -50,8 +49,7 @@ TEST(StdMapAdapter_int_string, set_property)
   // Given
   std::map<int, std::string> std_map = {};
 
-  Lisple::StdMapAdapter<int, std::string> adapter("map<int, string>",
-                                                  Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
                                                   std_map,
                                                   &Lisple::Type::NUMBER,
                                                   &Lisple::Type::STRING);
@@ -74,8 +72,7 @@ TEST(StdMapAdapter_int_string, keys)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, std::string> adapter("map<int, string>",
-                                                  Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
                                                   std_map,
                                                   &Lisple::Type::NUMBER,
                                                   &Lisple::Type::STRING);
@@ -96,8 +93,7 @@ TEST(StdMapAdapter_int_string, to_string)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, std::string> adapter("map<int, string>",
-                                                  Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
                                                   std_map,
                                                   &Lisple::Type::NUMBER,
                                                   &Lisple::Type::STRING);
@@ -116,8 +112,7 @@ TEST(StdMapAdapter_int_string, script_usage)
   };
 
   std::shared_ptr<Lisple::StdMapAdapter<int, std::string>> adapter =
-    std::make_shared<Lisple::StdMapAdapter<int, std::string>>("map<int, string>",
-                                                              Lisple::HostObjectType::STD_MAP_INT_STRING,
+    std::make_shared<Lisple::StdMapAdapter<int, std::string>>(&Tests::MAP_INT_TO_STRING,
                                                               std_map,
                                                               &Lisple::Type::NUMBER,
                                                               &Lisple::Type::STRING);
@@ -174,8 +169,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, get_sptr_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter("map<RegNumber, Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
                                                        std_map,
                                                        &Tests::REGNUM_TYPE,
                                                        &Tests::VEHICLE_TYPE);
@@ -196,8 +190,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, set_property)
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
                         Tests::VehicleAdapter>
-    adapter("map<RegNumber, Vehicle>",
-            Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+    adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
             std_map,
             &Tests::REGNUM_TYPE,
             &Tests::VEHICLE_TYPE);
@@ -224,8 +217,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, keys)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter("map<RegNumber, Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
                                                        std_map,
                                                        &Tests::REGNUM_TYPE,
                                                        &Tests::VEHICLE_TYPE);
@@ -254,8 +246,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, to_string)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter("map<RegNumber, Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
                                                        std_map,
                                                        &Tests::REGNUM_TYPE,
                                                        &Tests::VEHICLE_TYPE);
@@ -286,8 +277,7 @@ TEST(StdMapAdapter_long_Vehicle, get_sptr_property)
 
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
-                        Tests::VehicleAdapter> adapter("map<long, Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_LONG_TO_VEHICLE,
                                                        std_map,
                                                        &Lisple::Type::NUMBER,
                                                        &Tests::VEHICLE_TYPE);
@@ -307,8 +297,7 @@ TEST(StdMapAdapter_long_Vehicle, set_property)
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
                         Tests::VehicleAdapter>
-    adapter("map<RegNumber, Vehicle>",
-            Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+    adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
             std_map,
             &Lisple::Type::NUMBER,
             &Tests::VEHICLE_TYPE);
@@ -334,8 +323,7 @@ TEST(StdMapAdapter_long_Vehicle, keys)
 
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
-                        Tests::VehicleAdapter> adapter("map<long, Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_LONG_TO_VEHICLE,
                                                        std_map,
                                                        &Lisple::Type::NUMBER,
                                                        &Tests::VEHICLE_TYPE);
@@ -363,8 +351,7 @@ TEST(StdMapAdapter_long_Vehicle, to_string)
 
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
-                        Tests::VehicleAdapter> adapter("map<long, Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_LONG_TO_VEHICLE,
                                                        std_map,
                                                        &Lisple::Type::NUMBER,
                                                        &Tests::VEHICLE_TYPE);
@@ -395,8 +382,7 @@ TEST(StdMapAdapter_RegNumber_short, get_sptr_property)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter> adapter("map<RegNumber, short>",
-                                                         Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_SHORT,
                                                          std_map,
                                                          &Tests::REGNUM_TYPE,
                                                          &Lisple::Type::NUMBER);
@@ -416,8 +402,7 @@ TEST(StdMapAdapter_RegNumber_short, set_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
                         Tests::RegNumberAdapter>
-    adapter("map<RegNumber, short>",
-            Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+    adapter(&Tests::MAP_REGNUM_TO_SHORT,
             std_map,
             &Tests::REGNUM_TYPE,
             &Lisple::Type::NUMBER);
@@ -443,8 +428,7 @@ TEST(StdMapAdapter_RegNumber_short, keys)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter> adapter("map<RegNumber, short>",
-                                                         Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_SHORT,
                                                          std_map,
                                                          &Tests::REGNUM_TYPE,
                                                          &Lisple::Type::NUMBER);
@@ -472,8 +456,7 @@ TEST(StdMapAdapter_RegNumber_short, to_string)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter> adapter("map<RegNumber, short>",
-                                                         Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_SHORT,
                                                          std_map,
                                                          &Tests::REGNUM_TYPE,
                                                          &Lisple::Type::NUMBER);
@@ -504,8 +487,7 @@ TEST(StdMapAdapter_int_const_string, get_sptr_property)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
-                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
                                                         std_map,
                                                         &Lisple::Type::NUMBER,
                                                         &Lisple::Type::STRING);
@@ -529,8 +511,7 @@ TEST(StdMapAdapter_int_const_string, set_property)
   // Given
   std::map<int, const std::string> std_map = {};
 
-  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
-                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
                                                         std_map,
                                                         &Lisple::Type::NUMBER,
                                                         &Lisple::Type::STRING);
@@ -553,8 +534,7 @@ TEST(StdMapAdapter_int_const_string, keys)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
-                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
                                                         std_map,
                                                         &Lisple::Type::NUMBER,
                                                         &Lisple::Type::STRING);
@@ -575,8 +555,7 @@ TEST(StdMapAdapter_int_const_string, to_string)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, const std::string> adapter("map<int, const string>",
-                                                        Lisple::HostObjectType::STD_MAP_INT_STRING,
+  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
                                                         std_map,
                                                         &Lisple::Type::NUMBER,
                                                         &Lisple::Type::STRING);
@@ -595,8 +574,7 @@ TEST(StdMapAdapter_int_const_string, script_usage)
   };
 
   std::shared_ptr<Lisple::StdMapAdapter<int, const std::string>> adapter =
-    std::make_shared<Lisple::StdMapAdapter<int, const std::string>>("map<int, string>",
-                                                                    Lisple::HostObjectType::STD_MAP_INT_STRING,
+    std::make_shared<Lisple::StdMapAdapter<int, const std::string>>(&Tests::MAP_INT_TO_CONST_STRING,
                                                                     std_map,
                                                                     &Lisple::Type::NUMBER,
                                                                     &Lisple::Type::STRING);
@@ -653,8 +631,7 @@ TEST(StdMapAdapter_RegNumber_const_int, get_sptr_property)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
-                        Tests::RegNumberAdapter> adapter("map<RegNumber, const int>",
-                                                         Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
                                                          std_map,
                                                          &Tests::REGNUM_TYPE,
                                                          &Lisple::Type::NUMBER);
@@ -674,8 +651,7 @@ TEST(StdMapAdapter_RegNumber_const_int, set_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
                         Tests::RegNumberAdapter>
-    adapter("map<RegNumber, const int>",
-            Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+    adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
             std_map,
             &Tests::REGNUM_TYPE,
             &Lisple::Type::NUMBER);
@@ -701,8 +677,7 @@ TEST(StdMapAdapter_RegNumber_const_int, keys)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
-                        Tests::RegNumberAdapter> adapter("map<RegNumber, const int>",
-                                                         Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
                                                          std_map,
                                                          &Tests::REGNUM_TYPE,
                                                          &Lisple::Type::NUMBER);
@@ -730,8 +705,7 @@ TEST(StdMapAdapter_RegNumber_const_int, to_string)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
-                        Tests::RegNumberAdapter> adapter("map<RegNumber, const int>",
-                                                         Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
                                                          std_map,
                                                          &Tests::REGNUM_TYPE,
                                                          &Lisple::Type::NUMBER);
@@ -762,8 +736,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, get_sptr_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter("map<RegNumber, const Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
                                                        std_map,
                                                        &Tests::REGNUM_TYPE,
                                                        &Tests::VEHICLE_TYPE);
@@ -784,8 +757,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, set_property)
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
                         Tests::VehicleAdapter>
-    adapter("map<RegNumber, Vehicle>",
-            Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+    adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
             std_map,
             &Tests::REGNUM_TYPE,
             &Tests::VEHICLE_TYPE);
@@ -812,8 +784,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, keys)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter("map<RegNumber, const Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
                                                        std_map,
                                                        &Tests::REGNUM_TYPE,
                                                        &Tests::VEHICLE_TYPE);
@@ -842,8 +813,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, to_string)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter("map<RegNumber, const Vehicle>",
-                                                       Lisple::HostObjectType::STD_MAP_REGNUM_VEHICLE,
+                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
                                                        std_map,
                                                        &Tests::REGNUM_TYPE,
                                                        &Tests::VEHICLE_TYPE);

@@ -7,22 +7,19 @@
 #include <lisple/host.h>
 #include <lisple/exec.h>
 
-namespace Lisple
-{
-  enum class HostObjectType : short
-  {
-    REG_NUMBER,
-    VEHICLE,
-    STD_MAP_INT_STRING,
-    STD_MAP_REGNUM_VEHICLE
-  };
-}
-
 namespace Tests
 {
-  inline Lisple::HostTypeRef VEHICLE_TYPE(Lisple::HostObjectType::VEHICLE, "vehicle", "vehicle/make-vehicle");
-  inline Lisple::HostTypeRef VEHICLE_TYPE__NO_COERCE(Lisple::HostObjectType::VEHICLE, "vehicle");
-  inline Lisple::HostTypeRef REGNUM_TYPE(Lisple::HostObjectType::REG_NUMBER, "regnum");
+
+  inline Lisple::HostTypeRef VEHICLE_TYPE("vehicle", "vehicle/make-vehicle");
+  inline Lisple::HostTypeRef VEHICLE_TYPE__NO_COERCE("vehicle");
+  inline Lisple::HostTypeRef REGNUM_TYPE("regnum");
+  inline Lisple::HostTypeRef MAP_INT_TO_STRING("map<int, string>");
+  inline Lisple::HostTypeRef MAP_INT_TO_CONST_STRING("map<int, const string>");
+  inline Lisple::HostTypeRef MAP_LONG_TO_VEHICLE("map<long, vehicle>");
+  inline Lisple::HostTypeRef MAP_REGNUM_TO_VEHICLE("map<regnum, vehicle>");
+  inline Lisple::HostTypeRef MAP_REGNUM_TO_CONST_VEHICLE("map<regnum, vehicle>");
+  inline Lisple::HostTypeRef MAP_REGNUM_TO_SHORT("map<regnum, short>");
+  inline Lisple::HostTypeRef MAP_REGNUM_TO_CONST_INT("map<regnum, const int>");
 
   inline Lisple::SeqRef ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &VEHICLE_TYPE, "[vehicle]");
   inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &ARRAY_OF_VEHICLE, "[[vehicle]]");
