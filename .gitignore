@@ -1,7 +1,7 @@
 **/CMakeFiles
 **/Makefile
 **/*.cmake
-/CMakeCache.txt
+**/CMakeCache.txt
 /compile_commands.json
 liblisple.a
 liblisple.so
