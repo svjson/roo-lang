@@ -1827,7 +1827,7 @@ namespace Lisple
       sptr_sobject prop = pattern->get_sptr_property(*key);
       sptr_sobject value = obj->get_sptr_property(*key);
 
-      if (Type::MAP.is_type_of(*prop))
+      if (*NIL != *prop && Type::MAP.is_type_of(*prop))
       {
         if (!match_map_like(value, prop))
         {

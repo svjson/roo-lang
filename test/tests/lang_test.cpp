@@ -558,6 +558,17 @@ TEST(SeqMatchFunction, seq_match_single_field)
   EXPECT_EQ(reader.eval("(seq-match my-seq {:id 3})")->to_string(), R"(nil)");
 }
 
+TEST(SeqMatchFunction, seq_match_missing_field)
+{
+  // Given
+  Lisple::Runtime reader;
+  reader.eval(R"((def my-seq [{:id 1 :name "Air Man"} {:id 2 :name "Bubble Man"}]))");
+
+  // Then
+  EXPECT_EQ(reader.eval("(seq-match my-seq {:electric-boogaloo 2})")->to_string(), "nil");
+  EXPECT_EQ(reader.eval("(seq-match my-seq {:id nil})")->to_string(), "nil");
+}
+
 TEST(SeqMatchFunction, seq_match_nested)
 {
   // Given
