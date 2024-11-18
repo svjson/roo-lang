@@ -100,7 +100,6 @@
 namespace Lisple
 {
   class Context;
-  class Namespace;
   class Scope;
 
   typedef bool vararg_mode;

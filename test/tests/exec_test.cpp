@@ -310,16 +310,20 @@ TEST(DestructuringArgumentBinding, apply__keys_and_alias)
   // Given
   Lisple::Scope scope;
 
-  Lisple::sptr_sobject map = std::make_shared<Lisple::Map>(Lisple::sptr_sobject_v { std::make_shared<Lisple::Key>("source"),
-                                                                                    std::make_shared<Lisple::Word>("The Thing"),
-                                                                                    std::make_shared<Lisple::Key>("target"),
-                                                                                    std::make_shared<Lisple::Word>("The Thang") });
+  Lisple::sptr_sobject map = Lisple::Map::make({
+      std::make_shared<Lisple::Key>("source"),
+      std::make_shared<Lisple::Word>("The Thing"),
+      std::make_shared<Lisple::Key>("target"),
+      std::make_shared<Lisple::Word>("The Thang") });
 
-  Lisple::Map arg_map { Lisple::sptr_sobject_v { std::make_shared<Lisple::Key>("keys"),
-                                                 std::make_shared<Lisple::Array>(Lisple::sptr_sobject_v { std::make_shared<Lisple::Word>("source"),
-                                                                                                          std::make_shared<Lisple::Word>("target")}),
-                                                 std::make_shared<Lisple::Key>("as"),
-                                                 std::make_shared<Lisple::Word>("context")}};
+  Lisple::Map arg_map ({
+      std::make_shared<Lisple::Key>("keys"),
+      Lisple::Array::make({
+          std::make_shared<Lisple::Word>("source"),
+          std::make_shared<Lisple::Word>("target")}),
+      std::make_shared<Lisple::Key>("as"),
+      std::make_shared<Lisple::Word>("context")});
+
   Lisple::DestructuringArgumentBinding arg { arg_map };
 
   // When

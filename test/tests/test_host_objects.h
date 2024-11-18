@@ -9,7 +9,6 @@
 
 namespace Tests
 {
-
   inline Lisple::HostTypeRef VEHICLE_TYPE("vehicle", "vehicle/make-vehicle");
   inline Lisple::HostTypeRef VEHICLE_TYPE__NO_COERCE("vehicle");
   inline Lisple::HostTypeRef REGNUM_TYPE("regnum");
@@ -20,6 +19,7 @@ namespace Tests
   inline Lisple::HostTypeRef MAP_REGNUM_TO_CONST_VEHICLE("map<regnum, vehicle>");
   inline Lisple::HostTypeRef MAP_REGNUM_TO_SHORT("map<regnum, short>");
   inline Lisple::HostTypeRef MAP_REGNUM_TO_CONST_INT("map<regnum, const int>");
+  inline Lisple::HostTypeRef VECTOR_VEHICLE("vector<Vehicle>");
 
   inline Lisple::SeqRef ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &VEHICLE_TYPE, "[vehicle]");
   inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &ARRAY_OF_VEHICLE, "[[vehicle]]");

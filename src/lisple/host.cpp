@@ -110,22 +110,17 @@ namespace Lisple
   /**
    * AbstractHostObject base implementation for all Host Object Adapters
    */
-  AbstractHostObject::AbstractHostObject(const HostTypeRef* type)
-    : Object(Form::HOST_OBJECT)
+  AbstractHostObject::AbstractHostObject(Form form, const HostTypeRef* type)
+    : Seq(form)
     , host_type(type)
   {
   }
 
-  AbstractHostObject::AbstractHostObject(const HostTypeRef* type, const AccessorLookup& accessors)
-    : Object(Form::HOST_OBJECT)
+  AbstractHostObject::AbstractHostObject(Form form, const HostTypeRef* type, const AccessorLookup& accessors)
+    : Seq(form)
     , host_type(type)
     , accessors(accessors)
   {
-  }
-
-  std::string AbstractHostObject::to_string(int) const
-  {
-    return "<host-object>";
   }
 
   const HostTypeRef* AbstractHostObject::get_host_type() const
@@ -170,6 +165,28 @@ namespace Lisple
   bool AbstractHostObject::operator==(const Object& other) const
   {
     return this == &other;
+  }
+
+  sptr_sobject_v& AbstractHostObject::get_children()
+  {
+    sync_children();
+    return children;
+  }
+
+  std::string AbstractHostObject::to_string(int depth) const
+  {
+    sync_children();
+    return Seq::to_string(depth);
+  }
+
+  const std::string AbstractHostObject::lpar() const
+  {
+    return "{";
+  }
+
+  const std::string AbstractHostObject::rpar() const
+  {
+    return "}";
   }
 
   Accessors::Accessors(const acc_get_t& getter,

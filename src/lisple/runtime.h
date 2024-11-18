@@ -15,7 +15,7 @@ namespace Lisple
   class Context;
   class List;
   class Map;
-  class Sexpression;
+  class Seq;
   class Word;
   class FileSystem;
 
@@ -149,7 +149,7 @@ namespace Lisple
      */
     sptr_sobject call_fn(const std::string& identifier, sptr_sobject& arg);
 
-    sptr_sobject_v eval_sexpression(Context& ctx, Sexpression& sexp);
+    sptr_sobject_v eval_sexpression(Context& ctx, Seq& sexp);
 
     sptr_sobject eval_list(Context& ctx, List& list);
     sptr_sobject eval_array(Context& ctx, Array& array);
@@ -158,6 +158,7 @@ namespace Lisple
 
     sptr_sobject lookup(const Word& identifier);
     sptr_sobject lookup(const Word& identifier, sptr_sobject fallback);
+    sptr_sobject lookup(const std::string& identifier);
     Namespace& get_ns_of(const Word& identifier);
 
    private:

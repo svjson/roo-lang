@@ -270,13 +270,13 @@
 
 #define SUB_ADAPTER__WITH_GETTERS(AD_CLASS, SUP_AD_CLASS, H_CLASS, GET_PROPS) \
   SUB_ADAPTER_MAIN_DECL(AD_CLASS, SUP_AD_CLASS, H_CLASS)                \
-  __HOST_ADAPTER_GETTERS GET_PROPS                                        \
+  __HOST_ADAPTER_GETTERS GET_PROPS                                      \
   HOST_ADAPTER_END_DECL
 
 #define SUB_ADAPTER__WITH_PROPS(AD_CLASS, SUP_AD_CLASS, H_CLASS, GET_PROPS, SET_PROPS) \
   SUB_ADAPTER_MAIN_DECL(AD_CLASS, SUP_AD_CLASS, H_CLASS)                \
-  __HOST_ADAPTER_GETTERS GET_PROPS                                        \
-  __HOST_ADAPTER_SETTERS SET_PROPS                                        \
+  __HOST_ADAPTER_GETTERS GET_PROPS                                      \
+  __HOST_ADAPTER_SETTERS SET_PROPS                                      \
   HOST_ADAPTER_END_DECL
 
 #define HOST_ADAPTER__NO_PROPS(AD_CLASS, H_CLASS)    \
@@ -284,7 +284,7 @@
   HOST_ADAPTER_END_DECL
 
 #define HOST_ADAPTER__WITH_GETTERS(AD_CLASS, H_CLASS, GET_PROPS) \
-  HOST_ADAPTER_MAIN_DECL(AD_CLASS, H_CLASS)                      \
+  HOST_ADAPTER_MAIN_DECL(AD_CLASS, H_CLASS)                        \
   __HOST_ADAPTER_GETTERS GET_PROPS                                 \
   HOST_ADAPTER_END_DECL
 
@@ -1045,17 +1045,16 @@ namespace Lisple
   /*!
    * @brief Abstract untyped/non-template base class for Host Object adapters.
    */
-  class AbstractHostObject : public Object
+  class AbstractHostObject : public Seq
   {
     const HostTypeRef* host_type;
     AccessorLookup accessors;
 
    public:
-    AbstractHostObject(const HostTypeRef* type);
-    AbstractHostObject(const HostTypeRef* type, const AccessorLookup& accessors);
+    AbstractHostObject(Form form, const HostTypeRef* type);
+    AbstractHostObject(Form form, const HostTypeRef* type, const AccessorLookup& accessors);
 
     bool operator==(const Object& other) const override;
-    virtual std::string to_string(int depth=-1) const override;
 
     const HostTypeRef* get_host_type() const;
 
@@ -1066,7 +1065,16 @@ namespace Lisple
     void set_property(const Object& key, sptr_sobject& value) override;
     void set_property(Context* ctx, const Object& key, sptr_sobject& value) override;
 
+    const std::string lpar() const override;
+    const std::string rpar() const override;
+
     const key_acc_map& get_accessors() const;
+
+    sptr_sobject_v& get_children() override;
+    std::string to_string(int depth=1) const override;
+
+   protected:
+    virtual void sync_children() const = 0;
   };
 
   /*! @brief Convenience type definition for GETTER function references */
@@ -1157,8 +1165,6 @@ namespace Lisple
    protected:
     const std::string type_name;
     std::unique_ptr<ValueHolder<T>> object;
-    /*! @brief Internally cached list of Lisple/HostObject children */
-    sptr_sobject_v __cached_children;
 
    public:
     /*!
@@ -1174,7 +1180,7 @@ namespace Lisple
      *        invoked
      */
     HostObject(const HostTypeRef* type, std::unique_ptr<T>& object, const AccessorLookup& accessors = {})
-      : AbstractHostObject(type, accessors)
+      : AbstractHostObject(Form::HOST_OBJECT, type, accessors)
       , object(std::make_unique<HostObjectValue<T>>(object))
     {
     }
@@ -1197,7 +1203,34 @@ namespace Lisple
      *         are invoked
      */
     HostObject(const HostTypeRef* type, T& object, const AccessorLookup& accessors = {})
-      : AbstractHostObject(type, accessors)
+      : AbstractHostObject(Form::HOST_OBJECT, type, accessors)
+      , object(std::make_unique<HostObjectRef<T>>(object))
+    {
+    }
+
+    /*!
+     *  @brief Creates a HostObject instance holding a REFERENCE to a host
+     *  object, with a custom @ref Lisple::Form type.
+     *
+     *  Use this when HostObject adapter cannot "own" the object itself.
+     *
+     *  To be used with care, as the adapter object may
+     *  be kept alive in the Lisple context/engine, while the original
+     *  instance is destroyed.
+     *
+     *  Typical usage is for objects that will be "lent" out to the Lisple
+     *  engine for quick calculatons or operations.
+     *
+     *  @param type The type of the object.
+     *  @param object The actual object reference
+     *  @param accessors Description of getters and setters, and how they
+     *         are invoked
+     */
+    HostObject(Form form,
+               const HostTypeRef* type,
+               T& object,
+               const AccessorLookup& accessors = {})
+      : AbstractHostObject(form, type, accessors)
       , object(std::make_unique<HostObjectRef<T>>(object))
     {
     }
@@ -1205,33 +1238,6 @@ namespace Lisple
     T& get_object() const
     {
       return object->get_object();
-    }
-
-    /*!
-     * @brief Returns the properties of the HostObject with :key and value
-     * interspersed, as if a Map.
-     *
-     * Because Object::get_children() assumes  ownership of the child vector we
-     * return by reference, which is why the __cached_children is needed.
-     *
-     * This could give rise to all sorts of problems down the road, and
-     * we should probably just own up to the fact that temporary copies
-     * of shared_ptr and vector aren't that expensive and change the
-     * signature to always return the child array by copy.
-     */
-    sptr_sobject_v& get_children() override
-    {
-      sptr_sobject_v kvs;
-      for (auto& k : keys())
-      {
-        if (*get_sptr_property(*k) != *NIL)
-        {
-          kvs.push_back(k);
-          kvs.push_back(get_sptr_property(*k));
-        }
-      }
-      __cached_children = kvs;
-      return __cached_children;
     }
 
     template <typename U = T>
@@ -1248,7 +1254,6 @@ namespace Lisple
     {
       return this->to_string() == other.to_string();
     }
-
 
     bool operator==(const Object& other) const override
     {
@@ -1268,6 +1273,21 @@ namespace Lisple
     std::unique_ptr<T>& get_object_ptr()
     {
       return object->get_object_ptr();
+    }
+
+   protected:
+    void sync_children() const override
+    {
+      this->children.clear();
+      sptr_sobject_v kvs;
+      for (auto& k : keys())
+      {
+        if (*get_sptr_property(*k) != *NIL)
+        {
+          children.push_back(k);
+          children.push_back(get_sptr_property(*k));
+        }
+      }
     }
   };
 

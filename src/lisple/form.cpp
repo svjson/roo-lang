@@ -375,7 +375,18 @@ namespace Lisple
   {
   }
 
+  Number::Number(unsigned long value)
+    : Number(static_cast<long>(value))
+  {
+  }
+
   Number::Number(float value)
+    : Value(Form::NUMBER, value)
+    , num_type(NumberType::FLOAT)
+  {
+  }
+
+  Number::Number(double value)
     : Value(Form::NUMBER, value)
     , num_type(NumberType::FLOAT)
   {
@@ -517,6 +528,16 @@ namespace Lisple
     return std::make_shared<Number>(value);
   }
 
+  std::shared_ptr<Number> Number::make(double value)
+  {
+    return std::make_shared<Number>(value);
+  }
+
+  std::shared_ptr<Number> Number::make(unsigned long value)
+  {
+    return std::make_shared<Number>(value);
+  }
+
   std::shared_ptr<Number> Number::make(const std::string& str_value)
   {
     try
@@ -536,38 +557,37 @@ namespace Lisple
     }
   }
 
-
   /**
-   * Sexpression - Abstract base for lists, arrays and maps
+   * Seq - Abstract base for lists, arrays and maps
    */
-  Sexpression::Sexpression(Form form)
+  Seq::Seq(Form form)
     : Object(form)
   {
-
   }
 
-  std::shared_ptr<Sexpression> Sexpression::new_sequence(Form type)
+  std::shared_ptr<Seq> Seq::new_sequence(Form type)
   {
     switch(type)
-      {
+    {
       case Form::LIST:
         return std::make_shared<List>();
       case Form::ARRAY:
+      case Form::HOST_SEQ:
         return std::make_shared<Array>();
       case Form::MAP:
         return std::make_shared<Map>();
       default:
         throw LispleException("Type is not a sequence");
-      }
+    }
   }
 
-  Sexpression::Sexpression(Form form, const sptr_sobject_v& children)
+  Seq::Seq(Form form, const sptr_sobject_v& children)
     : Object(form)
     , children(children)
   {
   }
 
-  sptr_sobject Sexpression::get_sptr_property(const Object& form) const
+  sptr_sobject Seq::get_sptr_property(const Object& form) const
   {
     for (auto i = this->children.begin(); i < this->children.end(); i+= 2)
     {
@@ -584,22 +604,22 @@ namespace Lisple
     return NIL;
   }
 
-  void Sexpression::set_property(const Object&, sptr_sobject&)
+  void Seq::set_property(const Object&, sptr_sobject&)
   {
     throw InvocationException("Set on sequences not implemented.");
   }
 
-  void Sexpression::append(const sptr_sobject& child)
+  void Seq::append(const sptr_sobject& child)
   {
     this->children.push_back(child);
   }
 
-  std::shared_ptr<Object>& Sexpression::head()
+  std::shared_ptr<Object>& Seq::head()
   {
     return children.empty() ? NIL : children.front();
   }
 
-  sptr_sobject_v Sexpression::tail()
+  sptr_sobject_v Seq::tail()
   {
     sptr_sobject_v tail;
     if (children.size() < 2) return tail;
@@ -613,7 +633,7 @@ namespace Lisple
     return tail;
   }
 
-  std::string Sexpression::to_string(int depth) const
+  std::string Seq::to_string(int depth) const
   {
     std::string str;
     if (depth == 0)
@@ -637,13 +657,13 @@ namespace Lisple
     return this->lpar() + str + this->rpar();
   }
 
-  bool Sexpression::operator==(const Object& other) const
+  bool Seq::operator==(const Object& other) const
   {
     if (type != other.get_type())
     {
       return false;
     }
-    auto& other_sexp = dynamic_cast<const Sexpression&>(other);
+    auto& other_sexp = dynamic_cast<const Seq&>(other);
     if (children.size() != other_sexp.children.size())
     {
       return false;
@@ -658,12 +678,17 @@ namespace Lisple
     return true;
   }
 
-  sptr_sobject_v& Sexpression::get_children()
+  sptr_sobject_v& Seq::get_children()
   {
     return children;
   }
 
-  unsigned int Sexpression::size() const
+  void Seq::replace_children(const sptr_sobject_v& vec)
+  {
+    this->children = vec;
+  }
+
+  unsigned int Seq::size() const
   {
     return this->children.size();
   }
@@ -672,13 +697,13 @@ namespace Lisple
    * List
    */
   List::List(bool q)
-    : Sexpression(Form::LIST)
+    : Seq(Form::LIST)
     , q(q)
   {
   }
 
   List::List(const sptr_sobject_v& children, bool q)
-    : Sexpression(Form::LIST, children)
+    : Seq(Form::LIST, children)
     , q(q)
   {
 
@@ -735,12 +760,12 @@ namespace Lisple
    * Array
    */
   Array::Array()
-    : Sexpression(Form::ARRAY)
+    : Seq(Form::ARRAY)
   {
   }
 
   Array::Array(const sptr_sobject_v& children)
-    : Sexpression(Form::ARRAY, children)
+    : Seq(Form::ARRAY, children)
   {
   }
 
@@ -763,12 +788,12 @@ namespace Lisple
    * Map
    */
   Map::Map()
-    : Sexpression(Form::MAP)
+    : Seq(Form::MAP)
   {
   }
 
   Map::Map(const sptr_sobject_v& children)
-    : Sexpression(Form::MAP, children)
+    : Seq(Form::MAP, children)
   {
     this->validate_keys();
   }
@@ -832,7 +857,7 @@ namespace Lisple
 
   unsigned int Map::size() const
   {
-    return Sexpression::size() / 2;
+    return Seq::size() / 2;
   }
 
   void Map::set_property(const Object& key, sptr_sobject& value)

@@ -56,4 +56,11 @@ namespace LispleTest
   };
 }
 
+namespace Lisple
+{
+  void PrintTo(const Lisple::Object& obj, std::ostream* os);
+}
+
+
+
 #endif

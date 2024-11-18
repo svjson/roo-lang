@@ -10,6 +10,8 @@
 
 using namespace ::testing;
 
+template class Lisple::StdMapAdapter<int, std::string>;
+
 /*
  * ===================================
  * std::map<int, string>

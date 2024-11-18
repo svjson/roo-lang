@@ -54,19 +54,16 @@ namespace Lisple
   std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val);
 
   template <typename T>
-  typename std::enable_if<std::is_integral<T>::value, T>::type unwrap_primitive(const Object &obj)
-  {
-    return obj.as<Number>().long_value();
-  }
+  typename std::enable_if<std::is_arithmetic<T>::value, T>::type unwrap_primitive(const Object &obj);
 
   template <typename T>
-  typename std::enable_if<!std::is_integral<T>::value, T>::type unwrap_primitive(const Object &obj);
+  typename std::enable_if<!std::is_arithmetic<T>::value, T>::type unwrap_primitive(const Object &obj);
 
-  sptr_sobject wrap_primitive(bool value);
-  sptr_sobject wrap_primitive(int value);
-  sptr_sobject wrap_primitive(long value);
-  sptr_sobject wrap_primitive(const std::string& value);
+  template <typename T>
+  sptr_sobject wrap_primitive(typename std::enable_if<std::is_arithmetic<T>::value, T>::type value);
 
+  template <typename T>
+  sptr_sobject wrap_primitive(const typename std::enable_if<!std::is_arithmetic<T>::value, T>::type& value);
 
 }
 

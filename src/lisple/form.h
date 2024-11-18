@@ -18,7 +18,6 @@ namespace Lisple
   extern const int INT_CONSTANTS_SIZE;
   extern std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
 
-
   /*!
    * @brief Abstract base class for all form implementations
    */
@@ -251,9 +250,11 @@ namespace Lisple
 
    public:
     Number(int value);
-    Number(unsigned int value);
-    Number(float value);
     Number(long value);
+    Number(unsigned int value);
+    Number(unsigned long value);
+    Number(float value);
+    Number(double value);
 
     std::string to_string(int depth=-1) const override;
 
@@ -274,9 +275,11 @@ namespace Lisple
     std::shared_ptr<Number> flip_sign();
 
     static std::shared_ptr<Number> make(int value);
-    static std::shared_ptr<Number> make(float value);
-    static std::shared_ptr<Number> make(unsigned int value);
+    static std::shared_ptr<Number> make(unsigned long value);
     static std::shared_ptr<Number> make(long value);
+    static std::shared_ptr<Number> make(float value);
+    static std::shared_ptr<Number> make(double value);
+    static std::shared_ptr<Number> make(unsigned int value);
     static std::shared_ptr<Number> make(const std::string& value);
   };
 
@@ -302,20 +305,20 @@ namespace Lisple
     bool has_value(const std::string& value) const override;
   };
 
-  class Sexpression : public Object
+  class Seq : public Object
   {
    public:
-    sptr_sobject_v children;
+    mutable sptr_sobject_v children;
 
-    Sexpression(Form form);
-    Sexpression(Form form, const sptr_sobject_v& children);
+    Seq(Form form);
+    Seq(Form form, const sptr_sobject_v& children);
 
-    static std::shared_ptr<Sexpression> new_sequence(Form type);
+    static std::shared_ptr<Seq> new_sequence(Form type);
 
     std::string to_string(int depth=-1) const override;
 
-    std::shared_ptr<Object>& head();
-    sptr_sobject_v tail();
+    virtual std::shared_ptr<Object>& head();
+    virtual sptr_sobject_v tail();
 
     sptr_sobject get_sptr_property(const Object& form) const override;
     void set_property(const Object& key, sptr_sobject& value) override;
@@ -323,12 +326,15 @@ namespace Lisple
     void append(const sptr_sobject& child) override;
     unsigned int size() const override;
     sptr_sobject_v& get_children() override;
+
+    virtual void replace_children(const sptr_sobject_v& vec);
+
     virtual const std::string lpar() const = 0;
     virtual const std::string rpar() const = 0;
     bool operator==(const Object& other) const override;
   };
 
-  class List : public Sexpression
+  class List : public Seq
   {
     bool q;
 
@@ -351,7 +357,7 @@ namespace Lisple
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
   };
 
-  class Array : public Sexpression
+  class Array : public Seq
   {
    public:
     Array();
@@ -363,7 +369,7 @@ namespace Lisple
     const std::string rpar() const override;
   };
 
-  class Map : public Sexpression
+  class Map : public Seq
   {
     void validate_keys() const;
 

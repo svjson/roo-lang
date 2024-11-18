@@ -126,25 +126,131 @@ namespace Lisple
   template <>
   int unwrap_primitive<int>(const Object& obj)
   {
-    return obj.as<Number>().value;
+    return obj.as<Number>().int_value();
   }
 
-  sptr_sobject wrap_primitive(bool value)
+  template <>
+  short unwrap_primitive<short>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  long unwrap_primitive<long>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  unsigned int unwrap_primitive<unsigned int>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  unsigned short unwrap_primitive<unsigned short>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  unsigned long unwrap_primitive<unsigned long>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  float unwrap_primitive<float>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  double unwrap_primitive<double>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  int8_t unwrap_primitive<int8_t>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template <>
+  uint8_t unwrap_primitive<uint8_t>(const Object& obj)
+  {
+    return obj.as<Number>().int_value();
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<int>(int value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<short>(short value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<long>(long value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<unsigned int>(unsigned int value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<float>(float value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<double>(double value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<int8_t>(int8_t value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<uint8_t>(uint8_t value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<unsigned long>(unsigned long value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<unsigned short>(unsigned short value)
+  {
+    return Number::make(value);
+  }
+
+  template<>
+  sptr_sobject wrap_primitive<bool>(bool value)
   {
     return Boolean::wrap(value);
   }
 
-  sptr_sobject wrap_primitive(int value)
-  {
-    return Number::make(value);
-  }
-
-  sptr_sobject wrap_primitive(long value)
-  {
-    return Number::make(value);
-  }
-
-  sptr_sobject wrap_primitive(const std::string& value)
+  template<>
+  sptr_sobject wrap_primitive<std::string>(const std::string& value)
   {
     return String::make(value);
   }

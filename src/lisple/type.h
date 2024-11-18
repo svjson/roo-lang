@@ -28,7 +28,8 @@ namespace Lisple
     STRING,
     SYMBOL,
     WORD,
-    DISCARD
+    DISCARD,
+    HOST_SEQ
   };
 
   class Context;
@@ -117,6 +118,7 @@ namespace Lisple
     inline const TypeRef FUNCTION(Form::FUNCTION, "Function");
     inline const TypeRef MACRO(Form::MACRO, "Macro");
     inline const TypeRef HOST_OBJECT(Form::HOST_OBJECT, "HostObject");
+    inline const TypeRef HOST_SEQ(Form::HOST_SEQ, "HostSeq");
     inline const TypeRef NIL(Form::NIL, "nil");
 
     inline const SeqRef ARRAY_OF_ARRAY(&ARRAY, &ARRAY, "[Array]");
@@ -130,7 +132,7 @@ namespace Lisple
 
     inline const MultiRef QUALIFIABLE({ &KEY, &WORD, &SYMBOL },  "Qualifiable");
 
-    inline const MultiRef SEQ(std::vector<const TypeRef*>{ &LIST, &ARRAY, &MAP }, "Seq");
+    inline const MultiRef SEQ(std::vector<const TypeRef*>{ &LIST, &ARRAY, &MAP, &HOST_SEQ }, "Seq");
     inline const MultiRef EXEC(std::vector<const TypeRef*>{ &FUNCTION, &MACRO, &KEY }, "Exec");
     inline const MultiRef COMPLEX(std::vector<const TypeRef*>{ &MAP, &HOST_OBJECT}, "Complex");
 

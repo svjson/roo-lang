@@ -20,6 +20,8 @@ namespace Lisple
     virtual ~Scope() = default;
 
     void store(const Word& identifier, const sptr_sobject& obj);
+    void store(const std::string& identifier, const sptr_sobject& obj);
+
     virtual void mutate(const Word& identifier, const sptr_sobject& obj);
     void remove(const Word& identifier);
     void clear();

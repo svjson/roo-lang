@@ -10,11 +10,16 @@ namespace Lisple
 {
   void Scope::store(const Word& name, const sptr_sobject& obj)
   {
-    if (objects.count(name.value))
+    this->store(name.value, obj);
+  }
+
+  void Scope::store(const std::string& name, const sptr_sobject& obj)
+  {
+    if (objects.count(name))
     {
-      throw IdentifierException("Identifier '" + name.value + "' is already defined.");
+      throw IdentifierException("Identifier '" + name + "' is already defined.");
     }
-    objects.emplace(name.value, obj);
+    objects.emplace(name, obj);
   }
 
   void Scope::mutate(const Word& name, const sptr_sobject& obj)

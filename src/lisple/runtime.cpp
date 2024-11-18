@@ -218,7 +218,7 @@ namespace Lisple
     throw LispleException("Encountered unimplemented form: " + statement->to_string());
  }
 
-  sptr_sobject_v Runtime::eval_sexpression(Context& ctx, Sexpression& sexp)
+  sptr_sobject_v Runtime::eval_sexpression(Context& ctx, Seq& sexp)
   {
     sptr_sobject_v elements;
     auto& children = sexp.get_children();
@@ -360,6 +360,11 @@ namespace Lisple
       throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
     }
     return fallback;
+  }
+
+  sptr_sobject Runtime::lookup(const std::string& identifier)
+  {
+    return this->lookup(Word(identifier));
   }
 
   Namespace& Runtime::get_ns_of(const Word& identifier)

@@ -1,6 +1,7 @@
 
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
+
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest_pred_impl.h>
@@ -9,6 +10,7 @@
 #include <memory>
 #include <vector>
 
+#include <lisple/adapter.h>
 #include <lisple/runtime.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
@@ -19,6 +21,7 @@
 #include <lisple/type.h>
 
 #include "runtime_fixture.h"
+#include "test_host_objects.h"
 
 using namespace ::testing;
 
@@ -296,7 +299,6 @@ TEST(CaseMacro, no_match_without_default)
   ASSERT_EQ(*result, *Lisple::NIL);
 }
 
-
 TEST(CondMacro, match_condition)
 {
   // Given
@@ -331,88 +333,16 @@ TEST(CondMacro, no_match_without_else)
   ASSERT_EQ(*result, *Lisple::NIL);
 }
 
-
-TEST(FilterFunction, filter_array)
+TEST(ApplyFunction, apply_concat)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
 
   // When
-  auto sexps = fixture.parser.read_sexps("(filter [1 2 3 4 5 6] even?)");
-  auto retval = fixture.runtime.eval(sexps.front());
+  auto retval = fixture.runtime.eval("(apply concat [[1 2 3] [4 5 6]])");
 
   // Then
-  ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*retval));
-
-  Lisple::Object& result = retval->as<Lisple::Array>();
-  ASSERT_EQ(result.get_children().size(), 3);
-
-  EXPECT_EQ(*result.get_children().at(0), Lisple::Number(2));
-  EXPECT_EQ(*result.get_children().at(1), Lisple::Number(4));
-  EXPECT_EQ(*result.get_children().at(2), Lisple::Number(6));
-}
-
-TEST(MapFunction, map_single_vec_of_numbers)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // When
-  auto retval = runtime.eval("(map [1 2 3] (fn [num] (* num 2)))");
-
-  // Then
-  ASSERT_EQ(retval->to_string(), "[2 4 6]");
-}
-
-
-TEST(MapFunction, map_two_vecs_of_numbers)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(map [1 2 3] [30 20 10] (fn [n1 n2] (+ n1 n2)))");
-
-  // Then
-  ASSERT_EQ(retval->to_string(), "[31 22 13]");
-}
-
-TEST(MapFunction, map_two_vecs_of_difference_sizes)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(map [1 2 3 4] [2 1] (fn [n1 n2] (* n1 n2)))");
-
-  // Then
-  ASSERT_EQ(retval->to_string(), "[2 2 nil nil]");
-}
-
-TEST(MapFunction, map_using_keyword)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto result = fixture.runtime.eval("(map [{:a 10} {:a 9} {:a \"How rare! A string!\"}] :a)");
-
-  // Then
-  ASSERT_EQ(result->to_string(), "[10 9 \"How rare! A string!\"]");
-}
-
-TEST(KeepFunction, transform_even)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // When
-  auto result = runtime.eval("(keep [1 2 3 4] (fn [x] (when (even? x) (str \"Number \" x))))");
-
-  // Then
-  ASSERT_EQ(*result, Lisple::Array({
-        Lisple::String::make("Number 2"),
-        Lisple::String::make("Number 4")}));
+  ASSERT_EQ(retval->to_string(), "[1 2 3 4 5 6]");
 }
 
 TEST(SelectKeysFunction, all_keys_present)
@@ -439,19 +369,6 @@ TEST(SelectKeysFunction, no_keys_present)
 
   // Then
   ASSERT_EQ(result->to_string(), "{}");
-}
-
-
-TEST(ApplyFunction, apply_concat)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(apply concat [[1 2 3] [4 5 6]])");
-
-  // Then
-  ASSERT_EQ(retval->to_string(), "[1 2 3 4 5 6]");
 }
 
 TEST(ResolveFunction, resolve)
@@ -527,62 +444,6 @@ TEST(ApplyFunction, apply_dynamic)
 
   // Then
   ASSERT_EQ(result->to_string(), "17");
-}
-
-TEST(FindFirstFunction, find_first_array)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval(R"((def my-array ["AA" "BB" "CCC" "DDDD" "EEE" "FF"]))");
-
-  // When
-  auto three_letter = fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 3 (count lmnt))))");
-  auto four_letter = fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 4 (count lmnt))))");
-  auto five_letter = fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 5 (count lmnt))))");
-
-  // Then
-  EXPECT_EQ(*three_letter, Lisple::String("CCC"));
-  EXPECT_EQ(*four_letter, Lisple::String("DDDD"));
-  EXPECT_EQ(*five_letter, *Lisple::NIL);
-}
-
-TEST(SeqMatchFunction, seq_match_single_field)
-{
-  // Given
-  Lisple::Runtime reader;
-  reader.eval(R"((def my-seq [{:id 1 :name "Air Man"} {:id 2 :name "Bubble Man"}]))");
-
-  // Then
-  EXPECT_EQ(reader.eval("(seq-match my-seq {:id 1})")->to_string(), R"({:id 1 :name "Air Man"})");
-  EXPECT_EQ(reader.eval("(seq-match my-seq {:id 2})")->to_string(), R"({:id 2 :name "Bubble Man"})");
-  EXPECT_EQ(reader.eval("(seq-match my-seq {:id 3})")->to_string(), R"(nil)");
-}
-
-TEST(SeqMatchFunction, seq_match_missing_field)
-{
-  // Given
-  Lisple::Runtime reader;
-  reader.eval(R"((def my-seq [{:id 1 :name "Air Man"} {:id 2 :name "Bubble Man"}]))");
-
-  // Then
-  EXPECT_EQ(reader.eval("(seq-match my-seq {:electric-boogaloo 2})")->to_string(), "nil");
-  EXPECT_EQ(reader.eval("(seq-match my-seq {:id nil})")->to_string(), "nil");
-}
-
-TEST(SeqMatchFunction, seq_match_nested)
-{
-  // Given
-  Lisple::Runtime reader;
-  const std::string air_man = R"({:id 1 :name "Air Man" :stats {:weapon "Air Shooter" :weakness "Leaf Shield"}})";
-  const std::string bubble_man = R"({:id 2 :name "Bubble Man" :stats {:weapon "Bubble Lead" :weakness "Metal Blade"}})";
-  const std::string wood_man = R"({:id 3 :name "Wood Man" :stats {:weapon "Leaf Shield" :weakness "Metal Blade"}})";
-  reader.eval("(def my-seq [" + air_man + bubble_man + wood_man + "])");
-
-  // Then
-  EXPECT_EQ(reader.eval(R"((seq-match my-seq {:stats {:weakness "Metal Blade"}}))")->to_string(), bubble_man);
-  EXPECT_EQ(reader.eval(R"((seq-match my-seq {:stats {:weapon "Leaf Shield"}}))")->to_string(), wood_man);
-  EXPECT_EQ(reader.eval(R"((seq-match my-seq {:id 3 :stats {:weapon "Leaf Shield"}}))")->to_string(), wood_man);
-  EXPECT_EQ(reader.eval(R"((seq-match my-seq {:stats {:weakness "Bubble Lead"}}))")->to_string(), "nil");
 }
 
 TEST(LambdaMacro, define_and_exec_lambda)
@@ -852,97 +713,6 @@ TEST(JoinFunction, join_strs)
   EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "foreveralone"))"), Lisple::String("foreveralone"));
 }
 
-TEST(CountFunction, count_str_length)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval("(count \"\")"), Lisple::Number(0));
-  EXPECT_EQ(*fixture.runtime.eval("(count \" \")"), Lisple::Number(1));
-  EXPECT_EQ(*fixture.runtime.eval("(count \"..\")"), Lisple::Number(2));
-  EXPECT_EQ(*fixture.runtime.eval("(count \" !\")"), Lisple::Number(2));
-  EXPECT_EQ(*fixture.runtime.eval("(count \"abc\")"), Lisple::Number(3));
-  EXPECT_EQ(*fixture.runtime.eval("(count \"Where is my garmonbozia?\")"), Lisple::Number(24));
-  EXPECT_EQ(*fixture.runtime.eval("(count \"0123456789\")"), Lisple::Number(10));
-  EXPECT_EQ(*fixture.runtime.eval("(count {:a 1 :b 2})"), Lisple::Number(2));
-}
-
-TEST(CountFunction, count_array_length)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval("(count [])"), Lisple::Number(0));
-  EXPECT_EQ(*fixture.runtime.eval("(count ['a' 'b'])"), Lisple::Number(2));
-  EXPECT_EQ(*fixture.runtime.eval("(count [1 2 3])"), Lisple::Number(3));
-  EXPECT_EQ(*fixture.runtime.eval("(count [0 0 0 0 0])"), Lisple::Number(5));
-}
-
-TEST(HeadFunction, head_of_array)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def my-array ['a' 'b' 'c'])");
-
-  // When
-  auto result_ref = fixture.runtime.eval("(head my-array)");
-  auto result_lit = fixture.runtime.eval("(head ['a' 'b' 'c'])");
-
-  // Then
-  EXPECT_EQ(*result_ref, Lisple::Char('a'));
-  EXPECT_EQ(*result_lit, Lisple::Char('a'));
-}
-
-TEST(HeadFunction, single_element)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto result = fixture.runtime.eval("(head ['a'])");
-
-  // Then
-  EXPECT_EQ(*result, Lisple::Char('a'));
-}
-
-TEST(TailFunction, tail_of_array)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def my-array ['a' 'b' 'c'])");
-
-  // When
-  auto result_ref = fixture.runtime.eval("(tail my-array)");
-  auto result_lit = fixture.runtime.eval("(tail ['a' 'b' 'c'])");
-
-  // Then
-  EXPECT_EQ(*result_ref, *fixture.runtime.eval("['b' 'c']"));
-  EXPECT_EQ(*result_lit, *fixture.runtime.eval("['b' 'c']"));
-}
-
-TEST(TailFunction, single_element)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto result = fixture.runtime.eval("(tail ['a'])");
-
-  // Then
-  EXPECT_EQ(*result, *fixture.runtime.eval("[]"));
-}
-
-TEST(LastFunction, last)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval("(last [1 2 3])"), Lisple::Number(3));
-}
-
 TEST(IntFunction, char_to_int)
 {
   // Given
@@ -1001,7 +771,6 @@ TEST(PlusFunction, multiple_arg_addition)
   // Then
   EXPECT_EQ(*result, Lisple::Number(22));
 }
-
 
 TEST(MinusFunction, simple_subtraction)
 {
@@ -1335,45 +1104,6 @@ TEST(RndFunction, min_max)
   }
 }
 
-TEST(RandNth, all_elements_possible)
-{
-  Lisple::Runtime reader;
-
-  std::vector freq { 0, 0, 0, 0, 0 };
-
-  for (int i=0; i < 5000; i++)
-  {
-    int num = reader.eval("(rand-nth [0 1 2 3 4])")->as<Lisple::Number>().value;
-    freq[num]++;;
-  }
-
-  for (int num_freq : freq)
-  {
-    EXPECT_NE(num_freq, 0);
-  }
-}
-
-TEST(RandNth, single_element)
-{
-  Lisple::Runtime reader;
-
-  for (int i=0; i<1000;i++)
-  {
-    int num = reader.eval("(rand-nth [8])")->as<Lisple::Number>().value;
-    EXPECT_EQ(num, 8);
-  }
-}
-
-TEST(TakeFunction, take)
-{
-  Lisple::Runtime runtime;
-
-  EXPECT_EQ(runtime.eval("(take 2 [1 2 3 4 5 6 7 8 9 10])")->to_string(), "[1 2]");
-  EXPECT_EQ(runtime.eval("(take 5 [1 2 3])")->to_string(), "[1 2 3]");
-  EXPECT_EQ(runtime.eval("(take 10 [])")->to_string(), "[]");
-  EXPECT_EQ(runtime.eval("(take 0 [1 2 3])")->to_string(), "[]");
-}
-
 TEST(RepeatFunction, repeat)
 {
   Lisple::Runtime runtime;
@@ -1497,61 +1227,6 @@ TEST(DissocBangFunction, removal_of_key_returns_value)
   EXPECT_EQ(runtime.eval("my-map")->to_string(), "{:a 1 :c 3}");
 }
 
-TEST(ContainsPredicateFunction, contains)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def my-vec [1 3 5 6 7 8])");
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 1)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 2)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 3)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 4)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 5)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 6)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 7)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 8)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 9)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.runtime.eval("(contains? my-vec 10)"), *Lisple::B_FALSE);
-}
-
-TEST(ConcatFunction, numbers)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(concat [1 2 3] [4 5 6])");
-
-  // Then
-  EXPECT_EQ(*retval, *fixture.runtime.eval("[1 2 3 4 5 6]"));
-}
-
-TEST(FlattenFunction, array_of_array)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(flatten [[1 2 3] [4 5 6] [7 8 9]])");
-
-  // Then
-  ASSERT_EQ(*retval, *fixture.runtime.eval("[1 2 3 4 5 6 7 8 9]"));
-}
-
-TEST(FlattenFunction, nested_arrays)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(flatten [1 [2 3] [4 [5 [6]] [7]] 8 9])");
-
-  // Then
-  ASSERT_EQ(*retval, *fixture.runtime.eval("[1 2 3 4 5 6 7 8 9]"));
-}
-
 TEST(SetBangMacro, set_global_value)
 {
   // Given
@@ -1645,45 +1320,4 @@ TEST(WhileMacro, multi_form_loop)
   // Then
   EXPECT_EQ(*retval, Lisple::Number(20));
   EXPECT_EQ(*fixture.runtime.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
-}
-
-TEST(RemoveBangFunction, remove_even)
-{
-  // Given
-  Lisple::Runtime reader;
-  reader.eval("(def my-seq [1 2 3 4])");
-
-  // When
-  reader.eval("(remove! (fn [n] (prn \"(even?  \" n (even? n) \")\") (even? n)) my-seq)");
-
-  // Then
-  Lisple::Array& my_seq = reader.lookup(Lisple::Word("my-seq"))->as<Lisple::Array>();
-  EXPECT_EQ(my_seq.get_children().size(), 2);
-  EXPECT_EQ(my_seq.get_children().at(0)->as<Lisple::Number>().int_value(), 1);
-  EXPECT_EQ(my_seq.get_children().at(1)->as<Lisple::Number>().int_value(), 3);
-}
-
-TEST(ReduceFunction, reduce_simple)
-{
-  // Given
-  Lisple::Runtime reader;
-
-  // When
-  auto retval = reader.eval("(reduce [128 64 32 16 8 4 2 1] 0 +)");
-
-  // Then
-  EXPECT_EQ(*retval, Lisple::Number(255));
-}
-
-TEST(ReduceKeyValueFunction, recreate_map)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def original-map {:a [1 2 3 4 5] :b [1 2 3]})");
-
-  // when
-  auto retval = fixture.runtime.eval("(reduce-kv original-map {} (fn [r k v] (assoc r k (count v))))");
-
-  // Then
-  EXPECT_EQ(*retval, *fixture.runtime.eval("{:a 5 :b 3}"));
 }

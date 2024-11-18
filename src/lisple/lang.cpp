@@ -1365,7 +1365,7 @@ namespace Lisple
 
   FUNC_BODY(AssocBangFunction, assoc_seq_bang)
   {
-    Sexpression& seq = args[0]->as<Lisple::Sexpression>();
+    Seq& seq = args[0]->as<Lisple::Seq>();
     Number& index = args[1]->as<Lisple::Number>();
 
     sptr_sobject& new_value = args.back();
@@ -1453,7 +1453,7 @@ namespace Lisple
 
   FUNC_BODY(AppendBangFunction, append_bang)
   {
-    Lisple::Sexpression& seq = args[0]->as<Lisple::Sexpression>();
+    Lisple::Seq& seq = args[0]->as<Lisple::Seq>();
 
     for (size_t i=1; i<args.size(); i++)
     {
@@ -1473,7 +1473,10 @@ namespace Lisple
 
     for (auto& vec : args)
     {
-      if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) && *vec != *NIL)
+      if (*vec != *NIL &&
+          (Type::ARRAY.is_type_of(*vec) ||
+           Type::LIST.is_type_of(*vec) ||
+           vec->get_type() == Form::HOST_SEQ))
       {
         for (auto& element : vec->get_children())
         {
@@ -1527,7 +1530,8 @@ namespace Lisple
     for (auto obj : args[0]->get_children())
     {
       if (Type::ARRAY.is_type_of(*obj) ||
-          Type::LIST.is_type_of(*obj))
+          Type::LIST.is_type_of(*obj) ||
+          Type::HOST_SEQ.is_type_of(*obj))
       {
         auto flat_args = sptr_sobject_v { obj };
         auto flattened = flatten_array(ctx, flat_args);
@@ -1544,31 +1548,35 @@ namespace Lisple
     return std::make_shared<Array>(std::move(result));
   }
 
+  /* HeadFunction */
   FUNC_IMPL(HeadFunction, SIG((FN_ARGS((&Type::SEQ)),
                                EXEC_DISPATCH(&HeadFunction::head))))
 
   FUNC_BODY(HeadFunction, head)
   {
     if (*NIL == *args[0]) return NIL;
-    return args[0]->as<Lisple::Sexpression>().head();
+    return args[0]->as<Lisple::Seq>().head();
   }
 
+  /* TailFunction */
   FUNC_IMPL(TailFunction, SIG((FN_ARGS((&Type::SEQ)),
                                EXEC_DISPATCH(&TailFunction::tail))))
 
   FUNC_BODY(TailFunction, tail)
   {
-    return std::make_shared<Lisple::Array>(args[0]->as<Lisple::Sexpression>().tail());
+    return std::make_shared<Lisple::Array>(args[0]->as<Lisple::Seq>().tail());
   }
 
+  /* LastFunction */
   FUNC_IMPL(LastFunction, SIG((FN_ARGS((&Type::SEQ)),
                                EXEC_DISPATCH(&LastFunction::last))))
 
   FUNC_BODY(LastFunction, last)
   {
-    return args[0]->as<Lisple::Sexpression>().get_children().back();
+    return args[0]->as<Lisple::Seq>().get_children().back();
   }
 
+  /* CountFunction */
   FUNC_IMPL(CountFunction, SIG((FN_ARGS((&Type::ANY)),
                                 EXEC_DISPATCH(&CountFunction::count))));
 
@@ -1584,7 +1592,7 @@ namespace Lisple
   FUNC_BODY(FilterFunction, filter_seq)
   {
     auto original = args[0];
-    sptr_sobject result = Sexpression::new_sequence(original->get_type());
+    sptr_sobject result = Seq::new_sequence(original->get_type());
 
     auto& filter_fn = args.back()->as<Executable>();
 
@@ -1662,7 +1670,7 @@ namespace Lisple
   FUNC_BODY(RemoveFunction, remove_seq)
   {
     auto original = args.back();
-    Lisple::sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
+    Lisple::sptr_sobject result = Lisple::Seq::new_sequence(original->get_type());
 
     auto& remove_fn = args[0]->as<Lisple::Executable>();
 
@@ -1687,17 +1695,23 @@ namespace Lisple
   FUNC_BODY(RemoveBangFunction, remove_seq)
   {
     auto& remove_fn = args[0]->as<Lisple::Executable>();
-    auto& seq = args.back()->as<Lisple::Sexpression>();
+    auto& seq = args[1]->as<Lisple::Seq>();
 
-    auto it = std::remove_if(seq.get_children().begin(),
-                             seq.get_children().end(),
+    sptr_sobject_v& children = seq.get_children();
+
+    auto it = std::remove_if(children.begin(),
+                             children.end(),
                              [&] (const Lisple::sptr_sobject& element)
                              {
                                Lisple::sptr_sobject_v val_args { element };
                                return remove_fn.execute(ctx, val_args)->is_truthy();
                              });
 
-    seq.get_children().erase(it, seq.get_children().end());
+    children.erase(it, children.end());
+    if (Type::HOST_SEQ.is_type_of(seq))
+    {
+      seq.replace_children(children);
+    }
     return args.back();
   }
 
@@ -1799,7 +1813,7 @@ namespace Lisple
   FUNC_BODY(FindFirstFunction, find_first_in_seq)
   {
     auto original = args[0];
-    sptr_sobject result = Lisple::Sexpression::new_sequence(original->get_type());
+    sptr_sobject result = Lisple::Seq::new_sequence(original->get_type());
 
     auto& filter_fn = args.back()->as<Executable>();
 
@@ -1912,7 +1926,7 @@ namespace Lisple
     auto& obj = args[0]->as<Lisple::Object>();
 
     sptr_sobject_v new_content;
-    for (auto& key : args.back()->as<Lisple::Sexpression>().get_children())
+    for (auto& key : args.back()->as<Lisple::Seq>().get_children())
     {
       auto value = obj.get_sptr_property(*key);
       if (value->get_type() != Form::NIL)
@@ -2091,14 +2105,14 @@ namespace Lisple
   /*
    * ContainsPredicateFunction - contains?
    */
-  FUNC_IMPL(ContainsPredicateFunction, SIG((FN_ARGS((&Type::ARRAY), (&Type::ANY)),
+  FUNC_IMPL(ContainsPredicateFunction, SIG((FN_ARGS((&Type::SEQ), (&Type::ANY)),
                                             EXEC_DISPATCH(&ContainsPredicateFunction::contains))))
 
   FUNC_BODY(ContainsPredicateFunction, contains)
   {
     if (*NIL == *args[0]) return B_FALSE;
 
-    sptr_sobject_v vector = args[0]->get_children();
+    sptr_sobject_v& vector = args[0]->get_children();
     return std::find_if(vector.begin(),
                         vector.end(),
                         [&args](sptr_sobject lmnt)
