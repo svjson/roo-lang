@@ -19,9 +19,7 @@ TEST(StdVectorAdapter_int, size)
   // Given
   std::vector<int> int_v { 100, 0, 90, 10, 80, 20 };
 
-  Lisple::StdVectorAdapter<int> adapter(&Lisple::Type::VECTOR_INT,
-                                        int_v,
-                                        &Lisple::Type::NUMBER);
+  Lisple::StdVectorAdapter<int> adapter(int_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 6);
@@ -32,9 +30,7 @@ TEST(StdVectorAdapter_int, get_children)
   // Given
   std::vector<int> int_v { 100, 0, 90, 10, 80, 20 };
 
-  Lisple::StdVectorAdapter<int> adapter(&Lisple::Type::VECTOR_INT,
-                                        int_v,
-                                        &Lisple::Type::NUMBER);
+  Lisple::StdVectorAdapter<int> adapter(int_v);
 
   // Then
   EXPECT_THAT(adapter.get_children(), ElementsAre(Lisple::Number::make(100),
@@ -50,9 +46,7 @@ TEST(StdVectorAdapter_int, to_string)
   // Given
   std::vector<int> int_v { 100, 0, 90, 10, 80, 20 };
 
-  Lisple::StdVectorAdapter<int> adapter(&Lisple::Type::VECTOR_INT,
-                                        int_v,
-                                        &Lisple::Type::NUMBER);
+  Lisple::StdVectorAdapter<int> adapter(int_v);
 
   // Then
   EXPECT_EQ(adapter.to_string(), "[100 0 90 10 80 20]");
@@ -63,9 +57,7 @@ TEST(StdVectorAdapter_int, append)
   // Given
   std::vector<int> int_v { 100, 0, 90, 10, 80, 20 };
 
-  Lisple::StdVectorAdapter<int> adapter(&Lisple::Type::VECTOR_INT,
-                                        int_v,
-                                        &Lisple::Type::NUMBER);
+  Lisple::StdVectorAdapter<int> adapter(int_v);
 
   // When
   adapter.append(Lisple::Number::make(70));
@@ -100,9 +92,7 @@ TEST(StdVectorAdapter_string, size)
                                       "Ate",
                                       "A" };
 
-  Lisple::StdVectorAdapter<std::string> adapter(&Lisple::Type::VECTOR_STRING,
-                                        string_v,
-                                        &Lisple::Type::STRING);
+  Lisple::StdVectorAdapter<std::string> adapter(string_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 6);
@@ -118,9 +108,7 @@ TEST(StdVectorAdapter_string, get_children)
                                       "Ate",
                                       "A" };
 
-  Lisple::StdVectorAdapter<std::string> adapter(&Lisple::Type::VECTOR_STRING,
-                                        string_v,
-                                        &Lisple::Type::STRING);
+  Lisple::StdVectorAdapter<std::string> adapter(string_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 6);
@@ -143,9 +131,7 @@ TEST(StdVectorAdapter_string, to_string)
                                       "A",
                                       "Cheese Muffin"};
 
-  Lisple::StdVectorAdapter<std::string> adapter(&Lisple::Type::VECTOR_STRING,
-                                                string_v,
-                                                &Lisple::Type::STRING);
+  Lisple::StdVectorAdapter<std::string> adapter(string_v);
 
   // Then
   EXPECT_EQ(adapter.to_string(), R"(["The" "Quick" "Brown" "Fox" "Ate" "A" "Cheese Muffin"])");
@@ -161,9 +147,7 @@ TEST(StdVectorAdapter_string, append)
                                       "Ate",
                                       "A" };
 
-  Lisple::StdVectorAdapter<std::string> adapter(&Lisple::Type::VECTOR_STRING,
-                                                string_v,
-                                                &Lisple::Type::STRING);
+  Lisple::StdVectorAdapter<std::string> adapter(string_v);
 
   // When
   adapter.append(Lisple::String::make("Horse"));
@@ -200,9 +184,7 @@ TEST(StdVectorAdapter_Vehicle, size)
                                                              Tests::Vehicle("Flying Saucer", 12),
                                                              Tests::Vehicle("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(&Tests::VECTOR_VEHICLE,
-                                                                          obj_v,
-                                                                          &Tests::VEHICLE_TYPE);
+  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(obj_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 3);
@@ -215,9 +197,7 @@ TEST(StdVectorAdapter_Vehicle, get_children)
                                       Tests::Vehicle("Flying Saucer", 12),
                                       Tests::Vehicle("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(&Tests::VECTOR_VEHICLE,
-                                                                          obj_v,
-                                                                          &Tests::VEHICLE_TYPE);
+  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(obj_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 3);
@@ -236,9 +216,7 @@ TEST(StdVectorAdapter_Vehicle, to_string)
                                       Tests::Vehicle("Flying Saucer", 12),
                                       Tests::Vehicle("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(&Tests::VECTOR_VEHICLE,
-                                                                          obj_v,
-                                                                          &Tests::VEHICLE_TYPE);
+  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(obj_v);
 
   // Then
   EXPECT_EQ(adapter.to_string(),
@@ -252,9 +230,7 @@ TEST(StdVectorAdapter_Vehicle, append)
                                       Tests::Vehicle("Flying Saucer", 12),
                                       Tests::Vehicle("Something Fast", 2) };
 
-  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(&Tests::VECTOR_VEHICLE,
-                                                                          obj_v,
-                                                                          &Tests::VEHICLE_TYPE);
+  Lisple::StdVectorAdapter<Tests::Vehicle, Tests::VehicleAdapter> adapter(obj_v);
 
   // When
   adapter.append(Tests::VehicleAdapter::make<Tests::Vehicle>("Aniara", 40000));

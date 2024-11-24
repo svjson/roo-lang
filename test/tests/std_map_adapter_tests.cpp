@@ -27,10 +27,7 @@ TEST(StdMapAdapter_int_string, get_sptr_property)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
-                                                  std_map,
-                                                  &Lisple::Type::NUMBER,
-                                                  &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, std::string> adapter(std_map);
 
   // Then
   EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(1)), Lisple::String("one"));
@@ -51,10 +48,7 @@ TEST(StdMapAdapter_int_string, set_property)
   // Given
   std::map<int, std::string> std_map = {};
 
-  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
-                                                  std_map,
-                                                  &Lisple::Type::NUMBER,
-                                                  &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, std::string> adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Lisple::String::make("five");
@@ -74,10 +68,7 @@ TEST(StdMapAdapter_int_string, keys)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
-                                                  std_map,
-                                                  &Lisple::Type::NUMBER,
-                                                  &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, std::string> adapter(std_map);
 
   // Then
   EXPECT_THAT(adapter.keys(), (Lisple::sptr_sobject_v {
@@ -95,10 +86,7 @@ TEST(StdMapAdapter_int_string, to_string)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, std::string> adapter(&Tests::MAP_INT_TO_STRING,
-                                                  std_map,
-                                                  &Lisple::Type::NUMBER,
-                                                  &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, std::string> adapter(std_map);
 
   // Then
   EXPECT_THAT(adapter.to_string(), R"({1 "one" 2 "two" 3 "three"})");
@@ -114,10 +102,7 @@ TEST(StdMapAdapter_int_string, script_usage)
   };
 
   std::shared_ptr<Lisple::StdMapAdapter<int, std::string>> adapter =
-    std::make_shared<Lisple::StdMapAdapter<int, std::string>>(&Tests::MAP_INT_TO_STRING,
-                                                              std_map,
-                                                              &Lisple::Type::NUMBER,
-                                                              &Lisple::Type::STRING);
+    std::make_shared<Lisple::StdMapAdapter<int, std::string>>(std_map);
 
   Lisple::Runtime runtime;
   runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
@@ -171,10 +156,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, get_sptr_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
-                                                       std_map,
-                                                       &Tests::REGNUM_TYPE,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
@@ -192,10 +174,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, set_property)
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
                         Tests::VehicleAdapter>
-    adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
-            std_map,
-            &Tests::REGNUM_TYPE,
-            &Tests::VEHICLE_TYPE);
+    adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Tests::VehicleAdapter::make<Tests::Vehicle>("The Vroom-Vroom", 2);
@@ -219,10 +198,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, keys)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
-                                                       std_map,
-                                                       &Tests::REGNUM_TYPE,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -248,10 +224,7 @@ TEST(StdMapAdapter_RegNumber_Vehicle, to_string)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
-                                                       std_map,
-                                                       &Tests::REGNUM_TYPE,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   // Then
 
@@ -279,10 +252,7 @@ TEST(StdMapAdapter_long_Vehicle, get_sptr_property)
 
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_LONG_TO_VEHICLE,
-                                                       std_map,
-                                                       &Lisple::Type::NUMBER,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(*Lisple::Number::make(2L));
@@ -299,10 +269,7 @@ TEST(StdMapAdapter_long_Vehicle, set_property)
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
                         Tests::VehicleAdapter>
-    adapter(&Tests::MAP_REGNUM_TO_VEHICLE,
-            std_map,
-            &Lisple::Type::NUMBER,
-            &Tests::VEHICLE_TYPE);
+    adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Tests::VehicleAdapter::make<Tests::Vehicle>("The Vroom-Vroom", 2);
@@ -325,10 +292,7 @@ TEST(StdMapAdapter_long_Vehicle, keys)
 
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_LONG_TO_VEHICLE,
-                                                       std_map,
-                                                       &Lisple::Type::NUMBER,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -353,10 +317,7 @@ TEST(StdMapAdapter_long_Vehicle, to_string)
 
   Lisple::StdMapAdapter<long,
                         Tests::Vehicle,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_LONG_TO_VEHICLE,
-                                                       std_map,
-                                                       &Lisple::Type::NUMBER,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   // Then
 
@@ -384,10 +345,7 @@ TEST(StdMapAdapter_RegNumber_short, get_sptr_property)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_SHORT,
-                                                         std_map,
-                                                         &Tests::REGNUM_TYPE,
-                                                         &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
@@ -403,11 +361,7 @@ TEST(StdMapAdapter_RegNumber_short, set_property)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter>
-    adapter(&Tests::MAP_REGNUM_TO_SHORT,
-            std_map,
-            &Tests::REGNUM_TYPE,
-            &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Lisple::Number::make(static_cast<short>(32123));
@@ -430,10 +384,7 @@ TEST(StdMapAdapter_RegNumber_short, keys)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_SHORT,
-                                                         std_map,
-                                                         &Tests::REGNUM_TYPE,
-                                                         &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -458,10 +409,7 @@ TEST(StdMapAdapter_RegNumber_short, to_string)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         short,
-                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_SHORT,
-                                                         std_map,
-                                                         &Tests::REGNUM_TYPE,
-                                                         &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   // Then
 
@@ -489,10 +437,7 @@ TEST(StdMapAdapter_int_const_string, get_sptr_property)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
-                                                        std_map,
-                                                        &Lisple::Type::NUMBER,
-                                                        &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, const std::string> adapter(std_map);
 
   // Then
   EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(1)), Lisple::String("one"));
@@ -513,10 +458,7 @@ TEST(StdMapAdapter_int_const_string, set_property)
   // Given
   std::map<int, const std::string> std_map = {};
 
-  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
-                                                        std_map,
-                                                        &Lisple::Type::NUMBER,
-                                                        &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, const std::string> adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Lisple::String::make("five");
@@ -536,10 +478,7 @@ TEST(StdMapAdapter_int_const_string, keys)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
-                                                        std_map,
-                                                        &Lisple::Type::NUMBER,
-                                                        &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, const std::string> adapter(std_map);
 
   // Then
   EXPECT_THAT(adapter.keys(), (Lisple::sptr_sobject_v {
@@ -557,10 +496,7 @@ TEST(StdMapAdapter_int_const_string, to_string)
     {3, "three"}
   };
 
-  Lisple::StdMapAdapter<int, const std::string> adapter(&Tests::MAP_INT_TO_CONST_STRING,
-                                                        std_map,
-                                                        &Lisple::Type::NUMBER,
-                                                        &Lisple::Type::STRING);
+  Lisple::StdMapAdapter<int, const std::string> adapter(std_map);
 
   // Then
   EXPECT_THAT(adapter.to_string(), R"({1 "one" 2 "two" 3 "three"})");
@@ -576,10 +512,7 @@ TEST(StdMapAdapter_int_const_string, script_usage)
   };
 
   std::shared_ptr<Lisple::StdMapAdapter<int, const std::string>> adapter =
-    std::make_shared<Lisple::StdMapAdapter<int, const std::string>>(&Tests::MAP_INT_TO_CONST_STRING,
-                                                                    std_map,
-                                                                    &Lisple::Type::NUMBER,
-                                                                    &Lisple::Type::STRING);
+    std::make_shared<Lisple::StdMapAdapter<int, const std::string>>(std_map);
 
   Lisple::Runtime runtime;
   runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
@@ -633,10 +566,7 @@ TEST(StdMapAdapter_RegNumber_const_int, get_sptr_property)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
-                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
-                                                         std_map,
-                                                         &Tests::REGNUM_TYPE,
-                                                         &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
@@ -653,10 +583,7 @@ TEST(StdMapAdapter_RegNumber_const_int, set_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
                         Tests::RegNumberAdapter>
-    adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
-            std_map,
-            &Tests::REGNUM_TYPE,
-            &Lisple::Type::NUMBER);
+    adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Lisple::Number::make(32123);
@@ -679,10 +606,7 @@ TEST(StdMapAdapter_RegNumber_const_int, keys)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
-                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
-                                                         std_map,
-                                                         &Tests::REGNUM_TYPE,
-                                                         &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -707,10 +631,7 @@ TEST(StdMapAdapter_RegNumber_const_int, to_string)
 
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const int,
-                        Tests::RegNumberAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_INT,
-                                                         std_map,
-                                                         &Tests::REGNUM_TYPE,
-                                                         &Lisple::Type::NUMBER);
+                        Tests::RegNumberAdapter> adapter(std_map);
 
   // Then
 
@@ -738,10 +659,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, get_sptr_property)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
-                                                       std_map,
-                                                       &Tests::REGNUM_TYPE,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
@@ -759,10 +677,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, set_property)
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
                         Tests::VehicleAdapter>
-    adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
-            std_map,
-            &Tests::REGNUM_TYPE,
-            &Tests::VEHICLE_TYPE);
+    adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Tests::VehicleAdapter::make<Tests::Vehicle>("The Vroom-Vroom", 2);
@@ -786,10 +701,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, keys)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
-                                                       std_map,
-                                                       &Tests::REGNUM_TYPE,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -815,10 +727,7 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, to_string)
   Lisple::StdMapAdapter<Tests::RegNumber,
                         const Tests::Vehicle,
                         Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter> adapter(&Tests::MAP_REGNUM_TO_CONST_VEHICLE,
-                                                       std_map,
-                                                       &Tests::REGNUM_TYPE,
-                                                       &Tests::VEHICLE_TYPE);
+                        Tests::VehicleAdapter> adapter(std_map);
 
   // Then
 

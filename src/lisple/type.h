@@ -50,9 +50,10 @@ namespace Lisple
   {
    protected:
     const Form form_type;
-    const std::string name;
 
    public:
+    const std::string name;
+
     TypeRef(Form form_type, const std::string& name);
     virtual ~TypeRef() = default;
 

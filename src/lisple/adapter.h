@@ -1,4 +1,7 @@
 
+#ifndef __ADAPTER_H_
+#define __ADAPTER_H_
+
 #include <cstdint>
 #include <map>
 #include <string>
@@ -9,161 +12,379 @@
 #include "impl.h"
 #include "type.h"
 
+/* __TRAITS_NAME_CONCAT_IMPL
+ * __TRAITS_NAME_CONCAT
+ * __TRAITS_NAME
+ *
+ * Helper macros for generating a unique name for a constant. Uses
+ * __COUNTER__ (available in gcc, clang and MSVC) to ensure uniqueness.
+ */
+#define __TRAITS_NAME_CONCAT_IMPL(A, B) A##B
+#define __TRAITS_NAME_CONCAT(BASE, COUNT) __TRAITS_NAME_CONCAT_IMPL(BASE, COUNT)
+#define __TRAITS_NAME(BASE) __TRAITS_NAME_CONCAT(BASE, __COUNTER__)
+
+/*
+ * __DEFINE_VECTOR_TYPE
+ * DEFINE_VECTOR_TYPE
+ * LISPLE__DEFINE_VECTOR_TYPE
+ *
+ * Generates necessary boiler-plate for using a Lisple::StdVectorAdapter
+ * together with an arbitrary type.
+ *
+ * This consists of a const Lisple::StdVectorTraits containing the type
+ * information and template specification of get_vector_traits<T> for
+ * accessing it.
+ *
+ * DEFINE_VECTOR_TYPE should be used when definition happens in the
+ * global namespace.
+ *
+ * LISPLE__DEFINE_VECTOR_TYPE should be used when definition happens from
+ * within the Lisple namespace.
+ */
+#define __DEFINE_VECTOR_TYPE(NS_PREFIX, TRAITS_ID, VEC_TYPE_REF, VALUE_TYPE, VALUE_TYPE_REF) \
+  inline static const Lisple::StdVectorTraits TRAITS_ID                 \
+  (                                                                     \
+    &VEC_TYPE_REF,                                                      \
+    &VALUE_TYPE_REF                                                     \
+  );                                                                    \
+  template <>                                                           \
+  constexpr const Lisple::StdVectorTraits* NS_PREFIX get_vector_traits<VALUE_TYPE>() \
+  {                                                                     \
+    return &TRAITS_ID;                                                  \
+  };
+
+#define DEFINE_VECTOR_TYPE(VEC_TYPE_REF, VALUE_TYPE, VALUE_TYPE_REF)   \
+  __DEFINE_VECTOR_TYPE(Lisple::, __TRAITS_NAME(StdVector__traits_), VEC_TYPE_REF, VALUE_TYPE, VALUE_TYPE_REF)
+
+#define LISPLE__DEFINE_VECTOR_TYPE(VEC_TYPE_REF, VALUE_TYPE, VALUE_TYPE_REF)   \
+  __DEFINE_VECTOR_TYPE(, __TRAITS_NAME(StdVector__traits_), VEC_TYPE_REF, VALUE_TYPE, VALUE_TYPE_REF)
+
+/*
+ * __DEFINE_MAP_TYPE
+ * DEFINE_MAP_TYPE
+ * LISPLE__DEFINE_MAP_TYPE
+ *
+ * Generates necessary boiler-plate for using a Lisple::StdMapAdapter
+ * together with arbitrary key and value types.
+ *
+ * This consists of a const Lisple::StdMapTraits containing the type
+ * information and template specification of get_map_traits<T> for
+ * accessing it.
+ *
+ * DEFINE_MAP_TYPE should be used when definition happens in the
+ * global namespace.
+ *
+ * LISPLE__DEFINE_MAP_TYPE should be used when definition happens from
+ * within the Lisple namespace.
+ */
+#define __DEFINE_MAP_TYPE(NS_PREFIX, TRAITS_ID, MAP_TYPE_REF, KEY_TYPE, VALUE_TYPE) \
+  inline static const Lisple::StdMapTraits TRAITS_ID                     \
+  {                                                                      \
+    &MAP_TYPE_REF,                                                       \
+    Lisple::get_lisple_type<KEY_TYPE>(),                                 \
+    Lisple::get_lisple_type<VALUE_TYPE>()                                \
+  };                                                                     \
+  template<>                                                             \
+  constexpr const Lisple::StdMapTraits* NS_PREFIX get_map_traits<KEY_TYPE, VALUE_TYPE>() \
+  {                                                                      \
+    return &TRAITS_ID;                                                   \
+  }
+
+#define DEFINE_MAP_TYPE(MAP_TYPE_REF, KEY_TYPE, VALUE_TYPE) \
+  __DEFINE_MAP_TYPE(Lisple::, __TRAITS_NAME(StdMap__traits_), MAP_TYPE_REF, KEY_TYPE, VALUE_TYPE)
+
+#define LISPLE__DEFINE_MAP_TYPE(MAP_TYPE_REF, KEY_TYPE, VALUE_TYPE) \
+  __DEFINE_MAP_TYPE(, __TRAITS_NAME(StdMap__traits_), MAP_TYPE_REF, KEY_TYPE, VALUE_TYPE)
+
+/*
+ * __DEFINE_LISPLE_TYPE__INTERNAL
+ * DEFINE_LISPLE_TYPE
+ * LISPLE__DEFINE_LISPLE_TYPE
+ *
+ * Generates necessary boiler-plate for using native types together with
+ * StdMapAdapter and StdVectorAdapter.
+ *
+ * This consists of a template specification of get_lisple_type<T> used
+ * lookup the type Lisple::TypeRef associated with T.
+ *
+ * DEFINE_LISPLE_TYPE should be used when definition happens in the
+ * global namespace.
+ *
+ * LISPLE__DEFINE_LISPLE_TYPE should be used when definition happens from
+ * within the Lisple namespace.
+ */
+#define __DEFINE_LISPLE_TYPE__INTERNAL(NS_PREFIX, NATIVE_TYPE, LISPLE_TYPE) \
+  template<>                                                            \
+  constexpr const Lisple::TypeRef* NS_PREFIX get_lisple_type<NATIVE_TYPE>() \
+  {                                                                       \
+    return &LISPLE_TYPE;                                                  \
+  }
+
+#define DEFINE_LISPLE_TYPE(NATIVE_TYPE, LISPLE_TYPE)                      \
+  __DEFINE_LISPLE_TYPE__INTERNAL(Lisple::, NATIVE_TYPE, LISPLE_TYPE)      \
+
+#define LISPLE__DEFINE_LISPLE_TYPE(NATIVE_TYPE, LISPLE_TYPE)              \
+  __DEFINE_LISPLE_TYPE__INTERNAL(, NATIVE_TYPE, LISPLE_TYPE)
+
+
 namespace Lisple
 {
   class Context;
 
   namespace Type
   {
+    /*! @brief HostTypeRef for wrapping std::vector<int> in StdVectorAdapter */
     static const HostTypeRef VECTOR_INT("vector<int>");
+
+    /*! @brief HostTypeRef for wrapping std::vector<short> in StdVectorAdapter */
     static const HostTypeRef VECTOR_SHORT("vector<short>");
+
+    /*! @brief HostTypeRef for wrapping std::vector<long> in StdVectorAdapter */
     static const HostTypeRef VECTOR_LONG("vector<long>");
+
+    /*! @brief HostTypeRef for wrapping std::vector<double> in StdVectorAdapter */
     static const HostTypeRef VECTOR_DOUBLE("vector<double>");
+
+    /*! @brief HostTypeRef for wrapping std::vector<float> in StdVectorAdapter */
     static const HostTypeRef VECTOR_FLOAT("vector<float>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::vector<unsigned int> in
+     * StdVectorAdapter
+     */
     static const HostTypeRef VECTOR_UINT("vector<unsigned int>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::vector<unsigned short> in
+     * StdVectorAdapter
+     */
     static const HostTypeRef VECTOR_USHORT("vector<unsigned short>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::vector<unsigned long> in
+     * StdVectorAdapter
+     */
     static const HostTypeRef VECTOR_ULONG("vector<unsigned long>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::vector<int8_t> in
+     * StdVectorAdapter
+     */
     static const HostTypeRef VECTOR_INT8("vector<int8_t>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::vector<uint8_t> in
+     * StdVectorAdapter
+     */
     static const HostTypeRef VECTOR_UINT8("vector<uint8_t>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::vector<std::string> in
+     * StdVectorAdapter
+     */
     static const HostTypeRef VECTOR_STRING("vector<string>");
-  }
 
-  template <typename V>
-  constexpr const HostTypeRef* get_vector_host_type();
-
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<int>()
-  {
-    return &Type::VECTOR_INT;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<short>()
-  {
-    return &Type::VECTOR_SHORT;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<long>()
-  {
-    return &Type::VECTOR_LONG;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<unsigned int>()
-  {
-    return &Type::VECTOR_UINT;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<unsigned short>()
-  {
-    return &Type::VECTOR_USHORT;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<unsigned long>()
-  {
-    return &Type::VECTOR_ULONG;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<double>()
-  {
-    return &Type::VECTOR_DOUBLE;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<float>()
-  {
-    return &Type::VECTOR_FLOAT;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<int8_t>()
-  {
-    return &Type::VECTOR_INT8;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<uint8_t>()
-  {
-    return &Type::VECTOR_UINT8;
-  }
-  template <>
-  constexpr const HostTypeRef* get_vector_host_type<std::string>()
-  {
-    return &Type::VECTOR_STRING;
-  }
-
-  template <typename V>
-  constexpr const TypeRef* get_lisple_type();
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<int>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<short>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<long>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<unsigned int>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<unsigned short>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<unsigned long>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<double>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<float>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<int8_t>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<uint8_t>()
-  {
-    return &Type::NUMBER;
-  }
-
-  template <>
-  constexpr const TypeRef* get_lisple_type<std::string>()
-  {
-    return &Type::STRING;
+    /*!
+     * @brief HostTypeRef for wrapping std::map<int, std::string> in
+     * StdMapAdapter
+     */
+    static const HostTypeRef MAP_INT_TO_STRING("map<int, string>");
   }
 
   /*!
-   * @brief Holds and std::vector and allows it to be exposed to the Lisple
+   * @brief AdapterTraits-implementation for use with StdVectorAdapter
+   */
+  struct StdVectorTraits : public AdapterTraits
+  {
+    /*!
+     * @brief The Lisple TypeRef corresponding to the type T of the wrapped
+     * std::vector<T>
+     */
+    const TypeRef* value_type;
+
+    /*!
+     * @brief Initializes a new StdVectorTraits instance with the specialized
+     * HostTypeRef and TypeRef for the mapped vector type.
+     */
+    StdVectorTraits(const HostTypeRef* type_ref,
+                    const TypeRef* value_type);
+  };
+
+  /*!
+   * @brief AdapterTraits-implementation for use with StdMapAdapter
+   */
+  struct StdMapTraits : public AdapterTraits
+  {
+    /*!
+     * @brief The Lisple TypeRef corresponding to the type K of the wrapped
+     * std::map<K, V>
+     */
+    const TypeRef* key_type;
+    /*!
+     * @brief The Lisple TypeRef corresponding to the type V of the wrapped
+     * std::map<K, V>
+     */
+    const TypeRef* value_type;
+
+    /*!
+     * @brief Initializes a new StdMapTraits instance with the specialized
+     * HostTypeRef and TypeRef pointers for the mapped K and V map types.
+     */
+    StdMapTraits(const HostTypeRef* type_ref,
+                 const TypeRef* key_type,
+                 const TypeRef* value_type);
+  };
+
+  /*!
+   * @brief Template method that must be specialized for all types that are
+   * to be used with wrapped native collection types.
+   *
+   * Lisple provides implementations for common native types, such as
+   * integrals, floating point types and std::string.
+   */
+  template <typename V>
+  constexpr const TypeRef* get_lisple_type();
+
+  /*!
+   * get_lisple_type<V> template specialization for int
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(int, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for const int
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(const int, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for short
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(short, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for long
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(long, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for unsigned int
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(unsigned int, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for unsigned short
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(unsigned short, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for unsigned long
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(unsigned long, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for double
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(double, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for float
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(float, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for int8_t
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(int8_t, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for uint8_t
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(uint8_t, Type::NUMBER);
+  /*!
+   * get_lisple_type<V> template specialization for std::string
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(std::string, Type::STRING);
+  /*!
+   * get_lisple_type<V> template specialization for const std::string
+   */
+  LISPLE__DEFINE_LISPLE_TYPE(const std::string, Type::STRING);
+
+  /*!
+   * @brief Template method that must be specialized for all types that are
+   * to be used with StdVectorAdapter.
+   *
+   * Lisple provides implementations for common native types, such as
+   * integrals, floating point types and std::string.
+   */
+  template <typename V>
+  constexpr const StdVectorTraits* get_vector_traits();
+
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<int> / Lisple::Type::VECTOR_INT.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_INT, int, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<short> / Lisple::Type::VECTOR_SHORT.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_SHORT, short, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<long> / Lisple::Type::VECTOR_LONG.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_LONG, long, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<unsigned_int> / Lisple::Type::VECTOR_UINT.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_UINT, unsigned int, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<unsigned short> / Lisple::Type::VECTOR_USHORT.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_USHORT, unsigned short, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<unsigned long> / Lisple::Type::VECTOR_ULONG.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_ULONG, unsigned long, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<double> / Lisple::Type::VECTOR_DOUBLE.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_DOUBLE, double, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<float> / Lisple::Type::VECTOR_FLOAT.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_FLOAT, float, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<int8_t> / Lisple::Type::VECTOR_INT8.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_INT8, int8_t, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<uint8_t> / Lisple::Type::VECTOR_UINT8.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_UINT8, uint8_t, Type::NUMBER);
+  /*!
+   * @brief StdVectorTraits template specialization of get_vector_type<T> for
+   * std::vector<std::string> / Lisple::Type::VECTOR_STRING.
+   */
+  LISPLE__DEFINE_VECTOR_TYPE(Type::VECTOR_STRING, std::string, Type::STRING);
+
+  /*!
+   * @brief Template method that must be specialized for all combinations of
+   * K and V types that are to be used with StdMapAdapter.
+   */
+  template <typename K, typename V>
+  constexpr const StdMapTraits* get_map_traits();
+
+  /*!
+   * @brief StdMapTraits template specialization of get_map_type<T> for
+   * std::map<int, std::string> / Lisple::Type::MAP_INT_TO_STRING
+   */
+  LISPLE__DEFINE_MAP_TYPE(Lisple::Type::MAP_INT_TO_STRING, int, std::string)
+
+  /*!
+   * @brief Holds an std::vector and allows it to be exposed to the Lisple
    * runtime and to be treated much like a Lisple::Array, although some
    * differences do apply.
    *
    * In order for Lisple functions to access the contents of the underlying
-   * vector, they must still be transformed on the fly behind and behind the
-   * scenes. This means that there is a performance cost to be considered.
+   * vector, they must still be transformed on the fly behind the scenes.
+   * This means that there is a performance cost to be considered.
    */
   template <typename V, class A=V>
   class StdVectorAdapter : public HostObject<std::vector<V>>
@@ -175,40 +396,68 @@ namespace Lisple
 
    public:
     /*!
-     * @brief Verbose constructor that allows specialization on construction
-     * "on the fly" and without pre-definition, but requires specifying the
-     * host type of the vector adapter self as well as the value
+     * @brief Constructor for pre-compiled vector types that will determine
+     * its type references automatically. Requires pre-defined specializations
+     * of @ref get_vector_traits and @ref get_lisple_type.
      */
-    StdVectorAdapter(const HostTypeRef* type,
-                     std::vector<V>& collection,
-                     const TypeRef* value_type)
-      : HostObject<std::vector<V>>(Form::HOST_SEQ, type, collection)
-      , value_type(value_type)
+    StdVectorAdapter(std::vector<V>& collection)
+      : HostObject<std::vector<V>>(Form::HOST_SEQ, collection)
+      , value_type(get_lisple_type<V>())
     {
     }
 
     /*!
-     * @brief Constructor for pre-compiled vector types that will determine
-     * its type references automatically. Requires pre-defined specializations
-     * of @ref get_vector_host_type and @ref get_lisple_type.
+     * @brief Specialized type-specific traits describing the vector and its
+     * value type.
      */
-    StdVectorAdapter(std::vector<V>& collection)
-      : HostObject<std::vector<V>>(Form::HOST_SEQ, get_vector_host_type<V>(), collection)
-      , value_type(get_lisple_type<V>())
+    inline static const StdVectorTraits* _traits = get_vector_traits<V>();
+
+    /*!
+     * @see Lisple::AbstractHostObject::get_traits
+     */
+    const AdapterTraits* get_traits() const override
     {
+      return _traits;
     }
+
+    /*!
+     * @brief Static access to the type traits
+     */
+    static const AdapterTraits* traits()
+    {
+      return _traits;
+    }
+
+    /*!
+     * @see Lisple::Seq::head
+     *
+     * @brief Retrieves the first element of the Sequence after syncing the
+     * vector contents with the cached Lisple view of the underlying std::vector.
+     */
     sptr_sobject& head() override
     {
       this->sync_children();
       return Seq::head();
     }
 
+    /*!
+     * @see Lisple::Seq::tail
+     *
+     * @brief Retrieves the first element of the Sequence after syncing the
+     * vector contents with the cached Lisple view of the underlying std::vector.
+     */
     sptr_sobject_v tail() override
     {
       this->sync_children();
       return Seq::tail();
     }
 
+    /*!
+     * @see Lisple::Seq::append
+     *
+     * @brief Appends a value to the underlying std::vector<V>. The value must be
+     * compatible with V.
+     */
     void append(const sptr_sobject& child) override
     {
       if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
@@ -221,12 +470,24 @@ namespace Lisple
       }
     }
 
+    /*!
+     * @see Lisple::Object::get_children
+     *
+     * @brief Returns a reference to the internally cached vector of children, after
+     * syncing it.
+     */
     sptr_sobject_v& get_children() override
     {
       this->sync_children();
       return this->children;;
     }
 
+    /*!
+     * @see Lisple::Seq::replace_children
+     *
+     * @brief Replaces the entire contents of the underlying vector with a new set of
+     * elements. All new children must be compatible with the value type V.
+     */
     void replace_children(const sptr_sobject_v& children) override
     {
       std::vector<V>& vec = this->get_object();
@@ -245,28 +506,47 @@ namespace Lisple
       }
     }
 
+    /*!
+     * @see Lisple::Seq::size
+     *
+     * @brief Does not require synchronization and does not affect the
+     * internally cached Lisple vector.
+     */
     unsigned int size() const override
     {
       return this->get_object().size();
     }
 
+    /*!
+     * @see Lisple::Object::to_string
+     *
+     * Requires synchronization of the internally cached Lisple vector, and is
+     * therefore a potentially costly operation.
+     */
     std::string to_string(int depth=-1) const override
     {
       this->sync_children();
       return Seq::to_string(depth);
     }
 
+    /*! @see Lisple::Seq::lpar */
     const std::string lpar() const override
     {
       return "[";
     }
 
+    /*! @see Lisple::Seq::rpar */
     const std::string rpar() const override
     {
       return "]";
     }
 
    protected:
+    /*!
+     * @brief Syncronizes the internally cached view of the underlying vector as
+     * Lisple Objects with a naive implementation that simply reinitializes the
+     * the vector from top to bottom.
+     */
     void sync_children() const override
     {
       this->children.clear();
@@ -281,53 +561,84 @@ namespace Lisple
         {
           this->children.push_back(A::make_ref(v));
         }
-
       }
     }
   };
 
+  /*! @brief Pre-defined specialization of StdVectorAdapter<int> */
   template class StdVectorAdapter<int>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<short> */
   template class StdVectorAdapter<short>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<long> */
   template class StdVectorAdapter<long>;
-  template class StdVectorAdapter<float>;
-  template class StdVectorAdapter<double>;
-  template class StdVectorAdapter<int8_t>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<unsigned int> */
   template class StdVectorAdapter<unsigned int>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<unsigned short> */
   template class StdVectorAdapter<unsigned short>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<unsigned long> */
   template class StdVectorAdapter<unsigned long>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<float> */
+  template class StdVectorAdapter<float>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<double> */
+  template class StdVectorAdapter<double>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<int8_t> */
+  template class StdVectorAdapter<int8_t>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<uint8_t> */
   template class StdVectorAdapter<uint8_t>;
+  /*! @brief Pre-defined specialization of StdVectorAdapter<std::string> */
   template class StdVectorAdapter<std::string>;
 
   typedef StdVectorAdapter<int> VectorInt;
 
+  /*!
+   * @brief Holds an std::map and allows it to be exposed to the Lisple
+   * runtime and to be treated much like a Lisple::Map, although some
+   * differences do apply.
+   *
+   * In order for Lisple functions to access the contents of the underlying
+   * map, they must still be transformed on the fly behind the scenes.
+   * This means that there is a performance cost to be considered.
+   */
   template <typename K, typename V, class A1=K, class A2=V>
   class StdMapAdapter : public HostObject<std::map<K, V>>
   {
-    const TypeRef* key_type;
-    const TypeRef* value_type;
-
    public:
-    StdMapAdapter(const HostTypeRef* type,
-                  std::map<K, V>& map,
-                  const TypeRef* key_type,
-                  const TypeRef* value_type)
-      : HostObject<std::map<K, V>>(type, map)
-      , key_type(key_type)
-      , value_type(value_type)
+    StdMapAdapter(std::map<K, V>& map)
+      : HostObject<std::map<K, V>>(map)
     {
     }
 
+    /*!
+     * @brief Specialized type-specific traits describing the map and its
+     * key and value types.
+     */
+    inline static const StdMapTraits* _traits = get_map_traits<K, V>();
+
+    /*!
+     * @see Lisple::AbstractHostObject::get_traits
+     */
+    const AdapterTraits* get_traits() const override
+    {
+      return _traits;
+    }
+
+    /*!
+     * @brief Add or overwrite a key/value pair of the underlying map.
+     */
     void set_property(const Object& key, sptr_sobject& value) override
     {
       this->set_property(nullptr, key, value);
     }
 
+    /*!
+     * @brief Add or overwrite a key/value pair of the underlying map.
+     */
     void set_property(Context*, const Lisple::Object& key, sptr_sobject& value) override
     {
       if (*value != *NIL &&
           key != *NIL &&
-          key_type->is_type_of(key) &&
-          value_type->is_type_of(*value))
+          _traits->key_type->is_type_of(key) &&
+          _traits->value_type->is_type_of(*value))
       {
         if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
         {
@@ -377,6 +688,11 @@ namespace Lisple
       }
     }
 
+    /*!
+     * @brief Retrieves a value V stored under a key K.
+     *
+     * Returns NIL if the underlying map does not contain a key K.
+     */
     sptr_sobject get_sptr_property(const Lisple::Object& key) const override
     {
       if (this->has_key(key))
@@ -407,10 +723,13 @@ namespace Lisple
       return Lisple::NIL;
     }
 
+    /*!
+     * @brief Tests if the underlying map contains a specific key.
+     */
     bool has_key(const Lisple::Object& key) const override
     {
       if (key != *Lisple::NIL &&
-          key_type->is_type_of(key))
+          _traits->key_type->is_type_of(key))
       {
         if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
         {
@@ -424,6 +743,9 @@ namespace Lisple
       return false;
     }
 
+    /*!
+     * @brief Returns a vector of all keys contained within the underlying map.
+     */
     const Lisple::sptr_sobject_v keys() const override
     {
       Lisple::sptr_sobject_v keys;
@@ -441,9 +763,18 @@ namespace Lisple
       return keys;
     }
 
+    /*!
+     * @see Lisple::Seq::size
+     *
+     * The returned size reflects the number of key/value pairs and not the
+     * total amount of elements.
+     */
     unsigned int size() const override
     {
       return this->get_object().size();
     }
+
   };
 }
+
+#endif

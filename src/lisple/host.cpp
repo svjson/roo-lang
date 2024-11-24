@@ -10,11 +10,11 @@
 namespace Lisple
 {
   /*!
-   * @brief Empty constant AccessorLookup that is spliced in by
+   * @brief Empty constant AccessorTable that is spliced in by
    * HOST_ADAPTER_IMPL whenever a Host Object Adapter object without accessors
    * is constructed.
    */
-  const AccessorLookup NO_ACCESSORS = AccessorLookup();
+  const AccessorTable NO_ACCESSORS = AccessorTable();
 
   /*!
    * @brief Default function that is spliced in by accessor macros when a property
@@ -32,11 +32,28 @@ namespace Lisple
     throw InvocationException("Property not mutable");
   };
 
+  AdapterTraits::AdapterTraits(const HostTypeRef* type_ref,
+                               const AccessorTable& accessor_table)
+    : type_ref(type_ref)
+    , accessor_table(accessor_table)
+  {
+  }
+
   /**
    * HostTypeRef implementation
    */
-  HostTypeRef::HostTypeRef(const std::string& name, const std::optional<std::string>& make_fn)
+  HostTypeRef::HostTypeRef(const std::string& name,
+                           const std::optional<std::string>& make_fn)
     : TypeRef(Form::HOST_OBJECT, name)
+    , make_fn(make_fn)
+  {
+  }
+
+  HostTypeRef::HostTypeRef(const std::string& name,
+                           const HostTypeRef* parent_type,
+                           const std::optional<std::string>& make_fn)
+    : TypeRef(Form::HOST_OBJECT, name)
+    , parent_type(parent_type)
     , make_fn(make_fn)
   {
   }
@@ -45,7 +62,9 @@ namespace Lisple
   {
     if (*NIL != obj && TypeRef::is_type_of(obj))
     {
-      return obj.as<AbstractHostObject>().get_host_type() == this;
+      const HostTypeRef* obj_type = obj.as<AbstractHostObject>().get_host_type();
+      return obj_type == this ||
+        (obj_type->parent_type && obj_type->parent_type == this);
     }
     return false;
   }
@@ -82,13 +101,9 @@ namespace Lisple
   }
 
   /**
-   * AccessorLookup implementation
+   * AccessorTable implementation
    */
-  AccessorLookup::AccessorLookup()
-  {
-  }
-
-  AccessorLookup::AccessorLookup(const key_acc_map& acc_map)
+  AccessorTable::AccessorTable(const key_acc_map& acc_map)
   {
     for (auto& [k, a] : acc_map)
     {
@@ -97,12 +112,12 @@ namespace Lisple
     }
   }
 
-  bool AccessorLookup::has_key(const Object& key) const
+  bool AccessorTable::has_key(const Object& key) const
   {
     return accessor_map.count(key.to_string());
   }
 
-  const Accessors& AccessorLookup::lookup(const Object& key) const
+  const Accessors& AccessorTable::lookup(const Object& key) const
   {
     return accessor_map.at(key.to_string());
   }
@@ -110,39 +125,37 @@ namespace Lisple
   /**
    * AbstractHostObject base implementation for all Host Object Adapters
    */
-  AbstractHostObject::AbstractHostObject(Form form, const HostTypeRef* type)
+  AbstractHostObject::AbstractHostObject(Form form)
     : Seq(form)
-    , host_type(type)
-  {
-  }
-
-  AbstractHostObject::AbstractHostObject(Form form, const HostTypeRef* type, const AccessorLookup& accessors)
-    : Seq(form)
-    , host_type(type)
-    , accessors(accessors)
   {
   }
 
   const HostTypeRef* AbstractHostObject::get_host_type() const
   {
-    return host_type;
+    return get_traits()->type_ref;
+  }
+
+  const AccessorTable& AbstractHostObject::accessor_table() const
+  {
+    return get_traits()->accessor_table;
   }
 
   const std::vector<std::shared_ptr<Object>> AbstractHostObject::keys() const
   {
-    return accessors.keys;
+    return accessor_table().keys;
   }
 
   bool AbstractHostObject::has_key(const Object& key) const
   {
-    return accessors.has_key(key);
+    return accessor_table().has_key(key);
   }
 
   sptr_sobject AbstractHostObject::get_sptr_property(const Object& key) const
   {
-    if (accessors.has_key(key))
+    auto& acc = accessor_table();
+    if (acc.has_key(key))
     {
-      return accessors.lookup(key).getter(this);
+      return acc.lookup(key).getter(this);
     }
     return NIL;
   }
@@ -154,9 +167,10 @@ namespace Lisple
 
   void AbstractHostObject::set_property(Context* ctx, const Object& key, sptr_sobject& value)
   {
-    if (accessors.has_key(key))
+    auto& acc = accessor_table();
+    if (acc.has_key(key))
     {
-      accessors.lookup(key).setter(this, ctx, *value);
+      acc.lookup(key).setter(this, ctx, *value);
       return;
     }
     throw InvocationException("No such property: " + key.to_string());
@@ -196,7 +210,7 @@ namespace Lisple
   {
   }
 
-  AccessorLookup merge_acc(const AccessorLookup& al1, const key_acc_map& kam2)
+  AccessorTable merge_acc(const AccessorTable& al1, const key_acc_map& kam2)
   {
     key_acc_map merged_map;
     for (auto& key : al1.keys)
@@ -209,7 +223,7 @@ namespace Lisple
       merged_map.emplace(key, acc);
     }
 
-    return AccessorLookup(merged_map);
+    return AccessorTable(merged_map);
   }
 
 }

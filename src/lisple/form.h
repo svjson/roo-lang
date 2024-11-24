@@ -317,7 +317,16 @@ namespace Lisple
 
     std::string to_string(int depth=-1) const override;
 
+    /*!
+     * @brief Retrieves the first element of the Sequence
+     */
     virtual std::shared_ptr<Object>& head();
+    /*!
+     * @brief Retrieves a new collection of all the elements of the Seq execpt
+     * the first element. This is akin to car-operation, but as the underlying
+     * type is not made up cons cells, this is an expensive operation for large
+     * sequences.
+     */
     virtual sptr_sobject_v tail();
 
     sptr_sobject get_sptr_property(const Object& form) const override;
