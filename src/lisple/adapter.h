@@ -634,6 +634,11 @@ namespace Lisple
       return _traits;
     }
 
+    std::map<K, V> get_self_object()
+    {
+      return this->get_object();
+    }
+
     /*!
      * @brief Add or overwrite a key/value pair of the underlying map.
      */
@@ -784,6 +789,11 @@ namespace Lisple
     unsigned int size() const override
     {
       return this->get_object().size();
+    }
+
+    static std::shared_ptr<StdMapAdapter<K,V,A1,A2>> make_ref(const std::map<K,V>& ref) \
+    {                                                                   \
+      return std::make_shared<StdMapAdapter<K,V,A1,A2>>(const_cast<std::map<K,V>&>(ref)); \
     }
 
   };
