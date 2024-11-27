@@ -189,6 +189,12 @@ namespace Lisple
      * StdMapAdapter
      */
     static const HostTypeRef MAP_INT_TO_STRING("map<int, string>");
+
+    /*!
+     * @brief HostTypeRef for wrapping std::map<uint8_t, short> in
+     * StdMapAdapter
+     */
+    static const HostTypeRef MAP_UINT8_TO_SHORT("map<uint8_t, short>");
   }
 
   /*!
@@ -376,6 +382,12 @@ namespace Lisple
    * std::map<int, std::string> / Lisple::Type::MAP_INT_TO_STRING
    */
   LISPLE__DEFINE_MAP_TYPE(Lisple::Type::MAP_INT_TO_STRING, int, std::string)
+
+  /*!
+   * @brief StdMapTraits template specialization of get_map_type<T> for
+   * std::map<uint8_t, short> / Lisple::Type::MAP_UINT8_TO_SHORT
+   */
+  LISPLE__DEFINE_MAP_TYPE(Lisple::Type::MAP_UINT8_TO_SHORT, uint8_t, short)
 
   /*!
    * @brief Holds an std::vector and allows it to be exposed to the Lisple
@@ -775,6 +787,14 @@ namespace Lisple
     }
 
   };
+
+  /*! @brief Pre-defined specialization of StdMapAdapter<int, std::string> */
+  template class StdMapAdapter<int, std::string>;
+  /*! @brief Pre-defined specialization of StdMapAdapter<uint8_t, short> */
+  template class StdMapAdapter<uint8_t, short>;
+
+  typedef StdMapAdapter<int, std::string> StdMapIntToString;
+  typedef StdMapAdapter<uint8_t, short> StdMapUint8ToShort;
 }
 
 #endif

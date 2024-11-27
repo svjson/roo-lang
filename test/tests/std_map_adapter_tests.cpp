@@ -10,8 +10,6 @@
 
 using namespace ::testing;
 
-template class Lisple::StdMapAdapter<int, std::string>;
-
 /*
  * ===================================
  * std::map<int, string>
@@ -136,6 +134,53 @@ TEST(StdMapAdapter_int_string, script_usage)
   EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
   EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
   EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::String::make("eight"));
+}
+
+/*
+ * ===================================
+ * std::map<uint8_t, short>
+ * ===================================
+ */
+
+TEST(StdMapAdapter_uint8_short, get_sptr_property)
+{
+  // Given
+  std::map<uint8_t, short> std_map = {
+    {0x01, 8},
+    {0x02, 16},
+    {0x03, 24}
+  };
+
+  Lisple::StdMapAdapter<uint8_t, short> adapter(std_map);
+
+  // Then
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(1)), *Lisple::Number::make(8));
+  EXPECT_EQ(Lisple::str_val(*adapter.get_sptr_property(*Lisple::Number::make(1))), "8");
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(2)), *Lisple::Number::make(16));
+  EXPECT_EQ(Lisple::str_val(*adapter.get_sptr_property(*Lisple::Number::make(2))), "16");
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(3)), *Lisple::Number::make(24));
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(4)), *Lisple::NIL);
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(5)), *Lisple::NIL);
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::Number::make(0)), *Lisple::NIL);
+
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::String::make("8")), *Lisple::NIL);
+  EXPECT_EQ(*adapter.get_sptr_property(*Lisple::NIL), *Lisple::NIL);
+}
+
+TEST(StdMapAdapter_uint8_short, make_ref)
+{
+  // Given
+  std::map<uint8_t, short> std_map = {
+    {0x01, 8},
+    {0x02, 16},
+    {0x03, 24}
+  };
+
+  // When
+  auto adapter = Lisple::StdMapUint8ToShort::make_ref(std_map);
+
+  // Then
+  EXPECT_EQ(*adapter->get_sptr_property(*Lisple::Number::make(1)), *Lisple::Number::make(8));
 }
 
 
