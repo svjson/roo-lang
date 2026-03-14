@@ -46,6 +46,11 @@ add_library(lisple SHARED ${lisple_SOURCES})
 
 target_link_libraries(lisple)
 
+target_include_directories(lisple
+  PUBLIC
+    src
+)
+
 # Enable Include What You Use analyzer with USE_IWYU=true
 if(DEFINED ENV{USE_IWYU})
   find_program(iwyu_path NAMES include-what-you-use iwyu)
