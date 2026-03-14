@@ -804,6 +804,24 @@ namespace Lisple
   FUNC_DECL(RemoveFunction, remove_seq)
 
   /*!
+   * @brief Remove the nth value of a Seq
+   *
+   * Usage:
+   * @code
+   * (remove-nth! seq n)
+   *
+   * (remove-nth! [1 2 3] 1)
+   * => [1 3]
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The seq to mutate                                                |
+   * | 1     | The index of the element to remove                               |
+   */
+  FUNC_DECL(RemoveNthBangFunction, remove_nth)
+
+  /*!
    * @brief Remove elements from a Seq by applying a function/executable to each
    * element, removing any element for which the predicate function returns a
    * truthy value.
