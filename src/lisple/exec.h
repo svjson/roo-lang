@@ -311,6 +311,7 @@ namespace Lisple
     Macro(std::unique_ptr<Signature> signature);
     Macro(Lisple::uptr_sig_v signatures);
 
+    Signature* get_signature(Context& ctx, sptr_sobject_v& args);
     Signature& get_signature(sptr_sobject_v& args);
 
     std::string to_string(int depth = -1) const override;

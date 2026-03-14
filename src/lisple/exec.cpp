@@ -504,9 +504,36 @@ namespace Lisple
   Macro::Macro(uptr_sig_v signatures)
     : Executable(Form::MACRO, std::move(signatures))
   {
-
   }
 
+  Signature* Macro::get_signature(Context& ctx, sptr_sobject_v& args)
+  {
+    for (auto& sig : signatures)
+    {
+      if (sig->matches(args))
+      {
+        return sig.get();
+      }
+    }
+
+    if (args.empty())
+    {
+      return nullptr;
+    }
+
+    for (auto& sig : signatures)
+    {
+      sptr_sobject_v coerced = sig->coerce_args(ctx, args);
+      if (!coerced.empty())
+      {
+        return sig.get();
+      }
+    }
+
+    return nullptr;
+  }
+
+  [[deprecated("Cannot handle coercion")]]
   Signature& Macro::get_signature(sptr_sobject_v& args)
   {
     for (auto& sig : signatures)
@@ -516,6 +543,7 @@ namespace Lisple
         return *sig;
       }
     }
+
     throw InvocationException("No matching form for arguments: " + Array(args).to_string());
   }
 
@@ -523,4 +551,4 @@ namespace Lisple
   {
     return "<macro>";
   }
-}
+} // namespace Lisple
