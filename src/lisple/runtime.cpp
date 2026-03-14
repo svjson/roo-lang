@@ -4,6 +4,7 @@
 #include "context.h"
 #include "exception.h"
 #include "exec.h"
+#include "exec_node.h"
 #include "file_system.h"
 #include "form.h"
 #include "lang.h"
@@ -198,30 +199,30 @@ namespace Lisple
   {
     switch (statement->get_type())
     {
-      case Form::LIST:
-        return eval_list(ctx, dynamic_cast<List&>(*statement));
-      case Form::ARRAY:
-        return eval_array(ctx, dynamic_cast<Array&>(*statement));
-      case Form::MAP:
-        return eval_map(ctx, dynamic_cast<Map&>(*statement));
-      case Form::STRING:
-      case Form::CHAR:
-      case Form::NUMBER:
-      case Form::SYMBOL:
-      case Form::FUNCTION:
-      case Form::NIL:
-      case Form::KEY:
-      case Form::BOOLEAN:
-      case Form::B_TRUE:
-      case Form::B_FALSE:
-      case Form::HOST_OBJECT:
-        return statement;
-      case Form::WORD:
-        return ctx.evalp() ? ctx.lookup(dynamic_cast<Word&>(*statement)) : statement;
-      case Form::DISCARD:
-        return NIL;
-      default:
-        break;
+    case Form::LIST:
+      return eval_list(ctx, dynamic_cast<List&>(*statement));
+    case Form::ARRAY:
+      return eval_array(ctx, dynamic_cast<Array&>(*statement));
+    case Form::MAP:
+      return eval_map(ctx, dynamic_cast<Map&>(*statement));
+    case Form::STRING:
+    case Form::CHAR:
+    case Form::NUMBER:
+    case Form::SYMBOL:
+    case Form::FUNCTION:
+    case Form::NIL:
+    case Form::KEY:
+    case Form::BOOLEAN:
+    case Form::B_TRUE:
+    case Form::B_FALSE:
+    case Form::HOST_OBJECT:
+      return statement;
+    case Form::WORD:
+      return ctx.evalp() ? ctx.lookup(dynamic_cast<Word&>(*statement)) : statement;
+    case Form::DISCARD:
+      return NIL;
+    default:
+      break;
     }
 
     throw LispleException("Encountered unimplemented form: " + statement->to_string());
@@ -274,23 +275,27 @@ namespace Lisple
     {
       return std::make_shared<List>(list.get_children(), true);
     }
-    auto elements = eval_sexpression(ctx, list);
-    auto lobj = std::make_shared<List>(elements);
+    auto wrapped = std::make_shared<List>(list);
 
     if (ctx.evalp())
     {
       try
       {
-        return lobj->execute(ctx);
+        // FIXME: Temporary rewrap into shared_ptr
+
+        auto node = lower(wrapped);
+
+        return Lisple::exec(ctx, *node);
       }
       catch (std::exception& e)
       {
-        throw InvocationException("Error while invoking " + list.get_children().front()->to_string() + ":\n" +
-                                          list.to_string() + "\n" + e.what());
+        throw InvocationException("Error while invoking " +
+                                  list.get_children().front()->to_string() + ":\n" +
+                                  list.to_string() + "\n" + e.what());
       }
     }
 
-    return lobj;
+    return wrapped;
   }
 
   sptr_sobject Runtime::eval_array(Context& ctx, Array& array)
