@@ -87,7 +87,7 @@ namespace Lisple
 
       if (ct != Token::STRING && ct != Token::SQUOT)
       {
-        if (c == ' ' || c == '\n' || c == '\t' || c == '\r')
+        if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '\f')
         {
           if (val.size() == 0)
           {

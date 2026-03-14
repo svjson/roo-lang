@@ -59,6 +59,6 @@ namespace Lisple
   private:
     std::string hex_to_int_str(const std::string& val) const;
   };
-}
+} // namespace Lisple
 
 #endif
