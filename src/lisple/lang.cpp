@@ -68,6 +68,7 @@ namespace Lisple
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
     lang.emplace("filter", std::make_shared<FilterFunction>());
     lang.emplace("find-first", std::make_shared<FindFirstFunction>());
+    lang.emplace("find-index", std::make_shared<FindIndexFunction>());
     lang.emplace("fn", std::make_shared<LambdaMacro>());
     lang.emplace("for", std::make_shared<ForMacro>());
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
@@ -1898,6 +1899,31 @@ namespace Lisple
       if (*pred_result != *B_FALSE && *pred_result != *NIL)
       {
         return val;
+      }
+    }
+
+    return NIL;
+  }
+
+  /* FindIndexFunction - find-index */
+  FUNC_IMPL(FindIndexFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+                 EXEC_DISPATCH(&FindIndexFunction::find_index_in_seq))))
+
+  FUNC_BODY(FindIndexFunction, find_index_in_seq)
+  {
+    auto original = args[0];
+    sptr_sobject result = Lisple::Seq::new_sequence(original->get_type());
+
+    auto& filter_fn = args.back()->as<Executable>();
+
+    for (size_t i = 0; i < args[0]->get_children().size(); i++)
+    {
+      sptr_sobject_v val_args{args[0]->get_children()[i]};
+      sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
+      if (*pred_result != *B_FALSE && *pred_result != *NIL)
+      {
+        return Lisple::Number::make(i);
       }
     }
 

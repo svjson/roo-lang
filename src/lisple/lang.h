@@ -888,6 +888,26 @@ namespace Lisple
   FUNC_DECL(FindFirstFunction, find_first_in_seq)
 
   /*!
+   * @brief Returns the index of the first element of a seq that matches a predicate
+   * function, or nil if no match is found.
+   *
+   * Usage:
+   * @code
+   * (find-index [1 3 7 8 5 10 2] even?)
+   * => 3
+   *
+   * (find-index [1 3 4] even?)
+   * => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The sequence to query                                            |
+   * | 1     | The predicate function                                           |
+   */
+  FUNC_DECL(FindIndexFunction, find_index_in_seq)
+
+  /*!
    * @brief Query a seq against a pattern in form of a partial map. Returns the
    * first element that matches all defined keys in the pattern
    *
