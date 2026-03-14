@@ -1,19 +1,15 @@
-
-#include <gtest/gtest.h>
+#include "runtime_fixture.h"
+#include <execinfo.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-
-#include <memory>
-
-#include <lisple/runtime.h>
-#include <lisple/namespace.h>
-
 #include <lisple/form.h>
+#include <lisple/namespace.h>
 #include <lisple/reader.h>
+#include <lisple/runtime.h>
 #include <lisple/type.h>
-
-#include "runtime_fixture.h"
+#include <memory>
 
 TEST(DefunTest, defun_with_static_return_value)
 {
@@ -42,10 +38,7 @@ TEST(DefunTest, defun_with_single_argument)
 
   // Then
   ASSERT_TRUE(fixture.runtime.get_current_namespace().has(Lisple::Word("add-five")));
-  Lisple::sptr_sobject_v args
-  {
-    std::make_shared<Lisple::Number>(6)
-  };
+  Lisple::sptr_sobject_v args{std::make_shared<Lisple::Number>(6)};
   auto retval = result->execute(fixture.ctx, args);
   ASSERT_EQ(retval->as<Lisple::Number>().int_value(), 11);
 }

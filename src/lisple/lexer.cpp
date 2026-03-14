@@ -1,17 +1,16 @@
 #include "lexer.h"
 
-#include <sstream>
-#include <regex>
-#include <string>
-
 #include "exception.h"
+#include <regex>
+#include <sstream>
+#include <string>
 
 namespace Lisple
 {
 
   Symbol::Symbol(Token token, std::string value)
-    : token(token)
-    , value(value)
+      : token(token)
+      , value(value)
   {
   }
 
@@ -25,23 +24,21 @@ namespace Lisple
     return stream << "Symbol(" << symbol.token << ", \"" << symbol.value << "\")";
   }
 
-  std::vector<std::string> token_names = {
-    "NONE",
-    "LPAREN",
-    "RPAREN",
-    "LBRACKET",
-    "RBRACKET",
-    "LCURLY",
-    "RCURLY",
-    "SQUOT",
-    "WORD",
-    "NUMBER",
-    "STRING",
-    "CHAR",
-    "KEY",
-    "HASH",
-    "USCORE"
-  };
+  std::vector<std::string> token_names = {"NONE",
+                                          "LPAREN",
+                                          "RPAREN",
+                                          "LBRACKET",
+                                          "RBRACKET",
+                                          "LCURLY",
+                                          "RCURLY",
+                                          "SQUOT",
+                                          "WORD",
+                                          "NUMBER",
+                                          "STRING",
+                                          "CHAR",
+                                          "KEY",
+                                          "HASH",
+                                          "USCORE"};
 
   std::ostream& operator<<(std::ostream& stream, const Token& token)
   {
@@ -127,7 +124,8 @@ namespace Lisple
       {
         if (val.empty() || val.size() > 1)
         {
-          throw ParseException("Invalid char token: '" + val + "'. Chars must have a size of exactly 1 character.");
+          throw ParseException("Invalid char token: '" + val +
+                               "'. Chars must have a size of exactly 1 character.");
         }
         ct = Token::NONE;
         tokens.push_back(Symbol(Token::CHAR, val));
@@ -135,10 +133,10 @@ namespace Lisple
         continue;
       }
       // Check if the currently determined Token is still valid with the new character
-      if ((ct == Token::WORD && std::regex_match(val+cs, regex_alphanum)) ||
-          (ct == Token::NUMBER && std::regex_match(val+cs, regex_num)) ||
-          (ct == Token::NUMBER && std::regex_match(val+cs, regex_hexnum)) ||
-          (ct == Token::KEY && std::regex_match(val+cs, regex_key_alphanum)) ||
+      if ((ct == Token::WORD && std::regex_match(val + cs, regex_alphanum)) ||
+          (ct == Token::NUMBER && std::regex_match(val + cs, regex_num)) ||
+          (ct == Token::NUMBER && std::regex_match(val + cs, regex_hexnum)) ||
+          (ct == Token::KEY && std::regex_match(val + cs, regex_key_alphanum)) ||
           (ct == Token::STRING && c != '"' && c != '\\'))
       {
         val += c;
@@ -154,7 +152,7 @@ namespace Lisple
         val += input.at(offset++);
         continue;
       }
-      else if (ct == Token::WORD && std::regex_match(val+cs, regex_num))
+      else if (ct == Token::WORD && std::regex_match(val + cs, regex_num))
       {
         val += c;
         ct = Token::NUMBER;
@@ -216,7 +214,7 @@ namespace Lisple
       }
 
       Token t = Token::NONE;
-      switch(c)
+      switch (c)
       {
       case '(':
         t = Token::LPAREN;
@@ -256,7 +254,7 @@ namespace Lisple
           }
           val = "";
         }
-        tokens.push_back(Symbol(t,cs));
+        tokens.push_back(Symbol(t, cs));
         ct = Token::NONE;
         continue;
       }
@@ -268,7 +266,7 @@ namespace Lisple
     {
       if (ct == Token::NUMBER && std::regex_match(val, regex_hexnum))
       {
-         val = hex_to_int_str(val);
+        val = hex_to_int_str(val);
       }
       tokens.push_back(Symbol(ct, val));
     }
@@ -283,4 +281,4 @@ namespace Lisple
     ss >> std::hex >> value;
     return std::to_string(value);
   }
-}
+} // namespace Lisple

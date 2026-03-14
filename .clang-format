@@ -1,0 +1,56 @@
+BasedOnStyle: LLVM
+
+# General formatting
+IndentWidth: 2
+ContinuationIndentWidth: 2
+TabWidth: 2
+UseTab: Never
+BreakBeforeBraces: Allman
+ColumnLimit: 93
+ReferenceAlignment: Left
+PointerAlignment: Left
+NamespaceIndentation: All
+
+# Includes
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<.*>'
+    Priority: 1
+  - Regex: '^"lisple/'
+    Priority: 2
+
+# Type Declarations
+AccessModifierOffset: -1
+
+# Blocks
+AllowShortLambdasOnASingleLine: Inline
+
+# Constructors
+ConstructorInitializerIndentWidth: 2
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BreakConstructorInitializers: BeforeColon
+BreakConstructorInitializersBeforeComma: true
+
+# Method globals
+AlignAfterOpenBracket: Align
+BreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyBreakBeforeFirstCallParameter: 0
+
+# Method declarations
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: Inline
+
+# Method invocations
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
+
+# Macros
+SkipMacroDefinitionBody: true
+
+# Elvis
+BreakBeforeTernaryOperators: true
+
+# If Statements
+AllowShortIfStatementsOnASingleLine: WithoutElse

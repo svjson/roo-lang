@@ -1,12 +1,11 @@
 #ifndef __LISP_FORM_H_
 #define __LISP_FORM_H_
 
+#include "type.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-
-#include "type.h"
 
 #define __ESCAPE(...) __VA_ARGS__
 
@@ -23,10 +22,10 @@ namespace Lisple
    */
   class Object
   {
-   protected:
+  protected:
     Form type;
 
-   public:
+  public:
     Object(Form form);
     virtual ~Object() = default;
 
@@ -74,26 +73,18 @@ namespace Lisple
      */
     virtual void set_property(Context* ctx, const Object& key, sptr_sobject& value);
 
-    virtual std::string to_string(int depth=-1) const = 0;
-
+    virtual std::string to_string(int depth = -1) const = 0;
 
     virtual std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args);
 
-    template<class OT> OT& as()
-    {
-      return dynamic_cast<OT&>(*this);
-    }
+    template <class OT> OT& as() { return dynamic_cast<OT&>(*this); }
 
-    template<class OT> const OT& as() const
-    {
-      return dynamic_cast<const OT&>(*this);
-    }
-
+    template <class OT> const OT& as() const { return dynamic_cast<const OT&>(*this); }
   };
 
   class Nil : public Object
   {
-   public:
+  public:
     Nil();
 
     bool operator==(const Object&) const override;
@@ -101,27 +92,23 @@ namespace Lisple
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
   };
 
   inline std::shared_ptr<Object> NIL = std::make_shared<Nil>();
 
-  template <typename T>
-  class Value : public Object
+  template <typename T> class Value : public Object
   {
-   public:
+  public:
     T value;
 
     Value(Form type, T value)
-      : Object(type)
-      , value(value)
+        : Object(type)
+        , value(value)
     {
     }
 
-    static T value_of(const Object& obj)
-    {
-      return dynamic_cast<const Value<T>&>(obj).value;
-    }
+    static T value_of(const Object& obj) { return dynamic_cast<const Value<T>&>(obj).value; }
 
     bool operator==(const Object& other) const override
     {
@@ -163,7 +150,7 @@ namespace Lisple
   {
     std::shared_ptr<Object> value;
 
-   public:
+  public:
     Discard();
 
     bool operator==(const Object&) const override;
@@ -172,18 +159,22 @@ namespace Lisple
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
   };
 
   class String : public Value<std::string>
   {
-   public:
+  private:
+    sptr_sobject_v _children;
+
+  public:
     String(const std::string& value);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     unsigned int size() const override;
     bool has_value(const std::string& value) const override;
+    sptr_sobject_v& get_children() override;
 
     static std::shared_ptr<String> make(const std::string& value);
   };
@@ -193,17 +184,17 @@ namespace Lisple
   public:
     Char(const char value);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     static std::shared_ptr<Char> make(char value);
   };
 
   class Boolean : public Value<bool>
   {
-   public:
+  public:
     Boolean(const bool value);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     bool is_truthy() const override;
     static std::shared_ptr<Boolean> wrap(bool value);
@@ -214,12 +205,12 @@ namespace Lisple
 
   class Key : public QualifiableStringValue
   {
-   public:
+  public:
     Key(const std::string& value);
 
     bool has_value(const std::string& value) const override;
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
@@ -248,7 +239,7 @@ namespace Lisple
   {
     NumberType num_type;
 
-   public:
+  public:
     Number(int value);
     Number(long value);
     Number(unsigned int value);
@@ -256,7 +247,7 @@ namespace Lisple
     Number(float value);
     Number(double value);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     int int_value() const;
     long long_value() const;
@@ -285,10 +276,10 @@ namespace Lisple
 
   class Word : public QualifiableStringValue
   {
-   public:
+  public:
     Word(const std::string& value);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     bool has_value(const std::string& value) const override;
 
@@ -297,17 +288,17 @@ namespace Lisple
 
   class QSymbol : public QualifiableStringValue
   {
-   public:
+  public:
     QSymbol(const std::string& value);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     bool has_value(const std::string& value) const override;
   };
 
   class Seq : public Object
   {
-   public:
+  public:
     mutable sptr_sobject_v children;
 
     Seq(Form form);
@@ -315,7 +306,7 @@ namespace Lisple
 
     static std::shared_ptr<Seq> new_sequence(Form type);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
 
     /*!
      * @brief Retrieves the first element of the Sequence
@@ -347,9 +338,9 @@ namespace Lisple
   {
     bool q;
 
-   public:
-    List(bool q=false);
-    List(const sptr_sobject_v& children, bool q=false);
+  public:
+    List(bool q = false);
+    List(const sptr_sobject_v& children, bool q = false);
 
     static std::shared_ptr<List> from(sptr_sobject, sptr_sobject_v);
 
@@ -368,7 +359,7 @@ namespace Lisple
 
   class Array : public Seq
   {
-   public:
+  public:
     Array();
     Array(const sptr_sobject_v& children);
 
@@ -382,7 +373,7 @@ namespace Lisple
   {
     void validate_keys() const;
 
-   public:
+  public:
     Map();
     Map(const sptr_sobject_v& children);
 
@@ -404,6 +395,6 @@ namespace Lisple
     bool has_key(const Object& key) const override;
   };
 
-}
+} // namespace Lisple
 
 #endif

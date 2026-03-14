@@ -31,7 +31,7 @@ namespace Lisple
 
   class Symbol
   {
-   public:
+  public:
     Token token;
     std::string value;
 

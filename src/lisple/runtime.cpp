@@ -1,23 +1,21 @@
 
 #include "runtime.h"
 
+#include "context.h"
+#include "exception.h"
+#include "exec.h"
+#include "file_system.h"
+#include "form.h"
+#include "lang.h"
+#include "namespace.h"
+#include "reader.h"
+#include "type.h"
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <stddef.h>
 #include <utility>
 #include <vector>
-
-#include "context.h"
-#include "lang.h"
-#include "exec.h"
-#include "form.h"
-#include "namespace.h"
-#include "reader.h"
-#include "type.h"
-
-#include "file_system.h"
-#include "exception.h"
 
 namespace Lisple
 {
@@ -45,7 +43,8 @@ namespace Lisple
   {
     if (ns.get_type() != Namespace::Type::USER)
     {
-      throw LispleException("Provided namespace '" + ns.get_name() + "' is of an invalid type.");
+      throw LispleException("Provided namespace '" + ns.get_name() +
+                            "' is of an invalid type.");
     }
 
     const std::string& ns_name = ns.get_name();
@@ -68,7 +67,8 @@ namespace Lisple
     {
       if (ns.get_type() != Namespace::Type::USER)
       {
-        throw LispleException("Provided namespace '" + ns.get_name() + "' is of an invalid type.");
+        throw LispleException("Provided namespace '" + ns.get_name() +
+                              "' is of an invalid type.");
       }
       this->namespaces.emplace(name, std::move(ns));
     }
@@ -82,8 +82,7 @@ namespace Lisple
    */
   void Runtime::switch_namespace(const std::string& namespace_name)
   {
-    if (current_namespace &&
-        current_namespace->empty() &&
+    if (current_namespace && current_namespace->empty() &&
         namespaces.count(current_namespace->get_name()) &&
         current_namespace->name != namespace_name)
     {
@@ -100,7 +99,8 @@ namespace Lisple
   {
     if (!namespaces.count(namespace_name))
     {
-      throw NamespaceException("Cannot import namespace '" + namespace_name + "', because it does not exist.");
+      throw NamespaceException("Cannot import namespace '" + namespace_name +
+                               "', because it does not exist.");
     }
 
     get_current_namespace().import_full(namespaces.at(namespace_name));
@@ -109,11 +109,13 @@ namespace Lisple
   /**
    *
    */
-  void Runtime::define_namespace_alias(const std::string& namespace_name, const std::string& alias)
+  void Runtime::define_namespace_alias(const std::string& namespace_name,
+                                       const std::string& alias)
   {
     if (!namespaces.count(namespace_name))
     {
-      throw NamespaceException("Cannot create an alias for namespace '" + namespace_name + "', because it does not exist");
+      throw NamespaceException("Cannot create an alias for namespace '" + namespace_name +
+                               "', because it does not exist");
     }
     get_current_namespace().import_aliased(namespaces.at(namespace_name), alias);
   }
@@ -149,14 +151,21 @@ namespace Lisple
   {
     if (!fs)
     {
-      throw new LispleException("This Lisple context does not provide any file system access");
+      throw new LispleException(
+        "This Lisple context does not provide any file system access");
     }
-    std::cout << "Reading data: " << file_name << std::endl;
 
     auto raw_file = fs->read_file_to_string(file_name);
 
     const std::string& current_ns = get_current_namespace().get_name();
-    eval(ctx, raw_file);
+    try
+    {
+      eval(ctx, raw_file);
+    }
+    catch (Lisple::LispleException* e)
+    {
+      throw Lisple::LispleException("Error reading '" + file_name + "': " + e->what());
+    }
     switch_namespace(current_ns); // Revert any namespace changes from evaluating the file
   }
 
@@ -216,7 +225,7 @@ namespace Lisple
     }
 
     throw LispleException("Encountered unimplemented form: " + statement->to_string());
- }
+  }
 
   sptr_sobject_v Runtime::eval_sexpression(Context& ctx, Seq& sexp)
   {
@@ -226,16 +235,14 @@ namespace Lisple
 
     Signature* sig = nullptr;
 
-    for (size_t i=0; i < children.size(); i++)
+    for (size_t i = 0; i < children.size(); i++)
     {
       if (children[i]->get_type() == Form::DISCARD)
       {
         continue;
       }
 
-      if (ctx.evalp() &&
-          i == 0 &&
-          sexp.get_type() == Form::LIST &&
+      if (ctx.evalp() && i == 0 && sexp.get_type() == Form::LIST &&
           children[i]->get_type() == Form::WORD)
       {
         auto head = this->eval(ctx, children[i]);
@@ -313,7 +320,8 @@ namespace Lisple
     }
     catch (std::exception& e)
     {
-      throw InvocationException("Error while invoking " + identifier + ":\n" + inv->to_string() + "\n" + e.what());
+      throw InvocationException("Error while invoking " + identifier + ":\n" +
+                                inv->to_string() + "\n" + e.what());
     }
 
     return NIL;
@@ -321,7 +329,7 @@ namespace Lisple
 
   sptr_sobject Runtime::call_fn(const std::string& identifier, sptr_sobject& arg)
   {
-    sptr_sobject_v args = sptr_sobject_v { arg };
+    sptr_sobject_v args = sptr_sobject_v{arg};
     return call_fn(identifier, args);
   }
 
@@ -335,12 +343,15 @@ namespace Lisple
     if (identifier.is_qualified())
     {
       Namespace* _ns = ns(identifier.get_qualifier());
-      if (_ns) return _ns->lookup(Word(identifier.get_identifier()));
+      if (_ns)
+      {
+        return _ns->lookup(Word(identifier.get_identifier()));
+      }
 
       sptr_sobject result = current_namespace->lookup(identifier);
       if (result) return result;
 
-      throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
+      throw IdentifierException("Unknown identifier: '" + identifier.to_string() + "'");
     }
 
     sptr_sobject lang_obj = lang.lookup(identifier);
@@ -381,4 +392,4 @@ namespace Lisple
     throw IdentifierException("Unknown identifier: " + identifier.value);
   }
 
-}
+} // namespace Lisple

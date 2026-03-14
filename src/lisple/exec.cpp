@@ -1,16 +1,15 @@
 
 #include "exec.h"
 
-#include <memory>
-#include <sstream>
-#include <utility>
-
-#include "form.h"
 #include "context.h"
+#include "exception.h"
+#include "form.h"
 #include "namespace.h"
 #include "scope.h"
 #include "type.h"
-#include "exception.h"
+#include <memory>
+#include <sstream>
+#include <utility>
 
 namespace Lisple
 {
@@ -18,7 +17,8 @@ namespace Lisple
   {
     if (arg_declaration.get_type() == Form::WORD)
     {
-      return std::make_unique<NamedArgumentBinding>(Value<std::string>::value_of(arg_declaration));
+      return std::make_unique<NamedArgumentBinding>(
+        Value<std::string>::value_of(arg_declaration));
     }
 
     if (arg_declaration.get_type() == Form::MAP)
@@ -37,7 +37,8 @@ namespace Lisple
   /* NamedArgumentBinding */
   NamedArgumentBinding::NamedArgumentBinding(const std::string& name)
     : arg_name(name)
-  {}
+  {
+  }
 
   void NamedArgumentBinding::apply(Scope& scope, sptr_sobject& arg_val)
   {
@@ -51,8 +52,7 @@ namespace Lisple
   DestructuringArgumentBinding::DestructuringArgumentBinding(const Map& binding_form)
     : binding_form(binding_form)
   {
-    if (!binding_form.has_key(keys) ||
-        binding_form.keys().size() > 2 ||
+    if (!binding_form.has_key(keys) || binding_form.keys().size() > 2 ||
         (binding_form.keys().size() == 2 && !binding_form.has_key(as)) ||
         !Type::ARRAY.is_type_of(binding_form.get_property(keys)))
     {
@@ -81,7 +81,8 @@ namespace Lisple
       Object& alias = binding_form.get_property(as);
       if (alias.get_type() != Form::WORD)
       {
-        throw LispleException("Invalid alias destructuring form: " + binding_form.to_string(2));
+        throw LispleException("Invalid alias destructuring form: " +
+                              binding_form.to_string(2));
       }
       Word& alias_word = alias.as<Word>();
       scope.store(alias_word, arg_val);
@@ -98,19 +99,19 @@ namespace Lisple
   {
     if (!Type::SEQ.is_type_of(*init_expr))
     {
-      throw TypeError("Invalid init expression: " + init_expr->to_string(2) + ". Must be Seq for binding form: " + binding_form.to_string(2));
+      throw TypeError("Invalid init expression: " + init_expr->to_string(2) +
+                      ". Must be Seq for binding form: " + binding_form.to_string(2));
     }
 
-    for (size_t b=0; b<binding_form.size(); b++)
+    for (size_t b = 0; b < binding_form.size(); b++)
     {
       sptr_sobject& b_form = binding_form.get_children()[b];
       if (!Type::WORD.is_type_of(*b_form))
       {
-        throw TypeError("Invalid binding form: " + b_form->to_string() + " in " + binding_form.to_string());
+        throw TypeError("Invalid binding form: " + b_form->to_string() + " in " +
+                        binding_form.to_string());
       }
-      sptr_sobject value = b < init_expr->size()
-        ? init_expr->get_children()[b]
-        : NIL;
+      sptr_sobject value = b < init_expr->size() ? init_expr->get_children()[b] : NIL;
       scope.store(b_form->as<Word>(), value);
     }
   }
@@ -123,7 +124,6 @@ namespace Lisple
   Argument::Argument(const TypeRef* type, eval_mode eval)
     : Argument(false, type, eval)
   {
-
   }
 
   Argument::Argument(vararg_mode var, const TypeRef* type)
@@ -160,9 +160,7 @@ namespace Lisple
 
   std::string Argument::to_string() const
   {
-    return this->is_vararg()
-      ? type->to_string() + "..."
-      : type->to_string();
+    return this->is_vararg() ? type->to_string() + "..." : type->to_string();
   }
 
   /* Signature */
@@ -245,7 +243,7 @@ namespace Lisple
         }
       }
 
-      if (a < arguments_size-1 || i < args_size) return false;
+      if (a < arguments_size - 1 || i < args_size) return false;
     }
     else
     {
@@ -276,7 +274,8 @@ namespace Lisple
     {
       return arguments.back().evalp();
     }
-    throw InvocationException("Invalid argument index: " + std::to_string(index) + ". Are varargs correcly applied?");
+    throw InvocationException("Invalid argument index: " + std::to_string(index) +
+                              ". Are varargs correcly applied?");
   }
 
   sptr_sobject Signature::invoke(Context& ctx, sptr_sobject_v& args)
@@ -289,9 +288,9 @@ namespace Lisple
     std::stringstream ss;
     ss << "[";
 
-    for (size_t i=0; i<arguments.size(); i++)
+    for (size_t i = 0; i < arguments.size(); i++)
     {
-      if (i>0)
+      if (i > 0)
       {
         ss << ", ";
       }
@@ -307,7 +306,6 @@ namespace Lisple
     : Object(type)
     , signatures(std::move(signatures))
   {
-
   }
 
   Executable::Executable(Form type, uptr_sig signature)
@@ -354,7 +352,8 @@ namespace Lisple
       }
     }
 
-    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " + expected + ", but got: " + Array(args).to_string(2) + ".");
+    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " +
+                              expected + ", but got: " + Array(args).to_string(2) + ".");
   }
 
   Function::Function(uptr_sig signature)
@@ -387,24 +386,26 @@ namespace Lisple
   {
   }
 
-  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(Context& ctx,
-                                                                    std::shared_ptr<Object> fun_obj,
-                                                                    sptr_sobject_v bound_args)
+  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(
+    Context& ctx,
+    std::shared_ptr<Object> fun_obj,
+    sptr_sobject_v bound_args)
   {
     std::shared_ptr<Function> fun = std::dynamic_pointer_cast<Function>(fun_obj);
     return make_detached(ctx, fun, bound_args);
   }
 
-  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(Context& ctx,
-                                                                    std::shared_ptr<Function> fun,
-                                                                    sptr_sobject_v bound_args)
+  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(
+    Context& ctx,
+    std::shared_ptr<Function> fun,
+    sptr_sobject_v bound_args)
   {
-    return fun
-      ? std::make_shared<DetachedFunction>(ctx.detach(), fun, bound_args)
-      : std::shared_ptr<DetachedFunction>();
+    return fun ? std::make_shared<DetachedFunction>(ctx.detach(), fun, bound_args) :
+                 std::shared_ptr<DetachedFunction>();
   }
 
-  std::vector<std::unique_ptr<Signature>> DetachedFunction::make_detached_signature(Function& target)
+  std::vector<std::unique_ptr<Signature>> DetachedFunction::make_detached_signature(
+    Function& target)
   {
     std::vector<std::unique_ptr<Signature>> sigs;
     for (auto& sig : target.get_signatures())
@@ -460,7 +461,6 @@ namespace Lisple
     , arg_bindings(std::move(arg_bindings))
     , body(body)
   {
-
   }
 
   sptr_sobject UserFunction::exec_body(Context& ctx, sptr_sobject_v& args)
@@ -468,7 +468,7 @@ namespace Lisple
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
     ctx.switch_namespace(home_ns);
     Scope fn_scope;
-    for (size_t i=0; i<args.size(); i++)
+    for (size_t i = 0; i < args.size(); i++)
     {
       arg_bindings[i]->apply(fn_scope, args[i]);
     }
@@ -490,7 +490,8 @@ namespace Lisple
     return body;
   }
 
-  const std::vector<std::unique_ptr<ArgumentBinding>>& UserFunction::get_argument_bindings() const
+  const std::vector<std::unique_ptr<ArgumentBinding>>& UserFunction::get_argument_bindings()
+    const
   {
     return arg_bindings;
   }

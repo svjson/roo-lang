@@ -1,11 +1,11 @@
 
 #include "host.h"
 
+#include "context.h"
+#include "exception.h"
 #include "exec.h"
 #include "form.h"
 #include "type.h"
-#include "context.h"
-#include "exception.h"
 
 namespace Lisple
 {
@@ -63,8 +63,7 @@ namespace Lisple
     if (*NIL != obj && TypeRef::is_type_of(obj))
     {
       const HostTypeRef* obj_type = obj.as<AbstractHostObject>().get_host_type();
-      return obj_type == this ||
-        (obj_type->parent_type && obj_type->parent_type == this);
+      return obj_type == this || (obj_type->parent_type && obj_type->parent_type == this);
     }
     return false;
   }
@@ -76,7 +75,9 @@ namespace Lisple
       sptr_sobject function = ctx.lookup(*make_fn);
       if (*function == *NIL || !Type::EXEC.is_type_of(*function))
       {
-        throw InvocationException("Coercion failed. Review Host Object configuration - Make Function '" + *make_fn + "' is not executable: " + function->to_string(2));
+        throw InvocationException(
+          "Coercion failed. Review Host Object configuration - Make Function '" + *make_fn +
+          "' is not executable: " + function->to_string(2));
       }
       auto& make_exec = function->as<Executable>();
 
@@ -86,13 +87,12 @@ namespace Lisple
 
         if (sig->get_arguments().front().matches(*obj))
         {
-          sptr_sobject_v arg_list { obj };
-          return CoercionResult { true, sig->invoke(ctx, arg_list) };
+          sptr_sobject_v arg_list{obj};
+          return CoercionResult{true, sig->invoke(ctx, arg_list)};
         }
       }
-
     }
-    return CoercionResult { false, nullptr };
+    return CoercionResult{false, nullptr};
   }
 
   bool HostTypeRef::is_host_object() const
@@ -203,8 +203,7 @@ namespace Lisple
     return "}";
   }
 
-  Accessors::Accessors(const acc_get_t& getter,
-                       const acc_set_t& setter)
+  Accessors::Accessors(const acc_get_t& getter, const acc_set_t& setter)
     : getter(getter)
     , setter(setter)
   {
@@ -226,4 +225,4 @@ namespace Lisple
     return AccessorTable(merged_map);
   }
 
-}
+} // namespace Lisple

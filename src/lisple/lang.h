@@ -2,11 +2,10 @@
 #ifndef __LANG_H_
 #define __LANG_H_
 
-#include <cstdint>
-
 #include "exec.h"
 #include "namespace.h"
 #include "type.h"
+#include <cstdint>
 
 namespace Lisple
 {
@@ -201,23 +200,23 @@ namespace Lisple
   FUNC_DECL(NilPredicateFunction, is_nil)
 
   /*!
-  * @brief Inverts a boolean or truthy/falsy expression or value.
-  *
-  * Usage:
-  * @code
-  * (not true)
-  * => false
-  *
-  * (not false)
-  * => true
-  *
-  * (not {:key "value"})
-  * => false
-  *
-  * (not nil)
-  * => true
-  * @endcode
-  */
+   * @brief Inverts a boolean or truthy/falsy expression or value.
+   *
+   * Usage:
+   * @code
+   * (not true)
+   * => false
+   *
+   * (not false)
+   * => true
+   *
+   * (not {:key "value"})
+   * => false
+   *
+   * (not nil)
+   * => true
+   * @endcode
+   */
   FUNC_DECL(NotFunction, invert_boolean, not_any)
 
   FUNC_DECL(IncludeFunction, include_file)
@@ -375,7 +374,6 @@ namespace Lisple
    */
   FUNC_DECL(BetweenPredicateFunction, between);
 
-
   FUNC_DECL(RangeFunction, make_range)
   FUNC_DECL(ThresholdFunction, cap_value)
 
@@ -383,7 +381,7 @@ namespace Lisple
   {
     const bool min;
 
-   public:
+  public:
     MinMaxFunction(bool min);
 
     sptr_sobject select_min_or_max(Context&, sptr_sobject_v& args);
@@ -842,7 +840,8 @@ namespace Lisple
    * |-------|------------------------------------------------------------------|
    * | 0     | The sequence to reduce                                           |
    * | 1     | The initial value of result                                      |
-   * | 2     | A function to apply for each element taking the accumulated result and current element as arguments |
+   * | 2     | A function to apply for each element taking the accumulated      |
+   * |       | result and current element as arguments                          |
    */
   FUNC_DECL(ReduceFunction, reduce)
 
@@ -861,9 +860,10 @@ namespace Lisple
    *
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
-   * |0      | The map to reduce                                                |
-   * |1      | The initial value of result                                      |
-   * |2      | A function to apply for each key-value pair, taking the accumulated result and the key and the value for each pair in the map |
+   * | 0     | The map to reduce                                                |
+   * | 1     | The initial value of result                                      |
+   * | 2     | A function to apply for each key-value pair, taking the key and  |
+   * |       | the value for each pair in the map accumulated result            |
    */
   FUNC_DECL(ReduceKeyValueFunction, reduce_kv)
 
@@ -1001,7 +1001,7 @@ namespace Lisple
   {
     uint8_t modulus;
 
-   public:
+  public:
     OddEvenPredicateFunction(uint8_t modulus);
 
     sptr_sobject exec_oddevenp(Context&, sptr_sobject_v& args);
@@ -1033,6 +1033,6 @@ namespace Lisple
   FUNC_DECL(ResolveFunction, resolve);
 
   FUNC_DECL(RndFunction, random_number)
-}
+} // namespace Lisple
 
 #endif

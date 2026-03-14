@@ -1,36 +1,34 @@
 
 #include "namespace.h"
 
-#include <algorithm>
-#include <memory>
-#include <utility>
-
-#include "form.h"
 #include "exception.h"
+#include "form.h"
 #include "scope.h"
 #include "type.h"
-
+#include <algorithm>
+#include <memory>
 #include <regex>
+#include <utility>
 
 namespace Lisple
 {
   std::regex regex_ns{"^[a-zA-Z0-9\\-_]+(\\.[a-zA-Z0-9\\-_]+)*$"};
 
   Namespace::Namespace(Type type, const std::string& name)
-    : type(type)
-    , name(name)
+      : type(type)
+      , name(name)
   {
   }
 
   Namespace::Namespace(Type type, const std::string& name, std::map<std::string, sptr_sobject> lang)
-    : type(type)
-    , name(name)
+      : type(type)
+      , name(name)
   {
     this->objects = std::move(lang);
   }
 
   Namespace::Namespace(const std::string& name)
-    : Namespace(Type::USER, name)
+      : Namespace(Type::USER, name)
   {
     if (!std::regex_match(name, regex_ns))
     {
@@ -85,7 +83,6 @@ namespace Lisple
     return nullptr;
   }
 
-
   Namespace Namespace::make_lang(std::map<std::string, sptr_sobject> lang)
   {
     return Namespace(Type::LANG, "", lang);
@@ -133,12 +130,11 @@ namespace Lisple
     }
     else if (aliased_namespaces.at(alias) != &ns)
     {
-      throw NamespaceException("Cannot define alias '" + alias + "' for namespace '" + ns.get_name() + "' " +
-                                       "because '" + alias + "' is already an alias for '" +
-                                       aliased_namespaces.at(alias)->get_name() + "' within namespace '" +
-                                       get_name() + "'");
+      throw NamespaceException(
+          "Cannot define alias '" + alias + "' for namespace '" + ns.get_name() + "' " +
+          "because '" + alias + "' is already an alias for '" +
+          aliased_namespaces.at(alias)->get_name() + "' within namespace '" + get_name() + "'");
     }
   }
 
-}
-
+} // namespace Lisple

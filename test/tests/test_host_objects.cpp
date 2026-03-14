@@ -1,4 +1,3 @@
-
 #include "test_host_objects.h"
 
 #include <lisple/context.h>
@@ -30,7 +29,7 @@ namespace Tests
   bool RegNumber::operator<(const RegNumber& other) const
   {
     return this->letters < other.letters ||
-      (this->letters == other.letters && this->numbers < other.numbers);
+           (this->letters == other.letters && this->numbers < other.numbers);
   }
 
   /* Vehicle */
@@ -57,8 +56,7 @@ namespace Tests
 
   bool Vehicle::operator==(const Vehicle& other) const
   {
-    return this->model_name == other.model_name &&
-      this->seats == other.seats;
+    return this->model_name == other.model_name && this->seats == other.seats;
   }
 
   // ===============================================================
@@ -71,19 +69,26 @@ namespace Tests
   SHKEY(SEATS, "seats")
 
   /* RegNumberAdapter */
-  HOST_ADAPTER_IMPL(RegNumberAdapter, RegNumber, &REGNUM_TYPE, (
-                      { K_GET(RegNumberAdapter, LETTERS, letters),
-                        K_GET(RegNumberAdapter, NUMBERS, numbers) }));
+  HOST_ADAPTER_IMPL(RegNumberAdapter,
+                    RegNumber,
+                    &REGNUM_TYPE,
+                    ({K_GET(RegNumberAdapter, LETTERS, letters),
+                      K_GET(RegNumberAdapter, NUMBERS, numbers)}));
 
   ADAPTER_PROP_GET__METHOD(RegNumberAdapter, letters, Lisple::String, get_letters);
   ADAPTER_PROP_GET__METHOD(RegNumberAdapter, numbers, Lisple::String, get_numbers);
 
   /* VehicleAdapter */
-  HOST_ADAPTER_IMPL(VehicleAdapter, Vehicle, &VEHICLE_TYPE, (
-                      { K_GET(VehicleAdapter, MODEL_NAME, model_name),
-                        K_GET(VehicleAdapter, SEATS, seats) }));
+  HOST_ADAPTER_IMPL(VehicleAdapter,
+                    Vehicle,
+                    &VEHICLE_TYPE,
+                    ({K_GET(VehicleAdapter, MODEL_NAME, model_name),
+                      K_GET(VehicleAdapter, SEATS, seats)}));
 
-  ADAPTER_PROP_GET__METHOD(VehicleAdapter, model_name, Lisple::String, get_model_name);
+  Lisple ::sptr_sobject VehicleAdapter ::get_model_name() const
+  {
+    return std ::make_shared<Lisple ::String>(get_self_object().get_model_name());
+  };
   ADAPTER_PROP_GET__METHOD(VehicleAdapter, seats, Lisple::Number, get_seats);
 
   // ===============================================================
@@ -91,44 +96,43 @@ namespace Tests
   // ===============================================================
 
   /* Vehicle Make-function */
-  FUNC_IMPL(VehicleMakeFunction, SIG((FN_ARGS((&Lisple::Type::MAP)),
-                                      EXEC_DISPATCH(&VehicleMakeFunction::make))))
+  FUNC_IMPL(VehicleMakeFunction,
+            SIG((FN_ARGS((&Lisple::Type::MAP)), EXEC_DISPATCH(&VehicleMakeFunction::make))))
 
   FUNC_BODY(VehicleMakeFunction, make)
   {
-    const std::string model_name = args.front()->as<Lisple::Map>().get_property(*MODEL_NAME).as<Lisple::String>().value;
-    int seats = args.front()->as<Lisple::Map>().get_property(*SEATS).as<Lisple::Number>().int_value();
+    const std::string model_name =
+      args.front()->as<Lisple::Map>().get_property(*MODEL_NAME).as<Lisple::String>().value;
+    int seats =
+      args.front()->as<Lisple::Map>().get_property(*SEATS).as<Lisple::Number>().int_value();
 
     return VehicleAdapter::make<Vehicle>(model_name, seats);
   }
 
-  FUNC_IMPL(PrnVehicle, SIG((FN_ARGS((&VEHICLE_TYPE)),
-                             EXEC_DISPATCH(&PrnVehicle::prn))))
+  FUNC_IMPL(PrnVehicle, SIG((FN_ARGS((&VEHICLE_TYPE)), EXEC_DISPATCH(&PrnVehicle::prn))))
 
   FUNC_BODY(PrnVehicle, prn)
   {
     Vehicle& v = args.front()->as<VehicleAdapter>().get_object();
-    ctx.eval("(prn \"The vehicle " +
-             v.get_model_name() +
-             " has " +
-             std::to_string(v.get_seats()) +
-             " seats\")");
+    ctx.eval("(prn \"The vehicle " + v.get_model_name() + " has " +
+             std::to_string(v.get_seats()) + " seats\")");
 
     return args.front();
   }
 
-  FUNC_IMPL(DoubleSizeVehicle, SIG((FN_ARGS((&VEHICLE_TYPE__NO_COERCE)),
-                                    EXEC_DISPATCH(&DoubleSizeVehicle::zoom))))
+  FUNC_IMPL(DoubleSizeVehicle,
+            SIG((FN_ARGS((&VEHICLE_TYPE__NO_COERCE)),
+                 EXEC_DISPATCH(&DoubleSizeVehicle::zoom))))
 
   FUNC_BODY(DoubleSizeVehicle, zoom)
   {
     Vehicle& v = args.front()->as<VehicleAdapter>().get_object();
 
-    return VehicleAdapter::make<Vehicle>(v.get_model_name(), v.get_seats()*2);
+    return VehicleAdapter::make<Vehicle>(v.get_model_name(), v.get_seats() * 2);
   }
 
-  FUNC_IMPL(CountVehicleSeats, SIG((FN_ARGS((&ARRAY_OF_VEHICLE)),
-                                    EXEC_DISPATCH(&CountVehicleSeats::count))))
+  FUNC_IMPL(CountVehicleSeats,
+            SIG((FN_ARGS((&ARRAY_OF_VEHICLE)), EXEC_DISPATCH(&CountVehicleSeats::count))))
 
   FUNC_BODY(CountVehicleSeats, count)
   {
@@ -140,8 +144,9 @@ namespace Tests
     return Lisple::Number::make(count);
   }
 
-  FUNC_IMPL(ArrayOfArrayTaker, SIG((FN_ARGS((&ARRAY_OF_ARRAY_OF_VEHICLE)),
-                                    EXEC_DISPATCH(&ArrayOfArrayTaker::accept))))
+  FUNC_IMPL(ArrayOfArrayTaker,
+            SIG((FN_ARGS((&ARRAY_OF_ARRAY_OF_VEHICLE)),
+                 EXEC_DISPATCH(&ArrayOfArrayTaker::accept))))
 
   FUNC_BODY(ArrayOfArrayTaker, accept)
   {
@@ -159,12 +164,27 @@ namespace Tests
   {
   }
 
-  const std::string& Product::get_name() { return this->name; }
-  float Product::get_price() { return this->price; }
-  int Product::get_sku() { return this->sku; }
+  const std::string& Product::get_name()
+  {
+    return this->name;
+  }
+  float Product::get_price()
+  {
+    return this->price;
+  }
+  int Product::get_sku()
+  {
+    return this->sku;
+  }
 
-  void Product::set_price(float price) { this->price = price; }
-  void Product::set_sku(int sku) { this->sku = sku; }
+  void Product::set_price(float price)
+  {
+    this->price = price;
+  }
+  void Product::set_sku(int sku)
+  {
+    this->sku = sku;
+  }
 
   Book::Book(const std::string& name,
              float price,
@@ -177,8 +197,14 @@ namespace Tests
   {
   }
 
-  const std::string& Book::get_author() { return this->author; }
-  const std::string& Book::get_isbn() { return this->isbn; }
+  const std::string& Book::get_author()
+  {
+    return this->author;
+  }
+  const std::string& Book::get_isbn()
+  {
+    return this->isbn;
+  }
 
   Clothing::Clothing(const std::string& name,
                      float price,
@@ -203,10 +229,12 @@ namespace Tests
   SHKEY(SIZE, "size")
   SHKEY(MATERIAL, "material")
 
-  HOST_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT, (
-                      { K_GET(ProductAdapter, NAME, name),
-                        K_GET_SET(ProductAdapter, PRICE, price),
-                        K_GET_SET(ProductAdapter, SKU, sku)}));
+  HOST_ADAPTER_IMPL(ProductAdapter,
+                    Product,
+                    &PRODUCT,
+                    ({K_GET(ProductAdapter, NAME, name),
+                      K_GET_SET(ProductAdapter, PRICE, price),
+                      K_GET_SET(ProductAdapter, SKU, sku)}));
 
   ADAPTER_PROP_GET__METHOD(ProductAdapter, name, Lisple::String, get_name);
   ADAPTER_PROP_GET__METHOD(ProductAdapter, price, Lisple::Number, get_price);
@@ -214,18 +242,26 @@ namespace Tests
   ADAPTER_PROP_GET__METHOD(ProductAdapter, sku, Lisple::Number, get_sku);
   ADAPTER_PROP_SET__METHOD(ProductAdapter, sku, Lisple::Number, set_sku);
 
-  HOST_SUB_ADAPTER_IMPL(BookAdapter, Book, ProductAdapter, Product, &BOOK, (
-                          { K_GET(BookAdapter, AUTHOR, author),
-                            K_GET(BookAdapter, ISBN, isbn)}));
+  HOST_SUB_ADAPTER_IMPL(BookAdapter,
+                        Book,
+                        ProductAdapter,
+                        Product,
+                        &BOOK,
+                        ({K_GET(BookAdapter, AUTHOR, author),
+                          K_GET(BookAdapter, ISBN, isbn)}));
 
   ADAPTER_PROP_GET__METHOD(BookAdapter, author, Lisple::String, get_author);
   ADAPTER_PROP_GET__METHOD(BookAdapter, isbn, Lisple::String, get_isbn);
 
-  HOST_SUB_ADAPTER_IMPL(ClothingAdapter, Clothing, ProductAdapter, Product, &CLOTHING, (
-                          { K_GET(ClothingAdapter, SIZE, size),
-                            K_GET(ClothingAdapter, MATERIAL, material)}));
+  HOST_SUB_ADAPTER_IMPL(ClothingAdapter,
+                        Clothing,
+                        ProductAdapter,
+                        Product,
+                        &CLOTHING,
+                        ({K_GET(ClothingAdapter, SIZE, size),
+                          K_GET(ClothingAdapter, MATERIAL, material)}));
 
   ADAPTER_PROP_GET__FIELD(ClothingAdapter, size, Lisple::String);
   ADAPTER_PROP_GET__FIELD(ClothingAdapter, material, Lisple::String);
 
-}
+} // namespace Tests

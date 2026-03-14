@@ -1,24 +1,19 @@
 
+#include "test_host_objects.h"
 #include <gtest/gtest.h>
-
-#include <memory>
-#include <vector>
-
-#include <lisple/runtime.h>
 #include <lisple/context.h>
 #include <lisple/form.h>
 #include <lisple/lang.h>
 #include <lisple/namespace.h>
 #include <lisple/reader.h>
+#include <lisple/runtime.h>
 #include <lisple/type.h>
-
-#include "test_host_objects.h"
-#include "runtime_fixture.h"
 
 TEST(HostObjectAdapter_Vehicle, type)
 {
   // Given
-  Lisple::sptr_sobject obj = Tests::VehicleAdapter::make<Tests::Vehicle>("Runaway Train", 500);
+  Lisple::sptr_sobject obj =
+    Tests::VehicleAdapter::make<Tests::Vehicle>("Runaway Train", 500);
   Tests::VehicleAdapter& adapter = obj->as<Tests::VehicleAdapter>();
 
   // Then
@@ -81,11 +76,10 @@ TEST(HostObjectAdapter_Clothing, get_property)
                                                                                "Silk");
 
   // Then
-  EXPECT_EQ(adapter->get_property(Lisple::Key("name")), Lisple::String("Mankini"));
-  EXPECT_EQ(adapter->get_property(Lisple::Key("price")), Lisple::Number(150.50));
-  EXPECT_EQ(adapter->get_property(Lisple::Key("sku")), Lisple::Number(889922123));
-  EXPECT_EQ(adapter->get_property(Lisple::Key("size")), Lisple::String("XS"));
-  EXPECT_EQ(adapter->get_property(Lisple::Key("material")), Lisple::String("Silk"));
-  EXPECT_EQ(adapter->get_property(Lisple::Key("non-existent")), *Lisple::NIL);
-
+  EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("name")), Lisple::String("Mankini"));
+  EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("price")), Lisple::Number(150.50));
+  EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("sku")), Lisple::Number(889922123));
+  EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("size")), Lisple::String("XS"));
+  EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("material")), Lisple::String("Silk"));
+  EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("non-existent")), *Lisple::NIL);
 }

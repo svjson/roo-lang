@@ -2,15 +2,15 @@
 #ifndef __SEXP_EXEC_H_
 #define __SEXP_EXEC_H_
 
+#include "form.h"
+#include "type.h"
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "form.h"
-#include "type.h"
-
+// clang-format off
 #define SIG_PREAMBLE Lisple::arg_v
 #define FN_ARGS1(A1) SIG_PREAMBLE{ Lisple::arg A1 }
 #define FN_ARGS2(A1,A2) SIG_PREAMBLE{ Lisple::arg A1, Lisple::arg A2 }
@@ -36,6 +36,8 @@
 #define DISP_DECL(DISP_NAME) \
   /*! @brief Native executable implementation */                        \
   Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args);
+
+// clang-format on
 
 #define EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                           \
   class EXEC_NAME : public EXEC_TYPE                                                    \
@@ -64,9 +66,9 @@
   DISP_DECL(DISP_NAME3)                                                                 \
   END_CLASS
 
-
 #define SELECT_EXEC_DECL_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
 
+// clang-format off
 #define FUNC_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
 
 #define FUNC_IMPL(FUNC_NAME, SIGNATURE)                                                 \
@@ -77,6 +79,7 @@
 
 
 #define MACRO_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
+// clang-format on
 
 #define MACRO_SUB_DECL(MACRO_BASE, MACRO_NAME, DISP_NAME)                               \
   class MACRO_NAME : public MACRO_BASE                                                  \
@@ -84,18 +87,21 @@
    public:                                                                              \
     MACRO_NAME();                                                                       \
                                                                                         \
-    Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args); \
-  };
+    Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args);
 
-#define MACRO_IMPL(MACRO_NAME, SIGNATURE)                                               \
-  MACRO_NAME::MACRO_NAME()                                                              \
-    : Lisple::Macro(SIGNATURE) { }
+#define MACRO_IMPL(MACRO_NAME, SIGNATURE)                                                          \
+  MACRO_NAME::MACRO_NAME()                                                                         \
+   : Lisple::Macro(SIGNATURE) {}
 
-#define MACRO_SUB_IMPL(MACRO_BASE, MACRO_NAME, SIGNATURE) \
-  MACRO_NAME::MACRO_NAME()                                \
-    : MACRO_BASE(SIGNATURE) { }
+#define MACRO_SUB_IMPL(MACRO_BASE, MACRO_NAME, SIGNATURE)                                          \
+  MACRO_NAME::MACRO_NAME()                                                                         \
+      : MACRO_BASE(SIGNATURE)                                                                      \
+  {                                                                                                \
+  }
 
-#define MACRO_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_sobject_v& args)
+#define MACRO_BODY(FUNC_NAME, DISP_NAME)                                                           \
+  Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]] Lisple::Context& ctx,                 \
+                                            [[maybe_unused]] Lisple::sptr_sobject_v& args)
 
 namespace Lisple
 {
@@ -230,13 +236,13 @@ namespace Lisple
 
   class Function : public Executable
   {
-  public:
+   public:
     Function(std::unique_ptr<Signature> signature);
     Function(std::vector<std::unique_ptr<Signature>> signatures);
 
     const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
   };
 
   class DetachedFunction : public Function
@@ -248,11 +254,14 @@ namespace Lisple
     std::vector<std::unique_ptr<Signature>> make_detached_signature(Function& fn);
 
    public:
-    DetachedFunction(std::shared_ptr<Context> ctx, std::shared_ptr<Function>& function, sptr_sobject_v bounds_args = {});
+    DetachedFunction(std::shared_ptr<Context> ctx,
+                     std::shared_ptr<Function>& function,
+                     sptr_sobject_v bounds_args = {});
 
     static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
                                                            std::shared_ptr<Object> fun_obj,
-                                                           sptr_sobject_v bound_args= {});
+                                                           sptr_sobject_v bound_args = {});
+
     static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
                                                            std::shared_ptr<Function> fun,
                                                            sptr_sobject_v bound_args = {});
@@ -298,14 +307,14 @@ namespace Lisple
 
   class Macro : public Executable
   {
-  public:
+   public:
     Macro(std::unique_ptr<Signature> signature);
     Macro(Lisple::uptr_sig_v signatures);
 
     Signature& get_signature(sptr_sobject_v& args);
 
-    std::string to_string(int depth=-1) const override;
+    std::string to_string(int depth = -1) const override;
   };
-}
+} // namespace Lisple
 
 #endif

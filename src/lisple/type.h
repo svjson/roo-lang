@@ -131,14 +131,16 @@ namespace Lisple
     inline const SeqRef ARRAY_OF_SYMBOL(&ARRAY, &SYMBOL, "[Symbol]");
     inline const SeqRef ARRAY_OF_MAP(&ARRAY, &MAP, "[Map]");
 
-    inline const MultiRef QUALIFIABLE({ &KEY, &WORD, &SYMBOL },  "Qualifiable");
+    inline const MultiRef QUALIFIABLE({&KEY, &WORD, &SYMBOL}, "Qualifiable");
 
-    inline const MultiRef SEQ(std::vector<const TypeRef*>{ &LIST, &ARRAY, &MAP, &HOST_SEQ }, "Seq");
-    inline const MultiRef EXEC(std::vector<const TypeRef*>{ &FUNCTION, &MACRO, &KEY }, "Exec");
-    inline const MultiRef COMPLEX(std::vector<const TypeRef*>{ &MAP, &HOST_OBJECT}, "Complex");
+    inline const MultiRef SEQ(std::vector<const TypeRef*>{&LIST, &ARRAY, &MAP, &HOST_SEQ},
+                              "Seq");
+    inline const MultiRef EXEC(std::vector<const TypeRef*>{&FUNCTION, &MACRO, &KEY}, "Exec");
+    inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP, &HOST_OBJECT},
+                                  "Complex");
 
     inline const AnyRef ANY;
-  }
-}
+  } // namespace Type
+} // namespace Lisple
 
 #endif

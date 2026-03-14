@@ -1,24 +1,24 @@
 
 #include "form.h"
 
+#include "exception.h"
+#include "type.h"
 #include <algorithm>
+#include <cmath>
 #include <compare>
 #include <iterator>
-#include <cmath>
+#include <sstream>
 #include <stddef.h>
 #include <stdexcept>
-#include <sstream>
-
-#include "type.h"
-#include "exception.h"
 
 namespace Lisple
 {
   const int INT_CONSTANTS_SIZE = 1001;
-  std::vector<std::shared_ptr<Number>> INT_CONSTANTS = []() {
+  std::vector<std::shared_ptr<Number>> INT_CONSTANTS = []()
+  {
     std::vector<std::shared_ptr<Number>> ints(INT_CONSTANTS_SIZE);
 
-    for (int i=0; i<INT_CONSTANTS_SIZE; i++)
+    for (int i = 0; i < INT_CONSTANTS_SIZE; i++)
     {
       ints[i] = std::make_shared<Number>(i);
     }
@@ -27,9 +27,8 @@ namespace Lisple
   }();
 
   Object::Object(Form form)
-    : type(form)
+      : type(form)
   {
-
   }
 
   Form Object::get_type() const
@@ -67,9 +66,10 @@ namespace Lisple
     return NIL;
   }
 
-  void Object::set_property(const Object &key, sptr_sobject&)
+  void Object::set_property(const Object& key, sptr_sobject&)
   {
-    throw InvocationException("Cannot set property '" + key.to_string() + "' of " + this->to_string(2));
+    throw InvocationException("Cannot set property '" + key.to_string() + "' of " +
+                              this->to_string(2));
   }
 
   void Object::set_property(Context*, const Object& key, sptr_sobject& value)
@@ -110,7 +110,8 @@ namespace Lisple
   /*
    * Nil - no values here
    */
-  Nil::Nil() : Object(Form::NIL)
+  Nil::Nil()
+      : Object(Form::NIL)
   {
   }
 
@@ -137,7 +138,8 @@ namespace Lisple
   /*
    * Discard - Ignored form
    */
-  Discard::Discard() : Object(Form::DISCARD)
+  Discard::Discard()
+      : Object(Form::DISCARD)
   {
   }
 
@@ -163,29 +165,29 @@ namespace Lisple
 
   /* QualifiableStringValue */
   QualifiableStringValue::QualifiableStringValue(Form type, const std::string& value)
-    : Value(type, value)
+      : Value(type, value)
   {
     std::stringstream ss(value);
     std::vector<std::string> tokens;
     std::string token;
-    while(std::getline(ss, token, '/'))
+    while (std::getline(ss, token, '/'))
     {
       tokens.push_back(token);
     }
 
     switch (tokens.size())
     {
-     case 0:
+    case 0:
       throw IdentifierException("Invalid symbol. Cannot be empty.");
-     case 1:
+    case 1:
       this->ns_qualifier = "";
       this->identifier = tokens.front();
       break;
-     case 2:
+    case 2:
       this->ns_qualifier = tokens.front();
       this->identifier = tokens.back();
       break;
-     default:
+    default:
       throw IdentifierException("Invalid symbol: " + value);
     }
   }
@@ -205,12 +207,11 @@ namespace Lisple
     return identifier;
   }
 
-
   /**
    * String form
    */
   String::String(const std::string& value)
-    : Value(Form::STRING, value)
+      : Value(Form::STRING, value)
   {
   }
 
@@ -238,9 +239,8 @@ namespace Lisple
    * Boolean form
    */
   Boolean::Boolean(const bool value)
-    : Value(Form::BOOLEAN, value)
+      : Value(Form::BOOLEAN, value)
   {
-
   }
 
   std::string Boolean::to_string(int) const
@@ -267,14 +267,13 @@ namespace Lisple
    * Char form
    */
   Char::Char(const char value)
-    : Value(Form::CHAR, value)
+      : Value(Form::CHAR, value)
   {
-
   }
 
   std::string Char::to_string(int) const
   {
-    return "'" + std::string {value} + "'";
+    return "'" + std::string{value} + "'";
   }
 
   std::shared_ptr<Char> Char::make(char value)
@@ -282,12 +281,11 @@ namespace Lisple
     return std::make_shared<Char>(value);
   }
 
-
   /**
    * Key form
    */
   Key::Key(const std::string& value)
-    : QualifiableStringValue(Form::KEY, value)
+      : QualifiableStringValue(Form::KEY, value)
   {
   }
 
@@ -324,7 +322,7 @@ namespace Lisple
    * QSymbol - a quoted word
    */
   QSymbol::QSymbol(const std::string& value)
-    : QualifiableStringValue(Form::SYMBOL, value)
+      : QualifiableStringValue(Form::SYMBOL, value)
   {
   }
 
@@ -342,7 +340,7 @@ namespace Lisple
    * Word - an actual word
    */
   Word::Word(const std::string& value)
-    : QualifiableStringValue(Form::WORD, value)
+      : QualifiableStringValue(Form::WORD, value)
   {
   }
 
@@ -365,36 +363,36 @@ namespace Lisple
    * Number
    */
   Number::Number(int value)
-    : Value(Form::NUMBER, static_cast<float>(value))
-    , num_type(NumberType::INT)
+      : Value(Form::NUMBER, static_cast<float>(value))
+      , num_type(NumberType::INT)
   {
   }
 
   Number::Number(unsigned int value)
-    : Number(static_cast<int>(value))
+      : Number(static_cast<int>(value))
   {
   }
 
   Number::Number(unsigned long value)
-    : Number(static_cast<long>(value))
+      : Number(static_cast<long>(value))
   {
   }
 
   Number::Number(float value)
-    : Value(Form::NUMBER, value)
-    , num_type(NumberType::FLOAT)
+      : Value(Form::NUMBER, value)
+      , num_type(NumberType::FLOAT)
   {
   }
 
   Number::Number(double value)
-    : Value(Form::NUMBER, value)
-    , num_type(NumberType::FLOAT)
+      : Value(Form::NUMBER, value)
+      , num_type(NumberType::FLOAT)
   {
   }
 
   Number::Number(long value)
-    : Value(Form::NUMBER, value)
-    , num_type(NumberType::LONG)
+      : Value(Form::NUMBER, value)
+      , num_type(NumberType::LONG)
   {
   }
 
@@ -420,8 +418,7 @@ namespace Lisple
 
   std::shared_ptr<Number> Number::operator+(const Number& other)
   {
-    if (num_type == NumberType::INT &&
-        other.num_type == NumberType::INT)
+    if (num_type == NumberType::INT && other.num_type == NumberType::INT)
     {
       return make(static_cast<int>(value + other.value));
     }
@@ -431,8 +428,7 @@ namespace Lisple
 
   std::shared_ptr<Number> Number::operator-(const Number& other)
   {
-    if (num_type == NumberType::INT &&
-        other.num_type == NumberType::INT)
+    if (num_type == NumberType::INT && other.num_type == NumberType::INT)
     {
       return make(static_cast<int>(value - other.value));
     }
@@ -442,8 +438,7 @@ namespace Lisple
 
   std::shared_ptr<Number> Number::operator*(const Number& other)
   {
-    if (num_type == NumberType::INT &&
-        other.num_type == NumberType::INT)
+    if (num_type == NumberType::INT && other.num_type == NumberType::INT)
     {
       return make(static_cast<int>(value * other.value));
     }
@@ -561,35 +556,35 @@ namespace Lisple
    * Seq - Abstract base for lists, arrays and maps
    */
   Seq::Seq(Form form)
-    : Object(form)
+      : Object(form)
   {
   }
 
   std::shared_ptr<Seq> Seq::new_sequence(Form type)
   {
-    switch(type)
+    switch (type)
     {
-      case Form::LIST:
-        return std::make_shared<List>();
-      case Form::ARRAY:
-      case Form::HOST_SEQ:
-        return std::make_shared<Array>();
-      case Form::MAP:
-        return std::make_shared<Map>();
-      default:
-        throw LispleException("Type is not a sequence");
+    case Form::LIST:
+      return std::make_shared<List>();
+    case Form::ARRAY:
+    case Form::HOST_SEQ:
+      return std::make_shared<Array>();
+    case Form::MAP:
+      return std::make_shared<Map>();
+    default:
+      throw LispleException("Type is not a sequence");
     }
   }
 
   Seq::Seq(Form form, const sptr_sobject_v& children)
-    : Object(form)
-    , children(children)
+      : Object(form)
+      , children(children)
   {
   }
 
   sptr_sobject Seq::get_sptr_property(const Object& form) const
   {
-    for (auto i = this->children.begin(); i < this->children.end(); i+= 2)
+    for (auto i = this->children.begin(); i < this->children.end(); i += 2)
     {
       if (**i == form)
       {
@@ -622,10 +617,11 @@ namespace Lisple
   sptr_sobject_v Seq::tail()
   {
     sptr_sobject_v tail;
-    if (children.size() < 2) return tail;
+    if (children.size() < 2)
+      return tail;
 
-    tail.reserve(children.size()-1);
-    for (size_t i=1; i<children.size(); i++)
+    tail.reserve(children.size() - 1);
+    for (size_t i = 1; i < children.size(); i++)
     {
       tail.push_back(children[i]);
     }
@@ -648,9 +644,9 @@ namespace Lisple
         {
           str += " ";
         }
-        if(element)
+        if (element)
         {
-          str += element->to_string(depth == -1 ? -1 : depth-1);
+          str += element->to_string(depth == -1 ? -1 : depth - 1);
         }
       }
     }
@@ -668,7 +664,7 @@ namespace Lisple
     {
       return false;
     }
-    for (size_t i=0; i<children.size(); i++)
+    for (size_t i = 0; i < children.size(); i++)
     {
       if (*children[i] != *other_sexp.children[i])
       {
@@ -697,16 +693,15 @@ namespace Lisple
    * List
    */
   List::List(bool q)
-    : Seq(Form::LIST)
-    , q(q)
+      : Seq(Form::LIST)
+      , q(q)
   {
   }
 
   List::List(const sptr_sobject_v& children, bool q)
-    : Seq(Form::LIST, children)
-    , q(q)
+      : Seq(Form::LIST, children)
+      , q(q)
   {
-
   }
 
   std::shared_ptr<List> List::from(sptr_sobject head, sptr_sobject_v tail)
@@ -717,10 +712,10 @@ namespace Lisple
 
   std::shared_ptr<List> List::insert(unsigned int index, sptr_sobject& element)
   {
-    sptr_sobject_v new_elements(children.size()+1);
-    std::copy(children.begin(), children.begin()+index, new_elements.begin());
+    sptr_sobject_v new_elements(children.size() + 1);
+    std::copy(children.begin(), children.begin() + index, new_elements.begin());
     new_elements[index] = element;
-    std::copy(children.begin()+index, children.end(), new_elements.begin()+index+1 );
+    std::copy(children.begin() + index, children.end(), new_elements.begin() + index + 1);
     return std::make_shared<List>(new_elements, q);
   }
 
@@ -760,12 +755,12 @@ namespace Lisple
    * Array
    */
   Array::Array()
-    : Seq(Form::ARRAY)
+      : Seq(Form::ARRAY)
   {
   }
 
   Array::Array(const sptr_sobject_v& children)
-    : Seq(Form::ARRAY, children)
+      : Seq(Form::ARRAY, children)
   {
   }
 
@@ -788,12 +783,12 @@ namespace Lisple
    * Map
    */
   Map::Map()
-    : Seq(Form::MAP)
+      : Seq(Form::MAP)
   {
   }
 
   Map::Map(const sptr_sobject_v& children)
-    : Seq(Form::MAP, children)
+      : Seq(Form::MAP, children)
   {
     this->validate_keys();
   }
@@ -810,13 +805,10 @@ namespace Lisple
     {
       int count = std::count_if(keys.begin(),
                                 keys.end(),
-                                [key](const Object* other)
-                                {
-                                  return *key == *other;
-                                });
+                                [key](const Object* other) { return *key == *other; });
       if (count != 1)
       {
-        throw TypeError("Duplicate key " + key->to_string() + " in Map: " +this->to_string(2));
+        throw TypeError("Duplicate key " + key->to_string() + " in Map: " + this->to_string(2));
       }
     }
   }
@@ -825,7 +817,7 @@ namespace Lisple
   {
     std::vector<Object*> keys;
     keys.reserve(size());
-    for (size_t i = 0; i<children.size(); i+=2)
+    for (size_t i = 0; i < children.size(); i += 2)
     {
       keys.push_back(children[i].get());
     }
@@ -836,7 +828,7 @@ namespace Lisple
   {
     sptr_sobject_v keys;
     keys.reserve(size());
-    for (size_t i=0; i<children.size(); i+=2)
+    for (size_t i = 0; i < children.size(); i += 2)
     {
       keys.push_back(children[i]);
     }
@@ -862,11 +854,11 @@ namespace Lisple
 
   void Map::set_property(const Object& key, sptr_sobject& value)
   {
-    for (size_t i=0; i<children.size(); i+=2)
+    for (size_t i = 0; i < children.size(); i += 2)
     {
       if (*children[i] == key)
       {
-        children[i+1] = value;
+        children[i + 1] = value;
         return;
       }
     }
@@ -893,7 +885,7 @@ namespace Lisple
 
     int index = -1;
 
-    for (size_t i=0; i<children.size(); i+=2)
+    for (size_t i = 0; i < children.size(); i += 2)
     {
       if (*children[i] == key)
       {
@@ -904,8 +896,8 @@ namespace Lisple
 
     if (index != -1)
     {
-      removed_val = children[index+1];
-      children.erase(children.begin() + index, children.begin() + index+2);
+      removed_val = children[index + 1];
+      children.erase(children.begin() + index, children.begin() + index + 2);
     }
 
     return removed_val;
@@ -931,4 +923,4 @@ namespace Lisple
   template class Value<char>;
   template class Value<float>;
 
-}
+} // namespace Lisple
