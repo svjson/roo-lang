@@ -230,6 +230,20 @@ namespace Lisple
     return this->value.size();
   }
 
+  sptr_sobject_v& String::get_children()
+  {
+    if (_children.empty())
+    {
+      _children.reserve(this->value.length());
+      for (char c : this->value)
+      {
+        _children.push_back(Char::make(c));
+      }
+    }
+
+    return _children;
+  }
+
   std::shared_ptr<String> String::make(const std::string& value)
   {
     return std::make_shared<String>(value);
