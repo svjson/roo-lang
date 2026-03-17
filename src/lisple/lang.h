@@ -829,6 +829,24 @@ namespace Lisple
   FUNC_DECL(RemoveFirstFunction, remove_first)
 
   /*!
+   * @brief Yield a copy of a sequence, omitting element n
+   *
+   * Usage:
+   * @code
+   * (remove-nth seq n)
+   *
+   * (remove-nth [1 2 3] 1)
+   * => [1 3]
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The seq to copy                                                  |
+   * | 1     | The index of the element to omit                                 |
+   */
+  FUNC_DECL(RemoveNthFunction, remove_nth)
+
+  /*!
    * @brief Remove the nth value of a Seq
    *
    * Usage:

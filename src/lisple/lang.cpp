@@ -109,6 +109,7 @@ namespace Lisple
     lang.emplace("remove", std::make_shared<RemoveFunction>());
     lang.emplace("remove-first", std::make_shared<RemoveFirstFunction>());
     lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
+    lang.emplace("remove-nth", std::make_shared<RemoveNthFunction>());
     lang.emplace("remove-nth!", std::make_shared<RemoveNthBangFunction>());
     lang.emplace("repeat", std::make_shared<RepeatFunction>());
     lang.emplace("resolve", std::make_shared<ResolveFunction>());
@@ -1885,6 +1886,33 @@ namespace Lisple
       seq.replace_children(children);
     }
     return args.back();
+  }
+
+  /* RemoveNthFunction - remove-nth! */
+  FUNC_IMPL(RemoveNthFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&RemoveNthFunction::remove_nth))))
+
+  FUNC_BODY(RemoveNthFunction, remove_nth)
+  {
+    if (args[0] == Lisple::NIL) return Lisple::NIL;
+
+    auto& original = args[0]->as<Lisple::Seq>();
+    sptr_sobject result = Seq::new_sequence(original.get_type(), original.size());
+
+    int n = args[1]->as<Lisple::Number>().int_value();
+
+    sptr_sobject_v& children = original.get_children();
+
+    for (size_t i = 0; i < original.size(); i++)
+    {
+      if (static_cast<int>(i) != n)
+      {
+        result->append(children[i]);
+      }
+    }
+
+    return result;
   }
 
   /* RemoveNthBangFunction - remove-nth! */
