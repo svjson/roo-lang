@@ -61,6 +61,7 @@ namespace Lisple
     lang.emplace("defun", std::make_shared<DefunMacro>());
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang.emplace("do", std::make_shared<DoMacro>());
+    lang.emplace("dotimes", std::make_shared<DoTimesMacro>());
     lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
     lang.emplace("eval", std::make_shared<EvalFunction>());
     lang.emplace("even?", std::make_shared<OddEvenPredicateFunction>(0));
@@ -519,6 +520,59 @@ namespace Lisple
     return ret;
   }
 
+  /* DoTimesMacro - dotimes */
+  MACRO_IMPL(DoTimesMacro,
+             SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                  EXEC_DISPATCH(&DoTimesMacro::make_dotimes))))
+
+  MACRO_BODY(DoTimesMacro, make_dotimes)
+  {
+    size_t n_args = args.size();
+    sptr_sobject_v result;
+
+    Array& seq_expr = args[0]->as<Lisple::Array>();
+    if (seq_expr.size() < 1 || seq_expr.size() > 2)
+    {
+      throw LispleException("Invalid binding form: " + seq_expr.to_string());
+    }
+
+    std::unique_ptr<ArgumentBinding> bind_var = nullptr;
+
+    sptr_sobject num_iter = ctx.eval(seq_expr.children.back());
+    if (num_iter->get_type() == Form::NUMBER)
+    {
+      int iterations = num_iter->as<Number>().int_value();
+
+      if (seq_expr.size() == 2)
+      {
+        bind_var = ArgumentBinding::create(*seq_expr.get_children()[0]);
+      }
+
+      if (iterations > 0)
+      {
+        result.reserve(iterations);
+
+        ctx.push_context(true);
+        Scope& iter_scope = ctx.current_scope();
+        for (int i = 0; i < iterations; i++)
+        {
+          sptr_sobject si = Number::make(i);
+          if (bind_var) bind_var->apply(iter_scope, si);
+          sptr_sobject iter_result;
+          for (size_t i = 1; i < n_args; i++)
+          {
+            iter_result = ctx.eval(args[i]);
+          }
+          result.push_back(std::move(iter_result));
+          iter_scope.clear();
+        }
+        ctx.pop_context();
+      }
+    }
+    return std::make_shared<Array>(std::move(result));
+  }
+
+  /* PrintFunction - prn */
   FUNC_IMPL(PrintFunction,
             SIG((FN_ARGS((&VARARG, &Type::ANY, true)),
                  EXEC_DISPATCH(&PrintFunction::do_print))))

@@ -60,6 +60,8 @@ namespace Lisple
   MACRO_DECL(WhenLetMacro, make_when_let)
 
   MACRO_DECL(DoMacro, make_do)
+  MACRO_DECL(DoTimesMacro, make_dotimes)
+
   MACRO_DECL(WhileMacro, make_while)
 
   MACRO_DECL(IfLetMacro, make_if_let)
