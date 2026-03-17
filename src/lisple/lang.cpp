@@ -1790,20 +1790,34 @@ namespace Lisple
 
   /* RemoveFunction */
   FUNC_IMPL(RemoveFunction,
-            SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
-                 EXEC_DISPATCH(&RemoveFunction::remove_seq))))
+            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                       EXEC_DISPATCH(&RemoveFunction::remove_seq)),
+                      (FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                       EXEC_DISPATCH(&RemoveFunction::remove_seq))))
 
   FUNC_BODY(RemoveFunction, remove_seq)
   {
-    auto original = args.back();
-    Lisple::sptr_sobject result = Lisple::Seq::new_sequence(original->get_type());
+    Object* original;
+    Executable* remove_fn;
 
-    auto& remove_fn = args[0]->as<Lisple::Executable>();
+    if (Type::SEQ.is_type_of(*args[0]))
+    {
+      original = args[0].get();
+      remove_fn = &args[1]->as<Executable>();
+    }
+    else
+    {
+      original = args[1].get();
+      remove_fn = &args[0]->as<Executable>();
+    }
+
+    Lisple::sptr_sobject result =
+      Lisple::Seq::new_sequence(original->get_type(), original->size());
 
     for (auto val : original->get_children())
     {
       Lisple::sptr_sobject_v val_args{val};
-      Lisple::sptr_sobject test_result = remove_fn.execute(ctx, val_args);
+      Lisple::sptr_sobject test_result = remove_fn->execute(ctx, val_args);
       if (*test_result == *Lisple::B_FALSE || *test_result == *Lisple::NIL)
       {
         result->append(val);
