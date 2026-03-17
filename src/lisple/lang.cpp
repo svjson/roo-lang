@@ -2346,6 +2346,11 @@ namespace Lisple
 
   FUNC_BODY(RndFunction, random_number)
   {
+    if (args[0]->get_type() != Form::NUMBER &&
+        (args.size() == 2 && args[1]->get_type() != Form::NUMBER))
+    {
+      return Lisple::NIL;
+    }
     int min = args.size() == 1 ? 0 : args[0]->as<Lisple::Number>().value;
     int max = args[args.size() == 1 ? 0 : 1]->as<Lisple::Number>().value;
 
