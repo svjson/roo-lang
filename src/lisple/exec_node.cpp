@@ -64,8 +64,7 @@ namespace Lisple
       auto& list = obj->as<List>();
       const auto& children = list.get_children();
 
-      if (children.empty())
-        throw LispleException("Cannot lower empty list");
+      if (children.empty()) throw LispleException("Cannot lower empty list");
 
       std::unique_ptr<ExecNode> callee = lower(children[0]);
 
@@ -88,83 +87,83 @@ namespace Lisple
   sptr_sobject exec(Context& ctx, const ExecNode& node)
   {
     return std::visit(
-        [&](auto const& n) -> sptr_sobject
+      [&](auto const& n) -> sptr_sobject
+      {
+        using T = std::decay_t<decltype(n)>;
+
+        if constexpr (std::is_same_v<T, LiteralNode>)
         {
-          using T = std::decay_t<decltype(n)>;
+          return n.value;
+        }
+        else if constexpr (std::is_same_v<T, LookupNode>)
+        {
+          sptr_sobject result = ctx.lookup(n.identifier);
+          return result;
+        }
+        else if constexpr (std::is_same_v<T, MapNode>)
+        {
+          sptr_sobject_v elements;
+          elements.reserve(n.elements.size());
 
-          if constexpr (std::is_same_v<T, LiteralNode>)
+          for (auto& lmnt : n.elements)
           {
-            return n.value;
+            elements.push_back(exec(ctx, *lmnt));
           }
-          else if constexpr (std::is_same_v<T, LookupNode>)
+
+          return Lisple::Map::make(elements);
+        }
+        else if constexpr (std::is_same_v<T, VectorNode>)
+        {
+          sptr_sobject_v elements;
+          elements.reserve(n.elements.size());
+
+          for (auto& lmnt : n.elements)
           {
-            sptr_sobject result = ctx.lookup(n.identifier);
-            return result;
+            elements.push_back(exec(ctx, *lmnt));
           }
-          else if constexpr (std::is_same_v<T, MapNode>)
+
+          return Lisple::Array::make(elements);
+        }
+        else if constexpr (std::is_same_v<T, CallNode>)
+        {
+          sptr_sobject fn = exec(ctx, *n.callee);
+
+          sptr_sobject_v args;
+          args.reserve(n.args.size());
+
+          sptr_sobject_v raw_args = node.form->as<List>().tail();
+
+          Signature* sig = fn->get_type() == Form::MACRO
+                             ? fn->as<Macro>().get_signature(ctx, raw_args)
+                             : nullptr;
+
+          if (sig)
           {
-            sptr_sobject_v elements;
-            elements.reserve(n.elements.size());
-
-            for (auto& lmnt : n.elements)
+            for (size_t i = 0; i < n.args.size(); i++)
             {
-              elements.push_back(exec(ctx, *lmnt));
-            }
-
-            return Lisple::Map::make(elements);
-          }
-          else if constexpr (std::is_same_v<T, VectorNode>)
-          {
-            sptr_sobject_v elements;
-            elements.reserve(n.elements.size());
-
-            for (auto& lmnt : n.elements)
-            {
-              elements.push_back(exec(ctx, *lmnt));
-            }
-
-            return Lisple::Array::make(elements);
-          }
-          else if constexpr (std::is_same_v<T, CallNode>)
-          {
-            sptr_sobject fn = exec(ctx, *n.callee);
-
-            sptr_sobject_v args;
-            args.reserve(n.args.size());
-
-            sptr_sobject_v raw_args = node.form->as<List>().tail();
-
-            Signature* sig = fn->get_type() == Form::MACRO
-                                 ? fn->as<Macro>().get_signature(ctx, raw_args)
-                                 : nullptr;
-
-            if (sig)
-            {
-              for (size_t i = 0; i < n.args.size(); i++)
-              {
-                auto& arg = n.args[i];
-                if (sig->should_eval_arg(i))
-                {
-                  args.push_back(exec(ctx, *arg));
-                }
-                else
-                {
-                  args.push_back(arg->form);
-                }
-              }
-            }
-            else
-            {
-              for (auto& arg : n.args)
+              auto& arg = n.args[i];
+              if (sig->should_eval_arg(i))
               {
                 args.push_back(exec(ctx, *arg));
               }
+              else
+              {
+                args.push_back(arg->form);
+              }
             }
-
-            return fn->execute(ctx, args);
           }
-        },
-        node.data);
+          else
+          {
+            for (auto& arg : n.args)
+            {
+              args.push_back(exec(ctx, *arg));
+            }
+          }
+
+          return fn->execute(ctx, args);
+        }
+      },
+      node.data);
   }
 
 } // namespace Lisple
