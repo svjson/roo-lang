@@ -2070,6 +2070,7 @@ namespace Lisple
   FUNC_BODY(FindIndexFunction, find_index_in_seq)
   {
     auto original = args[0];
+    if (NIL == original) return NIL;
 
     auto& filter_fn = args.back()->as<Executable>();
 
