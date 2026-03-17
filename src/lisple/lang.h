@@ -90,7 +90,8 @@ namespace Lisple
    * | Arg # | Description                                                |
    * |-------|------------------------------------------------------------|
    * | 0     | A conditional form - anything that can be considered truthy or falsy |
-   * | 1...  | Any number of forms to be evaluated if the conditional evaluates to a truthy value |
+   * | 1...  | Any number of forms to be evaluated if the conditional evaluates to a truthy
+   * value |
    */
   MACRO_DECL(WhenMacro, make_when)
 
@@ -383,7 +384,7 @@ namespace Lisple
   {
     const bool min;
 
-  public:
+   public:
     MinMaxFunction(bool min);
 
     sptr_sobject select_min_or_max(Context&, sptr_sobject_v& args);
@@ -795,7 +796,7 @@ namespace Lisple
    * => [1 3]
    *
    * (remove nil? [1 2 nil 5 6 nil 8 nil])
-   * => [1 2 4 5 8]
+   * => [1 2 4 5 6 8]
    * @endcode
    *
    * | Arg # | Description                                                      |
@@ -1041,7 +1042,7 @@ namespace Lisple
   {
     uint8_t modulus;
 
-  public:
+   public:
     OddEvenPredicateFunction(uint8_t modulus);
 
     sptr_sobject exec_oddevenp(Context&, sptr_sobject_v& args);
