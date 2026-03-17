@@ -807,6 +807,28 @@ namespace Lisple
   FUNC_DECL(RemoveFunction, remove_seq)
 
   /*!
+   * @brief Yield a new Seq containing all elements except the first element that
+   * yields a truthy value when applying a function/executable to each element.
+   *
+   * Usage:
+   * @code
+   * (remove-first exec my-seq)
+   *
+   * (remove-first (fn [n] (even? n)) [1 2 3 4])
+   * => [1 3 4]
+   *
+   * (remove nil? [1 2 nil 5 6 nil 8 nil])
+   * => [1 2 4 5 6 nil 8 nil]
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The function/executable to apply to each element                 |
+   * | 1     | The seq to filter                                                |
+   */
+  FUNC_DECL(RemoveFirstFunction, remove_first)
+
+  /*!
    * @brief Remove the nth value of a Seq
    *
    * Usage:

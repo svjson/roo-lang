@@ -107,6 +107,7 @@ namespace Lisple
     lang.emplace("reduce", std::make_shared<ReduceFunction>());
     lang.emplace("reduce-kv", std::make_shared<ReduceKeyValueFunction>());
     lang.emplace("remove", std::make_shared<RemoveFunction>());
+    lang.emplace("remove-first", std::make_shared<RemoveFirstFunction>());
     lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
     lang.emplace("remove-nth!", std::make_shared<RemoveNthBangFunction>());
     lang.emplace("repeat", std::make_shared<RepeatFunction>());
@@ -1821,6 +1822,37 @@ namespace Lisple
       if (*test_result == *Lisple::B_FALSE || *test_result == *Lisple::NIL)
       {
         result->append(val);
+      }
+    }
+
+    return result;
+  }
+
+  /* RemoveFirstFunction - find-first */
+  FUNC_IMPL(RemoveFirstFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+                 EXEC_DISPATCH(&RemoveFirstFunction::remove_first))))
+
+  FUNC_BODY(RemoveFirstFunction, remove_first)
+  {
+    auto original = args.back();
+    Lisple::sptr_sobject result =
+      Lisple::Seq::new_sequence(original->get_type(), original->size());
+
+    auto& remove_fn = args[0]->as<Lisple::Executable>();
+
+    bool removed = false;
+    for (auto val : original->get_children())
+    {
+      Lisple::sptr_sobject_v val_args{val};
+      Lisple::sptr_sobject test_result = remove_fn.execute(ctx, val_args);
+      if (removed || *test_result == *Lisple::B_FALSE || *test_result == *Lisple::NIL)
+      {
+        result->append(val);
+      }
+      else
+      {
+        removed = true;
       }
     }
 
