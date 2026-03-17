@@ -424,7 +424,7 @@ TEST(Macro, get_signature__sig_with_varargs__array__form)
   // Given
   Lisple::Runtime runtime;
   Lisple::Context ctx(runtime);
-  Lisple::DoTimesMacro dotimes_macro;
+  Lisple::DoTimesForm dotimes;
 
   Lisple::sptr_sobject_v array__form{
     Lisple::Array::make({Lisple::Word::make("n"), Lisple::Number::make(4)}),
@@ -432,7 +432,7 @@ TEST(Macro, get_signature__sig_with_varargs__array__form)
       {Lisple::Word::make("+"), Lisple::Number::make(2), Lisple::Number::make(10)})};
 
   // When
-  Lisple::Signature* sig = dotimes_macro.get_signature(ctx, array__form);
+  Lisple::Signature* sig = dotimes.get_signature(ctx, array__form);
 
   // Then
   ASSERT_NE(sig, nullptr);

@@ -237,7 +237,6 @@ namespace Lisple
    */
   class Number : public Value<float>
   {
-    NumberType num_type;
 
    public:
     Number(int value);
@@ -249,6 +248,7 @@ namespace Lisple
 
     std::string to_string(int depth = -1) const override;
 
+    NumberType num_type;
     int int_value() const;
     long long_value() const;
     float float_value() const;

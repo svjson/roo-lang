@@ -1,9 +1,9 @@
 
-#ifndef __LISPLE_AST_H_
-#define __LISPLE_AST_H_
+#ifndef LISPLE__EXEC_TREE_H
+#define LISPLE__EXEC_TREE_H
 
-#include "form.h"
-#include "type.h"
+#include "../form.h"
+#include "../type.h"
 #include <cstdint>
 #include <variant>
 
@@ -11,6 +11,7 @@ namespace Lisple
 {
   struct ExecNode;
   using uptr_exec_node = std::unique_ptr<ExecNode>;
+  using ptr_exec_node_v = std::vector<ExecNode*>;
 
   enum class ExecNodeType : uint8_t
   {
@@ -24,7 +25,7 @@ namespace Lisple
     sptr_sobject value;
 
     explicit LiteralNode(sptr_sobject v)
-        : value(std::move(v))
+      : value(std::move(v))
     {
     }
   };
@@ -34,7 +35,7 @@ namespace Lisple
     Word identifier;
 
     LookupNode(Word id)
-        : identifier(id)
+      : identifier(id)
     {
     }
   };
@@ -44,7 +45,7 @@ namespace Lisple
     std::vector<uptr_exec_node> elements;
 
     MapNode(std::vector<uptr_exec_node> elements)
-        : elements(std::move(elements))
+      : elements(std::move(elements))
     {
     }
   };
@@ -54,7 +55,7 @@ namespace Lisple
     std::vector<uptr_exec_node> elements;
 
     VectorNode(std::vector<uptr_exec_node> elements)
-        : elements(std::move(elements))
+      : elements(std::move(elements))
     {
     }
   };
@@ -65,10 +66,12 @@ namespace Lisple
     std::vector<uptr_exec_node> args;
 
     CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args)
-        : callee(std::move(callee))
-        , args(std::move(args))
+      : callee(std::move(callee))
+      , args(std::move(args))
     {
     }
+
+    std::string to_string(size_t indent_level = 0);
   };
 
   using ExecNodeData = std::variant<LiteralNode, LookupNode, MapNode, CallNode, VectorNode>;
@@ -80,11 +83,12 @@ namespace Lisple
 
     template <typename T>
     explicit ExecNode(const sptr_sobject& form, T node)
-        : form(form)
-        , data(std::move(node))
+      : form(form)
+      , data(std::move(node))
     {
     }
   };
+
 } // namespace Lisple
 
 #endif

@@ -50,6 +50,10 @@ namespace Lisple
         return nullptr;
       }
     }
+    else if (this->objects.count(identifier.get_identifier()))
+    {
+      return this->objects.at(identifier.get_identifier());
+    }
 
     if (Scope::has(identifier))
     {

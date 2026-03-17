@@ -1,7 +1,5 @@
 
-#include "ast.h"
-#include "exception.h"
-#include "form.h"
+#include "exec_tree.h"
 
 namespace Lisple
 {
@@ -15,4 +13,7 @@ namespace Lisple
   std::unique_ptr<ExecNode> lower(const sptr_sobject& obj);
 
   sptr_sobject exec(Context& ctx, const ExecNode& node);
+
+  std::string to_string(const ExecNode& node, std::string indent = "");
+
 } // namespace Lisple

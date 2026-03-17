@@ -6,7 +6,7 @@ set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-set(CMAKE_CXX_COMPILER clang++)
+#set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -27,7 +27,7 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/context.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/dir_root_file_system.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec_node.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/exec_node.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/form.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/impl.cpp

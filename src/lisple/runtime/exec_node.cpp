@@ -1,14 +1,80 @@
 
 #include "exec_node.h"
 
-#include "ast.h"
-#include "context.h"
-#include "exception.h"
-#include "exec.h"
-#include "type.h"
+#include "../context.h"
+#include "../exception.h"
+#include "../exec.h"
+#include "../type.h"
+#include "exec_tree.h"
+#include <iostream>
 
 namespace Lisple
 {
+  std::string to_string(const ExecNode& node, std::string indent)
+  {
+    return std::visit(
+      [&](auto const& n) -> std::string
+      {
+        using T = std::decay_t<decltype(n)>;
+
+        if constexpr (std::is_same_v<T, LiteralNode>)
+        {
+          return indent + " - LiteralNode(" + n.value->to_string() + ")\n";
+        }
+        else if constexpr (std::is_same_v<T, LookupNode>)
+        {
+          return indent + " - LookupNode(" + n.identifier.to_string() + ")\n";
+        }
+        else if constexpr (std::is_same_v<T, MapNode>)
+        {
+          std::string result =
+            indent + " - MapNode(" + std::to_string(n.elements.size()) + ")\n";
+          indent += "  ";
+
+          for (auto& lmnt : n.elements)
+          {
+            result += to_string(*lmnt, indent);
+          }
+
+          return result;
+        }
+        else if constexpr (std::is_same_v<T, VectorNode>)
+        {
+          std::string result =
+            indent + " - VectorNode(" + std::to_string(n.elements.size()) + ")\n";
+          indent += "  ";
+
+          for (auto& lmnt : n.elements)
+          {
+            result += to_string(*lmnt, indent);
+          }
+
+          return result;
+        }
+        else if constexpr (std::is_same_v<T, CallNode>)
+        {
+          std::string result = indent + " - CallNode\n";
+          indent += "  ";
+          result += indent + " - Callee:\n";
+          result += to_string(*n.callee, indent + "  ");
+
+          result += indent + " - Arguments:\n";
+          indent += "  ";
+          for (size_t i = 0; i < n.args.size(); i++)
+          {
+            auto& arg = n.args[i];
+            result += to_string(*arg, indent);
+          }
+
+          return result;
+        }
+
+        return indent + " UNHANDLED NODE TYPE\n";
+      },
+
+      node.data);
+  }
+
   std::unique_ptr<ExecNode> lower(const sptr_sobject& obj)
   {
     switch (obj->get_type())
@@ -141,14 +207,29 @@ namespace Lisple
           {
             for (size_t i = 0; i < n.args.size(); i++)
             {
-              auto& arg = n.args[i];
-              if (sig->should_eval_arg(i))
+              if (sig->supports_exec_tree())
               {
-                args.push_back(exec(ctx, *arg));
+                ptr_exec_node_v node_args;
+                node_args.reserve(n.args.size());
+
+                for (auto& arg : n.args)
+                {
+                  node_args.push_back(arg.get());
+                }
+
+                return sig->invoke(ctx, node_args);
               }
               else
               {
-                args.push_back(arg->form);
+                auto& arg = n.args[i];
+                if (sig->should_eval_arg(i))
+                {
+                  args.push_back(exec(ctx, *arg));
+                }
+                else
+                {
+                  args.push_back(arg->form);
+                }
               }
             }
           }

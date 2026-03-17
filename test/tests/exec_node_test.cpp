@@ -1,8 +1,8 @@
 
 #include <gtest/gtest.h>
 
-#include "lisple/exec_node.h"
 #include "lisple/form.h"
+#include "lisple/runtime/exec_node.h"
 
 TEST(ExecNodeTest, lower_number__literal_node)
 {

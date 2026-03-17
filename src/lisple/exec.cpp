@@ -11,6 +11,8 @@
 #include <sstream>
 #include <utility>
 
+#include "lisple/runtime/exec_tree.h"
+
 namespace Lisple
 {
   std::unique_ptr<ArgumentBinding> ArgumentBinding::create(Object& arg_declaration)
@@ -178,6 +180,12 @@ namespace Lisple
     }
   }
 
+  Signature::Signature(arg_v args, exec_fn target_func, exec_node_fn exec_func)
+    : Signature(args, target_func)
+  {
+    this->exec_func = exec_func;
+  }
+
   const std::vector<Argument>& Signature::get_arguments() const
   {
     return arguments;
@@ -216,6 +224,11 @@ namespace Lisple
     }
 
     return coerced;
+  }
+
+  bool Signature::supports_exec_tree() const
+  {
+    return this->exec_func != nullptr;
   }
 
   bool Signature::matches(const sptr_sobject_v& args) const
@@ -283,6 +296,11 @@ namespace Lisple
     return target_func(ctx, args);
   }
 
+  sptr_sobject Signature::invoke(Context& ctx, ptr_exec_node_v& args)
+  {
+    return exec_func(ctx, args);
+  }
+
   std::string Signature::to_string() const
   {
     std::stringstream ss;
@@ -312,6 +330,16 @@ namespace Lisple
     : Object(type)
   {
     signatures.push_back(std::move(signature));
+  }
+
+  bool Executable::supports_exec_tree() const
+  {
+    if (signatures.size() == 1)
+    {
+      return signatures[0]->supports_exec_tree();
+    }
+
+    return false;
   }
 
   bool Executable::operator==(const Object& other) const
@@ -400,8 +428,8 @@ namespace Lisple
     std::shared_ptr<Function> fun,
     sptr_sobject_v bound_args)
   {
-    return fun ? std::make_shared<DetachedFunction>(ctx.detach(), fun, bound_args) :
-                 std::shared_ptr<DetachedFunction>();
+    return fun ? std::make_shared<DetachedFunction>(ctx.detach(), fun, bound_args)
+               : std::shared_ptr<DetachedFunction>();
   }
 
   std::vector<std::unique_ptr<Signature>> DetachedFunction::make_detached_signature(
@@ -456,7 +484,7 @@ namespace Lisple
                              arg_v args,
                              std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
                              sptr_sobject_v& body)
-    : Function(std::make_unique<sig>(args, EXEC_DISPATCH(&UserFunction::exec_body)))
+    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
     , home_ns(home_ns)
     , arg_bindings(std::move(arg_bindings))
     , body(body)

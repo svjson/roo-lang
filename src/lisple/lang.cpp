@@ -8,6 +8,7 @@
 #include "host.h"
 #include "impl.h"
 #include "namespace.h"
+#include "runtime/exec_node.h"
 #include "scope.h"
 #include "type.h"
 #include <algorithm>
@@ -61,7 +62,7 @@ namespace Lisple
     lang.emplace("defun", std::make_shared<DefunMacro>());
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang.emplace("do", std::make_shared<DoMacro>());
-    lang.emplace("dotimes", std::make_shared<DoTimesMacro>());
+    lang.emplace("dotimes", std::make_shared<DoTimesForm>());
     lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
     lang.emplace("eval", std::make_shared<EvalFunction>());
     lang.emplace("even?", std::make_shared<OddEvenPredicateFunction>(0));
@@ -522,12 +523,13 @@ namespace Lisple
     return ret;
   }
 
-  /* DoTimesMacro - dotimes */
-  MACRO_IMPL(DoTimesMacro,
-             SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
-                  EXEC_DISPATCH(&DoTimesMacro::make_dotimes))))
+  /* DoTimes - dotimes */
+  SPECIAL_FORM_IMPL(DoTimesForm,
+                    SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                         EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
+                                       &DoTimesForm::exec_dotimes))))
 
-  MACRO_BODY(DoTimesMacro, make_dotimes)
+  MACRO_BODY(DoTimesForm, inv_dotimes)
   {
     size_t n_args = args.size();
     sptr_sobject_v result;
@@ -572,6 +574,67 @@ namespace Lisple
       }
     }
     return std::make_shared<Array>(std::move(result));
+  }
+
+  EXEC_BODY(DoTimesForm, exec_dotimes)
+  {
+    sptr_sobject_v result;
+
+    // FIXME: Using the AST form for now, because a simple exec of the node
+    // would attempt to lookup the binding variable name, ie [n 100].
+    // There is no n to lookup - it's being declared here.
+    Array& seq_expr = args[0]->form->as<Lisple::Array>();
+
+    if (seq_expr.size() < 1 || seq_expr.size() > 2)
+    {
+      throw LispleException("Invalid binding form: " + seq_expr.to_string());
+    }
+
+    sptr_sobject num_iter = ctx.eval(seq_expr.children.back());
+    if (num_iter->get_type() == Form::NUMBER)
+    {
+      int iterations = num_iter->as<Number>().int_value();
+
+      if (iterations > 0)
+      {
+        std::unique_ptr<ArgumentBinding> bind_var = nullptr;
+
+        if (seq_expr.size() == 2)
+        {
+          bind_var = ArgumentBinding::create(*seq_expr.get_children()[0]);
+        }
+
+        result.reserve(iterations);
+
+        ctx.push_context(true);
+        Scope& iter_scope = ctx.current_scope();
+        size_t n_args = args.size();
+
+        for (int i = 0; i < iterations; i++)
+        {
+          sptr_sobject si = Number::make(i);
+
+          if (bind_var)
+          {
+            bind_var->apply(iter_scope, si);
+          }
+
+          sptr_sobject iter_result;
+
+          for (size_t j = 1; j < n_args; j++)
+          {
+            iter_result = exec(ctx, *args[j]);
+          }
+
+          result.push_back(iter_result);
+          iter_scope.clear();
+        }
+      }
+
+      ctx.pop_context();
+    }
+
+    return Array::make(result);
   }
 
   /* PrintFunction - prn */

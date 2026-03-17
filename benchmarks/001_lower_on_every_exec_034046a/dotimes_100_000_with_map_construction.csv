@@ -1,0 +1,8 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+2156677654,dotimes_100_000_with_map_construction,0,0,115,0,115
+2156702442,dotimes_100_000_with_map_construction,0,0,114,0,114
+2161909908,dotimes_100_000_with_map_construction,0,0,112,0,112
+2161980518,dotimes_100_000_with_map_construction,0,0,110,0,110
+2169042622,dotimes_100_000_with_map_construction,0,0,114,0,114
+2169481879,dotimes_100_000_with_map_construction,0,0,114,0,114
+2169524235,dotimes_100_000_with_map_construction,0,0,109,0,109

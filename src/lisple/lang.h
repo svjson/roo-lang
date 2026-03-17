@@ -4,6 +4,7 @@
 
 #include "exec.h"
 #include "namespace.h"
+#include "runtime/exec_tree.h"
 #include "type.h"
 #include <cstdint>
 
@@ -60,7 +61,7 @@ namespace Lisple
   MACRO_DECL(WhenLetMacro, make_when_let)
 
   MACRO_DECL(DoMacro, make_do)
-  MACRO_DECL(DoTimesMacro, make_dotimes)
+  SPECIAL_FORM_DECL(DoTimesForm, dotimes)
 
   MACRO_DECL(WhileMacro, make_while)
 
