@@ -1722,7 +1722,9 @@ namespace Lisple
   FUNC_BODY(FilterFunction, filter_seq)
   {
     auto original = args[0];
-    sptr_sobject result = Seq::new_sequence(original->get_type());
+    if (NIL == original) return Array::make({});
+
+    sptr_sobject result = Seq::new_sequence(original->get_type(), original->size());
 
     auto& filter_fn = args.back()->as<Executable>();
 
