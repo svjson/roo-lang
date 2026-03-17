@@ -5,7 +5,6 @@
 #include "type.h"
 #include <algorithm>
 #include <cmath>
-#include <compare>
 #include <iterator>
 #include <sstream>
 #include <stddef.h>
@@ -569,22 +568,23 @@ namespace Lisple
   /**
    * Seq - Abstract base for lists, arrays and maps
    */
-  Seq::Seq(Form form)
-      : Object(form)
+  Seq::Seq(Form form, size_t reserved_size)
+    : Object(form)
   {
+    this->children.reserve(reserved_size);
   }
 
-  std::shared_ptr<Seq> Seq::new_sequence(Form type)
+  std::shared_ptr<Seq> Seq::new_sequence(Form type, size_t reserved_size)
   {
     switch (type)
     {
     case Form::LIST:
-      return std::make_shared<List>();
+      return std::make_shared<List>(reserved_size);
     case Form::ARRAY:
     case Form::HOST_SEQ:
-      return std::make_shared<Array>();
+      return std::make_shared<Array>(reserved_size);
     case Form::MAP:
-      return std::make_shared<Map>();
+      return std::make_shared<Map>(reserved_size);
     default:
       throw LispleException("Type is not a sequence");
     }
@@ -705,9 +705,9 @@ namespace Lisple
   /**
    * List
    */
-  List::List(bool q)
-      : Seq(Form::LIST)
-      , q(q)
+  List::List(bool q, size_t reserved_size)
+    : Seq(Form::LIST, reserved_size)
+    , q(q)
   {
   }
 
@@ -767,8 +767,8 @@ namespace Lisple
   /**
    * Array
    */
-  Array::Array()
-      : Seq(Form::ARRAY)
+  Array::Array(size_t reserved_size)
+    : Seq(Form::ARRAY, reserved_size)
   {
   }
 
@@ -795,8 +795,8 @@ namespace Lisple
   /**
    * Map
    */
-  Map::Map()
-      : Seq(Form::MAP)
+  Map::Map(size_t reserved_size)
+    : Seq(Form::MAP, reserved_size * 2)
   {
   }
 

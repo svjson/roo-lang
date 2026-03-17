@@ -301,10 +301,10 @@ namespace Lisple
    public:
     mutable sptr_sobject_v children;
 
-    Seq(Form form);
+    Seq(Form form, size_t reserved_size = 0);
     Seq(Form form, const sptr_sobject_v& children);
 
-    static std::shared_ptr<Seq> new_sequence(Form type);
+    static std::shared_ptr<Seq> new_sequence(Form type, size_t reserved_size = 0);
 
     std::string to_string(int depth = -1) const override;
 
@@ -338,8 +338,8 @@ namespace Lisple
   {
     bool q;
 
-  public:
-    List(bool q = false);
+   public:
+    List(bool q = false, size_t reserved_size = 0);
     List(const sptr_sobject_v& children, bool q = false);
 
     static std::shared_ptr<List> from(sptr_sobject, sptr_sobject_v);
@@ -359,8 +359,8 @@ namespace Lisple
 
   class Array : public Seq
   {
-  public:
-    Array();
+   public:
+    Array(size_t reserved_size = 0);
     Array(const sptr_sobject_v& children);
 
     static std::shared_ptr<Array> make(const sptr_sobject_v& children);
@@ -373,8 +373,8 @@ namespace Lisple
   {
     void validate_keys() const;
 
-  public:
-    Map();
+   public:
+    Map(size_t reserved_size = 0);
     Map(const sptr_sobject_v& children);
 
     void set_property(const Object& key, sptr_sobject& value) override;
