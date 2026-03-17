@@ -27,7 +27,7 @@ namespace Lisple
   }();
 
   Object::Object(Form form)
-      : type(form)
+    : type(form)
   {
   }
 
@@ -111,7 +111,7 @@ namespace Lisple
    * Nil - no values here
    */
   Nil::Nil()
-      : Object(Form::NIL)
+    : Object(Form::NIL)
   {
   }
 
@@ -139,7 +139,7 @@ namespace Lisple
    * Discard - Ignored form
    */
   Discard::Discard()
-      : Object(Form::DISCARD)
+    : Object(Form::DISCARD)
   {
   }
 
@@ -165,7 +165,7 @@ namespace Lisple
 
   /* QualifiableStringValue */
   QualifiableStringValue::QualifiableStringValue(Form type, const std::string& value)
-      : Value(type, value)
+    : Value(type, value)
   {
     std::stringstream ss(value);
     std::vector<std::string> tokens;
@@ -211,7 +211,7 @@ namespace Lisple
    * String form
    */
   String::String(const std::string& value)
-      : Value(Form::STRING, value)
+    : Value(Form::STRING, value)
   {
   }
 
@@ -253,7 +253,7 @@ namespace Lisple
    * Boolean form
    */
   Boolean::Boolean(const bool value)
-      : Value(Form::BOOLEAN, value)
+    : Value(Form::BOOLEAN, value)
   {
   }
 
@@ -281,7 +281,7 @@ namespace Lisple
    * Char form
    */
   Char::Char(const char value)
-      : Value(Form::CHAR, value)
+    : Value(Form::CHAR, value)
   {
   }
 
@@ -299,7 +299,7 @@ namespace Lisple
    * Key form
    */
   Key::Key(const std::string& value)
-      : QualifiableStringValue(Form::KEY, value)
+    : QualifiableStringValue(Form::KEY, value)
   {
   }
 
@@ -336,7 +336,7 @@ namespace Lisple
    * QSymbol - a quoted word
    */
   QSymbol::QSymbol(const std::string& value)
-      : QualifiableStringValue(Form::SYMBOL, value)
+    : QualifiableStringValue(Form::SYMBOL, value)
   {
   }
 
@@ -354,7 +354,7 @@ namespace Lisple
    * Word - an actual word
    */
   Word::Word(const std::string& value)
-      : QualifiableStringValue(Form::WORD, value)
+    : QualifiableStringValue(Form::WORD, value)
   {
   }
 
@@ -377,36 +377,36 @@ namespace Lisple
    * Number
    */
   Number::Number(int value)
-      : Value(Form::NUMBER, static_cast<float>(value))
-      , num_type(NumberType::INT)
+    : Value(Form::NUMBER, static_cast<float>(value))
+    , num_type(NumberType::INT)
   {
   }
 
   Number::Number(unsigned int value)
-      : Number(static_cast<int>(value))
+    : Number(static_cast<int>(value))
   {
   }
 
   Number::Number(unsigned long value)
-      : Number(static_cast<long>(value))
+    : Number(static_cast<long>(value))
   {
   }
 
   Number::Number(float value)
-      : Value(Form::NUMBER, value)
-      , num_type(NumberType::FLOAT)
+    : Value(Form::NUMBER, value)
+    , num_type(NumberType::FLOAT)
   {
   }
 
   Number::Number(double value)
-      : Value(Form::NUMBER, value)
-      , num_type(NumberType::FLOAT)
+    : Value(Form::NUMBER, value)
+    , num_type(NumberType::FLOAT)
   {
   }
 
   Number::Number(long value)
-      : Value(Form::NUMBER, value)
-      , num_type(NumberType::LONG)
+    : Value(Form::NUMBER, value)
+    , num_type(NumberType::LONG)
   {
   }
 
@@ -591,8 +591,8 @@ namespace Lisple
   }
 
   Seq::Seq(Form form, const sptr_sobject_v& children)
-      : Object(form)
-      , children(children)
+    : Object(form)
+    , children(children)
   {
   }
 
@@ -631,8 +631,7 @@ namespace Lisple
   sptr_sobject_v Seq::tail()
   {
     sptr_sobject_v tail;
-    if (children.size() < 2)
-      return tail;
+    if (children.size() < 2) return tail;
 
     tail.reserve(children.size() - 1);
     for (size_t i = 1; i < children.size(); i++)
@@ -713,8 +712,8 @@ namespace Lisple
   }
 
   List::List(const sptr_sobject_v& children, bool q)
-      : Seq(Form::LIST, children)
-      , q(q)
+    : Seq(Form::LIST, children)
+    , q(q)
   {
   }
 
@@ -774,7 +773,7 @@ namespace Lisple
   }
 
   Array::Array(const sptr_sobject_v& children)
-      : Seq(Form::ARRAY, children)
+    : Seq(Form::ARRAY, children)
   {
   }
 
@@ -802,7 +801,7 @@ namespace Lisple
   }
 
   Map::Map(const sptr_sobject_v& children)
-      : Seq(Form::MAP, children)
+    : Seq(Form::MAP, children)
   {
     this->validate_keys();
   }
@@ -822,7 +821,8 @@ namespace Lisple
                                 [key](const Object* other) { return *key == *other; });
       if (count != 1)
       {
-        throw TypeError("Duplicate key " + key->to_string() + " in Map: " + this->to_string(2));
+        throw TypeError("Duplicate key " + key->to_string() +
+                        " in Map: " + this->to_string(2));
       }
     }
   }

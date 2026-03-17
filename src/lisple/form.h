@@ -22,10 +22,10 @@ namespace Lisple
    */
   class Object
   {
-  protected:
+   protected:
     Form type;
 
-  public:
+   public:
     Object(Form form);
     virtual ~Object() = default;
 
@@ -84,7 +84,7 @@ namespace Lisple
 
   class Nil : public Object
   {
-  public:
+   public:
     Nil();
 
     bool operator==(const Object&) const override;
@@ -99,12 +99,12 @@ namespace Lisple
 
   template <typename T> class Value : public Object
   {
-  public:
+   public:
     T value;
 
     Value(Form type, T value)
-        : Object(type)
-        , value(value)
+      : Object(type)
+      , value(value)
     {
     }
 
@@ -138,7 +138,7 @@ namespace Lisple
      */
     std::string identifier;
 
-  public:
+   public:
     QualifiableStringValue(Form type, const std::string& value);
 
     bool is_qualified() const;
@@ -150,7 +150,7 @@ namespace Lisple
   {
     std::shared_ptr<Object> value;
 
-  public:
+   public:
     Discard();
 
     bool operator==(const Object&) const override;
@@ -164,10 +164,10 @@ namespace Lisple
 
   class String : public Value<std::string>
   {
-  private:
+   private:
     sptr_sobject_v _children;
 
-  public:
+   public:
     String(const std::string& value);
 
     std::string to_string(int depth = -1) const override;
@@ -181,7 +181,7 @@ namespace Lisple
 
   class Char : public Value<char>
   {
-  public:
+   public:
     Char(const char value);
 
     std::string to_string(int depth = -1) const override;
@@ -191,7 +191,7 @@ namespace Lisple
 
   class Boolean : public Value<bool>
   {
-  public:
+   public:
     Boolean(const bool value);
 
     std::string to_string(int depth = -1) const override;
@@ -205,7 +205,7 @@ namespace Lisple
 
   class Key : public QualifiableStringValue
   {
-  public:
+   public:
     Key(const std::string& value);
 
     bool has_value(const std::string& value) const override;
@@ -239,7 +239,7 @@ namespace Lisple
   {
     NumberType num_type;
 
-  public:
+   public:
     Number(int value);
     Number(long value);
     Number(unsigned int value);
@@ -276,7 +276,7 @@ namespace Lisple
 
   class Word : public QualifiableStringValue
   {
-  public:
+   public:
     Word(const std::string& value);
 
     std::string to_string(int depth = -1) const override;
@@ -288,7 +288,7 @@ namespace Lisple
 
   class QSymbol : public QualifiableStringValue
   {
-  public:
+   public:
     QSymbol(const std::string& value);
 
     std::string to_string(int depth = -1) const override;
@@ -298,7 +298,7 @@ namespace Lisple
 
   class Seq : public Object
   {
-  public:
+   public:
     mutable sptr_sobject_v children;
 
     Seq(Form form);
