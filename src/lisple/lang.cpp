@@ -2044,7 +2044,6 @@ namespace Lisple
   FUNC_BODY(FindFirstFunction, find_first_in_seq)
   {
     auto original = args[0];
-    sptr_sobject result = Lisple::Seq::new_sequence(original->get_type());
 
     auto& filter_fn = args.back()->as<Executable>();
 
@@ -2069,7 +2068,6 @@ namespace Lisple
   FUNC_BODY(FindIndexFunction, find_index_in_seq)
   {
     auto original = args[0];
-    sptr_sobject result = Lisple::Seq::new_sequence(original->get_type());
 
     auto& filter_fn = args.back()->as<Executable>();
 
