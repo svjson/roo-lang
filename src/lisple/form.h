@@ -343,6 +343,7 @@ namespace Lisple
     List(const sptr_sobject_v& children, bool q = false);
 
     static std::shared_ptr<List> from(sptr_sobject, sptr_sobject_v);
+    static std::shared_ptr<List> make(const sptr_sobject_v& children);
 
     const std::string lpar() const override;
     const std::string rpar() const override;

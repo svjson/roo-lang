@@ -723,6 +723,11 @@ namespace Lisple
     return std::make_shared<List>(tail);
   }
 
+  std::shared_ptr<List> List::make(const sptr_sobject_v& children)
+  {
+    return std::make_shared<List>(children);
+  }
+
   std::shared_ptr<List> List::insert(unsigned int index, sptr_sobject& element)
   {
     sptr_sobject_v new_elements(children.size() + 1);
