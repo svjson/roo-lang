@@ -1263,32 +1263,34 @@ namespace Lisple
   {
     sptr_sobject_v result;
 
-    Number& begin_num = args[0]->as<Number>();
-    Number& end_num = args.back()->as<Number>();
-
-    if (begin_num.is_num_type(NumberType::INT) && end_num.is_num_type(NumberType::INT))
+    if (args[0]->get_type() == Form::NUMBER && args[1]->get_type() == Form::NUMBER)
     {
-      int begin = begin_num.int_value();
-      int end = end_num.int_value();
+      Number& begin_num = args[0]->as<Number>();
+      Number& end_num = args[1]->as<Number>();
 
-      result.reserve(std::abs(end - begin));
-
-      for (int i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
+      if (begin_num.is_num_type(NumberType::INT) && end_num.is_num_type(NumberType::INT))
       {
-        result.push_back(Number::make(i));
+        int begin = begin_num.int_value();
+        int end = end_num.int_value();
+
+        result.reserve(std::abs(end - begin));
+
+        for (int i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
+        {
+          result.push_back(Number::make(i));
+        }
+      }
+      else
+      {
+        float begin = begin_num.float_value();
+        float end = end_num.float_value();
+
+        for (float i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
+        {
+          result.push_back(box_number(i));
+        }
       }
     }
-    else
-    {
-      float begin = begin_num.float_value();
-      float end = end_num.float_value();
-
-      for (float i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
-      {
-        result.push_back(box_number(i));
-      }
-    }
-
     return std::make_shared<Array>(std::move(result));
   }
 
