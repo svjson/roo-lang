@@ -1,21 +1,19 @@
 
 #include "parser.h"
 
-#include <string>
-#include <utility>
-
+#include "exception.h"
 #include "form.h"
 #include "lexer.h"
 #include "type.h"
-
-#include "exception.h"
+#include <string>
+#include <utility>
 
 namespace Lisple
 {
   void ParseContext::begin_list(Token start_type)
   {
     std::shared_ptr<Object> list;
-    switch(start_type)
+    switch (start_type)
     {
     case Token::LPAREN:
       list = std::make_shared<List>();
@@ -28,7 +26,7 @@ namespace Lisple
     case Token::LBRACKET:
       list = std::make_shared<Array>();
       closing_tokens.push_back(Token::RBRACKET);
-        break;
+      break;
     case Token::LCURLY:
       list = std::make_shared<Map>();
       closing_tokens.push_back(Token::RCURLY);
@@ -85,7 +83,8 @@ namespace Lisple
     }
   }
 
-  void eof_check(std::vector<Symbol>& symbols, unsigned int offset) {
+  void eof_check(std::vector<Symbol>& symbols, unsigned int offset)
+  {
     if (offset == symbols.size())
     {
       throw ParseException("Unexpected end of input");
@@ -102,7 +101,7 @@ namespace Lisple
     {
       Symbol& sym = symbols.at(offset++);
 
-      switch(sym.token)
+      switch (sym.token)
       {
       case Token::HASH:
         ctx.begin_hash_context();
@@ -124,7 +123,7 @@ namespace Lisple
         ctx.append(std::make_unique<Char>(sym.value.at(0)));
         break;
       case Token::KEY:
-        ctx.append(std::make_unique<Key>(sym.value));
+        ctx.append(Key::make(sym.value));
         break;
       case Token::WORD:
         ctx.append(std::make_unique<Word>(sym.value));
@@ -160,4 +159,4 @@ namespace Lisple
 
     return std::move(ctx.forms);
   }
-}
+} // namespace Lisple

@@ -25,6 +25,8 @@ namespace Lisple
     return ints;
   }();
 
+  std::unordered_map<std::string, std::shared_ptr<Key>> key_intern_pool;
+
   Object::Object(Form form)
     : type(form)
   {
@@ -328,7 +330,14 @@ namespace Lisple
 
   std::shared_ptr<Key> Key::make(const std::string& value)
   {
-    return std::make_shared<Key>(value);
+    if (key_intern_pool.count(value))
+    {
+      return key_intern_pool.at(value);
+    }
+    std::cout << "INTERN POOL MISS FOR: " << value << std::endl;
+    auto key = std::make_shared<Key>(value);
+    key_intern_pool.emplace(value, key);
+    return key;
   }
 
   /**

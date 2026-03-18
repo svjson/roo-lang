@@ -67,10 +67,10 @@ namespace Lisple
     for (auto& key_obj : binding_form.get_sptr_property(keys)->as<Array>().get_children())
     {
       Word& key_name = key_obj->as<Word>();
-      Key key(key_name.to_string());
-      if (arg_val->has_key(key))
+      auto key = Key::make(key_name.to_string());
+      if (arg_val->has_key(*key))
       {
-        scope.store(key_name, arg_val->get_sptr_property(key));
+        scope.store(key_name, arg_val->get_sptr_property(*key));
       }
       else
       {

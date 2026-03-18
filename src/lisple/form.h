@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #define __ESCAPE(...) __VA_ARGS__
@@ -13,9 +14,12 @@ namespace Lisple
 {
   class Context;
   class Number;
+  class Key;
 
   extern const int INT_CONSTANTS_SIZE;
   extern std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
+
+  extern std::unordered_map<std::string, std::shared_ptr<Key>> key_intern_pool;
 
   /*!
    * @brief Abstract base class for all form implementations
