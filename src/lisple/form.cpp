@@ -334,7 +334,6 @@ namespace Lisple
     {
       return key_intern_pool.at(value);
     }
-    std::cout << "INTERN POOL MISS FOR: " << value << std::endl;
     auto key = std::make_shared<Key>(value);
     key_intern_pool.emplace(value, key);
     return key;
