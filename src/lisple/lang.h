@@ -279,6 +279,11 @@ namespace Lisple
    */
   FUNC_DECL(CeilFunction, ceil)
 
+  FUNC_DECL(SinFunction, sin);
+  FUNC_DECL(CosFunction, cos);
+
+  FUNC_DECL(SqrtFunction, sqrt);
+
   FUNC_DECL(IntFunction, to_int)
   FUNC_DECL(PlusFunction, do_addition)
   FUNC_DECL(MinusFunction, do_subtraction)

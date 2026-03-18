@@ -57,6 +57,7 @@ namespace Lisple
     lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
     lang.emplace("cond", std::make_shared<CondMacro>());
     lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
+    lang.emplace("cos", std::make_shared<CosFunction>());
     lang.emplace("count", std::make_shared<CountFunction>());
     lang.emplace("def", std::make_shared<DefMacro>());
     lang.emplace("defun", std::make_shared<DefunMacro>());
@@ -118,8 +119,10 @@ namespace Lisple
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
     lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
     lang.emplace("set!", std::make_shared<SetBangMacro>());
+    lang.emplace("sin", std::make_shared<SinFunction>());
     lang.emplace("some?", std::make_shared<SomeFunction>());
     lang.emplace("sort", std::make_shared<SortFunction>());
+    lang.emplace("sqrt", std::make_shared<SqrtFunction>());
     lang.emplace("str", std::make_shared<StrFunction>());
     lang.emplace("tail", std::make_shared<TailFunction>());
     lang.emplace("take", std::make_shared<TakeFunction>());
@@ -629,9 +632,9 @@ namespace Lisple
           result.push_back(iter_result);
           iter_scope.clear();
         }
-      }
 
-      ctx.pop_context();
+        ctx.pop_context();
+      }
     }
 
     return Array::make(result);
@@ -1047,6 +1050,31 @@ namespace Lisple
   {
     Number& num = args[0]->as<Number>();
     return Number::make(static_cast<int>(std::ceil(num.float_value())));
+  }
+
+  /* SinFunction - sin */
+  FUNC_IMPL(SinFunction, SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SinFunction::sin))))
+
+  FUNC_BODY(SinFunction, sin)
+  {
+    return Lisple::Number::make(std::sin(args[0]->as<Number>().float_value()));
+  }
+
+  /* CosFunction - cos */
+  FUNC_IMPL(CosFunction, SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CosFunction::cos))))
+
+  FUNC_BODY(CosFunction, cos)
+  {
+    return Lisple::Number::make(std::cos(args[0]->as<Number>().float_value()));
+  }
+
+  /* SqrtFunction - sqrt */
+  FUNC_IMPL(SqrtFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SqrtFunction::sqrt))))
+
+  FUNC_BODY(SqrtFunction, sqrt)
+  {
+    return Lisple::Number::make(std::sqrt(args[0]->as<Number>().float_value()));
   }
 
   /* IntFunction - int */
