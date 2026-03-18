@@ -41,7 +41,7 @@ namespace Lisple
   * | 0     | Array containing a variable name and variable value pairs  |
   * | 1...  | Body forms to execute with the temporary bindings          |
   */
-  MACRO_DECL(LetMacro, make_let)
+  SPECIAL_FORM_DECL(LetForm, let)
 
   /*!
    * @brief Temporarily bind values to variables that will exist only

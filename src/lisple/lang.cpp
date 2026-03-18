@@ -85,7 +85,7 @@ namespace Lisple
     lang.emplace("keep", std::make_shared<KeepFunction>());
     lang.emplace("keys", std::make_shared<KeysFunction>());
     lang.emplace("last", std::make_shared<LastFunction>());
-    lang.emplace("let", std::make_shared<LetMacro>());
+    lang.emplace("let", std::make_shared<LetForm>());
     lang.emplace("lower-case", std::make_shared<LowerCaseFunction>());
     lang.emplace("map", std::make_shared<MapFunction>());
     lang.emplace("max", std::make_shared<MinMaxFunction>(false));
@@ -349,12 +349,12 @@ namespace Lisple
     return create_detached_function(ctx, *args[0], body);
   }
 
-  /* LetMacro */
-  MACRO_IMPL(LetMacro,
-             SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
-                  EXEC_DISPATCH(&LetMacro::make_let))))
+  /* LetForm */
+  SPECIAL_FORM_IMPL(LetForm,
+                    SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                         EXEC_DISPATCH(&LetForm::inv_let, &LetForm::exec_let))))
 
-  MACRO_BODY(LetMacro, make_let)
+  MACRO_BODY(LetForm, inv_let)
   {
     Object& bindings = *args[0];
 
@@ -379,6 +379,42 @@ namespace Lisple
     for (size_t i = 1; i < args.size(); i++)
     {
       result = ctx.eval(args[i]);
+    }
+
+    for (size_t i = 0; i < bindings.size() / 2; i++)
+    {
+      ctx.pop_context();
+    }
+
+    return result;
+  }
+
+  EXEC_BODY(LetForm, exec_let)
+  {
+    Array& bindings = args[0]->form->as<Lisple::Array>();
+
+    if (bindings.get_children().size() % 2 != 0)
+    {
+      throw LispleException(
+        "Wrong number of parameters in binding form of let expression: " +
+        bindings.to_string());
+    }
+
+    for (size_t i = 0; i < bindings.size(); i += 2)
+    {
+      Scope var_scope;
+      auto binding = ArgumentBinding::create(*bindings.get_children()[i]);
+      // FIXME: This still goes into ctx.eval and causes re-lower
+      auto init_expr = ctx.eval(bindings.get_children()[i + 1]);
+      binding->apply(var_scope, init_expr);
+      ctx.push_context(true, var_scope);
+    }
+
+    sptr_sobject result;
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result = exec(ctx, *args[i]);
     }
 
     for (size_t i = 0; i < bindings.size() / 2; i++)
