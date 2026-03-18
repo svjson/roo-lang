@@ -15,12 +15,18 @@ namespace LispleTest
 
    public:
     SnippetBenchmark(const std::string& case_name, const std::string& input);
+    SnippetBenchmark(const std::string& case_name,
+                     const std::vector<std::string>& pre_evaluated,
+                     const std::string& ns,
+                     const std::string& input);
 
     void run();
     void print_result();
     void log_result();
 
     std::string case_name;
+    std::vector<std::string> pre_evaluated;
+    std::string ns;
     std::string input;
 
     long start_time;

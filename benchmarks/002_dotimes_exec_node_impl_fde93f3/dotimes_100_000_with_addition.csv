@@ -1,0 +1,10 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+2172592675,dotimes_100_000_with_addition,0,0,40,0,40
+2172596153,dotimes_100_000_with_addition,0,0,38,0,38
+2173893161,dotimes_100_000_with_addition,0,0,40,0,40
+2173896172,dotimes_100_000_with_addition,1,0,40,0,41
+2181421923,dotimes_100_000_with_addition,0,0,36,0,36
+2181511886,dotimes_100_000_with_addition,0,0,37,0,37
+2181687904,dotimes_100_000_with_addition,0,0,36,0,36
+2181856462,dotimes_100_000_with_addition,0,0,37,0,37
+2181931873,dotimes_100_000_with_addition,0,0,40,0,40

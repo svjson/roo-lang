@@ -20,6 +20,18 @@ namespace LispleTest
 
   SnippetBenchmark::SnippetBenchmark(const std::string& case_name, const std::string& input)
     : case_name(case_name)
+    , ns("user")
+    , input(input)
+  {
+  }
+
+  SnippetBenchmark::SnippetBenchmark(const std::string& case_name,
+                                     const std::vector<std::string>& pre_evaluated,
+                                     const std::string& ns,
+                                     const std::string& input)
+    : case_name(case_name)
+    , pre_evaluated(pre_evaluated)
+    , ns(ns)
     , input(input)
   {
   }
@@ -29,6 +41,14 @@ namespace LispleTest
     Lisple::Runtime runtime;
 
     start_time = now();
+
+    for (auto& pe : pre_evaluated)
+    {
+      runtime.eval(pe);
+    }
+
+    runtime.switch_namespace(ns);
+
     parse_start_time = now();
     auto parse_result = reader.read_sexps(input);
     parse_end_time = now();
@@ -45,8 +65,6 @@ namespace LispleTest
     auto node = Lisple::lower(parse_result[0]);
     lower_end_time = now();
     lower_time = lower_end_time - lower_start_time;
-
-    std::cout << Lisple::to_string(*node);
 
     exec_start_time = now();
     auto result = Lisple::exec(ctx, *node);
@@ -77,7 +95,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "002_lower_on_every_exec_034046a";
+    const std::string CHANGE_ME = "002_dotimes_exec_node_impl_fde93f3";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
