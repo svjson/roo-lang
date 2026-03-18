@@ -5,8 +5,10 @@
 #include "exception.h"
 #include "form.h"
 #include "namespace.h"
+#include "runtime/exec_node.h"
 #include "scope.h"
 #include "type.h"
+#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -483,12 +485,30 @@ namespace Lisple
   UserFunction::UserFunction(const std::string& home_ns,
                              arg_v args,
                              std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
-                             sptr_sobject_v& body)
+                             ptr_exec_node_v& body)
     : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
     , home_ns(home_ns)
     , arg_bindings(std::move(arg_bindings))
     , body(body)
   {
+  }
+
+  UserFunction::UserFunction(const std::string& home_ns,
+                             arg_v args,
+                             std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
+                             sptr_sobject_v& body)
+    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
+    , home_ns(home_ns)
+    , arg_bindings(std::move(arg_bindings))
+  {
+    this->uptr_body.reserve(body.size());
+    this->body.reserve(body.size());
+    for (auto& node : body)
+    {
+      uptr_exec_node unode = lower(node);
+      this->uptr_body.push_back(std::move(unode));
+      this->body.push_back(uptr_body.back().get());
+    }
   }
 
   sptr_sobject UserFunction::exec_body(Context& ctx, sptr_sobject_v& args)
@@ -503,9 +523,9 @@ namespace Lisple
     ctx.push_context(true, fn_scope);
     sptr_sobject retval = body.empty() ? NIL : nullptr;
 
-    for (auto& form : body)
+    for (auto& node : body)
     {
-      retval = ctx.eval(form);
+      retval = exec(ctx, *node);
     }
     ctx.pop_context();
     ctx.switch_namespace(current_namespace);
@@ -513,9 +533,9 @@ namespace Lisple
     return retval;
   }
 
-  const sptr_sobject_v& UserFunction::get_body() const
+  const uptr_exec_node_v& UserFunction::get_body() const
   {
-    return body;
+    return uptr_body;
   }
 
   const std::vector<std::unique_ptr<ArgumentBinding>>& UserFunction::get_argument_bindings()

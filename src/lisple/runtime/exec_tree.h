@@ -12,6 +12,7 @@ namespace Lisple
   struct ExecNode;
   using uptr_exec_node = std::unique_ptr<ExecNode>;
   using ptr_exec_node_v = std::vector<ExecNode*>;
+  using uptr_exec_node_v = std::vector<uptr_exec_node>;
 
   enum class ExecNodeType : uint8_t
   {

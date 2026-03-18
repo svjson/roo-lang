@@ -343,18 +343,24 @@ namespace Lisple
      */
     const std::string home_ns;
     std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
-    sptr_sobject_v body;
+    uptr_exec_node_v uptr_body;
+    ptr_exec_node_v body;
 
    public:
+    UserFunction(const std::string& home_ns,
+                 arg_v,
+                 std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
+                 ptr_exec_node_v& body);
+
     UserFunction(const std::string& home_ns,
                  Lisple::arg_v,
                  std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
                  sptr_sobject_v& body);
 
     const std::vector<std::unique_ptr<ArgumentBinding>>& get_argument_bindings() const;
-    const sptr_sobject_v& get_body() const;
+    const uptr_exec_node_v& get_body() const;
 
-    Lisple::sptr_sobject exec_body(Lisple::Context& ctx, sptr_sobject_v& args);
+    sptr_sobject exec_body(Lisple::Context& ctx, sptr_sobject_v& args);
   };
 
   class Macro : public Executable

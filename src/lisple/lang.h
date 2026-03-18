@@ -24,7 +24,7 @@ namespace Lisple
 
   MACRO_DECL(DefMacro, define_obj, define_obj_docstring)
   MACRO_DECL(DefunMacro, define_fun, define_fun_docstring)
-  MACRO_DECL(LambdaMacro, make_lambda)
+  SPECIAL_FORM_DECL(FnForm, decl)
 
   /*!
   * @brief Temporarily bind values to variables that will exist only within

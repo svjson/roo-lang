@@ -72,7 +72,7 @@ namespace Lisple
     lang.emplace("filter", std::make_shared<FilterFunction>());
     lang.emplace("find-first", std::make_shared<FindFirstFunction>());
     lang.emplace("find-index", std::make_shared<FindIndexFunction>());
-    lang.emplace("fn", std::make_shared<LambdaMacro>());
+    lang.emplace("fn", std::make_shared<FnForm>());
     lang.emplace("for", std::make_shared<ForMacro>());
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang.emplace("get", std::make_shared<GetFunction>());
@@ -292,9 +292,41 @@ namespace Lisple
                                           body);
   }
 
-  std::shared_ptr<DetachedFunction> create_detached_function(Lisple::Context& ctx,
-                                                             Lisple::Object& arg_array,
-                                                             Lisple::sptr_sobject_v& body)
+  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+                                                Object& arg_array,
+                                                ptr_exec_node_v& body)
+  {
+    std::vector<Argument> arg_types;
+    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
+    arg_types.reserve(arg_array.size());
+    arg_bindings.reserve(arg_array.size());
+    for (auto& arg : arg_array.get_children())
+    {
+      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP)
+      {
+        throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
+      }
+      arg_types.push_back(Lisple::arg(&Type::ANY));
+      arg_bindings.push_back(ArgumentBinding::create(*arg));
+    }
+    return std::make_shared<UserFunction>(home_ns->get_name(),
+                                          std::move(arg_types),
+                                          arg_bindings,
+                                          body);
+  }
+
+  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
+                                                             Object& arg_array,
+                                                             sptr_sobject_v& body)
+  {
+    std::shared_ptr<Function> fn =
+      create_function(ctx.get_current_namespace(), arg_array, body);
+    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
+  }
+
+  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
+                                                             Object& arg_array,
+                                                             ptr_exec_node_v& body)
   {
     std::shared_ptr<Function> fn =
       create_function(ctx.get_current_namespace(), arg_array, body);
@@ -334,11 +366,11 @@ namespace Lisple
     return this->define_fun(ctx, args);
   }
 
-  MACRO_IMPL(LambdaMacro,
-             SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
-                  EXEC_DISPATCH(&LambdaMacro::make_lambda))))
+  SPECIAL_FORM_IMPL(FnForm,
+                    SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                         EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::exec_decl))))
 
-  MACRO_BODY(LambdaMacro, make_lambda)
+  MACRO_BODY(FnForm, inv_decl)
   {
     sptr_sobject_v body;
     body.reserve(args.size() - 1);
@@ -347,6 +379,18 @@ namespace Lisple
       body.push_back(args[i]);
     }
     return create_detached_function(ctx, *args[0], body);
+  }
+
+  EXEC_BODY(FnForm, exec_decl)
+  {
+    ptr_exec_node_v body;
+
+    body.reserve(args.size() - 1);
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      body.push_back(args[i]);
+    }
+    return create_detached_function(ctx, *args[0]->form, body);
   }
 
   /* LetForm */

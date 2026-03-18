@@ -1,27 +1,24 @@
 
 #include "gmock/gmock.h"
-#include <gtest/gtest.h>
-
+#include "runtime_fixture.h"
+#include "test_host_objects.h"
+#include <ext/alloc_traits.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-
-#include <ext/alloc_traits.h>
-#include <memory>
-#include <vector>
-
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
 #include <lisple/lang.h>
 #include <lisple/namespace.h>
 #include <lisple/reader.h>
+#include <lisple/runtime.h>
+#include <lisple/runtime/exec_node.h>
 #include <lisple/type.h>
-
-#include "runtime_fixture.h"
-#include "test_host_objects.h"
+#include <memory>
+#include <vector>
 
 using namespace ::testing;
 
@@ -107,7 +104,9 @@ TEST(NsMacro, import_existing_namespace)
   try
   {
     reader.eval("what-is-hot?");
-  } catch (Lisple::LispleException& e) {
+  }
+  catch (Lisple::LispleException& e)
+  {
     message = e.what();
   }
 
@@ -124,13 +123,14 @@ TEST(NsMacro, import_non_existing_aliased_namespace)
   try
   {
     reader.eval("(ns my-main-ns (:require [other :as o]))");
-  } catch (Lisple::LispleException& e) {
+  }
+  catch (Lisple::LispleException& e)
+  {
     message = e.what();
   }
 
   // Then
   EXPECT_THAT(message, HasSubstr("does not exist"));
-
 }
 
 TEST(NsMacro, import_existing_aliased_namespace)
@@ -153,13 +153,14 @@ TEST(NsMacro, import_existing_aliased_namespace)
   try
   {
     reader.eval("o/what-is-hot?");
-  } catch (Lisple::LispleException& e) {
+  }
+  catch (Lisple::LispleException& e)
+  {
     message = e.what();
   }
 
   EXPECT_THAT(message, HasSubstr("Unknown identifier: 'o/what-is-hot?'"));
 }
-
 
 TEST(DefMacro, define_var)
 {
@@ -203,12 +204,9 @@ TEST(DefunMacro, define_no_arg_fun)
 {
   LispleTest::RuntimeFixture fixture;
 
-  Lisple::sptr_sobject_v args
-  {
-    std::make_shared<Lisple::Word>("my-fn"),
-    std::make_shared<Lisple::Array>(),
-    std::make_shared<Lisple::Number>(8)
-  };
+  Lisple::sptr_sobject_v args{std::make_shared<Lisple::Word>("my-fn"),
+                              std::make_shared<Lisple::Array>(),
+                              std::make_shared<Lisple::Number>(8)};
 
   Lisple::DefunMacro defun;
 
@@ -222,20 +220,20 @@ TEST(DefunMacro, define_no_arg_fun)
   ASSERT_EQ(fun->get_type(), Lisple::Form::FUNCTION);
   EXPECT_TRUE(fun->as<Lisple::UserFunction>().get_argument_bindings().empty());
   EXPECT_EQ(fun->as<Lisple::UserFunction>().get_body().size(), 1);
-  EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front(), Lisple::Number(8));
+  EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front()->form,
+            *Lisple::Number::make(8));
 }
 
 TEST(DefunMacro, define_no_arg_fun_with_docstring)
 {
   LispleTest::RuntimeFixture fixture;
 
-  Lisple::sptr_sobject_v args
-  {
+  Lisple::sptr_sobject_v args{
     std::make_shared<Lisple::Word>("my-fn"),
-    std::make_shared<Lisple::String>("This function does all the magic things you can think of..."),
+    std::make_shared<Lisple::String>(
+      "This function does all the magic things you can think of..."),
     std::make_shared<Lisple::Array>(),
-    std::make_shared<Lisple::Number>(8)
-  };
+    std::make_shared<Lisple::Number>(8)};
 
   Lisple::DefunMacro defun;
 
@@ -249,7 +247,8 @@ TEST(DefunMacro, define_no_arg_fun_with_docstring)
   ASSERT_EQ(fun->get_type(), Lisple::Form::FUNCTION);
   EXPECT_TRUE(fun->as<Lisple::UserFunction>().get_argument_bindings().empty());
   EXPECT_EQ(fun->as<Lisple::UserFunction>().get_body().size(), 1);
-  EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front(), Lisple::Number(8));
+  EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front()->form,
+            *Lisple::Number::make(8));
 }
 
 TEST(CaseMacro, constants)
@@ -258,7 +257,8 @@ TEST(CaseMacro, constants)
   Lisple::Runtime reader;
 
   // When
-  Lisple::sptr_sobject result = reader.eval(R"((case 20 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
+  Lisple::sptr_sobject result =
+    reader.eval(R"((case 20 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
 
   // Then
   ASSERT_EQ(*result, Lisple::String("Zwanzig"));
@@ -270,7 +270,8 @@ TEST(CaseMacro, expressions)
   Lisple::Runtime reader;
 
   // When
-  Lisple::sptr_sobject result = reader.eval(R"((case (- 20 10) (- 10 10) "Zilch" (+ 5 5) "Zen" :default "Zillions"))");
+  Lisple::sptr_sobject result =
+    reader.eval(R"((case (- 20 10) (- 10 10) "Zilch" (+ 5 5) "Zen" :default "Zillions"))");
   // Then
   ASSERT_EQ(*result, Lisple::String("Zen"));
 }
@@ -281,7 +282,8 @@ TEST(CaseMacro, no_match_with_default)
   Lisple::Runtime reader;
 
   // When
-  Lisple::sptr_sobject result = reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
+  Lisple::sptr_sobject result =
+    reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
 
   // Then
   ASSERT_EQ(*result, Lisple::String("Zillions"));
@@ -305,7 +307,8 @@ TEST(CondMacro, match_condition)
   Lisple::Runtime reader;
 
   // When
-  Lisple::sptr_sobject result = reader.eval(R"((let [x 20] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
+  Lisple::sptr_sobject result = reader.eval(
+    R"((let [x 20] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
 
   // Then
   ASSERT_EQ(*result, Lisple::String("Zwanzig"));
@@ -317,7 +320,8 @@ TEST(CondMacro, no_match_with_else)
   Lisple::Runtime reader;
 
   // When
-  Lisple::sptr_sobject result = reader.eval(R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
+  Lisple::sptr_sobject result = reader.eval(
+    R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
   // Then
   ASSERT_EQ(*result, Lisple::String("Zillions"));
 }
@@ -328,7 +332,8 @@ TEST(CondMacro, no_match_without_else)
   Lisple::Runtime reader;
 
   // When
-  Lisple::sptr_sobject result = reader.eval(R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig")))");
+  Lisple::sptr_sobject result =
+    reader.eval(R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig")))");
   // Then
   ASSERT_EQ(*result, *Lisple::NIL);
 }
@@ -399,7 +404,8 @@ TEST(ResolveFunction, resolve_other_namespace)
 {
   // Given
   Lisple::Runtime runtime;
-  runtime.ns("some.nested.space", true)->store(Lisple::Word("magic-number"), Lisple::Number::make(3));
+  runtime.ns("some.nested.space", true)
+    ->store(Lisple::Word("magic-number"), Lisple::Number::make(3));
 
   // When
   auto result = runtime.eval("(resolve 'some.nested.space/magic-number)");
@@ -527,7 +533,6 @@ TEST(LetMacro, destructure_map)
 
   // Then
   ASSERT_EQ(*result, *Lisple::Number::make(35));
-
 }
 
 TEST(IfLetMacro, if_let)
@@ -536,8 +541,10 @@ TEST(IfLetMacro, if_let)
   Lisple::Runtime runtime;
 
   // Then
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(), "10");
-  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(), "\"no value\"");
+  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(),
+            "10");
+  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(),
+            "\"no value\"");
 }
 
 TEST(IfLetMacro, if_check_must_happen_only_at_current_scope_level)
@@ -547,8 +554,10 @@ TEST(IfLetMacro, if_check_must_happen_only_at_current_scope_level)
   runtime.eval("(def value 1234)");
 
   // When
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(), "10");
-  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(), "\"no value\"");
+  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(),
+            "10");
+  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(),
+            "\"no value\"");
 }
 
 TEST(IfLetMacro, branching_should_happen_according_to_truthiness_not_just_ifdef)
@@ -557,8 +566,10 @@ TEST(IfLetMacro, branching_should_happen_according_to_truthiness_not_just_ifdef)
   Lisple::Runtime runtime;
 
   // When
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a true})] value \"no value\")")->to_string(), "true");
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a false})] value \"no value\")")->to_string(), "\"no value\"");
+  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a true})] value \"no value\")")->to_string(),
+            "true");
+  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a false})] value \"no value\")")->to_string(),
+            "\"no value\"");
 }
 
 TEST(ThreadFirstMacro, deep_map_traversal)
@@ -656,7 +667,8 @@ TEST(VectorFunction, make_vector)
 
   // Then
   EXPECT_EQ(fixture.runtime.eval("(vector 1 2 3 4)")->to_string(), "[1 2 3 4]");
-  EXPECT_EQ(fixture.runtime.eval(R"((vector 1 "2" :foo 'BAR))")->to_string(), "[1 \"2\" :foo 'BAR]");
+  EXPECT_EQ(fixture.runtime.eval(R"((vector 1 "2" :foo 'BAR))")->to_string(),
+            "[1 \"2\" :foo 'BAR]");
   EXPECT_EQ(fixture.runtime.eval("(vector :bork)")->to_string(), "[:bork]");
   EXPECT_EQ(fixture.runtime.eval("(vector 1 [2 3])")->to_string(), "[1 [2 3]]");
 }
@@ -670,7 +682,8 @@ TEST(StrFunction, concat_strings)
   EXPECT_EQ(fixture.runtime.eval(R"((str 'a' 'b' 'c'))")->to_string(), "\"abc\"");
   EXPECT_EQ(fixture.runtime.eval(R"((str "a" 1 :rust))")->to_string(), "\"a1:rust\"");
   EXPECT_EQ(fixture.runtime.eval(R"((str [1 2 3]))")->to_string(), "\"[1 2 3]\"");
-  EXPECT_EQ(fixture.runtime.eval(R"((str 'a' false {:a 1}))")->to_string(), R"("afalse{:a 1}")");
+  EXPECT_EQ(fixture.runtime.eval(R"((str 'a' false {:a 1}))")->to_string(),
+            R"("afalse{:a 1}")");
   EXPECT_EQ(fixture.runtime.eval(R"((str :key " " nil))")->to_string(), R"(":key nil")");
 }
 
@@ -681,7 +694,8 @@ TEST(UpperCaseFunction, uppercase)
 
   // Then
   EXPECT_EQ(*runtime.eval("(upper-case \"mIxEd-CaSe!\")"), Lisple::String("MIXED-CASE!"));
-  EXPECT_EQ(*runtime.eval("(upper-case \"The King is dead.\")"), Lisple::String("THE KING IS DEAD."));
+  EXPECT_EQ(*runtime.eval("(upper-case \"The King is dead.\")"),
+            Lisple::String("THE KING IS DEAD."));
   EXPECT_EQ(*runtime.eval("(upper-case :regular-key)"), Lisple::String(":REGULAR-KEY"));
   EXPECT_EQ(*runtime.eval("(upper-case {:x 10 :y 8})"), Lisple::String("{:X 10 :Y 8}"));
   EXPECT_EQ(*runtime.eval("(upper-case nil)"), Lisple::String("NIL"));
@@ -694,7 +708,8 @@ TEST(LowerCaseFunction, lowercase)
 
   // Then
   EXPECT_EQ(*runtime.eval("(lower-case \"mIxEd-CaSe!\")"), Lisple::String("mixed-case!"));
-  EXPECT_EQ(*runtime.eval("(lower-case \"The King is dead.\")"), Lisple::String("the king is dead."));
+  EXPECT_EQ(*runtime.eval("(lower-case \"The King is dead.\")"),
+            Lisple::String("the king is dead."));
   EXPECT_EQ(*runtime.eval("(lower-case :UPCASE-KEY)"), Lisple::String(":upcase-key"));
   EXPECT_EQ(*runtime.eval("(lower-case {:X 10 :Y 8})"), Lisple::String("{:x 10 :y 8}"));
   EXPECT_EQ(*runtime.eval("(lower-case nil)"), Lisple::String("nil"));
@@ -706,11 +721,15 @@ TEST(JoinFunction, join_strs)
   LispleTest::RuntimeFixture fixture;
 
   // Then
-  EXPECT_EQ(*fixture.runtime.eval(R"((join " " "This" "is" "bat" "country"))"), Lisple::String("This is bat country"));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "hyphenate" "all" "the" "things"))"), Lisple::String("hyphenate-all-the-things"));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join ", " "CSV" "to" "the" "rescue"))"), Lisple::String("CSV, to, the, rescue"));
+  EXPECT_EQ(*fixture.runtime.eval(R"((join " " "This" "is" "bat" "country"))"),
+            Lisple::String("This is bat country"));
+  EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "hyphenate" "all" "the" "things"))"),
+            Lisple::String("hyphenate-all-the-things"));
+  EXPECT_EQ(*fixture.runtime.eval(R"((join ", " "CSV" "to" "the" "rescue"))"),
+            Lisple::String("CSV, to, the, rescue"));
   EXPECT_EQ(*fixture.runtime.eval(R"((join "-"))"), Lisple::String(""));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "foreveralone"))"), Lisple::String("foreveralone"));
+  EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "foreveralone"))"),
+            Lisple::String("foreveralone"));
 }
 
 TEST(IntFunction, char_to_int)
@@ -854,11 +873,13 @@ TEST(EqualsFunction, string)
 {
   LispleTest::RuntimeFixture fixture;
   EXPECT_EQ(*fixture.ctx.eval("(= \"test\" \"test\")"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(= \"a whole sentence\" \"a whole sentence\")"), *Lisple::B_TRUE);
+  EXPECT_EQ(*fixture.ctx.eval("(= \"a whole sentence\" \"a whole sentence\")"),
+            *Lisple::B_TRUE);
   EXPECT_EQ(*fixture.ctx.eval("(= \" test\" \" test\")"), *Lisple::B_TRUE);
 
   EXPECT_EQ(*fixture.ctx.eval("(= \"test\" \" test\")"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(= \"a whole sentence\" \"a_whole_sentence\")"), *Lisple::B_FALSE);
+  EXPECT_EQ(*fixture.ctx.eval("(= \"a whole sentence\" \"a_whole_sentence\")"),
+            *Lisple::B_FALSE);
   EXPECT_EQ(*fixture.ctx.eval("(= \" test\" \" test \")"), *Lisple::B_FALSE);
 }
 
@@ -886,19 +907,19 @@ TEST(NotEqualsFunction, chars)
   EXPECT_EQ(*fixture.ctx.eval("(not= '.' '.')"), *Lisple::B_FALSE);
 }
 
-
 TEST(NotEqualsFunction, string)
 {
   LispleTest::RuntimeFixture fixture;
   EXPECT_EQ(*fixture.ctx.eval("(not= \"test\" \" test\")"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= \"a whole sentence\" \"a_whole_sentence\")"), *Lisple::B_TRUE);
+  EXPECT_EQ(*fixture.ctx.eval("(not= \"a whole sentence\" \"a_whole_sentence\")"),
+            *Lisple::B_TRUE);
   EXPECT_EQ(*fixture.ctx.eval("(not= \" test\" \" test \")"), *Lisple::B_TRUE);
 
   EXPECT_EQ(*fixture.ctx.eval("(not= \"test\" \"test\")"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= \"a whole sentence\" \"a whole sentence\")"), *Lisple::B_FALSE);
+  EXPECT_EQ(*fixture.ctx.eval("(not= \"a whole sentence\" \"a whole sentence\")"),
+            *Lisple::B_FALSE);
   EXPECT_EQ(*fixture.ctx.eval("(not= \" test\" \" test\")"), *Lisple::B_FALSE);
 }
-
 
 TEST(AndMacro, logical_and)
 {
@@ -1011,12 +1032,12 @@ TEST(OddEvenPredicateFunction, odd_test)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
-  Lisple::sptr_sobject_v num1{ std::make_shared<Lisple::Number>(1) };
-  Lisple::sptr_sobject_v num2{ std::make_shared<Lisple::Number>(2) };
-  Lisple::sptr_sobject_v num3{ std::make_shared<Lisple::Number>(3) };
-  Lisple::sptr_sobject_v num4{ std::make_shared<Lisple::Number>(4) };
-  Lisple::sptr_sobject_v num5{ std::make_shared<Lisple::Number>(5) };
-  Lisple::sptr_sobject_v num6{ std::make_shared<Lisple::Number>(6) };
+  Lisple::sptr_sobject_v num1{std::make_shared<Lisple::Number>(1)};
+  Lisple::sptr_sobject_v num2{std::make_shared<Lisple::Number>(2)};
+  Lisple::sptr_sobject_v num3{std::make_shared<Lisple::Number>(3)};
+  Lisple::sptr_sobject_v num4{std::make_shared<Lisple::Number>(4)};
+  Lisple::sptr_sobject_v num5{std::make_shared<Lisple::Number>(5)};
+  Lisple::sptr_sobject_v num6{std::make_shared<Lisple::Number>(6)};
 
   Lisple::OddEvenPredicateFunction fn(1);
 
@@ -1033,12 +1054,12 @@ TEST(OddEvenPredicateFunction, even_test)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
-  Lisple::sptr_sobject_v num1{ std::make_shared<Lisple::Number>(1) };
-  Lisple::sptr_sobject_v num2{ std::make_shared<Lisple::Number>(2) };
-  Lisple::sptr_sobject_v num3{ std::make_shared<Lisple::Number>(3) };
-  Lisple::sptr_sobject_v num4{ std::make_shared<Lisple::Number>(4) };
-  Lisple::sptr_sobject_v num5{ std::make_shared<Lisple::Number>(5) };
-  Lisple::sptr_sobject_v num6{ std::make_shared<Lisple::Number>(6) };
+  Lisple::sptr_sobject_v num1{std::make_shared<Lisple::Number>(1)};
+  Lisple::sptr_sobject_v num2{std::make_shared<Lisple::Number>(2)};
+  Lisple::sptr_sobject_v num3{std::make_shared<Lisple::Number>(3)};
+  Lisple::sptr_sobject_v num4{std::make_shared<Lisple::Number>(4)};
+  Lisple::sptr_sobject_v num5{std::make_shared<Lisple::Number>(5)};
+  Lisple::sptr_sobject_v num6{std::make_shared<Lisple::Number>(6)};
 
   Lisple::OddEvenPredicateFunction fn(0);
 
@@ -1057,10 +1078,7 @@ TEST(EvalFunction, eval_string)
   LispleTest::RuntimeFixture fixture;
   Lisple::EvalFunction eval_fn;
 
-  Lisple::sptr_sobject_v args
-  {
-    std::make_shared<Lisple::String>("(+ 10 100)")
-  };
+  Lisple::sptr_sobject_v args{std::make_shared<Lisple::String>("(+ 10 100)")};
 
   // When
   auto result = eval_fn.eval_string(fixture.ctx, args);
@@ -1087,7 +1105,7 @@ TEST(EvalFunction, eval_list)
 TEST(RndFunction, max)
 {
   LispleTest::RuntimeFixture fixture;
-  for (int i=0; i < 1000; i++)
+  for (int i = 0; i < 1000; i++)
   {
     int rndval = fixture.ctx.eval("(rnd 5)")->as<Lisple::Number>().value;
     ASSERT_TRUE(rndval >= 0 && rndval <= 4);
@@ -1154,7 +1172,8 @@ TEST(AssocFunction, replace_key_in_map)
 
   // Then
   EXPECT_EQ(*result, *fixture.runtime.eval("{:a 10 :b 2}"));
-  EXPECT_EQ(*fixture.runtime.lookup(Lisple::Word("my-map")), *fixture.runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*fixture.runtime.lookup(Lisple::Word("my-map")),
+            *fixture.runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST(AssocBangFunction, add_key_to_map)
@@ -1196,7 +1215,8 @@ TEST(AssocBangFunction, add_and_replace_multiple)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
-  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
+  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")),
+            *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
 }
 
 TEST(DissocBangFunction, removal_of_non_existing_key_returns_nil)
@@ -1237,7 +1257,8 @@ TEST(SetBangMacro, set_global_value)
   fixture.runtime.eval("(set! [my-global-var] 50)");
 
   // Then
-  auto& global_var = *fixture.runtime.get_current_namespace().lookup(Lisple::Word("my-global-var"));
+  auto& global_var =
+    *fixture.runtime.get_current_namespace().lookup(Lisple::Word("my-global-var"));
   ASSERT_EQ(global_var.as<Lisple::Number>().value, Lisple::Number(50).value);
 }
 
@@ -1263,7 +1284,8 @@ TEST(SetBangMacro, set_global_map_value)
   fixture.runtime.eval("(set! [:key2 global-map] \"Number 9\")");
 
   // Then
-  auto& global_map = *fixture.runtime.get_current_namespace().lookup(Lisple::Word("global-map"));
+  auto& global_map =
+    *fixture.runtime.get_current_namespace().lookup(Lisple::Word("global-map"));
   auto expected_map = fixture.runtime.eval("{:key1 10 :key2 \"Number 9\"}");
   ASSERT_EQ(global_map, *expected_map);
 }
@@ -1305,7 +1327,8 @@ TEST(WhileMacro, loop_with_counter)
 
   // Then
   EXPECT_EQ(*retval, Lisple::Number(10));
-  EXPECT_EQ(*fixture.runtime.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
+  EXPECT_EQ(*fixture.runtime.get_current_namespace().lookup(Lisple::Word("x")),
+            Lisple::Number(10));
 }
 
 TEST(WhileMacro, multi_form_loop)
@@ -1319,5 +1342,6 @@ TEST(WhileMacro, multi_form_loop)
 
   // Then
   EXPECT_EQ(*retval, Lisple::Number(20));
-  EXPECT_EQ(*fixture.runtime.get_current_namespace().lookup(Lisple::Word("x")), Lisple::Number(10));
+  EXPECT_EQ(*fixture.runtime.get_current_namespace().lookup(Lisple::Word("x")),
+            Lisple::Number(10));
 }
