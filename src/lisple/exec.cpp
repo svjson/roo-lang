@@ -485,12 +485,17 @@ namespace Lisple
   UserFunction::UserFunction(const std::string& home_ns,
                              arg_v args,
                              std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
-                             ptr_exec_node_v& body)
+                             uptr_exec_node_v&& body)
     : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
     , home_ns(home_ns)
     , arg_bindings(std::move(arg_bindings))
-    , body(body)
+    , uptr_body(std::move(body))
   {
+    this->body.reserve(body.size());
+    for (auto& node : uptr_body)
+    {
+      this->body.push_back(node.get());
+    }
   }
 
   UserFunction::UserFunction(const std::string& home_ns,

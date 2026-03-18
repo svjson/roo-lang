@@ -350,7 +350,7 @@ namespace Lisple
     UserFunction(const std::string& home_ns,
                  arg_v,
                  std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
-                 ptr_exec_node_v& body);
+                 uptr_exec_node_v&& body);
 
     UserFunction(const std::string& home_ns,
                  Lisple::arg_v,

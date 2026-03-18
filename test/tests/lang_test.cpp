@@ -452,7 +452,7 @@ TEST(ApplyFunction, apply_dynamic)
   ASSERT_EQ(result->to_string(), "17");
 }
 
-TEST(LambdaMacro, define_and_exec_lambda)
+TEST(FnForm, define_and_exec_lambda)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
@@ -471,7 +471,7 @@ TEST(LambdaMacro, define_and_exec_lambda)
   EXPECT_EQ(retval->as<Lisple::Number>().value, 9);
 }
 
-TEST(LambdaMacro, with_bound_scope)
+TEST(FnForm, with_bound_scope)
 {
   // Given
   LispleTest::RuntimeFixture fixture;

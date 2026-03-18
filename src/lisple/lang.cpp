@@ -309,10 +309,22 @@ namespace Lisple
       arg_types.push_back(Lisple::arg(&Type::ANY));
       arg_bindings.push_back(ArgumentBinding::create(*arg));
     }
+
+    // FIXME: Re-lowering the body to let the resulting UserFunction own
+    // its exec_node tree, without breaking the source tree.
+    //
+    // This is wasteful and should not be necessary.
+    uptr_exec_node_v new_body;
+    for (auto& node : body)
+    {
+      uptr_exec_node new_node = lower(node->form);
+      new_body.push_back(std::move(new_node));
+    }
+
     return std::make_shared<UserFunction>(home_ns->get_name(),
                                           std::move(arg_types),
                                           arg_bindings,
-                                          body);
+                                          std::move(new_body));
   }
 
   std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
