@@ -64,6 +64,10 @@ namespace Lisple
                               char,
                               std::monostate>;
 
+    RTValue() = default;
+    RTValue(int);
+    RTValue(const std::string&, Type type);
+
     RTValue::Data value;
     RTValue::Type type;
 

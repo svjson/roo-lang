@@ -3,9 +3,22 @@
 
 #include "../exception.h"
 #include "../form.h"
+#include "pool.h"
 
 namespace Lisple
 {
+  RTValue::RTValue(int v)
+    : value(RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = v})
+    , type(RTValue::Type::NUMBER)
+  {
+  }
+
+  RTValue::RTValue(const std::string& s, Type type)
+    : value(s)
+    , type(type)
+  {
+  }
+
   int RTValue::Number::get_int() const
   {
     switch (num_type)
@@ -38,10 +51,7 @@ namespace Lisple
 
   sptr_rtval RTValue::number(int v)
   {
-    sptr_rtval val = std::make_shared<RTValue>();
-    val->type = RTValue::Type::NUMBER;
-    val->value = RTValue::Number{.num_type = NumberType::INT, .int_value = v};
-    return val;
+    return IntegerPool::get(v);
   }
 
   sptr_rtval RTValue::number(long v)
@@ -78,10 +88,7 @@ namespace Lisple
 
   sptr_rtval RTValue::keyword(const std::string& v)
   {
-    sptr_rtval val = std::make_shared<RTValue>();
-    val->type = RTValue::Type::KEYWORD;
-    val->value = v;
-    return val;
+    return KeywordPool::get(v);
   }
 
   sptr_rtval RTValue::symbol(const std::string& v)
