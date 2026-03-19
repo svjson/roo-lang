@@ -1,6 +1,7 @@
 
 #include "lang.h"
 
+#include "bind.h"
 #include "context.h"
 #include "exception.h"
 #include "exec.h"
@@ -698,12 +699,7 @@ namespace Lisple
   {
     sptr_sobject_v result;
 
-    // FIXME: Using the AST form for now, because a simple exec of the node
-    // would attempt to lookup the binding variable name, ie [n 100].
-    // There is no n to lookup - it's being declared here.
     auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
-
-    // Array& seq_expr = args[0]->form->as<Lisple::Array>();
 
     if (bnd->value->type == RTValue::Type::VECTOR)
     {

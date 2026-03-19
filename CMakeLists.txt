@@ -24,6 +24,7 @@ endif()
 
 set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/adapter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/bind.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/context.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/dir_root_file_system.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec.cpp

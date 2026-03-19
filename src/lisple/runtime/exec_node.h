@@ -1,4 +1,7 @@
 
+#ifndef LISPLE__EXEC_NODE_H
+#define LISPLE__EXEC_NODE_H
+
 #include "exec_tree.h"
 
 namespace Lisple
@@ -25,3 +28,5 @@ namespace Lisple
   std::string to_string(const ExecNode& node, std::string indent = "");
 
 } // namespace Lisple
+
+#endif /* EXEC_NODE_H */
