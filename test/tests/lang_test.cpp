@@ -485,7 +485,7 @@ TEST(FnForm, with_bound_scope)
   EXPECT_EQ(*result, Lisple::Number(7));
 }
 
-TEST(LetMacro, define_and_exec_let)
+TEST(LetForm, define_and_exec_let)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
@@ -498,7 +498,7 @@ TEST(LetMacro, define_and_exec_let)
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
-TEST(LetMacro, define_and_exec_let_with_dynamic_values)
+TEST(LetForm, define_and_exec_let_with_dynamic_values)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
@@ -511,7 +511,7 @@ TEST(LetMacro, define_and_exec_let_with_dynamic_values)
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
-TEST(LetMacro, destructure_array)
+TEST(LetForm, destructure_array)
 {
   // Given
   Lisple::Runtime runtime;
@@ -523,7 +523,7 @@ TEST(LetMacro, destructure_array)
   ASSERT_EQ(*result, *Lisple::Number::make(35));
 }
 
-TEST(LetMacro, destructure_map)
+TEST(LetForm, destructure_map)
 {
   // Given
   Lisple::Runtime runtime;
@@ -535,7 +535,7 @@ TEST(LetMacro, destructure_map)
   ASSERT_EQ(*result, *Lisple::Number::make(35));
 }
 
-TEST(IfLetMacro, if_let)
+TEST(IfLetForm, if_let)
 {
   // Given
   Lisple::Runtime runtime;
@@ -547,7 +547,7 @@ TEST(IfLetMacro, if_let)
             "\"no value\"");
 }
 
-TEST(IfLetMacro, if_check_must_happen_only_at_current_scope_level)
+TEST(IfLetForm, if_check_must_happen_only_at_current_scope_level)
 {
   // Given
   Lisple::Runtime runtime;
@@ -560,7 +560,7 @@ TEST(IfLetMacro, if_check_must_happen_only_at_current_scope_level)
             "\"no value\"");
 }
 
-TEST(IfLetMacro, branching_should_happen_according_to_truthiness_not_just_ifdef)
+TEST(IfLetForm, branching_should_happen_according_to_truthiness_not_just_ifdef)
 {
   // Given
   Lisple::Runtime runtime;

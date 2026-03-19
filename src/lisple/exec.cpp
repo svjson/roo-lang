@@ -6,9 +6,9 @@
 #include "form.h"
 #include "namespace.h"
 #include "runtime/exec_node.h"
+#include "runtime/value.h"
 #include "scope.h"
 #include "type.h"
-#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -17,6 +17,136 @@
 
 namespace Lisple
 {
+  const Key KEY_DESTR__KEYS("keys");
+  const Key KEY_DESTR__AS("as");
+
+  /** LexicalBinding */
+  std::unique_ptr<LexicalBinding> LexicalBinding::create(LiteralNode& pattern)
+  {
+    if (pattern.value.type == RTValue::Type::SYMBOL)
+    {
+      return std::make_unique<SymbolBinding>(std::get<std::string>(pattern.value.value));
+    }
+    else if (pattern.value.type == RTValue::Type::MAP)
+    {
+      return std::make_unique<MapDestructureBinding>(
+        std::get<std::vector<RTValue>>(pattern.value.value));
+    }
+    else if (pattern.value.type == RTValue::Type::VECTOR)
+    {
+      return std::make_unique<VectorDestructureBinding>(
+        std::get<std::vector<RTValue>>(pattern.value.value));
+    }
+    else
+    {
+      throw LispleException("Invalid bind pattern: " + pattern.ast_node->to_string());
+    }
+  }
+
+  /** SymbolBinding */
+  SymbolBinding::SymbolBinding(const std::string& symbol)
+    : symbol(symbol)
+  {
+  }
+
+  void SymbolBinding::apply(Scope& scope, LiteralNode& value_expr) const
+  {
+    scope.store(symbol, value_expr.ast_node);
+  }
+
+  /** MapDestructureBinding */
+  MapDestructureBinding::MapDestructureBinding(const std::vector<RTValue>& map_data)
+  {
+    auto [_k, keys] = map_entry(map_data, RTValue::keyword("keys"));
+    auto [_vs, as_symbol] = map_entry(map_data, RTValue::keyword("as"));
+
+    if (keys == nullptr || keys->type != RTValue::Type::VECTOR || map_data.size() > 4 ||
+        (map_data.size() == 4 && as_symbol == nullptr))
+    {
+      throw TypeError("Invalid map destructure form.");
+    }
+
+    for (auto& symbol : std::get<std::vector<RTValue>>(keys->value))
+    {
+      if (symbol.type == RTValue::Type::SYMBOL)
+      {
+        bindings.push_back(std::make_pair(
+          RTValue::keyword(std::get<std::string>(symbol.value)),
+          std::make_unique<SymbolBinding>(std::get<std::string>(symbol.value))));
+      }
+      else
+      {
+        throw TypeError("Binding not valid in binding form");
+      }
+    }
+
+    if (as_symbol != nullptr)
+    {
+      this->map_symbol =
+        std::make_unique<SymbolBinding>(std::get<std::string>(as_symbol->value));
+    }
+    else
+    {
+      this->map_symbol = nullptr;
+    }
+  }
+
+  void MapDestructureBinding::apply(Scope& scope, LiteralNode& node) const
+  {
+    std::vector<RTValue>& map = std::get<std::vector<RTValue>>(node.value.value);
+    for (auto& [key, binding] : bindings)
+    {
+      auto [_, val] = map_entry(map, key);
+
+      if (val)
+      {
+        sptr_sobject lkey = Lisple::Key::make(std::get<std::string>(key.value));
+        sptr_sobject lval = node.ast_node->get_sptr_property(*lkey);
+
+        auto lit_node = LiteralNode(*val, lval);
+        binding->apply(scope, lit_node);
+      }
+      else
+      {
+        // FIXME: Bind nil
+      }
+    }
+
+    if (this->map_symbol)
+    {
+      this->map_symbol->apply(scope, node);
+    }
+  }
+
+  /** VectorDestructureBinding */
+  VectorDestructureBinding::VectorDestructureBinding(const std::vector<RTValue>& vector)
+  {
+    for (auto sym : vector)
+    {
+      if (sym.type == RTValue::Type::SYMBOL)
+      {
+        this->bindings.push_back(
+          std::make_unique<SymbolBinding>(std::get<std::string>(sym.value)));
+      }
+      else
+      {
+        throw LispleException("Non-symbol bindings not supported in vector destructuring");
+      }
+    }
+  }
+
+  void VectorDestructureBinding::apply(Scope& scope, LiteralNode& vector_expr) const
+  {
+    std::vector<RTValue>& vec = std::get<std::vector<RTValue>>(vector_expr.value.value);
+
+    for (size_t i = 0; i < this->bindings.size(); i++)
+    {
+      LiteralNode val_node = LiteralNode(vec[i], vector_expr.ast_node->get_children()[i]);
+      this->bindings[i]->apply(scope, val_node);
+    }
+  }
+
+  /** Legacy - ArgumentBinding */
   std::unique_ptr<ArgumentBinding> ArgumentBinding::create(Object& arg_declaration)
   {
     if (arg_declaration.get_type() == Form::WORD)
@@ -49,16 +179,13 @@ namespace Lisple
     scope.store(Word(arg_name), arg_val);
   }
 
-  const Key keys("keys");
-  const Key as("as");
-
   /* DestructuringArgumentBinding */
   DestructuringArgumentBinding::DestructuringArgumentBinding(const Map& binding_form)
     : binding_form(binding_form)
   {
-    if (!binding_form.has_key(keys) || binding_form.keys().size() > 2 ||
-        (binding_form.keys().size() == 2 && !binding_form.has_key(as)) ||
-        !Type::ARRAY.is_type_of(binding_form.get_property(keys)))
+    if (!binding_form.has_key(KEY_DESTR__KEYS) || binding_form.keys().size() > 2 ||
+        (binding_form.keys().size() == 2 && !binding_form.has_key(KEY_DESTR__AS)) ||
+        !Type::ARRAY.is_type_of(binding_form.get_property(KEY_DESTR__KEYS)))
     {
       throw TypeError("Invalid destructuring form: " + binding_form.to_string(2));
     }
@@ -66,7 +193,8 @@ namespace Lisple
 
   void DestructuringArgumentBinding::apply(Scope& scope, sptr_sobject& arg_val)
   {
-    for (auto& key_obj : binding_form.get_sptr_property(keys)->as<Array>().get_children())
+    for (auto& key_obj :
+         binding_form.get_sptr_property(KEY_DESTR__KEYS)->as<Array>().get_children())
     {
       Word& key_name = key_obj->as<Word>();
       auto key = Key::make(key_name.to_string());
@@ -80,9 +208,9 @@ namespace Lisple
       }
     }
 
-    if (binding_form.has_key(as))
+    if (binding_form.has_key(KEY_DESTR__AS))
     {
-      Object& alias = binding_form.get_property(as);
+      Object& alias = binding_form.get_property(KEY_DESTR__AS);
       if (alias.get_type() != Form::WORD)
       {
         throw LispleException("Invalid alias destructuring form: " +
@@ -510,7 +638,7 @@ namespace Lisple
     this->body.reserve(body.size());
     for (auto& node : body)
     {
-      uptr_exec_node unode = lower(node);
+      uptr_exec_node unode = lower_expr(node);
       this->uptr_body.push_back(std::move(unode));
       this->body.push_back(uptr_body.back().get());
     }

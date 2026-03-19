@@ -282,8 +282,7 @@ namespace Lisple
       try
       {
         // FIXME: Temporary rewrap into shared_ptr
-
-        auto node = lower(wrapped);
+        auto node = lower_expr(wrapped);
 
         return Lisple::exec(ctx, *node);
       }

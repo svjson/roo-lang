@@ -6,6 +6,7 @@
 namespace LispleTest
 {
   inline bool logging_enabled = false;
+  inline bool skip_benchmark_tests = false;
 
   long now();
 

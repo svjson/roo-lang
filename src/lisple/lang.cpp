@@ -317,7 +317,7 @@ namespace Lisple
     uptr_exec_node_v new_body;
     for (auto& node : body)
     {
-      uptr_exec_node new_node = lower(node->form);
+      uptr_exec_node new_node = lower_expr(node->form);
       new_body.push_back(std::move(new_node));
     }
 
@@ -447,35 +447,58 @@ namespace Lisple
 
   EXEC_BODY(LetForm, exec_let)
   {
-    Array& bindings = args[0]->form->as<Lisple::Array>();
-
-    if (bindings.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of let expression: " +
-        bindings.to_string());
-    }
-
-    for (size_t i = 0; i < bindings.size(); i += 2)
-    {
-      Scope var_scope;
-      auto binding = ArgumentBinding::create(*bindings.get_children()[i]);
-      // FIXME: This still goes into ctx.eval and causes re-lower
-      auto init_expr = ctx.eval(bindings.get_children()[i + 1]);
-      binding->apply(var_scope, init_expr);
-      ctx.push_context(true, var_scope);
-    }
-
     sptr_sobject result;
 
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      result = exec(ctx, *args[i]);
-    }
+    auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
 
-    for (size_t i = 0; i < bindings.size() / 2; i++)
+    if (bnd->value.type == RTValue::Type::VECTOR)
     {
-      ctx.pop_context();
+      std::vector<RTValue>& bind_forms = std::get<std::vector<RTValue>>(bnd->value.value);
+      if (bind_forms.size() % 2 != 0)
+      {
+        throw LispleException(
+          "Wrong number of parameters in binding form of let expression: " +
+          std::to_string(bind_forms.size()));
+      }
+
+      uptr_exec_node_v bound_values;
+      for (size_t i = 0; i < bind_forms.size(); i += 2)
+      {
+        Scope binding_scope;
+
+        LiteralNode bind_expr(bind_forms[i], args[0]->form->get_children()[i]);
+
+        uptr_exec_node val_exec_node = lower_expr(args[0]->form->get_children()[i + 1]);
+        auto val = lower_literal(exec(ctx, *val_exec_node));
+
+        auto binding = LexicalBinding::create(bind_expr);
+
+        bound_values.push_back(lower_literal(exec(ctx, *val)));
+
+        if (auto* value = std::get_if<LiteralNode>(&bound_values.back()->data))
+        {
+          binding->apply(binding_scope, *value);
+          ctx.push_context(true, binding_scope);
+        }
+        else
+        {
+          throw LispleException("let: Invalid value node.");
+        }
+      }
+
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        result = exec(ctx, *lower_expr(args[i]->form));
+      }
+
+      for (size_t i = 0; i < bind_forms.size() / 2; i++)
+      {
+        ctx.pop_context();
+      }
+    }
+    else
+    {
+      throw LispleException("Invalid binding form.");
     }
 
     return result;
@@ -678,54 +701,67 @@ namespace Lisple
     // FIXME: Using the AST form for now, because a simple exec of the node
     // would attempt to lookup the binding variable name, ie [n 100].
     // There is no n to lookup - it's being declared here.
-    Array& seq_expr = args[0]->form->as<Lisple::Array>();
+    auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
 
-    if (seq_expr.size() < 1 || seq_expr.size() > 2)
+    // Array& seq_expr = args[0]->form->as<Lisple::Array>();
+
+    if (bnd->value.type == RTValue::Type::VECTOR)
     {
-      throw LispleException("Invalid binding form: " + seq_expr.to_string());
-    }
+      std::vector<RTValue>& bind_forms = std::get<std::vector<RTValue>>(bnd->value.value);
 
-    sptr_sobject num_iter = ctx.eval(seq_expr.children.back());
-    if (num_iter->get_type() == Form::NUMBER)
-    {
-      int iterations = num_iter->as<Number>().int_value();
-
-      if (iterations > 0)
+      if (bind_forms.size() < 1 || bind_forms.size() > 2)
       {
-        std::unique_ptr<ArgumentBinding> bind_var = nullptr;
+        throw LispleException("Invalid binding form: " + bnd->ast_node->to_string());
+      }
 
-        if (seq_expr.size() == 2)
+      uptr_exec_node num_iter_node = lower_expr(bnd->ast_node->get_children().back());
+      auto num_iter_evalled = lower_literal(exec(ctx, *num_iter_node));
+      RTValue& num_iter_value = std::get<LiteralNode>(num_iter_evalled->data).value;
+
+      if (num_iter_value.type == RTValue::Type::NUMBER)
+      {
+        int iterations = std::get<RTValue::Number>(num_iter_value.value).get_int();
+
+        if (iterations > 0)
         {
-          bind_var = ArgumentBinding::create(*seq_expr.get_children()[0]);
-        }
+          std::unique_ptr<LexicalBinding> bind_var = nullptr;
 
-        result.reserve(iterations);
-
-        ctx.push_context(true);
-        Scope& iter_scope = ctx.current_scope();
-        size_t n_args = args.size();
-
-        for (int i = 0; i < iterations; i++)
-        {
-          sptr_sobject si = Number::make(i);
-
-          if (bind_var)
+          if (bind_forms.size() == 2)
           {
-            bind_var->apply(iter_scope, si);
+            bind_var =
+              std::make_unique<SymbolBinding>(std::get<std::string>(bind_forms[0].value));
           }
 
-          sptr_sobject iter_result;
+          result.reserve(iterations);
 
-          for (size_t j = 1; j < n_args; j++)
+          ctx.push_context(true);
+          Scope& iter_scope = ctx.current_scope();
+          size_t n_args = args.size();
+
+          for (int i = 0; i < iterations; i++)
           {
-            iter_result = exec(ctx, *args[j]);
+            sptr_sobject si = Number::make(i);
+
+            if (bind_var)
+            {
+              auto inum = Lisple::Number::make(i);
+              auto ilit = LiteralNode(RTValue::number(i), inum);
+              bind_var->apply(iter_scope, ilit);
+            }
+
+            sptr_sobject iter_result;
+
+            for (size_t j = 1; j < n_args; j++)
+            {
+              iter_result = exec(ctx, *lower_expr(args[j]->form));
+            }
+
+            result.push_back(iter_result);
+            iter_scope.clear();
           }
 
-          result.push_back(iter_result);
-          iter_scope.clear();
+          ctx.pop_context();
         }
-
-        ctx.pop_context();
       }
     }
 

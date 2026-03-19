@@ -12,6 +12,10 @@ int main(int argc, char** argv)
     {
       LispleTest::logging_enabled = true;
     }
+    else if (std::string(argv[i]) == "--skip-benchmarks")
+    {
+      LispleTest::skip_benchmark_tests = true;
+    }
   }
 
   std::srand(std::chrono::duration_cast<std::chrono::milliseconds>(

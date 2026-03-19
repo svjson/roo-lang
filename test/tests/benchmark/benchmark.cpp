@@ -38,6 +38,7 @@ namespace LispleTest
 
   void SnippetBenchmark::run()
   {
+    if (skip_benchmark_tests) return;
     Lisple::Runtime runtime;
 
     start_time = now();
@@ -62,7 +63,7 @@ namespace LispleTest
 
     Lisple::Context ctx(runtime);
     lower_start_time = now();
-    auto node = Lisple::lower(parse_result[0]);
+    auto node = Lisple::lower_expr(parse_result[0]);
     lower_end_time = now();
     lower_time = lower_end_time - lower_start_time;
 

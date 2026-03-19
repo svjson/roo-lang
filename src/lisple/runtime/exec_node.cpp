@@ -6,7 +6,7 @@
 #include "../exec.h"
 #include "../type.h"
 #include "exec_tree.h"
-#include <iostream>
+#include <vector>
 
 namespace Lisple
 {
@@ -19,7 +19,7 @@ namespace Lisple
 
         if constexpr (std::is_same_v<T, LiteralNode>)
         {
-          return indent + " - LiteralNode(" + n.value->to_string() + ")\n";
+          return indent + " - LiteralNode(" + node.form->to_string() + ")\n";
         }
         else if constexpr (std::is_same_v<T, LookupNode>)
         {
@@ -75,7 +75,7 @@ namespace Lisple
       node.data);
   }
 
-  std::unique_ptr<ExecNode> lower(const sptr_sobject& obj)
+  std::unique_ptr<ExecNode> lower_expr(const sptr_sobject& obj)
   {
     switch (obj->get_type())
     {
@@ -89,7 +89,7 @@ namespace Lisple
 
       for (auto& child : children)
       {
-        elements.push_back(lower(child));
+        elements.push_back(lower_expr(child));
       }
 
       return std::make_unique<ExecNode>(obj, MapNode(std::move(elements)));
@@ -104,7 +104,7 @@ namespace Lisple
 
       for (auto& child : children)
       {
-        elements.push_back(lower(child));
+        elements.push_back(lower_expr(child));
       }
 
       return std::make_unique<ExecNode>(obj, VectorNode(std::move(elements)));
@@ -120,7 +120,7 @@ namespace Lisple
     case Form::B_TRUE:
     case Form::B_FALSE:
     case Form::NIL:
-      return std::make_unique<ExecNode>(obj, LiteralNode(obj));
+      return lower_literal(obj);
 
     case Form::WORD:
       return std::make_unique<ExecNode>(obj, LookupNode(obj->as<Word>()));
@@ -132,14 +132,14 @@ namespace Lisple
 
       if (children.empty()) throw LispleException("Cannot lower empty list");
 
-      std::unique_ptr<ExecNode> callee = lower(children[0]);
+      std::unique_ptr<ExecNode> callee = lower_expr(children[0]);
 
       std::vector<std::unique_ptr<ExecNode>> args;
       args.reserve(children.size() - 1);
 
       for (size_t i = 1; i < children.size(); i++)
       {
-        args.push_back(lower(children[i]));
+        args.push_back(lower_expr(children[i]));
       }
 
       return std::make_unique<ExecNode>(obj, CallNode(std::move(callee), std::move(args)));
@@ -147,6 +147,95 @@ namespace Lisple
 
     default:
       throw LispleException("Lowering not implemented for form");
+    }
+  }
+
+  std::unique_ptr<ExecNode> lower_literal(const sptr_sobject& obj)
+  {
+    switch (obj->get_type())
+    {
+    case Form::CHAR:
+      return std::make_unique<ExecNode>(
+        obj,
+        LiteralNode(RTValue::character(obj->as<Char>().value), obj));
+    case Form::LIST:
+    {
+      std::vector<RTValue> elements;
+      elements.reserve(obj->get_children().size());
+      for (auto& l : obj->get_children())
+      {
+        auto lit_child = lower_literal(l);
+        elements.push_back(std::get<LiteralNode>(lit_child->data).value);
+      }
+      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::list(elements), obj));
+    }
+    case Form::ARRAY:
+    {
+      std::vector<RTValue> elements;
+      elements.reserve(obj->get_children().size());
+      for (auto& l : obj->get_children())
+      {
+        auto lit_child = lower_literal(l);
+        elements.push_back(std::get<LiteralNode>(lit_child->data).value);
+      }
+      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::vector(elements), obj));
+    }
+    case Form::MAP:
+    {
+      std::vector<RTValue> elements;
+      elements.reserve(obj->get_children().size());
+      for (auto& l : obj->get_children())
+      {
+        auto lit_child = lower_literal(l);
+        elements.push_back(std::get<LiteralNode>(lit_child->data).value);
+      }
+      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::map(elements), obj));
+    }
+    case Form::HOST_OBJECT:
+      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::object(obj.get()), obj));
+    case Form::KEY:
+      return std::make_unique<ExecNode>(
+        obj,
+        LiteralNode(RTValue::keyword(obj->as<Key>().value), obj));
+    case Form::NUMBER:
+    {
+      auto& num_obj = obj->as<Lisple::Number>();
+      switch (num_obj.num_type)
+      {
+      case Lisple::NumberType::INT:
+        return std::make_unique<ExecNode>(
+          obj,
+          LiteralNode(RTValue::number(num_obj.int_value()), obj));
+      case Lisple::NumberType::LONG:
+        return std::make_unique<ExecNode>(
+          obj,
+          LiteralNode(RTValue::number(num_obj.long_value()), obj));
+
+      case Lisple::NumberType::FLOAT:
+        return std::make_unique<ExecNode>(
+          obj,
+          LiteralNode(RTValue::number(num_obj.float_value()), obj));
+      }
+
+      throw LispleException("Unexpected number type");
+    }
+    case Form::BOOLEAN:
+    case Form::B_TRUE:
+    case Form::B_FALSE:
+      return std::make_unique<ExecNode>(
+        obj,
+        LiteralNode(RTValue::boolean(obj->as<Boolean>().value), obj));
+    case Form::STRING:
+      return std::make_unique<ExecNode>(obj,
+                                        LiteralNode(RTValue::string(obj->to_string()), obj));
+    case Form::WORD:
+      return std::make_unique<ExecNode>(obj,
+                                        LiteralNode(RTValue::symbol(obj->to_string()), obj));
+    case Form::SYMBOL:
+      return std::make_unique<ExecNode>(obj,
+                                        LiteralNode(RTValue::symbol(obj->to_string()), obj));
+    default:
+      throw LispleException("Lowering not implemented for form: " + obj->to_string());
     }
   }
 
@@ -159,7 +248,7 @@ namespace Lisple
 
         if constexpr (std::is_same_v<T, LiteralNode>)
         {
-          return n.value;
+          return n.ast_node;
         }
         else if constexpr (std::is_same_v<T, LookupNode>)
         {
@@ -205,21 +294,33 @@ namespace Lisple
 
           if (sig)
           {
-            for (size_t i = 0; i < n.args.size(); i++)
+            if (sig->supports_exec_tree())
             {
-              if (sig->supports_exec_tree())
+              ptr_exec_node_v node_args;
+              uptr_exec_node_v uptr_node_args;
+              node_args.reserve(n.args.size());
+              uptr_node_args.reserve(n.args.size());
+
+              for (size_t i = 0; i < n.args.size(); i++)
               {
-                ptr_exec_node_v node_args;
-                node_args.reserve(n.args.size());
-
-                for (auto& arg : n.args)
+                auto& arg = n.args[i];
+                if (sig->should_eval_arg(i))
                 {
-                  node_args.push_back(arg.get());
+                  uptr_node_args.push_back(lower_expr(exec(ctx, *arg)));
+                  node_args.push_back(uptr_node_args.back().get());
                 }
-
-                return sig->invoke(ctx, node_args);
+                else
+                {
+                  uptr_node_args.push_back(lower_literal(arg->form));
+                  node_args.push_back(uptr_node_args.back().get());
+                }
               }
-              else
+
+              return sig->invoke(ctx, node_args);
+            }
+            else
+            {
+              for (size_t i = 0; i < n.args.size(); i++)
               {
                 auto& arg = n.args[i];
                 if (sig->should_eval_arg(i))
@@ -240,7 +341,6 @@ namespace Lisple
               args.push_back(exec(ctx, *arg));
             }
           }
-
           return fn->execute(ctx, args);
         }
       },

@@ -8,9 +8,17 @@ namespace Lisple
    *
    * @param obj The SObject to lower.
    *
-   * @return A shared pointer to the resulting ExecNode.
+   * @return A unique pointer to the resulting ExecNode.
    */
-  std::unique_ptr<ExecNode> lower(const sptr_sobject& obj);
+  std::unique_ptr<ExecNode> lower_expr(const sptr_sobject& obj);
+  /**
+   * Lower an SObject to a literal/data node.
+   *
+   * @param obj The SObject to lower.
+   *
+   * @return A unique pointer to the resulting ExecNode
+   */
+  std::unique_ptr<ExecNode> lower_literal(const sptr_sobject& obj);
 
   sptr_sobject exec(Context& ctx, const ExecNode& node);
 
