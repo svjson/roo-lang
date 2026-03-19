@@ -2,11 +2,17 @@
 #define LISPLE__VALUE_H
 
 #include "../type.h"
+#include <memory>
 #include <variant>
+#include <vector>
 
 namespace Lisple
 {
   class Function;
+  struct RTValue;
+
+  using sptr_rtval = std::shared_ptr<RTValue>;
+  using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
 
   struct RTValue
   {
@@ -53,7 +59,7 @@ namespace Lisple
                               Function*,
                               std::string,
                               RTValue::Number,
-                              std::vector<RTValue>,
+                              sptr_rtval_v,
                               bool,
                               char,
                               std::monostate>;
@@ -63,30 +69,29 @@ namespace Lisple
 
     bool operator==(const RTValue& other) const;
 
-    static RTValue nil();
-    static RTValue boolean(bool);
-    static RTValue number(int);
-    static RTValue number(long);
-    static RTValue number(double);
-    static RTValue string(const std::string&);
-    static RTValue character(char);
-    static RTValue keyword(const std::string&);
-    static RTValue symbol(const std::string&);
-    static RTValue list(std::vector<RTValue>&);
-    static RTValue vector(std::vector<RTValue>&);
-    static RTValue map(std::vector<RTValue>&);
-    static RTValue object(Object*);
-    static RTValue function(Function*);
+    static sptr_rtval nil();
+    static sptr_rtval boolean(bool);
+    static sptr_rtval number(int);
+    static sptr_rtval number(long);
+    static sptr_rtval number(double);
+    static sptr_rtval string(const std::string&);
+    static sptr_rtval character(char);
+    static sptr_rtval keyword(const std::string&);
+    static sptr_rtval symbol(const std::string&);
+    static sptr_rtval list(sptr_rtval_v&);
+    static sptr_rtval vector(sptr_rtval_v&);
+    static sptr_rtval map(sptr_rtval_v&);
+    static sptr_rtval object(Object*);
+    static sptr_rtval function(Function*);
   };
 
-  RTValue to_rt_value(const Object& obj);
+  sptr_rtval to_rt_value(const Object& obj);
 
   const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data);
 
-  std::pair<const RTValue*, const RTValue*> map_entry(const std::vector<RTValue>& map_data,
-                                                      const RTValue& key);
-  std::pair<RTValue*, RTValue*> map_entry(std::vector<RTValue>& map_data,
-                                          const RTValue& key);
+  std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
+                                                          const RTValue& key);
+  std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key);
 
 } // namespace Lisple
 

@@ -23,19 +23,19 @@ namespace Lisple
   /** LexicalBinding */
   std::unique_ptr<LexicalBinding> LexicalBinding::create(LiteralNode& pattern)
   {
-    if (pattern.value.type == RTValue::Type::SYMBOL)
+    if (pattern.value->type == RTValue::Type::SYMBOL)
     {
-      return std::make_unique<SymbolBinding>(std::get<std::string>(pattern.value.value));
+      return std::make_unique<SymbolBinding>(std::get<std::string>(pattern.value->value));
     }
-    else if (pattern.value.type == RTValue::Type::MAP)
+    else if (pattern.value->type == RTValue::Type::MAP)
     {
       return std::make_unique<MapDestructureBinding>(
-        std::get<std::vector<RTValue>>(pattern.value.value));
+        std::get<sptr_rtval_v>(pattern.value->value));
     }
-    else if (pattern.value.type == RTValue::Type::VECTOR)
+    else if (pattern.value->type == RTValue::Type::VECTOR)
     {
       return std::make_unique<VectorDestructureBinding>(
-        std::get<std::vector<RTValue>>(pattern.value.value));
+        std::get<sptr_rtval_v>(pattern.value->value));
     }
     else
     {
@@ -55,10 +55,10 @@ namespace Lisple
   }
 
   /** MapDestructureBinding */
-  MapDestructureBinding::MapDestructureBinding(const std::vector<RTValue>& map_data)
+  MapDestructureBinding::MapDestructureBinding(const sptr_rtval_v& map_data)
   {
-    auto [_k, keys] = map_entry(map_data, RTValue::keyword("keys"));
-    auto [_vs, as_symbol] = map_entry(map_data, RTValue::keyword("as"));
+    auto [_k, keys] = map_entry(map_data, *RTValue::keyword("keys"));
+    auto [_vs, as_symbol] = map_entry(map_data, *RTValue::keyword("as"));
 
     if (keys == nullptr || keys->type != RTValue::Type::VECTOR || map_data.size() > 4 ||
         (map_data.size() == 4 && as_symbol == nullptr))
@@ -66,13 +66,13 @@ namespace Lisple
       throw TypeError("Invalid map destructure form.");
     }
 
-    for (auto& symbol : std::get<std::vector<RTValue>>(keys->value))
+    for (auto& symbol : std::get<sptr_rtval_v>(keys->value))
     {
-      if (symbol.type == RTValue::Type::SYMBOL)
+      if (symbol->type == RTValue::Type::SYMBOL)
       {
         bindings.push_back(std::make_pair(
-          RTValue::keyword(std::get<std::string>(symbol.value)),
-          std::make_unique<SymbolBinding>(std::get<std::string>(symbol.value))));
+          *RTValue::keyword(std::get<std::string>(symbol->value)),
+          std::make_unique<SymbolBinding>(std::get<std::string>(symbol->value))));
       }
       else
       {
@@ -93,7 +93,7 @@ namespace Lisple
 
   void MapDestructureBinding::apply(Scope& scope, LiteralNode& node) const
   {
-    std::vector<RTValue>& map = std::get<std::vector<RTValue>>(node.value.value);
+    sptr_rtval_v& map = std::get<sptr_rtval_v>(node.value->value);
     for (auto& [key, binding] : bindings)
     {
       auto [_, val] = map_entry(map, key);
@@ -103,7 +103,7 @@ namespace Lisple
         sptr_sobject lkey = Lisple::Key::make(std::get<std::string>(key.value));
         sptr_sobject lval = node.ast_node->get_sptr_property(*lkey);
 
-        auto lit_node = LiteralNode(*val, lval);
+        auto lit_node = LiteralNode(val, lval);
         binding->apply(scope, lit_node);
       }
       else
@@ -119,14 +119,14 @@ namespace Lisple
   }
 
   /** VectorDestructureBinding */
-  VectorDestructureBinding::VectorDestructureBinding(const std::vector<RTValue>& vector)
+  VectorDestructureBinding::VectorDestructureBinding(const sptr_rtval_v& vector)
   {
     for (auto sym : vector)
     {
-      if (sym.type == RTValue::Type::SYMBOL)
+      if (sym->type == RTValue::Type::SYMBOL)
       {
         this->bindings.push_back(
-          std::make_unique<SymbolBinding>(std::get<std::string>(sym.value)));
+          std::make_unique<SymbolBinding>(std::get<std::string>(sym->value)));
       }
       else
       {
@@ -137,7 +137,7 @@ namespace Lisple
 
   void VectorDestructureBinding::apply(Scope& scope, LiteralNode& vector_expr) const
   {
-    std::vector<RTValue>& vec = std::get<std::vector<RTValue>>(vector_expr.value.value);
+    sptr_rtval_v& vec = std::get<sptr_rtval_v>(vector_expr.value->value);
 
     for (size_t i = 0; i < this->bindings.size(); i++)
     {

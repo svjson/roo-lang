@@ -24,11 +24,11 @@ namespace Lisple
 
   struct LiteralNode
   {
-    RTValue value;
+    sptr_rtval value;
     // FIXME: This should not be required here
     sptr_sobject ast_node;
 
-    explicit LiteralNode(const RTValue& v, sptr_sobject ast_node)
+    explicit LiteralNode(const sptr_rtval& v, sptr_sobject ast_node)
       : value(v)
       , ast_node(ast_node)
     {

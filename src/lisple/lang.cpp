@@ -451,9 +451,9 @@ namespace Lisple
 
     auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
 
-    if (bnd->value.type == RTValue::Type::VECTOR)
+    if (bnd->value->type == RTValue::Type::VECTOR)
     {
-      std::vector<RTValue>& bind_forms = std::get<std::vector<RTValue>>(bnd->value.value);
+      sptr_rtval_v& bind_forms = std::get<sptr_rtval_v>(bnd->value->value);
       if (bind_forms.size() % 2 != 0)
       {
         throw LispleException(
@@ -705,9 +705,9 @@ namespace Lisple
 
     // Array& seq_expr = args[0]->form->as<Lisple::Array>();
 
-    if (bnd->value.type == RTValue::Type::VECTOR)
+    if (bnd->value->type == RTValue::Type::VECTOR)
     {
-      std::vector<RTValue>& bind_forms = std::get<std::vector<RTValue>>(bnd->value.value);
+      sptr_rtval_v& bind_forms = std::get<sptr_rtval_v>(bnd->value->value);
 
       if (bind_forms.size() < 1 || bind_forms.size() > 2)
       {
@@ -716,11 +716,11 @@ namespace Lisple
 
       uptr_exec_node num_iter_node = lower_expr(bnd->ast_node->get_children().back());
       auto num_iter_evalled = lower_literal(exec(ctx, *num_iter_node));
-      RTValue& num_iter_value = std::get<LiteralNode>(num_iter_evalled->data).value;
+      sptr_rtval& num_iter_value = std::get<LiteralNode>(num_iter_evalled->data).value;
 
-      if (num_iter_value.type == RTValue::Type::NUMBER)
+      if (num_iter_value->type == RTValue::Type::NUMBER)
       {
-        int iterations = std::get<RTValue::Number>(num_iter_value.value).get_int();
+        int iterations = std::get<RTValue::Number>(num_iter_value->value).get_int();
 
         if (iterations > 0)
         {
@@ -729,7 +729,7 @@ namespace Lisple
           if (bind_forms.size() == 2)
           {
             bind_var =
-              std::make_unique<SymbolBinding>(std::get<std::string>(bind_forms[0].value));
+              std::make_unique<SymbolBinding>(std::get<std::string>(bind_forms[0]->value));
           }
 
           result.reserve(iterations);

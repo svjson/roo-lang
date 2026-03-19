@@ -206,7 +206,7 @@ namespace Lisple
     std::vector<std::tuple<RTValue, std::unique_ptr<LexicalBinding>>> bindings;
 
    public:
-    MapDestructureBinding(const std::vector<RTValue>& map);
+    MapDestructureBinding(const sptr_rtval_v& map);
 
     void apply(Scope& scope, LiteralNode& value_expr) const override;
   };
@@ -216,7 +216,7 @@ namespace Lisple
     std::vector<std::unique_ptr<LexicalBinding>> bindings;
 
    public:
-    VectorDestructureBinding(const std::vector<RTValue>& vector);
+    VectorDestructureBinding(const sptr_rtval_v& vector);
 
     void apply(Scope& scope, LiteralNode& value_expr) const override;
   };

@@ -160,7 +160,7 @@ namespace Lisple
         LiteralNode(RTValue::character(obj->as<Char>().value), obj));
     case Form::LIST:
     {
-      std::vector<RTValue> elements;
+      sptr_rtval_v elements;
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
@@ -171,7 +171,7 @@ namespace Lisple
     }
     case Form::ARRAY:
     {
-      std::vector<RTValue> elements;
+      sptr_rtval_v elements;
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
@@ -182,7 +182,7 @@ namespace Lisple
     }
     case Form::MAP:
     {
-      std::vector<RTValue> elements;
+      sptr_rtval_v elements;
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {

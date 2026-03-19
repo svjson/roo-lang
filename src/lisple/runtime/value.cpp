@@ -20,115 +20,115 @@ namespace Lisple
     }
   }
 
-  RTValue RTValue::nil()
+  sptr_rtval RTValue::nil()
   {
-    RTValue val;
-    val.type = RTValue::Type::NIL;
-    val.value = std::monostate{};
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::NIL;
+    val->value = std::monostate{};
     return val;
   }
 
-  RTValue RTValue::boolean(bool b)
+  sptr_rtval RTValue::boolean(bool b)
   {
-    RTValue val;
-    val.type = RTValue::Type::BOOL;
-    val.value = b;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::BOOL;
+    val->value = b;
     return val;
   }
 
-  RTValue RTValue::number(int v)
+  sptr_rtval RTValue::number(int v)
   {
-    RTValue val;
-    val.type = RTValue::Type::NUMBER;
-    val.value = RTValue::Number{.num_type = NumberType::INT, .int_value = v};
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::NUMBER;
+    val->value = RTValue::Number{.num_type = NumberType::INT, .int_value = v};
     return val;
   }
 
-  RTValue RTValue::number(long v)
+  sptr_rtval RTValue::number(long v)
   {
-    RTValue val;
-    val.type = RTValue::Type::NUMBER;
-    val.value = RTValue::Number{.num_type = NumberType::LONG, .long_value = v};
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::NUMBER;
+    val->value = RTValue::Number{.num_type = NumberType::LONG, .long_value = v};
     return val;
   }
 
-  RTValue RTValue::number(double v)
+  sptr_rtval RTValue::number(double v)
   {
-    RTValue val;
-    val.type = RTValue::Type::NUMBER;
-    val.value = RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v};
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::NUMBER;
+    val->value = RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v};
     return val;
   }
 
-  RTValue RTValue::character(char c)
+  sptr_rtval RTValue::character(char c)
   {
-    RTValue val;
-    val.type = RTValue::Type::CHAR;
-    val.value = c;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::CHAR;
+    val->value = c;
     return val;
   }
 
-  RTValue RTValue::string(const std::string& v)
+  sptr_rtval RTValue::string(const std::string& v)
   {
-    RTValue val;
-    val.type = RTValue::Type::STRING;
-    val.value = v;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::STRING;
+    val->value = v;
     return val;
   }
 
-  RTValue RTValue::keyword(const std::string& v)
+  sptr_rtval RTValue::keyword(const std::string& v)
   {
-    RTValue val;
-    val.type = RTValue::Type::KEYWORD;
-    val.value = v;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::KEYWORD;
+    val->value = v;
     return val;
   }
 
-  RTValue RTValue::symbol(const std::string& v)
+  sptr_rtval RTValue::symbol(const std::string& v)
   {
-    RTValue val;
-    val.type = RTValue::Type::SYMBOL;
-    val.value = v;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::SYMBOL;
+    val->value = v;
     return val;
   }
 
-  RTValue RTValue::object(Object* o)
+  sptr_rtval RTValue::object(Object* o)
   {
-    RTValue val;
-    val.type = RTValue::Type::OBJECT;
-    val.value = o;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::OBJECT;
+    val->value = o;
     return val;
   }
 
-  RTValue RTValue::list(std::vector<RTValue>& v)
+  sptr_rtval RTValue::list(sptr_rtval_v& v)
   {
-    RTValue val;
-    val.type = RTValue::Type::LIST;
-    val.value = v;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::LIST;
+    val->value = v;
     return val;
   }
 
-  RTValue RTValue::vector(std::vector<RTValue>& v)
+  sptr_rtval RTValue::vector(sptr_rtval_v& v)
   {
-    RTValue val;
-    val.type = RTValue::Type::VECTOR;
-    val.value = v;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::VECTOR;
+    val->value = v;
     return val;
   }
 
-  RTValue RTValue::map(std::vector<RTValue>& v)
+  sptr_rtval RTValue::map(sptr_rtval_v& v)
   {
-    RTValue val;
-    val.type = RTValue::Type::MAP;
-    val.value = v;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::MAP;
+    val->value = v;
     return val;
   }
 
-  RTValue RTValue::function(Function* fn)
+  sptr_rtval RTValue::function(Function* fn)
   {
-    RTValue val;
-    val.type = RTValue::Type::FUNCTION;
-    val.value = fn;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::FUNCTION;
+    val->value = fn;
     return val;
   }
 
@@ -147,7 +147,7 @@ namespace Lisple
     }
   }
 
-  RTValue to_rt_value(const Object& obj)
+  sptr_rtval to_rt_value(const Object& obj)
   {
     switch (obj.get_type())
     {
@@ -181,27 +181,27 @@ namespace Lisple
     return keys;
   }
 
-  std::pair<const RTValue*, const RTValue*> map_entry(const std::vector<RTValue>& map_data,
-                                                      const RTValue& key)
+  std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
+                                                          const RTValue& key)
   {
     for (size_t i = 0; i < map_data.size(); i += 2)
     {
-      if (map_data[i] == key)
+      if (*map_data[i] == key)
       {
-        return {&map_data[i], &map_data[i + 1]};
+        return {map_data[i], map_data[i + 1]};
       }
     }
 
     return {nullptr, nullptr};
   }
 
-  std::pair<RTValue*, RTValue*> map_entry(std::vector<RTValue>& map_data, const RTValue& key)
+  std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key)
   {
     for (size_t i = 0; i < map_data.size(); i += 2)
     {
-      if (map_data[i] == key)
+      if (*map_data[i] == key)
       {
-        return {&map_data[i], &map_data[i + 1]};
+        return {map_data[i], map_data[i + 1]};
       }
     }
 
