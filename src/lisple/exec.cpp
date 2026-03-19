@@ -123,7 +123,7 @@ namespace Lisple
   }
 
   Argument::Argument(const TypeRef* type)
-    : Argument(false, type, EVAL)
+    : Argument(false, type, eval_mode::EVAL)
   {
   }
 
@@ -133,11 +133,11 @@ namespace Lisple
   }
 
   Argument::Argument(vararg_mode var, const TypeRef* type)
-    : Argument(var, type, EVAL)
+    : Argument(var, type, eval_mode::EVAL)
   {
   }
 
-  Argument::Argument(vararg_mode var, const TypeRef* type, bool eval)
+  Argument::Argument(vararg_mode var, const TypeRef* type, eval_mode eval)
     : type(type)
     , eval(eval)
     , varargs(var)
@@ -154,9 +154,14 @@ namespace Lisple
     return type->coerce(ctx, obj);
   }
 
+  bool Argument::is_literal() const
+  {
+    return eval == eval_mode::LITERAL;
+  }
+
   bool Argument::evalp() const
   {
-    return eval;
+    return eval == eval_mode::EVAL;
   }
 
   bool Argument::is_vararg() const
@@ -279,6 +284,20 @@ namespace Lisple
     }
 
     return true;
+  }
+
+  bool Signature::is_literal_arg(std::size_t index) const
+  {
+    if (index < arguments.size())
+    {
+      return arguments[index].is_literal();
+    }
+    else if (arguments.back().is_vararg())
+    {
+      return arguments.back().is_literal();
+    }
+    throw InvocationException("Invalid argument index: " + std::to_string(index) +
+                              ". Are varargs correcly applied?");
   }
 
   bool Signature::should_eval_arg(std::size_t index) const

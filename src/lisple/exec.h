@@ -148,17 +148,24 @@ FORM_NAME::FORM_NAME() \
   Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]] Lisple::Context& ctx,                 \
                                             [[maybe_unused]] Lisple::sptr_sobject_v& args)
 
+#define DATA eval_mode::LITERAL
+#define NO_EVAL eval_mode::POSTPONE
+
 namespace Lisple
 {
   class Context;
   class Scope;
 
   typedef bool vararg_mode;
-  typedef bool eval_mode;
+
+  enum class eval_mode : uint8_t
+  {
+    EVAL,
+    POSTPONE,
+    LITERAL
+  };
 
   inline const vararg_mode VARARG = true;
-  inline const eval_mode EVAL = true;
-  inline const eval_mode NO_EVAL = false;
 
   class ArgumentBinding
   {
@@ -203,7 +210,7 @@ namespace Lisple
   class Argument
   {
     const TypeRef* type;
-    const bool eval;
+    const eval_mode eval;
     const bool varargs;
 
    public:
@@ -216,7 +223,19 @@ namespace Lisple
     bool is_vararg() const;
     bool matches(Lisple::Object&) const;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
+    /**
+     * @brief Query if the argument should be evaluated before being
+     * passed to the target executable form, or if it should be passed
+     * as-is for the target to handle evaluation itself.
+     *
+     * This is for legacy use. EVAL = true, LITERAL/POSTPONE = false
+     */
     bool evalp() const;
+    /**
+     * @brief Query if the target executable expects the argument as
+     * pure literal data.
+     */
+    bool is_literal() const;
     std::string to_string() const;
   };
 
@@ -247,6 +266,7 @@ namespace Lisple
 
     bool supports_exec_tree() const;
     bool matches(const sptr_sobject_v& args) const;
+    bool is_literal_arg(std::size_t index) const;
     bool should_eval_arg(std::size_t index) const;
     /*
      * @brief Attempt to coerce arguments list to fit the Signature by inspecting

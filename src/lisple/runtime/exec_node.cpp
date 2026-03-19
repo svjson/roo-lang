@@ -10,6 +10,19 @@
 
 namespace Lisple
 {
+  std::string to_string(const ptr_exec_node_v& nodes, std::string indent)
+  {
+    std::string result = "";
+
+    for (size_t i = 0; i < nodes.size(); i++)
+    {
+      result += indent + " - #" + std::to_string(i) + "\n";
+      result += to_string(*nodes[i], indent + "  ");
+    }
+
+    return result;
+  }
+
   std::string to_string(const ExecNode& node, std::string indent)
   {
     return std::visit(
@@ -304,15 +317,19 @@ namespace Lisple
               for (size_t i = 0; i < n.args.size(); i++)
               {
                 auto& arg = n.args[i];
+                if (sig->is_literal_arg(i))
+                {
+                  uptr_node_args.push_back(lower_literal(arg->form));
+                  node_args.push_back(uptr_node_args.back().get());
+                }
                 if (sig->should_eval_arg(i))
                 {
-                  uptr_node_args.push_back(lower_expr(exec(ctx, *arg)));
+                  uptr_node_args.push_back(lower_literal(exec(ctx, *arg)));
                   node_args.push_back(uptr_node_args.back().get());
                 }
                 else
                 {
-                  uptr_node_args.push_back(lower_literal(arg->form));
-                  node_args.push_back(uptr_node_args.back().get());
+                  node_args.push_back(arg.get());
                 }
               }
 

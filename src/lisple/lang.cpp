@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <bits/std_abs.h>
 #include <cmath>
-#include <compare>
 #include <cstdlib>
 #include <ctype.h>
 #include <iostream>
@@ -140,8 +139,8 @@ namespace Lisple
 
   /* NsMacro */
   MACRO_IMPL(NsMacro,
-             MULTI_SIG((FN_ARGS((&Type::WORD, false)), EXEC_DISPATCH(&NsMacro::switch_ns)),
-                       (FN_ARGS((&Type::WORD, false), (&Type::LIST, false)),
+             MULTI_SIG((FN_ARGS((&Type::WORD, DATA)), EXEC_DISPATCH(&NsMacro::switch_ns)),
+                       (FN_ARGS((&Type::WORD, DATA), (&Type::LIST, DATA)),
                         EXEC_DISPATCH(&NsMacro::switch_ns))))
 
   Key KEY_REQUIRE("require");
@@ -243,7 +242,7 @@ namespace Lisple
 
   /* CommentMacro */
   MACRO_IMPL(CommentMacro,
-             SIG((FN_ARGS((VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&CommentMacro::comment))))
 
   MACRO_BODY(CommentMacro, comment)
@@ -253,9 +252,9 @@ namespace Lisple
 
   /* DefMacro */
   MACRO_IMPL(DefMacro,
-             MULTI_SIG((FN_ARGS((&Type::WORD, false), (&Type::ANY)),
+             MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
                         EXEC_DISPATCH(&DefMacro::define_obj)),
-                       (FN_ARGS((&Type::WORD, false), (&Type::STRING), (&Type::ANY)),
+                       (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
                         EXEC_DISPATCH(&DefMacro::define_obj_docstring))))
 
   MACRO_BODY(DefMacro, define_obj)
@@ -347,14 +346,14 @@ namespace Lisple
   }
 
   MACRO_IMPL(DefunMacro,
-             MULTI_SIG((FN_ARGS((&Type::WORD, false),
-                                (&Type::ARRAY, false),
-                                (VARARG, &Type::ANY, false)),
+             MULTI_SIG((FN_ARGS((&Type::WORD, DATA),
+                                (&Type::ARRAY, DATA),
+                                (VARARG, &Type::ANY, NO_EVAL)),
                         EXEC_DISPATCH(&DefunMacro::define_fun)),
-                       (FN_ARGS((&Type::WORD, false),
-                                (&Type::STRING, false),
-                                (&Type::ARRAY, false),
-                                (VARARG, &Type::ANY, false)),
+                       (FN_ARGS((&Type::WORD, DATA),
+                                (&Type::STRING, DATA),
+                                (&Type::ARRAY, DATA),
+                                (VARARG, &Type::ANY, NO_EVAL)),
                         EXEC_DISPATCH(&DefunMacro::define_fun_docstring))))
 
   /* DefunMacro */
@@ -380,7 +379,7 @@ namespace Lisple
   }
 
   SPECIAL_FORM_IMPL(FnForm,
-                    SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::exec_decl))))
 
   MACRO_BODY(FnForm, inv_decl)
@@ -408,7 +407,7 @@ namespace Lisple
 
   /* LetForm */
   SPECIAL_FORM_IMPL(LetForm,
-                    SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&LetForm::inv_let, &LetForm::exec_let))))
 
   MACRO_BODY(LetForm, inv_let)
@@ -489,7 +488,7 @@ namespace Lisple
 
       for (size_t i = 1; i < args.size(); i++)
       {
-        result = exec(ctx, *lower_expr(args[i]->form));
+        result = exec(ctx, *args[i]);
       }
 
       for (size_t i = 0; i < bind_forms.size() / 2; i++)
@@ -507,7 +506,7 @@ namespace Lisple
 
   /* WhenLetMacro */
   MACRO_IMPL(WhenLetMacro,
-             SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&WhenLetMacro::make_when_let))))
 
   MACRO_BODY(WhenLetMacro, make_when_let)
@@ -567,9 +566,10 @@ namespace Lisple
   }
 
   /* IfLetMacro */
-  MACRO_IMPL(IfLetMacro,
-             SIG((FN_ARGS((&Type::ARRAY, false), (&Type::ANY, false), (&Type::ANY, false)),
-                  EXEC_DISPATCH(&IfLetMacro::make_if_let))))
+  MACRO_IMPL(
+    IfLetMacro,
+    SIG((FN_ARGS((&Type::ARRAY, DATA), (&Type::ANY, NO_EVAL), (&Type::ANY, NO_EVAL)),
+         EXEC_DISPATCH(&IfLetMacro::make_if_let))))
 
   MACRO_BODY(IfLetMacro, make_if_let)
   {
@@ -628,7 +628,8 @@ namespace Lisple
   }
 
   MACRO_IMPL(DoMacro,
-             SIG((FN_ARGS((&VARARG, &Type::ANY, false)), EXEC_DISPATCH(&DoMacro::make_do))))
+             SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
+                  EXEC_DISPATCH(&DoMacro::make_do))))
 
   MACRO_BODY(DoMacro, make_do)
   {
@@ -644,7 +645,7 @@ namespace Lisple
 
   /* DoTimes - dotimes */
   SPECIAL_FORM_IMPL(DoTimesForm,
-                    SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
                                        &DoTimesForm::exec_dotimes))))
 
@@ -749,7 +750,7 @@ namespace Lisple
 
             for (size_t j = 1; j < n_args; j++)
             {
-              iter_result = exec(ctx, *lower_expr(args[j]->form));
+              iter_result = exec(ctx, *args[j]);
             }
 
             result.push_back(iter_result);
@@ -766,8 +767,7 @@ namespace Lisple
 
   /* PrintFunction - prn */
   FUNC_IMPL(PrintFunction,
-            SIG((FN_ARGS((&VARARG, &Type::ANY, true)),
-                 EXEC_DISPATCH(&PrintFunction::do_print))))
+            SIG((FN_ARGS((&VARARG, &Type::ANY)), EXEC_DISPATCH(&PrintFunction::do_print))))
 
   FUNC_BODY(PrintFunction, do_print)
   {
@@ -791,7 +791,7 @@ namespace Lisple
 
   /* ThreadFirstMacro */
   MACRO_IMPL(ThreadFirstMacro,
-             SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&ThreadFirstMacro::make_thread_first))))
 
   MACRO_BODY(ThreadFirstMacro, make_thread_first)
@@ -854,7 +854,7 @@ namespace Lisple
   }
 
   SetBangMacro::SetBangMacro()
-    : Macro(SIG((FN_ARGS((&Lisple::Type::ARRAY, false), (&Lisple::Type::ANY)),
+    : Macro(SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
                  EXEC_DISPATCH(&SetBangMacro::do_set_member))))
   {
   }
@@ -887,7 +887,7 @@ namespace Lisple
   }
 
   MACRO_IMPL(WhileMacro,
-             SIG((FN_ARGS((&Lisple::Type::ANY, false), (VARARG, &Lisple::Type::ANY, false)),
+             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&WhileMacro::make_while))))
 
   MACRO_BODY(WhileMacro, make_while)
@@ -908,11 +908,12 @@ namespace Lisple
   }
 
   MACRO_IMPL(IfMacro,
-             MULTI_SIG((FN_ARGS((&Lisple::Type::ANY, false), (&Lisple::Type::ANY, false)),
+             MULTI_SIG((FN_ARGS((&Lisple::Type::ANY, NO_EVAL),
+                                (&Lisple::Type::ANY, NO_EVAL)),
                         EXEC_DISPATCH(&IfMacro::make_if)),
-                       (FN_ARGS((&Lisple::Type::ANY, false),
-                                (&Lisple::Type::ANY, false),
-                                (&Lisple::Type::ANY, false)),
+                       (FN_ARGS((&Lisple::Type::ANY, NO_EVAL),
+                                (&Lisple::Type::ANY, NO_EVAL),
+                                (&Lisple::Type::ANY, NO_EVAL)),
                         EXEC_DISPATCH(&IfMacro::make_if))))
 
   MACRO_BODY(IfMacro, make_if)
@@ -935,7 +936,7 @@ namespace Lisple
 
   /* when */
   MACRO_IMPL(WhenMacro,
-             SIG((FN_ARGS((&Type::ANY, false), (VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&WhenMacro::make_when))))
 
   MACRO_BODY(WhenMacro, make_when)
@@ -957,7 +958,7 @@ namespace Lisple
 
   /* case */
   MACRO_IMPL(CaseMacro,
-             SIG((FN_ARGS((&Type::ANY, false), (VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&CaseMacro::make_case))))
 
   Key DEFAULT = Key("default");
@@ -993,7 +994,7 @@ namespace Lisple
 
   /* cond */
   MACRO_IMPL(CondMacro,
-             SIG((FN_ARGS((VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&CondMacro::make_cond))))
 
   MACRO_BODY(CondMacro, make_cond)
@@ -1026,9 +1027,9 @@ namespace Lisple
 
   /* ForMacro - for */
   MACRO_IMPL(ForMacro,
-             MULTI_SIG((FN_ARGS((&Type::SEQ, false), (VARARG, &Type::ANY, false)),
+             MULTI_SIG((FN_ARGS((&Type::SEQ, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                         EXEC_DISPATCH(&ForMacro::make_for)),
-                       (FN_ARGS((&Type::STRING, false), (VARARG, &Type::ANY, false)),
+                       (FN_ARGS((&Type::STRING), (VARARG, &Type::ANY, NO_EVAL)),
                         EXEC_DISPATCH(&ForMacro::make_for))))
 
   MACRO_BODY(ForMacro, make_for)
@@ -1071,7 +1072,7 @@ namespace Lisple
 
   /* ForIndexedMacro - for-indexed */
   MACRO_IMPL(ForIndexedMacro,
-             SIG((FN_ARGS((&Type::ARRAY, false), (VARARG, &Type::ANY, false)),
+             SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&ForIndexedMacro::make_for))))
 
   MACRO_BODY(ForIndexedMacro, make_for)
@@ -1535,7 +1536,7 @@ namespace Lisple
   }
 
   MACRO_IMPL(AndMacro,
-             SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, false)),
+             SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&AndMacro::logical_and))))
 
   FUNC_BODY(AndMacro, logical_and)
@@ -1555,7 +1556,7 @@ namespace Lisple
   }
 
   MACRO_IMPL(OrMacro,
-             SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, false)),
+             SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&OrMacro::logical_or))))
 
   MACRO_BODY(OrMacro, logical_or)
