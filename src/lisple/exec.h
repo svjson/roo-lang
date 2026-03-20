@@ -3,6 +3,7 @@
 #define __SEXP_EXEC_H_
 
 #include "form.h"
+#include "namespace.h"
 #include "runtime/eval_plan.h"
 #include "runtime/exec_tree.h"
 #include "type.h"
@@ -394,6 +395,23 @@ namespace Lisple
 
     std::string to_string(int depth = -1) const override;
   };
+
+  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+                                                Object& arg_array,
+                                                sptr_sobject_v& body);
+
+  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+                                                Object& arg_array,
+                                                ptr_exec_node_v& body);
+
+  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
+                                                             Object& arg_array,
+                                                             sptr_sobject_v& body);
+
+  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
+                                                             Object& arg_array,
+                                                             ptr_exec_node_v& body);
+
 } // namespace Lisple
 
 #endif

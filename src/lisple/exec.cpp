@@ -630,4 +630,81 @@ namespace Lisple
   {
     return "<macro>";
   }
+
+  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+                                                Object& arg_array,
+                                                sptr_sobject_v& body)
+  {
+    std::vector<Argument> arg_types;
+    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
+    arg_types.reserve(arg_array.size());
+    arg_bindings.reserve(arg_array.size());
+    for (auto& arg : arg_array.get_children())
+    {
+      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP)
+      {
+        throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
+      }
+      arg_types.push_back(Lisple::arg(&Type::ANY));
+      arg_bindings.push_back(ArgumentBinding::create(*arg));
+    }
+    return std::make_shared<UserFunction>(home_ns->get_name(),
+                                          std::move(arg_types),
+                                          arg_bindings,
+                                          body);
+  }
+
+  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+                                                Object& arg_array,
+                                                ptr_exec_node_v& body)
+  {
+    std::vector<Argument> arg_types;
+    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
+    arg_types.reserve(arg_array.size());
+    arg_bindings.reserve(arg_array.size());
+    for (auto& arg : arg_array.get_children())
+    {
+      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP)
+      {
+        throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
+      }
+      arg_types.push_back(Lisple::arg(&Type::ANY));
+      arg_bindings.push_back(ArgumentBinding::create(*arg));
+    }
+
+    // FIXME: Re-lowering the body to let the resulting UserFunction own
+    // its exec_node tree, without breaking the source tree.
+    //
+    // This is wasteful and should not be necessary.
+    uptr_exec_node_v new_body;
+    for (auto& node : body)
+    {
+      uptr_exec_node new_node = lower_expr(node->form);
+      new_body.push_back(std::move(new_node));
+    }
+
+    return std::make_shared<UserFunction>(home_ns->get_name(),
+                                          std::move(arg_types),
+                                          arg_bindings,
+                                          std::move(new_body));
+  }
+
+  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
+                                                             Object& arg_array,
+                                                             sptr_sobject_v& body)
+  {
+    std::shared_ptr<Function> fn =
+      create_function(ctx.get_current_namespace(), arg_array, body);
+    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
+  }
+
+  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
+                                                             Object& arg_array,
+                                                             ptr_exec_node_v& body)
+  {
+    std::shared_ptr<Function> fn =
+      create_function(ctx.get_current_namespace(), arg_array, body);
+    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
+  }
+
 } // namespace Lisple

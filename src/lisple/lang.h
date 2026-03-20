@@ -4,7 +4,6 @@
 
 #include "exec.h"
 #include "namespace.h"
-#include "runtime/exec_tree.h"
 #include "type.h"
 #include <cstdint>
 
@@ -24,24 +23,6 @@ namespace Lisple
 
   MACRO_DECL(DefMacro, define_obj, define_obj_docstring)
   MACRO_DECL(DefunMacro, define_fun, define_fun_docstring)
-  SPECIAL_FORM_DECL(FnForm, decl)
-
-  /*!
-  * @brief Temporarily bind values to variables that will exist only within
-  * the scope of the body of the let macro
-  *
-  * Usage:
-  * @code
-  * (let [var-name (some-function)] body...)
-  * (let [name "Cheech" age 54] body...)
-  ' @endcode
-  *
-  * | Arg # | Description                                                |
-  * |-------|------------------------------------------------------------|
-  * | 0     | Array containing a variable name and variable value pairs  |
-  * | 1...  | Body forms to execute with the temporary bindings          |
-  */
-  SPECIAL_FORM_DECL(LetForm, let)
 
   /*!
    * @brief Temporarily bind values to variables that will exist only
@@ -61,7 +42,6 @@ namespace Lisple
   MACRO_DECL(WhenLetMacro, make_when_let)
 
   MACRO_DECL(DoMacro, make_do)
-  SPECIAL_FORM_DECL(DoTimesForm, dotimes)
 
   MACRO_DECL(WhileMacro, make_while)
 

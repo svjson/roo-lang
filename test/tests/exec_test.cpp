@@ -8,16 +8,16 @@
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
+#include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
+#include <lisple/host.h>
 #include <lisple/lang.h>
+#include <lisple/lang/loop.h>
+#include <lisple/runtime.h>
 #include <lisple/type.h>
 #include <memory>
 #include <stdexcept>
-
-#include "lisple/exception.h"
-#include "lisple/host.h"
-#include "lisple/runtime.h"
 
 using namespace ::testing;
 

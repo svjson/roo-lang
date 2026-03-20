@@ -8,9 +8,10 @@
 #include "form.h"
 #include "host.h"
 #include "impl.h"
+#include "lang/bind_form.h"
+#include "lang/func.h"
+#include "lang/loop.h"
 #include "namespace.h"
-#include "runtime/exec_node.h"
-#include "runtime/lower.h"
 #include "scope.h"
 #include "type.h"
 #include <algorithm>
@@ -24,8 +25,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "lisple/runtime/eval_plan.h"
 
 namespace Lisple
 {
@@ -272,82 +271,6 @@ namespace Lisple
     return args[1];
   }
 
-  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
-                                                Object& arg_array,
-                                                sptr_sobject_v& body)
-  {
-    std::vector<Argument> arg_types;
-    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
-    arg_types.reserve(arg_array.size());
-    arg_bindings.reserve(arg_array.size());
-    for (auto& arg : arg_array.get_children())
-    {
-      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP)
-      {
-        throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
-      }
-      arg_types.push_back(Lisple::arg(&Type::ANY));
-      arg_bindings.push_back(ArgumentBinding::create(*arg));
-    }
-    return std::make_shared<UserFunction>(home_ns->get_name(),
-                                          std::move(arg_types),
-                                          arg_bindings,
-                                          body);
-  }
-
-  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
-                                                Object& arg_array,
-                                                ptr_exec_node_v& body)
-  {
-    std::vector<Argument> arg_types;
-    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
-    arg_types.reserve(arg_array.size());
-    arg_bindings.reserve(arg_array.size());
-    for (auto& arg : arg_array.get_children())
-    {
-      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP)
-      {
-        throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
-      }
-      arg_types.push_back(Lisple::arg(&Type::ANY));
-      arg_bindings.push_back(ArgumentBinding::create(*arg));
-    }
-
-    // FIXME: Re-lowering the body to let the resulting UserFunction own
-    // its exec_node tree, without breaking the source tree.
-    //
-    // This is wasteful and should not be necessary.
-    uptr_exec_node_v new_body;
-    for (auto& node : body)
-    {
-      uptr_exec_node new_node = lower_expr(node->form);
-      new_body.push_back(std::move(new_node));
-    }
-
-    return std::make_shared<UserFunction>(home_ns->get_name(),
-                                          std::move(arg_types),
-                                          arg_bindings,
-                                          std::move(new_body));
-  }
-
-  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             Object& arg_array,
-                                                             sptr_sobject_v& body)
-  {
-    std::shared_ptr<Function> fn =
-      create_function(ctx.get_current_namespace(), arg_array, body);
-    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
-  }
-
-  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             Object& arg_array,
-                                                             ptr_exec_node_v& body)
-  {
-    std::shared_ptr<Function> fn =
-      create_function(ctx.get_current_namespace(), arg_array, body);
-    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
-  }
-
   MACRO_IMPL(DefunMacro,
              MULTI_SIG((FN_ARGS((&Type::WORD, DATA),
                                 (&Type::ARRAY, DATA),
@@ -379,127 +302,6 @@ namespace Lisple
   {
     args.erase(args.begin() + 1);
     return this->define_fun(ctx, args);
-  }
-
-  SPECIAL_FORM_IMPL(FnForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::exec_decl))))
-
-  MACRO_BODY(FnForm, inv_decl)
-  {
-    sptr_sobject_v body;
-    body.reserve(args.size() - 1);
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-    return create_detached_function(ctx, *args[0], body);
-  }
-
-  EXEC_BODY(FnForm, exec_decl)
-  {
-    ptr_exec_node_v body;
-
-    body.reserve(args.size() - 1);
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-    return create_detached_function(ctx, *args[0]->form, body);
-  }
-
-  /* LetForm */
-  SPECIAL_FORM_IMPL(LetForm,
-                    SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
-                                 (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&LetForm::inv_let, &LetForm::exec_let))))
-
-  MACRO_BODY(LetForm, inv_let)
-  {
-    Object& bindings = *args[0];
-
-    if (bindings.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of let expression: " +
-        bindings.to_string());
-    }
-
-    for (size_t i = 0; i < bindings.size(); i += 2)
-    {
-      Scope var_scope;
-      auto binding = ArgumentBinding::create(*bindings.get_children()[i]);
-      auto init_expr = ctx.eval(bindings.get_children()[i + 1]);
-      binding->apply(var_scope, init_expr);
-      ctx.push_context(true, var_scope);
-    }
-
-    sptr_sobject result;
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      result = ctx.eval(args[i]);
-    }
-
-    for (size_t i = 0; i < bindings.size() / 2; i++)
-    {
-      ctx.pop_context();
-    }
-
-    return result;
-  }
-
-  EXEC_BODY(LetForm, exec_let)
-  {
-    sptr_sobject result;
-
-    if (ExecNodeList* bnd = std::get_if<ExecNodeList>(&args[0]->data))
-    {
-      if (bnd->nodes.size() % 2 != 0)
-      {
-        throw LispleException(
-          "Wrong number of parameters in binding form of let expression: " +
-          std::to_string(bnd->nodes.size()));
-      }
-
-      uptr_exec_node_v bound_values;
-      for (size_t i = 0; i < bnd->nodes.size(); i += 2)
-      {
-        Scope binding_scope;
-
-        LiteralNode& bind_expr = std::get<LiteralNode>(bnd->nodes[i]->data);
-
-        auto binding = LexicalBinding::create(bind_expr);
-
-        bound_values.push_back(lower_literal(exec(ctx, *bnd->nodes[i + 1])));
-
-        if (auto* value = std::get_if<LiteralNode>(&bound_values.back()->data))
-        {
-          binding->apply(binding_scope, *value);
-          ctx.push_context(true, binding_scope);
-        }
-        else
-        {
-          throw LispleException("let: Invalid value node.");
-        }
-      }
-
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        result = exec(ctx, *args[i]);
-      }
-
-      for (size_t i = 0; i < bnd->nodes.size() / 2; i++)
-      {
-        ctx.pop_context();
-      }
-    }
-    else
-    {
-      throw LispleException("let: Invalid bind form.");
-    }
-
-    return result;
   }
 
   /* WhenLetMacro */
@@ -639,128 +441,6 @@ namespace Lisple
     }
     ctx.pop_context();
     return ret;
-  }
-
-  /* DoTimes - dotimes */
-  SPECIAL_FORM_IMPL(DoTimesForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
-                                       &DoTimesForm::exec_dotimes))))
-
-  MACRO_BODY(DoTimesForm, inv_dotimes)
-  {
-    size_t n_args = args.size();
-    sptr_sobject_v result;
-
-    Array& seq_expr = args[0]->as<Lisple::Array>();
-    if (seq_expr.size() < 1 || seq_expr.size() > 2)
-    {
-      throw LispleException("Invalid binding form: " + seq_expr.to_string());
-    }
-
-    std::unique_ptr<ArgumentBinding> bind_var = nullptr;
-
-    sptr_sobject num_iter = ctx.eval(seq_expr.children.back());
-    if (num_iter->get_type() == Form::NUMBER)
-    {
-      int iterations = num_iter->as<Number>().int_value();
-
-      if (seq_expr.size() == 2)
-      {
-        bind_var = ArgumentBinding::create(*seq_expr.get_children()[0]);
-      }
-
-      if (iterations > 0)
-      {
-        result.reserve(iterations);
-
-        ctx.push_context(true);
-        Scope& iter_scope = ctx.current_scope();
-        for (int i = 0; i < iterations; i++)
-        {
-          sptr_sobject si = Number::make(i);
-          if (bind_var) bind_var->apply(iter_scope, si);
-          sptr_sobject iter_result;
-          for (size_t i = 1; i < n_args; i++)
-          {
-            iter_result = ctx.eval(args[i]);
-          }
-          result.push_back(std::move(iter_result));
-          iter_scope.clear();
-        }
-        ctx.pop_context();
-      }
-    }
-    return std::make_shared<Array>(std::move(result));
-  }
-
-  EXEC_BODY(DoTimesForm, exec_dotimes)
-  {
-    sptr_sobject_v result;
-
-    auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
-
-    if (bnd->value->type == RTValue::Type::VECTOR)
-    {
-      sptr_rtval_v& bind_forms = std::get<sptr_rtval_v>(bnd->value->value);
-
-      if (bind_forms.size() < 1 || bind_forms.size() > 2)
-      {
-        throw LispleException("Invalid binding form: " + bnd->ast_node->to_string());
-      }
-
-      uptr_exec_node num_iter_node = lower_expr(bnd->ast_node->get_children().back());
-      auto num_iter_evalled = lower_literal(exec(ctx, *num_iter_node));
-      sptr_rtval& num_iter_value = std::get<LiteralNode>(num_iter_evalled->data).value;
-
-      if (num_iter_value->type == RTValue::Type::NUMBER)
-      {
-        int iterations = std::get<RTValue::Number>(num_iter_value->value).get_int();
-
-        if (iterations > 0)
-        {
-          std::unique_ptr<LexicalBinding> bind_var = nullptr;
-
-          if (bind_forms.size() == 2)
-          {
-            bind_var =
-              std::make_unique<SymbolBinding>(std::get<std::string>(bind_forms[0]->value));
-          }
-
-          result.reserve(iterations);
-
-          ctx.push_context(true);
-          Scope& iter_scope = ctx.current_scope();
-          size_t n_args = args.size();
-
-          for (int i = 0; i < iterations; i++)
-          {
-            sptr_sobject si = Number::make(i);
-
-            if (bind_var)
-            {
-              auto inum = Lisple::Number::make(i);
-              auto ilit = LiteralNode(RTValue::number(i), inum);
-              bind_var->apply(iter_scope, ilit);
-            }
-
-            sptr_sobject iter_result;
-
-            for (size_t j = 1; j < n_args; j++)
-            {
-              iter_result = exec(ctx, *args[j]);
-            }
-
-            result.push_back(iter_result);
-            iter_scope.clear();
-          }
-
-          ctx.pop_context();
-        }
-      }
-    }
-
-    return Array::make(result);
   }
 
   /* PrintFunction - prn */
