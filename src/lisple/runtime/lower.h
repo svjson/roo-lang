@@ -1,0 +1,29 @@
+
+#ifndef LISPLE__LOWER_H
+#define LISPLE__LOWER_H
+
+#include "exec_tree.h"
+#include <memory>
+
+namespace Lisple
+{
+  /**
+   * Lower an SObject to an executable node.
+   *
+   * @param obj The SObject to lower.
+   *
+   * @return A unique pointer to the resulting ExecNode.
+   */
+  std::unique_ptr<ExecNode> lower_expr(const sptr_sobject& obj);
+  /**
+   * Lower an SObject to a literal/data node.
+   *
+   * @param obj The SObject to lower.
+   *
+   * @return A unique pointer to the resulting ExecNode
+   */
+  std::unique_ptr<ExecNode> lower_literal(const sptr_sobject& obj);
+
+} // namespace Lisple
+
+#endif /* LISPLE__LOWER_H */

@@ -28,41 +28,28 @@ namespace Lisple
     // FIXME: This should not be required here
     sptr_sobject ast_node;
 
-    explicit LiteralNode(const sptr_rtval& v, sptr_sobject ast_node)
-      : value(v)
-      , ast_node(ast_node)
-    {
-    }
+    explicit LiteralNode(const sptr_rtval& v, sptr_sobject ast_node);
   };
 
   struct LookupNode
   {
     Word identifier;
 
-    LookupNode(Word id)
-      : identifier(id)
-    {
-    }
+    LookupNode(Word id);
   };
 
   struct MapNode
   {
     std::vector<uptr_exec_node> elements;
 
-    MapNode(std::vector<uptr_exec_node> elements)
-      : elements(std::move(elements))
-    {
-    }
+    MapNode(std::vector<uptr_exec_node> elements);
   };
 
   struct VectorNode
   {
     std::vector<uptr_exec_node> elements;
 
-    VectorNode(std::vector<uptr_exec_node> elements)
-      : elements(std::move(elements))
-    {
-    }
+    VectorNode(std::vector<uptr_exec_node> elements);
   };
 
   struct CallNode
@@ -70,16 +57,20 @@ namespace Lisple
     uptr_exec_node callee;
     std::vector<uptr_exec_node> args;
 
-    CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args)
-      : callee(std::move(callee))
-      , args(std::move(args))
-    {
-    }
+    CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args);
 
     std::string to_string(size_t indent_level = 0);
   };
 
-  using ExecNodeData = std::variant<LiteralNode, LookupNode, MapNode, CallNode, VectorNode>;
+  struct ExecNodeList
+  {
+    std::vector<ExecNode*> nodes;
+
+    ExecNodeList(const std::vector<ExecNode*>& nodes);
+  };
+
+  using ExecNodeData =
+    std::variant<LiteralNode, LookupNode, MapNode, CallNode, VectorNode, ExecNodeList>;
 
   struct ExecNode
   {

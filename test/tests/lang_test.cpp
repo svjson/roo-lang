@@ -498,7 +498,7 @@ TEST(LetForm, define_and_exec_let)
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
-TEST(LetForm, define_and_exec_let_with_dynamic_values)
+TEST(LetForm, define_and_exec_let_with_dynamic_value)
 {
   // Given
   LispleTest::RuntimeFixture fixture;
@@ -508,6 +508,33 @@ TEST(LetForm, define_and_exec_let_with_dynamic_values)
 
   // Then
   ASSERT_EQ(*retval, Lisple::Number(50));
+  ASSERT_EQ(fixture.ctx.stack_size(), 1);
+}
+
+TEST(LetForm, define_and_exec_let_with_dependent_bindings)
+{
+  // Given
+  LispleTest::RuntimeFixture fixture;
+
+  // When
+  Lisple::sptr_sobject retval = fixture.runtime.eval("(let [x 10 y (+ x 20)] (+ x y))");
+
+  // Then
+  ASSERT_EQ(*retval, Lisple::Number(40));
+  ASSERT_EQ(fixture.ctx.stack_size(), 1);
+}
+
+TEST(LetForm, define_and_exec_let_with_dynamic_values)
+{
+  // Given
+  LispleTest::RuntimeFixture fixture;
+
+  // When
+  Lisple::sptr_sobject retval =
+    fixture.runtime.eval("(let [x (+ 20 20) y (/ 90 2)] (+ x y))");
+
+  // Then
+  ASSERT_EQ(*retval, Lisple::Number(85));
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 

@@ -10,9 +10,9 @@
 #include "namespace.h"
 #include "reader.h"
 #include "runtime/exec_node.h"
+#include "runtime/lower.h"
 #include "type.h"
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <stddef.h>
 #include <utility>

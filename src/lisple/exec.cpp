@@ -6,6 +6,7 @@
 #include "form.h"
 #include "namespace.h"
 #include "runtime/exec_node.h"
+#include "runtime/lower.h"
 #include "runtime/value.h"
 #include "scope.h"
 #include "type.h"
@@ -123,21 +124,21 @@ namespace Lisple
   }
 
   Argument::Argument(const TypeRef* type)
-    : Argument(false, type, eval_mode::EVAL)
+    : Argument(false, type, &Eval::DEFAULT)
   {
   }
 
-  Argument::Argument(const TypeRef* type, eval_mode eval)
+  Argument::Argument(const TypeRef* type, const EvalMode* eval)
     : Argument(false, type, eval)
   {
   }
 
   Argument::Argument(vararg_mode var, const TypeRef* type)
-    : Argument(var, type, eval_mode::EVAL)
+    : Argument(var, type, &Eval::DEFAULT)
   {
   }
 
-  Argument::Argument(vararg_mode var, const TypeRef* type, eval_mode eval)
+  Argument::Argument(vararg_mode var, const TypeRef* type, const EvalMode* eval)
     : type(type)
     , eval(eval)
     , varargs(var)
@@ -156,12 +157,12 @@ namespace Lisple
 
   bool Argument::is_literal() const
   {
-    return eval == eval_mode::LITERAL;
+    return eval == &Eval::LITERAL;
   }
 
   bool Argument::evalp() const
   {
-    return eval == eval_mode::EVAL;
+    return eval == &Eval::DEFAULT;
   }
 
   bool Argument::is_vararg() const
@@ -179,14 +180,18 @@ namespace Lisple
     : arguments(args)
     , target_func(target_func)
   {
+    std::vector<const EvalMode*> arg_modes;
     for (auto& arg : arguments)
     {
+      arg_modes.push_back(arg.eval);
       if (arg.is_vararg())
       {
         this->vararg = true;
         break;
       }
     }
+
+    this->eval_pattern = std::make_unique<EvalPattern>(arg_modes);
   }
 
   Signature::Signature(arg_v args, exec_fn target_func, exec_node_fn exec_func)
