@@ -8,6 +8,7 @@
 #include "form.h"
 #include "host.h"
 #include "impl.h"
+#include "lang/base.h"
 #include "lang/bind_form.h"
 #include "lang/func.h"
 #include "lang/loop.h"
@@ -45,7 +46,7 @@ namespace Lisple
     lang.emplace(">=", std::make_shared<GreaterThanOrEqualsFunction>());
     lang.emplace("->", std::make_shared<ThreadFirstMacro>());
     lang.emplace("abs", std::make_shared<AbsFunction>());
-    lang.emplace("and", std::make_shared<AndMacro>());
+    lang.emplace("and", std::make_shared<AndForm>());
     lang.emplace("append!", std::make_shared<AppendBangFunction>());
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang.emplace("assoc", std::make_shared<AssocFunction>());
@@ -103,7 +104,7 @@ namespace Lisple
     lang.emplace("ns", std::make_shared<NsMacro>());
     lang.emplace("nth", std::make_shared<NthFunction>());
     lang.emplace("odd?", std::make_shared<OddEvenPredicateFunction>(1));
-    lang.emplace("or", std::make_shared<OrMacro>());
+    lang.emplace("or", std::make_shared<OrForm>());
     lang.emplace("partition", std::make_shared<PartitionFunction>());
     lang.emplace("prn", std::make_shared<PrintFunction>());
     lang.emplace("rand-nth", std::make_shared<RandNthFunction>());
@@ -1211,46 +1212,6 @@ namespace Lisple
     }
 
     return args[result_index];
-  }
-
-  MACRO_IMPL(AndMacro,
-             SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&AndMacro::logical_and))))
-
-  FUNC_BODY(AndMacro, logical_and)
-  {
-    ctx.push_context(true);
-    for (auto& arg : args)
-    {
-      Lisple::sptr_sobject lmnt = ctx.eval(arg);
-      if (!lmnt->is_truthy())
-      {
-        ctx.pop_context();
-        return Lisple::B_FALSE;
-      }
-    }
-    ctx.pop_context();
-    return Lisple::B_TRUE;
-  }
-
-  MACRO_IMPL(OrMacro,
-             SIG((FN_ARGS((Lisple::VARARG, &Lisple::Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&OrMacro::logical_or))))
-
-  MACRO_BODY(OrMacro, logical_or)
-  {
-    ctx.push_context(true);
-    for (auto& arg : args)
-    {
-      Lisple::sptr_sobject lmnt = ctx.eval(arg);
-      if (lmnt->is_truthy())
-      {
-        ctx.pop_context();
-        return lmnt;
-      }
-    }
-    ctx.pop_context();
-    return Lisple::B_FALSE;
   }
 
   FUNC_IMPL(GetFunction,

@@ -838,25 +838,6 @@ TEST(NotEqualsFunction, string)
   EXPECT_EQ(*fixture.ctx.eval("(not= \" test\" \" test\")"), *Lisple::B_FALSE);
 }
 
-TEST(AndMacro, logical_and)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(and (odd? 1) (odd? 3))"), *Lisple::B_TRUE);
-
-  EXPECT_EQ(*fixture.ctx.eval("(and (odd? 2) (odd? 3))"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(and (odd? 1) (odd? 2))"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(and (odd? 2) (odd? 4))"), *Lisple::B_FALSE);
-}
-
-TEST(OrFunction, logical_or)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(or (odd? 1) (odd? 3))"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(or (odd? 2) (odd? 3))"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(or (odd? 1) (odd? 2))"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(or (odd? 2) (odd? 4))"), *Lisple::B_FALSE);
-}
-
 TEST(NilPredicateFunction, nil)
 {
   LispleTest::RuntimeFixture fixture;

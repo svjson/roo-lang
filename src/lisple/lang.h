@@ -376,47 +376,6 @@ namespace Lisple
     sptr_sobject select_min_or_max(Context&, sptr_sobject_v& args);
   };
 
-  /*!
-   * @brief Tests if all arguments are truthy
-   *
-   * Returns true if all arguments evaluate as true/truthy, or false if any
-   * argument evaluates as false/falsy.
-   *
-   * Arguments are lazily evaluated, and evaluation stops if a falsy value
-   * is encountered.
-   *
-   * Usage:
-   * @code
-   * (and true [] "string")
-   * => true
-   *
-   * (and true false nil)
-   * => false
-   * @endcode
-   */
-  MACRO_DECL(AndMacro, logical_and)
-
-  /*!
-   * @brief Tests if any of the arguments are truthy, and returns
-   * the first truthy argument. Otherwise, nil
-   *
-   * Arguments are lazily evaluated, and evaluation stops if a truthy value
-   * is encountered.
-   *
-   * Usage:
-   * @code
-   * (or {:x 1 :y 12} false)
-   * => {:x 1 :y 12}
-   *
-   * (or nil false)
-   * => nil
-   *
-   * (or nil true)
-   * => true
-   * @endcode
-   */
-  MACRO_DECL(OrMacro, logical_or)
-
   FUNC_DECL(HeadFunction, head)
   FUNC_DECL(TailFunction, tail)
   FUNC_DECL(LastFunction, last)

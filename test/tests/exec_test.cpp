@@ -13,6 +13,7 @@
 #include <lisple/form.h>
 #include <lisple/host.h>
 #include <lisple/lang.h>
+#include <lisple/lang/base.h>
 #include <lisple/lang/loop.h>
 #include <lisple/runtime.h>
 #include <lisple/type.h>
@@ -37,10 +38,10 @@ using SignatureTest::STRING;
 TEST(Signature, matches_arguments)
 {
   // Given
-  Lisple::AndMacro dummy_func;
+  Lisple::AndForm dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    std::bind(&Lisple::AndMacro::logical_and,
+    std::bind(&Lisple::AndForm::inv_and,
               &dummy_func,
               std::placeholders::_1,
               std::placeholders::_2));
@@ -56,9 +57,9 @@ TEST(Signature, matches_arguments)
 TEST(Signature, no_arg_signature_matches_only_empty_arglist)
 {
   // Given
-  Lisple::AndMacro dummy_func;
+  Lisple::AndForm dummy_func;
   Lisple::Signature signature(Lisple::arg_v{},
-                              std::bind(&Lisple::AndMacro::logical_and,
+                              std::bind(&Lisple::AndForm::inv_and,
                                         &dummy_func,
                                         std::placeholders::_1,
                                         std::placeholders::_2));
@@ -75,10 +76,10 @@ TEST(Signature, no_arg_signature_matches_only_empty_arglist)
 TEST(Signature, matches_varargs)
 {
   // Given
-  Lisple::AndMacro dummy_func;
+  Lisple::AndForm dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(Lisple::VARARG, &Lisple::Type::STRING)},
-    std::bind(&Lisple::AndMacro::logical_and,
+    std::bind(&Lisple::AndForm::inv_and,
               &dummy_func,
               std::placeholders::_1,
               std::placeholders::_2));
