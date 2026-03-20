@@ -8,6 +8,7 @@
 #include <lisple/exception.h>
 #include <lisple/runtime.h>
 #include <lisple/runtime/exec_node.h>
+#include <lisple/runtime/lower.h>
 
 namespace LispleTest
 {
@@ -96,7 +97,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "008_RTValue_int_string_intern_pools_ca9699d";
+    const std::string CHANGE_ME = "009_eval__no_eval__literal_4f3951b";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 

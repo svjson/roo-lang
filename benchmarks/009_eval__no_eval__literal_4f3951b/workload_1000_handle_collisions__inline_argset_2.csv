@@ -1,0 +1,2 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+2345892346,workload_1000_handle_collisions__inline_argset_2,1,0,5182,53,5236
