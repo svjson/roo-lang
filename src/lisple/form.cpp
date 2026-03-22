@@ -1038,6 +1038,28 @@ namespace Lisple
     }
   }
 
+  void RuntimeValueWrapper::append(const sptr_sobject& value)
+  {
+    RuntimeValueWrapper* val_wrapper = dynamic_cast<RuntimeValueWrapper*>(value.get());
+    if (val_wrapper)
+    {
+      this->delegate->append(value);
+      if (val->type == RTValue::Type::VECTOR)
+      {
+        sptr_rtval_v& elements = std::get<sptr_rtval_v>(val->value);
+        elements.push_back(val_wrapper->val);
+      }
+    }
+    else
+    {
+      sptr_rtval rtval = to_rt_value(const_cast<sptr_sobject&>(value));
+      sptr_rtval_v& elements = std::get<sptr_rtval_v>(val->value);
+      elements.push_back(rtval);
+
+      this->delegate->append(RuntimeValueWrapper::make(rtval));
+    }
+  }
+
   void RuntimeValueWrapper::set_property(const sptr_sobject& key, const sptr_sobject& value)
   {
     delegate->set_property(key, value);
