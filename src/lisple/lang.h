@@ -264,10 +264,6 @@ namespace Lisple
   FUNC_DECL(SqrtFunction, sqrt);
 
   FUNC_DECL(IntFunction, to_int)
-  FUNC_DECL(PlusFunction, do_addition)
-  FUNC_DECL(MinusFunction, do_subtraction)
-  FUNC_DECL(DivideFunction, do_division)
-  FUNC_DECL(MultiplyFunction, do_multiplication)
 
   /*!
    * @brief Performs numerical or lexical comparison between two values.

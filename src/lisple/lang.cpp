@@ -8,6 +8,7 @@
 #include "form.h"
 #include "host.h"
 #include "impl.h"
+#include "lang/arithmetic.h"
 #include "lang/base.h"
 #include "lang/bind_form.h"
 #include "lang/func.h"
@@ -879,123 +880,6 @@ namespace Lisple
     }
 
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
-  }
-
-  /* PlusFunction - + */
-  FUNC_IMPL(PlusFunction,
-            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
-                 EXEC_DISPATCH(&PlusFunction::do_addition))))
-
-  FUNC_BODY(PlusFunction, do_addition)
-  {
-    if (args.size() == 0)
-    {
-      throw LispleException("No arguments given to +");
-    }
-
-    if (*NIL == *args[0])
-    {
-      throw TypeError(
-        "Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
-    }
-    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
-    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      if (*NIL == *args[i])
-      {
-        throw TypeError(
-          "Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
-      }
-      result = *result + args[i]->as<Number>();
-    }
-
-    return result;
-  }
-
-  /* MinusFunction - - */
-  FUNC_IMPL(MinusFunction,
-            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
-                 EXEC_DISPATCH(&MinusFunction::do_subtraction))))
-
-  FUNC_BODY(MinusFunction, do_subtraction)
-  {
-    if (args.size() == 0)
-    {
-      throw LispleException("No arguments given to -");
-    }
-
-    if (*NIL == *args[0])
-    {
-      throw TypeError(
-        "Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
-    }
-    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
-    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
-
-    if (args.size() == 1)
-    {
-      result = result->flip_sign();
-    }
-    else
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        if (*NIL == *args[i])
-        {
-          throw TypeError("Cannot perform arithmetic with nil. Arguments: " +
-                          Array(args).to_string() + ".");
-        }
-        result = *result - args[i]->as<Number>();
-      }
-    }
-
-    return result;
-  }
-
-  FUNC_IMPL(DivideFunction,
-            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
-                 EXEC_DISPATCH(&DivideFunction::do_division))))
-
-  FUNC_BODY(DivideFunction, do_division)
-  {
-    if (args.size() == 0)
-    {
-      throw LispleException("No arguments given to /");
-    }
-
-    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
-    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      result = *result / args[i]->as<Number>();
-    }
-
-    return result;
-  }
-
-  FUNC_IMPL(MultiplyFunction,
-            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
-                 EXEC_DISPATCH(&MultiplyFunction::do_multiplication))));
-
-  FUNC_BODY(MultiplyFunction, do_multiplication)
-  {
-    if (args.size() == 0)
-    {
-      throw LispleException("No arguments given to *");
-    }
-
-    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
-    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      result = *result * args[i]->as<Number>();
-    }
-
-    return result;
   }
 
   /* LessThanFunction */
