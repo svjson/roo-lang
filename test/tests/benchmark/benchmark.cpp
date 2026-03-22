@@ -97,7 +97,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "010_granular_eval_control_991cd52";
+    const std::string CHANGE_ME = "011_exec_path_prefers_rtvalue_47f73c1";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
