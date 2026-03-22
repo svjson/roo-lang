@@ -5,6 +5,12 @@
 
 namespace Lisple
 {
+  LiteralNode::LiteralNode(const sptr_rtval& v)
+    : value(v)
+    , ast_node(Lisple::NIL)
+  {
+  }
+
   LiteralNode::LiteralNode(const sptr_rtval& v, sptr_sobject ast_node)
     : value(v)
     , ast_node(ast_node)
@@ -36,4 +42,11 @@ namespace Lisple
     : nodes(nodes)
   {
   }
+
+  ExecNode::ExecNode(const sptr_rtval& runtime_value)
+    : form(Lisple::NIL)
+    , data(LiteralNode(runtime_value))
+  {
+  }
+
 } // namespace Lisple

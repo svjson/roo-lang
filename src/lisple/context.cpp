@@ -1,16 +1,13 @@
 
 #include "context.h"
 
-#include <utility>
-
-#include "runtime.h"
-
+#include "exception.h"
 #include "form.h"
 #include "namespace.h"
+#include "runtime.h"
 #include "scope.h"
 #include "type.h"
-
-#include "exception.h"
+#include <utility>
 
 namespace Lisple
 {
@@ -18,13 +15,11 @@ namespace Lisple
     : evaluation_mode(evaluation_mode)
     , scope(std::move(scope))
   {
-
   }
 
   ContextFrame::ContextFrame(bool evaluation_mode)
     : evaluation_mode(evaluation_mode)
   {
-
   }
 
   bool ContextFrame::evalp() const
@@ -42,27 +37,27 @@ namespace Lisple
     return scope.has(word);
   }
 
-  Context::Context(Runtime& reader)
-    : reader(reader)
+  Context::Context(Runtime& runtime)
+    : runtime(runtime)
   {
     push_context(true);
   }
 
   Context::Context(const Context& other)
-    : reader(other.reader)
+    : runtime(other.runtime)
   {
     for (auto& frame : other.frame_stack)
     {
       Scope clone(frame->scope);
-      this->frame_stack.push_back(std::make_unique<ContextFrame>(frame->evaluation_mode, clone));
+      this->frame_stack.push_back(
+        std::make_unique<ContextFrame>(frame->evaluation_mode, clone));
     }
   }
 
-  Context::Context(Runtime& reader, frame_stack_t& frame_stack)
+  Context::Context(Runtime& runtime, frame_stack_t& frame_stack)
     : frame_stack(std::move(frame_stack))
-    , reader(reader)
+    , runtime(runtime)
   {
-
   }
 
   std::shared_ptr<Context> Context::detach() const
@@ -100,47 +95,53 @@ namespace Lisple
 
   sptr_sobject Context::eval(const sptr_sobject& form)
   {
-    return reader.eval(*this, form);
+    return runtime.eval(*this, form);
   }
 
   sptr_sobject Context::eval(const std::string& str)
   {
-    return reader.eval(str);
+    return runtime.eval(str);
   }
 
   void Context::read_file(const std::string& file_name)
   {
-    reader.read_file(file_name);
+    runtime.read_file(file_name);
   }
 
   void Context::switch_namespace(const std::string& namespace_name)
   {
-    reader.switch_namespace(namespace_name);
+    runtime.switch_namespace(namespace_name);
   }
 
   Namespace* Context::get_current_namespace()
   {
-    return &reader.get_current_namespace();
+    return &runtime.get_current_namespace();
   }
 
   void Context::import_namespace(const std::string& namespace_name)
   {
-    reader.import_namespace(namespace_name);
+    runtime.import_namespace(namespace_name);
   }
 
-  void Context::define_namespace_alias(const std::string& namespace_name, const std::string& alias)
+  void Context::define_namespace_alias(const std::string& namespace_name,
+                                       const std::string& alias)
   {
-    reader.define_namespace_alias(namespace_name, alias);
+    runtime.define_namespace_alias(namespace_name, alias);
   }
 
   void Context::store_namespace(Word key, sptr_sobject value)
   {
-    reader.get_current_namespace().store(key.value, value);
+    runtime.get_current_namespace().store(key.value, value);
+  }
+
+  void Context::store_namespace(const std::string& symbol, sptr_rtval& value)
+  {
+    runtime.get_current_namespace().store(symbol, value);
   }
 
   sptr_sobject Context::call(const std::string& fn_name, sptr_sobject& arg1)
   {
-    return this->call(fn_name, sptr_sobject_v { arg1 });
+    return this->call(fn_name, sptr_sobject_v{arg1});
   }
 
   sptr_sobject Context::call(const std::string& fn_name, const sptr_sobject_v& args)
@@ -158,7 +159,7 @@ namespace Lisple
   {
     if (identifier.is_qualified())
     {
-      sptr_sobject result = reader.lookup(identifier);
+      sptr_sobject result = runtime.lookup(identifier);
       return result ? result : NIL;
     }
 
@@ -171,7 +172,7 @@ namespace Lisple
       }
     }
 
-    return reader.lookup(identifier);
+    return runtime.lookup(identifier);
   }
 
   Scope& Context::current_scope()
@@ -189,7 +190,7 @@ namespace Lisple
       }
     }
 
-    return reader.get_ns_of(identifier);
+    return runtime.get_ns_of(identifier);
   }
 
   void Context::push_context(bool evaluation_mode)
@@ -210,4 +211,4 @@ namespace Lisple
     }
     frame_stack.pop_back();
   }
-}
+} // namespace Lisple

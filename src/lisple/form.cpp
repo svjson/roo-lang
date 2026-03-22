@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdexcept>
 
+#include "lisple/runtime/value.h"
+
 namespace Lisple
 {
   const int INT_CONSTANTS_SIZE = 1001;
@@ -71,6 +73,12 @@ namespace Lisple
   {
     throw InvocationException("Cannot set property '" + key.to_string() + "' of " +
                               this->to_string(2));
+  }
+
+  void Object::set_property(const sptr_sobject& key, const sptr_sobject& value)
+  {
+    sptr_sobject cp = value;
+    return set_property(*key, cp);
   }
 
   void Object::set_property(Context*, const Object& key, sptr_sobject& value)
@@ -680,14 +688,13 @@ namespace Lisple
     {
       return false;
     }
-    auto& other_sexp = dynamic_cast<const Seq&>(other);
-    if (children.size() != other_sexp.children.size())
+    if (children.size() != const_cast<Object&>(other).get_children().size())
     {
       return false;
     }
     for (size_t i = 0; i < children.size(); i++)
     {
-      if (*children[i] != *other_sexp.children[i])
+      if (*children[i] != *const_cast<Object&>(other).get_children()[i])
       {
         return false;
       }
@@ -943,6 +950,140 @@ namespace Lisple
   std::shared_ptr<Map> Map::make(const sptr_sobject_v& children)
   {
     return std::make_shared<Map>(children);
+  }
+
+  /** Refactor support - RuntimeValueWrapper */
+  RuntimeValueWrapper::RuntimeValueWrapper(const sptr_rtval& val)
+    : Object(Form::NIL)
+    , val(val)
+    , delegate(to_AST(*val))
+  {
+    switch (val->type)
+    {
+    case RTValue::Type::NUMBER:
+      type = Form::NUMBER;
+      break;
+    case RTValue::Type::BOOL:
+      type = Form::BOOLEAN;
+      break;
+    case RTValue::Type::NIL:
+      type = Form::NIL;
+      break;
+    case RTValue::Type::STRING:
+      type = Form::STRING;
+      break;
+    case RTValue::Type::CHAR:
+      type = Form::CHAR;
+      break;
+    case RTValue::Type::SYMBOL:
+      type = Form::WORD;
+      break;
+    case RTValue::Type::KEYWORD:
+      type = Form::KEY;
+      break;
+    case RTValue::Type::LIST:
+      type = Form::LIST;
+      break;
+    case RTValue::Type::VECTOR:
+      type = Form::ARRAY;
+      break;
+    case RTValue::Type::MAP:
+      type = Form::MAP;
+      break;
+    case RTValue::Type::FUNCTION:
+      type = Form::FUNCTION;
+      break;
+    case RTValue::Type::OBJECT:
+      type = delegate->get_type();
+      break;
+    }
+  }
+
+  bool RuntimeValueWrapper::operator==(const Object& other) const
+  {
+    return *delegate == other;
+  }
+
+  std::string RuntimeValueWrapper::to_string([[maybe_unused]] int depth) const
+  {
+
+    return val->to_string();
+  }
+
+  bool RuntimeValueWrapper::is_truthy() const
+  {
+    return Lisple::is_truthy(*val);
+  }
+
+  void RuntimeValueWrapper::set_property(const Object& key, sptr_sobject& value)
+  {
+    delegate->set_property(key, value);
+
+    switch (key.get_type())
+    {
+    case Form::KEY:
+    {
+      sptr_rtval v = to_rt_value(value);
+      Lisple::set_property(val, RTValue::keyword(Value<std::string>::value_of(key)), v);
+      break;
+    }
+    default:
+      throw LispleException(
+        "Mutation of underlying rtvalue with non-keyword not implemented.");
+    }
+  }
+
+  void RuntimeValueWrapper::set_property(const sptr_sobject& key, const sptr_sobject& value)
+  {
+    delegate->set_property(key, value);
+
+    switch (key->get_type())
+    {
+    case Form::KEY:
+    {
+      sptr_sobject vv = value;
+      sptr_rtval v = to_rt_value(vv);
+      Lisple::set_property(val, RTValue::keyword(Value<std::string>::value_of(*key)), v);
+      break;
+    }
+    default:
+      throw LispleException(
+        "Mutation of underlying rtvalue with non-keyword not implemented.");
+    }
+  }
+
+  sptr_sobject RuntimeValueWrapper::get_sptr_property(const Object& key) const
+  {
+    if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEY)
+    {
+      auto entry = Lisple::map_entry(std::get<sptr_rtval_v>(val->value),
+                                     *RTValue::keyword(Value<std::string>::value_of(key)));
+      if (entry.second)
+      {
+        return std::make_shared<RuntimeValueWrapper>(entry.second);
+      }
+    }
+    return delegate->get_sptr_property(key);
+  }
+
+  sptr_sobject_v& RuntimeValueWrapper::get_children()
+  {
+    return delegate->get_children();
+  }
+
+  unsigned int RuntimeValueWrapper::size() const
+  {
+    return delegate->size();
+  }
+
+  std::shared_ptr<Object> RuntimeValueWrapper::execute(Context& ctx, sptr_sobject_v& args)
+  {
+    return delegate->execute(ctx, args);
+  }
+
+  std::shared_ptr<RuntimeValueWrapper> RuntimeValueWrapper::make(const sptr_rtval& value)
+  {
+    return std::make_shared<RuntimeValueWrapper>(value);
   }
 
   template class Value<std::string>;

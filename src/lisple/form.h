@@ -1,6 +1,8 @@
 #ifndef __LISP_FORM_H_
 #define __LISP_FORM_H_
 
+#include "exception.h"
+#include "runtime/value.h"
 #include "type.h"
 #include <cstdint>
 #include <memory>
@@ -56,6 +58,7 @@ namespace Lisple
     virtual bool is_truthy() const;
     virtual bool has_key(const Object& key) const;
     virtual void set_property(const Object& key, sptr_sobject& value);
+    virtual void set_property(const sptr_sobject& key, const sptr_sobject& value);
     /**
      * TODO: This exists because of the need to use the Context in some
      * HostObject setters.
@@ -81,7 +84,7 @@ namespace Lisple
 
     virtual std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args);
 
-    template <class OT> OT& as() { return dynamic_cast<OT&>(*this); }
+    template <class OT> OT& as();
 
     template <class OT> const OT& as() const { return dynamic_cast<const OT&>(*this); }
   };
@@ -112,7 +115,7 @@ namespace Lisple
     {
     }
 
-    static T value_of(const Object& obj) { return dynamic_cast<const Value<T>&>(obj).value; }
+    static T value_of(const Object& obj);
 
     bool operator==(const Object& other) const override
     {
@@ -120,8 +123,7 @@ namespace Lisple
       {
         return false;
       }
-      auto& other_val = dynamic_cast<const Value<T>&>(other);
-      return other_val.value == value;
+      return Value<T>::value_of(other) == value;
     }
   };
 
@@ -383,7 +385,7 @@ namespace Lisple
     Map(const sptr_sobject_v& children);
 
     void set_property(const Object& key, sptr_sobject& value) override;
-    void set_property(const sptr_sobject& key, const sptr_sobject& value);
+    void set_property(const sptr_sobject& key, const sptr_sobject& value) override;
 
     sptr_sobject remove_key(const Object& key);
 
@@ -399,6 +401,51 @@ namespace Lisple
 
     bool has_key(const Object& key) const override;
   };
+
+  class RuntimeValueWrapper : public Object
+  {
+   public:
+    sptr_rtval val;
+    sptr_sobject delegate;
+
+    RuntimeValueWrapper(const sptr_rtval& val);
+
+    bool operator==(const Object& other) const override;
+    unsigned int size() const override;
+
+    void set_property(const Object& key, sptr_sobject& value) override;
+    void set_property(const sptr_sobject& key, const sptr_sobject& value) override;
+    sptr_sobject get_sptr_property(const Object& key) const override;
+    bool is_truthy() const override;
+
+    sptr_sobject_v& get_children() override;
+
+    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
+
+    static std::shared_ptr<RuntimeValueWrapper> make(const sptr_rtval& value);
+
+    std::string to_string(int depth = -1) const override;
+  };
+
+  template <class OT> OT& Object::as()
+  {
+    if (auto* self = dynamic_cast<OT*>(this)) return *self;
+
+    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(this))
+      return wrapper->delegate->as<OT>();
+
+    throw LispleException("Unexpected AST node type");
+  }
+
+  template <typename T> T Value<T>::value_of(const Object& obj)
+  {
+    if (auto* lw = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    {
+      return Value<T>::value_of(*lw->delegate);
+    }
+
+    return dynamic_cast<const Value<T>&>(obj).value;
+  }
 
 } // namespace Lisple
 

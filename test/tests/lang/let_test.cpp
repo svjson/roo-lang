@@ -78,3 +78,18 @@ TEST(LetForm, destructure_map)
   // Then
   ASSERT_EQ(*result, *Lisple::Number::make(35));
 }
+
+TEST(LetForm, bound_value_and_source_are_the_same)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.switch_namespace("user");
+  runtime.eval("(def state {:nested {:x 10 :y 8}})");
+
+  // When
+  Lisple::sptr_sobject result =
+    runtime.eval("(let [nested (:nested state)] (assoc! nested :y 100))");
+
+  // Then
+  EXPECT_EQ(runtime.lookup("state")->to_string(), "{:nested {:x 10 :y 100}}");
+}

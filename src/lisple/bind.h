@@ -32,7 +32,7 @@ namespace Lisple
    public:
     virtual ~LexicalBinding() = default;
 
-    virtual void apply(Scope& scope, LiteralNode& pattern) const = 0;
+    virtual void apply(Scope& scope, const sptr_rtval& value) const = 0;
 
     static std::unique_ptr<LexicalBinding> create(LiteralNode& pattern);
   };
@@ -44,7 +44,7 @@ namespace Lisple
    public:
     SymbolBinding(const std::string& symbol);
 
-    void apply(Scope& scope, LiteralNode& value_expr) const override;
+    void apply(Scope& scope, const sptr_rtval& value_expr) const override;
   };
 
   class MapDestructureBinding : public LexicalBinding
@@ -55,7 +55,7 @@ namespace Lisple
    public:
     MapDestructureBinding(const sptr_rtval_v& map);
 
-    void apply(Scope& scope, LiteralNode& value_expr) const override;
+    void apply(Scope& scope, const sptr_rtval& value_expr) const override;
   };
 
   class VectorDestructureBinding : public LexicalBinding
@@ -65,7 +65,7 @@ namespace Lisple
    public:
     VectorDestructureBinding(const sptr_rtval_v& vector);
 
-    void apply(Scope& scope, LiteralNode& value_expr) const override;
+    void apply(Scope& scope, const sptr_rtval& value_expr) const override;
   };
 
 } // namespace Lisple

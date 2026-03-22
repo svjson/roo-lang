@@ -51,7 +51,7 @@
 
 #define EXEC_DECL(DISP_NAME) \
   /*! @brief Native executable implementation */                        \
-  Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::ptr_exec_node_v& args);
+  Lisple::sptr_rtval DISP_NAME(Lisple::Context& ctx, Lisple::ptr_exec_node_v& args);
 
 // clang-format on
 
@@ -63,6 +63,10 @@
 
 #define END_CLASS                                                                       \
   };
+
+#define DISPATCH(NAME)                                                                  \
+  DISP_DECL(inv_##NAME)                                                                 \
+  EXEC_DECL(exec_##NAME)
 
 #define EXEC_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                    \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
@@ -84,23 +88,20 @@
 
 #define SFORM_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                   \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
-  DISP_DECL(inv_##DISP_NAME1)                                                           \
-  EXEC_DECL(exec_##DISP_NAME1)                                                          \
+  DISPATCH(DISP_NAME1)                                                                  \
   END_CLASS
 
 #define SFORM_DECL2(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2)                       \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
-  DISP_DECL(DISP_NAME1)                                                                 \
-  DISP_DECL(DISP_NAME1)                                                                 \
-  DISP_DECL(DISP_NAME2)                                                                 \
-  DISP_DECL(DISP_NAME2)                                                                 \
+  DISPATCH(DISP_NAME1)                                                                  \
+  DISPATCH(DISP_NAME2)                                                                  \
   END_CLASS
 
 #define SFORM_DECL3(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2, DISP_NAME3)           \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
-  DISP_DECL(DISP_NAME1)                                                                 \
-  DISP_DECL(DISP_NAME2)                                                                 \
-  DISP_DECL(DISP_NAME3)                                                                 \
+  DISPATCH(DISP_NAME1)                                                                  \
+  DISPATCH(DISP_NAME2)                                                                  \
+  DISPATCH(DISP_NAME3)                                                                  \
   END_CLASS
 
 #define SELECT_EXEC_DECL_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
@@ -108,13 +109,15 @@
 // clang-format off
 #define FUNC_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
 
+#define FUNC(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, SFORM_DECL3, SFORM_DECL2, SFORM_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
+
 #define FUNC_IMPL(FUNC_NAME, SIGNATURE)                                                 \
   FUNC_NAME::FUNC_NAME()                                                                \
     : Function(SIGNATURE) { }
 
 #define FUNC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_sobject_v& args)
 
-#define EXEC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::ptr_exec_node_v& args)
+#define EXEC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::ptr_exec_node_v& args)
 
 #define MACRO_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
 
@@ -236,7 +239,7 @@ namespace Lisple
   };
 
   typedef std::function<std::shared_ptr<Object>(Context&, sptr_sobject_v&)> exec_fn;
-  typedef std::function<std::shared_ptr<Object>(Context&, ptr_exec_node_v&)> exec_node_fn;
+  typedef std::function<sptr_rtval(Context&, ptr_exec_node_v&)> exec_node_fn;
 
   /*!
    * @brief Signature
@@ -276,7 +279,7 @@ namespace Lisple
     sptr_sobject_v coerce_args(Context& ctx, sptr_sobject_v& args);
 
     sptr_sobject invoke(Context& ctx, sptr_sobject_v& args);
-    sptr_sobject invoke(Context& ctx, ptr_exec_node_v& args);
+    sptr_rtval invoke(Context& ctx, ptr_exec_node_v& args);
     std::string to_string() const;
   };
 
@@ -295,6 +298,8 @@ namespace Lisple
     bool supports_exec_tree() const;
 
     bool operator==(const Lisple::Object& other) const override;
+
+    Signature* get_signature(Context& ctx, sptr_sobject_v& args);
 
     virtual Lisple::sptr_sobject execute(Context& ctx, sptr_sobject_v& args) override;
 
@@ -389,9 +394,6 @@ namespace Lisple
    public:
     Macro(std::unique_ptr<Signature> signature);
     Macro(Lisple::uptr_sig_v signatures);
-
-    Signature* get_signature(Context& ctx, sptr_sobject_v& args);
-    Signature& get_signature(sptr_sobject_v& args);
 
     std::string to_string(int depth = -1) const override;
   };

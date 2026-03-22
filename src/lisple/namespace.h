@@ -2,14 +2,13 @@
 #ifndef __NAMESPACE_H_
 #define __NAMESPACE_H_
 
+#include "form.h"
+#include "scope.h"
+#include "type.h"
 #include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
-
-#include "form.h"
-#include "scope.h"
-#include "type.h"
 
 namespace Lisple
 {
@@ -88,6 +87,6 @@ namespace Lisple
 
     friend class Runtime;
   };
-}
+} // namespace Lisple
 
 #endif

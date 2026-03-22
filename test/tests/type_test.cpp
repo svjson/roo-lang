@@ -1,18 +1,13 @@
 
-#include <gtest/gtest.h>
+#include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-
-#include <memory>
-
-#include <lisple/runtime.h>
-
 #include <lisple/context.h>
 #include <lisple/form.h>
+#include <lisple/runtime.h>
 #include <lisple/type.h>
-
-#include "runtime_fixture.h"
 
 TEST(TypeRef, is_type_of)
 {
@@ -26,6 +21,24 @@ TEST(TypeRef, is_type_of)
   EXPECT_FALSE(Lisple::Type::MAP.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::STRING.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::WORD.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::KEY.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::SYMBOL.is_type_of(obj));
+}
+
+TEST(TypeRef, rtwrapper_is_type_of)
+{
+  // Given
+  Lisple::sptr_rtval str_val = Lisple::RTValue::string("this is a string");
+  Lisple::RuntimeValueWrapper obj(str_val);
+
+  // Then
+  EXPECT_TRUE(Lisple::Type::STRING.is_type_of(obj));
+
+  EXPECT_FALSE(Lisple::Type::FUNCTION.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::MAP.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::LIST.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::WORD.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::KEY.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::SYMBOL.is_type_of(obj));
@@ -82,7 +95,8 @@ TEST(SeqRef, Array_of_String__is_type_of)
   Lisple::QSymbol symbol("symbol");
   Lisple::Word word("word");
   fixture.ctx.push_context(false);
-  auto list_of_string = fixture.runtime.eval(fixture.ctx, "(\"stringA\" \"stringB\" \"stringC\")");
+  auto list_of_string =
+    fixture.runtime.eval(fixture.ctx, "(\"stringA\" \"stringB\" \"stringC\")");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*array_of_string));
@@ -100,7 +114,7 @@ TEST(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
   // Given
   LispleTest::RuntimeFixture fixture;
 
-  auto array_of_char  = fixture.runtime.eval("['A' 'B' 'C' 'D' 'E']");
+  auto array_of_char = fixture.runtime.eval("['A' 'B' 'C' 'D' 'E']");
   auto array_of_char_with_nils = fixture.runtime.eval("['A' 'B' 'C' nil 'E']");
   auto array_of_mixed = fixture.runtime.eval("['A' 'B' 3 \"D\" 'E']");
 

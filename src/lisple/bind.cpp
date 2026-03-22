@@ -3,6 +3,8 @@
 #include "exception.h"
 #include "scope.h"
 
+#include "lisple/form.h"
+
 namespace Lisple
 {
 
@@ -35,9 +37,9 @@ namespace Lisple
   {
   }
 
-  void SymbolBinding::apply(Scope& scope, LiteralNode& value_expr) const
+  void SymbolBinding::apply(Scope& scope, const sptr_rtval& value_expr) const
   {
-    scope.store(symbol, value_expr.ast_node);
+    scope.store(symbol, value_expr);
   }
 
   /** MapDestructureBinding */
@@ -77,20 +79,16 @@ namespace Lisple
     }
   }
 
-  void MapDestructureBinding::apply(Scope& scope, LiteralNode& node) const
+  void MapDestructureBinding::apply(Scope& scope, const sptr_rtval& value) const
   {
-    sptr_rtval_v& map = std::get<sptr_rtval_v>(node.value->value);
+    sptr_rtval_v& map = std::get<sptr_rtval_v>(value->value);
     for (auto& [key, binding] : bindings)
     {
       auto [_, val] = map_entry(map, key);
 
       if (val)
       {
-        sptr_sobject lkey = Lisple::Key::make(std::get<std::string>(key.value));
-        sptr_sobject lval = node.ast_node->get_sptr_property(*lkey);
-
-        auto lit_node = LiteralNode(val, lval);
-        binding->apply(scope, lit_node);
+        binding->apply(scope, val);
       }
       else
       {
@@ -100,7 +98,7 @@ namespace Lisple
 
     if (this->map_symbol)
     {
-      this->map_symbol->apply(scope, node);
+      this->map_symbol->apply(scope, value);
     }
   }
 
@@ -121,14 +119,14 @@ namespace Lisple
     }
   }
 
-  void VectorDestructureBinding::apply(Scope& scope, LiteralNode& vector_expr) const
+  void VectorDestructureBinding::apply(Scope& scope, const sptr_rtval& vector_expr) const
   {
-    sptr_rtval_v& vec = std::get<sptr_rtval_v>(vector_expr.value->value);
+    sptr_rtval_v& vec = std::get<sptr_rtval_v>(vector_expr->value);
+    sptr_sobject form = std::make_shared<RuntimeValueWrapper>(RTValue::vector(vec));
 
     for (size_t i = 0; i < this->bindings.size(); i++)
     {
-      LiteralNode val_node = LiteralNode(vec[i], vector_expr.ast_node->get_children()[i]);
-      this->bindings[i]->apply(scope, val_node);
+      this->bindings[i]->apply(scope, vec[i]);
     }
   }
 

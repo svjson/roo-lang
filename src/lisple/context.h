@@ -2,14 +2,13 @@
 #ifndef __LISPLE_CONTEXT_H_
 #define __LISPLE_CONTEXT_H_
 
+#include "form.h"
+#include "scope.h"
+#include "type.h"
 #include <memory>
 #include <stddef.h>
 #include <string>
 #include <vector>
-
-#include "form.h"
-#include "scope.h"
-#include "type.h"
 
 namespace Lisple
 {
@@ -36,12 +35,12 @@ namespace Lisple
   {
    private:
     frame_stack_t frame_stack;
-    Runtime& reader;
+    Runtime& runtime;
 
    public:
     Context(const Context& other);
-    Context(Runtime& reader);
-    Context(Runtime& reader, frame_stack_t& frame_stack);
+    Context(Runtime& runtime);
+    Context(Runtime& runtime, frame_stack_t& frame_stack);
 
     std::shared_ptr<Context> detach() const;
 
@@ -60,6 +59,7 @@ namespace Lisple
 
     void read_file(const std::string& file_name);
     void store_namespace(Word key, sptr_sobject value);
+    void store_namespace(const std::string& symbol, sptr_rtval& value);
 
     /*!
      * @brief Switch the underlying namespace in which execution and unqualified
@@ -77,7 +77,7 @@ namespace Lisple
 
     /*!
      * @brief Get a pointer to the currently active namespace of the underlying
-     * lisp reader instance.
+     * lisp runtime.
      *
      * @return A pointer to the current namespace
      */
@@ -139,6 +139,6 @@ namespace Lisple
 
     friend class NsMacro;
   };
-}
+} // namespace Lisple
 
 #endif

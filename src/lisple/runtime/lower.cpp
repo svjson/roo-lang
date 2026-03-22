@@ -122,7 +122,10 @@ namespace Lisple
       return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::map(elements), obj));
     }
     case Form::HOST_OBJECT:
-      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::object(obj.get()), obj));
+    {
+      sptr_sobject ho = obj;
+      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::object(ho), obj));
+    }
     case Form::KEY:
       return std::make_unique<ExecNode>(
         obj,
@@ -156,14 +159,14 @@ namespace Lisple
         obj,
         LiteralNode(RTValue::boolean(obj->as<Boolean>().value), obj));
     case Form::STRING:
-      return std::make_unique<ExecNode>(obj,
-                                        LiteralNode(RTValue::string(obj->to_string()), obj));
-    case Form::WORD:
-      return std::make_unique<ExecNode>(obj,
-                                        LiteralNode(RTValue::symbol(obj->to_string()), obj));
+      return std::make_unique<ExecNode>(
+        obj,
+        LiteralNode(RTValue::string(Value<std::string>::value_of(*obj)), obj));
     case Form::SYMBOL:
-      return std::make_unique<ExecNode>(obj,
-                                        LiteralNode(RTValue::symbol(obj->to_string()), obj));
+    case Form::WORD:
+      return std::make_unique<ExecNode>(
+        obj,
+        LiteralNode(RTValue::symbol(Value<std::string>::value_of(*obj)), obj));
     default:
       throw LispleException("Lowering not implemented for form: " + obj->to_string());
     }

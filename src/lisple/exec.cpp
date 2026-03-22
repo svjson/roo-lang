@@ -324,7 +324,7 @@ namespace Lisple
     return target_func(ctx, args);
   }
 
-  sptr_sobject Signature::invoke(Context& ctx, ptr_exec_node_v& args)
+  sptr_rtval Signature::invoke(Context& ctx, ptr_exec_node_v& args)
   {
     return exec_func(ctx, args);
   }
@@ -373,6 +373,33 @@ namespace Lisple
   bool Executable::operator==(const Object& other) const
   {
     return this == &other;
+  }
+
+  Signature* Executable::get_signature(Context& ctx, sptr_sobject_v& args)
+  {
+    for (auto& sig : signatures)
+    {
+      if (sig->matches(args))
+      {
+        return sig.get();
+      }
+    }
+
+    if (args.empty())
+    {
+      return nullptr;
+    }
+
+    for (auto& sig : signatures)
+    {
+      sptr_sobject_v coerced = sig->coerce_args(ctx, args);
+      if (!coerced.empty())
+      {
+        return sig.get();
+      }
+    }
+
+    return nullptr;
   }
 
   sptr_sobject Executable::execute(Context& ctx, sptr_sobject_v& args)
@@ -556,7 +583,7 @@ namespace Lisple
 
     for (auto& node : body)
     {
-      retval = exec(ctx, *node);
+      retval = eval(ctx, *node);
     }
     ctx.pop_context();
     ctx.switch_namespace(current_namespace);
@@ -583,47 +610,6 @@ namespace Lisple
   Macro::Macro(uptr_sig_v signatures)
     : Executable(Form::MACRO, std::move(signatures))
   {
-  }
-
-  Signature* Macro::get_signature(Context& ctx, sptr_sobject_v& args)
-  {
-    for (auto& sig : signatures)
-    {
-      if (sig->matches(args))
-      {
-        return sig.get();
-      }
-    }
-
-    if (args.empty())
-    {
-      return nullptr;
-    }
-
-    for (auto& sig : signatures)
-    {
-      sptr_sobject_v coerced = sig->coerce_args(ctx, args);
-      if (!coerced.empty())
-      {
-        return sig.get();
-      }
-    }
-
-    return nullptr;
-  }
-
-  [[deprecated("Cannot handle coercion")]]
-  Signature& Macro::get_signature(sptr_sobject_v& args)
-  {
-    for (auto& sig : signatures)
-    {
-      if (sig->matches(args))
-      {
-        return *sig;
-      }
-    }
-
-    throw InvocationException("No matching form for arguments: " + Array(args).to_string());
   }
 
   std::string Macro::to_string(int) const

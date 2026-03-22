@@ -8,7 +8,7 @@
 
 namespace Lisple
 {
-  class Function;
+  class Executable;
   struct RTValue;
 
   using sptr_rtval = std::shared_ptr<RTValue>;
@@ -53,10 +53,11 @@ namespace Lisple
       int get_int() const;
       long get_long() const;
       double get_double() const;
+      float get_float() const;
     };
 
-    using Data = std::variant<Object*,
-                              Function*,
+    using Data = std::variant<sptr_sobject,
+                              std::shared_ptr<Executable>,
                               std::string,
                               RTValue::Number,
                               sptr_rtval_v,
@@ -65,15 +66,16 @@ namespace Lisple
                               std::monostate>;
 
     RTValue() = default;
-    RTValue(int);
+    explicit RTValue(int);
+    explicit RTValue(bool);
     RTValue(const std::string&, Type type);
+    RTValue(std::monostate);
 
     RTValue::Data value;
     RTValue::Type type;
 
     bool operator==(const RTValue& other) const;
 
-    static sptr_rtval nil();
     static sptr_rtval boolean(bool);
     static sptr_rtval number(int);
     static sptr_rtval number(long);
@@ -85,11 +87,26 @@ namespace Lisple
     static sptr_rtval list(sptr_rtval_v&);
     static sptr_rtval vector(sptr_rtval_v&);
     static sptr_rtval map(sptr_rtval_v&);
-    static sptr_rtval object(Object*);
-    static sptr_rtval function(Function*);
+    static sptr_rtval object(sptr_sobject&);
+    static sptr_rtval executable(std::shared_ptr<Executable>&);
+
+    static std::string to_string(sptr_rtval_v&);
+    std::string to_string();
   };
 
-  sptr_rtval to_rt_value(const Object& obj);
+  namespace Constant
+  {
+    inline const sptr_rtval TRUE = std::make_shared<RTValue>(true);
+    inline const sptr_rtval FALSE = std::make_shared<RTValue>(false);
+    inline const sptr_rtval NIL = std::make_shared<RTValue>(std::monostate());
+  } // namespace Constant
+
+  sptr_rtval to_rt_value(sptr_sobject& obj);
+  sptr_sobject to_AST(RTValue& val);
+  bool is_truthy(RTValue& val);
+  void set_property(sptr_rtval& target, const sptr_rtval& property, sptr_rtval& value);
+
+  sptr_rtval remove_property(sptr_rtval& target, const sptr_rtval& property);
 
   const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data);
 

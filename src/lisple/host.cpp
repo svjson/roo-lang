@@ -20,7 +20,10 @@ namespace Lisple
    * @brief Default function that is spliced in by accessor macros when a property
    * is defined without a getter.
    */
-  const acc_get_t no_getter = [](const AbstractHostObject*) { return NIL; };
+  const acc_get_t no_getter = [](const AbstractHostObject*)
+  {
+    return NIL;
+  };
 
   /*!
    * @brief Default function that is sliced in by accessor macros when a
@@ -60,6 +63,11 @@ namespace Lisple
 
   bool HostTypeRef::is_type_of(const Object& obj) const
   {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    {
+      return is_type_of(*wrapper->delegate);
+    }
+
     if (*NIL != obj && TypeRef::is_type_of(obj))
     {
       const HostTypeRef* obj_type = obj.as<AbstractHostObject>().get_host_type();

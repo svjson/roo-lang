@@ -250,7 +250,7 @@ namespace Lisple
         if (head->get_type() == Form::MACRO)
         {
           auto tail = sexp.tail();
-          sig = &head->as<Macro>().get_signature(tail);
+          sig = head->as<Macro>().get_signature(ctx, tail);
         }
         elements.push_back(head);
       }
@@ -284,7 +284,7 @@ namespace Lisple
         // FIXME: Temporary rewrap into shared_ptr
         auto node = lower_expr(wrapped);
 
-        return Lisple::exec(ctx, *node);
+        return Lisple::eval(ctx, *node);
       }
       catch (std::exception& e)
       {

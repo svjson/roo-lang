@@ -1,12 +1,12 @@
 
 #include "impl.h"
 
-#include <memory>
-#include <string>
-
+#include "exception.h"
 #include "form.h"
 #include "type.h"
-#include "exception.h"
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace Lisple
 {
@@ -14,16 +14,13 @@ namespace Lisple
 
   const std::string str_val(const Object& obj) noexcept
   {
-    if (Type::NUMBER.is_type_of(obj) ||
-        *NIL == obj)
+    if (Type::NUMBER.is_type_of(obj) || *NIL == obj)
     {
       return obj.to_string();
     }
 
-    if (Type::STRING.is_type_of(obj) ||
-        Type::KEY.is_type_of(obj) ||
-        Type::SYMBOL.is_type_of(obj) ||
-        Type::WORD.is_type_of(obj))
+    if (Type::STRING.is_type_of(obj) || Type::KEY.is_type_of(obj) ||
+        Type::SYMBOL.is_type_of(obj) || Type::WORD.is_type_of(obj))
     {
       return obj.as<Value<std::string>>().value;
     }
@@ -63,6 +60,14 @@ namespace Lisple
 
   int int_val(const Object& obj)
   {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    {
+      if (wrapper->val->type == RTValue::Type::NUMBER)
+      {
+        return std::get<RTValue::Number>(wrapper->val->value).get_int();
+      }
+    }
+
     if (Type::NUMBER.is_type_of(obj))
     {
       return obj.as<Number>().int_value();
@@ -83,6 +88,14 @@ namespace Lisple
 
   float float_val(const Object& obj)
   {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    {
+      if (wrapper->val->type == RTValue::Type::NUMBER)
+      {
+        return std::get<RTValue::Number>(wrapper->val->value).get_float();
+      }
+    }
+
     if (Type::NUMBER.is_type_of(obj))
     {
       return obj.as<Number>().float_value();
@@ -96,8 +109,7 @@ namespace Lisple
     List& list = list_obj.as<List>();
     sptr_sobject prepended;
 
-    if (Type::STRING.is_type_of(*list.head()) ||
-        Type::NUMBER.is_type_of(*list.head()))
+    if (Type::STRING.is_type_of(*list.head()) || Type::NUMBER.is_type_of(*list.head()))
     {
       prepended = std::make_shared<String>(prepend_val + str_val(*list.head()));
     }
@@ -117,143 +129,119 @@ namespace Lisple
     return subst_sexp_lmnt(list, 0, prepended);
   }
 
-  template <>
-  std::string unwrap_primitive<std::string>(const Object& obj)
+  template <> std::string unwrap_primitive<std::string>(const Object& obj)
   {
     return const_cast<std::string&>(obj.as<String>().value);
   }
 
-  template <>
-  int unwrap_primitive<int>(const Object& obj)
+  template <> int unwrap_primitive<int>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  short unwrap_primitive<short>(const Object& obj)
+  template <> short unwrap_primitive<short>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  long unwrap_primitive<long>(const Object& obj)
+  template <> long unwrap_primitive<long>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  unsigned int unwrap_primitive<unsigned int>(const Object& obj)
+  template <> unsigned int unwrap_primitive<unsigned int>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  unsigned short unwrap_primitive<unsigned short>(const Object& obj)
+  template <> unsigned short unwrap_primitive<unsigned short>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  unsigned long unwrap_primitive<unsigned long>(const Object& obj)
+  template <> unsigned long unwrap_primitive<unsigned long>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  float unwrap_primitive<float>(const Object& obj)
+  template <> float unwrap_primitive<float>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  double unwrap_primitive<double>(const Object& obj)
+  template <> double unwrap_primitive<double>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  int8_t unwrap_primitive<int8_t>(const Object& obj)
+  template <> int8_t unwrap_primitive<int8_t>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template <>
-  uint8_t unwrap_primitive<uint8_t>(const Object& obj)
+  template <> uint8_t unwrap_primitive<uint8_t>(const Object& obj)
   {
     return obj.as<Number>().int_value();
   }
 
-  template<>
-  sptr_sobject wrap_primitive<int>(int value)
+  template <> sptr_sobject wrap_primitive<int>(int value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<short>(short value)
+  template <> sptr_sobject wrap_primitive<short>(short value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<long>(long value)
+  template <> sptr_sobject wrap_primitive<long>(long value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<unsigned int>(unsigned int value)
+  template <> sptr_sobject wrap_primitive<unsigned int>(unsigned int value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<float>(float value)
+  template <> sptr_sobject wrap_primitive<float>(float value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<double>(double value)
+  template <> sptr_sobject wrap_primitive<double>(double value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<int8_t>(int8_t value)
+  template <> sptr_sobject wrap_primitive<int8_t>(int8_t value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<uint8_t>(uint8_t value)
+  template <> sptr_sobject wrap_primitive<uint8_t>(uint8_t value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<unsigned long>(unsigned long value)
+  template <> sptr_sobject wrap_primitive<unsigned long>(unsigned long value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<unsigned short>(unsigned short value)
+  template <> sptr_sobject wrap_primitive<unsigned short>(unsigned short value)
   {
     return Number::make(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<bool>(bool value)
+  template <> sptr_sobject wrap_primitive<bool>(bool value)
   {
     return Boolean::wrap(value);
   }
 
-  template<>
-  sptr_sobject wrap_primitive<std::string>(const std::string& value)
+  template <> sptr_sobject wrap_primitive<std::string>(const std::string& value)
   {
     return String::make(value);
   }
 
-
-}
+} // namespace Lisple

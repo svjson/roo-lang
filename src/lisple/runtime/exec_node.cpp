@@ -2,10 +2,13 @@
 #include "exec_node.h"
 
 #include "../context.h"
+#include "../exception.h"
 #include "../exec.h"
 #include "../type.h"
 #include "eval_plan.h"
 #include "exec_tree.h"
+#include "value.h"
+#include <sstream>
 #include <vector>
 
 namespace Lisple
@@ -32,7 +35,10 @@ namespace Lisple
 
         if constexpr (std::is_same_v<T, LiteralNode>)
         {
-          return indent + " - LiteralNode(" + node.form->to_string() + ")\n";
+          std::stringstream ss;
+          ss << indent << " - LiteralNode(" << node.form->to_string() << ", RTValue("
+             << n.value.get() << "))\n";
+          return ss.str();
         }
         else if constexpr (std::is_same_v<T, LookupNode>)
         {
@@ -98,7 +104,7 @@ namespace Lisple
       node.data);
   }
 
-  sptr_sobject exec(Context& ctx, const ExecNode& node)
+  sptr_sobject eval(Context& ctx, const ExecNode& node)
   {
     return std::visit(
       [&](auto const& n) -> sptr_sobject
@@ -121,7 +127,7 @@ namespace Lisple
 
           for (auto& lmnt : n.elements)
           {
-            elements.push_back(exec(ctx, *lmnt));
+            elements.push_back(eval(ctx, *lmnt));
           }
 
           return Lisple::Map::make(elements);
@@ -133,25 +139,157 @@ namespace Lisple
 
           for (auto& lmnt : n.elements)
           {
-            elements.push_back(exec(ctx, *lmnt));
+            elements.push_back(eval(ctx, *lmnt));
           }
 
           return Lisple::Array::make(elements);
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
-          // std::cout << "Execute CallNode: " << std::endl;
-          // std::cout << to_string(node, "") << std::endl;
-          sptr_sobject fn = exec(ctx, *n.callee);
+          sptr_rtval fn_val = exec(ctx, *n.callee);
+          sptr_sobject fn;
+
+          if (fn_val->type == RTValue::Type::KEYWORD)
+          {
+            fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
+          }
+          else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+          {
+            fn = *ssptr;
+          }
+          else
+          {
+            throw LispleException("Node is not callable");
+          }
 
           sptr_sobject_v args;
           args.reserve(n.args.size());
 
           sptr_sobject_v raw_args = node.form->as<List>().tail();
 
-          Signature* sig = fn->get_type() == Form::MACRO
-                             ? fn->as<Macro>().get_signature(ctx, raw_args)
-                             : nullptr;
+          Signature* sig = nullptr;
+          if (Executable* x = dynamic_cast<Executable*>(fn.get()))
+          {
+            sig = x->get_signature(ctx, raw_args);
+          }
+
+          if (sig)
+          {
+            if (sig->supports_exec_tree())
+            {
+              ptr_exec_node_v node_args;
+              uptr_exec_node_v uptr_node_args;
+              node_args.reserve(n.args.size());
+              uptr_node_args.reserve(n.args.size());
+
+              prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
+
+              sptr_rtval result = sig->invoke(ctx, node_args);
+              return std::make_shared<RuntimeValueWrapper>(result);
+            }
+            else
+            {
+              for (size_t i = 0; i < n.args.size(); i++)
+              {
+                auto& arg = n.args[i];
+                if (sig->should_eval_arg(i))
+                {
+                  args.push_back(eval(ctx, *arg));
+                }
+                else
+                {
+                  args.push_back(arg->form);
+                }
+              }
+            }
+          }
+          else
+          {
+            for (auto& arg : n.args)
+            {
+              args.push_back(eval(ctx, *arg));
+            }
+          }
+
+          sptr_sobject r = fn->execute(ctx, args);
+          return r;
+        }
+        else if constexpr (std::is_same_v<T, ExecNodeList>)
+        {
+          return Lisple::NIL;
+        }
+      },
+      node.data);
+  }
+
+  sptr_rtval exec(Context& ctx, const ExecNode& node)
+  {
+    return std::visit(
+      [&](auto const& n) -> sptr_rtval
+      {
+        using T = std::decay_t<decltype(n)>;
+
+        if constexpr (std::is_same_v<T, LiteralNode>)
+        {
+          return n.value;
+        }
+        else if constexpr (std::is_same_v<T, LookupNode>)
+        {
+          sptr_sobject result = ctx.lookup(n.identifier);
+          return to_rt_value(result);
+        }
+        else if constexpr (std::is_same_v<T, MapNode>)
+        {
+          sptr_rtval_v elements;
+          elements.reserve(n.elements.size());
+
+          for (auto& lmnt : n.elements)
+          {
+            elements.push_back(exec(ctx, *lmnt));
+          }
+
+          return RTValue::map(elements);
+        }
+        else if constexpr (std::is_same_v<T, VectorNode>)
+        {
+          sptr_rtval_v elements;
+          elements.reserve(n.elements.size());
+
+          for (auto& lmnt : n.elements)
+          {
+            elements.push_back(exec(ctx, *lmnt));
+          }
+
+          return RTValue::vector(elements);
+        }
+        else if constexpr (std::is_same_v<T, CallNode>)
+        {
+          sptr_rtval fn_val = exec(ctx, *n.callee);
+          sptr_sobject fn;
+
+          if (fn_val->type == RTValue::Type::KEYWORD)
+          {
+            fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
+          }
+          else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+          {
+            fn = *ssptr;
+          }
+          else
+          {
+            throw LispleException("Node is not callable");
+          }
+
+          sptr_sobject_v args;
+          args.reserve(n.args.size());
+
+          sptr_sobject_v raw_args = node.form->as<List>().tail();
+
+          Signature* sig = nullptr;
+          if (Executable* x = dynamic_cast<Executable*>(fn.get()))
+          {
+            sig = x->get_signature(ctx, raw_args);
+          }
 
           if (sig)
           {
@@ -173,7 +311,7 @@ namespace Lisple
                 auto& arg = n.args[i];
                 if (sig->should_eval_arg(i))
                 {
-                  args.push_back(exec(ctx, *arg));
+                  args.push_back(eval(ctx, *arg));
                 }
                 else
                 {
@@ -186,14 +324,16 @@ namespace Lisple
           {
             for (auto& arg : n.args)
             {
-              args.push_back(exec(ctx, *arg));
+              args.push_back(eval(ctx, *arg));
             }
           }
-          return fn->execute(ctx, args);
+
+          sptr_sobject result = fn->execute(ctx, args);
+          return to_rt_value(result);
         }
         else if constexpr (std::is_same_v<T, ExecNodeList>)
         {
-          return Lisple::NIL;
+          return Constant::NIL;
         }
       },
       node.data);

@@ -1,10 +1,10 @@
 
 #include "scope.h"
 
-#include "form.h"
-#include "type.h"
-
 #include "exception.h"
+#include "form.h"
+#include "runtime/value.h"
+#include "type.h"
 
 namespace Lisple
 {
@@ -20,6 +20,11 @@ namespace Lisple
       throw IdentifierException("Identifier '" + name + "' is already defined.");
     }
     objects.emplace(name, obj);
+  }
+
+  void Scope::store(const std::string& name, const sptr_rtval& value)
+  {
+    this->store(name, std::make_shared<RuntimeValueWrapper>(value));
   }
 
   void Scope::mutate(const Word& name, const sptr_sobject& obj)
@@ -55,7 +60,21 @@ namespace Lisple
     }
     // Not returning NIL, as we need to know if we hit something whose value
     // is actually NIL or if the identifier doesn't exist in the scope.
+    // FIXME: Do we?
     return nullptr;
+  }
+
+  sptr_rtval Scope::lookup(const std::string& symbol) const
+  {
+    auto it = objects.find(symbol);
+    if (it == objects.end()) return Constant::NIL;
+
+    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(it->second.get()))
+    {
+      return wrapper->val;
+    }
+
+    throw LispleException("Attempt to lookup non-RTValue.");
   }
 
   std::shared_ptr<Array> Scope::get_keys()
@@ -68,4 +87,4 @@ namespace Lisple
     }
     return array;
   }
-}
+} // namespace Lisple

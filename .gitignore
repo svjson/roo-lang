@@ -6,4 +6,6 @@
 liblisple.a
 liblisple.so
 test/testlisple
+test/cmake*.json
 .cache
+scratch/

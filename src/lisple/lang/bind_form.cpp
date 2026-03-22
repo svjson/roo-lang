@@ -4,7 +4,6 @@
 #include "../bind.h"
 #include "../exception.h"
 #include "../runtime/exec_node.h"
-#include "../runtime/lower.h"
 
 namespace Lisple
 {
@@ -53,7 +52,7 @@ namespace Lisple
 
   EXEC_BODY(LetForm, exec_let)
   {
-    sptr_sobject result;
+    sptr_rtval result;
 
     if (ExecNodeList* bnd = std::get_if<ExecNodeList>(&args[0]->data))
     {
@@ -73,11 +72,13 @@ namespace Lisple
 
         auto binding = LexicalBinding::create(bind_expr);
 
-        bound_values.push_back(lower_literal(exec(ctx, *bnd->nodes[i + 1])));
+        bound_values.push_back(std::make_unique<ExecNode>(
+          Lisple::NIL,
+          LiteralNode(exec(ctx, *bnd->nodes[i + 1]), Lisple::NIL)));
 
         if (auto* value = std::get_if<LiteralNode>(&bound_values.back()->data))
         {
-          binding->apply(binding_scope, *value);
+          binding->apply(binding_scope, value->value);
           ctx.push_context(true, binding_scope);
         }
         else

@@ -8,6 +8,24 @@ namespace Lisple
 {
 
   /*!
+   * @brief Defines a var in the current namespace, and optionally
+   * assigns it a value.
+   *
+   * Usage:
+   * @code
+   * (def x 5)
+   * => 5
+   *
+   * (def y)
+   * => nil
+   *
+   * (def my-map {:a 1 :b 2})
+   * => {:a 1 :b 2}
+   * @endcode
+   */
+  SPECIAL_FORM_DECL(DefForm, def, def_docstring)
+
+  /*!
    * @brief Tests if all arguments are truthy
    *
    * Returns true if all arguments evaluate as true/truthy, or false if any

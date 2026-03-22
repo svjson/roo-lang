@@ -1,10 +1,8 @@
 
 #include "eval_plan.h"
 
-#include "../exception.h"
 #include "exec_node.h"
 #include "lower.h"
-#include <iostream>
 
 #include "lisple/runtime/exec_tree.h"
 #include "lisple/runtime/value.h"
@@ -107,7 +105,9 @@ namespace Lisple
       else if (elem_mode == &Eval::DEFAULT)
       {
         // std::cout << indent << "  <eval>" << std::endl;
-        storage.push_back(lower_literal(exec(ctx, *arg)));
+        storage.push_back(
+          std::make_unique<ExecNode>(Lisple::NIL,
+                                     LiteralNode(exec(ctx, *arg), Lisple::NIL)));
         output.push_back(storage.back().get());
         // std::cout << indent << "  </eval>" << std::endl;
       }

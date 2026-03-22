@@ -12,6 +12,7 @@
 #include "lang/bind_form.h"
 #include "lang/func.h"
 #include "lang/loop.h"
+#include "lang/struct.h"
 #include "namespace.h"
 #include "scope.h"
 #include "type.h"
@@ -29,7 +30,6 @@
 
 namespace Lisple
 {
-  using Lisple::UserFunction;
 
   Namespace make_language_namespace()
   {
@@ -62,7 +62,7 @@ namespace Lisple
     lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
     lang.emplace("cos", std::make_shared<CosFunction>());
     lang.emplace("count", std::make_shared<CountFunction>());
-    lang.emplace("def", std::make_shared<DefMacro>());
+    lang.emplace("def", std::make_shared<DefForm>());
     lang.emplace("defun", std::make_shared<DefunMacro>());
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang.emplace("do", std::make_shared<DoMacro>());
@@ -251,25 +251,6 @@ namespace Lisple
   MACRO_BODY(CommentMacro, comment)
   {
     return NIL;
-  }
-
-  /* DefMacro */
-  MACRO_IMPL(DefMacro,
-             MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
-                        EXEC_DISPATCH(&DefMacro::define_obj)),
-                       (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
-                        EXEC_DISPATCH(&DefMacro::define_obj_docstring))))
-
-  MACRO_BODY(DefMacro, define_obj)
-  {
-    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[1]);
-    return args[1];
-  }
-
-  MACRO_BODY(DefMacro, define_obj_docstring)
-  {
-    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[2]);
-    return args[1];
   }
 
   MACRO_IMPL(DefunMacro,
@@ -824,7 +805,7 @@ namespace Lisple
 
   FUNC_BODY(NotEqualsFunction, not_equals_any)
   {
-    return *args[0] != *args[1] ? B_TRUE : B_FALSE;
+    return *args[0] == *args[1] ? B_FALSE : B_TRUE;
   }
 
   std::shared_ptr<Number> box_number(float num)
@@ -917,7 +898,8 @@ namespace Lisple
       throw TypeError(
         "Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
     }
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
 
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -949,7 +931,8 @@ namespace Lisple
       throw TypeError(
         "Cannot perform arithmetic with nil. Arguments: " + Array(args).to_string() + ".");
     }
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
 
     if (args.size() == 1)
     {
@@ -982,7 +965,8 @@ namespace Lisple
       throw LispleException("No arguments given to /");
     }
 
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
 
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -1003,7 +987,8 @@ namespace Lisple
       throw LispleException("No arguments given to *");
     }
 
-    std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
+    std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
 
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -1027,6 +1012,7 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
+
     return Number::value_of(*args[0]) < Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
   }
 
@@ -1236,167 +1222,6 @@ namespace Lisple
     return args[0]->get_children()[n];
   }
 
-  /* AssocFunction - assoc */
-  FUNC_IMPL(AssocFunction,
-            MULTI_SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
-                       EXEC_DISPATCH(&AssocFunction::assoc_map)),
-                      (FN_ARGS((&Type::HOST_OBJECT), (&Type::ANY), (&Type::ANY)),
-                       EXEC_DISPATCH(&AssocFunction::assoc_ho))))
-
-  FUNC_BODY(AssocFunction, assoc_map)
-  {
-    Map& map = args[0]->as<Map>();
-    sptr_sobject_v new_content;
-    sptr_sobject assoc_key = args[1];
-    sptr_sobject value = args.back();
-
-    for (auto key : map.key_ptrs())
-    {
-      new_content.push_back(key);
-      if (*key != *assoc_key)
-      {
-        new_content.push_back(map.get_sptr_property(*key));
-      }
-      else
-      {
-        new_content.push_back(value);
-        value.reset();
-      }
-    }
-
-    if (value.get())
-    {
-      new_content.push_back(assoc_key);
-      new_content.push_back(value);
-    }
-
-    return std::make_shared<Map>(std::move(new_content));
-  }
-
-  FUNC_BODY(AssocFunction, assoc_ho)
-  {
-    AbstractHostObject& source = args[0]->as<AbstractHostObject>();
-    sptr_sobject_v new_content;
-    sptr_sobject assoc_key = args[1];
-    sptr_sobject value = args.back();
-
-    for (auto key : source.keys())
-    {
-      new_content.push_back(key);
-      if (*key != *assoc_key)
-      {
-        new_content.push_back(source.get_sptr_property(*key));
-      }
-      else
-      {
-        new_content.push_back(value);
-        value.reset();
-      }
-    }
-
-    if (value.get())
-    {
-      new_content.push_back(assoc_key);
-      new_content.push_back(value);
-    }
-
-    return std::make_shared<Map>(std::move(new_content));
-  }
-
-  /* AssocBangFunction - assoc! */
-  FUNC_IMPL(AssocBangFunction,
-            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
-                       EXEC_DISPATCH(&AssocBangFunction::assoc_bang)),
-                      (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY)),
-                       EXEC_DISPATCH(&AssocBangFunction::assoc_seq_bang))))
-
-  FUNC_BODY(AssocBangFunction, assoc_bang)
-  {
-    if (args.size() % 2 == 0)
-    {
-      throw Lisple::InvocationException("No value given for key '" +
-                                        args.back()->to_string() + "'");
-    }
-
-    if (*NIL == *args[0])
-    {
-      throw Lisple::TypeError("Cannot mutate nil");
-    }
-
-    if (Lisple::Type::MAP.is_type_of(*args[0]))
-    {
-      Map& map = args[0]->as<Map>();
-      for (size_t i = 1; i < args.size() - 1; i += 2)
-      {
-        map.set_property(args[i], args[i + 1]);
-      }
-      return args[0];
-    }
-    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args[0]))
-    {
-      AbstractHostObject& ho = args[0]->as<AbstractHostObject>();
-      for (size_t i = 1; i < args.size() - 1; i += 2)
-      {
-        ho.set_property(&ctx, *args[i], args[i + 1]);
-      }
-      return args[0];
-    }
-
-    throw Lisple::TypeError("Cannot mutate " + args[0]->to_string());
-  }
-
-  FUNC_BODY(AssocBangFunction, assoc_seq_bang)
-  {
-    Seq& seq = args[0]->as<Lisple::Seq>();
-    Number& index = args[1]->as<Lisple::Number>();
-
-    sptr_sobject& new_value = args.back();
-
-    seq.get_children()[index.int_value()] = new_value;
-
-    return args[0];
-  }
-
-  /* AssocInBangFunction - assoc-in! */
-  FUNC_IMPL(AssocInBangFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
-                 EXEC_DISPATCH(&AssocInBangFunction::assoc_in_bang))))
-
-  FUNC_BODY(AssocInBangFunction, assoc_in_bang)
-  {
-    sptr_sobject assoc_path = args[1];
-    if (assoc_path->get_children().empty())
-    {
-      throw InvocationException("Path for assoc-in! cannot be empty.");
-    }
-    sptr_sobject value = args.back();
-    sptr_sobject assoc_key = assoc_path->get_children().back();
-
-    sptr_sobject& target = args[0];
-    for (size_t i = 0; i < assoc_path->get_children().size() - 1; i++)
-    {
-      target = target->get_sptr_property(*assoc_path->get_children()[i]);
-    }
-
-    if (Lisple::Type::MAP.is_type_of(*args[0]))
-    {
-      Map& map = args[0]->as<Map>();
-      map.set_property(assoc_key, value);
-    }
-    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args[0]))
-    {
-      AbstractHostObject& ho = args[0]->as<AbstractHostObject>();
-      ho.set_property(&ctx, *assoc_key, value);
-    }
-    else
-    {
-      throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " +
-                              args[0]->to_string());
-    }
-
-    return args[0];
-  }
-
   /* DissocBangFunction */
   FUNC_IMPL(DissocBangFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
@@ -1409,7 +1234,13 @@ namespace Lisple
       return NIL;
     }
 
-    return args[0]->as<Lisple::Map>().remove_key(*args[1]);
+    sptr_sobject removed = args[0]->as<Lisple::Map>().remove_key(*args[1]);
+    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[0].get()))
+    {
+      Lisple::remove_property(wrapper->val, to_rt_value(args[1]));
+    }
+
+    return removed;
   }
 
   /* MergeFunction - merge */
@@ -2038,12 +1869,12 @@ namespace Lisple
 
   FUNC_BODY(SelectKeysFunction, select_keys_fn)
   {
-    auto& obj = args[0]->as<Lisple::Object>();
+    auto& obj = *args[0];
 
     sptr_sobject_v new_content;
-    for (auto& key : args.back()->as<Lisple::Seq>().get_children())
+    for (auto& key : args.back()->get_children())
     {
-      auto value = obj.get_sptr_property(*key);
+      sptr_sobject value = obj.get_sptr_property(*key);
       if (value->get_type() != Form::NIL)
       {
         new_content.push_back(key);
@@ -2158,9 +1989,10 @@ namespace Lisple
   }
 
   /* ResolveFunction - resolve */
-  FUNC_IMPL(ResolveFunction,
-            SIG((FN_ARGS((&Lisple::Type::SYMBOL)),
-                 EXEC_DISPATCH(&ResolveFunction::resolve))));
+  FUNC_IMPL(
+    ResolveFunction,
+    MULTI_SIG((FN_ARGS((&Lisple::Type::SYMBOL)), EXEC_DISPATCH(&ResolveFunction::resolve)),
+              (FN_ARGS((&Lisple::Type::WORD)), EXEC_DISPATCH(&ResolveFunction::resolve))));
 
   FUNC_BODY(ResolveFunction, resolve)
   {

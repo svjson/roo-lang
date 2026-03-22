@@ -33,7 +33,8 @@ namespace Lisple
     {
       body.push_back(args[i]);
     }
-    return create_detached_function(ctx, *args[0]->form, body);
+    sptr_sobject fn = create_detached_function(ctx, *args[0]->form, body);
+    return RTValue::object(fn);
   }
 
 } // namespace Lisple

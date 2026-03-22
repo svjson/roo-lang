@@ -28,6 +28,7 @@ namespace Lisple
     // FIXME: This should not be required here
     sptr_sobject ast_node;
 
+    explicit LiteralNode(const sptr_rtval& v);
     explicit LiteralNode(const sptr_rtval& v, sptr_sobject ast_node);
   };
 
@@ -77,6 +78,29 @@ namespace Lisple
     sptr_sobject form;
     ExecNodeData data;
 
+    /**
+     * @brief Construct an ExecNode of type T.
+     *
+     * Sets the legacy form value to NIL.
+     */
+    template <typename T>
+    explicit ExecNode(T node)
+      : form(Lisple::NIL)
+      , data(std::move(node))
+    {
+    }
+
+    /**
+     * @brief Construct a literal/value ExecNode containing `runtime_value`
+     */
+    explicit ExecNode(const sptr_rtval& runtime_value);
+
+    /**
+     * @brief Construct an ExecNode containing the source AST node.
+     *
+     * The AST node (form) is required for compatibility with the legacy
+     * AST-as-runtime implementation.
+     */
     template <typename T>
     explicit ExecNode(const sptr_sobject& form, T node)
       : form(form)

@@ -65,7 +65,7 @@ namespace Lisple
 
   EXEC_BODY(DoTimesForm, exec_dotimes)
   {
-    sptr_sobject_v result;
+    sptr_rtval_v result;
 
     auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
 
@@ -79,8 +79,7 @@ namespace Lisple
       }
 
       uptr_exec_node num_iter_node = lower_expr(bnd->ast_node->get_children().back());
-      auto num_iter_evalled = lower_literal(exec(ctx, *num_iter_node));
-      sptr_rtval& num_iter_value = std::get<LiteralNode>(num_iter_evalled->data).value;
+      sptr_rtval num_iter_value = exec(ctx, *num_iter_node);
 
       if (num_iter_value->type == RTValue::Type::NUMBER)
       {
@@ -108,12 +107,10 @@ namespace Lisple
 
             if (bind_var)
             {
-              auto inum = Lisple::Number::make(i);
-              auto ilit = LiteralNode(RTValue::number(i), inum);
-              bind_var->apply(iter_scope, ilit);
+              bind_var->apply(iter_scope, RTValue::number(i));
             }
 
-            sptr_sobject iter_result;
+            sptr_rtval iter_result;
 
             for (size_t j = 1; j < n_args; j++)
             {
@@ -129,7 +126,7 @@ namespace Lisple
       }
     }
 
-    return Array::make(result);
+    return RTValue::vector(result);
   }
 
 } // namespace Lisple
