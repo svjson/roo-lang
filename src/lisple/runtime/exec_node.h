@@ -6,6 +6,9 @@
 
 namespace Lisple
 {
+  extern int eval_executions;
+  extern int exec_executions;
+
   sptr_rtval exec(Context& ctx, const ExecNode& node);
 
   /**

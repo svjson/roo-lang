@@ -13,6 +13,9 @@
 
 namespace Lisple
 {
+  int eval_executions = 0;
+  int exec_executions = 0;
+
   std::string to_string(const ptr_exec_node_v& nodes, std::string indent)
   {
     std::string result = "";
@@ -106,7 +109,7 @@ namespace Lisple
 
   sptr_sobject eval(Context& ctx, const ExecNode& node)
   {
-
+    eval_executions++;
     return std::visit(
       [&](auto const& n) -> sptr_sobject
       {
@@ -225,6 +228,7 @@ namespace Lisple
 
   sptr_rtval exec(Context& ctx, const ExecNode& node)
   {
+    exec_executions++;
     return std::visit(
       [&](auto const& n) -> sptr_rtval
       {

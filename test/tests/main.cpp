@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
+#include <lisple/runtime/exec_node.h>
 
 int main(int argc, char** argv)
 {
@@ -23,5 +24,9 @@ int main(int argc, char** argv)
                .count());
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
+
+  std::cout << "EVAL path executions: " << Lisple::eval_executions << std::endl;
+  std::cout << "EXEC path executions: " << Lisple::exec_executions << std::endl;
+
   return ret;
 }
