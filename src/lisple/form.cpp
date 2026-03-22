@@ -1106,7 +1106,20 @@ namespace Lisple
 
   sptr_sobject_v& RuntimeValueWrapper::get_children()
   {
-    return delegate->get_children();
+    sptr_sobject_v& dc = delegate->get_children();
+    if (val->type == RTValue::Type::VECTOR)
+    {
+      sptr_rtval_v& vc = std::get<sptr_rtval_v>(val->value);
+      if (vc.size() != dc.size())
+      {
+        dc.clear();
+        for (auto& c : vc)
+        {
+          dc.push_back(RuntimeValueWrapper::make(c));
+        }
+      }
+    }
+    return dc;
   }
 
   unsigned int RuntimeValueWrapper::size() const

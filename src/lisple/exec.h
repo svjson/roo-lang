@@ -280,6 +280,7 @@ namespace Lisple
 
     sptr_sobject invoke(Context& ctx, sptr_sobject_v& args);
     sptr_rtval invoke(Context& ctx, ptr_exec_node_v& args);
+    sptr_rtval invoke(Context& ctx, sptr_rtval_v& args);
     std::string to_string() const;
   };
 
@@ -302,6 +303,7 @@ namespace Lisple
     Signature* get_signature(Context& ctx, sptr_sobject_v& args);
 
     virtual Lisple::sptr_sobject execute(Context& ctx, sptr_sobject_v& args) override;
+    virtual Lisple::sptr_rtval execute(Context& ctx, sptr_rtval_v& args);
 
     friend class HostTypeRef;
   };

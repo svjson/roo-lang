@@ -11,6 +11,8 @@
 #include <sstream>
 #include <vector>
 
+#include "lisple/form.h"
+
 namespace Lisple
 {
   int eval_executions = 0;
@@ -172,22 +174,23 @@ namespace Lisple
           sptr_sobject_v raw_args = node.form->as<List>().tail();
 
           Signature* sig = nullptr;
-          if (Executable* x = dynamic_cast<Executable*>(fn.get()))
+          Executable* x = dynamic_cast<Executable*>(fn.get());
+
+          if (x)
           {
             sig = x->get_signature(ctx, raw_args);
           }
+
+          ptr_exec_node_v node_args;
+          uptr_exec_node_v uptr_node_args;
+          node_args.reserve(n.args.size());
+          uptr_node_args.reserve(n.args.size());
 
           if (sig)
           {
             if (sig->supports_exec_tree())
             {
-              ptr_exec_node_v node_args;
-              uptr_exec_node_v uptr_node_args;
-              node_args.reserve(n.args.size());
-              uptr_node_args.reserve(n.args.size());
-
               prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
-
               sptr_rtval result = sig->invoke(ctx, node_args);
               return std::make_shared<RuntimeValueWrapper>(result);
             }
@@ -205,7 +208,22 @@ namespace Lisple
                   args.push_back(arg->form);
                 }
               }
+
+              sptr_sobject_v coerced = sig->coerce_args(ctx, args);
+              if (!coerced.empty())
+              {
+                return sig->invoke(ctx, coerced);
+              }
             }
+          }
+          else if (x)
+          {
+            sptr_rtval_v val_args;
+            for (auto& arg : n.args)
+            {
+              val_args.push_back(exec(ctx, *arg));
+            }
+            return RuntimeValueWrapper::make(x->execute(ctx, val_args));
           }
           else
           {
@@ -291,7 +309,9 @@ namespace Lisple
           sptr_sobject_v raw_args = node.form->as<List>().tail();
 
           Signature* sig = nullptr;
-          if (Executable* x = dynamic_cast<Executable*>(fn.get()))
+          Executable* x = dynamic_cast<Executable*>(fn.get());
+
+          if (x)
           {
             sig = x->get_signature(ctx, raw_args);
           }
@@ -324,6 +344,15 @@ namespace Lisple
                 }
               }
             }
+          }
+          else if (x)
+          {
+            sptr_rtval_v val_args;
+            for (auto& arg : n.args)
+            {
+              val_args.push_back(exec(ctx, *arg));
+            }
+            return x->execute(ctx, val_args);
           }
           else
           {

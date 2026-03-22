@@ -5,6 +5,9 @@
 #include "../form.h"
 #include "pool.h"
 #include <algorithm>
+#include <iostream>
+
+#include "lisple/host.h"
 
 namespace Lisple
 {
@@ -80,6 +83,11 @@ namespace Lisple
 
   sptr_rtval RTValue::number(double v)
   {
+    int intval = static_cast<int>(v);
+    if (intval == v)
+    {
+      return RTValue::number(intval);
+    }
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::NUMBER;
     val->value = RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v};
@@ -172,6 +180,9 @@ namespace Lisple
 
     switch (type)
     {
+    case RTValue::Type::BOOL:
+      r += std::get<bool>(value) ? "true" : "false";
+      break;
     case RTValue::Type::KEYWORD:
       r += ":" + std::get<std::string>(value);
       break;
@@ -179,6 +190,9 @@ namespace Lisple
       r += "{";
       r += to_string(std::get<sptr_rtval_v>(value));
       r += "}";
+      break;
+    case RTValue::Type::NIL:
+      r += "nil";
       break;
     case RTValue::Type::OBJECT:
       r += std::get<sptr_sobject>(value)->to_string();
@@ -239,10 +253,14 @@ namespace Lisple
       return RTValue::boolean(Value<bool>::value_of(*obj));
       // To allow polymorphic invocation of Object::execute, all functions and executables
       // are stored as Object* for the time being.
+    case Form::CHAR:
+      return RTValue::character(Value<char>::value_of(*obj));
     case Form::FUNCTION:
     case Form::MACRO:
       return RTValue::object(obj);
     case Form::HOST_OBJECT:
+      return RTValue::object(obj);
+    case Form::HOST_SEQ:
       return RTValue::object(obj);
     case Form::KEY:
       return RTValue::keyword(Value<std::string>::value_of(*obj));
@@ -276,7 +294,8 @@ namespace Lisple
     case Form::STRING:
       return RTValue::string(Value<std::string>::value_of(*obj));
     default:
-      throw LispleException("to_rt_value: Unsupported RTValue type: " + obj->to_string());
+      throw LispleException("to_rt_value: Unsupported RTValue type(" +
+                            std::to_string((int)obj->get_type()) + "): " + obj->to_string());
     }
   }
 
@@ -441,8 +460,14 @@ namespace Lisple
         elements[index + 1] = value;
       }
     }
+    else if (target->type == RTValue::Type::OBJECT)
+    {
+      sptr_sobject& ho = std::get<sptr_sobject>(target->value);
+      ho->set_property(to_AST(*property), to_AST(*value));
+    }
     else
     {
+      std::cout << "RTValue::Type==" << (int)target->type << std::endl;
       throw LispleException("Cannot mutate target");
     }
   }

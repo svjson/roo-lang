@@ -1442,9 +1442,8 @@ namespace Lisple
   FUNC_BODY(RemoveBangFunction, remove_seq)
   {
     auto& remove_fn = args[0]->as<Lisple::Executable>();
-    auto& seq = args[1]->as<Lisple::Seq>();
 
-    sptr_sobject_v& children = seq.get_children();
+    sptr_sobject_v& children = args[1]->get_children();
 
     auto it = std::remove_if(children.begin(),
                              children.end(),
@@ -1455,9 +1454,26 @@ namespace Lisple
                              });
 
     children.erase(it, children.end());
-    if (Type::HOST_SEQ.is_type_of(seq))
+
+    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[1].get()))
     {
-      seq.replace_children(children);
+      if (Type::HOST_SEQ.is_type_of(*wrapper->delegate))
+      {
+        args[1]->as<Seq>().replace_children(children);
+      }
+      else
+      {
+        sptr_rtval_v& vec = std::get<sptr_rtval_v>(wrapper->val->value);
+        vec.clear();
+        for (auto& c : children)
+        {
+          vec.push_back(to_rt_value(c));
+        }
+      }
+    }
+    else if (Type::HOST_SEQ.is_type_of(*args[1]))
+    {
+      args[1]->as<Seq>().replace_children(children);
     }
     return args.back();
   }

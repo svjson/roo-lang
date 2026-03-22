@@ -274,10 +274,12 @@ TEST(RemoveBangFunction, remove_even_from_array)
   runtime.eval("(remove! (fn [n] (even? n)) my-seq)");
 
   // Then
-  Lisple::Array& my_seq = runtime.lookup(Lisple::Word("my-seq"))->as<Lisple::Array>();
-  EXPECT_EQ(my_seq.get_children().size(), 2);
-  EXPECT_EQ(my_seq.get_children().at(0)->as<Lisple::Number>().int_value(), 1);
-  EXPECT_EQ(my_seq.get_children().at(1)->as<Lisple::Number>().int_value(), 3);
+  Lisple::sptr_sobject my_seq = runtime.lookup("my-seq");
+
+  EXPECT_EQ(my_seq->get_children().size(), 2);
+  std::cout << "Got: " << my_seq->to_string() << std::endl;
+  EXPECT_EQ(my_seq->get_children().at(0)->as<Lisple::Number>().int_value(), 1);
+  EXPECT_EQ(my_seq->get_children().at(1)->as<Lisple::Number>().int_value(), 3);
 }
 
 TEST(RemoveBangFunction, remove_even_from_vector_int)

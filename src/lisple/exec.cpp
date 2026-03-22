@@ -329,6 +329,21 @@ namespace Lisple
     return exec_func(ctx, args);
   }
 
+  sptr_rtval Signature::invoke(Context& ctx, sptr_rtval_v& args)
+  {
+    ptr_exec_node_v node_args;
+    uptr_exec_node_v uptr_node_args;
+    node_args.reserve(args.size());
+    uptr_node_args.reserve(args.size());
+
+    for (auto& val : args)
+    {
+      uptr_node_args.push_back(std::make_unique<ExecNode>(LiteralNode(val)));
+      node_args.push_back(uptr_node_args.back().get());
+    }
+    return exec_func(ctx, node_args);
+  }
+
   std::string Signature::to_string() const
   {
     std::stringstream ss;
@@ -437,6 +452,34 @@ namespace Lisple
 
     throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " +
                               expected + ", but got: " + Array(args).to_string(2) + ".");
+  }
+
+  sptr_rtval Executable::execute(Context& ctx, sptr_rtval_v& args)
+  {
+    sptr_sobject_v wrapped_args;
+    for (auto& arg : args)
+    {
+      wrapped_args.push_back(RuntimeValueWrapper::make(arg));
+    }
+
+    for (auto& signature : signatures)
+    {
+      if (signature->matches(wrapped_args))
+      {
+        if (signature->supports_exec_tree())
+        {
+          return signature->invoke(ctx, args);
+        }
+        else
+        {
+          sptr_sobject retval = signature->invoke(ctx, wrapped_args);
+          return to_rt_value(retval);
+        }
+      }
+    }
+
+    throw LispleException(
+      "No matching signature, and coercion not possible in RTValue path");
   }
 
   Function::Function(uptr_sig signature)

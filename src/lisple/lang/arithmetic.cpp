@@ -119,7 +119,6 @@ namespace Lisple
 
     // std::shared_ptr<Number> result = std::dynamic_pointer_cast<Number>(args[0]);
     std::shared_ptr<Number> result = std::make_shared<Number>(args[0]->as<Number>());
-
     for (size_t i = 1; i < args.size(); i++)
     {
       result = *result / args[i]->as<Number>();

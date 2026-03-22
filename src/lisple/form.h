@@ -436,7 +436,7 @@ namespace Lisple
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(this))
       return wrapper->delegate->as<OT>();
 
-    throw LispleException("Unexpected AST node type");
+    throw LispleException("Unexpected AST node type: " + std::to_string((int)this->type));
   }
 
   template <typename T> T Value<T>::value_of(const Object& obj)

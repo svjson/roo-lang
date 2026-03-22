@@ -11,7 +11,7 @@ TEST(LetForm, define_and_exec_let)
   Lisple::sptr_sobject retval = fixture.runtime.eval("(let [x 10 y 20] (+ x y))");
 
   // Then
-  ASSERT_EQ(*retval, Lisple::Number(30));
+  ASSERT_EQ(retval->to_string(), "30");
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
@@ -51,7 +51,7 @@ TEST(LetForm, define_and_exec_let_with_dynamic_values)
     fixture.runtime.eval("(let [x (+ 20 20) y (/ 90 2)] (+ x y))");
 
   // Then
-  ASSERT_EQ(*retval, Lisple::Number(85));
+  ASSERT_EQ(retval->to_string(), "85");
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
@@ -64,7 +64,7 @@ TEST(LetForm, destructure_array)
   Lisple::sptr_sobject result = runtime.eval("(let [[a b] [10 25]] (+ a b))");
 
   // Then
-  ASSERT_EQ(*result, *Lisple::Number::make(35));
+  ASSERT_EQ(result->to_string(), "35");
 }
 
 TEST(LetForm, destructure_map)
