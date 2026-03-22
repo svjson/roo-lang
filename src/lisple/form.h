@@ -413,6 +413,7 @@ namespace Lisple
     bool operator==(const Object& other) const override;
     unsigned int size() const override;
 
+    bool has_key(const Object&) const override;
     void set_property(const Object& key, sptr_sobject& value) override;
     void set_property(const sptr_sobject& key, const sptr_sobject& value) override;
     sptr_sobject get_sptr_property(const Object& key) const override;

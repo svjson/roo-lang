@@ -90,8 +90,8 @@ namespace Lisple
     static sptr_rtval object(sptr_sobject&);
     static sptr_rtval executable(std::shared_ptr<Executable>&);
 
-    static std::string to_string(sptr_rtval_v&);
-    std::string to_string();
+    static std::string to_string(const sptr_rtval_v&);
+    std::string to_string() const;
   };
 
   namespace Constant

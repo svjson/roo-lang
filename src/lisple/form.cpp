@@ -1006,6 +1006,11 @@ namespace Lisple
 
   std::string RuntimeValueWrapper::to_string([[maybe_unused]] int depth) const
   {
+    // std::ostringstream r;
+    // r << "<RTvalue(" << this->val.get() << "): " << this->val->to_string() << ", Object("
+    //   << this->delegate.get() << "): " << this->delegate->to_string(depth) << ">";
+
+    // return r.str();
 
     return val->to_string();
   }
@@ -1064,6 +1069,17 @@ namespace Lisple
       }
     }
     return delegate->get_sptr_property(key);
+  }
+
+  bool RuntimeValueWrapper::has_key(const Object& key) const
+  {
+    if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEY)
+    {
+      auto entry = Lisple::map_entry(std::get<sptr_rtval_v>(val->value),
+                                     *RTValue::keyword(Value<std::string>::value_of(key)));
+      return entry.first ? true : false;
+    }
+    return delegate->has_key(key);
   }
 
   sptr_sobject_v& RuntimeValueWrapper::get_children()

@@ -155,7 +155,7 @@ namespace Lisple
     return val;
   }
 
-  std::string RTValue::to_string(sptr_rtval_v& values)
+  std::string RTValue::to_string(const sptr_rtval_v& values)
   {
     std::string r;
     for (size_t i = 0; i < values.size(); i++)
@@ -166,7 +166,7 @@ namespace Lisple
     return r;
   }
 
-  std::string RTValue::to_string()
+  std::string RTValue::to_string() const
   {
     std::string r = "";
 
@@ -191,7 +191,7 @@ namespace Lisple
     case RTValue::Type::NUMBER:
     case RTValue::Type::STRING:
     case RTValue::Type::SYMBOL:
-      r += to_AST(*this)->to_string();
+      r += to_AST(*const_cast<RTValue*>(this))->to_string();
       break;
     default:
       r += "<to_string not implemented for #" + std::to_string((int)type) + ">";
