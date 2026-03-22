@@ -51,7 +51,8 @@ namespace Lisple
     if (keys == nullptr || keys->type != RTValue::Type::VECTOR || map_data.size() > 4 ||
         (map_data.size() == 4 && as_symbol == nullptr))
     {
-      throw TypeError("Invalid map destructure form.");
+      throw TypeError("Invalid map destructure form: " +
+                      Lisple::RTValue::map(map_data)->to_string());
     }
 
     for (auto& symbol : std::get<sptr_rtval_v>(keys->value))

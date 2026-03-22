@@ -85,8 +85,8 @@ namespace Lisple
     static sptr_rtval keyword(const std::string&);
     static sptr_rtval symbol(const std::string&);
     static sptr_rtval list(sptr_rtval_v&);
-    static sptr_rtval vector(sptr_rtval_v&);
-    static sptr_rtval map(sptr_rtval_v&);
+    static sptr_rtval vector(const sptr_rtval_v&);
+    static sptr_rtval map(const sptr_rtval_v&);
     static sptr_rtval object(sptr_sobject&);
     static sptr_rtval executable(std::shared_ptr<Executable>&);
 

@@ -131,7 +131,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::vector(sptr_rtval_v& v)
+  sptr_rtval RTValue::vector(const sptr_rtval_v& v)
   {
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::VECTOR;
@@ -139,7 +139,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::map(sptr_rtval_v& v)
+  sptr_rtval RTValue::map(const sptr_rtval_v& v)
   {
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::MAP;
