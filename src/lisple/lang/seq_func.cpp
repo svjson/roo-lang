@@ -67,4 +67,38 @@ namespace Lisple
     return RTValue::vector(std::move(result));
   }
 
+  /* ReduceFunction - reduce */
+  FUNC_IMPL(ReduceFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::FUNCTION)),
+                 EXEC_DISPATCH(&ReduceFunction::exec_reduce))))
+
+  EXEC_BODY(ReduceFunction, exec_reduce)
+  {
+    sptr_rtval_v children = Lisple::get_children(*args[0]);
+    sptr_rtval result = args[1];
+    auto& reducer = args.back();
+
+    ExecNode enode(CallNode(std::make_unique<ExecNode>(reducer), {}));
+    std::vector<uptr_exec_node>& arg_nodes = std::get<CallNode>(enode.data).args;
+    arg_nodes.push_back(std::make_unique<ExecNode>(args[1]));
+    arg_nodes.push_back(nullptr);
+
+    sptr_rtval iter_result;
+    for (auto& lmnt : children)
+    {
+      auto lmnt_node = std::make_unique<ExecNode>(lmnt);
+      arg_nodes[1].swap(lmnt_node);
+      iter_result = exec(ctx, enode);
+
+      if (iter_result.get() != result.get())
+      {
+        result.swap(iter_result);
+        auto acc_node = std::make_unique<ExecNode>(result);
+        arg_nodes[0].swap(acc_node);
+      }
+    }
+
+    return result;
+  }
+
 } // namespace Lisple

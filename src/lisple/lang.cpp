@@ -1492,29 +1492,6 @@ namespace Lisple
     return to_delete;
   }
 
-  /* ReduceFunction - reduce */
-  FUNC_IMPL(ReduceFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&ReduceFunction::reduce))))
-
-  FUNC_BODY(ReduceFunction, reduce)
-  {
-    sptr_sobject result = args[1];
-    Function& reducer = args.back()->as<Function>();
-
-    for (auto& lmnt : args[0]->get_children())
-    {
-      sptr_sobject_v reducer_args{result, lmnt};
-      sptr_sobject iter_result = reducer.execute(ctx, reducer_args);
-      if (iter_result.get() != result.get())
-      {
-        result.swap(iter_result);
-      }
-    }
-
-    return result;
-  }
-
   /* ReduceKeyValueFunction - reduce-kv */
   FUNC_IMPL(ReduceKeyValueFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::FUNCTION)),

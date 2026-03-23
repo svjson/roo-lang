@@ -735,25 +735,6 @@ namespace Lisple
   FUNC_DECL(RemoveBangFunction, remove_seq)
 
   /*!
-   * @brief Performs a functional reduce on a sequence
-   *
-   * Usage:
-   * @code
-   * (reduce sequence
-   *         {}
-   *         (fn [result element] (assoc result (:id element) element)))
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to reduce                                           |
-   * | 1     | The initial value of result                                      |
-   * | 2     | A function to apply for each element taking the accumulated      |
-   * |       | result and current element as arguments                          |
-   */
-  FUNC_DECL(ReduceFunction, reduce)
-
-  /*!
    * @brief Perform a functional reduce on all key-value pairs of a Map.
    *
    * Usage:
