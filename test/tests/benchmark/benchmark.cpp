@@ -97,7 +97,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "013_callnode_cache_and_rtval_scope_4de02a1";
+    const std::string CHANGE_ME = "014_rtval_execution_of_user_functions_ded3388";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
