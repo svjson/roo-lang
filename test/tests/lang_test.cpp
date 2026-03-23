@@ -525,20 +525,6 @@ TEST(VectorFunction, make_vector)
   EXPECT_EQ(fixture.runtime.eval("(vector 1 [2 3])")->to_string(), "[1 [2 3]]");
 }
 
-TEST(StrFunction, concat_strings)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  EXPECT_EQ(fixture.runtime.eval(R"((str "a" "b" "c"))")->to_string(), "\"abc\"");
-  EXPECT_EQ(fixture.runtime.eval(R"((str 'a' 'b' 'c'))")->to_string(), "\"abc\"");
-  EXPECT_EQ(fixture.runtime.eval(R"((str "a" 1 :rust))")->to_string(), "\"a1:rust\"");
-  EXPECT_EQ(fixture.runtime.eval(R"((str [1 2 3]))")->to_string(), "\"[1 2 3]\"");
-  EXPECT_EQ(fixture.runtime.eval(R"((str 'a' false {:a 1}))")->to_string(),
-            R"("afalse{:a 1}")");
-  EXPECT_EQ(fixture.runtime.eval(R"((str :key " " nil))")->to_string(), R"(":key nil")");
-}
-
 TEST(UpperCaseFunction, uppercase)
 {
   // Given

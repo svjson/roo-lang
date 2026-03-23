@@ -201,6 +201,23 @@ namespace Lisple
     case RTValue::Type::NIL:
       r += "nil";
       break;
+    case RTValue::Type::NUMBER:
+    {
+      auto num = std::get<RTValue::Number>(value);
+      switch (num.num_type)
+      {
+      case NumberType::INT:
+        r += std::to_string(num.int_value);
+        break;
+      case NumberType::LONG:
+        r += std::to_string(num.long_value);
+        break;
+      case NumberType::FLOAT:
+        r += std::to_string(num.float_value);
+        break;
+      }
+    }
+    break;
     case RTValue::Type::OBJECT:
       r += std::get<sptr_sobject>(value)->to_string();
       break;
@@ -209,7 +226,6 @@ namespace Lisple
       r += to_string(std::get<sptr_rtval_v>(value));
       r += "]";
       break;
-    case RTValue::Type::NUMBER:
     case RTValue::Type::STRING:
     case RTValue::Type::SYMBOL:
       r += to_AST(*const_cast<RTValue*>(this))->to_string();

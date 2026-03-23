@@ -16,7 +16,7 @@ namespace Lisple
                (&Type::STRING, DATA),
                (&Type::ARRAY, DATA),
                (VARARG, &Type::ANY, NO_EVAL)),
-       EXEC_DISPATCH(&DefunForm::inv_decl, &DefunForm::execnode_decl))))
+       EXEC_DISPATCH(&DefunForm::inv_decl_docstring, &DefunForm::execnode_decl_docstring))))
 
   /** Legacy AST-based implementation */
   MACRO_BODY(DefunForm, inv_decl)

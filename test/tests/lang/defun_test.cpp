@@ -4,7 +4,7 @@
 #include <lisple/lang/func.h>
 #include <lisple/runtime.h>
 
-TEST(DefunMacro, define_no_arg_fun)
+TEST(DefunForm, define_no_arg_fun)
 {
   LispleTest::RuntimeFixture fixture;
 
@@ -28,7 +28,7 @@ TEST(DefunMacro, define_no_arg_fun)
             *Lisple::Number::make(8));
 }
 
-TEST(DefunMacro, define_no_arg_fun_with_docstring)
+TEST(DefunForm, define_no_arg_fun_with_docstring)
 {
   LispleTest::RuntimeFixture fixture;
 

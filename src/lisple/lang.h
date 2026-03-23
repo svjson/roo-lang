@@ -484,21 +484,6 @@ namespace Lisple
   FUNC_DECL(JoinFunction, join_str)
 
   /*!
-   * @brief Converts any object to their string representation and concatenates
-   * multiple forms or strings to a single string
-   *
-   * Usage:
-   * @code
-   * (str 1) => "1"
-   * (str "There is no " (rand-nth ["spoon" "hope"])) => "There is no spoon"
-   * (str :regular-key) => ":regular-key"
-   * (str "The number " x " is the value of x")
-   * => "The number 10 is the value of x"
-   * @endcode
-   */
-  FUNC_DECL(StrFunction, concat_str)
-
-  /*!
    * @brief Converts string or string representation to all upper-case.
    *
    * Usage:

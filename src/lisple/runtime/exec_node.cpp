@@ -347,7 +347,9 @@ namespace Lisple
               {
                 args.push_back(exec(ctx, *arg));
               }
-              return sig->invoke(ctx, args);
+              auto retval = sig->invoke(ctx, args);
+
+              return retval;
             }
 
             if (sig->supports_exec_tree())

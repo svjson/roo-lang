@@ -13,6 +13,7 @@
 #include "lang/bind_form.h"
 #include "lang/func.h"
 #include "lang/loop.h"
+#include "lang/string.h"
 #include "lang/struct.h"
 #include "namespace.h"
 #include "scope.h"
@@ -1992,35 +1993,6 @@ namespace Lisple
     }
 
     return std::make_shared<Array>(std::move(result));
-  }
-
-  /*
-   * StrFunction - str
-   */
-  FUNC_IMPL(StrFunction,
-            SIG((FN_ARGS((VARARG, &Type::ANY)), EXEC_DISPATCH(&StrFunction::concat_str))))
-
-  FUNC_BODY(StrFunction, concat_str)
-  {
-    std::string result = "";
-
-    for (auto& obj : args)
-    {
-      switch (obj->get_type())
-      {
-      case Form::STRING:
-        result += obj->as<String>().value;
-        break;
-      case Form::CHAR:
-        result += obj->as<Char>().value;
-        break;
-      default:
-        result += obj->to_string();
-        break;
-      }
-    }
-
-    return std::make_shared<String>(std::move(result));
   }
 
   /*
