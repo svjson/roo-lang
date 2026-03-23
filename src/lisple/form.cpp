@@ -1146,7 +1146,19 @@ namespace Lisple
     if (*value == *Constant::NIL) return Lisple::NIL;
     if (*value == *Constant::FALSE) return Lisple::B_FALSE;
     if (*value == *Constant::TRUE) return Lisple::B_TRUE;
-    return std::make_shared<RuntimeValueWrapper>(value);
+    switch (value->type)
+    {
+    case RTValue::Type::NUMBER:
+      return to_AST(*value);
+    case RTValue::Type::STRING:
+      return String::make(std::get<std::string>(value->value));
+    case RTValue::Type::KEYWORD:
+      return Key::make(std::get<std::string>(value->value));
+    case RTValue::Type::SYMBOL:
+      return Word::make(std::get<std::string>(value->value));
+    default:
+      return std::make_shared<RuntimeValueWrapper>(value);
+    }
   }
 
   template class Value<std::string>;
