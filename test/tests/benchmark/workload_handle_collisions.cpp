@@ -4414,6 +4414,20 @@ const std::string DEF_PARTICLES_2 = "(def particles " + PARTICLES_ARG_2 + ")\n";
 const std::string DEF_ARG_SET_1 = DEF_PLAYER_1 + DEF_ASTEROIDS_1 + DEF_PARTICLES_1;
 const std::string DEF_ARG_SET_2 = DEF_PLAYER_2 + DEF_ASTEROIDS_2 + DEF_PARTICLES_2;
 
+TEST(Workload, handle_collisions_inline_argset_1)
+{
+  LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
+                                  {PIXILS__POINT,
+                                   ASTEROIDS__ASTEROID,
+                                   ASTEROIDS__DEBRIS,
+                                   NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
+                                  "asteroids.collision",
+                                  "(let [state {:player player :asteroids "
+                                  "asteroids :particles particles}]" +
+                                    HANDLE_COLLISIONS_BODY + ")");
+  bm.run();
+}
+
 TEST(Benchmark_Workload, benchmark_handle_collisions_inline_1000_argset_1)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",

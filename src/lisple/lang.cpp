@@ -17,6 +17,7 @@
 #include "lang/string.h"
 #include "lang/struct.h"
 #include "namespace.h"
+#include "runtime/dict.h"
 #include "scope.h"
 #include "type.h"
 #include <algorithm>
@@ -1081,7 +1082,7 @@ namespace Lisple
     sptr_sobject removed = args[0]->as<Lisple::Map>().remove_key(*args[1]);
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[0].get()))
     {
-      Lisple::remove_property(wrapper->val, to_rt_value(args[1]));
+      Dict::remove_property(wrapper->val, to_rt_value(args[1]));
     }
 
     return removed;

@@ -2,6 +2,7 @@
 #include "struct.h"
 
 #include "../host.h"
+#include "../runtime/dict.h"
 #include "../runtime/value.h"
 
 namespace Lisple
@@ -80,39 +81,6 @@ namespace Lisple
                       (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY)),
                        EXEC_DISPATCH(&AssocBangFunction::exec_assoc_seq_bang))))
 
-  // FUNC_BODY(AssocBangFunction, inv_assoc_bang)
-  // {
-  //   if (args.size() % 2 == 0)
-  //   {
-  //     throw Lisple::InvocationException("No value given for key '" +
-  //                                       args.back()->to_string() + "'");
-  //   }
-
-  //   if (*NIL == *args[0])
-  //   {
-  //     throw Lisple::TypeError("Cannot mutate nil");
-  //   }
-
-  //   if (Lisple::Type::MAP.is_type_of(*args[0]))
-  //   {
-  //     for (size_t i = 1; i < args.size() - 1; i += 2)
-  //     {
-  //       args[0]->set_property(args[i], args[i + 1]);
-  //     }
-  //     return args[0];
-  //   }
-  //   else if (Lisple::Type::HOST_OBJECT.is_type_of(*args[0]))
-  //   {
-  //     for (size_t i = 1; i < args.size() - 1; i += 2)
-  //     {
-  //       args[0]->set_property(&ctx, *args[i], args[i + 1]);
-  //     }
-  //     return args[0];
-  //   }
-
-  //   throw Lisple::TypeError("Cannot mutate " + args[0]->to_string());
-  // }
-
   EXEC_BODY(AssocBangFunction, exec_assoc_bang)
   {
     if (args.size() % 2 == 0)
@@ -123,23 +91,11 @@ namespace Lisple
 
     for (size_t i = 1; i < args.size() - 1; i += 2)
     {
-      Lisple::set_property(args[0], args[i], args[i + 1]);
+      Dict::set_property(args[0], args[i], args[i + 1]);
     }
 
     return args[0];
   }
-
-  // FUNC_BODY(AssocBangFunction, inv_assoc_seq_bang)
-  // {
-  //   Seq& seq = args[0]->as<Lisple::Seq>();
-  //   Number& index = args[1]->as<Lisple::Number>();
-
-  //   sptr_sobject& new_value = args.back();
-
-  //   seq.get_children()[index.int_value()] = new_value;
-
-  //   return args[0];
-  // }
 
   EXEC_BODY(AssocBangFunction, exec_assoc_seq_bang)
   {

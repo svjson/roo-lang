@@ -1,6 +1,7 @@
 #include "bind.h"
 
 #include "exception.h"
+#include "runtime/dict.h"
 #include "scope.h"
 
 #include "lisple/form.h"
@@ -66,8 +67,8 @@ namespace Lisple
   /** MapDestructureBinding */
   MapDestructureBinding::MapDestructureBinding(const sptr_rtval_v& map_data)
   {
-    auto [_k, keys] = map_entry(map_data, *RTValue::keyword("keys"));
-    auto [_vs, as_symbol] = map_entry(map_data, *RTValue::keyword("as"));
+    auto [_k, keys] = Dict::map_entry(map_data, *RTValue::keyword("keys"));
+    auto [_vs, as_symbol] = Dict::map_entry(map_data, *RTValue::keyword("as"));
 
     if (keys == nullptr || keys->type != RTValue::Type::VECTOR || map_data.size() > 4 ||
         (map_data.size() == 4 && as_symbol == nullptr))
@@ -108,7 +109,7 @@ namespace Lisple
       value->type == RTValue::Type::MAP ? std::get<sptr_rtval_v>(value->value) : EMPTY_V;
     for (auto& [key, binding] : bindings)
     {
-      auto [_, val] = map_entry(map, key);
+      auto [_, val] = Dict::map_entry(map, key);
 
       if (val)
       {
@@ -116,7 +117,7 @@ namespace Lisple
       }
       else
       {
-        // FIXME: Bind nil
+        binding->apply(scope, Constant::NIL);
       }
     }
 

@@ -139,6 +139,7 @@ namespace Lisple
     inline const SeqRef ARRAY_OF_MAP(&ARRAY, &MAP, "[Map]");
 
     inline const MultiRef QUALIFIABLE({&KEY, &WORD, &SYMBOL}, "Qualifiable");
+    inline const MultiRef SYMBOL_VALUE({&SYMBOL, &WORD}, "Symbol");
 
     inline const MultiRef SEQ(std::vector<const TypeRef*>{&LIST, &ARRAY, &MAP, &HOST_SEQ},
                               "Seq");

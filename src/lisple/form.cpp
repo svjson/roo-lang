@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdexcept>
 
+#include "lisple/runtime/dict.h"
 #include "lisple/runtime/value.h"
 
 namespace Lisple
@@ -1038,7 +1039,7 @@ namespace Lisple
     case Form::KEY:
     {
       sptr_rtval v = to_rt_value(value);
-      Lisple::set_property(val, RTValue::keyword(Value<std::string>::value_of(key)), v);
+      Dict::set_property(val, RTValue::keyword(Value<std::string>::value_of(key)), v);
       break;
     }
     default:
@@ -1079,7 +1080,7 @@ namespace Lisple
     {
       sptr_sobject vv = value;
       sptr_rtval v = to_rt_value(vv);
-      Lisple::set_property(val, RTValue::keyword(Value<std::string>::value_of(*key)), v);
+      Dict::set_property(val, RTValue::keyword(Value<std::string>::value_of(*key)), v);
       break;
     }
     default:
@@ -1092,8 +1093,8 @@ namespace Lisple
   {
     if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEY)
     {
-      auto entry = Lisple::map_entry(std::get<sptr_rtval_v>(val->value),
-                                     *RTValue::keyword(Value<std::string>::value_of(key)));
+      auto entry = Dict::map_entry(std::get<sptr_rtval_v>(val->value),
+                                   *RTValue::keyword(Value<std::string>::value_of(key)));
       if (entry.second)
       {
         return std::make_shared<RuntimeValueWrapper>(entry.second);
@@ -1106,8 +1107,8 @@ namespace Lisple
   {
     if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEY)
     {
-      auto entry = Lisple::map_entry(std::get<sptr_rtval_v>(val->value),
-                                     *RTValue::keyword(Value<std::string>::value_of(key)));
+      auto entry = Dict::map_entry(std::get<sptr_rtval_v>(val->value),
+                                   *RTValue::keyword(Value<std::string>::value_of(key)));
       return entry.first ? true : false;
     }
     return delegate->has_key(key);

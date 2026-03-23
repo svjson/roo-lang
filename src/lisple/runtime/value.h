@@ -24,19 +24,19 @@ namespace Lisple
   {
     enum class Type : uint8_t
     {
-      ANY,
-      NIL,
-      NUMBER,
-      STRING,
-      CHAR,
-      BOOL,
-      SYMBOL,
-      KEYWORD,
-      LIST,
-      VECTOR,
-      MAP,
-      FUNCTION,
-      OBJECT
+      ANY = 0x00,
+      NIL = 0x01,
+      NUMBER = 0x02,
+      STRING = 0x03,
+      CHAR = 0x04,
+      BOOL = 0x05,
+      SYMBOL = 0x06,
+      KEYWORD = 0x07,
+      LIST = 0x08,
+      VECTOR = 0x09,
+      MAP = 0x0a,
+      FUNCTION = 0x0b,
+      OBJECT = 0x0c
     };
 
     enum class NumberType : uint8_t
@@ -110,15 +110,6 @@ namespace Lisple
   sptr_rtval to_rt_value(sptr_sobject& obj);
   sptr_sobject to_AST(RTValue& val);
   bool is_truthy(RTValue& val);
-  void set_property(sptr_rtval& target, const sptr_rtval& property, sptr_rtval& value);
-
-  sptr_rtval remove_property(sptr_rtval& target, const sptr_rtval& property);
-
-  const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data);
-
-  std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
-                                                          const RTValue& key);
-  std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key);
 
 } // namespace Lisple
 

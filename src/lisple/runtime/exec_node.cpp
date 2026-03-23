@@ -5,6 +5,7 @@
 #include "../exception.h"
 #include "../exec.h"
 #include "../type.h"
+#include "dict.h"
 #include "eval_plan.h"
 #include "exec_tree.h"
 #include "value.h"
@@ -311,8 +312,15 @@ namespace Lisple
             sptr_rtval fn_val = exec(ctx, *n.callee);
             if (fn_val->type == RTValue::Type::KEYWORD)
             {
-              fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
-              n.cached_fn = fn;
+              if (n.args.size() == 1)
+              {
+                sptr_rtval target = exec(ctx, *n.args[0]);
+                return Lisple::Dict::get_property(target, fn_val);
+              }
+              else
+              {
+                throw LispleException("Invalid map dereference: ");
+              }
             }
             else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
             {
