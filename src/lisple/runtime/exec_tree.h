@@ -10,6 +10,11 @@
 
 namespace Lisple
 {
+  extern int exec_nodes_constructed;
+  extern int call_nodes_constructed;
+  extern int literal_nodes_constructed;
+  extern int lookup_nodes_constructed;
+
   struct ExecNode;
   using uptr_exec_node = std::unique_ptr<ExecNode>;
   using ptr_exec_node_v = std::vector<ExecNode*>;
@@ -88,6 +93,7 @@ namespace Lisple
       : form(Lisple::NIL)
       , data(std::move(node))
     {
+      exec_nodes_constructed++;
     }
 
     /**
@@ -106,6 +112,7 @@ namespace Lisple
       : form(form)
       , data(std::move(node))
     {
+      exec_nodes_constructed++;
     }
   };
 

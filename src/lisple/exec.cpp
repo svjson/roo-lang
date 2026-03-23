@@ -150,6 +150,11 @@ namespace Lisple
     return type->is_type_of(obj);
   }
 
+  bool Argument::matches(RTValue& obj) const
+  {
+    return type->is_type_of(obj);
+  }
+
   CoercionResult Argument::coerce(Context& ctx, sptr_sobject& obj) const
   {
     return type->coerce(ctx, obj);
@@ -200,6 +205,26 @@ namespace Lisple
     this->exec_func = exec_func;
   }
 
+  Signature::Signature(arg_v args, exec_rtval_fn exec_func)
+    : arguments(args)
+    , target_func(nullptr)
+    , exec_func(nullptr)
+    , exec_rtval(exec_func)
+  {
+    std::vector<const EvalMode*> arg_modes;
+    for (auto& arg : arguments)
+    {
+      arg_modes.push_back(arg.eval);
+      if (arg.is_vararg())
+      {
+        this->vararg = true;
+        break;
+      }
+    }
+
+    this->eval_pattern = std::make_unique<EvalPattern>(arg_modes);
+  }
+
   const std::vector<Argument>& Signature::get_arguments() const
   {
     return arguments;
@@ -243,6 +268,57 @@ namespace Lisple
   bool Signature::supports_exec_tree() const
   {
     return this->exec_func != nullptr;
+  }
+
+  bool Signature::supports_rt_value() const
+  {
+    return this->exec_rtval != nullptr;
+  }
+
+  bool Signature::matches(const sptr_rtval_v& args) const
+  {
+    size_t args_size = args.size();
+    size_t arguments_size = arguments.size();
+    if (this->vararg)
+    {
+      size_t i = 0;
+      size_t a = 0;
+      while (i < args_size && a < arguments_size)
+      {
+        if (arguments[a].is_vararg())
+        {
+          if (arguments[a].matches(*args[i]))
+            i++;
+          else
+            a++;
+        }
+        else
+        {
+          if (!arguments[a].matches(*args[i])) return false;
+          i++;
+          a++;
+        }
+      }
+
+      if (a < arguments_size - 1 || i < args_size) return false;
+    }
+    else
+    {
+      if (arguments_size != args_size)
+      {
+        return false;
+      }
+
+      for (size_t i = 0; i < args_size; i++)
+      {
+        if (!arguments[i].matches(*args[i]))
+        {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   bool Signature::matches(const sptr_sobject_v& args) const
@@ -321,7 +397,23 @@ namespace Lisple
 
   sptr_sobject Signature::invoke(Context& ctx, sptr_sobject_v& args)
   {
-    return target_func(ctx, args);
+    if (target_func)
+    {
+      return target_func(ctx, args);
+    }
+    else if (exec_rtval)
+    {
+      sptr_rtval_v rt_args;
+      for (auto& arg : args)
+      {
+        rt_args.push_back(to_rt_value(arg));
+      }
+      return RuntimeValueWrapper::make(exec_rtval(ctx, rt_args));
+    }
+    else
+    {
+      throw LispleException("Bad execution path. Args: " + Array::make(args)->to_string());
+    }
   }
 
   sptr_rtval Signature::invoke(Context& ctx, ptr_exec_node_v& args)
@@ -331,6 +423,11 @@ namespace Lisple
 
   sptr_rtval Signature::invoke(Context& ctx, sptr_rtval_v& args)
   {
+    if (this->supports_rt_value())
+    {
+      return exec_rtval(ctx, args);
+    }
+
     ptr_exec_node_v node_args;
     uptr_exec_node_v uptr_node_args;
     node_args.reserve(args.size());
@@ -456,30 +553,36 @@ namespace Lisple
 
   sptr_rtval Executable::execute(Context& ctx, sptr_rtval_v& args)
   {
-    sptr_sobject_v wrapped_args;
-    for (auto& arg : args)
-    {
-      wrapped_args.push_back(RuntimeValueWrapper::make(arg));
-    }
-
     for (auto& signature : signatures)
     {
-      if (signature->matches(wrapped_args))
+      if (signature->matches(args))
       {
-        if (signature->supports_exec_tree())
+        if (signature->supports_rt_value() || signature->supports_exec_tree())
         {
           return signature->invoke(ctx, args);
         }
         else
         {
+          sptr_sobject_v wrapped_args;
+          for (auto& arg : args)
+          {
+            wrapped_args.push_back(RuntimeValueWrapper::make(arg));
+          }
+
           sptr_sobject retval = signature->invoke(ctx, wrapped_args);
           return to_rt_value(retval);
         }
       }
     }
 
-    throw LispleException(
-      "No matching signature, and coercion not possible in RTValue path");
+    sptr_sobject_v wrapped_args;
+    for (auto& arg : args)
+    {
+      wrapped_args.push_back(RuntimeValueWrapper::make(arg));
+    }
+
+    sptr_sobject retval = this->execute(ctx, wrapped_args);
+    return to_rt_value(retval);
   }
 
   Function::Function(uptr_sig signature)

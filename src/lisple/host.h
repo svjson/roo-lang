@@ -2,6 +2,10 @@
 #ifndef __HOST_H_
 #define __HOST_H_
 
+#include "context.h"
+#include "exception.h"
+#include "form.h"
+#include "type.h"
 #include <functional>
 #include <map>
 #include <memory>
@@ -11,10 +15,8 @@
 #include <utility>
 #include <vector>
 
-#include "context.h"
-#include "form.h"
-#include "type.h"
-#include "exception.h"
+// clang-format off
+
 
 /*
  * Helper macro for selecting a specific macro implementation depending on the
@@ -1138,6 +1140,9 @@
   /*! @brief Constant Lisple::Key */ \
   const std::shared_ptr<Lisple::Key> CONSTNAME = std::make_shared<Lisple::Key>(KEYNAME);
 
+// clang-format off
+
+
 // Helper to detect if a type has operator==
 template <typename T, typename = void>
 struct is_comparable : std::false_type {};
@@ -1196,7 +1201,16 @@ namespace Lisple
                 const std::optional<std::string>& make_fn = std::nullopt);
 
     /*!
-     * @brief Tests is an object is this type.
+     * @brief Tests if a value is an instance of this type.
+     *
+     * @return true if the value refers to an object of this concrete
+     * type or if the type if a base of the concrete type of the
+     * object.
+     */
+    bool is_type_of(const RTValue& obj) const override;
+
+    /*!
+     * @brief Tests if an object is an instance of this type.
      *
      * @return true if the object is of this concrete type or if the type if a
      * base of the concrete type of the object.
@@ -1304,7 +1318,7 @@ namespace Lisple
     const key_acc_map& get_accessors() const;
 
     sptr_sobject_v& get_children() override;
-    std::string to_string(int depth=1) const override;
+    std::string to_string(int depth = 1) const override;
 
     const HostTypeRef* get_host_type() const;
     virtual const AdapterTraits* get_traits() const = 0;
@@ -1348,8 +1362,7 @@ namespace Lisple
    * @brief Abstract base class for wrapping the object held by a Host Object
    * Adapter.
    */
-  template<class T>
-  class ValueHolder
+  template <class T> class ValueHolder
   {
    public:
     virtual ~ValueHolder() = default;
@@ -1362,13 +1375,15 @@ namespace Lisple
    * @brief ValueHolder-implementation that owns the Host Object instance,
    * containing it in a std::unique_ptr
    */
-  template<class T>
-  class HostObjectValue : public ValueHolder<T>
+  template <class T> class HostObjectValue : public ValueHolder<T>
   {
     std::unique_ptr<T> object;
 
-  public:
-    HostObjectValue(std::unique_ptr<T>& object) : object(std::move(object)) {}
+   public:
+    HostObjectValue(std::unique_ptr<T>& object)
+      : object(std::move(object))
+    {
+    }
     T& get_object() override { return *object; }
     std::unique_ptr<T>& get_object_ptr() override { return object; }
   };
@@ -1377,13 +1392,15 @@ namespace Lisple
    * @brief ValueHolder-implementation that holds a reference to the Host Object
    * for cases where ownership cannot be given to the Adapter.
    */
-  template<class T>
-  class HostObjectRef : public ValueHolder<T>
+  template <class T> class HostObjectRef : public ValueHolder<T>
   {
     T& object_reference;
 
    public:
-    HostObjectRef(T& ref) : object_reference(ref) {}
+    HostObjectRef(T& ref)
+      : object_reference(ref)
+    {
+    }
     T& get_object() override { return object_reference; }
     std::unique_ptr<T>& get_object_ptr() override
     {
@@ -1396,8 +1413,7 @@ namespace Lisple
    * typically be derived directly from this class, using the HOST_ADAPTER and
    * HOST_ADAPTER_IMPL macros for convenience.
    */
-  template<class T>
-  class HostObject : public AbstractHostObject
+  template <class T> class HostObject : public AbstractHostObject
   {
    protected:
     std::unique_ptr<ValueHolder<T>> object;
@@ -1462,29 +1478,28 @@ namespace Lisple
      *  @param accessors Description of getters and setters, and how they
      *         are invoked
      */
-    HostObject(Form form,
-               T& object)
+    HostObject(Form form, T& object)
       : AbstractHostObject(form)
       , object(std::make_unique<HostObjectRef<T>>(object))
     {
     }
 
-    T& get_object() const
+    T& get_object() const { return object->get_object(); }
+
+    template <typename U = T>
+    typename std::enable_if<is_comparable<U>::value, bool>::type compare_to(
+      const HostObject<T>& other) const
     {
-      return object->get_object();
+      auto equals = [&]()
+      {
+        return this->get_object() == other.get_object();
+      };
+      return equals(); // Only evaluated if T supports ==
     }
 
     template <typename U = T>
-    typename std::enable_if<is_comparable<U>::value, bool>::type
-    compare_to(const HostObject<T>& other) const
-    {
-      auto equals = [&]() { return this->get_object() == other.get_object(); };
-      return equals();  // Only evaluated if T supports ==
-    }
-
-    template <typename U = T>
-    typename std::enable_if<!is_comparable<U>::value, bool>::type
-    compare_to(const HostObject<T>& other) const
+    typename std::enable_if<!is_comparable<U>::value, bool>::type compare_to(
+      const HostObject<T>& other) const
     {
       return this->to_string() == other.to_string();
     }
@@ -1492,22 +1507,20 @@ namespace Lisple
     bool operator==(const Object& other) const override
     {
       if (other.get_type() != Form::HOST_OBJECT) return false;
-      if (other.as<AbstractHostObject>().get_host_type() != this->get_host_type()) return false;
+      if (other.as<AbstractHostObject>().get_host_type() != this->get_host_type())
+        return false;
 
       return compare_to(other.as<HostObject<T>>());
     }
 
-    std::string to_string(int depth=-1) const override
+    std::string to_string(int depth = -1) const override
     {
       sptr_sobject_v kvs = const_cast<HostObject<T>&>(*this).get_children();
 
       return Map(kvs).to_string(depth);
     }
 
-    std::unique_ptr<T>& get_object_ptr()
-    {
-      return object->get_object_ptr();
-    }
+    std::unique_ptr<T>& get_object_ptr() { return object->get_object_ptr(); }
 
    protected:
     void sync_children() const override
@@ -1525,6 +1538,6 @@ namespace Lisple
     }
   };
 
-}
+} // namespace Lisple
 
 #endif

@@ -7,10 +7,17 @@
 namespace Lisple
 {
   /* TypeRef */
-  TypeRef::TypeRef(Form form_type, const std::string& name)
-    : form_type(form_type)
+  TypeRef::TypeRef(RTValue::Type value_type, Form form_type, const std::string& name)
+    : value_type(value_type)
+    , form_type(form_type)
     , name(name)
   {
+  }
+
+  bool TypeRef::is_type_of(const RTValue& val) const
+  {
+    if (val == *Constant::NIL) return true;
+    return val.type == value_type;
   }
 
   bool TypeRef::is_type_of(const Object& obj) const
@@ -21,7 +28,7 @@ namespace Lisple
 
   CoercionResult TypeRef::coerce(Context&, sptr_sobject&) const
   {
-    return CoercionResult { false, nullptr };
+    return CoercionResult{false, nullptr};
   }
 
   CoercionResult TypeRef::coerce(Runtime& reader, sptr_sobject& obj) const
@@ -42,8 +49,13 @@ namespace Lisple
 
   /* AnyRef */
   AnyRef::AnyRef()
-    : TypeRef(Form::ANY, "<any>")
+    : TypeRef(RTValue::Type::ANY, Form::ANY, "<any>")
   {
+  }
+
+  bool AnyRef::is_type_of(const RTValue&) const
+  {
+    return true;
   }
 
   bool AnyRef::is_type_of(const Object&) const
@@ -53,9 +65,21 @@ namespace Lisple
 
   /* MultiRef */
   MultiRef::MultiRef(std::vector<const TypeRef*> types, const std::string& name)
-    : TypeRef(Form::ANY, name)
+    : TypeRef(RTValue::Type::ANY, Form::ANY, name)
     , types(types)
   {
+  }
+
+  bool MultiRef::is_type_of(const RTValue& val) const
+  {
+    for (const TypeRef* ref : types)
+    {
+      if (ref->is_type_of(val))
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool MultiRef::is_type_of(const Object& obj) const
@@ -85,10 +109,32 @@ namespace Lisple
 
   /* SeqRef */
   SeqRef::SeqRef(const TypeRef* seq_type, const TypeRef* child_type, const std::string& name)
-    : TypeRef(Form::ANY, name)
+    : TypeRef(RTValue::Type::ANY, Form::ANY, name)
     , seq_type(seq_type)
     , child_type(child_type)
   {
+  }
+
+  bool SeqRef::is_type_of(const RTValue& val) const
+  {
+    if (!seq_type->is_type_of(val))
+    {
+      return false;
+    }
+
+    if (auto* children = std::get_if<sptr_rtval_v>(&val.value))
+    {
+      for (auto& child : *children)
+      {
+        if (!child_type->is_type_of(*child))
+        {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
   }
 
   bool SeqRef::is_type_of(const Object& obj) const
@@ -143,13 +189,13 @@ namespace Lisple
         coerced_seq = std::make_shared<List>(coerced_elements);
         break;
       default:
-        return CoercionResult { false, nullptr };
+        return CoercionResult{false, nullptr};
       }
 
-      return CoercionResult { true, coerced_seq };
+      return CoercionResult{true, coerced_seq};
     }
 
-    return CoercionResult { false, nullptr };
+    return CoercionResult{false, nullptr};
   }
 
-}
+} // namespace Lisple

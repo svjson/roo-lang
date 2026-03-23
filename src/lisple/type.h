@@ -2,6 +2,7 @@
 #ifndef __LISPLE_TYPE_H_
 #define __LISPLE_TYPE_H_
 
+#include "runtime/value.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -49,15 +50,18 @@ namespace Lisple
   class TypeRef
   {
    protected:
+    const RTValue::Type value_type;
     const Form form_type;
 
    public:
     const std::string name;
 
-    TypeRef(Form form_type, const std::string& name);
+    TypeRef(RTValue::Type value_type, Form form_type, const std::string& name);
     virtual ~TypeRef() = default;
 
+    virtual bool is_type_of(const RTValue& val) const;
     virtual bool is_type_of(const Object& obj) const;
+
     virtual CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
     CoercionResult coerce(Runtime& reader, sptr_sobject& obj) const;
 
@@ -76,6 +80,7 @@ namespace Lisple
    public:
     MultiRef(std::vector<const TypeRef*> types, const std::string& name);
 
+    bool is_type_of(const RTValue& val) const override;
     bool is_type_of(const Object& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
   };
@@ -85,6 +90,7 @@ namespace Lisple
   {
    public:
     AnyRef();
+    bool is_type_of(const RTValue& val) const override;
     bool is_type_of(const Object& obj) const override;
   };
 
@@ -100,27 +106,28 @@ namespace Lisple
    public:
     SeqRef(const TypeRef* seq_type, const TypeRef* child_type, const std::string& name);
 
+    bool is_type_of(const RTValue& val) const override;
     bool is_type_of(const Object& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
   };
 
   namespace Type
   {
-    inline const TypeRef LIST(Form::LIST, "List");
-    inline const TypeRef ARRAY(Form::ARRAY, "Vector");
-    inline const TypeRef BOOL(Form::BOOLEAN, "Boolean");
-    inline const TypeRef CHAR(Form::CHAR, "Char");
-    inline const TypeRef MAP(Form::MAP, "Map");
-    inline const TypeRef STRING(Form::STRING, "String");
-    inline const TypeRef NUMBER(Form::NUMBER, "Number");
-    inline const TypeRef SYMBOL(Form::SYMBOL, "Symbol");
-    inline const TypeRef WORD(Form::WORD, "Word");
-    inline const TypeRef KEY(Form::KEY, "Keyword");
-    inline const TypeRef FUNCTION(Form::FUNCTION, "Function");
-    inline const TypeRef MACRO(Form::MACRO, "Macro");
-    inline const TypeRef HOST_OBJECT(Form::HOST_OBJECT, "HostObject");
-    inline const TypeRef HOST_SEQ(Form::HOST_SEQ, "HostSeq");
-    inline const TypeRef NIL(Form::NIL, "nil");
+    inline const TypeRef LIST(RTValue::Type::LIST, Form::LIST, "List");
+    inline const TypeRef ARRAY(RTValue::Type::VECTOR, Form::ARRAY, "Vector");
+    inline const TypeRef BOOL(RTValue::Type::BOOL, Form::BOOLEAN, "Boolean");
+    inline const TypeRef CHAR(RTValue::Type::CHAR, Form::CHAR, "Char");
+    inline const TypeRef MAP(RTValue::Type::MAP, Form::MAP, "Map");
+    inline const TypeRef STRING(RTValue::Type::STRING, Form::STRING, "String");
+    inline const TypeRef NUMBER(RTValue::Type::NUMBER, Form::NUMBER, "Number");
+    inline const TypeRef SYMBOL(RTValue::Type::SYMBOL, Form::SYMBOL, "Symbol");
+    inline const TypeRef WORD(RTValue::Type::SYMBOL, Form::WORD, "Word");
+    inline const TypeRef KEY(RTValue::Type::KEYWORD, Form::KEY, "Keyword");
+    inline const TypeRef FUNCTION(RTValue::Type::FUNCTION, Form::FUNCTION, "Function");
+    inline const TypeRef MACRO(RTValue::Type::FUNCTION, Form::MACRO, "Macro");
+    inline const TypeRef HOST_OBJECT(RTValue::Type::OBJECT, Form::HOST_OBJECT, "HostObject");
+    inline const TypeRef HOST_SEQ(RTValue::Type::OBJECT, Form::HOST_SEQ, "HostSeq");
+    inline const TypeRef NIL(RTValue::Type::NIL, Form::NIL, "nil");
 
     inline const SeqRef ARRAY_OF_ARRAY(&ARRAY, &ARRAY, "[Array]");
     inline const SeqRef ARRAY_OF_KEY(&ARRAY, &KEY, "[Key]");

@@ -47,7 +47,7 @@ namespace Lisple
    */
   HostTypeRef::HostTypeRef(const std::string& name,
                            const std::optional<std::string>& make_fn)
-    : TypeRef(Form::HOST_OBJECT, name)
+    : TypeRef(RTValue::Type::OBJECT, Form::HOST_OBJECT, name)
     , make_fn(make_fn)
   {
   }
@@ -55,10 +55,17 @@ namespace Lisple
   HostTypeRef::HostTypeRef(const std::string& name,
                            const HostTypeRef* parent_type,
                            const std::optional<std::string>& make_fn)
-    : TypeRef(Form::HOST_OBJECT, name)
+    : TypeRef(RTValue::Type::OBJECT, Form::HOST_OBJECT, name)
     , parent_type(parent_type)
     , make_fn(make_fn)
   {
+  }
+
+  bool HostTypeRef::is_type_of(const RTValue& val) const
+  {
+    if (val.type != RTValue::Type::OBJECT) return false;
+
+    return this->is_type_of(*std::get<sptr_sobject>(val.value));
   }
 
   bool HostTypeRef::is_type_of(const Object& obj) const
@@ -107,6 +114,7 @@ namespace Lisple
         }
       }
     }
+
     return CoercionResult{false, nullptr};
   }
 

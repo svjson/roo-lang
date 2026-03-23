@@ -1,23 +1,30 @@
 #ifndef LISPLE__VALUE_H
 #define LISPLE__VALUE_H
 
-#include "../type.h"
 #include <memory>
 #include <variant>
 #include <vector>
 
 namespace Lisple
 {
+  extern int rtvalues_constructed;
+  extern int rtvalue_wrappers_constructed;
+  extern int to_ast_conversions;
+  extern int to_rtvalue_conversions;
+
+  class Object;
   class Executable;
   struct RTValue;
 
   using sptr_rtval = std::shared_ptr<RTValue>;
   using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
+  using sptr_sobject = std::shared_ptr<Object>;
 
   struct RTValue
   {
     enum class Type : uint8_t
     {
+      ANY,
       NIL,
       NUMBER,
       STRING,

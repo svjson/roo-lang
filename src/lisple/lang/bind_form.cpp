@@ -11,7 +11,7 @@ namespace Lisple
   SPECIAL_FORM_IMPL(LetForm,
                     SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&LetForm::inv_let, &LetForm::exec_let))))
+                         EXEC_DISPATCH(&LetForm::inv_let, &LetForm::execnode_let))))
   /**
    * Legacy AST-based implementation
    */
@@ -50,7 +50,7 @@ namespace Lisple
     return result;
   }
 
-  EXEC_BODY(LetForm, exec_let)
+  EXECNODE_BODY(LetForm, execnode_let)
   {
     sptr_rtval result;
 

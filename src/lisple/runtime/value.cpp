@@ -7,32 +7,39 @@
 #include <algorithm>
 #include <iostream>
 
-#include "lisple/host.h"
-
 namespace Lisple
 {
+  int rtvalues_constructed = 0;
+  int rtvalue_wrappers_constructed = 0;
+  int to_ast_conversions = 0;
+  int to_rtvalue_conversions = 0;
+
   RTValue::RTValue(int v)
     : value(RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = v})
     , type(RTValue::Type::NUMBER)
   {
+    rtvalues_constructed++;
   }
 
   RTValue::RTValue(const std::string& s, Type type)
     : value(s)
     , type(type)
   {
+    rtvalues_constructed++;
   }
 
   RTValue::RTValue(bool v)
     : value(v)
     , type(RTValue::Type::BOOL)
   {
+    rtvalues_constructed++;
   }
 
   RTValue::RTValue(std::monostate)
     : value(std::monostate())
     , type(RTValue::Type::NIL)
   {
+    rtvalues_constructed++;
   }
 
   int RTValue::Number::get_int() const
@@ -220,15 +227,17 @@ namespace Lisple
 
     switch (this->type)
     {
+    case Type::BOOL:
+      return std::get<bool>(this->value) == std::get<bool>(other.value);
+    case Type::NIL:
+      return other.type == Type::NIL;
     case Type::KEYWORD:
     case Type::STRING:
     case Type::SYMBOL:
-    {
-      bool r = std::get<std::string>(this->value) == std::get<std::string>(other.value);
-      return r;
-    }
+      return std::get<std::string>(this->value) == std::get<std::string>(other.value);
     default:
-      throw LispleException("== not implemented for type");
+      throw LispleException("== not implemented for type: " +
+                            std::to_string((int)this->type));
     }
   }
 
@@ -236,6 +245,7 @@ namespace Lisple
   {
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(obj.get())) return wrapper->val;
 
+    to_rtvalue_conversions++;
     switch (obj->get_type())
     {
     case Form::ARRAY:
@@ -301,6 +311,7 @@ namespace Lisple
 
   sptr_sobject to_AST(RTValue& val)
   {
+    to_ast_conversions++;
     switch (val.type)
     {
     case RTValue::Type::BOOL:

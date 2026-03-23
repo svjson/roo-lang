@@ -3,6 +3,7 @@
 #define LISPLE__LANG__ARITHMETIC_H
 
 #include "../exec.h"
+#include <functional>
 
 namespace Lisple
 {

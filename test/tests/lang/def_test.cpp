@@ -18,7 +18,7 @@ TEST(DefForm, exec_def__string)
   args.push_back(&str_value);
 
   // When
-  def.exec_def(ctx, args);
+  def.execnode_def(ctx, args);
 
   // Then
   auto obj = runtime.get_current_namespace().lookup(Lisple::Word("var-name"));

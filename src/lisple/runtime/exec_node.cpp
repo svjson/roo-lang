@@ -188,14 +188,26 @@ namespace Lisple
 
           if (sig)
           {
+            if (sig->supports_rt_value())
+            {
+              sptr_rtval_v args;
+              for (auto& arg : n.args)
+              {
+                args.push_back(exec(ctx, *arg));
+              }
+              return RuntimeValueWrapper::make(sig->invoke(ctx, args));
+            }
+
             if (sig->supports_exec_tree())
             {
               prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
+              // std::cout << "args: " << node_args.size() << std::endl;
               sptr_rtval result = sig->invoke(ctx, node_args);
               return std::make_shared<RuntimeValueWrapper>(result);
             }
             else
             {
+              // std::cout << "EVAL sig->no_exec_tree!" << std::endl;
               for (size_t i = 0; i < n.args.size(); i++)
               {
                 auto& arg = n.args[i];
@@ -318,8 +330,19 @@ namespace Lisple
 
           if (sig)
           {
+            if (sig->supports_rt_value())
+            {
+              sptr_rtval_v args;
+              for (auto& arg : n.args)
+              {
+                args.push_back(exec(ctx, *arg));
+              }
+              return sig->invoke(ctx, args);
+            }
+
             if (sig->supports_exec_tree())
             {
+              // std::cout << "EXEC sig->node_tree!" << std::endl;
               ptr_exec_node_v node_args;
               uptr_exec_node_v uptr_node_args;
               node_args.reserve(n.args.size());

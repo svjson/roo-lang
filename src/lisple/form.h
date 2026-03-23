@@ -424,7 +424,7 @@ namespace Lisple
 
     std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
-    static std::shared_ptr<RuntimeValueWrapper> make(const sptr_rtval& value);
+    static std::shared_ptr<Object> make(const sptr_rtval& value);
 
     std::string to_string(int depth = -1) const override;
   };

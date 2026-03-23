@@ -66,7 +66,7 @@ TEST(Signature, no_arg_signature_matches_only_empty_arglist)
                                         std::placeholders::_2));
 
   // Then
-  EXPECT_TRUE(signature.matches({}));
+  EXPECT_TRUE(signature.matches(Lisple::sptr_sobject_v{}));
 
   EXPECT_FALSE(signature.matches({STRING, NUMBER}));
   EXPECT_FALSE(signature.matches({STRING, STRING}));
@@ -86,7 +86,7 @@ TEST(Signature, matches_varargs)
               std::placeholders::_2));
 
   // Then
-  EXPECT_TRUE(signature.matches({}));
+  EXPECT_TRUE(signature.matches(Lisple::sptr_sobject_v{}));
   EXPECT_TRUE(signature.matches({STRING}));
   EXPECT_TRUE(signature.matches({STRING, STRING}));
   EXPECT_TRUE(signature.matches({STRING, STRING, STRING}));
@@ -117,7 +117,7 @@ TEST(Signature, matches__leading_varargs)
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, FUNCTION}));
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY, FUNCTION}));
 
-  EXPECT_FALSE(signature.matches({}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_sobject_v{}));
   EXPECT_FALSE(signature.matches({STRING}));
   EXPECT_FALSE(signature.matches({FUNCTION, ARRAY}));
 }
@@ -139,7 +139,7 @@ TEST(Signature, matches__trailing_varargs)
   EXPECT_TRUE(signature.matches({FUNCTION, ARRAY, ARRAY}));
   EXPECT_TRUE(signature.matches({FUNCTION, ARRAY, ARRAY, ARRAY}));
 
-  EXPECT_FALSE(signature.matches({}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_sobject_v{}));
   EXPECT_FALSE(signature.matches({STRING}));
   EXPECT_FALSE(signature.matches({ARRAY}));
   EXPECT_FALSE(signature.matches({ARRAY, FUNCTION}));
@@ -164,7 +164,7 @@ TEST(Signature, matches__trailing_varargs_of_same_type)
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY}));
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY, ARRAY}));
 
-  EXPECT_FALSE(signature.matches({}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_sobject_v{}));
   EXPECT_FALSE(signature.matches({ARRAY, STRING}));
   EXPECT_FALSE(signature.matches({STRING, ARRAY}));
   EXPECT_FALSE(signature.matches({ARRAY, FUNCTION}));

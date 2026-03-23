@@ -8,7 +8,7 @@ namespace Lisple
   /** FnForm - fn */
   SPECIAL_FORM_IMPL(FnForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::exec_decl))))
+                         EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::execnode_decl))))
 
   /**
    * Legacy AST-based implementation
@@ -24,7 +24,7 @@ namespace Lisple
     return create_detached_function(ctx, *args[0], body);
   }
 
-  EXEC_BODY(FnForm, exec_decl)
+  EXECNODE_BODY(FnForm, execnode_decl)
   {
     ptr_exec_node_v body;
 

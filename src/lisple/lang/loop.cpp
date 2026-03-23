@@ -11,7 +11,7 @@ namespace Lisple
   SPECIAL_FORM_IMPL(DoTimesForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
-                                       &DoTimesForm::exec_dotimes))))
+                                       &DoTimesForm::execnode_dotimes))))
 
   /**
    * Legacy AST-based implementation
@@ -63,7 +63,7 @@ namespace Lisple
     return std::make_shared<Array>(std::move(result));
   }
 
-  EXEC_BODY(DoTimesForm, exec_dotimes)
+  EXECNODE_BODY(DoTimesForm, execnode_dotimes)
   {
     sptr_rtval_v result;
 

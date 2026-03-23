@@ -958,6 +958,8 @@ namespace Lisple
     , val(val)
     , delegate(to_AST(*val))
   {
+    rtvalue_wrappers_constructed++;
+
     switch (val->type)
     {
     case RTValue::Type::NUMBER:
@@ -996,6 +998,8 @@ namespace Lisple
     case RTValue::Type::OBJECT:
       type = delegate->get_type();
       break;
+    case RTValue::Type::ANY:
+      throw LispleException("Invalid RTValue");
     }
   }
 
@@ -1132,8 +1136,11 @@ namespace Lisple
     return delegate->execute(ctx, args);
   }
 
-  std::shared_ptr<RuntimeValueWrapper> RuntimeValueWrapper::make(const sptr_rtval& value)
+  std::shared_ptr<Object> RuntimeValueWrapper::make(const sptr_rtval& value)
   {
+    if (*value == *Constant::NIL) return Lisple::NIL;
+    if (*value == *Constant::FALSE) return Lisple::B_FALSE;
+    if (*value == *Constant::TRUE) return Lisple::B_TRUE;
     return std::make_shared<RuntimeValueWrapper>(value);
   }
 

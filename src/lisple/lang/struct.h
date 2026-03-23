@@ -58,7 +58,7 @@ namespace Lisple
    * | 1     | The path to the nested key to set                                |
    * | 2     | The value to associate with the last key of the key path         |
    */
-  FUNC(AssocInBangFunction, assoc_in_bang)
+  FUNC_DECL(AssocInBangFunction, inv_assoc_in_bang)
 
 } // namespace Lisple
 

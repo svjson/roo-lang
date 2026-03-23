@@ -9,10 +9,10 @@ namespace Lisple
   /* DefForm */
   MACRO_IMPL(DefForm,
              MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
-                        EXEC_DISPATCH(&DefForm::inv_def, &DefForm::exec_def)),
+                        EXEC_DISPATCH(&DefForm::inv_def, &DefForm::execnode_def)),
                        (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
                         EXEC_DISPATCH(&DefForm::inv_def_docstring,
-                                      &DefForm::exec_def_docstring))))
+                                      &DefForm::execnode_def_docstring))))
 
   /**
    * Legacy AST-based implementation.
@@ -24,7 +24,7 @@ namespace Lisple
     return ctx.get_current_namespace()->lookup(symbol);
   }
 
-  EXEC_BODY(DefForm, exec_def)
+  EXECNODE_BODY(DefForm, execnode_def)
   {
     std::string& key =
       std::get<std::string>(std::get<LiteralNode>(args[0]->data).value->value);
@@ -42,7 +42,7 @@ namespace Lisple
     return args[2];
   }
 
-  EXEC_BODY(DefForm, exec_def_docstring)
+  EXECNODE_BODY(DefForm, execnode_def_docstring)
   {
     sptr_rtval& value = std::get<LiteralNode>(args[2]->data).value;
     ctx.store_namespace(
@@ -54,7 +54,7 @@ namespace Lisple
   /** AndForm - and */
   SPECIAL_FORM_IMPL(AndForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&AndForm::inv_and, &AndForm::exec_and))))
+                         EXEC_DISPATCH(&AndForm::inv_and, &AndForm::execnode_and))))
 
   /**
    * Legacy AST-based implementation.
@@ -75,7 +75,7 @@ namespace Lisple
     return B_TRUE;
   }
 
-  EXEC_BODY(AndForm, exec_and)
+  EXECNODE_BODY(AndForm, execnode_and)
   {
     sptr_rtval val;
     for (auto& arg : args)
@@ -92,7 +92,7 @@ namespace Lisple
   /** OrForm - or */
   SPECIAL_FORM_IMPL(OrForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&OrForm::inv_or, &OrForm::exec_or))))
+                         EXEC_DISPATCH(&OrForm::inv_or, &OrForm::execnode_or))))
 
   MACRO_BODY(OrForm, inv_or)
   {
@@ -110,7 +110,7 @@ namespace Lisple
     return B_FALSE;
   }
 
-  EXEC_BODY(OrForm, exec_or)
+  EXECNODE_BODY(OrForm, execnode_or)
   {
     sptr_rtval val;
 

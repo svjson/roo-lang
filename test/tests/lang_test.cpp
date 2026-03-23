@@ -713,13 +713,13 @@ TEST(EqualsFunction, string)
 TEST(NotEqualsFunction, ints)
 {
   LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(not= 1 2)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= 50 (+ 25 250))"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= 999 -999)"), *Lisple::B_TRUE);
+  EXPECT_TRUE(fixture.ctx.eval("(not= 1 2)")->is_truthy());
+  EXPECT_TRUE(fixture.ctx.eval("(not= 50 (+ 25 250))")->is_truthy());
+  EXPECT_TRUE(fixture.ctx.eval("(not= 999 -999)")->is_truthy());
 
-  EXPECT_EQ(*fixture.ctx.eval("(not= 1 1)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= 50 (+ 25 25))"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= 999 999)"), *Lisple::B_FALSE);
+  EXPECT_FALSE(fixture.ctx.eval("(not= 1 1)")->is_truthy());
+  EXPECT_FALSE(fixture.ctx.eval("(not= 50 (+ 25 25))")->is_truthy());
+  EXPECT_FALSE(fixture.ctx.eval("(not= 999 999)")->is_truthy());
 }
 
 TEST(NotEqualsFunction, chars)
