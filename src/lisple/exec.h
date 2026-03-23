@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "lisple/bind.h"
+
 // clang-format off
 #define SIG_PREAMBLE Lisple::arg_v
 #define FN_ARGS1(A1) SIG_PREAMBLE{ Lisple::arg A1 }
@@ -403,13 +405,14 @@ namespace Lisple
      */
     const std::string home_ns;
     std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
+    std::vector<std::unique_ptr<LexicalBinding>> arg_binding;
     uptr_exec_node_v uptr_body;
     ptr_exec_node_v body;
 
    public:
     UserFunction(const std::string& home_ns,
                  arg_v,
-                 std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
+                 std::vector<std::unique_ptr<LexicalBinding>>& arg_bindings,
                  uptr_exec_node_v&& body);
 
     UserFunction(const std::string& home_ns,
@@ -420,7 +423,8 @@ namespace Lisple
     const std::vector<std::unique_ptr<ArgumentBinding>>& get_argument_bindings() const;
     const uptr_exec_node_v& get_body() const;
 
-    sptr_sobject exec_body(Lisple::Context& ctx, sptr_sobject_v& args);
+    sptr_sobject exec_ast_body(Lisple::Context& ctx, sptr_sobject_v& args);
+    sptr_rtval exec_body(Lisple::Context& ctx, sptr_rtval_v& args);
   };
 
   class Macro : public Executable
@@ -437,7 +441,7 @@ namespace Lisple
                                                 sptr_sobject_v& body);
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
-                                                Object& arg_array,
+                                                sptr_rtval_v& param_form,
                                                 ptr_exec_node_v& body);
 
   std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
@@ -445,7 +449,7 @@ namespace Lisple
                                                              sptr_sobject_v& body);
 
   std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             Object& arg_array,
+                                                             sptr_rtval_v& arg_array,
                                                              ptr_exec_node_v& body);
 
 } // namespace Lisple

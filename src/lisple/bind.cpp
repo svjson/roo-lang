@@ -31,6 +31,27 @@ namespace Lisple
     }
   }
 
+  std::unique_ptr<LexicalBinding> LexicalBinding::create(sptr_rtval& pattern)
+  {
+    if (pattern->type == RTValue::Type::SYMBOL)
+    {
+      return std::make_unique<SymbolBinding>(std::get<std::string>(pattern->value));
+    }
+    else if (pattern->type == RTValue::Type::MAP)
+    {
+      return std::make_unique<MapDestructureBinding>(std::get<sptr_rtval_v>(pattern->value));
+    }
+    else if (pattern->type == RTValue::Type::VECTOR)
+    {
+      return std::make_unique<VectorDestructureBinding>(
+        std::get<sptr_rtval_v>(pattern->value));
+    }
+    else
+    {
+      throw LispleException("Invalid bind pattern: " + pattern->to_string());
+    }
+  }
+
   /** SymbolBinding */
   SymbolBinding::SymbolBinding(const std::string& symbol)
     : symbol(symbol)

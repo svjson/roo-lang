@@ -35,6 +35,7 @@ namespace Lisple
     virtual void apply(Scope& scope, const sptr_rtval& value) const = 0;
 
     static std::unique_ptr<LexicalBinding> create(LiteralNode& pattern);
+    static std::unique_ptr<LexicalBinding> create(sptr_rtval& pattern);
   };
 
   class SymbolBinding : public LexicalBinding

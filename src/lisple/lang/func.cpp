@@ -33,7 +33,11 @@ namespace Lisple
     {
       body.push_back(args[i]);
     }
-    sptr_sobject fn = create_detached_function(ctx, *args[0]->form, body);
+
+    sptr_rtval_v& arg_form =
+      std::get<sptr_rtval_v>(std::get<LiteralNode>(args[0]->data).value->value);
+
+    sptr_sobject fn = create_detached_function(ctx, arg_form, body);
     return RTValue::object(fn);
   }
 

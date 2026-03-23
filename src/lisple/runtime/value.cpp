@@ -303,6 +303,8 @@ namespace Lisple
     }
     case Form::STRING:
       return RTValue::string(Value<std::string>::value_of(*obj));
+    case Form::WORD:
+      return RTValue::symbol(Value<std::string>::value_of(*obj));
     default:
       throw LispleException("to_rt_value: Unsupported RTValue type(" +
                             std::to_string((int)obj->get_type()) + "): " + obj->to_string());
