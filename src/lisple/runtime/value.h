@@ -64,7 +64,6 @@ namespace Lisple
     };
 
     using Data = std::variant<sptr_sobject,
-                              std::shared_ptr<Executable>,
                               std::string,
                               RTValue::Number,
                               sptr_rtval_v,
@@ -95,7 +94,7 @@ namespace Lisple
     static sptr_rtval vector(const sptr_rtval_v&);
     static sptr_rtval map(const sptr_rtval_v&);
     static sptr_rtval object(sptr_sobject&);
-    static sptr_rtval executable(std::shared_ptr<Executable>&);
+    static sptr_rtval executable(sptr_sobject&);
 
     static std::string to_string(const sptr_rtval_v&);
     std::string to_string() const;

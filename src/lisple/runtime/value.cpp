@@ -162,7 +162,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::executable(std::shared_ptr<Executable>& fn)
+  sptr_rtval RTValue::executable(sptr_sobject& fn)
   {
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::FUNCTION;
@@ -328,8 +328,10 @@ namespace Lisple
       }
     }
     case RTValue::Type::CHAR:
-    {
       return Char::make(std::get<char>(val.value));
+    case RTValue::Type::FUNCTION:
+    {
+      return std::get<sptr_sobject>(val.value);
     }
     case RTValue::Type::KEYWORD:
     {

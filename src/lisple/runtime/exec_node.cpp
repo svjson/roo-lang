@@ -129,27 +129,27 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, MapNode>)
         {
-          sptr_sobject_v elements;
+          sptr_rtval_v elements;
           elements.reserve(n.elements.size());
 
           for (auto& lmnt : n.elements)
           {
-            elements.push_back(eval(ctx, *lmnt));
+            elements.push_back(exec(ctx, *lmnt));
           }
 
-          return Lisple::Map::make(elements);
+          return RuntimeValueWrapper::make(RTValue::map(elements));
         }
         else if constexpr (std::is_same_v<T, VectorNode>)
         {
-          sptr_sobject_v elements;
+          sptr_rtval_v elements;
           elements.reserve(n.elements.size());
 
           for (auto& lmnt : n.elements)
           {
-            elements.push_back(eval(ctx, *lmnt));
+            elements.push_back(exec(ctx, *lmnt));
           }
 
-          return Lisple::Array::make(elements);
+          return RuntimeValueWrapper::make(RTValue::vector(elements));
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {

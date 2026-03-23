@@ -21,8 +21,6 @@ namespace Lisple
    */
   MACRO_DECL(CommentMacro, comment);
 
-  MACRO_DECL(DefunMacro, define_fun, define_fun_docstring)
-
   /*!
    * @brief Temporarily bind values to variables that will exist only
    * within the scope of the body of the when-let macro. The body will execute

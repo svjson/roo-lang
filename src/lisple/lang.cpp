@@ -64,7 +64,7 @@ namespace Lisple
     lang.emplace("cos", std::make_shared<CosFunction>());
     lang.emplace("count", std::make_shared<CountFunction>());
     lang.emplace("def", std::make_shared<DefForm>());
-    lang.emplace("defun", std::make_shared<DefunMacro>());
+    lang.emplace("defun", std::make_shared<DefunForm>());
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang.emplace("do", std::make_shared<DoMacro>());
     lang.emplace("dotimes", std::make_shared<DoTimesForm>());
@@ -252,39 +252,6 @@ namespace Lisple
   MACRO_BODY(CommentMacro, comment)
   {
     return NIL;
-  }
-
-  MACRO_IMPL(DefunMacro,
-             MULTI_SIG((FN_ARGS((&Type::WORD, DATA),
-                                (&Type::ARRAY, DATA),
-                                (VARARG, &Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&DefunMacro::define_fun)),
-                       (FN_ARGS((&Type::WORD, DATA),
-                                (&Type::STRING, DATA),
-                                (&Type::ARRAY, DATA),
-                                (VARARG, &Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&DefunMacro::define_fun_docstring))))
-
-  /* DefunMacro */
-  MACRO_BODY(DefunMacro, define_fun)
-  {
-    std::string fun_name = Lisple::Value<std::string>::value_of(*args[0]);
-    sptr_sobject_v body;
-    body.reserve(args.size() - 2);
-    for (size_t i = 2; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-    auto fn = create_function(ctx.get_current_namespace(), *args[1], body);
-    ctx.store_namespace(fun_name, fn);
-
-    return fn;
-  }
-
-  MACRO_BODY(DefunMacro, define_fun_docstring)
-  {
-    args.erase(args.begin() + 1);
-    return this->define_fun(ctx, args);
   }
 
   /* WhenLetMacro */

@@ -103,7 +103,9 @@ namespace Lisple
 
   void MapDestructureBinding::apply(Scope& scope, const sptr_rtval& value) const
   {
-    sptr_rtval_v& map = std::get<sptr_rtval_v>(value->value);
+    static const sptr_rtval_v EMPTY_V{};
+    const sptr_rtval_v& map =
+      value->type == RTValue::Type::MAP ? std::get<sptr_rtval_v>(value->value) : EMPTY_V;
     for (auto& [key, binding] : bindings)
     {
       auto [_, val] = map_entry(map, key);

@@ -8,6 +8,11 @@ namespace Lisple
 {
 
   /**
+   * @brief Define a function in the current namespace
+   */
+  SPECIAL_FORM_DECL(DefunForm, decl, decl_docstring)
+
+  /**
    * @brief Define an anonymous lambda function with optional argument
    * destructuring.
    *
