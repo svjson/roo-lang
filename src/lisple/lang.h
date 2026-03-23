@@ -42,9 +42,6 @@ namespace Lisple
 
   MACRO_DECL(WhileMacro, make_while)
 
-  MACRO_DECL(IfLetMacro, make_if_let)
-
-  MACRO_DECL(IfMacro, make_if)
   /*!
    * @brief Optionally execute forms if conditional expression evaluates
    * to a truthy value.
@@ -100,34 +97,6 @@ namespace Lisple
   MACRO_DECL(CaseMacro, make_case)
 
   /*!
-   * @brief Defines a sequence of condition and expression pairs that will be
-   * sequentially evaluated until a condition evaluates to a truthy, upon
-   * which the corresponding expression will be evaluated and returned.
-   *
-   * @return nil if no condition evaluates to a truthy value
-   *
-   * Usage:
-   * @code
-   * (cond
-   *   (= x 10) "x is equal to 10"
-   *   (> x 10) "x is greater than 10"
-   *   :else "x is less than 10")
-   * @endcode
-   *
-   * In the example above, :else is a truthy value and can therefore be used
-   * as a last catch-all condition.
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | A conditional form                                               |
-   * | 1     | An expression that will, conditionally, be evaluated             |
-   * | 2...  | Repetitions of Params 0-1                                        |
-   */
-  MACRO_DECL(CondMacro, make_cond)
-
-  MACRO_DECL(ThreadFirstMacro, make_thread_first)
-
-  /*!
    * @brief Executes a form for every element in a sequence, binding the element
    * to the local scope. Returns an array constructed from the return value of
    * each iteration
@@ -180,26 +149,6 @@ namespace Lisple
    */
   FUNC_DECL(NilPredicateFunction, is_nil)
 
-  /*!
-   * @brief Inverts a boolean or truthy/falsy expression or value.
-   *
-   * Usage:
-   * @code
-   * (not true)
-   * => false
-   *
-   * (not false)
-   * => true
-   *
-   * (not {:key "value"})
-   * => false
-   *
-   * (not nil)
-   * => true
-   * @endcode
-   */
-  FUNC_DECL(NotFunction, invert_boolean, not_any)
-
   FUNC_DECL(IncludeFunction, include_file)
 
   /*!
@@ -219,26 +168,6 @@ namespace Lisple
   FUNC_DECL(ApplyFunction, apply_fn)
 
   /*!
-   * @brief Returns the absolute value of a Number
-   *
-   * Usage:
-   * @code
-   * (abs -5)
-   * => 5
-   *
-   * (abs 5)
-   * => 5
-   *
-   * (abs -5.5)
-   * => 5.5
-   *
-   * (abs 5.5)
-   * => 5.5
-   * @endcode
-   */
-  FUNC_DECL(AbsFunction, abs_value)
-
-  /*!
    * @brief Rounds a number up to the nearest integer
    *
    * Usage:
@@ -256,84 +185,7 @@ namespace Lisple
    */
   FUNC_DECL(CeilFunction, ceil)
 
-  FUNC_DECL(SinFunction, sin);
-  FUNC_DECL(CosFunction, cos);
-
-  FUNC_DECL(SqrtFunction, sqrt);
-
   FUNC_DECL(IntFunction, to_int)
-
-  /*!
-   * @brief Performs numerical or lexical comparison between two values.
-   *
-   * Usage:
-   * @code
-   * (< 5 10)
-   * => true
-   *
-   * (< 10 5)
-   * => false
-   *
-   * (< 10 10)
-   * => false
-   * @endcode
-   */
-  FUNC_DECL(LessThanFunction, lt_num, lt_str)
-
-  /*!
-   * @brief Performs numerical or lexical comparison between two
-   * values.
-   *
-   * Usage:
-   * (<= 5 10)
-   * => true
-   *
-   * (<= 10 5)
-   * => false
-   *
-   * (<= 10 10)
-   * => true
-   * @endcode
-   */
-  FUNC_DECL(LessThanOrEqualsFunction, lte_num, lte_str)
-
-  /*!
-   * @brief Performs numerical or lexical comparison between two values.
-   *
-   * Usage:
-   * @code
-   * (> 5 10)
-   * => false
-   *
-   * (> 10 5)
-   * => true
-   *
-   * (> 10 10)
-   * => false
-   *
-   * (> "hat" "cat")
-   * => true
-   *
-   * @endcode
-   */
-  FUNC_DECL(GreaterThanFunction, gt_num, gt_str)
-
-  /*!
-   * @brief Performs numerical or lexical comparison between two values.
-   *
-   * Usage:
-   * @code
-   * (>= 5 10)
-   * => false
-   *
-   * (>= 10 5)
-   * => true
-   *
-   * (>= 10 10)
-   * => true
-   * @endcode
-   */
-  FUNC_DECL(GreaterThanOrEqualsFunction, gte_num, gte_str)
 
   /*!
    * @brief Tests if a numeric value has a value that is between
@@ -356,7 +208,6 @@ namespace Lisple
    */
   FUNC_DECL(BetweenPredicateFunction, between);
 
-  FUNC_DECL(RangeFunction, make_range)
   FUNC_DECL(ThresholdFunction, cap_value)
 
   class MinMaxFunction : public Function
@@ -372,21 +223,6 @@ namespace Lisple
   FUNC_DECL(HeadFunction, head)
   FUNC_DECL(TailFunction, tail)
   FUNC_DECL(LastFunction, last)
-  /*!
-   * @brief Select a random element from a sequence.
-   * Returns nil if the sequence is empty
-   *
-   * Usage:
-   * @code
-   * (rand-nth [0 1 2 3 4])
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to retrieve a random element from.                  |
-   */
-  FUNC_DECL(RandNthFunction, rand_nth)
-  FUNC_DECL(CountFunction, count)
 
   /*!
    * @brief Tests if a Seq contains a specific value
@@ -430,24 +266,6 @@ namespace Lisple
    * @endcode
    */
   FUNC_DECL(RepeatFunction, repeat)
-
-  /*!
-   * @brief Get a property by value from a complex object, ie a map
-   * or a host object.
-   *
-   * Usage:
-   * @code
-   * (get {:a 1 :b 2} :a)
-   * => 1
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map or complex object                                        |
-   * | 1     | The property value, usually a key.                               |
-   */
-  FUNC_DECL(GetFunction, get);
-  FUNC_DECL(NthFunction, get_nth);
 
   /*!
    * @brief Remove a key from a map.
@@ -542,18 +360,6 @@ namespace Lisple
    *        (append! seq 3 4)
    */
   FUNC_DECL(AppendBangFunction, append_bang)
-
-  /*!
-   * @brief ConcatFunction - splice two or more forms together
-   * into an array. Any non sequence arguments will be treated
-   * as arrays of that argument
-   *
-   * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
-   *        (concat 1 2 [3 4]) => [1 2 3 4]
-   *
-   * Param 0... - The sequences to splice together
-   */
-  FUNC_DECL(ConcatFunction, concat_array)
 
   /*!
    * @brief ConcatBangFunction - splice two or more forms together
@@ -676,24 +482,6 @@ namespace Lisple
   FUNC_DECL(RemoveFirstFunction, remove_first)
 
   /*!
-   * @brief Yield a copy of a sequence, omitting element n
-   *
-   * Usage:
-   * @code
-   * (remove-nth seq n)
-   *
-   * (remove-nth [1 2 3] 1)
-   * => [1 3]
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq to copy                                                  |
-   * | 1     | The index of the element to omit                                 |
-   */
-  FUNC_DECL(RemoveNthFunction, remove_nth)
-
-  /*!
    * @brief Remove the nth value of a Seq
    *
    * Usage:
@@ -775,26 +563,6 @@ namespace Lisple
    * | 1     | The predicate function                                           |
    */
   FUNC_DECL(FindFirstFunction, find_first_in_seq)
-
-  /*!
-   * @brief Returns the index of the first element of a seq that matches a predicate
-   * function, or nil if no match is found.
-   *
-   * Usage:
-   * @code
-   * (find-index [1 3 7 8 5 10 2] even?)
-   * => 3
-   *
-   * (find-index [1 3 4] even?)
-   * => nil
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to query                                            |
-   * | 1     | The predicate function                                           |
-   */
-  FUNC_DECL(FindIndexFunction, find_index_in_seq)
 
   /*!
    * @brief Query a seq against a pattern in form of a partial map. Returns the
@@ -940,7 +708,6 @@ namespace Lisple
    */
   FUNC_DECL(ResolveFunction, resolve);
 
-  FUNC_DECL(RndFunction, random_number)
 } // namespace Lisple
 
 #endif

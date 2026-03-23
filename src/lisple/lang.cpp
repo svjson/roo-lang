@@ -10,9 +10,14 @@
 #include "impl.h"
 #include "lang/base.h"
 #include "lang/bind_form.h"
+#include "lang/branch.h"
 #include "lang/func.h"
 #include "lang/loop.h"
+#include "lang/math.h"
 #include "lang/operator.h"
+#include "lang/predicate.h"
+#include "lang/rewrite.h"
+#include "lang/seq.h"
 #include "lang/seq_func.h"
 #include "lang/string.h"
 #include "lang/struct.h"
@@ -48,7 +53,7 @@ namespace Lisple
     lang.emplace("<=", std::make_shared<LessThanOrEqualsFunction>());
     lang.emplace(">", std::make_shared<GreaterThanFunction>());
     lang.emplace(">=", std::make_shared<GreaterThanOrEqualsFunction>());
-    lang.emplace("->", std::make_shared<ThreadFirstMacro>());
+    lang.emplace("->", std::make_shared<ThreadFirstForm>());
     lang.emplace("abs", std::make_shared<AbsFunction>());
     lang.emplace("and", std::make_shared<AndForm>());
     lang.emplace("append!", std::make_shared<AppendBangFunction>());
@@ -62,7 +67,7 @@ namespace Lisple
     lang.emplace("comment", std::make_shared<CommentMacro>());
     lang.emplace("concat", std::make_shared<ConcatFunction>());
     lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
-    lang.emplace("cond", std::make_shared<CondMacro>());
+    lang.emplace("cond", std::make_shared<CondForm>());
     lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
     lang.emplace("cos", std::make_shared<CosFunction>());
     lang.emplace("count", std::make_shared<CountFunction>());
@@ -84,8 +89,8 @@ namespace Lisple
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang.emplace("get", std::make_shared<GetFunction>());
     lang.emplace("head", std::make_shared<HeadFunction>());
-    lang.emplace("if", std::make_shared<IfMacro>());
-    lang.emplace("if-let", std::make_shared<IfLetMacro>());
+    lang.emplace("if", std::make_shared<IfForm>());
+    lang.emplace("if-let", std::make_shared<IfLetForm>());
     lang.emplace("include", std::make_shared<IncludeFunction>());
     lang.emplace("int", std::make_shared<IntFunction>());
     lang.emplace("join", std::make_shared<JoinFunction>());
@@ -318,68 +323,6 @@ namespace Lisple
     return result;
   }
 
-  /* IfLetMacro */
-  MACRO_IMPL(
-    IfLetMacro,
-    SIG((FN_ARGS((&Type::ARRAY, DATA), (&Type::ANY, NO_EVAL), (&Type::ANY, NO_EVAL)),
-         EXEC_DISPATCH(&IfLetMacro::make_if_let))))
-
-  MACRO_BODY(IfLetMacro, make_if_let)
-  {
-    Object& binding_form = *args[0];
-
-    if (binding_form.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of if-let expression: " +
-        binding_form.to_string());
-    }
-
-    bool contains_non_truthy = false;
-
-    size_t scopes = 0;
-    for (size_t i = 0; i < binding_form.size(); i += 2)
-    {
-      auto& var_name_obj = *binding_form.get_children()[i];
-      auto var_val_obj = ctx.eval(binding_form.get_children()[i + 1]);
-
-      if (!var_val_obj->is_truthy())
-      {
-        contains_non_truthy = true;
-        break;
-      }
-
-      if (!Type::WORD.is_type_of(var_name_obj))
-      {
-        throw TypeError(
-          "Invalid variable identifier in binding form of if-let expression: " +
-          var_name_obj.to_string() + " in " + binding_form.to_string());
-      }
-
-      Scope var_scope;
-      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
-      ctx.push_context(true, var_scope);
-      scopes++;
-    }
-
-    sptr_sobject result = NIL;
-
-    if (!contains_non_truthy)
-    {
-      result = ctx.eval(args[1]);
-    }
-    else
-    {
-      result = ctx.eval(args[2]);
-    }
-    for (size_t i = 0; i < scopes; i++)
-    {
-      ctx.pop_context();
-    }
-
-    return result;
-  }
-
   MACRO_IMPL(DoMacro,
              SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&DoMacro::make_do))))
@@ -420,47 +363,6 @@ namespace Lisple
     return NIL;
   }
 
-  /* ThreadFirstMacro */
-  MACRO_IMPL(ThreadFirstMacro,
-             SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&ThreadFirstMacro::make_thread_first))))
-
-  MACRO_BODY(ThreadFirstMacro, make_thread_first)
-  {
-    sptr_sobject value = args[0];
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      sptr_sobject ifn = args[i];
-      if (ifn->get_type() == Form::LIST)
-      {
-        sptr_sobject_v ifn_children = ifn->get_children();
-        size_t ifn_size = ifn_children.size();
-        sptr_sobject_v fn_list;
-
-        fn_list.reserve(ifn->size() + 1);
-        if (ifn_size)
-        {
-          fn_list.push_back(ctx.eval(ifn_children[0]));
-        }
-
-        fn_list.push_back(value);
-
-        for (size_t n = 1; n < ifn_size; n++)
-        {
-          fn_list.push_back(ctx.eval(ifn_children[n]));
-        }
-
-        value = List(fn_list).execute(ctx);
-      }
-      else
-      {
-        value = List({ctx.eval(ifn), value}).execute(ctx);
-      }
-    }
-
-    return value;
-  }
-
   /* NilPredicateFunction */
   FUNC_IMPL(NilPredicateFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NilPredicateFunction::is_nil))))
@@ -468,20 +370,6 @@ namespace Lisple
   FUNC_BODY(NilPredicateFunction, is_nil)
   {
     return *args[0] == *NIL ? B_TRUE : B_FALSE;
-  }
-
-  FUNC_IMPL(NotFunction,
-            MULTI_SIG((FN_ARGS((&Type::BOOL)), EXEC_DISPATCH(&NotFunction::invert_boolean)),
-                      (FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NotFunction::not_any))))
-
-  FUNC_BODY(NotFunction, invert_boolean)
-  {
-    return args[0]->is_truthy() ? B_FALSE : B_TRUE;
-  }
-
-  FUNC_BODY(NotFunction, not_any)
-  {
-    return *args[0] == *B_FALSE || *args[0] == *NIL ? B_TRUE : B_FALSE;
   }
 
   SetBangMacro::SetBangMacro()
@@ -538,33 +426,6 @@ namespace Lisple
     return retval;
   }
 
-  MACRO_IMPL(IfMacro,
-             MULTI_SIG((FN_ARGS((&Lisple::Type::ANY, NO_EVAL),
-                                (&Lisple::Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&IfMacro::make_if)),
-                       (FN_ARGS((&Lisple::Type::ANY, NO_EVAL),
-                                (&Lisple::Type::ANY, NO_EVAL),
-                                (&Lisple::Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&IfMacro::make_if))))
-
-  MACRO_BODY(IfMacro, make_if)
-  {
-    sptr_sobject retval = Lisple::NIL;
-
-    ctx.push_context(true);
-    auto condition = ctx.eval(args[0]);
-    if (*condition != *Lisple::B_FALSE && *condition != *Lisple::NIL)
-    {
-      retval = ctx.eval(args[1]);
-    }
-    else if (args.size() == 3)
-    {
-      retval = ctx.eval(args[2]);
-    }
-    ctx.pop_context();
-    return retval;
-  }
-
   /* when */
   MACRO_IMPL(WhenMacro,
              SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
@@ -613,39 +474,6 @@ namespace Lisple
     for (size_t i = 1; i < args.size(); i += 2)
     {
       if (*ctx.eval(args[i]) == *value || *args[i] == DEFAULT)
-      {
-        retval = ctx.eval(args[i + 1]);
-        break;
-      }
-    }
-
-    ctx.pop_context();
-    return retval;
-  }
-
-  /* cond */
-  MACRO_IMPL(CondMacro,
-             SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&CondMacro::make_cond))))
-
-  MACRO_BODY(CondMacro, make_cond)
-  {
-    if (args.size() % 2 != 0)
-    {
-      throw InvocationException("Uneven number of forms passed to cond");
-    }
-    else if (args.size() == 0)
-    {
-      throw InvocationException("Empty cond-form");
-    }
-
-    sptr_sobject retval = Lisple::NIL;
-
-    ctx.push_context(true);
-    for (size_t i = 0; i < args.size(); i += 2)
-    {
-      sptr_sobject condition = ctx.eval(args[i]);
-      if (*condition != *B_FALSE && *condition != *NIL)
       {
         retval = ctx.eval(args[i + 1]);
         break;
@@ -770,25 +598,6 @@ namespace Lisple
     return *args[0] == *args[1] ? B_FALSE : B_TRUE;
   }
 
-  std::shared_ptr<Number> box_number(float num)
-  {
-    if (floorf(num) || num == 0.0)
-    {
-      return Number::make(static_cast<int>(num));
-    }
-    return Number::make(num);
-  }
-
-  /* AbsFunction - abs */
-  FUNC_IMPL(AbsFunction,
-            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&AbsFunction::abs_value))))
-
-  FUNC_BODY(AbsFunction, abs_value)
-  {
-    Number& num = args[0]->as<Number>();
-    return Number::make(std::abs(num.value));
-  }
-
   /* CeilFunction - ceil */
   FUNC_IMPL(CeilFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CeilFunction::ceil))))
@@ -797,31 +606,6 @@ namespace Lisple
   {
     Number& num = args[0]->as<Number>();
     return Number::make(static_cast<int>(std::ceil(num.float_value())));
-  }
-
-  /* SinFunction - sin */
-  FUNC_IMPL(SinFunction, SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SinFunction::sin))))
-
-  FUNC_BODY(SinFunction, sin)
-  {
-    return Lisple::Number::make(std::sin(args[0]->as<Number>().float_value()));
-  }
-
-  /* CosFunction - cos */
-  FUNC_IMPL(CosFunction, SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CosFunction::cos))))
-
-  FUNC_BODY(CosFunction, cos)
-  {
-    return Lisple::Number::make(std::cos(args[0]->as<Number>().float_value()));
-  }
-
-  /* SqrtFunction - sqrt */
-  FUNC_IMPL(SqrtFunction,
-            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SqrtFunction::sqrt))))
-
-  FUNC_BODY(SqrtFunction, sqrt)
-  {
-    return Lisple::Number::make(std::sqrt(args[0]->as<Number>().float_value()));
   }
 
   /* IntFunction - int */
@@ -841,118 +625,6 @@ namespace Lisple
     }
 
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
-  }
-
-  /* LessThanFunction */
-  FUNC_IMPL(LessThanFunction,
-            MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                       EXEC_DISPATCH(&LessThanFunction::lt_num)),
-                      (FN_ARGS((&Type::STRING), (&Type::STRING)),
-                       EXEC_DISPATCH(&LessThanFunction::lt_str))))
-
-  FUNC_BODY(LessThanFunction, lt_num)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-
-    return Number::value_of(*args[0]) < Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  FUNC_BODY(LessThanFunction, lt_str)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-
-    return str_val(*args[0]) < str_val(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  /* LessThanOrEqualsFunction */
-  FUNC_IMPL(LessThanOrEqualsFunction,
-            MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                       EXEC_DISPATCH(&LessThanOrEqualsFunction::lte_num)),
-                      (FN_ARGS((&Type::STRING), (&Type::STRING)),
-                       EXEC_DISPATCH(&LessThanOrEqualsFunction::lte_str))))
-
-  FUNC_BODY(LessThanOrEqualsFunction, lte_num)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-    return Number::value_of(*args[0]) <= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  FUNC_BODY(LessThanOrEqualsFunction, lte_str)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-
-    return str_val(*args[0]) <= str_val(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  /* GreaterThanFunction */
-  FUNC_IMPL(GreaterThanFunction,
-            MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                       EXEC_DISPATCH(&GreaterThanFunction::gt_num)),
-                      (FN_ARGS((&Type::STRING), (&Type::STRING)),
-                       EXEC_DISPATCH(&GreaterThanFunction::gt_str))))
-
-  FUNC_BODY(GreaterThanFunction, gt_num)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-    return Number::value_of(*args[0]) > Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  FUNC_BODY(GreaterThanFunction, gt_str)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-
-    return str_val(*args[0]) > str_val(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  /* GreaterThanOrEqualsFunction */
-  FUNC_IMPL(GreaterThanOrEqualsFunction,
-            MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                       EXEC_DISPATCH(&GreaterThanOrEqualsFunction::gte_num)),
-                      (FN_ARGS((&Type::STRING), (&Type::STRING)),
-                       EXEC_DISPATCH(&GreaterThanOrEqualsFunction::gte_str))))
-
-  FUNC_BODY(GreaterThanOrEqualsFunction, gte_num)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-    return Number::value_of(*args[0]) >= Number::value_of(*args[1]) ? B_TRUE : B_FALSE;
-  }
-
-  FUNC_BODY(GreaterThanOrEqualsFunction, gte_str)
-  {
-    if (*args[0] == *NIL || *args[1] == *NIL)
-    {
-      throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
-                      args[1]->to_string());
-    }
-    return str_val(*args[0]) >= str_val(*args[1]) ? B_TRUE : B_FALSE;
   }
 
   /* BetweenPredicateFunction - between? */
@@ -981,45 +653,6 @@ namespace Lisple
     return b > a ? args[0] : args[1];
   }
 
-  FUNC_IMPL(RangeFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&RangeFunction::make_range))))
-
-  FUNC_BODY(RangeFunction, make_range)
-  {
-    sptr_sobject_v result;
-
-    if (args[0]->get_type() == Form::NUMBER && args[1]->get_type() == Form::NUMBER)
-    {
-      Number& begin_num = args[0]->as<Number>();
-      Number& end_num = args[1]->as<Number>();
-
-      if (begin_num.is_num_type(NumberType::INT) && end_num.is_num_type(NumberType::INT))
-      {
-        int begin = begin_num.int_value();
-        int end = end_num.int_value();
-
-        result.reserve(std::abs(end - begin));
-
-        for (int i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
-        {
-          result.push_back(Number::make(i));
-        }
-      }
-      else
-      {
-        float begin = begin_num.float_value();
-        float end = end_num.float_value();
-
-        for (float i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
-        {
-          result.push_back(box_number(i));
-        }
-      }
-    }
-    return std::make_shared<Array>(std::move(result));
-  }
-
   MinMaxFunction::MinMaxFunction(bool min)
     : Function(SIG((FN_ARGS((&Lisple::Type::NUMBER), (VARARG, &Lisple::Type::NUMBER)),
                     EXEC_DISPATCH(&MinMaxFunction::select_min_or_max))))
@@ -1043,28 +676,6 @@ namespace Lisple
     }
 
     return args[result_index];
-  }
-
-  FUNC_IMPL(GetFunction,
-            SIG((FN_ARGS((&Type::ANY), (&Type::ANY)), EXEC_DISPATCH(&GetFunction::get))))
-
-  FUNC_BODY(GetFunction, get)
-  {
-    return args[0]->get_sptr_property(*args.back());
-  }
-
-  FUNC_IMPL(NthFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&NthFunction::get_nth))))
-
-  FUNC_BODY(NthFunction, get_nth)
-  {
-    int n = args.back()->as<Number>().int_value();
-    if (n >= static_cast<int>(args[0]->get_children().size()) || n < 0)
-    {
-      return NIL;
-    }
-    return args[0]->get_children()[n];
   }
 
   /* DissocBangFunction */
@@ -1124,34 +735,6 @@ namespace Lisple
     }
 
     return args[0];
-  }
-
-  /* ConcatFunction - concat */
-  FUNC_IMPL(ConcatFunction,
-            SIG((FN_ARGS((&VARARG, &Type::ANY)),
-                 EXEC_DISPATCH(&ConcatFunction::concat_array))))
-
-  FUNC_BODY(ConcatFunction, concat_array)
-  {
-    auto result = std::make_shared<Lisple::Array>();
-
-    for (auto& vec : args)
-    {
-      if (*vec != *NIL && (Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec) ||
-                           vec->get_type() == Form::HOST_SEQ))
-      {
-        for (auto& element : vec->get_children())
-        {
-          result->append(element);
-        }
-      }
-      else
-      {
-        result->append(vec);
-      }
-    }
-
-    return result;
   }
 
   /* ConcatBangFunction - concat */
@@ -1234,15 +817,6 @@ namespace Lisple
   FUNC_BODY(LastFunction, last)
   {
     return args[0]->as<Lisple::Seq>().get_children().back();
-  }
-
-  /* CountFunction */
-  FUNC_IMPL(CountFunction,
-            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&CountFunction::count))));
-
-  FUNC_BODY(CountFunction, count)
-  {
-    return Number::make(args[0]->size());
   }
 
   /* FilterFunction */
@@ -1439,33 +1013,6 @@ namespace Lisple
     return args.back();
   }
 
-  /* RemoveNthFunction - remove-nth! */
-  FUNC_IMPL(RemoveNthFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&RemoveNthFunction::remove_nth))))
-
-  FUNC_BODY(RemoveNthFunction, remove_nth)
-  {
-    if (args[0] == Lisple::NIL) return Lisple::NIL;
-
-    auto& original = args[0]->as<Lisple::Seq>();
-    sptr_sobject result = Seq::new_sequence(original.get_type(), original.size());
-
-    int n = args[1]->as<Lisple::Number>().int_value();
-
-    sptr_sobject_v& children = original.get_children();
-
-    for (size_t i = 0; i < original.size(); i++)
-    {
-      if (static_cast<int>(i) != n)
-      {
-        result->append(children[i]);
-      }
-    }
-
-    return result;
-  }
-
   /* RemoveNthBangFunction - remove-nth! */
   FUNC_IMPL(RemoveNthBangFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
@@ -1535,31 +1082,6 @@ namespace Lisple
       if (*pred_result != *B_FALSE && *pred_result != *NIL)
       {
         return val;
-      }
-    }
-
-    return NIL;
-  }
-
-  /* FindIndexFunction - find-index */
-  FUNC_IMPL(FindIndexFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&FindIndexFunction::find_index_in_seq))))
-
-  FUNC_BODY(FindIndexFunction, find_index_in_seq)
-  {
-    auto original = args[0];
-    if (NIL == original) return NIL;
-
-    auto& filter_fn = args.back()->as<Executable>();
-
-    for (size_t i = 0; i < args[0]->get_children().size(); i++)
-    {
-      sptr_sobject_v val_args{args[0]->get_children()[i]};
-      sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
-      if (*pred_result != *B_FALSE && *pred_result != *NIL)
-      {
-        return Lisple::Number::make(i);
       }
     }
 
@@ -1802,39 +1324,6 @@ namespace Lisple
     auto& fn_args = args.back()->get_children();
 
     return fn.execute(ctx, fn_args);
-  }
-
-  /* RandNth - rand-nth */
-  FUNC_IMPL(RandNthFunction,
-            SIG((FN_ARGS((&Lisple::Type::SEQ)), EXEC_DISPATCH(&RandNthFunction::rand_nth))))
-
-  FUNC_BODY(RandNthFunction, rand_nth)
-  {
-    auto& seq = args[0];
-    if (seq->get_children().empty())
-    {
-      return NIL;
-    }
-    return seq->get_children()[std::rand() % (seq->size())];
-  }
-
-  FUNC_IMPL(RndFunction,
-            MULTI_SIG((FN_ARGS((&Lisple::Type::NUMBER)),
-                       EXEC_DISPATCH(&RndFunction::random_number)),
-                      (FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
-                       EXEC_DISPATCH(&RndFunction::random_number))))
-
-  FUNC_BODY(RndFunction, random_number)
-  {
-    if (args[0]->get_type() != Form::NUMBER &&
-        (args.size() == 2 && args[1]->get_type() != Form::NUMBER))
-    {
-      return Lisple::NIL;
-    }
-    int min = args.size() == 1 ? 0 : args[0]->as<Lisple::Number>().value;
-    int max = args[args.size() == 1 ? 0 : 1]->as<Lisple::Number>().value;
-
-    return Number::make((std::rand() % (max - min)) + min);
   }
 
   FUNC_IMPL(VectorFunction,

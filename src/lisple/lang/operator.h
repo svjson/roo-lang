@@ -87,6 +87,79 @@ namespace Lisple
    * | 0...  | The numbers to multiply. Must be at least one argument.          |
    */
   FUNC(MultiplyFunction, multiply)
+
+  /*!
+   * @brief Performs numerical or lexical comparison between two values.
+   *
+   * Usage:
+   * @code
+   * (< 5 10)
+   * => true
+   *
+   * (< 10 5)
+   * => false
+   *
+   * (< 10 10)
+   * => false
+   * @endcode
+   */
+  FUNC(LessThanFunction, lt_num, lt_str)
+
+  /*!
+   * @brief Performs numerical or lexical comparison between two
+   * values.
+   *
+   * Usage:
+   * (<= 5 10)
+   * => true
+   *
+   * (<= 10 5)
+   * => false
+   *
+   * (<= 10 10)
+   * => true
+   * @endcode
+   */
+  FUNC(LessThanOrEqualsFunction, lte_num, lte_str)
+
+  /*!
+   * @brief Performs numerical or lexical comparison between two values.
+   *
+   * Usage:
+   * @code
+   * (> 5 10)
+   * => false
+   *
+   * (> 10 5)
+   * => true
+   *
+   * (> 10 10)
+   * => false
+   *
+   * (> "hat" "cat")
+   * => true
+   *
+   * @endcode
+   */
+  FUNC(GreaterThanFunction, gt_num, gt_str)
+
+  /*!
+   * @brief Performs numerical or lexical comparison between two values.
+   *
+   * Usage:
+   * @code
+   * (>= 5 10)
+   * => false
+   *
+   * (>= 10 5)
+   * => true
+   *
+   * (>= 10 10)
+   * => true
+   * @endcode
+   */
+  FUNC(GreaterThanOrEqualsFunction, gte_num, gte_str)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__ARITHMETIC_H */

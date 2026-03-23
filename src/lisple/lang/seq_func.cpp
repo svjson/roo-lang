@@ -4,9 +4,41 @@
 #include "../runtime/seq.h"
 #include <algorithm>
 
+#include "lisple/runtime/value.h"
+
 namespace Lisple
 {
-  /* MapFunction - map */
+  /** FindIndexFunction - find-index */
+  FUNC_IMPL(FindIndexFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+                 EXEC_DISPATCH(&FindIndexFunction::exec_find_index))))
+
+  EXEC_BODY(FindIndexFunction, exec_find_index)
+  {
+    if (*args[0] == *Constant::NIL) return Constant::NIL;
+
+    auto& filter_fn = args.back();
+
+    ExecNode enode(CallNode(std::make_unique<ExecNode>(filter_fn), {}));
+    std::vector<uptr_exec_node>& arg_nodes = std::get<CallNode>(enode.data).args;
+    arg_nodes.push_back(nullptr);
+
+    sptr_rtval_v children = Lisple::get_children(*args[0]);
+
+    for (size_t i = 0; i < children.size(); i++)
+    {
+      auto item = std::make_unique<ExecNode>(children[i]);
+      arg_nodes[0].swap(item);
+      if (Lisple::is_truthy(*exec(ctx, enode)))
+      {
+        return RTValue::number(static_cast<int>(i));
+      }
+    }
+
+    return Constant::NIL;
+  }
+
+  /** MapFunction - map */
   FUNC_IMPL(MapFunction,
             SIG((FN_ARGS((&VARARG, &Type::SEQ), (&Type::EXEC)),
                  EXEC_DISPATCH(&MapFunction::exec_map))))
@@ -67,7 +99,7 @@ namespace Lisple
     return RTValue::vector(std::move(result));
   }
 
-  /* ReduceFunction - reduce */
+  /** ReduceFunction - reduce */
   FUNC_IMPL(ReduceFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&ReduceFunction::exec_reduce))))

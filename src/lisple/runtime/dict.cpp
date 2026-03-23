@@ -21,6 +21,12 @@ namespace Lisple::Dict
         }
       }
     }
+    else if (target->type == RTValue::Type::OBJECT)
+    {
+      auto key = RuntimeValueWrapper::make(property);
+      auto val = std::get<sptr_sobject>(target->value)->get_sptr_property(*key);
+      return to_rt_value(val);
+    }
 
     return Constant::NIL;
   }

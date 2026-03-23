@@ -25,7 +25,7 @@ namespace Lisple
    * | 1     | The key to set                                                   |
    * | 2     | The value to associate with the key                              |
    */
-  FUNC_DECL(AssocFunction, assoc_map, assoc_ho)
+  FUNC(AssocFunction, assoc)
 
   /*!
    * @brief Set or replace a key in a map or map-like structure, mutating it.
@@ -59,6 +59,23 @@ namespace Lisple
    * | 2     | The value to associate with the last key of the key path         |
    */
   FUNC_DECL(AssocInBangFunction, inv_assoc_in_bang)
+
+  /*!
+   * @brief Get a property by value from a complex object, ie a map
+   * or a host object.
+   *
+   * Usage:
+   * @code
+   * (get {:a 1 :b 2} :a)
+   * => 1
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map or complex object                                        |
+   * | 1     | The property value, usually a key.                               |
+   */
+  FUNC(GetFunction, get);
 
 } // namespace Lisple
 

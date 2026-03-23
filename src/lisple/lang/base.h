@@ -66,6 +66,8 @@ namespace Lisple
    */
   SPECIAL_FORM_DECL(OrForm, or)
 
+  FUNC(RndFunction, rnd)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__BASE_H */

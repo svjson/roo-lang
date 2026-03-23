@@ -1,78 +1,22 @@
 
-#include "gmock/gmock.h"
-#include <gtest/gtest.h>
-
+#include <ext/alloc_traits.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-
-#include <ext/alloc_traits.h>
-#include <memory>
-#include <vector>
-
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
 #include <lisple/lang.h>
 #include <lisple/namespace.h>
 #include <lisple/reader.h>
+#include <lisple/runtime.h>
 #include <lisple/type.h>
-
-#include "runtime_fixture.h"
-#include "test_host_objects.h"
+#include <memory>
+#include <vector>
 
 using namespace ::testing;
-
-/*
- * ======================================================================
- * ConcatFunction - (concat [...] 5)
- * ConcatFunction - (concat [...] [...])
- * ======================================================================
- */
-
-TEST(ConcatFunction, numbers)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // When
-  auto retval = runtime.eval("(concat [1 2 3] [4 5 6])");
-
-  // Then
-  EXPECT_EQ(*retval, *runtime.eval("[1 2 3 4 5 6]"));
-}
-
-TEST(ConcatFunction, number_to_vector_int)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  std::vector<int> int_v { 1, 2, 3 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
-
-  // When
-  auto retval = runtime.eval("(concat wrapped-vec 4)");
-
-  // Then
-  EXPECT_EQ(*retval, *runtime.eval("[1 2 3 4]"));
-  EXPECT_EQ(runtime.lookup("wrapped-vec")->to_string(), runtime.eval("[1 2 3]")->to_string());
-  EXPECT_THAT(int_v, ElementsAre(1, 2, 3));
-}
-
-TEST(ConcatFunction, host_objects_and_primitives)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  runtime.get_current_namespace().store("cessna", Tests::VehicleAdapter::make<Tests::Vehicle>("Cessna", 2));
-
-  // When
-  auto retval = runtime.eval("(concat [] cessna {:a 2} \"rawk n rawl\")");
-
-  EXPECT_EQ(retval->to_string(), R"([{:model-name "Cessna" :seats 2} {:a 2} "rawk n rawl"])");
-}
 
 /*
  * ======================================================================
@@ -103,8 +47,9 @@ TEST(ContainsPredicateFunction, contains_vector_int)
 {
   // Given
   Lisple::Runtime runtime;
-  std::vector<int> int_v { 1, 3, 5, 6, 7, 8 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{1, 3, 5, 6, 7, 8};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // Then
   EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 1)"), *Lisple::B_TRUE);
@@ -117,45 +62,6 @@ TEST(ContainsPredicateFunction, contains_vector_int)
   EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 8)"), *Lisple::B_TRUE);
   EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 9)"), *Lisple::B_FALSE);
   EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 10)"), *Lisple::B_FALSE);
-}
-
-/*
- * ===================================
- * CountFunction - (count [...])
- *               - (count "a string")
- * ===================================
- */
-
-TEST(CountFunction, count_seq_length)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  std::vector<int> int_v { 50, 100, 90 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(count [])"), Lisple::Number(0));
-  EXPECT_EQ(*runtime.eval("(count ['a' 'b'])"), Lisple::Number(2));
-  EXPECT_EQ(*runtime.eval("(count [1 2 3])"), Lisple::Number(3));
-  EXPECT_EQ(*runtime.eval("(count [0 0 0 0 0])"), Lisple::Number(5));
-  EXPECT_EQ(*runtime.eval("(count wrapped-vec)"), Lisple::Number(3));
-}
-
-TEST(CountFunction, count_str_length)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(count \"\")"), Lisple::Number(0));
-  EXPECT_EQ(*runtime.eval("(count \" \")"), Lisple::Number(1));
-  EXPECT_EQ(*runtime.eval("(count \"..\")"), Lisple::Number(2));
-  EXPECT_EQ(*runtime.eval("(count \" !\")"), Lisple::Number(2));
-  EXPECT_EQ(*runtime.eval("(count \"abc\")"), Lisple::Number(3));
-  EXPECT_EQ(*runtime.eval("(count \"Where is my garmonbozia?\")"), Lisple::Number(24));
-  EXPECT_EQ(*runtime.eval("(count \"0123456789\")"), Lisple::Number(10));
-  EXPECT_EQ(*runtime.eval("(count {:a 1 :b 2})"), Lisple::Number(2));
 }
 
 /*
@@ -193,8 +99,9 @@ TEST(FlattenFunction, nested_vector_int_in_array)
   // Given
   Lisple::Runtime runtime;
 
-  std::vector<int> int_v { 2, 3 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{2, 3};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // When
   auto retval = runtime.eval("(flatten [1 wrapped-vec [4 [5 [6]] [7]] 8 9])");
@@ -215,8 +122,9 @@ TEST(HeadFunction, head_of_seq)
   Lisple::Runtime runtime;
   runtime.eval("(def my-array ['a' 'b' 'c'])");
 
-  std::vector<int> int_v { 50, 100, 90 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{50, 100, 90};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // When
   auto result_ref = runtime.eval("(head my-array)");
@@ -226,7 +134,8 @@ TEST(HeadFunction, head_of_seq)
   // Then
   EXPECT_EQ(*result_ref, Lisple::Char('a'));
   EXPECT_EQ(*result_lit, Lisple::Char('a'));
-  EXPECT_EQ(*result_wrapped, Lisple::Number(50)) << result_wrapped->to_string() << " vs " << Lisple::Number(50).to_string();
+  EXPECT_EQ(*result_wrapped, Lisple::Number(50))
+    << result_wrapped->to_string() << " vs " << Lisple::Number(50).to_string();
 }
 
 TEST(HeadFunction, single_element)
@@ -234,8 +143,9 @@ TEST(HeadFunction, single_element)
   // Given
   Lisple::Runtime runtime;
 
-  std::vector<int> int_v { 9 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{9};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // When
   auto result_lit = runtime.eval("(head ['a'])");
@@ -258,9 +168,9 @@ TEST(TailFunction, tail_of_array)
   Lisple::Runtime runtime;
   runtime.eval("(def my-array ['a' 'b' 'c'])");
 
-  std::vector<int> int_v { 50, 100, 90 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
-
+  std::vector<int> int_v{50, 100, 90};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // When
   auto result_ref = runtime.eval("(tail my-array)");
@@ -278,8 +188,9 @@ TEST(TailFunction, single_element)
   // Given
   Lisple::Runtime runtime;
 
-  std::vector<int> int_v { 50  };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{50};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // When
   auto result = runtime.eval("(tail ['a'])");
@@ -301,8 +212,9 @@ TEST(LastFunction, last)
   // Given
   Lisple::Runtime runtime;
 
-  std::vector<int> int_v { 50, 100, 90 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{50, 100, 90};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // Then
   EXPECT_EQ(*runtime.eval("(last [1 2 3])"), Lisple::Number(3));
@@ -320,13 +232,14 @@ TEST(RandNth, all_elements_possible)
   // Given
   Lisple::Runtime runtime;
 
-  std::vector freq { 0, 0, 0, 0, 0 };
+  std::vector freq{0, 0, 0, 0, 0};
 
   // When
-  for (int i=0; i < 5000; i++)
+  for (int i = 0; i < 5000; i++)
   {
     int num = runtime.eval("(rand-nth [0 1 2 3 4])")->as<Lisple::Number>().value;
-    freq[num]++;;
+    freq[num]++;
+    ;
   }
 
   // Then
@@ -341,16 +254,18 @@ TEST(RandNth, all_elements_possible_wrapped)
   // Given
   Lisple::Runtime runtime;
 
-  std::vector<int> int_v { 0, 1, 2, 3, 4 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{0, 1, 2, 3, 4};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
-  std::vector freq { 0, 0, 0, 0, 0 };
+  std::vector freq{0, 0, 0, 0, 0};
 
   // When
-  for (int i=0; i < 5000; i++)
+  for (int i = 0; i < 5000; i++)
   {
     int num = runtime.eval("(rand-nth wrapped-vec)")->as<Lisple::Number>().value;
-    freq[num]++;;
+    freq[num]++;
+    ;
   }
 
   // Then
@@ -366,7 +281,7 @@ TEST(RandNth, single_element)
   Lisple::Runtime runtime;
 
   // Then
-  for (int i=0; i<1000;i++)
+  for (int i = 0; i < 1000; i++)
   {
     int num = runtime.eval("(rand-nth [8])")->as<Lisple::Number>().value;
     EXPECT_EQ(num, 8);
@@ -382,8 +297,9 @@ TEST(TakeFunction, take)
 {
   // Given
   Lisple::Runtime runtime;
-  std::vector<int> int_v { 0, 1, 2, 3, 4 };
-  runtime.get_current_namespace().store("wrapped-vec", std::make_shared<Lisple::VectorInt>(int_v));
+  std::vector<int> int_v{0, 1, 2, 3, 4};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
 
   // Then
   EXPECT_EQ(runtime.eval("(take 2 [1 2 3 4 5 6 7 8 9 10])")->to_string(), "[1 2]");
@@ -406,8 +322,10 @@ TEST(SeqMatchFunction, seq_match_single_field)
   runtime.eval(R"((def my-seq [{:id 1 :name "Air Man"} {:id 2 :name "Bubble Man"}]))");
 
   // Then
-  EXPECT_EQ(runtime.eval("(seq-match my-seq {:id 1})")->to_string(), R"({:id 1 :name "Air Man"})");
-  EXPECT_EQ(runtime.eval("(seq-match my-seq {:id 2})")->to_string(), R"({:id 2 :name "Bubble Man"})");
+  EXPECT_EQ(runtime.eval("(seq-match my-seq {:id 1})")->to_string(),
+            R"({:id 1 :name "Air Man"})");
+  EXPECT_EQ(runtime.eval("(seq-match my-seq {:id 2})")->to_string(),
+            R"({:id 2 :name "Bubble Man"})");
   EXPECT_EQ(runtime.eval("(seq-match my-seq {:id 3})")->to_string(), R"(nil)");
 }
 
@@ -437,9 +355,16 @@ TEST(SeqMatchFunction, seq_match_nested)
   runtime.eval("(def my-seq [" + air_man + bubble_man + wood_man + "])");
 
   // Then
-  EXPECT_EQ(runtime.eval(R"((seq-match my-seq {:stats {:weakness "Metal Blade"}}))")->to_string(), bubble_man);
-  EXPECT_EQ(runtime.eval(R"((seq-match my-seq {:stats {:weapon "Leaf Shield"}}))")->to_string(), wood_man);
-  EXPECT_EQ(runtime.eval(R"((seq-match my-seq {:id 3 :stats {:weapon "Leaf Shield"}}))")->to_string(), wood_man);
-  EXPECT_EQ(runtime.eval(R"((seq-match my-seq {:stats {:weakness "Bubble Lead"}}))")->to_string(), "nil");
+  EXPECT_EQ(
+    runtime.eval(R"((seq-match my-seq {:stats {:weakness "Metal Blade"}}))")->to_string(),
+    bubble_man);
+  EXPECT_EQ(
+    runtime.eval(R"((seq-match my-seq {:stats {:weapon "Leaf Shield"}}))")->to_string(),
+    wood_man);
+  EXPECT_EQ(runtime.eval(R"((seq-match my-seq {:id 3 :stats {:weapon "Leaf Shield"}}))")
+              ->to_string(),
+            wood_man);
+  EXPECT_EQ(
+    runtime.eval(R"((seq-match my-seq {:stats {:weakness "Bubble Lead"}}))")->to_string(),
+    "nil");
 }
-

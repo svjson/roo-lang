@@ -504,12 +504,13 @@ TEST(StdMapAdapter_int_const_string, script_usage)
   EXPECT_EQ(runtime.eval("my-map"), adapter);
 
   EXPECT_EQ(*runtime.eval("(str my-map)"),
-            *Lisple::String::make(R"({1 "one" 2 "two" 3 "three"})"))
-    << "Why though?";
+            *Lisple::String::make(R"({1 "one" 2 "two" 3 "three"})"));
+
   EXPECT_EQ(runtime.eval("(str my-map)")->to_string(), R"("{1 "one" 2 "two" 3 "three"}")");
 
   /* Get keys */
-  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::String::make("one"));
+  EXPECT_EQ(runtime.eval("(get my-map 1)")->to_string(),
+            Lisple::String::make("one")->to_string());
   EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
   EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
   EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);

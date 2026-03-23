@@ -35,4 +35,23 @@ namespace Lisple
     }
     throw LispleException("Cannot get children from type: " + std::to_string((int)v.type));
   }
+
+  size_t count(RTValue& v)
+  {
+    switch (v.type)
+    {
+    case RTValue::Type::STRING:
+      return std::get<std::string>(v.value).size();
+    case RTValue::Type::VECTOR:
+    case RTValue::Type::LIST:
+      return std::get<sptr_rtval_v>(v.value).size();
+    case RTValue::Type::MAP:
+      return std::get<sptr_rtval_v>(v.value).size() / 2;
+    case RTValue::Type::OBJECT:
+      return std::get<sptr_sobject>(v.value)->size();
+    default:
+      return 1;
+    }
+  }
+
 } // namespace Lisple

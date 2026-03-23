@@ -126,4 +126,24 @@ namespace Lisple
     return Constant::FALSE;
   }
 
+  /** RndFunction - rnd */
+  FUNC_IMPL(RndFunction,
+            MULTI_SIG((FN_ARGS((&Lisple::Type::NUMBER)),
+                       EXEC_DISPATCH(&RndFunction::exec_rnd)),
+                      (FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
+                       EXEC_DISPATCH(&RndFunction::exec_rnd))))
+
+  EXEC_BODY(RndFunction, exec_rnd)
+  {
+    if (args[0]->type != RTValue::Type::NUMBER &&
+        (args.size() == 2 && args[1]->type != RTValue::Type::NUMBER))
+    {
+      return Constant::NIL;
+    }
+    int min = args.size() == 1 ? 0 : std::get<RTValue::Number>(args[0]->value).get_int();
+    int max = std::get<RTValue::Number>(args[args.size() == 1 ? 0 : 1]->value).get_int();
+
+    return RTValue::number((std::rand() % (max - min)) + min);
+  }
+
 } // namespace Lisple

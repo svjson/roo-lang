@@ -7,6 +7,26 @@
 namespace Lisple
 {
   /*!
+   * @brief Returns the index of the first element of a seq that matches a predicate
+   * function, or nil if no match is found.
+   *
+   * Usage:
+   * @code
+   * (find-index [1 3 7 8 5 10 2] even?)
+   * => 3
+   *
+   * (find-index [1 3 4] even?)
+   * => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The sequence to query                                            |
+   * | 1     | The predicate function                                           |
+   */
+  FUNC(FindIndexFunction, find_index)
+
+  /*!
    * @brief Transforms elements of a Seq by applying a function/executable
    * to each element, creating a new Seq containing the transformed elements.
    * The original Seq is not mutated.

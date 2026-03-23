@@ -3,75 +3,40 @@
 
 #include "../host.h"
 #include "../runtime/dict.h"
+#include "../runtime/seq.h"
 #include "../runtime/value.h"
 
 namespace Lisple
 {
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
-            MULTI_SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
-                       EXEC_DISPATCH(&AssocFunction::assoc_map)),
-                      (FN_ARGS((&Type::HOST_OBJECT), (&Type::ANY), (&Type::ANY)),
-                       EXEC_DISPATCH(&AssocFunction::assoc_ho))))
+            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
+                 EXEC_DISPATCH(&AssocFunction::exec_assoc))))
 
-  FUNC_BODY(AssocFunction, assoc_map)
+  EXEC_BODY(AssocFunction, exec_assoc)
   {
-    Map& map = args[0]->as<Map>();
-    sptr_sobject_v new_content;
-    sptr_sobject assoc_key = args[1];
-    sptr_sobject value = args.back();
+    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
+    sptr_rtval& assoc_key = args[1];
+    sptr_rtval& value = args.back();
 
-    for (auto key : map.key_ptrs())
+    bool found = false;
+    for (size_t i = 0; i < new_content.size(); i += 2)
     {
-      new_content.push_back(key);
-      if (*key != *assoc_key)
+      if (*new_content[i] == *assoc_key)
       {
-        new_content.push_back(map.get_sptr_property(*key));
-      }
-      else
-      {
-        new_content.push_back(value);
-        value.reset();
+        new_content[i + 1] = value;
+        found = true;
+        break;
       }
     }
 
-    if (value.get())
+    if (!found)
     {
       new_content.push_back(assoc_key);
       new_content.push_back(value);
     }
 
-    return std::make_shared<Map>(std::move(new_content));
-  }
-
-  FUNC_BODY(AssocFunction, assoc_ho)
-  {
-    AbstractHostObject& source = args[0]->as<AbstractHostObject>();
-    sptr_sobject_v new_content;
-    sptr_sobject assoc_key = args[1];
-    sptr_sobject value = args.back();
-
-    for (auto key : source.keys())
-    {
-      new_content.push_back(key);
-      if (*key != *assoc_key)
-      {
-        new_content.push_back(source.get_sptr_property(*key));
-      }
-      else
-      {
-        new_content.push_back(value);
-        value.reset();
-      }
-    }
-
-    if (value.get())
-    {
-      new_content.push_back(assoc_key);
-      new_content.push_back(value);
-    }
-
-    return std::make_shared<Map>(std::move(new_content));
+    return RTValue::map(std::move(new_content));
   }
 
   /* AssocBangFunction - assoc! */
@@ -138,6 +103,16 @@ namespace Lisple
     }
 
     return args[0];
+  }
+
+  FUNC_IMPL(GetFunction,
+            SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
+                 EXEC_DISPATCH(&GetFunction::exec_get))))
+
+  /** GetFunction - get */
+  EXEC_BODY(GetFunction, exec_get)
+  {
+    return Dict::get_property(args[0], args[1]);
   }
 
 } // namespace Lisple

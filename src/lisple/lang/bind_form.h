@@ -22,6 +22,8 @@ namespace Lisple
    */
   SPECIAL_FORM_DECL(LetForm, let)
 
+  SPECIAL_FORM_DECL(IfLetForm, if_let)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__BIND_FORM_H */

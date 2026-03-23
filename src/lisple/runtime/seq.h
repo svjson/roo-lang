@@ -7,6 +7,7 @@
 namespace Lisple
 {
   sptr_rtval_v get_children(RTValue& v);
-}
+  size_t count(RTValue& v);
+} // namespace Lisple
 
 #endif /* LISPLE__RUNTIME__SEQ_H */

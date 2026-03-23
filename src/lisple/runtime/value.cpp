@@ -4,8 +4,6 @@
 #include "../exception.h"
 #include "../form.h"
 #include "pool.h"
-#include <algorithm>
-#include <iostream>
 
 namespace Lisple
 {
@@ -255,6 +253,8 @@ namespace Lisple
     {
     case Type::BOOL:
       return std::get<bool>(this->value) == std::get<bool>(other.value);
+    case Type::CHAR:
+      return std::get<char>(this->value) == std::get<char>(other.value);
     case Type::NIL:
       return other.type == Type::NIL;
     case Type::NUMBER:

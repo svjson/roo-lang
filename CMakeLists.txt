@@ -42,9 +42,14 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/base.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/bind_form.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/branch.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/func.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/loop.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/math.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/operator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/predicate.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/rewrite.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/seq.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/seq_func.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/string.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/struct.cpp

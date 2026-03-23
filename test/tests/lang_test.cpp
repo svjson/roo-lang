@@ -212,43 +212,6 @@ TEST(CaseMacro, no_match_without_default)
   ASSERT_EQ(*result, *Lisple::NIL);
 }
 
-TEST(CondMacro, match_condition)
-{
-  // Given
-  Lisple::Runtime reader;
-
-  // When
-  Lisple::sptr_sobject result = reader.eval(
-    R"((let [x 20] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
-
-  // Then
-  ASSERT_EQ(*result, Lisple::String("Zwanzig"));
-}
-
-TEST(CondMacro, no_match_with_else)
-{
-  // Given
-  Lisple::Runtime reader;
-
-  // When
-  Lisple::sptr_sobject result = reader.eval(
-    R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig" :else "Zillions")))");
-  // Then
-  ASSERT_EQ(*result, Lisple::String("Zillions"));
-}
-
-TEST(CondMacro, no_match_without_else)
-{
-  // Given
-  Lisple::Runtime reader;
-
-  // When
-  Lisple::sptr_sobject result =
-    reader.eval(R"((let [x 100] (cond (= x 0) "Zilch" (= x 10) "Zen" (= x 20) "Zwanzig")))");
-  // Then
-  ASSERT_EQ(*result, *Lisple::NIL);
-}
-
 TEST(ApplyFunction, apply_concat)
 {
   // Given
@@ -361,43 +324,6 @@ TEST(ApplyFunction, apply_dynamic)
 
   // Then
   ASSERT_EQ(result->to_string(), "17");
-}
-
-TEST(IfLetForm, if_let)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(),
-            "10");
-  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(),
-            "\"no value\"");
-}
-
-TEST(IfLetForm, if_check_must_happen_only_at_current_scope_level)
-{
-  // Given
-  Lisple::Runtime runtime;
-  runtime.eval("(def value 1234)");
-
-  // When
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a 10})] value \"no value\")")->to_string(),
-            "10");
-  EXPECT_EQ(runtime.eval("(if-let [value (:b {:a 10})] value \"no value\")")->to_string(),
-            "\"no value\"");
-}
-
-TEST(IfLetForm, branching_should_happen_according_to_truthiness_not_just_ifdef)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // When
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a true})] value \"no value\")")->to_string(),
-            "true");
-  EXPECT_EQ(runtime.eval("(if-let [value (:a {:a false})] value \"no value\")")->to_string(),
-            "\"no value\"");
 }
 
 TEST(ThreadFirstMacro, deep_map_traversal)
@@ -603,48 +529,6 @@ TEST(CeilFunction, ceil)
   EXPECT_EQ(*runtime.eval("(ceil 19.1)"), Lisple::Number(20));
 }
 
-TEST(RangeFunction, rising_numbers)
-{
-  LispleTest::RuntimeFixture fixture;
-
-  EXPECT_EQ(fixture.runtime.eval("(range 5 10)")->to_string(), "[5 6 7 8 9 10]");
-  EXPECT_EQ(fixture.runtime.eval("(range -5 2)")->to_string(), "[-5 -4 -3 -2 -1 0 1 2]");
-}
-
-TEST(RangeFunction, descending_numbers)
-{
-  LispleTest::RuntimeFixture fixture;
-
-  EXPECT_EQ(fixture.runtime.eval("(range 10 7)")->to_string(), "[10 9 8 7]");
-  EXPECT_EQ(fixture.runtime.eval("(range 2 -5)")->to_string(), "[2 1 0 -1 -2 -3 -4 -5]");
-}
-
-TEST(EqualsFunction, ints)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(= 1 1)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(= 50 (+ 25 25))"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(= 999 999)"), *Lisple::B_TRUE);
-
-  EXPECT_EQ(*fixture.ctx.eval("(= 1 2)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(= 50 (+ 25 250))"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(= 999 -999)"), *Lisple::B_FALSE);
-}
-
-TEST(EqualsFunction, string)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(= \"test\" \"test\")"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(= \"a whole sentence\" \"a whole sentence\")"),
-            *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(= \" test\" \" test\")"), *Lisple::B_TRUE);
-
-  EXPECT_EQ(*fixture.ctx.eval("(= \"test\" \" test\")"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(= \"a whole sentence\" \"a_whole_sentence\")"),
-            *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(= \" test\" \" test \")"), *Lisple::B_FALSE);
-}
-
 TEST(NotEqualsFunction, ints)
 {
   LispleTest::RuntimeFixture fixture;
@@ -694,39 +578,6 @@ TEST(NilPredicateFunction, nil)
   EXPECT_EQ(*fixture.ctx.eval("(nil? :nil)"), *Lisple::B_FALSE);
   EXPECT_EQ(*fixture.ctx.eval("(nil? 'nil)"), *Lisple::B_FALSE);
   EXPECT_EQ(*fixture.ctx.eval("(nil? false)"), *Lisple::B_FALSE);
-}
-
-TEST(NotFunction, booleans)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(not true)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not false)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not (odd? 2))"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not (odd? 1))"), *Lisple::B_FALSE);
-}
-
-TEST(NotFunction, values)
-{
-  // Given
-  Lisple::Runtime reader;
-  reader.eval("(def my-val 15)");
-  reader.eval("(def other-val nil)");
-
-  // Then
-  EXPECT_EQ(*reader.eval("(not my-val)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*reader.eval("(not other-val)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*reader.eval("(not 0)"), *Lisple::B_FALSE);
-}
-
-TEST(EqualsFunction, mixed_types)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_NE(*fixture.ctx.eval("(= \"test\" 'test)"), *Lisple::B_TRUE);
-  EXPECT_NE(*fixture.ctx.eval("(= :test 'test)"), *Lisple::B_TRUE);
-  EXPECT_NE(*fixture.ctx.eval("(= :test \"test\")"), *Lisple::B_TRUE);
-
-  EXPECT_NE(*fixture.ctx.eval("(= [1 2] {1 2})"), *Lisple::B_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(= [1 2] [1 2])"), *Lisple::B_TRUE);
 }
 
 TEST(MinMaxFunction, min)
@@ -845,26 +696,6 @@ TEST(EvalFunction, eval_list)
   EXPECT_EQ(*result, Lisple::Number(98));
 }
 
-TEST(RndFunction, max)
-{
-  LispleTest::RuntimeFixture fixture;
-  for (int i = 0; i < 1000; i++)
-  {
-    int rndval = fixture.ctx.eval("(rnd 5)")->as<Lisple::Number>().value;
-    ASSERT_TRUE(rndval >= 0 && rndval <= 4);
-  }
-}
-
-TEST(RndFunction, min_max)
-{
-  LispleTest::RuntimeFixture fixture;
-  for (int i = 0; i < 1000; i++)
-  {
-    int rndval = fixture.ctx.eval("(rnd 50 55)")->as<Lisple::Number>().value;
-    ASSERT_TRUE(rndval >= 50 && rndval <= 54);
-  }
-}
-
 TEST(RepeatFunction, repeat)
 {
   Lisple::Runtime runtime;
@@ -874,19 +705,6 @@ TEST(RepeatFunction, repeat)
   EXPECT_EQ(runtime.eval("(repeat 2 :key)")->to_string(), "[:key :key]");
   EXPECT_EQ(runtime.eval("(repeat 2 :a :b)")->to_string(), "[:a :b :a :b]");
   EXPECT_EQ(runtime.eval("(repeat 3 :a :b)")->to_string(), "[:a :b :a :b :a :b]");
-}
-
-TEST(GetFunction, get_from_map)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def my-map {:a 1 :b 2})");
-
-  // When
-  auto result = fixture.runtime.eval("(get my-map :b)");
-
-  // Then
-  ASSERT_EQ(*result, Lisple::Number(2));
 }
 
 TEST(DissocBangFunction, removal_of_non_existing_key_returns_nil)

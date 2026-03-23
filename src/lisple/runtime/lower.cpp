@@ -62,9 +62,8 @@ namespace Lisple
 
       if (children.empty()) throw LispleException("Cannot lower empty list");
 
-      std::unique_ptr<ExecNode> callee = lower_expr(children[0]);
-
-      std::vector<std::unique_ptr<ExecNode>> args;
+      uptr_exec_node callee = lower_expr(children[0]);
+      uptr_exec_node_v args;
       args.reserve(children.size() - 1);
 
       for (size_t i = 1; i < children.size(); i++)

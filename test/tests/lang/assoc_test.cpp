@@ -28,7 +28,7 @@ TEST(AssocFunction, replace_key_in_map)
   auto result = runtime.eval("(assoc my-map :a 10)");
 
   // Then
-  EXPECT_EQ(*result, *runtime.eval("{:a 10 :b 2}"));
+  EXPECT_EQ(result->to_string(), "{:a 10 :b 2}");
   EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
 }
 
