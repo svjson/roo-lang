@@ -97,7 +97,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "017_user_function_path_fix_44790d8";
+    const std::string CHANGE_ME = "018_keyword_dereferencing_on_exec_path_908066a";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
