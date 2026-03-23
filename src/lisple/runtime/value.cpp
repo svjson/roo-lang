@@ -159,6 +159,15 @@ namespace Lisple
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::MAP;
     val->value = v;
+
+    // std::cout << "===> CREATING NEW MAP (" << val.get() << ")" << std::endl;
+    // for (size_t i = 0; i < v.size(); i += 2)
+    // {
+    //   std::cout << " - key(" << v[i].get() << "): " << v[i]->to_string() << std::endl;
+    //   std::cout << " - val(" << v[i + 1].get() << "): " << v[i + 1]->to_string()
+    //             << std::endl;
+    // }
+
     return val;
   }
 

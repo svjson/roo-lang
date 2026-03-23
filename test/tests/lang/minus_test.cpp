@@ -10,7 +10,7 @@ TEST(MinusFunction, simple_subtraction)
   auto result = runtime.eval("(- 10 5)");
 
   // Then
-  EXPECT_EQ(*result, Lisple::Number(5));
+  EXPECT_EQ(result->to_string(), "5");
 }
 
 TEST(MinusFunction, on_evaluated_numbers)
@@ -22,7 +22,7 @@ TEST(MinusFunction, on_evaluated_numbers)
   auto result = runtime.eval("(- (+ 10 10) (+ 3 5))");
 
   // Then
-  EXPECT_EQ(*result, Lisple::Number(12));
+  EXPECT_EQ(result->to_string(), "12");
 }
 
 TEST(MinusFunction, single_positive_flips_sign)
@@ -34,7 +34,7 @@ TEST(MinusFunction, single_positive_flips_sign)
   auto result = runtime.eval("(- 25)");
 
   // Then
-  ASSERT_EQ(*result, Lisple::Number(-25));
+  ASSERT_EQ(result->to_string(), "-25");
 }
 
 TEST(MinusFunction, single_negative_flips_sign)
@@ -46,5 +46,5 @@ TEST(MinusFunction, single_negative_flips_sign)
   auto result = runtime.eval("(- -25)");
 
   // Then
-  ASSERT_EQ(*result, Lisple::Number(25));
+  ASSERT_EQ(result->to_string(), "25");
 }

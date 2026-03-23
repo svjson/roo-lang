@@ -13,9 +13,9 @@
 #include <lisple/form.h>
 #include <lisple/host.h>
 #include <lisple/lang.h>
-#include <lisple/lang/arithmetic.h>
 #include <lisple/lang/base.h>
 #include <lisple/lang/loop.h>
+#include <lisple/lang/operator.h>
 #include <lisple/runtime.h>
 #include <lisple/type.h>
 #include <memory>

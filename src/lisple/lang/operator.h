@@ -3,7 +3,6 @@
 #define LISPLE__LANG__ARITHMETIC_H
 
 #include "../exec.h"
-#include <functional>
 
 namespace Lisple
 {
@@ -36,7 +35,7 @@ namespace Lisple
    * |-------|------------------------------------------------------------------|
    * | 0...  | The numbers to subtract. Must be at least one argument.          |
    */
-  FUNC_DECL(MinusFunction, do_subtraction)
+  FUNC(MinusFunction, subtract)
 
   /**
    * @brief Divides the first numeric argument by the second, and then divides the
@@ -52,7 +51,7 @@ namespace Lisple
    * |-------|------------------------------------------------------------------|
    * | 0...  | The numbers to divide. Must be at least one argument.            |
    */
-  FUNC_DECL(DivideFunction, do_division)
+  FUNC(DivideFunction, divide)
 
   /**
    * @brief Multiplies any number of numeric arguments together, and
@@ -68,7 +67,7 @@ namespace Lisple
    * |-------|------------------------------------------------------------------|
    * | 0...  | The numbers to multiply. Must be at least one argument.          |
    */
-  FUNC_DECL(MultiplyFunction, do_multiplication)
+  FUNC(MultiplyFunction, multiply)
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__ARITHMETIC_H */

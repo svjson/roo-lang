@@ -38,11 +38,11 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/impl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/arithmetic.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/base.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/bind_form.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/func.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/loop.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/operator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/string.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/struct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lexer.cpp
