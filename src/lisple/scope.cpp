@@ -15,7 +15,7 @@ namespace Lisple
 
   void Scope::store(const std::string& name, const sptr_sobject& obj)
   {
-    if (objects.count(name))
+    if (objects.count(name) || values.count(name))
     {
       throw IdentifierException("Identifier '" + name + "' is already defined.");
     }
@@ -24,7 +24,11 @@ namespace Lisple
 
   void Scope::store(const std::string& name, const sptr_rtval& value)
   {
-    this->store(name, std::make_shared<RuntimeValueWrapper>(value));
+    if (objects.count(name) || values.count(name))
+    {
+      throw IdentifierException("Identifier '" + name + "' is already defined.");
+    }
+    values.emplace(name, value);
   }
 
   void Scope::mutate(const Word& name, const sptr_sobject& obj)
@@ -35,21 +39,28 @@ namespace Lisple
 
   void Scope::remove(const Word& name)
   {
-    if (!objects.count(name.value))
+    if (objects.count(name.value))
     {
-      throw IdentifierException("Unknown identifier '" + name.value + "'");
+      objects.erase(name.value);
+      return;
     }
-    objects.erase(name.value);
+    else if (values.count(name.value))
+    {
+      values.erase(name.value);
+      return;
+    }
+    throw IdentifierException("Unknown identifier '" + name.value + "'");
   }
 
   void Scope::clear()
   {
     this->objects.clear();
+    this->values.clear();
   }
 
   bool Scope::has(const Word& identifier) const
   {
-    return objects.count(identifier.value);
+    return objects.count(identifier.value) || values.count(identifier.value);
   }
 
   sptr_sobject Scope::lookup(const Word& identifier) const
@@ -57,6 +68,10 @@ namespace Lisple
     if (objects.count(identifier.value))
     {
       return objects.at(identifier.value);
+    }
+    else if (values.count(identifier.value))
+    {
+      return RuntimeValueWrapper::make(values.at(identifier.value));
     }
     // Not returning NIL, as we need to know if we hit something whose value
     // is actually NIL or if the identifier doesn't exist in the scope.
@@ -67,24 +82,38 @@ namespace Lisple
   sptr_rtval Scope::lookup(const std::string& symbol) const
   {
     auto it = objects.find(symbol);
-    if (it == objects.end()) return Constant::NIL;
+    if (it == objects.end())
+    {
+      auto v_it = values.find(symbol);
+      if (v_it == values.end())
+      {
+        return nullptr;
+      }
+
+      return v_it->second;
+    }
 
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(it->second.get()))
     {
       return wrapper->val;
     }
 
-    throw LispleException("Attempt to lookup non-RTValue.");
+    sptr_sobject result = it->second;
+    return to_rt_value(result);
   }
 
   std::shared_ptr<Array> Scope::get_keys()
   {
-    auto array = std::make_shared<Array>();
+    sptr_sobject_v keys;
+    keys.reserve(objects.size() + values.size());
     for (auto& [key, val] : objects)
     {
-      sptr_sobject word = std::make_shared<Word>(key);
-      array->append(word);
+      keys.push_back(Word::make(key));
     }
-    return array;
+    for (auto& [key, val] : values)
+    {
+      keys.push_back(Word::make(key));
+    }
+    return Array::make(keys);
   }
 } // namespace Lisple

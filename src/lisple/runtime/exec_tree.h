@@ -63,6 +63,8 @@ namespace Lisple
     uptr_exec_node callee;
     std::vector<uptr_exec_node> args;
 
+    sptr_sobject cached_fn = nullptr;
+
     CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args);
 
     std::string to_string(size_t indent_level = 0);

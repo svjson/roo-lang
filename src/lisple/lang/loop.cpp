@@ -103,8 +103,6 @@ namespace Lisple
 
           for (int i = 0; i < iterations; i++)
           {
-            sptr_sobject si = Number::make(i);
-
             if (bind_var)
             {
               bind_var->apply(iter_scope, RTValue::number(i));

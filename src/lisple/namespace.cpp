@@ -15,20 +15,22 @@ namespace Lisple
   std::regex regex_ns{"^[a-zA-Z0-9\\-_]+(\\.[a-zA-Z0-9\\-_]+)*$"};
 
   Namespace::Namespace(Type type, const std::string& name)
-      : type(type)
-      , name(name)
+    : type(type)
+    , name(name)
   {
   }
 
-  Namespace::Namespace(Type type, const std::string& name, std::map<std::string, sptr_sobject> lang)
-      : type(type)
-      , name(name)
+  Namespace::Namespace(Type type,
+                       const std::string& name,
+                       std::map<std::string, sptr_sobject> lang)
+    : type(type)
+    , name(name)
   {
     this->objects = std::move(lang);
   }
 
   Namespace::Namespace(const std::string& name)
-      : Namespace(Type::USER, name)
+    : Namespace(Type::USER, name)
   {
     if (!std::regex_match(name, regex_ns))
     {
@@ -104,14 +106,15 @@ namespace Lisple
 
   bool Namespace::empty() const
   {
-    return objects.empty();
+    return objects.empty() && values.empty();
   }
 
   void Namespace::mutate(const Word& identifier, const sptr_sobject& obj)
   {
     if (this->type == Type::LANG)
     {
-      throw NamespaceException("Cannnot override language identifier: '" + identifier.value + "'.");
+      throw NamespaceException("Cannnot override language identifier: '" + identifier.value +
+                               "'.");
     }
 
     Scope::mutate(identifier, obj);
@@ -134,10 +137,11 @@ namespace Lisple
     }
     else if (aliased_namespaces.at(alias) != &ns)
     {
-      throw NamespaceException(
-          "Cannot define alias '" + alias + "' for namespace '" + ns.get_name() + "' " +
-          "because '" + alias + "' is already an alias for '" +
-          aliased_namespaces.at(alias)->get_name() + "' within namespace '" + get_name() + "'");
+      throw NamespaceException("Cannot define alias '" + alias + "' for namespace '" +
+                               ns.get_name() + "' " + "because '" + alias +
+                               "' is already an alias for '" +
+                               aliased_namespaces.at(alias)->get_name() +
+                               "' within namespace '" + get_name() + "'");
     }
   }
 

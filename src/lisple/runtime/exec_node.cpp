@@ -8,6 +8,7 @@
 #include "eval_plan.h"
 #include "exec_tree.h"
 #include "value.h"
+#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -109,11 +110,11 @@ namespace Lisple
       node.data);
   }
 
-  sptr_sobject eval(Context& ctx, const ExecNode& node)
+  sptr_sobject eval(Context& ctx, ExecNode& node)
   {
     eval_executions++;
     return std::visit(
-      [&](auto const& n) -> sptr_sobject
+      [&](auto& n) -> sptr_sobject
       {
         using T = std::decay_t<decltype(n)>;
 
@@ -152,20 +153,26 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
-          sptr_rtval fn_val = exec(ctx, *n.callee);
-          sptr_sobject fn;
+          sptr_sobject fn = n.cached_fn;
+          if (!fn)
+          {
+            sptr_rtval fn_val = exec(ctx, *n.callee);
 
-          if (fn_val->type == RTValue::Type::KEYWORD)
-          {
-            fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
-          }
-          else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
-          {
-            fn = *ssptr;
-          }
-          else
-          {
-            throw LispleException("Node is not callable");
+            if (fn_val->type == RTValue::Type::KEYWORD)
+            {
+              fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
+              n.cached_fn = fn;
+            }
+            else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+            {
+              fn = *ssptr;
+              n.cached_fn = fn;
+            }
+            else
+            {
+              std::cout << "Node: " << fn_val->to_string() << std::endl;
+              throw LispleException("Node is not callable");
+            }
           }
 
           sptr_sobject_v args;
@@ -201,13 +208,11 @@ namespace Lisple
             if (sig->supports_exec_tree())
             {
               prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
-              // std::cout << "args: " << node_args.size() << std::endl;
               sptr_rtval result = sig->invoke(ctx, node_args);
               return std::make_shared<RuntimeValueWrapper>(result);
             }
             else
             {
-              // std::cout << "EVAL sig->no_exec_tree!" << std::endl;
               for (size_t i = 0; i < n.args.size(); i++)
               {
                 auto& arg = n.args[i];
@@ -256,11 +261,11 @@ namespace Lisple
       node.data);
   }
 
-  sptr_rtval exec(Context& ctx, const ExecNode& node)
+  sptr_rtval exec(Context& ctx, ExecNode& node)
   {
     exec_executions++;
     return std::visit(
-      [&](auto const& n) -> sptr_rtval
+      [&](auto& n) -> sptr_rtval
       {
         using T = std::decay_t<decltype(n)>;
 
@@ -270,8 +275,7 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, LookupNode>)
         {
-          sptr_sobject result = ctx.lookup(n.identifier);
-          return to_rt_value(result);
+          return ctx.lookup_value(n.identifier);
         }
         else if constexpr (std::is_same_v<T, MapNode>)
         {
@@ -299,20 +303,26 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
-          sptr_rtval fn_val = exec(ctx, *n.callee);
-          sptr_sobject fn;
+          sptr_sobject fn = n.cached_fn;
 
-          if (fn_val->type == RTValue::Type::KEYWORD)
+          if (!fn)
           {
-            fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
-          }
-          else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
-          {
-            fn = *ssptr;
-          }
-          else
-          {
-            throw LispleException("Node is not callable");
+            sptr_rtval fn_val = exec(ctx, *n.callee);
+            if (fn_val->type == RTValue::Type::KEYWORD)
+            {
+              fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
+              n.cached_fn = fn;
+            }
+            else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+            {
+              fn = *ssptr;
+              n.cached_fn = fn;
+            }
+            else
+            {
+              std::cout << "Node: " << fn_val->to_string() << std::endl;
+              throw LispleException("Node is not callable");
+            }
           }
 
           sptr_sobject_v args;
@@ -342,7 +352,6 @@ namespace Lisple
 
             if (sig->supports_exec_tree())
             {
-              // std::cout << "EXEC sig->node_tree!" << std::endl;
               ptr_exec_node_v node_args;
               uptr_exec_node_v uptr_node_args;
               node_args.reserve(n.args.size());

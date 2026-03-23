@@ -684,6 +684,11 @@ namespace Lisple
 
   bool Seq::operator==(const Object& other) const
   {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&other))
+    {
+      return *wrapper == *this;
+    }
+
     if (type != other.get_type())
     {
       return false;

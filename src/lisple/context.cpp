@@ -32,6 +32,11 @@ namespace Lisple
     return scope.lookup(word);
   }
 
+  sptr_rtval ContextFrame::lookup_value(const Word& word) const
+  {
+    return scope.lookup(word.get_identifier());
+  }
+
   bool ContextFrame::has(const Word& word) const
   {
     return scope.has(word);
@@ -173,6 +178,27 @@ namespace Lisple
     }
 
     return runtime.lookup(identifier);
+  }
+
+  sptr_rtval Context::lookup_value(const Word& identifier) const
+  {
+    if (identifier.is_qualified())
+    {
+      sptr_sobject result = runtime.lookup(identifier);
+      return result ? to_rt_value(result) : Constant::NIL;
+    }
+
+    for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
+    {
+      sptr_rtval res = i->get()->lookup_value(identifier);
+      if (res.get())
+      {
+        return res;
+      }
+    }
+
+    sptr_sobject result = runtime.lookup(identifier);
+    return to_rt_value(result);
   }
 
   Scope& Context::current_scope()

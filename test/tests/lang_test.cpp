@@ -1019,10 +1019,12 @@ TEST(SetBangMacro, set_global_map_value)
   fixture.runtime.eval("(set! [:key2 global-map] \"Number 9\")");
 
   // Then
-  auto& global_map =
-    *fixture.runtime.get_current_namespace().lookup(Lisple::Word("global-map"));
+  auto global_map =
+    fixture.runtime.get_current_namespace().lookup(Lisple::Word("global-map"));
+  std::cout << &global_map << std::endl;
   auto expected_map = fixture.runtime.eval("{:key1 10 :key2 \"Number 9\"}");
-  ASSERT_EQ(global_map, *expected_map);
+  std::cout << global_map->to_string() << std::endl;
+  ASSERT_EQ(*global_map, *expected_map);
 }
 
 TEST(ForMacro, transform_vector_of_int)

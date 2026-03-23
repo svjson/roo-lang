@@ -25,6 +25,7 @@ namespace Lisple
     ContextFrame(bool evaluation_mode);
 
     bool evalp() const;
+    sptr_rtval lookup_value(const Word& word) const;
     sptr_sobject lookup(const Word& word) const;
     bool has(const Word& word) const;
   };
@@ -114,6 +115,7 @@ namespace Lisple
      */
     sptr_sobject call(const std::string& fn_name, const sptr_sobject_v& args);
     sptr_sobject lookup(const Word& word) const;
+    sptr_rtval lookup_value(const Word& word) const;
 
     void push_context(bool evaluation_mode);
     void push_context(bool evaluation_mode, Scope& scope);

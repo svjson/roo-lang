@@ -14,6 +14,7 @@ namespace Lisple
   {
    protected:
     std::map<std::string, sptr_sobject> objects;
+    std::map<std::string, sptr_rtval> values;
 
    public:
     virtual ~Scope() = default;
