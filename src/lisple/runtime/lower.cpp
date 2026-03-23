@@ -121,6 +121,8 @@ namespace Lisple
       }
       return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::map(elements), obj));
     }
+    case Form::NIL:
+      return std::make_unique<ExecNode>(Constant::NIL);
     case Form::HOST_OBJECT:
     {
       sptr_sobject ho = obj;

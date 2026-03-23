@@ -28,6 +28,8 @@ namespace Lisple
     sptr_rtval lookup_value(const Word& word) const;
     sptr_sobject lookup(const Word& word) const;
     bool has(const Word& word) const;
+
+    std::string to_string() const;
   };
 
   typedef std::vector<std::unique_ptr<ContextFrame>> frame_stack_t;

@@ -33,6 +33,7 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/exec_tree.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/lower.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/pool.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/seq.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/value.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/form.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host.cpp
@@ -43,6 +44,7 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/func.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/loop.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/operator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/seq_func.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/string.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/struct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lexer.cpp

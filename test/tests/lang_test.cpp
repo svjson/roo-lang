@@ -520,7 +520,7 @@ TEST(VectorFunction, make_vector)
   // Then
   EXPECT_EQ(fixture.runtime.eval("(vector 1 2 3 4)")->to_string(), "[1 2 3 4]");
   EXPECT_EQ(fixture.runtime.eval(R"((vector 1 "2" :foo 'BAR))")->to_string(),
-            "[1 \"2\" :foo 'BAR]");
+            "[1 \"2\" :foo BAR]");
   EXPECT_EQ(fixture.runtime.eval("(vector :bork)")->to_string(), "[:bork]");
   EXPECT_EQ(fixture.runtime.eval("(vector 1 [2 3])")->to_string(), "[1 [2 3]]");
 }

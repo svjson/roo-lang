@@ -34,3 +34,17 @@ TEST(FnForm, with_bound_scope)
   // Then
   EXPECT_EQ(*result, Lisple::Number(7));
 }
+
+TEST(FnForm, signals_correct_exec_path)
+{
+  // Given
+  Lisple::Runtime runtime;
+  Lisple::sptr_sobject result = runtime.eval("(fn [n] (+ n 10))");
+  Lisple::Executable& fn = result->as<Lisple::Executable>();
+
+  // When
+  EXPECT_FALSE(fn.supports_exec_tree());
+  EXPECT_EQ(fn.get_signatures().size(), 1);
+  EXPECT_FALSE(fn.get_signatures().front()->supports_exec_tree());
+  EXPECT_TRUE(fn.get_signatures().front()->supports_rt_value());
+}

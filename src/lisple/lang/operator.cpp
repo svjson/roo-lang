@@ -5,6 +5,16 @@
 
 namespace Lisple
 {
+  /** EqualsPredicatefunction - = */
+  FUNC_IMPL(EqualsPredicateFunction,
+            SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY)),
+                 EXEC_DISPATCH(&EqualsPredicateFunction::exec_equals))))
+
+  EXEC_BODY(EqualsPredicateFunction, exec_equals)
+  {
+    return *args[0] == *args[1] ? Constant::TRUE : Constant::FALSE;
+  }
+
   /** PlusFunction - + */
   FUNC_IMPL(PlusFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)), EXEC_DISPATCH(&PlusFunction::exec_plus))))

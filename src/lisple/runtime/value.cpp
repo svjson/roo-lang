@@ -227,6 +227,7 @@ namespace Lisple
       }
     }
     break;
+    case RTValue::Type::FUNCTION:
     case RTValue::Type::OBJECT:
       r += std::get<sptr_sobject>(value)->to_string();
       break;
@@ -256,10 +257,24 @@ namespace Lisple
       return std::get<bool>(this->value) == std::get<bool>(other.value);
     case Type::NIL:
       return other.type == Type::NIL;
+    case Type::NUMBER:
+      return std::get<RTValue::Number>(this->value).get_float() ==
+             std::get<RTValue::Number>(other.value).get_float();
     case Type::KEYWORD:
     case Type::STRING:
     case Type::SYMBOL:
       return std::get<std::string>(this->value) == std::get<std::string>(other.value);
+    case Type::VECTOR:
+    {
+      const sptr_rtval_v& a = std::get<sptr_rtval_v>(value);
+      const sptr_rtval_v& b = std::get<sptr_rtval_v>(other.value);
+      if (a.size() != b.size()) return false;
+      for (size_t i = 0; i < a.size(); i++)
+      {
+        if (*a[i] != *b[i]) return false;
+      }
+      return true;
+    }
     default:
       throw LispleException("== not implemented for type: " +
                             std::to_string((int)this->type));

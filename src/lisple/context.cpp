@@ -11,6 +11,7 @@
 
 namespace Lisple
 {
+  /** ContextFrame */
   ContextFrame::ContextFrame(bool evaluation_mode, Scope& scope)
     : evaluation_mode(evaluation_mode)
     , scope(std::move(scope))
@@ -42,6 +43,22 @@ namespace Lisple
     return scope.has(word);
   }
 
+  std::string ContextFrame::to_string() const
+  {
+    std::stringstream s;
+    s << "ContextFrame (" << this << ", eval_mode=" << evaluation_mode << ")" << std::endl;
+
+    sptr_sobject keys = scope.get_keys();
+    for (auto& k : keys->get_children())
+    {
+      s << " - " << k->to_string() << ": " << scope.lookup(k->to_string())->to_string()
+        << std::endl;
+    }
+
+    return s.str();
+  }
+
+  /** Context */
   Context::Context(Runtime& runtime)
     : runtime(runtime)
   {

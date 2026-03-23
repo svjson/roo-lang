@@ -19,6 +19,13 @@
 
 namespace Lisple
 {
+  int user_functions_created = 0;
+  int user_functions_ast_created = 0;
+  int user_functions_rtval_created = 0;
+  int user_function_ast_invocations = 0;
+  int user_function_rtval_invocations = 0;
+  int user_function_wrong_path_invocations = 0;
+
   const Key KEY_DESTR__KEYS("keys");
   const Key KEY_DESTR__AS("as");
 
@@ -156,6 +163,11 @@ namespace Lisple
     return type->is_type_of(obj);
   }
 
+  bool Argument::matches(const uptr_exec_node&) const
+  {
+    return true;
+  }
+
   CoercionResult Argument::coerce(Context& ctx, sptr_sobject& obj) const
   {
     return type->coerce(ctx, obj);
@@ -274,6 +286,52 @@ namespace Lisple
   bool Signature::supports_rt_value() const
   {
     return this->exec_rtval != nullptr;
+  }
+
+  bool Signature::matches(const uptr_exec_node_v& args) const
+  {
+    size_t args_size = args.size();
+    size_t arguments_size = arguments.size();
+    if (this->vararg)
+    {
+      size_t i = 0;
+      size_t a = 0;
+      while (i < args_size && a < arguments_size)
+      {
+        if (arguments[a].is_vararg())
+        {
+          if (arguments[a].matches(args[i]))
+            i++;
+          else
+            a++;
+        }
+        else
+        {
+          if (!arguments[a].matches(args[i])) return false;
+          i++;
+          a++;
+        }
+      }
+
+      if (a < arguments_size - 1 || i < args_size) return false;
+    }
+    else
+    {
+      if (arguments_size != args_size)
+      {
+        return false;
+      }
+
+      for (size_t i = 0; i < args_size; i++)
+      {
+        if (!arguments[i].matches(args[i]))
+        {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   bool Signature::matches(const sptr_rtval_v& args) const
@@ -488,6 +546,19 @@ namespace Lisple
     return this == &other;
   }
 
+  Signature* Executable::get_signature([[maybe_unused]] Context& ctx, uptr_exec_node_v& args)
+  {
+    for (auto& sig : signatures)
+    {
+      if (sig->matches(args))
+      {
+        return sig.get();
+      }
+    }
+
+    return nullptr;
+  }
+
   Signature* Executable::get_signature(Context& ctx, sptr_sobject_v& args)
   {
     for (auto& sig : signatures)
@@ -513,6 +584,11 @@ namespace Lisple
     }
 
     return nullptr;
+  }
+
+  const std::vector<std::unique_ptr<Signature>>& Executable::get_signatures() const
+  {
+    return signatures;
   }
 
   sptr_sobject Executable::execute(Context& ctx, sptr_sobject_v& args)
@@ -596,11 +672,6 @@ namespace Lisple
   {
   }
 
-  const std::vector<std::unique_ptr<Signature>>& Function::get_signatures() const
-  {
-    return signatures;
-  }
-
   std::string Function::to_string(int) const
   {
     return "<fn>";
@@ -640,22 +711,42 @@ namespace Lisple
     std::vector<std::unique_ptr<Signature>> sigs;
     for (auto& sig : target.get_signatures())
     {
-      exec_fn disp_target = std::bind(&DetachedFunction::dispatch_detached,
-                                      this,
-                                      std::placeholders::_1,
-                                      std::placeholders::_2);
+      if (sig->supports_rt_value())
+      {
+        exec_rtval_fn disp_target = std::bind(&DetachedFunction::dispatch_detached,
+                                              this,
+                                              std::placeholders::_1,
+                                              std::placeholders::_2);
+        sigs.push_back(std::make_unique<Signature>(sig->get_arguments(), disp_target));
+      }
+      else if (sig->supports_exec_tree())
+      {
+        throw LispleException("exec_node dispatch not supported!");
+      }
+      else
+      {
+        exec_fn disp_target = std::bind(&DetachedFunction::dispatch_detached_ast,
+                                        this,
+                                        std::placeholders::_1,
+                                        std::placeholders::_2);
 
-      sigs.push_back(std::make_unique<Signature>(sig->get_arguments(), disp_target));
+        sigs.push_back(std::make_unique<Signature>(sig->get_arguments(), disp_target));
+      }
     }
     return sigs;
   }
 
   sptr_sobject DetachedFunction::execute(Context& ctx, sptr_sobject_v& args)
   {
+    return dispatch_detached_ast(ctx, args);
+  }
+
+  sptr_rtval DetachedFunction::execute(Context& ctx, sptr_rtval_v& args)
+  {
     return dispatch_detached(ctx, args);
   }
 
-  sptr_sobject DetachedFunction::dispatch_detached(Context&, sptr_sobject_v& args)
+  sptr_sobject DetachedFunction::dispatch_detached_ast(Context&, sptr_sobject_v& args)
   {
     if (bound_args.empty())
     {
@@ -677,6 +768,34 @@ namespace Lisple
     return execute_bound(merged_args);
   }
 
+  sptr_rtval DetachedFunction::dispatch_detached(Context&, sptr_rtval_v& args)
+  {
+    if (bound_args.empty())
+    {
+      return fun->execute(*this->ctx, args);
+    }
+    if (args.empty())
+    {
+      throw LispleException(
+        "DetachedFunction::dispatch_detached with bounds args not supported for rtval");
+      // return fun->execute(*this->ctx, bound_args);
+    }
+
+    throw LispleException("DetachedFunction::dispatch_detached with merged bound+literal "
+                          "args not supported for rtval");
+
+    // sptr_sobject_v merged_args;
+    // for (auto& arg : args)
+    // {
+    //   merged_args.push_back(arg);
+    // }
+    // for (auto& arg : bound_args)
+    // {
+    //   merged_args.push_back(arg);
+    // }
+    // return execute_bound(merged_args);
+  }
+
   sptr_sobject DetachedFunction::execute_bound(sptr_sobject_v& args)
   {
     return fun->execute(*ctx, args);
@@ -686,11 +805,13 @@ namespace Lisple
                              arg_v args,
                              std::vector<std::unique_ptr<LexicalBinding>>& arg_binding,
                              uptr_exec_node_v&& body)
-    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_ast_body)))
+    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
     , home_ns(home_ns)
     , arg_binding(std::move(arg_binding))
     , uptr_body(std::move(body))
   {
+    user_functions_created++;
+    user_functions_rtval_created++;
     this->body.reserve(body.size());
     for (auto& node : uptr_body)
     {
@@ -702,10 +823,12 @@ namespace Lisple
                              arg_v args,
                              std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
                              sptr_sobject_v& body)
-    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
+    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_ast_body)))
     , home_ns(home_ns)
     , arg_bindings(std::move(arg_bindings))
   {
+    user_functions_created++;
+    user_functions_ast_created++;
     this->uptr_body.reserve(body.size());
     this->body.reserve(body.size());
     for (auto& node : body)
@@ -718,6 +841,7 @@ namespace Lisple
 
   sptr_sobject UserFunction::exec_ast_body(Context& ctx, sptr_sobject_v& args)
   {
+    user_function_ast_invocations++;
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
     ctx.switch_namespace(home_ns);
     Scope fn_scope;
@@ -730,6 +854,7 @@ namespace Lisple
     }
     else if (arg_binding.size() > 0)
     {
+      user_function_wrong_path_invocations++;
       for (size_t i = 0; i < args.size(); i++)
       {
         arg_binding[i]->apply(fn_scope, to_rt_value(args[i]));
@@ -750,6 +875,7 @@ namespace Lisple
 
   sptr_rtval UserFunction::exec_body(Context& ctx, sptr_rtval_v& args)
   {
+    user_function_rtval_invocations++;
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
     ctx.switch_namespace(home_ns);
     Scope fn_scope;
@@ -762,6 +888,7 @@ namespace Lisple
     }
     else if (arg_bindings.size() > 0)
     {
+      user_function_wrong_path_invocations++;
       for (size_t i = 0; i < args.size(); i++)
       {
         sptr_sobject wrapped = RuntimeValueWrapper::make(args[i]);
@@ -849,15 +976,10 @@ namespace Lisple
       arg_bindings.push_back(LexicalBinding::create(arg));
     }
 
-    // FIXME: Re-lowering the body to let the resulting UserFunction own
-    // its exec_node tree, without breaking the source tree.
-    //
-    // This is wasteful and should not be necessary.
     uptr_exec_node_v new_body;
     for (auto& node : body)
     {
-      uptr_exec_node new_node = lower_expr(node->form);
-      new_body.push_back(std::move(new_node));
+      new_body.push_back(node->clone());
     }
 
     return std::make_shared<UserFunction>(home_ns->get_name(),

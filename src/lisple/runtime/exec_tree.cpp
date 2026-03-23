@@ -59,4 +59,54 @@ namespace Lisple
     exec_nodes_constructed++;
   }
 
+  uptr_exec_node ExecNode::clone() const
+  {
+    return std::make_unique<ExecNode>(
+      form,
+      std::visit(
+        [](const auto& n) -> ExecNodeData
+        {
+          using T = std::decay_t<decltype(n)>;
+
+          if constexpr (std::is_same_v<T, LiteralNode>)
+          {
+            return LiteralNode(n.value);
+          }
+          else if constexpr (std::is_same_v<T, LookupNode>)
+          {
+            return LookupNode(n.identifier);
+          }
+          else if constexpr (std::is_same_v<T, CallNode>)
+          {
+            uptr_exec_node_v args;
+            for (const auto& arg : n.args)
+              args.push_back(arg->clone());
+
+            return CallNode(n.callee->clone(), std::move(args));
+          }
+          else if constexpr (std::is_same_v<T, MapNode>)
+          {
+            uptr_exec_node_v elements;
+            for (const auto& lmnt : n.elements)
+              elements.push_back(lmnt->clone());
+
+            return MapNode(std::move(elements));
+          }
+          else if constexpr (std::is_same_v<T, VectorNode>)
+          {
+            uptr_exec_node_v elements;
+            for (const auto& lmnt : n.elements)
+              elements.push_back(lmnt->clone());
+
+            return VectorNode(std::move(elements));
+          }
+          else if constexpr (std::is_same_v<T, ExecNodeList>)
+          {
+            return ExecNodeList(n.nodes);
+          }
+          throw LispleException("Cannot clone node type");
+        },
+        data));
+  }
+
 } // namespace Lisple

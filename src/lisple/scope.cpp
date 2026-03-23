@@ -102,7 +102,7 @@ namespace Lisple
     return to_rt_value(result);
   }
 
-  std::shared_ptr<Array> Scope::get_keys()
+  std::shared_ptr<Array> Scope::get_keys() const
   {
     sptr_sobject_v keys;
     keys.reserve(objects.size() + values.size());

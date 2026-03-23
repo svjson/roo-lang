@@ -5,6 +5,7 @@
 #include <gtest/gtest_pred_impl.h>
 #include <lisple/runtime/exec_node.h>
 
+#include "lisple/exec.h"
 #include "lisple/runtime/exec_tree.h"
 #include "lisple/runtime/value.h"
 
@@ -47,6 +48,15 @@ int main(int argc, char** argv)
   std::cout << "to_AST conversions: " << Lisple::to_ast_conversions << std::endl;
   std::cout << "to_RTValue conversions: " << Lisple::to_rtvalue_conversions << std::endl;
   std::cout << "-----------------------------------------------" << std::endl;
+  std::cout << "UserFunction constructions: " << Lisple::user_functions_created << std::endl;
+  std::cout << "UserFunction(RTValue body) constructions: "
+            << Lisple::user_functions_rtval_created << std::endl;
+  std::cout << "UserFunction(RTValue body) invocations: "
+            << Lisple::user_function_rtval_invocations << std::endl;
+  std::cout << "UserFunction(AST Body) constructions: " << Lisple::user_functions_ast_created
+            << std::endl;
+  std::cout << "UserFunction(AST Body) invocations: "
+            << Lisple::user_function_ast_invocations << std::endl;
 
   return ret;
 }

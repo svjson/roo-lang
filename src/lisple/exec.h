@@ -187,6 +187,13 @@ FORM_NAME::FORM_NAME() \
 
 namespace Lisple
 {
+  extern int user_functions_created;
+  extern int user_functions_ast_created;
+  extern int user_functions_rtval_created;
+  extern int user_function_ast_invocations;
+  extern int user_function_rtval_invocations;
+  extern int user_function_wrong_path_invocations;
+
   class Context;
   class Scope;
 
@@ -250,6 +257,7 @@ namespace Lisple
     bool is_vararg() const;
     bool matches(Lisple::Object&) const;
     bool matches(RTValue&) const;
+    bool matches(const uptr_exec_node&) const;
     CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
     /**
      * @brief Query if the argument should be evaluated before being
@@ -301,6 +309,7 @@ namespace Lisple
     bool supports_rt_value() const;
     bool matches(const sptr_sobject_v& args) const;
     bool matches(const sptr_rtval_v& args) const;
+    bool matches(const uptr_exec_node_v& args) const;
     bool is_literal_arg(std::size_t index) const;
     bool is_literal_arg(std::size_t index, std::size_t n) const;
     bool is_eval_arg(std::size_t index, std::size_t n) const;
@@ -334,7 +343,10 @@ namespace Lisple
 
     bool operator==(const Lisple::Object& other) const override;
 
+    const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
+
     Signature* get_signature(Context& ctx, sptr_sobject_v& args);
+    Signature* get_signature(Context& ctx, uptr_exec_node_v& args);
 
     virtual Lisple::sptr_sobject execute(Context& ctx, sptr_sobject_v& args) override;
     virtual Lisple::sptr_rtval execute(Context& ctx, sptr_rtval_v& args);
@@ -353,8 +365,6 @@ namespace Lisple
    public:
     Function(std::unique_ptr<Signature> signature);
     Function(std::vector<std::unique_ptr<Signature>> signatures);
-
-    const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
 
     std::string to_string(int depth = -1) const override;
   };
@@ -382,10 +392,12 @@ namespace Lisple
 
     const sptr_sobject_v get_bound_arguments() const;
 
-    Lisple::sptr_sobject execute(Context&, sptr_sobject_v& args) override;
+    sptr_sobject execute(Context&, sptr_sobject_v& args) override;
+    sptr_rtval execute(Context&, sptr_rtval_v& args) override;
 
     sptr_sobject execute_bound(sptr_sobject_v& args);
-    sptr_sobject dispatch_detached(Context&, sptr_sobject_v& args);
+    sptr_sobject dispatch_detached_ast(Context&, sptr_sobject_v& args);
+    sptr_rtval dispatch_detached(Context&, sptr_rtval_v& args);
   };
 
   /*!

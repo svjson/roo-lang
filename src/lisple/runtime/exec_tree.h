@@ -116,6 +116,8 @@ namespace Lisple
     {
       exec_nodes_constructed++;
     }
+
+    uptr_exec_node clone() const;
   };
 
 } // namespace Lisple

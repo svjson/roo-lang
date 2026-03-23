@@ -576,27 +576,6 @@ namespace Lisple
   FUNC_DECL(FlattenFunction, flatten_array)
 
   /*!
-   * @brief Transforms elements of a Seq by applying a function/executable
-   * to each element, creating a new Seq containing the transformed elements.
-   * The original Seq is not mutated.
-   *
-   * Usage:
-   * @code
-   * (map my-seq exec)
-   *
-   * (map [1 2 3]
-   *  (fn [n] (* 2 n)))
-   * ==> [2 4 6]
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq to transform                                             |
-   * | 1     | The function/executable to apply to each element                 |
-   */
-  FUNC_DECL(MapFunction, map_seq)
-
-  /*!
    * @brief Keep only certain elements of a Seq by applying a function/executable
    * to each element.
    *
@@ -943,7 +922,6 @@ namespace Lisple
    */
   FUNC_DECL(NotEmptyPredicateFunction, exec_not_emptyp_seq, exec_not_emptyp_string)
 
-  FUNC_DECL(EqualsPredicateFunction, equals_any)
   FUNC_DECL(NotEqualsFunction, not_equals_any)
 
   class OddEvenPredicateFunction : public Function

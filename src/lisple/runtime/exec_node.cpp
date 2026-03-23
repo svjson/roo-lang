@@ -42,7 +42,8 @@ namespace Lisple
         if constexpr (std::is_same_v<T, LiteralNode>)
         {
           std::stringstream ss;
-          ss << indent << " - LiteralNode(" << node.form->to_string() << ", RTValue("
+          ss << indent << " - LiteralNode("
+             << std::get<LiteralNode>(node.data).value->to_string() << ", RTValue("
              << n.value.get() << "))\n";
           return ss.str();
         }
@@ -120,7 +121,7 @@ namespace Lisple
 
         if constexpr (std::is_same_v<T, LiteralNode>)
         {
-          return n.ast_node;
+          return RuntimeValueWrapper::make(n.value);
         }
         else if constexpr (std::is_same_v<T, LookupNode>)
         {
@@ -325,17 +326,12 @@ namespace Lisple
             }
           }
 
-          sptr_sobject_v args;
-          args.reserve(n.args.size());
-
-          sptr_sobject_v raw_args = node.form->as<List>().tail();
-
           Signature* sig = nullptr;
           Executable* x = dynamic_cast<Executable*>(fn.get());
 
           if (x)
           {
-            sig = x->get_signature(ctx, raw_args);
+            sig = x->get_signature(ctx, n.args);
           }
 
           if (sig)
@@ -365,8 +361,11 @@ namespace Lisple
             }
             else
             {
+              sptr_sobject_v args;
+              args.reserve(n.args.size());
               for (size_t i = 0; i < n.args.size(); i++)
               {
+
                 auto& arg = n.args[i];
                 if (sig->should_eval_arg(i))
                 {
@@ -377,6 +376,9 @@ namespace Lisple
                   args.push_back(arg->form);
                 }
               }
+
+              sptr_sobject result = fn->execute(ctx, args);
+              return to_rt_value(result);
             }
           }
           else if (x)
@@ -388,12 +390,12 @@ namespace Lisple
             }
             return x->execute(ctx, val_args);
           }
-          else
+
+          sptr_sobject_v args;
+          args.reserve(n.args.size());
+          for (auto& arg : n.args)
           {
-            for (auto& arg : n.args)
-            {
-              args.push_back(eval(ctx, *arg));
-            }
+            args.push_back(eval(ctx, *arg));
           }
 
           sptr_sobject result = fn->execute(ctx, args);

@@ -16,6 +16,7 @@
 #include <lisple/lang/base.h>
 #include <lisple/lang/loop.h>
 #include <lisple/lang/operator.h>
+#include <lisple/lang/seq_func.h>
 #include <lisple/runtime.h>
 #include <lisple/type.h>
 #include <memory>
@@ -107,7 +108,7 @@ TEST(Signature, matches__leading_varargs)
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY),
                   Lisple::arg(&Lisple::Type::FUNCTION)},
-    std::bind(&Lisple::MapFunction::map_seq,
+    std::bind(&Lisple::MapFunction::exec_map,
               &dummy_func,
               std::placeholders::_1,
               std::placeholders::_2));
@@ -129,7 +130,7 @@ TEST(Signature, matches__trailing_varargs)
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::FUNCTION),
                   Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY)},
-    std::bind(&Lisple::MapFunction::map_seq,
+    std::bind(&Lisple::MapFunction::exec_map,
               &dummy_func,
               std::placeholders::_1,
               std::placeholders::_2));
@@ -154,7 +155,7 @@ TEST(Signature, matches__trailing_varargs_of_same_type)
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::ARRAY),
                   Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY)},
-    std::bind(&Lisple::MapFunction::map_seq,
+    std::bind(&Lisple::MapFunction::exec_map,
               &dummy_func,
               std::placeholders::_1,
               std::placeholders::_2));
@@ -441,4 +442,24 @@ TEST(Macro, get_signature__sig_with_varargs__array__form)
 
   ASSERT_EQ(sig->get_arguments().size(), 2);
   EXPECT_EQ(sig->to_string(), "[Vector, <any>...]");
+}
+
+TEST(create_function__RTValue_semantics, function_should_support_rtvalue_execution)
+{
+  // Given
+  Lisple::Runtime runtime;
+
+  std::cout << " ---------- TEST BEGINS ---------------" << std::endl;
+
+  Lisple::sptr_rtval_v param_array{Lisple::RTValue::symbol("n")};
+  auto body_node = std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(10));
+  Lisple::ptr_exec_node_v body = {body_node.get()};
+
+  // When
+  auto func = Lisple::create_function(&runtime.get_current_namespace(), param_array, body);
+
+  // Then
+  EXPECT_FALSE(func->supports_exec_tree());
+  EXPECT_EQ(func->get_signatures().size(), 1);
+  EXPECT_TRUE(func->get_signatures()[0]->supports_rt_value());
 }

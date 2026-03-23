@@ -13,6 +13,7 @@
 #include "lang/func.h"
 #include "lang/loop.h"
 #include "lang/operator.h"
+#include "lang/seq_func.h"
 #include "lang/string.h"
 #include "lang/struct.h"
 #include "namespace.h"
@@ -759,15 +760,6 @@ namespace Lisple
     return std::make_shared<Array>(std::move(result));
   }
 
-  FUNC_IMPL(EqualsPredicateFunction,
-            SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY)),
-                 EXEC_DISPATCH(&EqualsPredicateFunction::equals_any))))
-
-  FUNC_BODY(EqualsPredicateFunction, equals_any)
-  {
-    return *args[0] == *args[1] ? Lisple::B_TRUE : Lisple::B_FALSE;
-  }
-
   FUNC_IMPL(NotEqualsFunction,
             SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
                  EXEC_DISPATCH(&NotEqualsFunction::not_equals_any))))
@@ -1498,53 +1490,6 @@ namespace Lisple
       seq.replace_children(children);
     }
     return to_delete;
-  }
-
-  /* MapFunction - map */
-  FUNC_IMPL(MapFunction,
-            SIG((FN_ARGS((&VARARG, &Type::SEQ), (&Type::EXEC)),
-                 EXEC_DISPATCH(&MapFunction::map_seq))))
-
-  FUNC_BODY(MapFunction, map_seq)
-  {
-    auto& map_fn = args.back()->as<Object>();
-    sptr_sobject_v result;
-    sptr_sobject_v seqs;
-
-    for (size_t i = 0; i < args.size() - 1; i++)
-    {
-      seqs.push_back(args[i]);
-    }
-
-    auto max_lmnts_it =
-      std::max_element(seqs.begin(),
-                       seqs.end(),
-                       [](const auto& a, const auto& b) { return a->size() < b->size(); });
-
-    result.reserve((*max_lmnts_it)->size());
-    for (size_t i = 0; i < (*max_lmnts_it)->size(); i++)
-    {
-      sptr_sobject_v iter_args;
-      for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
-      {
-        if (i < seqs[seq_i]->size())
-        {
-          iter_args.push_back(seqs[seq_i]->get_children()[i]);
-        }
-      }
-
-      if (iter_args.size() == seqs.size())
-      {
-        sptr_sobject iter_result = map_fn.execute(ctx, iter_args);
-        result.push_back(iter_result);
-      }
-      else
-      {
-        result.push_back(NIL);
-      }
-    }
-
-    return std::make_shared<Array>(std::move(result));
   }
 
   /* ReduceFunction - reduce */
