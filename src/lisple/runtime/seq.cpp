@@ -23,6 +23,8 @@ namespace Lisple
       }
       return chars;
     }
+    case RTValue::Type::NIL:
+      return {};
     case RTValue::Type::MAP:
     case RTValue::Type::VECTOR:
       return std::get<sptr_rtval_v>(v.value);

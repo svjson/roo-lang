@@ -207,6 +207,9 @@ namespace Lisple
     case RTValue::Type::BOOL:
       r += std::get<bool>(value) ? "true" : "false";
       break;
+    case RTValue::Type::CHAR:
+      r += "'" + std::string(1, std::get<char>(value)) + "'";
+      break;
     case RTValue::Type::KEYWORD:
       r += ":" + std::get<std::string>(value);
       break;

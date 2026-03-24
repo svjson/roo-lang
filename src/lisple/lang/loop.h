@@ -25,6 +25,23 @@ namespace Lisple
    */
   SPECIAL_FORM_DECL(DoTimesForm, dotimes);
 
+  /*!
+   * @brief Executes a form for every element in a sequence, binding the element
+   * to the local scope. Returns an array constructed from the return value of
+   * each iteration
+   *
+   * Usage:
+   * @code
+   * (for [num [1 2 3 4]] (* 2 num)) => [2 4 6 8]
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Binding form, [<var-name> <seq>]                                 |
+   * | 0     | Form body to execute                                             |
+   */
+  SPECIAL_FORM_DECL(ForForm, for)
+
 } // namespace Lisple
 
 #endif

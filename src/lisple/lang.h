@@ -97,21 +97,6 @@ namespace Lisple
   MACRO_DECL(CaseMacro, make_case)
 
   /*!
-   * @brief Executes a form for every element in a sequence, binding the element
-   * to the local scope. Returns an array constructed from the return value of
-   * each iteration
-   *
-   * Usage:
-   * @code
-   * (for [num [1 2 3 4]] (* 2 num)) => [2 4 6 8]
-   * @endcode
-   *
-   * Param 0: Binding form, [<var-name> <seq>]
-   * Param 1: Form body to execute
-   */
-  MACRO_DECL(ForMacro, make_for)
-
-  /*!
    * @brief Executes a form for every element in a sequence, just like
    * (for ...), but takes a leading binding in the binding form containing
    * the zero-based iteration index

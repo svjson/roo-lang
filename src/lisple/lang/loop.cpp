@@ -4,6 +4,9 @@
 #include "../bind.h"
 #include "../exception.h"
 #include "../runtime/lower.h"
+#include "../runtime/seq.h"
+
+#include "lisple/runtime/eval_plan.h"
 
 namespace Lisple
 {
@@ -125,6 +128,86 @@ namespace Lisple
     }
 
     return RTValue::vector(result);
+  }
+
+  /* ForForm - for */
+  SPECIAL_FORM_IMPL(ForForm,
+                    SIG((FN_ARGS((&Type::SEQ, &Eval::BIND_SYM_VAL),
+                                 (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&ForForm::inv_for, &ForForm::execnode_for))))
+
+  MACRO_BODY(ForForm, inv_for)
+  {
+    size_t n_args = args.size();
+    sptr_sobject_v result;
+    sptr_sobject_v& seq_expr = args[0]->get_children();
+
+    sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
+    if (*Lisple::NIL != *obj_iterable)
+    {
+      if (!Type::SEQ.is_type_of(*obj_iterable) && !Type::STRING.is_type_of(*obj_iterable))
+      {
+        throw TypeError("For macro requires an iterable. Wrong type: " +
+                        obj_iterable->to_string());
+      }
+
+      auto seq_binding = ArgumentBinding::create(*seq_expr[0]);
+
+      result.reserve(obj_iterable->size());
+      auto& iter_elements = obj_iterable->get_children();
+
+      ctx.push_context(true);
+      Scope& iter_scope = ctx.current_scope();
+      for (auto it = iter_elements.begin(); it != iter_elements.end(); ++it)
+      {
+        seq_binding->apply(iter_scope, *it);
+        sptr_sobject iter_result;
+        for (size_t i = 1; i < n_args; i++)
+        {
+          iter_result = ctx.eval(args[i]);
+        }
+        result.push_back(std::move(iter_result));
+        iter_scope.clear();
+      }
+      ctx.pop_context();
+    }
+    return std::make_shared<Array>(std::move(result));
+  }
+
+  EXECNODE_BODY(ForForm, execnode_for)
+  {
+    sptr_rtval_v result;
+
+    if (ExecNodeList* bnd = std::get_if<ExecNodeList>(&args[0]->data))
+    {
+      if (bnd->nodes.size() != 2)
+      {
+        throw LispleException("for: Invalid bind form.");
+      }
+
+      auto binding = LexicalBinding::create(std::get<LiteralNode>(bnd->nodes.front()->data));
+      sptr_rtval seq = std::get<LiteralNode>(bnd->nodes.back()->data).value;
+
+      sptr_rtval_v elements = Lisple::get_children(*seq);
+
+      sptr_rtval iter_result;
+      for (auto& item : elements)
+      {
+        ctx.push_context(true);
+        Scope& iter_scope = ctx.current_scope();
+        binding->apply(iter_scope, item);
+
+        for (size_t bi = 1; bi < args.size(); bi++)
+        {
+          iter_result = exec(ctx, *args[bi]);
+        }
+
+        result.push_back(iter_result);
+        ctx.pop_context();
+      }
+    }
+
+    return RTValue::vector(std::move(result));
   }
 
 } // namespace Lisple

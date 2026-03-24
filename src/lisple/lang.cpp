@@ -86,7 +86,7 @@ namespace Lisple
     lang.emplace("find-first", std::make_shared<FindFirstFunction>());
     lang_symbols.emplace("find-index", FindIndexFunction::make());
     lang_symbols.emplace("fn", FnForm::make());
-    lang.emplace("for", std::make_shared<ForMacro>());
+    lang_symbols.emplace("for", ForForm::make());
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang_symbols.emplace("get", GetFunction::make());
     lang.emplace("head", std::make_shared<HeadFunction>());
@@ -483,51 +483,6 @@ namespace Lisple
 
     ctx.pop_context();
     return retval;
-  }
-
-  /* ForMacro - for */
-  MACRO_IMPL(ForMacro,
-             MULTI_SIG((FN_ARGS((&Type::SEQ, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&ForMacro::make_for)),
-                       (FN_ARGS((&Type::STRING), (VARARG, &Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&ForMacro::make_for))))
-
-  MACRO_BODY(ForMacro, make_for)
-  {
-    size_t n_args = args.size();
-    sptr_sobject_v result;
-    sptr_sobject_v& seq_expr = args[0]->get_children();
-
-    sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
-    if (*Lisple::NIL != *obj_iterable)
-    {
-      if (!Type::SEQ.is_type_of(*obj_iterable) && !Type::STRING.is_type_of(*obj_iterable))
-      {
-        throw TypeError("For macro requires an iterable. Wrong type: " +
-                        obj_iterable->to_string());
-      }
-
-      auto seq_binding = ArgumentBinding::create(*seq_expr[0]);
-
-      result.reserve(obj_iterable->size());
-      auto& iter_elements = obj_iterable->get_children();
-
-      ctx.push_context(true);
-      Scope& iter_scope = ctx.current_scope();
-      for (auto it = iter_elements.begin(); it != iter_elements.end(); ++it)
-      {
-        seq_binding->apply(iter_scope, *it);
-        sptr_sobject iter_result;
-        for (size_t i = 1; i < n_args; i++)
-        {
-          iter_result = ctx.eval(args[i]);
-        }
-        result.push_back(std::move(iter_result));
-        iter_scope.clear();
-      }
-      ctx.pop_context();
-    }
-    return std::make_shared<Array>(std::move(result));
   }
 
   /* ForIndexedMacro - for-indexed */
