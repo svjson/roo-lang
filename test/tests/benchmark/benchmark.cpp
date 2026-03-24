@@ -225,7 +225,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "019_workload_functions_on_exec_path_6673586";
+    const std::string CHANGE_ME = "020_namespace_and_scope_store_rtvalue_a9b421c";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
