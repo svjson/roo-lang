@@ -11,6 +11,8 @@
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 
+#include "lisple/form.h"
+
 namespace LispleTest
 {
   Counters counter_snapshot;
@@ -149,6 +151,20 @@ namespace LispleTest
   {
   }
 
+  SnippetBenchmark::SnippetBenchmark(
+    const std::string& case_name,
+    std::map<const std::string, Lisple::Namespace> native_namespaces,
+    const std::vector<std::string>& pre_evaluated,
+    const std::string& ns,
+    const std::string& input)
+    : case_name(case_name)
+    , native_namespaces(native_namespaces)
+    , pre_evaluated(pre_evaluated)
+    , ns(ns)
+    , input(input)
+  {
+  }
+
   SnippetBenchmark::SnippetBenchmark(const std::string& case_name,
                                      const std::vector<std::string>& pre_evaluated,
                                      const std::string& ns,
@@ -160,10 +176,10 @@ namespace LispleTest
   {
   }
 
-  void SnippetBenchmark::run()
+  Lisple::sptr_rtval SnippetBenchmark::run()
   {
-    if (skip_benchmark_tests) return;
-    Lisple::Runtime runtime;
+    if (skip_benchmark_tests) return Lisple::Constant::NIL;
+    Lisple::Runtime runtime(native_namespaces);
 
     start_time = now();
 
@@ -208,6 +224,7 @@ namespace LispleTest
       log_result();
     }
     apply_counter_snapshot();
+    return result;
   }
 
   void SnippetBenchmark::print_result()

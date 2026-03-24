@@ -53,6 +53,11 @@ namespace Lisple
     switch_namespace(ns_name);
   }
 
+  Runtime::Runtime(std::map<const std::string, Namespace> namespaces)
+    : Runtime(DEFAULT_NAMESPACE, namespaces, nullptr)
+  {
+  }
+
   Runtime::Runtime(const std::string& main_ns,
                    std::map<const std::string, Namespace> namespaces)
     : Runtime(main_ns, namespaces, nullptr)

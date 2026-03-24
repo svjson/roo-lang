@@ -72,7 +72,18 @@ namespace Lisple
     Runtime(Namespace& host_namespace, FileSystem* fs);
 
     /*!
-     * @brief Creates a Lisple runtime with a host-provided namespaces in
+     * @brief Creates a Lisple runtime with host-provided namespaces in
+     * addition to the language built-in functions and no file system access.
+     *
+     * The provided namespaces will typically be the host application
+     * namespaces.
+     * The Runtime instance will assume ownership of the provided std::map
+     * of namespaces.
+     */
+    Runtime(std::map<const std::string, Namespace> namespaces);
+
+    /*!
+     * @brief Creates a Lisple runtime with host-provided namespaces in
      * addition to the language built-in functions and no file system access.
      *
      * The provided namespaces will typically be the host application

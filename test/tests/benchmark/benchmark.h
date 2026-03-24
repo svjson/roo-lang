@@ -2,7 +2,9 @@
 #ifndef LISPLE_TEST_NOW_H
 #define LISPLE_TEST_NOW_H
 
-#include "lisple/reader.h"
+#include <lisple/namespace.h>
+#include <lisple/reader.h>
+
 namespace LispleTest
 {
   inline bool logging_enabled = false;
@@ -46,15 +48,21 @@ namespace LispleTest
    public:
     SnippetBenchmark(const std::string& case_name, const std::string& input);
     SnippetBenchmark(const std::string& case_name,
+                     std::map<const std::string, Lisple::Namespace> native_namespaces,
+                     const std::vector<std::string>& pre_evaluated,
+                     const std::string& ns,
+                     const std::string& input);
+    SnippetBenchmark(const std::string& case_name,
                      const std::vector<std::string>& pre_evaluated,
                      const std::string& ns,
                      const std::string& input);
 
-    void run();
+    Lisple::sptr_rtval run();
     void print_result();
     void log_result();
 
     std::string case_name;
+    std::map<const std::string, Lisple::Namespace> native_namespaces;
     std::vector<std::string> pre_evaluated;
     std::string ns;
     std::string input;

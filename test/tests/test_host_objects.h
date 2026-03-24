@@ -2,12 +2,12 @@
 #ifndef __TEST_HOST_OBJECTS_H_
 #define __TEST_HOST_OBJECTS_H_
 
-#include <string>
-
 #include <lisple/adapter.h>
-#include <lisple/host.h>
 #include <lisple/exec.h>
+#include <lisple/host.h>
+#include <lisple/namespace.h>
 #include <lisple/type.h>
+#include <string>
 
 namespace Tests
 {
@@ -28,7 +28,9 @@ namespace Tests
   inline Lisple::HostTypeRef VECTOR_VEHICLE("vector<Vehicle>");
 
   inline Lisple::SeqRef ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &VEHICLE_TYPE, "[vehicle]");
-  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &ARRAY_OF_VEHICLE, "[[vehicle]]");
+  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY,
+                                                  &ARRAY_OF_VEHICLE,
+                                                  "[[vehicle]]");
 
   class RegNumber
   {
@@ -36,7 +38,6 @@ namespace Tests
     const std::string numbers;
 
    public:
-
     RegNumber(const std::string& letters, const std::string& numbers);
 
     const std::string& get_letters() const;
@@ -61,8 +62,7 @@ namespace Tests
     bool operator==(const Vehicle& other) const;
   };
 
-  template <typename T>
-  const Lisple::AdapterTraits& resolve_traits();
+  template <typename T> const Lisple::AdapterTraits& resolve_traits();
 
   // ===============================================================
   // Vehicle example - adapters
@@ -146,13 +146,62 @@ namespace Tests
 
   HOST_ADAPTER(ProductAdapter, Product, (name, price, sku), (price, sku));
 
-  HOST_SUB_ADAPTER(BookAdapter, Book,
-                   ProductAdapter, Product, (author, isbn));
+  HOST_SUB_ADAPTER(BookAdapter, Book, ProductAdapter, Product, (author, isbn));
 
-  HOST_SUB_ADAPTER(ClothingAdapter, Clothing,
-                   ProductAdapter, Product, (size, material));
+  HOST_SUB_ADAPTER(ClothingAdapter, Clothing, ProductAdapter, Product, (size, material));
 
-}
+  // ===============================================================
+  // Vector graphics example
+  // ===============================================================
+
+  struct Point
+  {
+    Point() = default;
+    Point(float x, float y)
+      : x(x)
+      , y(y)
+    {
+    }
+
+    float x;
+    float y;
+  };
+
+  // ===============================================================
+  // Vector graphics example - adapters - RTValue & AST-based
+  // ===============================================================
+
+  inline const Lisple::HostTypeRef POINT("point", "pixils.point/make-point");
+
+  HOST_ADAPTER(PointAdapter, Point, (x, y));
+
+  // FUNC(MakePointFunction, make_point);
+
+  // FUNC(RotatePointFunction, rotate_point);
+
+  // FUNC(PointAddFunction, plus);
+
+  // FUNC(PointSubtractFunction, minus);
+
+  // FUNC(PointMultiplyFunction, multiply);
+
+  FUNC_DECL(MakePointASTFunction, make_point);
+
+  FUNC_DECL(PointRotateASTFunction, rotate_point);
+
+  FUNC_DECL(PointAddASTFunction, plus);
+
+  FUNC_DECL(PointDivideASTFunction, divide);
+
+  FUNC_DECL(PointDistanceASTFunction, distance);
+
+  class PointASTBasedNamespace : public Lisple::Namespace
+  {
+   public:
+    PointASTBasedNamespace(const std::string& name);
+  };
+
+} // namespace Tests
 
 DEFINE_LISPLE_TYPE(const Tests::Vehicle, Tests::VEHICLE_TYPE);
 DEFINE_LISPLE_TYPE(Tests::Vehicle, Tests::VEHICLE_TYPE);

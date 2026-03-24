@@ -73,7 +73,7 @@
   template <typename... Args> \
   static Lisple::sptr_rtval make(Args&&... args) \
   { \
-  return RTValue::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
+  return Lisple::RTValue::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
 }
 
 #define EXECNODE_DISPATCH(NAME)                                                                  \
