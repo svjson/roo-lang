@@ -80,6 +80,7 @@ namespace Lisple
 
   sptr_rtval RTValue::number(long v)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::NUMBER;
     val->value = RTValue::Number{.num_type = NumberType::LONG, .long_value = v};
@@ -93,6 +94,7 @@ namespace Lisple
     {
       return RTValue::number(intval);
     }
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::NUMBER;
     val->value = RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v};
@@ -101,6 +103,7 @@ namespace Lisple
 
   sptr_rtval RTValue::character(char c)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::CHAR;
     val->value = c;
@@ -109,6 +112,7 @@ namespace Lisple
 
   sptr_rtval RTValue::string(const std::string& v)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::STRING;
     val->value = v;
@@ -122,6 +126,7 @@ namespace Lisple
 
   sptr_rtval RTValue::symbol(const std::string& v)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::SYMBOL;
     val->value = v;
@@ -130,6 +135,7 @@ namespace Lisple
 
   sptr_rtval RTValue::object(sptr_sobject& o)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::OBJECT;
     val->value = o;
@@ -138,6 +144,7 @@ namespace Lisple
 
   sptr_rtval RTValue::list(sptr_rtval_v& v)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::LIST;
     val->value = v;
@@ -146,6 +153,7 @@ namespace Lisple
 
   sptr_rtval RTValue::vector(const sptr_rtval_v& v)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::VECTOR;
     val->value = v;
@@ -154,6 +162,7 @@ namespace Lisple
 
   sptr_rtval RTValue::map(const sptr_rtval_v& v)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::MAP;
     val->value = v;
@@ -171,6 +180,7 @@ namespace Lisple
 
   sptr_rtval RTValue::executable(const sptr_sobject& fn)
   {
+    rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::FUNCTION;
     val->value = fn;
