@@ -4,6 +4,9 @@
 #include <iostream>
 #include <lisple/context.h>
 #include <lisple/impl.h>
+#include <lisple/runtime/dict.h>
+
+#include "lisple/runtime/value.h"
 
 namespace Tests
 {
@@ -274,17 +277,21 @@ namespace Tests
   // Vector graphics example - adapters - RTValue & AST-based
   // ===============================================================
 
-  SHKEY(X, "x");
-  SHKEY(Y, "y");
+  SHKEY(KEY_X, "x");
+  SHKEY(KEY_Y, "y");
+
+  const Lisple::sptr_rtval X = Lisple::RTValue::keyword("x");
+  const Lisple::sptr_rtval Y = Lisple::RTValue::keyword("y");
 
   HOST_ADAPTER_IMPL(PointAdapter,
                     Point,
                     &POINT,
-                    ({K_GET(PointAdapter, X, x), K_GET(PointAdapter, Y, y)}));
+                    ({K_GET(PointAdapter, KEY_X, x), K_GET(PointAdapter, KEY_Y, y)}));
 
   ADAPTER_PROP_GET__FIELD(PointAdapter, x, Lisple::Number);
   ADAPTER_PROP_GET__FIELD(PointAdapter, y, Lisple::Number);
 
+  /** AST-based make-point */
   FUNC_IMPL(MakePointASTFunction,
             SIG((FN_ARGS((&Lisple::Type::MAP)),
                  EXEC_DISPATCH(&MakePointASTFunction::make_point))));
@@ -292,15 +299,35 @@ namespace Tests
   FUNC_BODY(MakePointASTFunction, make_point)
   {
     if (args[0]->get_type() != Lisple::Form::MAP ||
-        args[0]->get_sptr_property(*X)->get_type() != Lisple::Form::NUMBER ||
-        args[0]->get_sptr_property(*Y)->get_type() != Lisple::Form::NUMBER)
+        args[0]->get_sptr_property(*KEY_X)->get_type() != Lisple::Form::NUMBER ||
+        args[0]->get_sptr_property(*KEY_Y)->get_type() != Lisple::Form::NUMBER)
       throw Lisple::LispleException("Invalid input");
 
     return PointAdapter::make<Point>(
-      args[0]->get_sptr_property(*X)->as<const Lisple::Number>().float_value(),
-      args[0]->get_sptr_property(*Y)->as<const Lisple::Number>().float_value());
+      args[0]->get_sptr_property(*KEY_X)->as<const Lisple::Number>().float_value(),
+      args[0]->get_sptr_property(*KEY_Y)->as<const Lisple::Number>().float_value());
   }
 
+  /** MakePointFunction -  make-point */
+  FUNC_IMPL(MakePointFunction,
+            SIG((FN_ARGS((&Lisple::Type::MAP)),
+                 EXEC_DISPATCH(&MakePointFunction::exec_make_point))));
+
+  EXEC_BODY(MakePointFunction, exec_make_point)
+  {
+    if (args[0]->type != Lisple::RTValue::Type::MAP ||
+        Lisple::Dict::get_property(args[0], X)->type != Lisple::RTValue::Type::NUMBER ||
+        Lisple::Dict::get_property(args[0], Y)->type != Lisple::RTValue::Type::NUMBER)
+      throw Lisple::LispleException("Invalid input");
+
+    return Lisple::RTValue::object(PointAdapter::make<Point>(
+      std::get<Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], X)->value)
+        .get_float(),
+      std::get<Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], Y)->value)
+        .get_float()));
+  }
+
+  /** AST-based point/rotate */
   FUNC_IMPL(PointRotateASTFunction,
             SIG((FN_ARGS((&POINT), (&Lisple::Type::NUMBER)),
                  EXEC_DISPATCH(&PointRotateASTFunction::rotate_point))));
@@ -325,6 +352,34 @@ namespace Tests
     return PointAdapter::make<Point>(x_new + origin.x, y_new + origin.y);
   }
 
+  /** PointRotateFunction - pixils.point/rotate */
+  FUNC_IMPL(PointRotateFunction,
+            SIG((FN_ARGS((&POINT), (&Lisple::Type::NUMBER)),
+                 EXEC_DISPATCH(&PointRotateFunction::exec_rotate_point))));
+
+  EXEC_BODY(PointRotateFunction, exec_rotate_point)
+  {
+    Lisple::sptr_sobject obj = std::get<Lisple::sptr_sobject>(args[0]->value);
+    const Point& point = obj->as<PointAdapter>().get_object();
+    const Point origin = {0, 0};
+    float amount = std::get<Lisple::RTValue::Number>(args[1]->value).get_float();
+
+    if (amount == 0.0) return args[0];
+
+    float s = std::sin(amount);
+    float c = std::cos(amount);
+
+    float x = point.x - origin.x;
+    float y = point.x - origin.y;
+
+    float x_new = x * c - y * s;
+    float y_new = x * s + y * c;
+
+    return Lisple::RTValue::object(
+      PointAdapter::make<Point>(x_new + origin.x, y_new + origin.y));
+  }
+
+  /** AST-based point/plus */
   FUNC_IMPL(PointAddASTFunction,
             SIG((FN_ARGS((&POINT), (&POINT)), EXEC_DISPATCH(&PointAddASTFunction::plus))));
 
@@ -336,6 +391,21 @@ namespace Tests
     return PointAdapter::make<Point>(a.x + b.x, a.y + b.y);
   }
 
+  /** PointAddFunction - pixils.point/plus */
+  FUNC_IMPL(PointAddFunction,
+            SIG((FN_ARGS((&POINT), (&POINT)), EXEC_DISPATCH(&PointAddFunction::exec_plus))));
+
+  EXEC_BODY(PointAddFunction, exec_plus)
+  {
+    const Point& a =
+      std::get<Lisple::sptr_sobject>(args[0]->value)->as<PointAdapter>().get_object();
+    const Point& b =
+      std::get<Lisple::sptr_sobject>(args[1]->value)->as<PointAdapter>().get_object();
+
+    return Lisple::RTValue::object(PointAdapter::make<Point>(a.x + b.x, a.y + b.y));
+  }
+
+  /** AST-based point/divide */
   FUNC_IMPL(PointDivideASTFunction,
             SIG((FN_ARGS((&POINT), (&Lisple::Type::NUMBER)),
                  EXEC_DISPATCH(&PointDivideASTFunction::divide))));
@@ -346,6 +416,20 @@ namespace Tests
     float div = args[1]->as<Lisple::Number>().float_value();
 
     return PointAdapter::make<Point>(a.x / div, a.y + div);
+  }
+
+  /** PointDivideFunction - pixils.point/div */
+  FUNC_IMPL(PointDivideFunction,
+            SIG((FN_ARGS((&POINT), (&Lisple::Type::NUMBER)),
+                 EXEC_DISPATCH(&PointDivideFunction::exec_divide))));
+
+  EXEC_BODY(PointDivideFunction, exec_divide)
+  {
+    const Point& a =
+      std::get<Lisple::sptr_sobject>(args[0]->value)->as<PointAdapter>().get_object();
+    float amount = std::get<Lisple::RTValue::Number>(args[1]->value).get_float();
+
+    return Lisple::RTValue::object(PointAdapter::make<Point>(a.x / amount, a.y / amount));
   }
 
   FUNC_IMPL(PointDistanceASTFunction,
@@ -359,6 +443,31 @@ namespace Tests
 
     return Lisple::Number::make(
       std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)));
+  }
+
+  FUNC_IMPL(PointDistanceFunction,
+            SIG((FN_ARGS((&POINT), (&POINT)),
+                 EXEC_DISPATCH(&PointDistanceFunction::exec_distance))));
+
+  EXEC_BODY(PointDistanceFunction, exec_distance)
+  {
+    const Point& a =
+      std::get<Lisple::sptr_sobject>(args[0]->value)->as<PointAdapter>().get_object();
+    const Point& b =
+      std::get<Lisple::sptr_sobject>(args[1]->value)->as<PointAdapter>().get_object();
+
+    return Lisple::RTValue::number(
+      std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)));
+  }
+
+  PointNamespace::PointNamespace(const std::string& name)
+    : Namespace(name)
+  {
+    values.emplace("plus", PointAddFunction::make());
+    values.emplace("div", PointDivideFunction::make());
+    values.emplace("rotate", PointRotateFunction::make());
+    values.emplace("distance", PointDistanceFunction::make());
+    values.emplace("make-point", MakePointFunction::make());
   }
 
   PointASTBasedNamespace::PointASTBasedNamespace(const std::string& name)

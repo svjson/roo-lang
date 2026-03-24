@@ -1221,7 +1221,14 @@ namespace Lisple
      * @brief Attempts to coerce a Lisple Object of a different type to this
      * this type by using the make function provided by the type.
      */
-    CoercionResult coerce(Context& ctx, sptr_sobject& obj) const override;
+    CoercionResult<Object> coerce(Context& ctx, sptr_sobject& obj) const override;
+
+    /*!
+     * @brief Attempts to coerce a Lisple Runtime Value of a different type to this
+     * this type by using the make function provided by the type.
+     */
+    CoercionResult<RTValue> coerce(Context& ctx, sptr_rtval& val) const override;
+
 
     /*!
      * @brief Tests if this type is a HostObject type.

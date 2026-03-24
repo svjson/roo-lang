@@ -133,7 +133,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::object(sptr_sobject& o)
+  sptr_rtval RTValue::object(const sptr_sobject& o)
   {
     rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
@@ -142,7 +142,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::list(sptr_rtval_v& v)
+  sptr_rtval RTValue::list(const sptr_rtval_v& v)
   {
     rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();

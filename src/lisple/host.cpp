@@ -83,7 +83,7 @@ namespace Lisple
     return false;
   }
 
-  CoercionResult HostTypeRef::coerce(Context& ctx, sptr_sobject& obj) const
+  CoercionResult<Object> HostTypeRef::coerce(Context& ctx, sptr_sobject& obj) const
   {
     if (make_fn)
     {
@@ -115,7 +115,42 @@ namespace Lisple
       }
     }
 
-    return CoercionResult{false, nullptr};
+    return CoercionResult<Object>{false, nullptr};
+  }
+
+  CoercionResult<RTValue> HostTypeRef::coerce(Context& ctx, sptr_rtval& obj) const
+  {
+    if (make_fn)
+    {
+      sptr_rtval function = ctx.lookup_value(*make_fn);
+      if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
+      {
+        throw InvocationException(
+          "Coercion failed. Review Host Object configuration - Make Function '" + *make_fn +
+          "' is not executable: " + function->to_string());
+      }
+      auto& make_exec = std::get<sptr_sobject>(function->value)->as<Executable>();
+
+      for (auto& sig : make_exec.signatures)
+      {
+        if (sig->get_arguments().size() != 1) continue;
+
+        if (sig->get_arguments().front().matches(*obj))
+        {
+          sptr_rtval_v arg_list{obj};
+          try
+          {
+            return CoercionResult{true, sig->invoke(ctx, arg_list)};
+          }
+          catch (const LispleException& e)
+          {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    return CoercionResult<RTValue>{false, nullptr};
   }
 
   bool HostTypeRef::is_host_object() const

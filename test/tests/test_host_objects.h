@@ -175,15 +175,15 @@ namespace Tests
 
   HOST_ADAPTER(PointAdapter, Point, (x, y));
 
-  // FUNC(MakePointFunction, make_point);
+  FUNC(MakePointFunction, make_point);
 
-  // FUNC(RotatePointFunction, rotate_point);
+  FUNC(PointRotateFunction, rotate_point);
 
-  // FUNC(PointAddFunction, plus);
+  FUNC(PointAddFunction, plus);
 
-  // FUNC(PointSubtractFunction, minus);
+  FUNC(PointDivideFunction, divide);
 
-  // FUNC(PointMultiplyFunction, multiply);
+  FUNC(PointDistanceFunction, distance);
 
   FUNC_DECL(MakePointASTFunction, make_point);
 
@@ -194,6 +194,12 @@ namespace Tests
   FUNC_DECL(PointDivideASTFunction, divide);
 
   FUNC_DECL(PointDistanceASTFunction, distance);
+
+  class PointNamespace : public Lisple::Namespace
+  {
+   public:
+    PointNamespace(const std::string& name);
+  };
 
   class PointASTBasedNamespace : public Lisple::Namespace
   {

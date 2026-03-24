@@ -90,10 +90,10 @@ namespace Lisple
     static sptr_rtval character(char);
     static sptr_rtval keyword(const std::string&);
     static sptr_rtval symbol(const std::string&);
-    static sptr_rtval list(sptr_rtval_v&);
+    static sptr_rtval list(const sptr_rtval_v&);
     static sptr_rtval vector(const sptr_rtval_v&);
     static sptr_rtval map(const sptr_rtval_v&);
-    static sptr_rtval object(sptr_sobject&);
+    static sptr_rtval object(const sptr_sobject&);
     static sptr_rtval executable(const sptr_sobject&);
 
     static std::string to_string(const sptr_rtval_v&);

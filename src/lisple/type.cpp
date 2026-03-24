@@ -3,6 +3,7 @@
 
 #include "context.h"
 #include "form.h"
+#include "runtime/seq.h"
 
 namespace Lisple
 {
@@ -26,12 +27,17 @@ namespace Lisple
     return obj.get_type() == form_type;
   }
 
-  CoercionResult TypeRef::coerce(Context&, sptr_sobject&) const
+  CoercionResult<Object> TypeRef::coerce(Context&, sptr_sobject&) const
   {
-    return CoercionResult{false, nullptr};
+    return CoercionResult<Object>{false, nullptr};
   }
 
-  CoercionResult TypeRef::coerce(Runtime& reader, sptr_sobject& obj) const
+  CoercionResult<RTValue> TypeRef::coerce(Context&, sptr_rtval&) const
+  {
+    return CoercionResult<RTValue>{false, nullptr};
+  }
+
+  CoercionResult<Object> TypeRef::coerce(Runtime& reader, sptr_sobject& obj) const
   {
     Context ctx(reader);
     return this->coerce(ctx, obj);
@@ -94,7 +100,20 @@ namespace Lisple
     return false;
   }
 
-  CoercionResult MultiRef::coerce(Context& ctx, sptr_sobject& obj) const
+  CoercionResult<Object> MultiRef::coerce(Context& ctx, sptr_sobject& obj) const
+  {
+    for (auto type : types)
+    {
+      CoercionResult result = type->coerce(ctx, obj);
+      if (result.success)
+      {
+        return result;
+      }
+    }
+    return TypeRef::coerce(ctx, obj);
+  }
+
+  CoercionResult<RTValue> MultiRef::coerce(Context& ctx, sptr_rtval& obj) const
   {
     for (auto type : types)
     {
@@ -154,7 +173,7 @@ namespace Lisple
     return true;
   }
 
-  CoercionResult SeqRef::coerce(Context& ctx, sptr_sobject& obj) const
+  CoercionResult<Object> SeqRef::coerce(Context& ctx, sptr_sobject& obj) const
   {
     if (seq_type->is_type_of(*obj))
     {
@@ -189,13 +208,57 @@ namespace Lisple
         coerced_seq = std::make_shared<List>(coerced_elements);
         break;
       default:
-        return CoercionResult{false, nullptr};
+        return CoercionResult<Object>{false, nullptr};
       }
 
       return CoercionResult{true, coerced_seq};
     }
 
-    return CoercionResult{false, nullptr};
+    return CoercionResult<Object>{false, nullptr};
+  }
+
+  CoercionResult<RTValue> SeqRef::coerce(Context& ctx, sptr_rtval& obj) const
+  {
+    if (seq_type->is_type_of(*obj))
+    {
+      sptr_rtval_v coerced_elements;
+
+      for (auto& child : Lisple::get_children(*obj))
+      {
+        if (child_type->is_type_of(*child))
+        {
+          coerced_elements.push_back(child);
+        }
+        else
+        {
+          CoercionResult coercion = child_type->coerce(ctx, child);
+          if (coercion.success)
+          {
+            coerced_elements.push_back(coercion.result);
+          }
+          else
+          {
+            return coercion;
+          }
+        }
+      }
+      sptr_rtval coerced_seq;
+      switch (seq_type->form_type)
+      {
+      case Form::ARRAY:
+        coerced_seq = RTValue::vector(std::move(coerced_elements));
+        break;
+      case Form::LIST:
+        coerced_seq = RTValue::list(std::move(coerced_elements));
+        break;
+      default:
+        return CoercionResult<RTValue>{false, nullptr};
+      }
+
+      return CoercionResult{true, coerced_seq};
+    }
+
+    return CoercionResult<RTValue>{false, nullptr};
   }
 
 } // namespace Lisple

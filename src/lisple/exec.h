@@ -271,7 +271,8 @@ namespace Lisple
     bool matches(Lisple::Object&) const;
     bool matches(RTValue&) const;
     bool matches(const uptr_exec_node&) const;
-    CoercionResult coerce(Context& ctx, sptr_sobject& obj) const;
+    CoercionResult<Object> coerce(Context& ctx, sptr_sobject& obj) const;
+    CoercionResult<RTValue> coerce(Context& ctx, sptr_rtval& obj) const;
     /**
      * @brief Query if the argument should be evaluated before being
      * passed to the target executable form, or if it should be passed
@@ -333,6 +334,8 @@ namespace Lisple
      * the signature types for possible conversions
      */
     sptr_sobject_v coerce_args(Context& ctx, sptr_sobject_v& args);
+
+    sptr_rtval_v coerce_args(Context& ctx, sptr_rtval_v& args);
 
     sptr_sobject invoke(Context& ctx, sptr_sobject_v& args);
     sptr_rtval invoke(Context& ctx, ptr_exec_node_v& args);

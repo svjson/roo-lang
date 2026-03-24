@@ -4444,6 +4444,20 @@ TEST(Workload, handle_collisions_AST_host_adapters_inline_argset_1)
   bm.run();
 }
 
+TEST(Workload, handle_collisions_host_adapters_inline_argset_1)
+{
+  LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
+                                  {{"pixils.point", Tests::PointNamespace("pixils.point")}},
+                                  {ASTEROIDS__ASTEROID,
+                                   ASTEROIDS__DEBRIS,
+                                   NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
+                                  "asteroids.collision",
+                                  "(let [state {:player player :asteroids "
+                                  "asteroids :particles particles}]" +
+                                    HANDLE_COLLISIONS_BODY + ")");
+  bm.run();
+}
+
 TEST(Benchmark_Workload, benchmark_handle_collisions_inline_1000_argset_1)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
@@ -4489,6 +4503,25 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_AST_host_adapters_funcall_1
     },
     "asteroids.collision",
     R"(
+(dotimes [1000] (handle-collisions {:player player
+                                    :asteroids asteroids
+                                    :particles particles} area))
+                                     )");
+  bm.run();
+}
+
+TEST(Benchmark_Workload, benchmark_handle_collisions_host_adapters_funcall_1000_argset_1)
+{
+
+  LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
+                                  {{"pixils.point", Tests::PointNamespace("pixils.point")}},
+                                  {
+                                    ASTEROIDS__ASTEROID,
+                                    ASTEROIDS__DEBRIS,
+                                    ASTEROIDS__COLLISION + DEF_AREA + DEF_ARG_SET_1,
+                                  },
+                                  "asteroids.collision",
+                                  R"(
 (dotimes [1000] (handle-collisions {:player player
                                     :asteroids asteroids
                                     :particles particles} area))

@@ -168,7 +168,12 @@ namespace Lisple
     return true;
   }
 
-  CoercionResult Argument::coerce(Context& ctx, sptr_sobject& obj) const
+  CoercionResult<Object> Argument::coerce(Context& ctx, sptr_sobject& obj) const
+  {
+    return type->coerce(ctx, obj);
+  }
+
+  CoercionResult<RTValue> Argument::coerce(Context& ctx, sptr_rtval& obj) const
   {
     return type->coerce(ctx, obj);
   }
@@ -243,6 +248,39 @@ namespace Lisple
     return arguments;
   }
 
+  sptr_rtval_v Signature::coerce_args(Context& ctx, sptr_rtval_v& args)
+  {
+    sptr_rtval_v coerced;
+    coerced.reserve(args.size());
+
+    if (args.size() == arguments.size())
+    {
+      for (size_t i = 0; i < arguments.size(); i++)
+      {
+        const Argument& arg = arguments[i];
+        if (arg.matches(*args[i]))
+        {
+          coerced.push_back(args[i]);
+          continue;
+        }
+        else
+        {
+          CoercionResult<RTValue> coercion = arg.coerce(ctx, args[i]);
+          if (coercion.success)
+          {
+            coerced.push_back(coercion.result);
+          }
+          else
+          {
+            coerced.clear();
+            break;
+          }
+        }
+      }
+    }
+    return coerced;
+  }
+
   sptr_sobject_v Signature::coerce_args(Context& ctx, sptr_sobject_v& args)
   {
     sptr_sobject_v coerced;
@@ -261,7 +299,7 @@ namespace Lisple
         }
         else
         {
-          CoercionResult coercion = arg.coerce(ctx, args[i]);
+          CoercionResult<Object> coercion = arg.coerce(ctx, args[i]);
           if (coercion.success)
           {
             coerced.push_back(coercion.result);
@@ -484,7 +522,24 @@ namespace Lisple
   {
     if (this->supports_rt_value())
     {
-      return exec_rtval(ctx, args);
+      if (!this->matches(args))
+      {
+        sptr_rtval_v coerced_args = coerce_args(ctx, args);
+        if (coerced_args.size())
+        {
+          return exec_rtval(ctx, coerced_args);
+        }
+        else
+        {
+          throw InvocationException(
+            "Could not apply args: " + RTValue::vector(args)->to_string() +
+            " to signature expecting: " + this->to_string() + ".");
+        }
+      }
+      else
+      {
+        return exec_rtval(ctx, args);
+      }
     }
 
     ptr_exec_node_v node_args;
