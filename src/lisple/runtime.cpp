@@ -342,6 +342,37 @@ namespace Lisple
     return lookup(identifier, nullptr);
   }
 
+  sptr_rtval Runtime::lookup_value(const Word& identifier)
+  {
+    if (identifier.is_qualified())
+    {
+      Namespace* _ns = ns(identifier.get_qualifier());
+      if (_ns)
+      {
+        return _ns->lookup_symbol(identifier.get_identifier());
+      }
+
+      sptr_rtval result = current_namespace->lookup_symbol(identifier);
+      if (result) return result;
+
+      throw IdentifierException("Unknown identifier: '" + identifier.to_string() + "'");
+    }
+
+    sptr_rtval lang_obj = lang.lookup_symbol(identifier.get_identifier());
+    if (lang_obj.get())
+    {
+      return lang_obj;
+    }
+
+    sptr_rtval ns_obj = current_namespace->lookup_symbol(identifier.get_identifier());
+    if (ns_obj.get())
+    {
+      return ns_obj;
+    }
+
+    throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
+  }
+
   sptr_sobject Runtime::lookup(const Word& identifier, sptr_sobject fallback)
   {
     if (identifier.is_qualified())

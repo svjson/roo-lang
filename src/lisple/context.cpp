@@ -9,6 +9,8 @@
 #include "type.h"
 #include <utility>
 
+#include "lisple/runtime/value.h"
+
 namespace Lisple
 {
   /** ContextFrame */
@@ -35,7 +37,7 @@ namespace Lisple
 
   sptr_rtval ContextFrame::lookup_value(const Word& word) const
   {
-    return scope.lookup(word.get_identifier());
+    return scope.lookup_value(word.get_identifier());
   }
 
   bool ContextFrame::has(const Word& word) const
@@ -201,8 +203,8 @@ namespace Lisple
   {
     if (identifier.is_qualified())
     {
-      sptr_sobject result = runtime.lookup(identifier);
-      return result ? to_rt_value(result) : Constant::NIL;
+      sptr_rtval result = runtime.lookup_value(identifier);
+      return result ? result : Constant::NIL;
     }
 
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
@@ -214,8 +216,9 @@ namespace Lisple
       }
     }
 
-    sptr_sobject result = runtime.lookup(identifier);
-    return to_rt_value(result);
+    auto val = runtime.lookup_value(identifier);
+
+    return val;
   }
 
   Scope& Context::current_scope()

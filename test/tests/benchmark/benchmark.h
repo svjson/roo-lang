@@ -10,6 +10,35 @@ namespace LispleTest
 
   long now();
 
+  struct Counters
+  {
+    int eval_executions = 0;
+    int exec_executions = 0;
+
+    int rtvalues_constructed = 0;
+    int rtvalue_wrappers_constructed = 0;
+    int to_ast_conversions = 0;
+    int to_rtvalue_conversions = 0;
+
+    int exec_nodes_constructed = 0;
+    int call_nodes_constructed = 0;
+    int literal_nodes_constructed = 0;
+    int lookup_nodes_constructed = 0;
+
+    int user_functions_created = 0;
+    int user_functions_ast_created = 0;
+    int user_functions_rtval_created = 0;
+    int user_function_ast_invocations = 0;
+    int user_function_rtval_invocations = 0;
+    int user_function_wrong_path_invocations = 0;
+  };
+
+  extern Counters counter_snapshot;
+
+  void print_counters();
+  void snapshot_counters();
+  void restore_counter_snapshot();
+
   class SnippetBenchmark
   {
     Lisple::Reader reader;

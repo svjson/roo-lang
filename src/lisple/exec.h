@@ -69,6 +69,13 @@
 #define END_CLASS                                                                       \
   };
 
+#define FUNC_MAKE(EXEC_NAME) \
+  template <typename... Args> \
+  static Lisple::sptr_rtval make(Args&&... args) \
+  { \
+  return RTValue::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
+}
+
 #define EXECNODE_DISPATCH(NAME)                                                                  \
   DISP_DECL(inv_##NAME)                                                                 \
   EXECNODE_DECL(execnode_##NAME)
@@ -97,12 +104,14 @@
 #define FUNC_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                    \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   FUNC_DISPATCH(DISP_NAME1)                                                             \
+  FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
 #define FUNC_DECL2(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2)                        \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   FUNC_DISPATCH(DISP_NAME1)                                                             \
   FUNC_DISPATCH(DISP_NAME2)                                                             \
+  FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
 #define FUNC_DECL3(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2, DISP_NAME3)            \
@@ -110,17 +119,20 @@
   FUNC_DISPATCH(DISP_NAME1)                                                             \
   FUNC_DISPATCH(DISP_NAME2)                                                             \
   FUNC_DISPATCH(DISP_NAME3)                                                             \
+  FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
 #define SFORM_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                   \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   EXECNODE_DISPATCH(DISP_NAME1)                                                         \
+  FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
 #define SFORM_DECL2(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2)                       \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   EXECNODE_DISPATCH(DISP_NAME1)                                                         \
   EXECNODE_DISPATCH(DISP_NAME2)                                                         \
+  FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
 #define SFORM_DECL3(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2, DISP_NAME3)           \
@@ -128,6 +140,7 @@
   EXECNODE_DISPATCH(DISP_NAME1)                                                         \
   EXECNODE_DISPATCH(DISP_NAME2)                                                         \
   EXECNODE_DISPATCH(DISP_NAME3)                                                         \
+  FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
 #define SELECT_EXEC_DECL_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME

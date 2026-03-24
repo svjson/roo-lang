@@ -13,6 +13,16 @@ namespace Lisple
   {
     switch (v.type)
     {
+    case RTValue::Type::STRING:
+    {
+      sptr_rtval_v chars;
+      std::string& str = std::get<std::string>(v.value);
+      for (size_t i = 0; i < str.size(); i++)
+      {
+        chars.push_back(RTValue::character(str.at(i)));
+      }
+      return chars;
+    }
     case RTValue::Type::MAP:
     case RTValue::Type::VECTOR:
       return std::get<sptr_rtval_v>(v.value);

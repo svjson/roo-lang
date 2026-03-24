@@ -28,7 +28,7 @@ namespace Lisple
     void clear();
     virtual bool has(const Word& identifier) const;
     virtual std::shared_ptr<Object> lookup(const Word& identifier) const;
-    virtual sptr_rtval lookup(const std::string& identifier) const;
+    virtual sptr_rtval lookup_value(const std::string& identifier) const;
     std::shared_ptr<Array> get_keys() const;
   };
 } // namespace Lisple

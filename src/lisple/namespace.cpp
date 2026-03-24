@@ -29,6 +29,17 @@ namespace Lisple
     this->objects = std::move(lang);
   }
 
+  Namespace::Namespace(Type type,
+                       const std::string& name,
+                       std::map<std::string, sptr_sobject> lang,
+                       std::map<std::string, sptr_rtval> lang_symbols)
+    : type(type)
+    , name(name)
+  {
+    this->objects = std::move(lang);
+    this->values = std::move(lang_symbols);
+  }
+
   Namespace::Namespace(const std::string& name)
     : Namespace(Type::USER, name)
   {
@@ -73,6 +84,46 @@ namespace Lisple
     return nullptr;
   }
 
+  sptr_rtval Namespace::find_symbol(const Word& identifier) const
+  {
+    if (identifier.is_qualified())
+    {
+      if (aliased_namespaces.count(identifier.get_qualifier()))
+      {
+        Namespace* aliased = aliased_namespaces.at(identifier.get_qualifier());
+        if (aliased->has(identifier.get_identifier()))
+        {
+          return aliased->lookup_symbol(identifier.get_identifier());
+        }
+        return nullptr;
+      }
+    }
+    else if (this->values.count(identifier.get_identifier()))
+    {
+      return this->values.at(identifier.get_identifier());
+    }
+    else if (this->objects.count(identifier.get_identifier()))
+    {
+      sptr_sobject match = this->objects.at(identifier.get_identifier());
+      return Lisple::to_rt_value(match);
+    }
+
+    if (Scope::has(identifier))
+    {
+      return Scope::lookup_value(identifier.get_identifier());
+    }
+
+    for (auto* imported : imported_namespaces)
+    {
+      if (imported->has(identifier))
+      {
+        return imported->lookup_symbol(identifier.get_identifier());
+      }
+    }
+
+    return nullptr;
+  }
+
   bool Namespace::has(const Word& identifier) const
   {
     return this->find(identifier) != nullptr;
@@ -89,9 +140,21 @@ namespace Lisple
     return nullptr;
   }
 
-  Namespace Namespace::make_lang(std::map<std::string, sptr_sobject> lang)
+  sptr_rtval Namespace::lookup_symbol(const Word& identifier) const
   {
-    return Namespace(Type::LANG, "", lang);
+    sptr_rtval value = this->find_symbol(identifier);
+    if (value)
+    {
+      return value;
+    }
+
+    return nullptr;
+  }
+
+  Namespace Namespace::make_lang(std::map<std::string, sptr_sobject> lang,
+                                 std::map<std::string, sptr_rtval> lang_symbols)
+  {
+    return Namespace(Type::LANG, "", lang, lang_symbols);
   }
 
   Namespace::Type Namespace::get_type() const

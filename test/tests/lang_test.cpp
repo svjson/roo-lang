@@ -254,12 +254,14 @@ TEST(ResolveFunction, resolve)
 {
   // Given
   Lisple::Runtime runtime;
+  Lisple::sptr_sobject rt_lookup_result = runtime.lookup(Lisple::Word("concat"));
 
   // When
   auto result = runtime.eval("(resolve 'concat)");
 
   // Then
-  ASSERT_EQ(result, runtime.lookup(Lisple::Word("concat")));
+  ASSERT_EQ(result->get_type(), Lisple::Form::FUNCTION);
+  ASSERT_EQ(&result->as<Lisple::Executable>(), &rt_lookup_result->as<Lisple::Executable>());
 }
 
 TEST(ResolveFunction, nil_resolves_to_nil)

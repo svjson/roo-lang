@@ -79,7 +79,7 @@ namespace Lisple
     return nullptr;
   }
 
-  sptr_rtval Scope::lookup(const std::string& symbol) const
+  sptr_rtval Scope::lookup_value(const std::string& symbol) const
   {
     auto it = objects.find(symbol);
     if (it == objects.end())
@@ -92,7 +92,6 @@ namespace Lisple
 
       return v_it->second;
     }
-
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(it->second.get()))
     {
       return wrapper->val;

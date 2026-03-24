@@ -169,7 +169,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::executable(sptr_sobject& fn)
+  sptr_rtval RTValue::executable(const sptr_sobject& fn)
   {
     sptr_rtval val = std::make_shared<RTValue>();
     val->type = RTValue::Type::FUNCTION;

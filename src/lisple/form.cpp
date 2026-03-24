@@ -177,28 +177,36 @@ namespace Lisple
   QualifiableStringValue::QualifiableStringValue(Form type, const std::string& value)
     : Value(type, value)
   {
-    std::stringstream ss(value);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (std::getline(ss, token, '/'))
+    if (value == "/")
     {
-      tokens.push_back(token);
-    }
-
-    switch (tokens.size())
-    {
-    case 0:
-      throw IdentifierException("Invalid symbol. Cannot be empty.");
-    case 1:
       this->ns_qualifier = "";
-      this->identifier = tokens.front();
-      break;
-    case 2:
-      this->ns_qualifier = tokens.front();
-      this->identifier = tokens.back();
-      break;
-    default:
-      throw IdentifierException("Invalid symbol: " + value);
+      this->identifier = value;
+    }
+    else
+    {
+      std::stringstream ss(value);
+      std::vector<std::string> tokens;
+      std::string token;
+      while (std::getline(ss, token, '/'))
+      {
+        tokens.push_back(token);
+      }
+
+      switch (tokens.size())
+      {
+      case 0:
+        throw IdentifierException("Invalid symbol. Cannot be empty.");
+      case 1:
+        this->ns_qualifier = "";
+        this->identifier = tokens.front();
+        break;
+      case 2:
+        this->ns_qualifier = tokens.front();
+        this->identifier = tokens.back();
+        break;
+      default:
+        throw IdentifierException("Invalid symbol: " + value);
+      }
     }
   }
 

@@ -2,12 +2,11 @@
 #ifndef __RUNTIME_H_
 #define __RUNTIME_H_
 
-#include <map>
-#include <string>
-
-#include "type.h"
 #include "namespace.h"
 #include "reader.h"
+#include "type.h"
+#include <map>
+#include <string>
 
 namespace Lisple
 {
@@ -81,8 +80,7 @@ namespace Lisple
      * The Runtime instance will assume ownership of the provided std::map
      * of namespaces.
      */
-    Runtime(const std::string& main_ns,
-            std::map<const std::string, Namespace> namespaces);
+    Runtime(const std::string& main_ns, std::map<const std::string, Namespace> namespaces);
 
     /*!
      * @brief Creates a Lisple runtime with a host-provided namespaces in
@@ -118,7 +116,7 @@ namespace Lisple
      *
      * If not created, this method will return nullptr.
      */
-    Namespace* ns(const std::string& name, bool create_if_absent=false);
+    Namespace* ns(const std::string& name, bool create_if_absent = false);
 
     /*!
      * @brief Returns a reference to the current namespace of the reader context
@@ -157,6 +155,7 @@ namespace Lisple
     sptr_sobject exec(Context& ctx, sptr_sobject_v& list);
 
     sptr_sobject lookup(const Word& identifier);
+    sptr_rtval lookup_value(const Word& identifier);
     sptr_sobject lookup(const Word& identifier, sptr_sobject fallback);
     sptr_sobject lookup(const std::string& identifier);
     Namespace& get_ns_of(const Word& identifier);
@@ -187,6 +186,6 @@ namespace Lisple
 
     friend class Context;
   };
-}
+} // namespace Lisple
 
 #endif

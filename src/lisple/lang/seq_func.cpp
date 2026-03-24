@@ -101,7 +101,7 @@ namespace Lisple
 
   /** ReduceFunction - reduce */
   FUNC_IMPL(ReduceFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::FUNCTION)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&ReduceFunction::exec_reduce))))
 
   EXEC_BODY(ReduceFunction, exec_reduce)

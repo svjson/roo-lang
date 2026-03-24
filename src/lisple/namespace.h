@@ -38,6 +38,10 @@ namespace Lisple
 
     Namespace(Type type, const std::string& name);
     Namespace(Type type, const std::string& name, std::map<std::string, sptr_sobject> lang);
+    Namespace(Type type,
+              const std::string& name,
+              std::map<std::string, sptr_sobject> lang,
+              std::map<std::string, sptr_rtval> lang_symbols);
 
     /*!
      * @brief Fully import another namespaces
@@ -50,9 +54,14 @@ namespace Lisple
     void import_aliased(Namespace& ns, const std::string& alias);
 
     /*!
-     * σbrief Used internally to service Namspace::has and Namespace::lookup
+     * @brief Used internally to service Namespace::has and Namespace::lookup
      */
     sptr_sobject find(const Word& identifier) const;
+
+    /*!
+     * @brief Used internally to service Namespace::lookup_symbol
+     */
+    sptr_rtval find_symbol(const Word& identifier) const;
 
    public:
     /*!
@@ -78,12 +87,15 @@ namespace Lisple
      */
     sptr_sobject lookup(const Word& identifier) const override;
 
+    sptr_rtval lookup_symbol(const Word& identifier) const;
+
     void mutate(const Word& identifier, const sptr_sobject& obj) override;
 
     /*
      * Creates a language namespace. Intented for internal use only.
      */
-    static Namespace make_lang(std::map<std::string, sptr_sobject> lang);
+    static Namespace make_lang(std::map<std::string, sptr_sobject> lang,
+                               std::map<std::string, sptr_rtval> lang_symbols);
 
     friend class Runtime;
   };
