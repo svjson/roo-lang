@@ -133,15 +133,6 @@ namespace Lisple
     inline const TypeRef HOST_SEQ(RTValue::Type::OBJECT, Form::HOST_SEQ, "HostSeq");
     inline const TypeRef NIL(RTValue::Type::NIL, Form::NIL, "nil");
 
-    inline const SeqRef ARRAY_OF_ARRAY(&ARRAY, &ARRAY, "[Array]");
-    inline const SeqRef ARRAY_OF_KEY(&ARRAY, &KEY, "[Key]");
-    inline const SeqRef ARRAY_OF_FUNCTION(&ARRAY, &FUNCTION, "[Function]");
-    inline const SeqRef ARRAY_OF_NUMBER(&ARRAY, &NUMBER, "[Number]");
-    inline const SeqRef ARRAY_OF_CHAR(&ARRAY, &CHAR, "[Char]");
-    inline const SeqRef ARRAY_OF_STRING(&ARRAY, &STRING, "[String]");
-    inline const SeqRef ARRAY_OF_SYMBOL(&ARRAY, &SYMBOL, "[Symbol]");
-    inline const SeqRef ARRAY_OF_MAP(&ARRAY, &MAP, "[Map]");
-
     inline const MultiRef QUALIFIABLE({&KEY, &WORD, &SYMBOL}, "Qualifiable");
     inline const MultiRef SYMBOL_VALUE({&SYMBOL, &WORD}, "Symbol");
 
@@ -152,6 +143,16 @@ namespace Lisple
     inline const MultiRef EXEC(std::vector<const TypeRef*>{&FUNCTION, &MACRO, &KEY}, "Exec");
     inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP, &HOST_OBJECT},
                                   "Complex");
+
+    inline const SeqRef ARRAY_OF_ARRAY(&ARRAY, &ARRAY, "[Array]");
+    inline const SeqRef ARRAY_OF_KEY(&ARRAY, &KEY, "[Key]");
+    inline const SeqRef ARRAY_OF_FUNCTION(&ARRAY, &FUNCTION, "[Function]");
+    inline const SeqRef ARRAY_OF_NUMBER(&ARRAY, &NUMBER, "[Number]");
+    inline const SeqRef ARRAY_OF_CHAR(&ARRAY, &CHAR, "[Char]");
+    inline const SeqRef ARRAY_OF_STRING(&ARRAY, &STRING, "[String]");
+    inline const SeqRef ARRAY_OF_SYMBOL(&ARRAY, &SYMBOL, "[Symbol]");
+    inline const SeqRef ARRAY_OF_SYMBOL_VALUE(&ARRAY, &SYMBOL_VALUE, "[Symbol]");
+    inline const SeqRef ARRAY_OF_MAP(&ARRAY, &MAP, "[Map]");
 
     inline const AnyRef ANY;
   } // namespace Type
