@@ -37,6 +37,25 @@ namespace Lisple
     return EMPTY_STRING;
   }
 
+  char char_val(const Object& obj) noexcept
+  {
+    if (Type::NUMBER.is_type_of(obj) || *NIL == obj)
+    {
+      return Lisple::int_val(obj);
+    }
+
+    if (Type::CHAR.is_type_of(obj))
+    {
+      if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+      {
+        return std::get<char>(wrapper->val->value);
+      }
+      return obj.as<Value<char>>().value;
+    }
+
+    return '\0';
+  }
+
   short short_val(const Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))

@@ -2,13 +2,12 @@
 #ifndef __LISPLE__IMPL_H_
 #define __LISPLE__IMPL_H_
 
+#include "form.h"
+#include "type.h"
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <type_traits>
-
-#include "form.h"
-#include "type.h"
 
 namespace Lisple
 {
@@ -26,6 +25,8 @@ namespace Lisple
    * will return an empty string
    */
   const std::string str_val(const Object& obj) noexcept;
+
+  char char_val(const Object& obj) noexcept;
 
   /*!
    * @brief Get the unsigned int value of lisple symbol
@@ -54,17 +55,21 @@ namespace Lisple
   std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val);
 
   template <typename T>
-  typename std::enable_if<std::is_arithmetic<T>::value, T>::type unwrap_primitive(const Object &obj);
+  typename std::enable_if<std::is_arithmetic<T>::value, T>::type unwrap_primitive(
+    const Object& obj);
 
   template <typename T>
-  typename std::enable_if<!std::is_arithmetic<T>::value, T>::type unwrap_primitive(const Object &obj);
+  typename std::enable_if<!std::is_arithmetic<T>::value, T>::type unwrap_primitive(
+    const Object& obj);
 
   template <typename T>
-  sptr_sobject wrap_primitive(typename std::enable_if<std::is_arithmetic<T>::value, T>::type value);
+  sptr_sobject wrap_primitive(
+    typename std::enable_if<std::is_arithmetic<T>::value, T>::type value);
 
   template <typename T>
-  sptr_sobject wrap_primitive(const typename std::enable_if<!std::is_arithmetic<T>::value, T>::type& value);
+  sptr_sobject wrap_primitive(
+    const typename std::enable_if<!std::is_arithmetic<T>::value, T>::type& value);
 
-}
+} // namespace Lisple
 
 #endif
