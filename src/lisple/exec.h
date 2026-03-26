@@ -172,7 +172,8 @@
    public:                                                                              \
     MACRO_NAME();                                                                       \
                                                                                         \
-    Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args);
+  Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args); \
+  };
 
 #define MACRO_IMPL(MACRO_NAME, SIGNATURE)                                                          \
   MACRO_NAME::MACRO_NAME()                                                                         \
