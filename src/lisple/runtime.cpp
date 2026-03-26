@@ -82,6 +82,15 @@ namespace Lisple
     switch_namespace(main_ns);
   }
 
+  Runtime::Runtime(const std::vector<std::unique_ptr<Namespace>> namespaces, FileSystem* fs)
+    : Runtime(fs)
+  {
+    for (auto& ns : namespaces)
+    {
+      this->namespaces.emplace(ns->get_name(), std::move(*ns.get()));
+    }
+  }
+
   /**
    * Switching to a non-existent namespace will create it and store it the namespace map.
    * It is still empty when switched out, it will be evicted from the map.
