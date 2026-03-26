@@ -28,8 +28,8 @@ TEST(Context, lang_lookup)
   auto include = ctx.lookup(include_sym);
 
   // Then
-  EXPECT_EQ(def->get_type(), Lisple::Form::FUNCTION);
-  EXPECT_EQ(defun->get_type(), Lisple::Form::FUNCTION);
+  EXPECT_EQ(def->get_type(), Lisple::Form::MACRO);
+  EXPECT_EQ(defun->get_type(), Lisple::Form::MACRO);
   EXPECT_EQ(include->get_type(), Lisple::Form::FUNCTION);
 }
 

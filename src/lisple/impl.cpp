@@ -20,9 +20,18 @@ namespace Lisple
     }
 
     if (Type::STRING.is_type_of(obj) || Type::KEY.is_type_of(obj) ||
-        Type::SYMBOL.is_type_of(obj) || Type::WORD.is_type_of(obj))
+        Type::SYMBOL_VALUE.is_type_of(obj))
     {
+      if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+      {
+        return std::get<std::string>(wrapper->val->value);
+      }
       return obj.as<Value<std::string>>().value;
+    }
+
+    if (Type::WORD.is_type_of(obj))
+    {
+      return obj.to_string();
     }
 
     return EMPTY_STRING;
@@ -42,6 +51,11 @@ namespace Lisple
   {
     if (Type::NUMBER.is_type_of(obj))
     {
+      if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+      {
+        return std::get<Lisple::RTValue::Number>(wrapper->val->value).get_int();
+      }
+
       return obj.as<Number>().int_value();
     }
 

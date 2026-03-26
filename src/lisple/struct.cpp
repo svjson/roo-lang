@@ -1,12 +1,10 @@
 
 #include "struct.h"
 
-#include <map>
-#include <memory>
-
+#include "exception.h"
 #include "form.h"
 #include "type.h"
-#include "exception.h"
+#include <map>
 
 namespace Lisple
 {
@@ -35,9 +33,9 @@ namespace Lisple
       auto& val = map.get_property(*key);
       if (!valid_keys.at(key->to_string()).value_type->is_type_of(val))
       {
-        throw LispleException("Invalid value '" + val.to_string() + "' for property " + key->to_string() + " in " + map.to_string());
+        throw LispleException("Invalid value '" + val.to_string() + "' for property " +
+                              key->to_string() + " in " + map.to_string());
       }
     }
   }
-}
-
+} // namespace Lisple

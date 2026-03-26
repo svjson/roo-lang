@@ -2,13 +2,12 @@
 #ifndef __STRUCT_H_
 #define __STRUCT_H_
 
+#include "exception.h"
+#include "form.h"
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "form.h"
-#include "exception.h"
 
 namespace Lisple
 {
@@ -35,6 +34,10 @@ namespace Lisple
     template <class T>
     std::shared_ptr<T> get_value(Lisple::Object& map_obj, const Lisple::Object& key) const
     {
+      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&map_obj))
+      {
+        return get_value<T>(*wrapper->delegate, key);
+      }
       Lisple::Map& map = map_obj.as<Lisple::Map>();
       for (auto keyptr : map.keys())
       {
@@ -46,12 +49,13 @@ namespace Lisple
 
       if (valid_keys.at(key.to_string()).required)
       {
-        throw Lisple::LispleException("Key " + key.to_string() + " is required, but not present in " + map.to_string());
+        throw Lisple::LispleException("Key " + key.to_string() +
+                                      " is required, but not present in " + map.to_string());
       }
 
       return std::shared_ptr<T>();
     }
   };
-}
+} // namespace Lisple
 
 #endif

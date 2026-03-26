@@ -431,10 +431,10 @@ namespace Lisple
 
   template <class OT> OT& Object::as()
   {
-    if (auto* self = dynamic_cast<OT*>(this)) return *self;
-
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(this))
       return wrapper->delegate->as<OT>();
+
+    if (auto* self = dynamic_cast<OT*>(this)) return *self;
 
     throw LispleException("Unexpected AST node type: " + std::to_string((int)this->type));
   }
