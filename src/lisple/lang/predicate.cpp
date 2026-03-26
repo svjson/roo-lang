@@ -8,7 +8,7 @@ namespace Lisple
 
   EXEC_BODY(NotFunction, exec_not)
   {
-    return Lisple::is_truthy(*args[0]) ? Constant::FALSE : Constant::TRUE;
+    return Lisple::is_truthy(*args[0]) ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
 } // namespace Lisple

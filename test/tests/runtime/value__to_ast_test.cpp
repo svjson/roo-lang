@@ -4,8 +4,8 @@
 
 TEST(to_AST, boolean)
 {
-  EXPECT_EQ(Lisple::to_AST(*Lisple::Constant::TRUE), Lisple::B_TRUE);
-  EXPECT_EQ(Lisple::to_AST(*Lisple::Constant::FALSE), Lisple::B_FALSE);
+  EXPECT_EQ(Lisple::to_AST(*Lisple::Constant::BOOL_TRUE), Lisple::B_TRUE);
+  EXPECT_EQ(Lisple::to_AST(*Lisple::Constant::BOOL_FALSE), Lisple::B_FALSE);
 }
 
 TEST(to_AST, string)

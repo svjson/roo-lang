@@ -102,8 +102,8 @@ namespace Lisple
 
   namespace Constant
   {
-    inline const sptr_rtval TRUE = std::make_shared<RTValue>(true);
-    inline const sptr_rtval FALSE = std::make_shared<RTValue>(false);
+    inline const sptr_rtval BOOL_TRUE = std::make_shared<RTValue>(true);
+    inline const sptr_rtval BOOL_FALSE = std::make_shared<RTValue>(false);
     inline const sptr_rtval NIL = std::make_shared<RTValue>(std::monostate());
   } // namespace Constant
 

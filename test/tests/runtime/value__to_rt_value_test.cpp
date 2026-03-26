@@ -7,8 +7,8 @@ TEST(to_rt_value, boolean)
   Lisple::sptr_sobject t = Lisple::B_TRUE;
   Lisple::sptr_sobject f = Lisple::B_FALSE;
 
-  EXPECT_EQ(Lisple::to_rt_value(t), Lisple::Constant::TRUE);
-  EXPECT_EQ(Lisple::to_rt_value(f), Lisple::Constant::FALSE);
+  EXPECT_EQ(Lisple::to_rt_value(t), Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(Lisple::to_rt_value(f), Lisple::Constant::BOOL_FALSE);
 }
 
 TEST(to_rt_value, string)

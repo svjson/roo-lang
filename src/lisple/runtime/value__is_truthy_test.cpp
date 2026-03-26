@@ -4,8 +4,8 @@
 
 TEST(is_truthy, boolean)
 {
-  EXPECT_TRUE(Lisple::is_truthy(*Lisple::Constant::TRUE));
-  EXPECT_FALSE(Lisple::is_truthy(*Lisple::Constant::FALSE));
+  EXPECT_TRUE(Lisple::is_truthy(*Lisple::Constant::BOOL_TRUE));
+  EXPECT_FALSE(Lisple::is_truthy(*Lisple::Constant::BOOL_FALSE));
 }
 
 TEST(is_truthy, number)

@@ -80,7 +80,7 @@ namespace Lisple
     lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
     lang.emplace("eval", std::make_shared<EvalFunction>());
     lang.emplace("even?", std::make_shared<OddEvenPredicateFunction>(0));
-    lang_symbols.emplace("false", Constant::FALSE);
+    lang_symbols.emplace("false", Constant::BOOL_FALSE);
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
     lang.emplace("filter", std::make_shared<FilterFunction>());
     lang.emplace("find-first", std::make_shared<FindFirstFunction>());
@@ -140,7 +140,7 @@ namespace Lisple
     lang.emplace("tail", std::make_shared<TailFunction>());
     lang.emplace("take", std::make_shared<TakeFunction>());
     lang.emplace("threshold", std::make_shared<ThresholdFunction>());
-    lang_symbols.emplace("true", Constant::TRUE);
+    lang_symbols.emplace("true", Constant::BOOL_TRUE);
     lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
     lang.emplace("vector", std::make_shared<VectorFunction>());
     lang.emplace("when", std::make_shared<WhenMacro>());

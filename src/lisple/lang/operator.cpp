@@ -12,7 +12,7 @@ namespace Lisple
 
   EXEC_BODY(EqualsPredicateFunction, exec_equals)
   {
-    return *args[0] == *args[1] ? Constant::TRUE : Constant::FALSE;
+    return *args[0] == *args[1] ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /** PlusFunction - + */
@@ -157,8 +157,8 @@ namespace Lisple
 
     return std::get<RTValue::Number>(args[0]->value).get_float() <
                std::get<RTValue::Number>(args[1]->value).get_float()
-             ? Constant::TRUE
-             : Constant::FALSE;
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
   }
 
   EXEC_BODY(LessThanFunction, exec_lt_str)
@@ -169,7 +169,8 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return args[0]->to_string() < args[1]->to_string() ? Constant::TRUE : Constant::FALSE;
+    return args[0]->to_string() < args[1]->to_string() ? Constant::BOOL_TRUE
+                                                       : Constant::BOOL_FALSE;
   }
 
   /* LessThanOrEqualsFunction */
@@ -188,8 +189,8 @@ namespace Lisple
     }
     return std::get<RTValue::Number>(args[0]->value).get_float() <=
                std::get<RTValue::Number>(args[1]->value).get_float()
-             ? Constant::TRUE
-             : Constant::FALSE;
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
   }
 
   EXEC_BODY(LessThanOrEqualsFunction, exec_lte_str)
@@ -200,7 +201,8 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return args[0]->to_string() <= args[1]->to_string() ? Constant::TRUE : Constant::FALSE;
+    return args[0]->to_string() <= args[1]->to_string() ? Constant::BOOL_TRUE
+                                                        : Constant::BOOL_FALSE;
   }
 
   /* GreaterThanFunction */
@@ -219,8 +221,8 @@ namespace Lisple
     }
     return std::get<RTValue::Number>(args[0]->value).get_float() >
                std::get<RTValue::Number>(args[1]->value).get_float()
-             ? Constant::TRUE
-             : Constant::FALSE;
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
   }
 
   EXEC_BODY(GreaterThanFunction, exec_gt_str)
@@ -231,7 +233,8 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return args[0]->to_string() > args[1]->to_string() ? Constant::TRUE : Constant::FALSE;
+    return args[0]->to_string() > args[1]->to_string() ? Constant::BOOL_TRUE
+                                                       : Constant::BOOL_FALSE;
   }
 
   /* GreaterThanOrEqualsFunction */
@@ -250,8 +253,8 @@ namespace Lisple
     }
     return std::get<RTValue::Number>(args[0]->value).get_float() >=
                std::get<RTValue::Number>(args[1]->value).get_float()
-             ? Constant::TRUE
-             : Constant::FALSE;
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
   }
 
   EXEC_BODY(GreaterThanOrEqualsFunction, exec_gte_str)
@@ -261,7 +264,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return args[0]->to_string() >= args[1]->to_string() ? Constant::TRUE : Constant::FALSE;
+    return args[0]->to_string() >= args[1]->to_string() ? Constant::BOOL_TRUE
+                                                        : Constant::BOOL_FALSE;
   }
 
 } // namespace Lisple

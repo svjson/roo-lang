@@ -83,7 +83,7 @@ namespace Lisple
       val = exec(ctx, *arg);
       if (!Lisple::is_truthy(*val))
       {
-        return Constant::FALSE;
+        return Constant::BOOL_FALSE;
       }
     }
     return val;
@@ -123,7 +123,7 @@ namespace Lisple
       }
     }
 
-    return Constant::FALSE;
+    return Constant::BOOL_FALSE;
   }
 
   /** RndFunction - rnd */

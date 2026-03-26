@@ -70,7 +70,7 @@ namespace Lisple
 
   sptr_rtval RTValue::boolean(bool b)
   {
-    return b ? Constant::TRUE : Constant::FALSE;
+    return b ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   sptr_rtval RTValue::number(int v)

@@ -1153,8 +1153,8 @@ namespace Lisple
   std::shared_ptr<Object> RuntimeValueWrapper::make(const sptr_rtval& value)
   {
     if (*value == *Constant::NIL) return Lisple::NIL;
-    if (*value == *Constant::FALSE) return Lisple::B_FALSE;
-    if (*value == *Constant::TRUE) return Lisple::B_TRUE;
+    if (*value == *Constant::BOOL_FALSE) return Lisple::B_FALSE;
+    if (*value == *Constant::BOOL_TRUE) return Lisple::B_TRUE;
     switch (value->type)
     {
     case RTValue::Type::NUMBER:
