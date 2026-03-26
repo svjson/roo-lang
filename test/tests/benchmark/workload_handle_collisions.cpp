@@ -4494,7 +4494,7 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_AST_host_adapters_funcall_1
 {
 
   LispleTest::SnippetBenchmark bm(
-    "workload_1000_handle_collisions__inline_argset_1",
+    "workload_1000_handle_collisions_AST_host_adapters__inline_argset_1",
     {{"pixils.point", Tests::PointASTBasedNamespace("pixils.point")}},
     {
       ASTEROIDS__ASTEROID,
@@ -4513,15 +4513,16 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_AST_host_adapters_funcall_1
 TEST(Benchmark_Workload, benchmark_handle_collisions_host_adapters_funcall_1000_argset_1)
 {
 
-  LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
-                                  {{"pixils.point", Tests::PointNamespace("pixils.point")}},
-                                  {
-                                    ASTEROIDS__ASTEROID,
-                                    ASTEROIDS__DEBRIS,
-                                    ASTEROIDS__COLLISION + DEF_AREA + DEF_ARG_SET_1,
-                                  },
-                                  "asteroids.collision",
-                                  R"(
+  LispleTest::SnippetBenchmark bm(
+    "workload_1000_handle_collisions_host_adapters__inline_argset_1",
+    {{"pixils.point", Tests::PointNamespace("pixils.point")}},
+    {
+      ASTEROIDS__ASTEROID,
+      ASTEROIDS__DEBRIS,
+      ASTEROIDS__COLLISION + DEF_AREA + DEF_ARG_SET_1,
+    },
+    "asteroids.collision",
+    R"(
 (dotimes [1000] (handle-collisions {:player player
                                     :asteroids asteroids
                                     :particles particles} area))

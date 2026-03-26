@@ -242,7 +242,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "021_exec_path_for_for_d6a0ad0";
+    const std::string CHANGE_ME = "022_arg_coercion_on_exec_path_45ad9eb";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
