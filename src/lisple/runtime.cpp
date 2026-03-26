@@ -202,6 +202,11 @@ namespace Lisple
 
   sptr_sobject Runtime::eval(Context& ctx, const sptr_sobject& statement)
   {
+    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(statement.get()))
+    {
+      return eval(ctx, wrapper->delegate);
+    }
+
     switch (statement->get_type())
     {
     case Form::LIST:
