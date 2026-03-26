@@ -10,7 +10,7 @@ namespace Lisple
 {
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
-            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
                  EXEC_DISPATCH(&AssocFunction::exec_assoc))))
 
   EXEC_BODY(AssocFunction, exec_assoc)
