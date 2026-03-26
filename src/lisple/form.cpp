@@ -1165,6 +1165,9 @@ namespace Lisple
       return Key::make(std::get<std::string>(value->value));
     case RTValue::Type::SYMBOL:
       return Word::make(std::get<std::string>(value->value));
+    case RTValue::Type::OBJECT:
+    case RTValue::Type::FUNCTION:
+      return std::get<sptr_sobject>(value->value);
     default:
       return std::make_shared<RuntimeValueWrapper>(value);
     }
