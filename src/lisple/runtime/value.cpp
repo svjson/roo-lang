@@ -356,6 +356,7 @@ namespace Lisple
     }
     case Form::STRING:
       return RTValue::string(Value<std::string>::value_of(*obj));
+    case Form::SYMBOL:
     case Form::WORD:
       return RTValue::symbol(Value<std::string>::value_of(*obj));
     default:
