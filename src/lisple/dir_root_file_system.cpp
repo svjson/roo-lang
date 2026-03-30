@@ -1,32 +1,40 @@
 
 #include "dir_root_file_system.h"
 
-#include <fstream>
-#include <string>
-#include <sstream>
-
 #include "exception.h"
+#include <fstream>
+#include <sstream>
+#include <string>
 
 namespace Lisple
 {
   DirRootFileSystem::DirRootFileSystem(const std::string& dir_root)
-    : dir_root(dir_root)
+    : DirRootFileSystem(std::vector<std::string>{dir_root})
   {
+  }
 
+  DirRootFileSystem::DirRootFileSystem(const std::vector<std::string>& load_paths)
+    : load_paths(load_paths)
+  {
   }
 
   const std::string DirRootFileSystem::read_file_to_string(const std::string& file_name)
   {
-    const std::string relative_path = dir_root + "/" + file_name;
-    std::ifstream stream(relative_path);
-    if (stream.fail())
+    for (auto& load_path : load_paths)
     {
-      throw LispleException("File not found: " + relative_path);
+      const std::string relative_path = load_path + "/" + file_name;
+      std::ifstream stream(relative_path);
+      if (stream.fail())
+      {
+        stream.close();
+        continue;
+      }
+      std::stringstream buffer;
+      buffer << stream.rdbuf();
+      stream.close();
+      return buffer.str();
     }
-    std::stringstream buffer;
-    buffer << stream.rdbuf();
-    stream.close();
-    return buffer.str();
+    throw LispleException("File not found on load path: '" + file_name + "'");
   }
 
-}
+} // namespace Lisple
