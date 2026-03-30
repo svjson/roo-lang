@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include "lisple/runtime/exec_tree.h"
+
 namespace Lisple
 {
   const std::string DEFAULT_NAMESPACE = "user";
@@ -334,6 +336,28 @@ namespace Lisple
   {
     auto elements = eval_sexpression(ctx, map);
     return std::make_shared<Map>(elements);
+  }
+
+  sptr_rtval Runtime::invoke(const std::string& function, sptr_rtval_v& args)
+  {
+    Context ctx(*this);
+    sptr_rtval inv = lookup_value(Word(function));
+    if (inv->type != RTValue::Type::FUNCTION)
+    {
+      throw new InvocationException(inv->to_string() + " is not executable.");
+    }
+
+    sptr_sobject& fun_obj = std::get<sptr_sobject>(inv->value);
+    Executable& exec = fun_obj->as<Executable>();
+    try
+    {
+      return exec.execute(ctx, args);
+    }
+    catch (std::exception& e)
+    {
+      throw InvocationException("Error while invoking " + function + ":\n" +
+                                inv->to_string() + "\n" + e.what());
+    }
   }
 
   sptr_sobject Runtime::call_fn(const std::string& identifier, sptr_sobject_v& args)

@@ -154,6 +154,8 @@ namespace Lisple
     sptr_sobject eval(const sptr_sobject& sexp);
     sptr_sobject eval(Context& ctx, const sptr_sobject& sexp);
 
+    sptr_rtval invoke(const std::string& function, sptr_rtval_v& args);
+
     /*!
      * @brief Call a Lisple function by name with the provided arguments
      */
