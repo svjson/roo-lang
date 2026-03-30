@@ -48,6 +48,34 @@ namespace Lisple
     throw LispleException("Cannot get children from type: " + std::to_string((int)v.type));
   }
 
+  sptr_rtval get_child(RTValue& seq, size_t index)
+  {
+    switch (seq.type)
+    {
+    case RTValue::Type::VECTOR:
+      return std::get<sptr_rtval_v>(seq.value).at(index);
+    default:
+      throw LispleException("get_child is not implemented for type: " +
+                            std::to_string((int)seq.type));
+    }
+  }
+
+  sptr_rtval pop_child(RTValue& seq)
+  {
+    switch (seq.type)
+    {
+    case RTValue::Type::VECTOR:
+    {
+      auto& vec = std::get<sptr_rtval_v>(seq.value);
+      auto item = vec.back();
+      vec.pop_back();
+      return item;
+    }
+    default:
+      throw LispleException("get_child is not implemented for type: " +
+                            std::to_string((int)seq.type));
+    }
+  }
   size_t count(RTValue& v)
   {
     switch (v.type)
@@ -63,6 +91,19 @@ namespace Lisple
       return std::get<sptr_sobject>(v.value)->size();
     default:
       return 1;
+    }
+  }
+
+  void append(RTValue& seq, const sptr_rtval& value)
+  {
+    if (seq.type == RTValue::Type::VECTOR)
+    {
+      std::get<sptr_rtval_v>(seq.value).push_back(value);
+    }
+    else
+    {
+      throw TypeError("append not implemented for RTValue type: " +
+                      std::to_string((int)seq.type));
     }
   }
 

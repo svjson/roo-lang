@@ -38,6 +38,8 @@ namespace Lisple
   unsigned short ushort_val(const Object& obj);
   float float_val(const Object& obj);
 
+  std::pair<std::string, std::string> split_qualifiable(const std::string& str);
+
   /*!
    * @brief Create a copy of a sexp form with a substituted child element
    */

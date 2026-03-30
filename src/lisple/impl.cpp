@@ -4,8 +4,8 @@
 #include "exception.h"
 #include "form.h"
 #include "type.h"
-#include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
 namespace Lisple
@@ -54,6 +54,38 @@ namespace Lisple
     }
 
     return '\0';
+  }
+
+  std::pair<std::string, std::string> split_qualifiable(const std::string& str)
+  {
+    if (str == "/")
+    {
+      return {"", str};
+    }
+    else
+    {
+      std::stringstream ss(str);
+      std::vector<std::string> tokens;
+      std::string token;
+      while (std::getline(ss, token, '/'))
+      {
+        tokens.push_back(token);
+      }
+
+      switch (tokens.size())
+      {
+      case 0:
+        return {"", ""};
+      case 1:
+        return {"", tokens.front()};
+        break;
+      case 2:
+        return {tokens.front(), tokens.back()};
+        break;
+      default:
+        throw IdentifierException("Invalid qualifier: " + str);
+      }
+    }
   }
 
   short short_val(const Object& obj)

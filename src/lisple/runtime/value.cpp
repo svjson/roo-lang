@@ -5,6 +5,8 @@
 #include "../form.h"
 #include "pool.h"
 
+#include "lisple/impl.h"
+
 namespace Lisple
 {
   int rtvalues_constructed = 0;
@@ -54,6 +56,20 @@ namespace Lisple
     }
   }
 
+  long RTValue::Number::get_long() const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return static_cast<long>(int_value);
+    case NumberType::LONG:
+      return long_value;
+    case NumberType::FLOAT:
+    default:
+      return float_value;
+    }
+  }
+
   float RTValue::Number::get_float() const
   {
     switch (num_type)
@@ -62,6 +78,20 @@ namespace Lisple
       return int_value;
     case NumberType::LONG:
       return static_cast<int>(long_value);
+    case NumberType::FLOAT:
+    default:
+      return float_value;
+    }
+  }
+
+  double RTValue::Number::get_double() const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return int_value;
+    case NumberType::LONG:
+      return long_value;
     case NumberType::FLOAT:
     default:
       return float_value;
@@ -294,6 +324,46 @@ namespace Lisple
     }
   }
 
+  uint8_t RTValue::ui8() const
+  {
+    return std::get<Number>(value).get_int();
+  }
+
+  int RTValue::i32() const
+  {
+    return std::get<Number>(value).get_int();
+  }
+
+  long RTValue::i64() const
+  {
+    return std::get<Number>(value).get_long();
+  }
+
+  float RTValue::f32() const
+  {
+    return std::get<Number>(value).get_float();
+  }
+
+  double RTValue::f64() const
+  {
+    return std::get<Number>(value).get_double();
+  }
+
+  sptr_sobject RTValue::obj() const
+  {
+    return std::get<sptr_sobject>(value);
+  }
+
+  const std::string& RTValue::str() const
+  {
+    return std::get<std::string>(value);
+  }
+
+  std::pair<std::string, std::string> RTValue::qual() const
+  {
+    return Lisple::split_qualifiable(str());
+  }
+
   sptr_rtval to_rt_value(std::shared_ptr<Object>& obj)
   {
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(obj.get())) return wrapper->val;
@@ -319,6 +389,7 @@ namespace Lisple
     case Form::CHAR:
       return RTValue::character(Value<char>::value_of(*obj));
     case Form::FUNCTION:
+      return RTValue::executable(obj);
     case Form::MACRO:
       return RTValue::object(obj);
     case Form::HOST_OBJECT:

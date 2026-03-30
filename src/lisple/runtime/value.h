@@ -15,6 +15,7 @@ namespace Lisple
   class Object;
   class Executable;
   struct RTValue;
+  template <class T> class HostObject;
 
   using sptr_rtval = std::shared_ptr<RTValue>;
   using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
@@ -59,8 +60,8 @@ namespace Lisple
 
       int get_int() const;
       long get_long() const;
-      double get_double() const;
       float get_float() const;
+      double get_double() const;
     };
 
     using Data = std::variant<sptr_sobject,
@@ -98,6 +99,15 @@ namespace Lisple
 
     static std::string to_string(const sptr_rtval_v&);
     std::string to_string() const;
+
+    uint8_t ui8() const;
+    int i32() const;
+    long i64() const;
+    float f32() const;
+    double f64() const;
+    const std::string& str() const;
+    sptr_sobject obj() const;
+    std::pair<std::string, std::string> qual() const;
   };
 
   namespace Constant
@@ -110,7 +120,6 @@ namespace Lisple
   sptr_rtval to_rt_value(sptr_sobject& obj);
   sptr_sobject to_AST(RTValue& val);
   bool is_truthy(RTValue& val);
-
 } // namespace Lisple
 
 #endif /* LISPLE__VALUE_H */
