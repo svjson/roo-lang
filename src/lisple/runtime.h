@@ -112,6 +112,10 @@ namespace Lisple
 
     Runtime(std::vector<std::unique_ptr<Namespace>> namespaces, FileSystem* fs);
 
+    Runtime(const std::string& main_ns,
+            std::vector<std::unique_ptr<Namespace>> namespaces,
+            FileSystem* fs);
+
     /*!
      * @brief Switch the namespace in which the lisple engine currently operates.
      * If the namespace does not currently exist, it will be created.

@@ -82,13 +82,21 @@ namespace Lisple
     switch_namespace(main_ns);
   }
 
-  Runtime::Runtime(const std::vector<std::unique_ptr<Namespace>> namespaces, FileSystem* fs)
+  Runtime::Runtime(std::vector<std::unique_ptr<Namespace>> namespaces, FileSystem* fs)
+    : Runtime(DEFAULT_NAMESPACE, std::move(namespaces), fs)
+  {
+  }
+
+  Runtime::Runtime(const std::string& default_namespace,
+                   std::vector<std::unique_ptr<Namespace>> namespaces,
+                   FileSystem* fs)
     : Runtime(fs)
   {
     for (auto& ns : namespaces)
     {
       this->namespaces.emplace(ns->get_name(), std::move(*ns.get()));
     }
+    switch_namespace(default_namespace);
   }
 
   /**
