@@ -515,7 +515,11 @@ namespace Lisple
 
   sptr_rtval Signature::invoke(Context& ctx, ptr_exec_node_v& args)
   {
-    return exec_func(ctx, args);
+    if (exec_func)
+    {
+      return exec_func(ctx, args);
+    }
+    throw LispleException("Bad execution path - Exec node execution not supported");
   }
 
   sptr_rtval Signature::invoke(Context& ctx, sptr_rtval_v& args)
@@ -542,17 +546,34 @@ namespace Lisple
       }
     }
 
-    ptr_exec_node_v node_args;
-    uptr_exec_node_v uptr_node_args;
-    node_args.reserve(args.size());
-    uptr_node_args.reserve(args.size());
-
-    for (auto& val : args)
+    if (exec_func != nullptr)
     {
-      uptr_node_args.push_back(std::make_unique<ExecNode>(LiteralNode(val)));
-      node_args.push_back(uptr_node_args.back().get());
+      ptr_exec_node_v node_args;
+      uptr_exec_node_v uptr_node_args;
+      node_args.reserve(args.size());
+      uptr_node_args.reserve(args.size());
+
+      for (auto& val : args)
+      {
+        uptr_node_args.push_back(std::make_unique<ExecNode>(LiteralNode(val)));
+        node_args.push_back(uptr_node_args.back().get());
+      }
+      return exec_func(ctx, node_args);
     }
-    return exec_func(ctx, node_args);
+
+    if (target_func != nullptr)
+    {
+      sptr_sobject_v obj_args;
+      for (auto& val : args)
+      {
+        obj_args.push_back(RuntimeValueWrapper::make(val));
+      }
+
+      sptr_sobject result = target_func(ctx, obj_args);
+      return Lisple::to_rt_value(result);
+    }
+
+    throw LispleException("Bad execution path");
   }
 
   std::string Signature::to_string() const
