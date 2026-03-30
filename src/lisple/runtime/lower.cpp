@@ -75,7 +75,8 @@ namespace Lisple
     }
 
     default:
-      throw LispleException("Lowering not implemented for form");
+      throw LispleException("Lowering not implemented for form: " +
+                            std::to_string((int)obj->get_type()));
     }
   }
 
