@@ -1,7 +1,6 @@
 
-#include "operator.h"
-
-#include "lisple/exception.h"
+#include <lisple/exception.h>
+#include <lisple/lang/operator.h>
 
 namespace Lisple
 {

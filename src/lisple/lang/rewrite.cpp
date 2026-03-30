@@ -1,6 +1,5 @@
 
-#include "rewrite.h"
-
+#include <lisple/lang/rewrite.h>
 #include <variant>
 
 namespace Lisple

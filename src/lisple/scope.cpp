@@ -1,10 +1,10 @@
 
-#include "scope.h"
+#include "lisple/scope.h"
 
-#include "exception.h"
-#include "form.h"
-#include "runtime/value.h"
-#include "type.h"
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/runtime/value.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

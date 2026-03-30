@@ -1,11 +1,10 @@
 
-#include "value.h"
+#include "lisple/runtime/value.h"
 
-#include "../exception.h"
-#include "../form.h"
-#include "pool.h"
-
-#include "lisple/impl.h"
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/impl.h>
+#include <lisple/runtime/pool.h>
 
 namespace Lisple
 {

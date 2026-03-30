@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project(lisple VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_BUILD_TYPE Release)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 #set(CMAKE_CXX_COMPILER clang++)
@@ -71,8 +69,11 @@ target_link_libraries(lisple)
 
 target_include_directories(lisple
   PUBLIC
-    src
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
+
+install(DIRECTORY include/ DESTINATION include)
 
 # Enable Include What You Use analyzer with USE_IWYU=true
 if(DEFINED ENV{USE_IWYU})

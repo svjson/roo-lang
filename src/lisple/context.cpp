@@ -1,15 +1,12 @@
 
-#include "context.h"
+#include "lisple/context.h"
 
-#include "exception.h"
-#include "form.h"
-#include "namespace.h"
-#include "runtime.h"
-#include "scope.h"
-#include "type.h"
-#include <utility>
-
-#include "lisple/runtime/value.h"
+#include <lisple/exception.h>
+#include <lisple/namespace.h>
+#include <lisple/runtime.h>
+#include <lisple/runtime/value.h>
+#include <lisple/scope.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

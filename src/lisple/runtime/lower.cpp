@@ -1,7 +1,7 @@
 
-#include "lower.h"
+#include "lisple/runtime/lower.h"
 
-#include "../exception.h"
+#include <lisple/exception.h>
 
 namespace Lisple
 {

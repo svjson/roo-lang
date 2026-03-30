@@ -1,11 +1,11 @@
 
-#include "host.h"
+#include "lisple/host.h"
 
-#include "context.h"
-#include "exception.h"
-#include "exec.h"
-#include "form.h"
-#include "type.h"
+#include <lisple/context.h>
+#include <lisple/exception.h>
+#include <lisple/exec.h>
+#include <lisple/form.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {
@@ -123,6 +123,7 @@ namespace Lisple
     if (make_fn)
     {
       sptr_rtval function = ctx.lookup_value(*make_fn);
+
       if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
       {
         throw InvocationException(

@@ -1,9 +1,10 @@
 
-#include "dict.h"
+#include "lisple/runtime/dict.h"
 
-#include "seq.h"
 #include <algorithm>
 #include <iostream>
+
+#include <lisple/runtime/seq.h>
 
 namespace Lisple::Dict
 {
@@ -105,9 +106,6 @@ namespace Lisple::Dict
 
     for (size_t i = 0; i < children.size(); i += 2)
     {
-      // std::cout << " - Inspect #" << i << std::endl;
-      // std::cout << "   - " << children[i]->to_string() << " vs " << property->to_string()
-      //           << " - " << (*children[i] == *property) << std::endl;
       if (*children[i] == *property)
       {
         index = i;
@@ -117,7 +115,6 @@ namespace Lisple::Dict
 
     if (index != -1)
     {
-      // std::cout << " - Erase entry" << std::endl;
       removed_val = children[index + 1];
       children.erase(children.begin() + index, children.begin() + index + 2);
     }

@@ -1,17 +1,18 @@
 
-#include "form.h"
+#include "lisple/form.h"
 
-#include "exception.h"
-#include "type.h"
 #include <algorithm>
 #include <cmath>
 #include <iterator>
 #include <sstream>
-#include <stddef.h>
 #include <stdexcept>
 
-#include "lisple/runtime/dict.h"
-#include "lisple/runtime/value.h"
+#include <lisple/exception.h>
+#include <lisple/runtime/dict.h>
+#include <lisple/runtime/value.h>
+#include <lisple/type.h>
+
+#include <stddef.h>
 
 namespace Lisple
 {

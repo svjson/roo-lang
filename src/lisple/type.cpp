@@ -1,9 +1,9 @@
 
-#include "type.h"
+#include "lisple/type.h"
 
-#include "context.h"
-#include "form.h"
-#include "runtime/seq.h"
+#include <lisple/context.h>
+#include <lisple/form.h>
+#include <lisple/runtime/seq.h>
 
 namespace Lisple
 {

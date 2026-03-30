@@ -1,11 +1,11 @@
 
-#include "reader.h"
+#include "lisple/reader.h"
 
 #include <vector>
 
-#include "lexer.h"
-#include "parser.h"
-#include "type.h"
+#include <lisple/lexer.h>
+#include <lisple/parser.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {
@@ -14,5 +14,4 @@ namespace Lisple
     auto symbols = lexer.read_symbols(input);
     return parser.parse_sexps(symbols);
   }
-}
-
+} // namespace Lisple

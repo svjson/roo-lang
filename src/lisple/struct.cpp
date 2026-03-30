@@ -1,10 +1,11 @@
 
-#include "struct.h"
+#include "lisple/struct.h"
 
-#include "exception.h"
-#include "form.h"
-#include "type.h"
 #include <map>
+
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

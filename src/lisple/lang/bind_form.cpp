@@ -1,11 +1,9 @@
 
-#include "bind_form.h"
-
-#include "../bind.h"
-#include "../exception.h"
-#include "../runtime/exec_node.h"
-
-#include "lisple/runtime/eval_plan.h"
+#include <lisple/bind.h>
+#include <lisple/exception.h>
+#include <lisple/lang/bind_form.h>
+#include <lisple/runtime/eval_plan.h>
+#include <lisple/runtime/exec_node.h>
 
 namespace Lisple
 {

@@ -1,11 +1,11 @@
 
-#include "adapter.h"
-#include "host.h"
+#include "lisple/adapter.h"
+
+#include <lisple/host.h>
 
 namespace Lisple
 {
-  StdVectorTraits::StdVectorTraits(const HostTypeRef* type_ref,
-                                   const TypeRef* value_type)
+  StdVectorTraits::StdVectorTraits(const HostTypeRef* type_ref, const TypeRef* value_type)
     : AdapterTraits(type_ref, Lisple::NO_ACCESSORS)
     , value_type(value_type)
   {
@@ -19,4 +19,4 @@ namespace Lisple
     , value_type(value_type)
   {
   }
-}
+} // namespace Lisple

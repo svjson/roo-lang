@@ -1,8 +1,7 @@
 
-#include "base.h"
-
-#include "../runtime/exec_node.h"
-#include "../runtime/value.h"
+#include <lisple/lang/base.h>
+#include <lisple/runtime/exec_node.h>
+#include <lisple/runtime/value.h>
 
 namespace Lisple
 {

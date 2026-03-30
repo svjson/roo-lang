@@ -1,7 +1,6 @@
 
-#include "func.h"
-
-#include "../exec.h"
+#include <lisple/exec.h>
+#include <lisple/lang/func.h>
 
 namespace Lisple
 {

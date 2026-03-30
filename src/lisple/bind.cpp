@@ -1,10 +1,9 @@
-#include "bind.h"
+#include "lisple/bind.h"
 
-#include "exception.h"
-#include "runtime/dict.h"
-#include "scope.h"
-
-#include "lisple/form.h"
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/runtime/dict.h>
+#include <lisple/scope.h>
 
 namespace Lisple
 {

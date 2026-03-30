@@ -1,8 +1,7 @@
 
-#include "seq.h"
-
-#include "../runtime/seq.h"
 #include <cmath>
+#include <lisple/lang/seq.h>
+#include <lisple/runtime/seq.h>
 
 namespace Lisple
 {

@@ -1,10 +1,9 @@
 
-#include "struct.h"
-
-#include "../host.h"
-#include "../runtime/dict.h"
-#include "../runtime/seq.h"
-#include "../runtime/value.h"
+#include <lisple/host.h>
+#include <lisple/lang/struct.h>
+#include <lisple/runtime/dict.h>
+#include <lisple/runtime/seq.h>
+#include <lisple/runtime/value.h>
 
 namespace Lisple
 {

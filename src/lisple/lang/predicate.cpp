@@ -1,5 +1,5 @@
 
-#include "predicate.h"
+#include <lisple/lang/predicate.h>
 
 namespace Lisple
 {

@@ -1,10 +1,8 @@
 
-#include "seq_func.h"
-
-#include "../runtime/seq.h"
 #include <algorithm>
-
-#include "lisple/runtime/value.h"
+#include <lisple/lang/seq_func.h>
+#include <lisple/runtime/seq.h>
+#include <lisple/runtime/value.h>
 
 namespace Lisple
 {

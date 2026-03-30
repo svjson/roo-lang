@@ -1,10 +1,8 @@
 
-#include "schema.h"
-
-#include "../context.h"
-#include "../runtime/dict.h"
-
-#include "lisple/exception.h"
+#include <lisple/context.h>
+#include <lisple/exception.h>
+#include <lisple/host/schema.h>
+#include <lisple/runtime/dict.h>
 
 namespace Lisple
 {

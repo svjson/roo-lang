@@ -1,11 +1,10 @@
 
-#include "seq.h"
+#include "lisple/runtime/seq.h"
 
-#include "../form.h"
-#include "../type.h"
-#include "value.h"
-
-#include "lisple/exception.h"
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/runtime/value.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

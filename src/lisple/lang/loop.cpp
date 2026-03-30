@@ -1,12 +1,10 @@
 
-#include "loop.h"
-
-#include "../bind.h"
-#include "../exception.h"
-#include "../runtime/lower.h"
-#include "../runtime/seq.h"
-
-#include "lisple/runtime/eval_plan.h"
+#include <lisple/bind.h>
+#include <lisple/exception.h>
+#include <lisple/lang/loop.h>
+#include <lisple/runtime/eval_plan.h>
+#include <lisple/runtime/lower.h>
+#include <lisple/runtime/seq.h>
 
 namespace Lisple
 {

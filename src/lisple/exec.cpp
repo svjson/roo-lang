@@ -1,21 +1,21 @@
 
-#include "exec.h"
+#include "lisple/exec.h"
 
-#include "context.h"
-#include "exception.h"
-#include "form.h"
-#include "namespace.h"
-#include "runtime/exec_node.h"
-#include "runtime/lower.h"
-#include "runtime/value.h"
-#include "scope.h"
-#include "type.h"
 #include <memory>
 #include <sstream>
 #include <utility>
 
-#include "lisple/bind.h"
-#include "lisple/runtime/exec_tree.h"
+#include <lisple/bind.h>
+#include <lisple/context.h>
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/namespace.h>
+#include <lisple/runtime/exec_node.h>
+#include <lisple/runtime/exec_tree.h>
+#include <lisple/runtime/lower.h>
+#include <lisple/runtime/value.h>
+#include <lisple/scope.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

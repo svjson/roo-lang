@@ -1,12 +1,13 @@
 
-#include "parser.h"
+#include "lisple/parser.h"
 
-#include "exception.h"
-#include "form.h"
-#include "lexer.h"
-#include "type.h"
 #include <string>
 #include <utility>
+
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/lexer.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

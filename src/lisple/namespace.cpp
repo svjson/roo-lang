@@ -1,14 +1,14 @@
 
-#include "namespace.h"
+#include "lisple/namespace.h"
 
-#include "exception.h"
-#include "form.h"
-#include "scope.h"
-#include "type.h"
 #include <algorithm>
-#include <memory>
 #include <regex>
 #include <utility>
+
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/scope.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {

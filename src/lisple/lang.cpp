@@ -1,41 +1,43 @@
 
-#include "lang.h"
+#include "lisple/lang.h"
 
-#include "bind.h"
-#include "context.h"
-#include "exception.h"
-#include "exec.h"
-#include "form.h"
-#include "host.h"
-#include "impl.h"
-#include "lang/base.h"
-#include "lang/bind_form.h"
-#include "lang/branch.h"
-#include "lang/func.h"
-#include "lang/loop.h"
-#include "lang/math.h"
-#include "lang/operator.h"
-#include "lang/predicate.h"
-#include "lang/rewrite.h"
-#include "lang/seq.h"
-#include "lang/seq_func.h"
-#include "lang/string.h"
-#include "lang/struct.h"
-#include "namespace.h"
-#include "runtime/dict.h"
-#include "scope.h"
-#include "type.h"
 #include <algorithm>
-#include <bits/std_abs.h>
 #include <cmath>
 #include <cstdlib>
-#include <ctype.h>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <lisple/bind.h>
+#include <lisple/context.h>
+#include <lisple/exception.h>
+#include <lisple/exec.h>
+#include <lisple/form.h>
+#include <lisple/host.h>
+#include <lisple/impl.h>
+#include <lisple/lang/base.h>
+#include <lisple/lang/bind_form.h>
+#include <lisple/lang/branch.h>
+#include <lisple/lang/func.h>
+#include <lisple/lang/loop.h>
+#include <lisple/lang/math.h>
+#include <lisple/lang/operator.h>
+#include <lisple/lang/predicate.h>
+#include <lisple/lang/rewrite.h>
+#include <lisple/lang/seq.h>
+#include <lisple/lang/seq_func.h>
+#include <lisple/lang/string.h>
+#include <lisple/lang/struct.h>
+#include <lisple/namespace.h>
+#include <lisple/runtime/dict.h>
+#include <lisple/scope.h>
+#include <lisple/type.h>
+
+#include <bits/std_abs.h>
+#include <ctype.h>
 
 namespace Lisple
 {

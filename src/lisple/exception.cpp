@@ -1,5 +1,5 @@
 
-#include "exception.h"
+#include "lisple/exception.h"
 
 namespace Lisple
 {
@@ -43,4 +43,4 @@ namespace Lisple
   {
   }
 
-}
+} // namespace Lisple

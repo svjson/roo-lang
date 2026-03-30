@@ -1,7 +1,6 @@
 
-#include "math.h"
-
 #include <cmath>
+#include <lisple/lang/math.h>
 
 namespace Lisple
 {
