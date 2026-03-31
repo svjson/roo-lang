@@ -12,8 +12,6 @@
 
 namespace Lisple
 {
-  std::regex regex_ns{"^[a-zA-Z0-9\\-_]+(\\.[a-zA-Z0-9\\-_]+)*$"};
-
   Namespace::Namespace(Type type, const std::string& name)
     : type(type)
     , name(name)
@@ -43,6 +41,7 @@ namespace Lisple
   Namespace::Namespace(const std::string& name)
     : Namespace(Type::USER, name)
   {
+    static std::regex regex_ns{"^[a-zA-Z0-9\\-_]+(\\.[a-zA-Z0-9\\-_]+)*$"};
     if (!std::regex_match(name, regex_ns))
     {
       throw NamespaceException("Invalid namespace name: '" + name + "'");
