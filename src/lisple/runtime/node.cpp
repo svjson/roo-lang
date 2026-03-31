@@ -47,6 +47,19 @@ namespace Lisple
     call_nodes_constructed++;
   }
 
+  bool CallNode::is_literal_arg_list()
+  {
+    for (auto& arg : args)
+    {
+      if (nullptr == std::get_if<LiteralNode>(&arg->data))
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   ExecNodeList::ExecNodeList(const std::vector<ExecNode*>& nodes)
     : nodes(nodes)
   {

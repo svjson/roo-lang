@@ -68,6 +68,8 @@ namespace Lisple
 
     CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args);
 
+    bool is_literal_arg_list();
+
     std::string to_string(size_t indent_level = 0);
   };
 

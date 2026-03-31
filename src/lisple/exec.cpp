@@ -326,6 +326,15 @@ namespace Lisple
     return this->exec_rtval != nullptr;
   }
 
+  bool Signature::is_lazy_eval() const
+  {
+    for (auto& arg : arguments)
+    {
+      if (!arg.evalp()) return true;
+    }
+    return false;
+  }
+
   bool Signature::matches(const uptr_exec_node_v& args) const
   {
     size_t args_size = args.size();
@@ -615,6 +624,16 @@ namespace Lisple
     }
 
     return false;
+  }
+
+  bool Executable::requires_late_binding(CallNode& call_node)
+  {
+    for (auto& sig : signatures)
+    {
+      if (sig->supports_exec_tree() || sig->is_lazy_eval()) return false;
+    }
+
+    return !call_node.is_literal_arg_list();
   }
 
   bool Executable::operator==(const Object& other) const

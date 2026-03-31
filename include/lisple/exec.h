@@ -322,6 +322,7 @@ namespace Lisple
 
     bool supports_exec_tree() const;
     bool supports_rt_value() const;
+    bool is_lazy_eval() const;
     bool matches(const sptr_sobject_v& args) const;
     bool matches(const sptr_rtval_v& args) const;
     bool matches(const uptr_exec_node_v& args) const;
@@ -330,6 +331,7 @@ namespace Lisple
     bool is_eval_arg(std::size_t index, std::size_t n) const;
     bool is_arg_pattern(std::size_t index) const;
     bool should_eval_arg(std::size_t index) const;
+
     /*
      * @brief Attempt to coerce arguments list to fit the Signature by inspecting
      * the signature types for possible conversions
@@ -364,6 +366,8 @@ namespace Lisple
 
     Signature* get_signature(Context& ctx, sptr_sobject_v& args);
     Signature* get_signature(Context& ctx, uptr_exec_node_v& args);
+
+    bool requires_late_binding(CallNode& args);
 
     virtual Lisple::sptr_sobject execute(Context& ctx, sptr_sobject_v& args) override;
     virtual Lisple::sptr_rtval execute(Context& ctx, sptr_rtval_v& args);

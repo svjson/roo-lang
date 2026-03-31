@@ -185,7 +185,7 @@ namespace Lisple
           Signature* sig = nullptr;
           Executable* x = dynamic_cast<Executable*>(fn.get());
 
-          if (x)
+          if (x && !x->requires_late_binding(n))
           {
             sig = x->get_signature(ctx, raw_args);
           }
@@ -337,7 +337,7 @@ namespace Lisple
           Signature* sig = nullptr;
           Executable* x = dynamic_cast<Executable*>(fn.get());
 
-          if (x)
+          if (x && !x->requires_late_binding(n))
           {
             sig = x->get_signature(ctx, n.args);
           }
