@@ -1,4 +1,6 @@
 
+#include <lisple/exec.h>
+
 #include "../runtime_fixture.h"
 #include <gtest/gtest.h>
 
