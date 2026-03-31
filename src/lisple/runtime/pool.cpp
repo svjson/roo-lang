@@ -31,6 +31,8 @@ namespace Lisple
 
   sptr_rtval KeywordPool::get(const std::string& kw)
   {
+    static std::unordered_map<std::string, sptr_rtval> pool;
+
     auto it = pool.find(kw);
     if (it != pool.end()) return it->second;
 
@@ -39,5 +41,4 @@ namespace Lisple
     return inserted_it->second;
   }
 
-  std::unordered_map<std::string, sptr_rtval> KeywordPool::pool = {};
 } // namespace Lisple
