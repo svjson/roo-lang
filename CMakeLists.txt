@@ -63,17 +63,48 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/type.cpp
 )
 
-add_library(lisple SHARED ${lisple_SOURCES})
+add_library(lisple INTERFACE)
+add_library(lisple_static STATIC ${lisple_SOURCES})
+add_library(lisple_shared SHARED ${lisple_SOURCES})
 
-target_link_libraries(lisple)
 
-target_include_directories(lisple
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
+foreach(target lisple_static lisple_shared)
+
+  set_target_properties(${target} PROPERTIES
+    OUTPUT_NAME lisple
+    POSITION_INDEPENDENT_CODE ON
+  )
+
+  target_link_libraries(${target})
+
+  target_include_directories(${target}
+    PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
+  )
+
+endforeach()
+
+target_link_libraries(lisple INTERFACE lisple_shared)
 
 install(DIRECTORY include/ DESTINATION include)
+
+install(TARGETS lisple_static lisple_shared lisple
+  EXPORT lispleTargets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(EXPORT lispleTargets
+  FILE lispleTargets.cmake
+  NAMESPACE Lisple::
+  DESTINATION lib/cmake/lisple
+)
+
+install(FILES cmake/lispleConfig.cmake
+  DESTINATION lib/cmake/lisple
+)
 
 # Enable Include What You Use analyzer with USE_IWYU=true
 if(DEFINED ENV{USE_IWYU})

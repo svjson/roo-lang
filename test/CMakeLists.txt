@@ -11,7 +11,11 @@ ADD_EXECUTABLE(testlisple ${TEST_SOURCES})
 target_link_libraries(testlisple
   gtest
   gmock
-  lisple
+  lisple_shared
+)
+
+set_target_properties(testlisple PROPERTIES
+  BUILD_RPATH "$ORIGIN/../build"
 )
 
 # Enable Include What You Use analyzer with TESTS_USE_IWYU=true
