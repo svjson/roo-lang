@@ -1,5 +1,6 @@
 
 #include <algorithm>
+
 #include <lisple/lang/seq_func.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
@@ -129,6 +130,48 @@ namespace Lisple
     }
 
     return result;
+  }
+
+  /* SortFunction - sort */
+  FUNC_IMPL(SortFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                 EXEC_DISPATCH(&SortFunction::exec_sort))))
+
+  EXEC_BODY(SortFunction, exec_sort)
+  {
+    Lisple::sptr_rtval_v elements = Lisple::get_children(*args[0]);
+    if (elements.size() > 1)
+    {
+      Lisple::sptr_sobject fn_obj = args.back()->obj();
+      Executable& comparator = fn_obj->as<Executable>();
+
+      bool modified = false;
+      Lisple::sptr_rtval tmp;
+      Lisple::sptr_rtval_v sort_cell = {Constant::NIL, Constant::NIL};
+      Lisple::sptr_rtval_v sort_cell_reverse = {Constant::NIL, Constant::NIL};
+      do
+      {
+        modified = false;
+        for (size_t i = 0; i < elements.size() - 1; i++)
+        {
+          sort_cell[0] = elements[i];
+          sort_cell[1] = elements[i + 1];
+          sort_cell_reverse[0] = elements[i + 1];
+          sort_cell_reverse[1] = elements[i];
+
+          if (Lisple::is_truthy(*comparator.execute(ctx, sort_cell)) &&
+              !Lisple::is_truthy(*comparator.execute(ctx, sort_cell_reverse)))
+          {
+            tmp = elements[i];
+            elements[i] = elements[i + 1];
+            elements[i + 1] = tmp;
+            modified = true;
+          }
+        }
+      } while (modified);
+    }
+
+    return RTValue::vector(std::move(elements));
   }
 
 } // namespace Lisple

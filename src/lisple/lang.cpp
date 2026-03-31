@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <ctype.h>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -37,7 +38,6 @@
 #include <lisple/type.h>
 
 #include <bits/std_abs.h>
-#include <ctype.h>
 
 namespace Lisple
 {
@@ -136,7 +136,7 @@ namespace Lisple
     lang.emplace("set!", std::make_shared<SetBangMacro>());
     lang.emplace("sin", std::make_shared<SinFunction>());
     lang.emplace("some?", std::make_shared<SomeFunction>());
-    lang.emplace("sort", std::make_shared<SortFunction>());
+    lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());
     lang.emplace("tail", std::make_shared<TailFunction>());
@@ -802,41 +802,6 @@ namespace Lisple
     }
 
     return result;
-  }
-
-  /* SortFunction - sort */
-  FUNC_IMPL(SortFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)), EXEC_DISPATCH(&SortFunction::sort))))
-
-  FUNC_BODY(SortFunction, sort)
-  {
-    Lisple::sptr_sobject_v elements = args[0]->get_children();
-    if (elements.size() > 1)
-    {
-      Executable& comparator = args.back()->as<Executable>();
-      Lisple::sptr_sobject tmp;
-      bool modified = false;
-      do
-      {
-        modified = false;
-        for (size_t i = 0; i < elements.size() - 1; i++)
-        {
-          Lisple::sptr_sobject_v args = {elements[i], elements[i + 1]};
-          Lisple::sptr_sobject_v args_reverse = {elements[i + 1], elements[i]};
-
-          if (comparator.execute(ctx, args)->is_truthy() &&
-              !comparator.execute(ctx, args_reverse)->is_truthy())
-          {
-            tmp = elements[i];
-            elements[i] = elements[i + 1];
-            elements[i + 1] = tmp;
-            modified = true;
-          }
-        }
-      } while (modified);
-    }
-
-    return std::make_shared<Array>(std::move(elements));
   }
 
   /* SomeFunction */

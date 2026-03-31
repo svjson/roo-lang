@@ -1,12 +1,7 @@
 
-#include "gmock/gmock.h"
-#include "runtime_fixture.h"
-#include "test_host_objects.h"
-#include <ext/alloc_traits.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
+#include <memory>
+#include <vector>
+
 #include <lisple/adapter.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
@@ -17,8 +12,15 @@
 #include <lisple/runtime.h>
 #include <lisple/runtime/exec_node.h>
 #include <lisple/type.h>
-#include <memory>
-#include <vector>
+
+#include "gmock/gmock.h"
+#include "runtime_fixture.h"
+#include "test_host_objects.h"
+#include <ext/alloc_traits.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using namespace ::testing;
 

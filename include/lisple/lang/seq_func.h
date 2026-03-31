@@ -66,6 +66,18 @@ namespace Lisple
    */
   FUNC(ReduceFunction, reduce)
 
+  /*!
+   * @brief Sorts a sequence according to a predicate function.
+   *
+   * Usage: (sort [5 3 7 2 8 1] <) => [1 2 3 5 7 8]
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The seq to sort                                                  |
+   * | 1     | The comparison function, a functiong taking                      |
+   */
+  FUNC(SortFunction, sort)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__SEQ_FUNC_H */
