@@ -6,7 +6,7 @@
 #include <vector>
 
 #include <lisple/context.h>
-#include <lisple/runtime/exec_tree.h>
+#include <lisple/runtime/node.h>
 
 namespace Lisple
 {

@@ -1,7 +1,7 @@
 #ifndef LISPLE_BIND__H
 #define LISPLE_BIND__H
 
-#include <lisple/runtime/exec_node.h>
+#include <lisple/runtime/node.h>
 
 namespace Lisple
 {

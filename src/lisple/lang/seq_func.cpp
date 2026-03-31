@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include <lisple/lang/seq_func.h>
+#include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
 

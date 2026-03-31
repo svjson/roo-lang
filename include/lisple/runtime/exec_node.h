@@ -2,7 +2,7 @@
 #ifndef LISPLE__EXEC_NODE_H
 #define LISPLE__EXEC_NODE_H
 
-#include <lisple/runtime/exec_tree.h>
+#include <lisple/runtime/node.h>
 
 namespace Lisple
 {

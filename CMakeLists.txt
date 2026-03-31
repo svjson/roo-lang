@@ -29,7 +29,7 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/dict.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/eval_plan.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/exec_node.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/exec_tree.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/node.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/lower.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/pool.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/seq.cpp

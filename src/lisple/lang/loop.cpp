@@ -3,6 +3,7 @@
 #include <lisple/exception.h>
 #include <lisple/lang/loop.h>
 #include <lisple/runtime/eval_plan.h>
+#include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 #include <lisple/runtime/seq.h>
 
