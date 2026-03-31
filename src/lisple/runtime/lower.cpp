@@ -2,6 +2,7 @@
 #include "lisple/runtime/lower.h"
 
 #include <lisple/exception.h>
+#include <lisple/runtime/exec_tree.h>
 
 namespace Lisple
 {
@@ -73,6 +74,9 @@ namespace Lisple
 
       return std::make_unique<ExecNode>(obj, CallNode(std::move(callee), std::move(args)));
     }
+
+    case Form::DISCARD:
+      return std::make_unique<ExecNode>(Lisple::Constant::NIL);
 
     default:
       throw LispleException("Lowering not implemented for form: " +
@@ -169,6 +173,8 @@ namespace Lisple
       return std::make_unique<ExecNode>(
         obj,
         LiteralNode(RTValue::symbol(Value<std::string>::value_of(*obj)), obj));
+    case Form::DISCARD:
+      return std::make_unique<ExecNode>(Lisple::Constant::NIL);
     default:
       throw LispleException("Lowering not implemented for form: " + obj->to_string());
     }
