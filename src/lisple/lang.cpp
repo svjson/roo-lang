@@ -91,7 +91,7 @@ namespace Lisple
     lang_symbols.emplace("for", ForForm::make());
     lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
     lang_symbols.emplace("get", GetFunction::make());
-    lang.emplace("head", std::make_shared<HeadFunction>());
+    lang_symbols.emplace("head", HeadFunction::make());
     lang_symbols.emplace("if", IfForm::make());
     lang_symbols.emplace("if-let", IfLetForm::make());
     lang.emplace("include", std::make_shared<IncludeFunction>());
@@ -750,15 +750,6 @@ namespace Lisple
     }
 
     return std::make_shared<Array>(std::move(result));
-  }
-
-  /* HeadFunction */
-  FUNC_IMPL(HeadFunction, SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&HeadFunction::head))))
-
-  FUNC_BODY(HeadFunction, head)
-  {
-    if (*NIL == *args[0]) return NIL;
-    return args[0]->as<Lisple::Seq>().head();
   }
 
   /* TailFunction */

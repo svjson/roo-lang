@@ -206,7 +206,6 @@ namespace Lisple
     sptr_sobject select_min_or_max(Context&, sptr_sobject_v& args);
   };
 
-  FUNC_DECL(HeadFunction, head)
   FUNC_DECL(TailFunction, tail)
   FUNC_DECL(LastFunction, last)
 

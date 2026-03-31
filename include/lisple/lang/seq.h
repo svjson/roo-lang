@@ -20,6 +20,21 @@ namespace Lisple
 
   FUNC(CountFunction, count)
 
+  /*!
+   * @brief Get the first element of a sequence
+   *
+   * Usage:
+   * @code
+   * (head [1 2 3]) => 1
+   * (head []) => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The sequence to retrieve the head element from                   |
+   */
+  FUNC(HeadFunction, head)
+
   FUNC(NthFunction, nth);
 
   /*!

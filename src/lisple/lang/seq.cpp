@@ -1,5 +1,6 @@
 
 #include <cmath>
+
 #include <lisple/lang/seq.h>
 #include <lisple/runtime/seq.h>
 
@@ -69,6 +70,16 @@ namespace Lisple
     sptr_rtval_v children = Lisple::get_children(*args.front());
 
     return children[n];
+  }
+
+  /* HeadFunction */
+  FUNC_IMPL(HeadFunction,
+            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&HeadFunction::exec_head))))
+
+  EXEC_BODY(HeadFunction, exec_head)
+  {
+    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    return Lisple::get_child(*args[0], 0);
   }
 
   /* RandNth - rand-nth */

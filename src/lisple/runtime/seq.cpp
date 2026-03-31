@@ -52,7 +52,23 @@ namespace Lisple
     switch (seq.type)
     {
     case RTValue::Type::VECTOR:
-      return std::get<sptr_rtval_v>(seq.value).at(index);
+    {
+      sptr_rtval_v& values = std::get<sptr_rtval_v>(seq.value);
+      if (index < values.size())
+      {
+        return values[index];
+      }
+      return Lisple::Constant::NIL;
+    }
+    case RTValue::Type::OBJECT:
+    {
+      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(seq.obj().get()))
+      {
+        return get_child(*wrapper->val, index);
+      }
+
+      return to_rt_value(seq.obj()->get_children().at(index));
+    }
     default:
       throw LispleException("get_child is not implemented for type: " +
                             std::to_string((int)seq.type));
