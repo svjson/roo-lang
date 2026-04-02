@@ -8,15 +8,16 @@ enable_testing()
 
 ADD_EXECUTABLE(testlisple ${TEST_SOURCES})
 
+set_target_properties(testlisple PROPERTIES
+  BUILD_RPATH "${CMAKE_BINARY_DIR}"
+)
+
 target_link_libraries(testlisple
   gtest
   gmock
   lisple_shared
 )
 
-set_target_properties(testlisple PROPERTIES
-  BUILD_RPATH "$ORIGIN/../build"
-)
 
 # Enable Include What You Use analyzer with TESTS_USE_IWYU=true
 if(DEFINED ENV{TESTS_USE_IWYU})
@@ -30,7 +31,6 @@ endif()
 
 
 include_directories(
-  "${CMAKE_CURRENT_SOURCE_DIR}/../src"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests"
 )
 
