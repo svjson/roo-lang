@@ -5,14 +5,13 @@
 #include <cmath>
 #include <iterator>
 #include <sstream>
+#include <stddef.h>
 #include <stdexcept>
 
 #include <lisple/exception.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/value.h>
 #include <lisple/type.h>
-
-#include <stddef.h>
 
 namespace Lisple
 {
@@ -971,7 +970,7 @@ namespace Lisple
   RuntimeValueWrapper::RuntimeValueWrapper(const sptr_rtval& val)
     : Object(Form::NIL)
     , val(val)
-    , delegate(to_AST(*val))
+    , delegate(val->type == RTValue::Type::NATIVE_OBJECT ? Lisple::NIL : to_AST(*val))
   {
     rtvalue_wrappers_constructed++;
 
@@ -1012,6 +1011,9 @@ namespace Lisple
       break;
     case RTValue::Type::OBJECT:
       type = delegate->get_type();
+      break;
+    case RTValue::Type::NATIVE_OBJECT:
+      type = Form::HOST_OBJECT;
       break;
     case RTValue::Type::ANY:
       throw LispleException("Invalid RTValue");

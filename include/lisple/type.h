@@ -131,6 +131,9 @@ namespace Lisple
     inline const TypeRef FUNCTION(RTValue::Type::FUNCTION, Form::FUNCTION, "Function");
     inline const TypeRef MACRO(RTValue::Type::FUNCTION, Form::MACRO, "Macro");
     inline const TypeRef HOST_OBJECT(RTValue::Type::OBJECT, Form::HOST_OBJECT, "HostObject");
+    inline const TypeRef NATIVE_OBJECT(RTValue::Type::NATIVE_OBJECT,
+                                       Form::HOST_OBJECT,
+                                       "NativeObject");
     inline const TypeRef HOST_SEQ(RTValue::Type::OBJECT, Form::HOST_SEQ, "HostSeq");
     inline const TypeRef NIL(RTValue::Type::NIL, Form::NIL, "nil");
 

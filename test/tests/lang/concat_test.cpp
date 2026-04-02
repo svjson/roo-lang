@@ -1,8 +1,9 @@
 
-#include "gmock/gmock.h"
-#include "test_host_objects.h"
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
+
+#include "gmock/gmock.h"
+#include "host/test_adapters/vehicle_host_adapters.h"
+#include <gtest/gtest.h>
 
 using namespace ::testing;
 
@@ -51,7 +52,7 @@ TEST(ConcatFunction, host_objects_and_primitives)
 
   runtime.get_current_namespace().store(
     "cessna",
-    Tests::VehicleAdapter::make<Tests::Vehicle>("Cessna", 2));
+    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Cessna", 2));
 
   // When
   auto retval = runtime.eval("(concat [] cessna {:a 2} \"rawk n rawl\")");

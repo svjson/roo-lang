@@ -7,6 +7,15 @@
 namespace Lisple
 {
   /*!
+   * @brief Appends elements to the back of a seq, modifying the
+   * seq.
+   *
+   * Usage: (append! seq 3)
+   *        (append! seq 3 4)
+   */
+  FUNC(AppendBangFunction, append_bang)
+
+  /*!
    * @brief ConcatFunction - splice two or more forms together
    * into an array. Any non sequence arguments will be treated
    * as arrays of that argument

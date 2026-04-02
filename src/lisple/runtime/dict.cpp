@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include <lisple/host/object.h>
 #include <lisple/runtime/seq.h>
 
 namespace Lisple::Dict
@@ -25,6 +26,11 @@ namespace Lisple::Dict
           return children[i + 1];
         }
       }
+    }
+    else if (target->type == RTValue::Type::NATIVE_OBJECT)
+    {
+      Lisple::sptr_native_obj obj = target->nobj();
+      return obj->get_property(property);
     }
     else if (target->type == RTValue::Type::OBJECT)
     {

@@ -284,6 +284,7 @@ namespace Lisple
   FUNC_DECL(MergeFunction, merge_maps)
 
   FUNC_DECL(VectorFunction, make_vector)
+
   FUNC_DECL(JoinFunction, join_str)
 
   /*!
@@ -336,15 +337,6 @@ namespace Lisple
    * @endcode
    */
   FUNC_DECL(NamespaceFunction, extract_namespace)
-
-  /*!
-   * @brief Appends elements to the back of a seq,
-   * modifying the seq.
-   *
-   * Usage: (append! seq 3)
-   *        (append! seq 3 4)
-   */
-  FUNC_DECL(AppendBangFunction, append_bang)
 
   /*!
    * @brief ConcatBangFunction - splice two or more forms together

@@ -41,6 +41,18 @@ namespace Lisple
 
   std::pair<std::string, std::string> split_qualifiable(const std::string& str);
 
+  template <class T> std::shared_ptr<T> sptr_sobject_cast(sptr_sobject& obj)
+  {
+    if (auto* wrapper = dynamic_cast<Lisple::RuntimeValueWrapper*>(obj.get()))
+    {
+      return std::dynamic_pointer_cast<T>(Lisple::to_AST(*wrapper->val));
+    }
+    else
+    {
+      return std::dynamic_pointer_cast<T>(obj);
+    }
+  }
+
   /*!
    * @brief Create a copy of a sexp form with a substituted child element
    */

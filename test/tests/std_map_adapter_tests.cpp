@@ -1,10 +1,11 @@
 
-#include "test_host_objects.h"
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <lisple/adapter.h>
 #include <lisple/impl.h>
 #include <lisple/runtime.h>
+
+#include "host/test_adapters/vehicle_host_adapters.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace ::testing;
 
@@ -167,60 +168,61 @@ TEST(StdMapAdapter_uint8_short, make_ref)
 TEST(StdMapAdapter_RegNumber_Vehicle, get_sptr_property)
 {
   // Given
-  std::map<Tests::RegNumber, Tests::Vehicle> std_map = {
-    {Tests::RegNumber("ABC", "123"), Tests::Vehicle("The Vroom-Vroom", 2)},
-    {Tests::RegNumber("SMK", "847"), Tests::Vehicle("Snail", 5)},
-    {Tests::RegNumber("EMP", "443"), Tests::Vehicle("Comfort", 4)}};
+  std::map<LispleTest::RegNumber, LispleTest::Vehicle> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {LispleTest::RegNumber("SMK", "847"), LispleTest::Vehicle("Snail", 5)},
+    {LispleTest::RegNumber("EMP", "443"), LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(
-    *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
-  EXPECT_EQ(*snail, *Tests::VehicleAdapter::make<Tests::Vehicle>("Snail", 5));
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
+  EXPECT_EQ(*snail, *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Snail", 5));
   EXPECT_EQ(snail->to_string(), R"({:model-name "Snail" :seats 5})");
 }
 
 TEST(StdMapAdapter_RegNumber_Vehicle, set_property)
 {
   // Given
-  std::map<Tests::RegNumber, Tests::Vehicle> std_map;
+  std::map<LispleTest::RegNumber, LispleTest::Vehicle> std_map;
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   // When
   Lisple::sptr_sobject value =
-    Tests::VehicleAdapter::make<Tests::Vehicle>("The Vroom-Vroom", 2);
-  adapter.set_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"),
-                       value);
+    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("The Vroom-Vroom", 2);
+  adapter.set_property(
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"),
+    value);
 
   // Then
   ASSERT_EQ(std_map.size(), 1);
-  ASSERT_EQ(std_map.count(Tests::RegNumber("SMK", "847")), 1);
-  ASSERT_EQ(std_map.at(Tests::RegNumber("SMK", "847")),
-            Tests::Vehicle("The Vroom-Vroom", 2));
+  ASSERT_EQ(std_map.count(LispleTest::RegNumber("SMK", "847")), 1);
+  ASSERT_EQ(std_map.at(LispleTest::RegNumber("SMK", "847")),
+            LispleTest::Vehicle("The Vroom-Vroom", 2));
 }
 
 TEST(StdMapAdapter_RegNumber_Vehicle, keys)
 {
   // Given
-  std::map<Tests::RegNumber, Tests::Vehicle> std_map = {
-    {Tests::RegNumber("ABC", "123"), Tests::Vehicle("The Vroom-Vroom", 2)},
-    {Tests::RegNumber("SMK", "847"), Tests::Vehicle("Snail", 5)},
-    {Tests::RegNumber("EMP", "443"), Tests::Vehicle("Comfort", 4)}};
+  std::map<LispleTest::RegNumber, LispleTest::Vehicle> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {LispleTest::RegNumber("SMK", "847"), LispleTest::Vehicle("Snail", 5)},
+    {LispleTest::RegNumber("EMP", "443"), LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
@@ -230,26 +232,26 @@ TEST(StdMapAdapter_RegNumber_Vehicle, keys)
   ASSERT_EQ(keys.size(), 3);
 
   // FIXME: This depends on the order of keys from std::map
-  EXPECT_EQ(keys[0]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("ABC", "123"));
-  EXPECT_EQ(keys[2]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
-  EXPECT_EQ(keys[1]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("EMP", "443"));
+  EXPECT_EQ(keys[0]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("ABC", "123"));
+  EXPECT_EQ(keys[2]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
+  EXPECT_EQ(keys[1]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("EMP", "443"));
 }
 
 TEST(StdMapAdapter_RegNumber_Vehicle, to_string)
 {
   // Given
-  std::map<Tests::RegNumber, Tests::Vehicle> std_map = {
-    {Tests::RegNumber("ABC", "123"), Tests::Vehicle("The Vroom-Vroom", 2)},
-    {Tests::RegNumber("SMK", "847"), Tests::Vehicle("Snail", 5)},
-    {Tests::RegNumber("EMP", "443"), Tests::Vehicle("Comfort", 4)}};
+  std::map<LispleTest::RegNumber, LispleTest::Vehicle> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {LispleTest::RegNumber("SMK", "847"), LispleTest::Vehicle("Snail", 5)},
+    {LispleTest::RegNumber("EMP", "443"), LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   // Then
@@ -271,44 +273,49 @@ TEST(StdMapAdapter_RegNumber_Vehicle, to_string)
 TEST(StdMapAdapter_long_Vehicle, get_sptr_property)
 {
   // Given
-  std::map<long, Tests::Vehicle> std_map = {{1L, Tests::Vehicle("The Vroom-Vroom", 2)},
-                                            {2L, Tests::Vehicle("Snail", 5)},
-                                            {3L, Tests::Vehicle("Comfort", 4)}};
+  std::map<long, LispleTest::Vehicle> std_map = {
+    {1L, LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {2L, LispleTest::Vehicle("Snail", 5)},
+    {3L, LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<long, Tests::Vehicle, Tests::VehicleAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<long, LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(
+    std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(*Lisple::Number::make(2L));
-  EXPECT_EQ(*snail, *Tests::VehicleAdapter::make<Tests::Vehicle>("Snail", 5));
+  EXPECT_EQ(*snail, *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Snail", 5));
   EXPECT_EQ(snail->to_string(), R"({:model-name "Snail" :seats 5})");
 }
 
 TEST(StdMapAdapter_long_Vehicle, set_property)
 {
   // Given
-  std::map<long, Tests::Vehicle> std_map;
+  std::map<long, LispleTest::Vehicle> std_map;
 
-  Lisple::StdMapAdapter<long, Tests::Vehicle, Tests::VehicleAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<long, LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(
+    std_map);
 
   // When
   Lisple::sptr_sobject value =
-    Tests::VehicleAdapter::make<Tests::Vehicle>("The Vroom-Vroom", 2);
+    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("The Vroom-Vroom", 2);
   adapter.set_property(*Lisple::Number::make(1L), value);
 
   // Then
   ASSERT_EQ(std_map.size(), 1);
   ASSERT_EQ(std_map.count(1L), 1);
-  ASSERT_EQ(std_map.at(1L), Tests::Vehicle("The Vroom-Vroom", 2));
+  ASSERT_EQ(std_map.at(1L), LispleTest::Vehicle("The Vroom-Vroom", 2));
 }
 
 TEST(StdMapAdapter_long_Vehicle, keys)
 {
   // Given
-  std::map<long, Tests::Vehicle> std_map = {{1L, Tests::Vehicle("The Vroom-Vroom", 2)},
-                                            {2L, Tests::Vehicle("Snail", 5)},
-                                            {3L, Tests::Vehicle("Comfort", 4)}};
+  std::map<long, LispleTest::Vehicle> std_map = {
+    {1L, LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {2L, LispleTest::Vehicle("Snail", 5)},
+    {3L, LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<long, Tests::Vehicle, Tests::VehicleAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<long, LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(
+    std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -325,11 +332,13 @@ TEST(StdMapAdapter_long_Vehicle, keys)
 TEST(StdMapAdapter_long_Vehicle, to_string)
 {
   // Given
-  std::map<long, Tests::Vehicle> std_map = {{1L, Tests::Vehicle("The Vroom-Vroom", 2)},
-                                            {2L, Tests::Vehicle("Snail", 5)},
-                                            {3L, Tests::Vehicle("Comfort", 4)}};
+  std::map<long, LispleTest::Vehicle> std_map = {
+    {1L, LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {2L, LispleTest::Vehicle("Snail", 5)},
+    {3L, LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<long, Tests::Vehicle, Tests::VehicleAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<long, LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(
+    std_map);
 
   // Then
 
@@ -348,15 +357,17 @@ TEST(StdMapAdapter_long_Vehicle, to_string)
 TEST(StdMapAdapter_RegNumber_short, get_sptr_property)
 {
   // Given
-  std::map<Tests::RegNumber, short> std_map = {{Tests::RegNumber("ABC", "123"), 10},
-                                               {Tests::RegNumber("SMK", "847"), 32123},
-                                               {Tests::RegNumber("EMP", "443"), 193}};
+  std::map<LispleTest::RegNumber, short> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), 10},
+    {LispleTest::RegNumber("SMK", "847"), 32123},
+    {LispleTest::RegNumber("EMP", "443"), 193}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber, short, Tests::RegNumberAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, short, LispleTest::RegNumberAdapter> adapter(
+    std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(
-    *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
   EXPECT_EQ(*snail, *Lisple::Number::make(32123));
   EXPECT_EQ(snail->to_string(), "32123");
 }
@@ -364,29 +375,33 @@ TEST(StdMapAdapter_RegNumber_short, get_sptr_property)
 TEST(StdMapAdapter_RegNumber_short, set_property)
 {
   // Given
-  std::map<Tests::RegNumber, short> std_map;
+  std::map<LispleTest::RegNumber, short> std_map;
 
-  Lisple::StdMapAdapter<Tests::RegNumber, short, Tests::RegNumberAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, short, LispleTest::RegNumberAdapter> adapter(
+    std_map);
 
   // When
   Lisple::sptr_sobject value = Lisple::Number::make(static_cast<short>(32123));
-  adapter.set_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"),
-                       value);
+  adapter.set_property(
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"),
+    value);
 
   // Then
   ASSERT_EQ(std_map.size(), 1);
-  ASSERT_EQ(std_map.count(Tests::RegNumber("SMK", "847")), 1);
-  ASSERT_EQ(std_map.at(Tests::RegNumber("SMK", "847")), static_cast<short>(32123));
+  ASSERT_EQ(std_map.count(LispleTest::RegNumber("SMK", "847")), 1);
+  ASSERT_EQ(std_map.at(LispleTest::RegNumber("SMK", "847")), static_cast<short>(32123));
 }
 
 TEST(StdMapAdapter_RegNumber_short, keys)
 {
   // Given
-  std::map<Tests::RegNumber, short> std_map = {{Tests::RegNumber("ABC", "123"), 10},
-                                               {Tests::RegNumber("SMK", "847"), 32123},
-                                               {Tests::RegNumber("EMP", "443"), 193}};
+  std::map<LispleTest::RegNumber, short> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), 10},
+    {LispleTest::RegNumber("SMK", "847"), 32123},
+    {LispleTest::RegNumber("EMP", "443"), 193}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber, short, Tests::RegNumberAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, short, LispleTest::RegNumberAdapter> adapter(
+    std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -395,22 +410,24 @@ TEST(StdMapAdapter_RegNumber_short, keys)
   ASSERT_EQ(keys.size(), 3);
 
   // FIXME: This depends on the order of keys from std::map
-  EXPECT_EQ(keys[0]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("ABC", "123"));
-  EXPECT_EQ(keys[2]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
-  EXPECT_EQ(keys[1]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("EMP", "443"));
+  EXPECT_EQ(keys[0]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("ABC", "123"));
+  EXPECT_EQ(keys[2]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
+  EXPECT_EQ(keys[1]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("EMP", "443"));
 }
 
 TEST(StdMapAdapter_RegNumber_short, to_string)
 {
   // Given
-  std::map<Tests::RegNumber, short> std_map = {{Tests::RegNumber("ABC", "123"), 10},
-                                               {Tests::RegNumber("SMK", "847"), 32123},
-                                               {Tests::RegNumber("EMP", "443"), 193}};
+  std::map<LispleTest::RegNumber, short> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), 10},
+    {LispleTest::RegNumber("SMK", "847"), 32123},
+    {LispleTest::RegNumber("EMP", "443"), 193}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber, short, Tests::RegNumberAdapter> adapter(std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, short, LispleTest::RegNumberAdapter> adapter(
+    std_map);
 
   // Then
 
@@ -542,16 +559,17 @@ TEST(StdMapAdapter_int_const_string, script_usage)
 TEST(StdMapAdapter_RegNumber_const_int, get_sptr_property)
 {
   // Given
-  std::map<Tests::RegNumber, const int> std_map = {{Tests::RegNumber("ABC", "123"), 10},
-                                                   {Tests::RegNumber("SMK", "847"), 32123},
-                                                   {Tests::RegNumber("EMP", "443"), 193}};
+  std::map<LispleTest::RegNumber, const int> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), 10},
+    {LispleTest::RegNumber("SMK", "847"), 32123},
+    {LispleTest::RegNumber("EMP", "443"), 193}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber, const int, Tests::RegNumberAdapter> adapter(
-    std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, const int, LispleTest::RegNumberAdapter>
+    adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(
-    *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
   EXPECT_EQ(*snail, *Lisple::Number::make(32123));
   EXPECT_EQ(snail->to_string(), "32123");
 }
@@ -559,31 +577,33 @@ TEST(StdMapAdapter_RegNumber_const_int, get_sptr_property)
 TEST(StdMapAdapter_RegNumber_const_int, set_property)
 {
   // Given
-  std::map<Tests::RegNumber, const int> std_map;
+  std::map<LispleTest::RegNumber, const int> std_map;
 
-  Lisple::StdMapAdapter<Tests::RegNumber, const int, Tests::RegNumberAdapter> adapter(
-    std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, const int, LispleTest::RegNumberAdapter>
+    adapter(std_map);
 
   // When
   Lisple::sptr_sobject value = Lisple::Number::make(32123);
-  adapter.set_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"),
-                       value);
+  adapter.set_property(
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"),
+    value);
 
   // Then
   ASSERT_EQ(std_map.size(), 1);
-  ASSERT_EQ(std_map.count(Tests::RegNumber("SMK", "847")), 1);
-  ASSERT_EQ(std_map.at(Tests::RegNumber("SMK", "847")), 32123);
+  ASSERT_EQ(std_map.count(LispleTest::RegNumber("SMK", "847")), 1);
+  ASSERT_EQ(std_map.at(LispleTest::RegNumber("SMK", "847")), 32123);
 }
 
 TEST(StdMapAdapter_RegNumber_const_int, keys)
 {
   // Given
-  std::map<Tests::RegNumber, const int> std_map = {{Tests::RegNumber("ABC", "123"), 10},
-                                                   {Tests::RegNumber("SMK", "847"), 32123},
-                                                   {Tests::RegNumber("EMP", "443"), 193}};
+  std::map<LispleTest::RegNumber, const int> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), 10},
+    {LispleTest::RegNumber("SMK", "847"), 32123},
+    {LispleTest::RegNumber("EMP", "443"), 193}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber, const int, Tests::RegNumberAdapter> adapter(
-    std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, const int, LispleTest::RegNumberAdapter>
+    adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
 
@@ -592,23 +612,24 @@ TEST(StdMapAdapter_RegNumber_const_int, keys)
   ASSERT_EQ(keys.size(), 3);
 
   // FIXME: This depends on the order of keys from std::map
-  EXPECT_EQ(keys[0]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("ABC", "123"));
-  EXPECT_EQ(keys[2]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
-  EXPECT_EQ(keys[1]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("EMP", "443"));
+  EXPECT_EQ(keys[0]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("ABC", "123"));
+  EXPECT_EQ(keys[2]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
+  EXPECT_EQ(keys[1]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("EMP", "443"));
 }
 
 TEST(StdMapAdapter_RegNumber_const_int, to_string)
 {
   // Given
-  std::map<Tests::RegNumber, const int> std_map = {{Tests::RegNumber("ABC", "123"), 10},
-                                                   {Tests::RegNumber("SMK", "847"), 32123},
-                                                   {Tests::RegNumber("EMP", "443"), 193}};
+  std::map<LispleTest::RegNumber, const int> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), 10},
+    {LispleTest::RegNumber("SMK", "847"), 32123},
+    {LispleTest::RegNumber("EMP", "443"), 193}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber, const int, Tests::RegNumberAdapter> adapter(
-    std_map);
+  Lisple::StdMapAdapter<LispleTest::RegNumber, const int, LispleTest::RegNumberAdapter>
+    adapter(std_map);
 
   // Then
 
@@ -627,60 +648,61 @@ TEST(StdMapAdapter_RegNumber_const_int, to_string)
 TEST(StdMapAdapter_RegNumber_const_Vehicle, get_sptr_property)
 {
   // Given
-  std::map<Tests::RegNumber, const Tests::Vehicle> std_map = {
-    {Tests::RegNumber("ABC", "123"), Tests::Vehicle("The Vroom-Vroom", 2)},
-    {Tests::RegNumber("SMK", "847"), Tests::Vehicle("Snail", 5)},
-    {Tests::RegNumber("EMP", "443"), Tests::Vehicle("Comfort", 4)}};
+  std::map<LispleTest::RegNumber, const LispleTest::Vehicle> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {LispleTest::RegNumber("SMK", "847"), LispleTest::Vehicle("Snail", 5)},
+    {LispleTest::RegNumber("EMP", "443"), LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        const Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        const LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   // Then
   Lisple::sptr_sobject snail = adapter.get_sptr_property(
-    *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
-  EXPECT_EQ(*snail, *Tests::VehicleAdapter::make<Tests::Vehicle>("Snail", 5));
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
+  EXPECT_EQ(*snail, *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Snail", 5));
   EXPECT_EQ(snail->to_string(), R"({:model-name "Snail" :seats 5})");
 }
 
 TEST(StdMapAdapter_RegNumber_const_Vehicle, set_property)
 {
   // Given
-  std::map<Tests::RegNumber, const Tests::Vehicle> std_map;
+  std::map<LispleTest::RegNumber, const LispleTest::Vehicle> std_map;
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        const Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        const LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   // When
   Lisple::sptr_sobject value =
-    Tests::VehicleAdapter::make<Tests::Vehicle>("The Vroom-Vroom", 2);
-  adapter.set_property(*Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"),
-                       value);
+    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("The Vroom-Vroom", 2);
+  adapter.set_property(
+    *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"),
+    value);
 
   // Then
   ASSERT_EQ(std_map.size(), 1);
-  ASSERT_EQ(std_map.count(Tests::RegNumber("SMK", "847")), 1);
-  ASSERT_EQ(std_map.at(Tests::RegNumber("SMK", "847")),
-            Tests::Vehicle("The Vroom-Vroom", 2));
+  ASSERT_EQ(std_map.count(LispleTest::RegNumber("SMK", "847")), 1);
+  ASSERT_EQ(std_map.at(LispleTest::RegNumber("SMK", "847")),
+            LispleTest::Vehicle("The Vroom-Vroom", 2));
 }
 
 TEST(StdMapAdapter_RegNumber_const_Vehicle, keys)
 {
   // Given
-  std::map<Tests::RegNumber, const Tests::Vehicle> std_map = {
-    {Tests::RegNumber("ABC", "123"), Tests::Vehicle("The Vroom-Vroom", 2)},
-    {Tests::RegNumber("SMK", "847"), Tests::Vehicle("Snail", 5)},
-    {Tests::RegNumber("EMP", "443"), Tests::Vehicle("Comfort", 4)}};
+  std::map<LispleTest::RegNumber, const LispleTest::Vehicle> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {LispleTest::RegNumber("SMK", "847"), LispleTest::Vehicle("Snail", 5)},
+    {LispleTest::RegNumber("EMP", "443"), LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        const Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        const LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   Lisple::sptr_sobject_v keys = adapter.keys();
@@ -690,26 +712,26 @@ TEST(StdMapAdapter_RegNumber_const_Vehicle, keys)
   ASSERT_EQ(keys.size(), 3);
 
   // FIXME: This depends on the order of keys from std::map
-  EXPECT_EQ(keys[0]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("ABC", "123"));
-  EXPECT_EQ(keys[2]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("SMK", "847"));
-  EXPECT_EQ(keys[1]->as<Tests::RegNumberAdapter>(),
-            *Tests::RegNumberAdapter::make<Tests::RegNumber>("EMP", "443"));
+  EXPECT_EQ(keys[0]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("ABC", "123"));
+  EXPECT_EQ(keys[2]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("SMK", "847"));
+  EXPECT_EQ(keys[1]->as<LispleTest::RegNumberAdapter>(),
+            *LispleTest::RegNumberAdapter::make<LispleTest::RegNumber>("EMP", "443"));
 }
 
 TEST(StdMapAdapter_RegNumber_const_Vehicle, to_string)
 {
   // Given
-  std::map<Tests::RegNumber, const Tests::Vehicle> std_map = {
-    {Tests::RegNumber("ABC", "123"), Tests::Vehicle("The Vroom-Vroom", 2)},
-    {Tests::RegNumber("SMK", "847"), Tests::Vehicle("Snail", 5)},
-    {Tests::RegNumber("EMP", "443"), Tests::Vehicle("Comfort", 4)}};
+  std::map<LispleTest::RegNumber, const LispleTest::Vehicle> std_map = {
+    {LispleTest::RegNumber("ABC", "123"), LispleTest::Vehicle("The Vroom-Vroom", 2)},
+    {LispleTest::RegNumber("SMK", "847"), LispleTest::Vehicle("Snail", 5)},
+    {LispleTest::RegNumber("EMP", "443"), LispleTest::Vehicle("Comfort", 4)}};
 
-  Lisple::StdMapAdapter<Tests::RegNumber,
-                        const Tests::Vehicle,
-                        Tests::RegNumberAdapter,
-                        Tests::VehicleAdapter>
+  Lisple::StdMapAdapter<LispleTest::RegNumber,
+                        const LispleTest::Vehicle,
+                        LispleTest::RegNumberAdapter,
+                        LispleTest::VehicleAdapter>
     adapter(std_map);
 
   // Then

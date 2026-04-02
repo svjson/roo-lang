@@ -6,6 +6,29 @@
 
 namespace Lisple
 {
+  /* AppendBangFunction - append_bang */
+  FUNC_IMPL(AppendBangFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&AppendBangFunction::exec_append_bang))))
+
+  EXEC_BODY(AppendBangFunction, exec_append_bang)
+  {
+    if (auto* elements = std::get_if<sptr_rtval_v>(&args[0]->value))
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        elements->push_back(args[i]);
+      }
+    }
+    else
+    {
+      throw TypeError("append! not implemented for value type: " +
+                      std::to_string((int)args[0]->type));
+    }
+
+    return args[0];
+  }
+
   /* ConcatFunction - concat */
   FUNC_IMPL(ConcatFunction,
             SIG((FN_ARGS((&VARARG, &Type::ANY)),

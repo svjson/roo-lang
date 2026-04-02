@@ -63,7 +63,18 @@ namespace Lisple
 
   EXEC_BODY(AssocBangFunction, exec_assoc_seq_bang)
   {
-    throw LispleException("Setting seq element by index with assoc! is not supported.");
+    if (auto* elements = std::get_if<sptr_rtval_v>(&args[0]->value))
+    {
+      size_t index = args[1]->i32();
+      (*elements)[index] = args.back();
+    }
+    else
+    {
+      throw TypeError("assoc! on seq by index not implemented for value type: " +
+                      std::to_string((int)args[0]->type));
+    }
+
+    return args[0];
   }
 
   /* AssocInBangFunction - assoc-in! */

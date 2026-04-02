@@ -1,6 +1,4 @@
 
-#include "test_host_objects.h"
-#include <gtest/gtest.h>
 #include <lisple/context.h>
 #include <lisple/form.h>
 #include <lisple/lang.h>
@@ -9,20 +7,24 @@
 #include <lisple/runtime.h>
 #include <lisple/type.h>
 
+#include "host/test_adapters/vehicle_host_adapters.h"
+#include "test_host_objects.h"
+#include <gtest/gtest.h>
+
 TEST(HostObjectAdapter_Vehicle, type)
 {
   // Given
   Lisple::sptr_sobject obj =
-    Tests::VehicleAdapter::make<Tests::Vehicle>("Runaway Train", 500);
-  Tests::VehicleAdapter& adapter = obj->as<Tests::VehicleAdapter>();
+    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Runaway Train", 500);
+  LispleTest::VehicleAdapter& adapter = obj->as<LispleTest::VehicleAdapter>();
 
   // Then
   EXPECT_EQ(obj->get_type(), Lisple::Form::HOST_OBJECT);
   EXPECT_EQ(adapter.get_type(), Lisple::Form::HOST_OBJECT);
-  EXPECT_EQ(adapter.get_host_type(), &Tests::VEHICLE_TYPE);
+  EXPECT_EQ(adapter.get_host_type(), &LispleTest::VEHICLE_TYPE);
 
   EXPECT_TRUE(Lisple::Type::HOST_OBJECT.is_type_of(adapter));
-  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(adapter));
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(adapter));
 
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(adapter));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(adapter));
@@ -36,7 +38,7 @@ TEST(HostObjectAdapter_Vehicle, get_property)
 {
   // Given
   Lisple::sptr_sobject adapter =
-    Tests::VehicleAdapter::make<Tests::Vehicle>("Runaway Train", 500);
+    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Runaway Train", 500);
 
   // Then
   EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("model-name")),
@@ -69,7 +71,7 @@ TEST(HostObjectAdapter_Clothing, type)
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(adapter));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(adapter));
   EXPECT_FALSE(Lisple::Type::MAP.is_type_of(adapter));
-  EXPECT_FALSE(Tests::VEHICLE_TYPE.is_type_of(adapter));
+  EXPECT_FALSE(LispleTest::VEHICLE_TYPE.is_type_of(adapter));
 }
 
 // Tmp changed to use get_sptr_property, because get_property in its current form does

@@ -16,10 +16,12 @@ namespace Lisple
   class Executable;
   struct RTValue;
   template <class T> class HostObject;
+  struct NativeObjectBase;
 
   using sptr_rtval = std::shared_ptr<RTValue>;
   using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
   using sptr_sobject = std::shared_ptr<Object>;
+  using sptr_native_obj = std::shared_ptr<NativeObjectBase>;
 
   struct RTValue
   {
@@ -37,7 +39,8 @@ namespace Lisple
       VECTOR = 0x09,
       MAP = 0x0a,
       FUNCTION = 0x0b,
-      OBJECT = 0x0c
+      OBJECT = 0x0c,
+      NATIVE_OBJECT = 0x0d
     };
 
     enum class NumberType : uint8_t
@@ -68,6 +71,7 @@ namespace Lisple
                               std::string,
                               RTValue::Number,
                               sptr_rtval_v,
+                              sptr_native_obj,
                               bool,
                               char,
                               std::monostate>;
@@ -95,6 +99,7 @@ namespace Lisple
     static sptr_rtval vector(const sptr_rtval_v&);
     static sptr_rtval map(const sptr_rtval_v&);
     static sptr_rtval object(const sptr_sobject&);
+    static sptr_rtval native_object(const sptr_native_obj&);
     static sptr_rtval executable(const sptr_sobject&);
 
     static std::string to_string(const sptr_rtval_v&);
@@ -107,6 +112,11 @@ namespace Lisple
     double f64() const;
     const std::string& str() const;
     sptr_sobject obj() const;
+    sptr_native_obj nobj() const;
+    template <typename T> T& adapter()
+    {
+      return *dynamic_cast<T*>(std::get<sptr_native_obj>(value).get());
+    }
     std::pair<std::string, std::string> qual() const;
   };
 
@@ -120,6 +130,7 @@ namespace Lisple
   sptr_rtval to_rt_value(sptr_sobject& obj);
   sptr_sobject to_AST(RTValue& val);
   bool is_truthy(RTValue& val);
+
 } // namespace Lisple
 
 #endif /* LISPLE__VALUE_H */

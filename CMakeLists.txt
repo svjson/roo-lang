@@ -36,7 +36,9 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/value.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/form.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/object.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/schema.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/type.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/impl.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/base.cpp

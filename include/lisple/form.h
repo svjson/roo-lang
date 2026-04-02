@@ -433,7 +433,9 @@ namespace Lisple
   template <class OT> OT& Object::as()
   {
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(this))
+    {
       return wrapper->delegate->as<OT>();
+    }
 
     if (auto* self = dynamic_cast<OT*>(this)) return *self;
 

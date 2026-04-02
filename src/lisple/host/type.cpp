@@ -1,0 +1,143 @@
+
+#include "lisple/host/type.h"
+
+#include <iostream>
+
+#include <lisple/exception.h>
+#include <lisple/exec.h>
+#include <lisple/form.h>
+#include <lisple/host.h>
+#include <lisple/host/object.h>
+
+namespace Lisple
+{
+  /**
+   * HostTypeRef implementation
+   */
+  HostTypeRef::HostTypeRef(const std::string& name,
+                           const std::optional<std::string>& make_fn)
+    : TypeRef(RTValue::Type::OBJECT, Form::HOST_OBJECT, name)
+    , make_fn(make_fn)
+  {
+  }
+
+  HostTypeRef::HostTypeRef(const std::string& name,
+                           const HostTypeRef* parent_type,
+                           const std::optional<std::string>& make_fn)
+    : TypeRef(RTValue::Type::OBJECT, Form::HOST_OBJECT, name)
+    , parent_type(parent_type)
+    , make_fn(make_fn)
+  {
+  }
+
+  bool HostTypeRef::is_type_of(const RTValue& val) const
+  {
+    if (val.type == RTValue::Type::OBJECT)
+    {
+      return this->is_type_of(*std::get<sptr_sobject>(val.value));
+    }
+
+    if (val.type == RTValue::Type::NATIVE_OBJECT)
+    {
+      return std::get<sptr_native_obj>(val.value)->get_host_type() == this;
+    }
+
+    return false;
+  }
+
+  bool HostTypeRef::is_type_of(const Object& obj) const
+  {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    {
+      if (wrapper->val->type == RTValue::Type::NATIVE_OBJECT)
+      {
+        return is_type_of(*wrapper->val);
+      }
+      return is_type_of(*wrapper->delegate);
+    }
+
+    if (*NIL != obj && TypeRef::is_type_of(obj))
+    {
+      const HostTypeRef* obj_type = obj.as<AbstractHostObject>().get_host_type();
+      return obj_type == this || (obj_type->parent_type && obj_type->parent_type == this);
+    }
+    return false;
+  }
+
+  CoercionResult<Object> HostTypeRef::coerce(Context& ctx, sptr_sobject& obj) const
+  {
+    if (make_fn)
+    {
+      sptr_sobject function = ctx.lookup(*make_fn);
+      if (*function == *NIL || !Type::EXEC.is_type_of(*function))
+      {
+        throw InvocationException(
+          "Coercion failed. Review Host Object configuration - Make Function '" + *make_fn +
+          "' is not executable: " + function->to_string(2));
+      }
+      auto& make_exec = function->as<Executable>();
+
+      for (auto& sig : make_exec.signatures)
+      {
+        if (sig->get_arguments().size() != 1) continue;
+
+        if (sig->get_arguments().front().matches(*obj))
+        {
+          sptr_sobject_v arg_list{obj};
+          try
+          {
+            return CoercionResult{true, sig->invoke(ctx, arg_list)};
+          }
+          catch (const LispleException& e)
+          {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    return CoercionResult<Object>{false, nullptr};
+  }
+
+  CoercionResult<RTValue> HostTypeRef::coerce(Context& ctx, sptr_rtval& obj) const
+  {
+    if (make_fn)
+    {
+      sptr_rtval function = ctx.lookup_value(*make_fn);
+
+      if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
+      {
+        throw InvocationException(
+          "Coercion failed. Review Host Object configuration - Make Function '" + *make_fn +
+          "' is not executable: " + function->to_string());
+      }
+      auto& make_exec = std::get<sptr_sobject>(function->value)->as<Executable>();
+
+      for (auto& sig : make_exec.signatures)
+      {
+        if (sig->get_arguments().size() != 1) continue;
+
+        if (sig->get_arguments().front().matches(*obj))
+        {
+          sptr_rtval_v arg_list{obj};
+          try
+          {
+            return CoercionResult{true, sig->invoke(ctx, arg_list)};
+          }
+          catch (const LispleException& e)
+          {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    return CoercionResult<RTValue>{false, nullptr};
+  }
+
+  bool HostTypeRef::is_host_object() const
+  {
+    return true;
+  }
+
+} // namespace Lisple

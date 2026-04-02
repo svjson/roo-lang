@@ -59,7 +59,7 @@ namespace Lisple
     lang_symbols.emplace("->", ThreadFirstForm::make());
     lang_symbols.emplace("abs", AbsFunction::make());
     lang_symbols.emplace("and", AndForm::make());
-    lang.emplace("append!", std::make_shared<AppendBangFunction>());
+    lang_symbols.emplace("append!", AppendBangFunction::make());
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang_symbols.emplace("assoc", AssocFunction::make());
     lang_symbols.emplace("assoc!", AssocBangFunction::make());
@@ -676,23 +676,6 @@ namespace Lisple
     }
 
     return result;
-  }
-
-  /* AppendBangFunction - append_bang */
-  FUNC_IMPL(AppendBangFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
-                 EXEC_DISPATCH(&AppendBangFunction::append_bang))))
-
-  FUNC_BODY(AppendBangFunction, append_bang)
-  {
-    Lisple::Seq& seq = args[0]->as<Lisple::Seq>();
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      seq.append(args[i]);
-    }
-
-    return args[0];
   }
 
   /* ConcatBangFunction - concat */

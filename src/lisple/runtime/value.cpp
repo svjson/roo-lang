@@ -171,6 +171,15 @@ namespace Lisple
     return val;
   }
 
+  sptr_rtval RTValue::native_object(const sptr_native_obj& o)
+  {
+    rtvalues_constructed++;
+    sptr_rtval val = std::make_shared<RTValue>();
+    val->type = RTValue::Type::NATIVE_OBJECT;
+    val->value = o;
+    return val;
+  }
+
   sptr_rtval RTValue::list(const sptr_rtval_v& v)
   {
     rtvalues_constructed++;
@@ -277,8 +286,10 @@ namespace Lisple
       r += "]";
       break;
     case RTValue::Type::STRING:
+      r += "\"" + std::get<std::string>(value) + "\"";
+      break;
     case RTValue::Type::SYMBOL:
-      r += to_AST(*const_cast<RTValue*>(this))->to_string();
+      r += std::get<std::string>(value);
       break;
     default:
       r += "<to_string not implemented for #" + std::to_string((int)type) + ">";
@@ -351,6 +362,11 @@ namespace Lisple
   sptr_sobject RTValue::obj() const
   {
     return std::get<sptr_sobject>(value);
+  }
+
+  sptr_native_obj RTValue::nobj() const
+  {
+    return std::get<sptr_native_obj>(value);
   }
 
   const std::string& RTValue::str() const

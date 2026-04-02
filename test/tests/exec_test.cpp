@@ -1,13 +1,8 @@
 
-#include "gmock/gmock.h"
-#include "runtime_fixture.h"
-#include "test_host_objects.h"
 #include <functional>
-#include <gtest/gtest-matchers.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
+#include <memory>
+#include <stdexcept>
+
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
@@ -19,8 +14,16 @@
 #include <lisple/lang/seq_func.h>
 #include <lisple/runtime.h>
 #include <lisple/type.h>
-#include <memory>
-#include <stdexcept>
+
+#include "gmock/gmock.h"
+#include "host/test_adapters/vehicle_host_adapters.h"
+#include "host/test_adapters/vehicle_native_adapters.h"
+#include "runtime_fixture.h"
+#include <gtest/gtest-matchers.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using namespace ::testing;
 
@@ -179,9 +182,9 @@ TEST(Signature, coerce_args__map_to_host_type)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"),
-                                       std::make_shared<Tests::VehicleMakeFunction>());
+                                       std::make_shared<LispleTest::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("prn-vehicle"),
-                                       std::make_shared<Tests::PrnVehicle>());
+                                       std::make_shared<LispleTest::PrnVehicle>());
   reader.switch_namespace("user");
 
   // When
@@ -190,7 +193,49 @@ TEST(Signature, coerce_args__map_to_host_type)
 
   // Then
   EXPECT_EQ(result->get_type(), Lisple::Form::HOST_OBJECT);
-  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*result));
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*result));
+}
+
+TEST(Signature, coerce_args__map_to_native_type__native_function)
+{
+  // Given
+  Lisple::Runtime reader;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store(
+    Lisple::Word("make-vehicle"),
+    std::make_shared<LispleTest::Native::VehicleMakeFunction>());
+  reader.get_current_namespace().store(Lisple::Word("prn-vehicle"),
+                                       std::make_shared<LispleTest::Native::PrnVehicle>());
+  reader.switch_namespace("user");
+
+  // When
+  Lisple::sptr_sobject result =
+    reader.eval(R"((vehicle/prn-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
+
+  // Then
+  EXPECT_EQ(result->get_type(), Lisple::Form::HOST_OBJECT);
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*result));
+}
+
+TEST(Signature, coerce_args__map_to_native_type__call_ast_based_native_function)
+{
+  // Given
+  Lisple::Runtime reader;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store(
+    Lisple::Word("make-vehicle"),
+    std::make_shared<LispleTest::Native::VehicleMakeFunction>());
+  reader.get_current_namespace().store(Lisple::Word("prn-vehicle"),
+                                       std::make_shared<LispleTest::PrnVehicle>());
+  reader.switch_namespace("user");
+
+  // When
+  Lisple::sptr_sobject result =
+    reader.eval(R"((vehicle/prn-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
+
+  // Then
+  EXPECT_EQ(result->get_type(), Lisple::Form::HOST_OBJECT);
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*result));
 }
 
 TEST(Signature, coerce_args__no_coercion_available)
@@ -199,9 +244,9 @@ TEST(Signature, coerce_args__no_coercion_available)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"),
-                                       std::make_shared<Tests::VehicleMakeFunction>());
+                                       std::make_shared<LispleTest::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("double-size-vehicle"),
-                                       std::make_shared<Tests::DoubleSizeVehicle>());
+                                       std::make_shared<LispleTest::DoubleSizeVehicle>());
   reader.switch_namespace("user");
 
   // When/Then
@@ -219,9 +264,9 @@ TEST(Signature, coerce_args__coerce_array_of_array_of_host_object)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"),
-                                       std::make_shared<Tests::VehicleMakeFunction>());
+                                       std::make_shared<LispleTest::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("a-of-a-taker"),
-                                       std::make_shared<Tests::ArrayOfArrayTaker>());
+                                       std::make_shared<LispleTest::ArrayOfArrayTaker>());
 
   // When
   Lisple::sptr_sobject result = reader.eval(R"((a-of-a-taker
@@ -237,15 +282,15 @@ TEST(Signature, coerce_args__coerce_array_of_array_of_host_object)
   EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*child1));
   EXPECT_EQ(child1->size(), 2);
 
-  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child1->get_children().at(0)));
-  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child1->get_children().at(1)));
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*child1->get_children().at(0)));
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*child1->get_children().at(1)));
 
   Lisple::sptr_sobject child2 = result->get_children().at(1);
   EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*child2));
   EXPECT_EQ(child2->size(), 2);
 
-  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child2->get_children().at(0)));
-  EXPECT_TRUE(Tests::VEHICLE_TYPE.is_type_of(*child2->get_children().at(1)));
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*child2->get_children().at(0)));
+  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*child2->get_children().at(1)));
 }
 
 TEST(Signature, coerce_args__coerce_array_elements)
@@ -254,9 +299,9 @@ TEST(Signature, coerce_args__coerce_array_elements)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(Lisple::Word("make-vehicle"),
-                                       std::make_shared<Tests::VehicleMakeFunction>());
+                                       std::make_shared<LispleTest::VehicleMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("count-seats"),
-                                       std::make_shared<Tests::CountVehicleSeats>());
+                                       std::make_shared<LispleTest::CountVehicleSeats>());
   reader.switch_namespace("user");
 
   // When
