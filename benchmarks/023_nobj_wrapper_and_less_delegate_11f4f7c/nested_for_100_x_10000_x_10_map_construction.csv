@@ -1,0 +1,4 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+41979385,nested_for_100_x_10000_x_10_map_construction,0,0,3965,0,3965
+48172417,nested_for_100_x_10000_x_10_map_construction,0,0,4035,0,4035
+48250430,nested_for_100_x_10000_x_10_map_construction,0,0,3967,0,3967

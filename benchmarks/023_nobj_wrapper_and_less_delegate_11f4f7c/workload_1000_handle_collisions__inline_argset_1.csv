@@ -1,0 +1,9 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+41987357,workload_1000_handle_collisions__inline_argset_1,0,0,8,38,46
+41987406,workload_1000_handle_collisions__inline_argset_1,0,0,8,37,45
+41987454,workload_1000_handle_collisions__inline_argset_1,1,0,8,36,45
+41995012,workload_1000_handle_collisions__inline_argset_1,0,0,7511,38,7549
+48180282,workload_1000_handle_collisions__inline_argset_1,1,0,7,37,45
+48187957,workload_1000_handle_collisions__inline_argset_1,1,0,7488,38,7527
+48258210,workload_1000_handle_collisions__inline_argset_1,0,0,8,37,45
+48265649,workload_1000_handle_collisions__inline_argset_1,1,0,7255,37,7293

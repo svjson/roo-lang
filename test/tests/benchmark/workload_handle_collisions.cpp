@@ -4433,7 +4433,7 @@ TEST(Workload, handle_collisions_inline_argset_1)
 TEST(Workload, handle_collisions_AST_host_adapters_inline_argset_1)
 {
   LispleTest::SnippetBenchmark bm(
-    "workload_1000_handle_collisions__inline_argset_1",
+    "workload_1000_host_adapters_handle_collisions__inline_argset_1",
     {{"pixils.point", LispleTest::PointASTBasedNamespace("pixils.point")}},
     {ASTEROIDS__ASTEROID,
      ASTEROIDS__DEBRIS,
@@ -4448,9 +4448,24 @@ TEST(Workload, handle_collisions_AST_host_adapters_inline_argset_1)
 TEST(Workload, handle_collisions_host_adapters_inline_argset_1)
 {
   LispleTest::SnippetBenchmark bm(
-    "workload_1000_handle_collisions__inline_argset_1",
+    "workload_1000_native_adapters_handle_collisions__inline_argset_1",
     {{"pixils.point", LispleTest::Native::PointNamespace("pixils.point")}},
     {ASTEROIDS__ASTEROID,
+     ASTEROIDS__DEBRIS,
+     NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
+    "asteroids.collision",
+    "(let [state {:player player :asteroids "
+    "asteroids :particles particles}]" +
+      HANDLE_COLLISIONS_BODY + ")");
+  bm.run();
+}
+
+TEST(Workload, handle_collisions_pure_lisple_inline_1000_argset_1)
+{
+  LispleTest::SnippetBenchmark bm(
+    "workload_1000_pure_lisple_handle_collisions__inline_argset_1",
+    {PIXILS__POINT,
+     ASTEROIDS__ASTEROID,
      ASTEROIDS__DEBRIS,
      NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
     "asteroids.collision",
