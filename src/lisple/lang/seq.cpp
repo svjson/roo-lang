@@ -105,6 +105,16 @@ namespace Lisple
     return Lisple::get_child(*args[0], 0);
   }
 
+  /* LastFunction */
+  FUNC_IMPL(LastFunction,
+            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&LastFunction::exec_last))))
+
+  EXEC_BODY(LastFunction, exec_last)
+  {
+    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    return Lisple::get_children(*args[0]).back();
+  }
+
   /* RandNth - rand-nth */
   FUNC_IMPL(RandNthFunction,
             SIG((FN_ARGS((&Lisple::Type::SEQ)),

@@ -49,9 +49,8 @@ namespace LispleTest
   FUNC_BODY(VehicleMakeFunction, make)
   {
     const std::string model_name =
-      args.front()->as<Lisple::Map>().get_property(*MODEL_NAME).as<Lisple::String>().value;
-    int seats =
-      args.front()->as<Lisple::Map>().get_property(*SEATS).as<Lisple::Number>().int_value();
+      args.front()->get_sptr_property(*MODEL_NAME)->as<Lisple::String>().value;
+    int seats = args.front()->get_sptr_property(*SEATS)->as<Lisple::Number>().int_value();
 
     return VehicleAdapter::make<Vehicle>(model_name, seats);
   }

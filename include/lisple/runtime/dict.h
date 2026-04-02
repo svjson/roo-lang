@@ -16,6 +16,7 @@ namespace Lisple::Dict
   const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data);
   const std::vector<const RTValue*> map_keys(const sptr_rtval_v& map_data);
   const std::vector<const RTValue*> map_keys(const RTValue& map_data);
+  std::vector<sptr_rtval> map_sptr_keys(const sptr_rtval& dict);
   std::unordered_set<std::string> map_string_keys(RTValue& map);
 
   sptr_rtval get_property_or_throw(RTValue& source, const std::string& keyword);

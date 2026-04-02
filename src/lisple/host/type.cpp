@@ -53,7 +53,7 @@ namespace Lisple
       {
         return is_type_of(*wrapper->val);
       }
-      return is_type_of(*wrapper->delegate);
+      return is_type_of(*wrapper->val);
     }
 
     if (*NIL != obj && TypeRef::is_type_of(obj))

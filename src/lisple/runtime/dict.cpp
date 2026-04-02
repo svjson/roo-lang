@@ -187,6 +187,17 @@ namespace Lisple::Dict
     return keys;
   }
 
+  std::vector<sptr_rtval> map_sptr_keys(const sptr_rtval& dict)
+  {
+    std::vector<sptr_rtval> keys;
+    sptr_rtval_v dc = get_children(*dict);
+    for (size_t i = 0; i < dc.size(); i += 2)
+    {
+      keys.push_back(dc[i]);
+    }
+    return keys;
+  }
+
   const std::vector<const RTValue*> map_keys(const RTValue& map_data)
   {
     if (const Lisple::sptr_rtval_v* children = std::get_if<sptr_rtval_v>(&map_data.value))

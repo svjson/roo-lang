@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include <lisple/lang/seq_func.h>
+#include <lisple/runtime/dict.h>
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
@@ -131,6 +132,49 @@ namespace Lisple
     }
 
     return result;
+  }
+
+  /* SeqMatchFunction */
+  FUNC_IMPL(SeqMatchFunction,
+            SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::MAP)),
+                 EXEC_DISPATCH(&SeqMatchFunction::exec_match))))
+
+  bool match_map_like(sptr_rtval& obj, sptr_rtval& pattern)
+  {
+    for (auto& key : Dict::map_sptr_keys(pattern))
+    {
+      sptr_rtval prop = Dict::get_property(pattern, *key);
+      sptr_rtval value = Dict::get_property(obj, *key);
+
+      if (*Constant::NIL != *prop && Type::COMPLEX.is_type_of(*prop))
+      {
+        if (!match_map_like(value, prop))
+        {
+          return false;
+        }
+      }
+      else if (*prop != *value)
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  EXEC_BODY(SeqMatchFunction, exec_match)
+  {
+    sptr_rtval& pattern = args.back();
+
+    for (auto& obj : Lisple::get_children(*args[0]))
+    {
+      if (match_map_like(obj, pattern))
+      {
+        return obj;
+      }
+    }
+
+    return Constant::NIL;
   }
 
   /* SortFunction - sort */

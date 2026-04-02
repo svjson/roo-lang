@@ -1,8 +1,9 @@
 
-#include <gtest/gtest.h>
 #include <lisple/form.h>
 #include <lisple/impl.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(str_val, returns_value_of_string_based_forms)
 {
@@ -16,14 +17,6 @@ TEST(str_val, returns_value_of_number_as_string)
 {
   EXPECT_EQ(Lisple::str_val(Lisple::Number(242)), "242");
   EXPECT_EQ(Lisple::str_val(Lisple::Number(18.65f)), "18.650000");
-}
-
-TEST(float_val, rt_value)
-{
-  Lisple::sptr_rtval fv = Lisple::RTValue::number(5.0);
-  Lisple::RuntimeValueWrapper wrapped(fv);
-
-  EXPECT_EQ(Lisple::float_val(wrapped), 5.0);
 }
 
 TEST(subst_sexp_lmnt, substitute_first_element_of_array)

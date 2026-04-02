@@ -113,6 +113,7 @@ namespace Lisple
     const std::string& str() const;
     sptr_sobject obj() const;
     sptr_native_obj nobj() const;
+    Executable& exec() const;
     template <typename T> T& adapter()
     {
       return *dynamic_cast<T*>(std::get<sptr_native_obj>(value).get());
@@ -128,6 +129,7 @@ namespace Lisple
   } // namespace Constant
 
   sptr_rtval to_rt_value(sptr_sobject& obj);
+  sptr_rtval to_rt_value(const Object& obj);
   sptr_sobject to_AST(RTValue& val);
   bool is_truthy(RTValue& val);
 

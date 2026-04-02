@@ -207,7 +207,6 @@ namespace Lisple
   };
 
   FUNC_DECL(TailFunction, tail)
-  FUNC_DECL(LastFunction, last)
 
   /*!
    * @brief Tests if a Seq contains a specific value
@@ -488,28 +487,6 @@ namespace Lisple
   FUNC_DECL(RemoveBangFunction, remove_seq)
 
   /*!
-   * @brief Perform a functional reduce on all key-value pairs of a Map.
-   *
-   * Usage:
-   * @code
-   * (reduce {:a 1 :b 2}
-   *         {:total 0}
-   *         (fn [result k v] (assoc result
-   *                                 :total
-   *                                 (+ v (:total result)))))
-   * => {:total 3}
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map to reduce                                                |
-   * | 1     | The initial value of result                                      |
-   * | 2     | A function to apply for each key-value pair, taking the key and  |
-   * |       | the value for each pair in the map accumulated result            |
-   */
-  FUNC_DECL(ReduceKeyValueFunction, reduce_kv)
-
-  /*!
    * @brief Returns the first element of a seq that matches a predicate function,
    * or nil if no match is found.
    *
@@ -528,22 +505,6 @@ namespace Lisple
    * | 1     | The predicate function                                           |
    */
   FUNC_DECL(FindFirstFunction, find_first_in_seq)
-
-  /*!
-   * @brief Query a seq against a pattern in form of a partial map. Returns the
-   * first element that matches all defined keys in the pattern
-   *
-   * Usage:
-   * @code
-   * (seq-match seq {:id 2 :status {:desc "disabled"}})
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to query                                            |
-   * | 1     | The partial map pattern to match                                 |
-   */
-  FUNC_DECL(SeqMatchFunction, match)
 
   /*!
    * @brief Essentially functions as a combination of map and filter, but

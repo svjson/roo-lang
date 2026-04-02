@@ -67,6 +67,22 @@ namespace Lisple
   FUNC(ReduceFunction, reduce)
 
   /*!
+   * @brief Query a seq against a pattern in form of a partial map. Returns the
+   * first element that matches all defined keys in the pattern
+   *
+   * Usage:
+   * @code
+   * (seq-match seq {:id 2 :status {:desc "disabled"}})
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The sequence to query                                            |
+   * | 1     | The partial map pattern to match                                 |
+   */
+  FUNC(SeqMatchFunction, match)
+
+  /*!
    * @brief Sorts a sequence according to a predicate function.
    *
    * Usage: (sort [5 3 7 2 8 1] <) => [1 2 3 5 7 8]

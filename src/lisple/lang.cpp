@@ -99,7 +99,7 @@ namespace Lisple
     lang.emplace("join", std::make_shared<JoinFunction>());
     lang.emplace("keep", std::make_shared<KeepFunction>());
     lang.emplace("keys", std::make_shared<KeysFunction>());
-    lang.emplace("last", std::make_shared<LastFunction>());
+    lang_symbols.emplace("last", LastFunction::make());
     lang_symbols.emplace("let", LetForm::make());
     lang.emplace("lower-case", std::make_shared<LowerCaseFunction>());
     lang_symbols.emplace("map", MapFunction::make());
@@ -122,7 +122,7 @@ namespace Lisple
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
     lang_symbols.emplace("range", RangeFunction::make());
     lang_symbols.emplace("reduce", ReduceFunction::make());
-    lang.emplace("reduce-kv", std::make_shared<ReduceKeyValueFunction>());
+    lang_symbols.emplace("reduce-kv", ReduceKeyValueFunction::make());
     lang.emplace("remove", std::make_shared<RemoveFunction>());
     lang.emplace("remove-first", std::make_shared<RemoveFirstFunction>());
     lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
@@ -132,7 +132,7 @@ namespace Lisple
     lang.emplace("resolve", std::make_shared<ResolveFunction>());
     lang_symbols.emplace("rnd", RndFunction::make());
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
-    lang.emplace("seq-match", std::make_shared<SeqMatchFunction>());
+    lang_symbols.emplace("seq-match", SeqMatchFunction::make());
     lang.emplace("set!", std::make_shared<SetBangMacro>());
     lang.emplace("sin", std::make_shared<SinFunction>());
     lang.emplace("some?", std::make_shared<SomeFunction>());
@@ -372,7 +372,7 @@ namespace Lisple
 
   FUNC_BODY(NilPredicateFunction, is_nil)
   {
-    return *args[0] == *NIL ? B_TRUE : B_FALSE;
+    return args[0]->get_type() == Lisple::Form::NIL ? B_TRUE : B_FALSE;
   }
 
   SetBangMacro::SetBangMacro()
@@ -648,10 +648,16 @@ namespace Lisple
       return NIL;
     }
 
-    sptr_sobject removed = args[0]->as<Lisple::Map>().remove_key(*args[1]);
+    sptr_sobject removed = Lisple::NIL;
+
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[0].get()))
     {
-      Dict::remove_property(wrapper->val, to_rt_value(args[1]));
+      removed =
+        RuntimeValueWrapper::make(Dict::remove_property(wrapper->val, to_rt_value(args[1])));
+    }
+    else
+    {
+      removed = args[0]->as<Lisple::Map>().remove_key(*args[1]);
     }
 
     return removed;
@@ -740,15 +746,18 @@ namespace Lisple
 
   FUNC_BODY(TailFunction, tail)
   {
-    return std::make_shared<Lisple::Array>(args[0]->as<Lisple::Seq>().tail());
-  }
+    sptr_sobject_v tail;
+    if (args[0]->size() > 1)
+    {
+      auto children = args[0]->get_children();
+      tail.reserve(children.size() - 1);
+      for (size_t i = 1; i < children.size(); i++)
+      {
+        tail.push_back(children[i]);
+      }
+    }
 
-  /* LastFunction */
-  FUNC_IMPL(LastFunction, SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&LastFunction::last))))
-
-  FUNC_BODY(LastFunction, last)
-  {
-    return args[0]->as<Lisple::Seq>().get_children().back();
+    return Array::make(tail);
   }
 
   /* FilterFunction */
@@ -889,9 +898,10 @@ namespace Lisple
 
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[1].get()))
     {
-      if (Type::HOST_SEQ.is_type_of(*wrapper->delegate))
+      if (wrapper->val->type == RTValue::Type::OBJECT &&
+          Type::HOST_SEQ.is_type_of(*wrapper->delegate))
       {
-        args[1]->as<Seq>().replace_children(children);
+        wrapper->val->obj()->as<Seq>().replace_children(children);
       }
       else
       {
@@ -937,30 +947,6 @@ namespace Lisple
     return to_delete;
   }
 
-  /* ReduceKeyValueFunction - reduce-kv */
-  FUNC_IMPL(ReduceKeyValueFunction,
-            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&ReduceKeyValueFunction::reduce_kv))))
-
-  FUNC_BODY(ReduceKeyValueFunction, reduce_kv)
-  {
-    sptr_sobject result = args[1];
-    Function& reducer = args.back()->as<Function>();
-
-    for (auto key : args[0]->as<Map>().key_ptrs())
-    {
-      sptr_sobject_v reducer_args{result, key, args[0]->get_sptr_property(*key)};
-
-      sptr_sobject new_result = reducer.execute(ctx, reducer_args);
-      if (new_result.get() != result.get())
-      {
-        result.swap(new_result);
-      }
-    }
-
-    return result;
-  }
-
   /* FindFirstFunction - find-first */
   FUNC_IMPL(FindFirstFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
@@ -979,49 +965,6 @@ namespace Lisple
       if (*pred_result != *B_FALSE && *pred_result != *NIL)
       {
         return val;
-      }
-    }
-
-    return NIL;
-  }
-
-  FUNC_IMPL(SeqMatchFunction,
-            SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::MAP)),
-                 EXEC_DISPATCH(&SeqMatchFunction::match))))
-
-  bool match_map_like(sptr_sobject& obj, sptr_sobject& pattern)
-  {
-    for (Object* key : pattern->as<Lisple::Map>().keys())
-    {
-      sptr_sobject prop = pattern->get_sptr_property(*key);
-      sptr_sobject value = obj->get_sptr_property(*key);
-
-      if (*NIL != *prop && Type::MAP.is_type_of(*prop))
-      {
-        if (!match_map_like(value, prop))
-        {
-          return false;
-        }
-      }
-      else if (*prop != *value)
-      {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  FUNC_BODY(SeqMatchFunction, match)
-  {
-    sptr_sobject& seq = args[0];
-    sptr_sobject& pattern = args.back();
-
-    for (auto& obj : seq->get_children())
-    {
-      if (match_map_like(obj, pattern))
-      {
-        return obj;
       }
     }
 

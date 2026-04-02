@@ -115,14 +115,38 @@ namespace Lisple
     return args[0];
   }
 
+  /** GetFunction - get */
   FUNC_IMPL(GetFunction,
             SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
                  EXEC_DISPATCH(&GetFunction::exec_get))))
 
-  /** GetFunction - get */
   EXEC_BODY(GetFunction, exec_get)
   {
     return Dict::get_property(args[0], args[1]);
+  }
+
+  /* ReduceKeyValueFunction - reduce-kv */
+  FUNC_IMPL(ReduceKeyValueFunction,
+            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::EXEC)),
+                 EXEC_DISPATCH(&ReduceKeyValueFunction::exec_reduce_kv))))
+
+  EXEC_BODY(ReduceKeyValueFunction, exec_reduce_kv)
+  {
+    sptr_rtval result = args[1];
+    Executable& reducer = args.back()->exec();
+
+    for (auto key : Dict::map_sptr_keys(args[0]))
+    {
+      sptr_rtval_v reducer_args{result, key, Dict::get_property(args[0], *key)};
+
+      sptr_rtval new_result = reducer.execute(ctx, reducer_args);
+      if (new_result.get() != result.get())
+      {
+        result.swap(new_result);
+      }
+    }
+
+    return result;
   }
 
 } // namespace Lisple

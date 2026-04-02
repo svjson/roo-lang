@@ -11,3 +11,12 @@ TEST(HeadFunction, head_vector)
   // When
   EXPECT_EQ(runtime.eval("(head [8 9 10])")->to_string(), "8");
 }
+
+TEST(HeadFunction, head_nil)
+{
+  // Given
+  Lisple::Runtime runtime;
+
+  // When
+  EXPECT_EQ(runtime.eval("(head nil)")->to_string(), "nil");
+}

@@ -1,11 +1,12 @@
 
-#include "gmock/gmock.h"
-#include <gtest/gtest.h>
+#include "lisple/form.h"
+#include "lisple/runtime/value.h"
+
 #include <lisple/bind.h>
 #include <lisple/runtime.h>
 
-#include "lisple/form.h"
-#include "lisple/runtime/value.h"
+#include "gmock/gmock.h"
+#include <gtest/gtest.h>
 
 using namespace ::testing;
 

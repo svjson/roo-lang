@@ -77,6 +77,28 @@ namespace Lisple
    */
   FUNC(GetFunction, get);
 
+  /*!
+   * @brief Perform a functional reduce on all key-value pairs of a Map.
+   *
+   * Usage:
+   * @code
+   * (reduce {:a 1 :b 2}
+   *         {:total 0}
+   *         (fn [result k v] (assoc result
+   *                                 :total
+   *                                 (+ v (:total result)))))
+   * => {:total 3}
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map to reduce                                                |
+   * | 1     | The initial value of result                                      |
+   * | 2     | A function to apply for each key-value pair, taking the key and  |
+   * |       | the value for each pair in the map accumulated result            |
+   */
+  FUNC(ReduceKeyValueFunction, reduce_kv)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__STRUCT_H */

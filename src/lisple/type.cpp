@@ -23,6 +23,10 @@ namespace Lisple
 
   bool TypeRef::is_type_of(const Object& obj) const
   {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    {
+      return is_type_of(*wrapper->val);
+    }
     if (obj == *NIL) return true;
     return obj.get_type() == form_type;
   }

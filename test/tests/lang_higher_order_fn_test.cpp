@@ -1,12 +1,6 @@
+#include <memory>
+#include <vector>
 
-
-#include "gmock/gmock.h"
-#include "runtime_fixture.h"
-#include <ext/alloc_traits.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
 #include <lisple/adapter.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
@@ -15,8 +9,14 @@
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
 #include <lisple/type.h>
-#include <memory>
-#include <vector>
+
+#include "gmock/gmock.h"
+#include "runtime_fixture.h"
+#include <ext/alloc_traits.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using namespace ::testing;
 
@@ -32,17 +32,16 @@ TEST(FilterFunction, filter_array)
   Lisple::Runtime runtime;
 
   // When
-  auto retval = runtime.eval("(filter [1 2 3 4 5 6] even?)");
+  auto result = runtime.eval("(filter [1 2 3 4 5 6] even?)");
 
   // Then
-  ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*retval));
+  ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
 
-  Lisple::Object& result = retval->as<Lisple::Array>();
-  ASSERT_EQ(result.get_children().size(), 3);
+  ASSERT_EQ(result->get_children().size(), 3);
 
-  EXPECT_EQ(*result.get_children().at(0), Lisple::Number(2));
-  EXPECT_EQ(*result.get_children().at(1), Lisple::Number(4));
-  EXPECT_EQ(*result.get_children().at(2), Lisple::Number(6));
+  EXPECT_EQ(*result->get_children().at(0), Lisple::Number(2));
+  EXPECT_EQ(*result->get_children().at(1), Lisple::Number(4));
+  EXPECT_EQ(*result->get_children().at(2), Lisple::Number(6));
 }
 
 TEST(FilterFunction, filter_vector_int)
@@ -55,17 +54,16 @@ TEST(FilterFunction, filter_vector_int)
                                         std::make_shared<Lisple::VectorInt>(int_v));
 
   // When
-  auto retval = runtime.eval("(filter wrapped-vec even?)");
+  auto result = runtime.eval("(filter wrapped-vec even?)");
 
   // Then
-  ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*retval));
+  ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
 
-  Lisple::Object& result = retval->as<Lisple::Array>();
-  ASSERT_EQ(result.get_children().size(), 3);
+  ASSERT_EQ(result->get_children().size(), 3);
 
-  EXPECT_EQ(*result.get_children().at(0), Lisple::Number(2));
-  EXPECT_EQ(*result.get_children().at(1), Lisple::Number(4));
-  EXPECT_EQ(*result.get_children().at(2), Lisple::Number(6));
+  EXPECT_EQ(*result->get_children().at(0), Lisple::Number(2));
+  EXPECT_EQ(*result->get_children().at(1), Lisple::Number(4));
+  EXPECT_EQ(*result->get_children().at(2), Lisple::Number(6));
 }
 
 /*
@@ -115,26 +113,6 @@ TEST(KeepFunction, transform_even)
   ASSERT_EQ(
     *result,
     Lisple::Array({Lisple::String::make("Number 2"), Lisple::String::make("Number 4")}));
-}
-
-/*
- * ======================================================================
- * ReduceKeyValueFunction - (reduce-kv [...] reducer-fn)
- * ======================================================================
- */
-
-TEST(ReduceKeyValueFunction, recreate_map)
-{
-  // Given
-  Lisple::Runtime runtime;
-  runtime.eval("(def original-map {:a [1 2 3 4 5] :b [1 2 3]})");
-
-  // when
-  auto retval =
-    runtime.eval("(reduce-kv original-map {} (fn [r k v] (assoc r k (count v))))");
-
-  // Then
-  EXPECT_EQ(*retval, *runtime.eval("{:a 5 :b 3}"));
 }
 
 /*

@@ -44,6 +44,21 @@ namespace Lisple
    */
   FUNC(HeadFunction, head)
 
+  /*!
+   * @brief Get the last element of a sequence
+   *
+   * Usage:
+   * @code
+   * (last [1 2 3]) => 1
+   * (last []) => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The sequence to retrieve the last element from                   |
+   */
+  FUNC(LastFunction, last);
+
   FUNC(NthFunction, nth);
 
   /*!

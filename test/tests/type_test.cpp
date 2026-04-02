@@ -1,13 +1,14 @@
 
+#include <lisple/context.h>
+#include <lisple/form.h>
+#include <lisple/runtime.h>
+#include <lisple/type.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <lisple/context.h>
-#include <lisple/form.h>
-#include <lisple/runtime.h>
-#include <lisple/type.h>
 
 TEST(TypeRef, is_type_of)
 {
@@ -29,14 +30,17 @@ TEST(TypeRef, is_type_of)
 TEST(TypeRef, rtwrapper_is_type_of)
 {
   // Given
-  Lisple::sptr_rtval str_val = Lisple::RTValue::string("this is a string");
-  Lisple::RuntimeValueWrapper obj(str_val);
+  Lisple::sptr_rtval map_val = Lisple::RTValue::map({Lisple::RTValue::keyword("name"),
+                                                     Lisple::RTValue::string("Hetty"),
+                                                     Lisple::RTValue::keyword("score"),
+                                                     Lisple::RTValue::number(5000000)});
+  Lisple::RuntimeValueWrapper obj(map_val);
 
   // Then
-  EXPECT_TRUE(Lisple::Type::STRING.is_type_of(obj));
+  EXPECT_TRUE(Lisple::Type::MAP.is_type_of(obj));
 
   EXPECT_FALSE(Lisple::Type::FUNCTION.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::MAP.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::STRING.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::LIST.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::WORD.is_type_of(obj));

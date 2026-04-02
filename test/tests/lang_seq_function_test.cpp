@@ -1,9 +1,7 @@
 
-#include <ext/alloc_traits.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
+#include <memory>
+#include <vector>
+
 #include <lisple/adapter.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
@@ -13,8 +11,12 @@
 #include <lisple/reader.h>
 #include <lisple/runtime.h>
 #include <lisple/type.h>
-#include <memory>
-#include <vector>
+
+#include <ext/alloc_traits.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using namespace ::testing;
 
@@ -178,9 +180,9 @@ TEST(TailFunction, tail_of_array)
   auto result_wrapped = runtime.eval("(tail wrapped-vec)");
 
   // Then
-  EXPECT_EQ(*result_ref, *runtime.eval("['b' 'c']"));
-  EXPECT_EQ(*result_lit, *runtime.eval("['b' 'c']"));
-  EXPECT_EQ(*result_wrapped, *runtime.eval("[100 90]"));
+  EXPECT_EQ(result_ref->to_string(), "['b' 'c']");
+  EXPECT_EQ(result_lit->to_string(), "['b' 'c']");
+  EXPECT_EQ(result_wrapped->to_string(), "[100 90]");
 }
 
 TEST(TailFunction, single_element)

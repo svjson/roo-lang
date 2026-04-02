@@ -2,6 +2,7 @@
 #include "lisple/runtime/value.h"
 
 #include <lisple/exception.h>
+#include <lisple/exec.h>
 #include <lisple/form.h>
 #include <lisple/impl.h>
 #include <lisple/runtime/pool.h>
@@ -317,6 +318,7 @@ namespace Lisple
     case Type::STRING:
     case Type::SYMBOL:
       return std::get<std::string>(this->value) == std::get<std::string>(other.value);
+    case Type::MAP:
     case Type::VECTOR:
     {
       const sptr_rtval_v& a = std::get<sptr_rtval_v>(value);
@@ -369,6 +371,11 @@ namespace Lisple
     return std::get<sptr_native_obj>(value);
   }
 
+  Executable& RTValue::exec() const
+  {
+    return *dynamic_cast<Executable*>(std::get<sptr_sobject>(value).get());
+  }
+
   const std::string& RTValue::str() const
   {
     return std::get<std::string>(value);
@@ -379,6 +386,45 @@ namespace Lisple
     return Lisple::split_qualifiable(str());
   }
 
+  sptr_rtval to_rt_value(const Object& obj)
+  {
+    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj)) return wrapper->val;
+
+    switch (obj.get_type())
+    {
+    case Form::ARRAY:
+    {
+      sptr_rtval_v elements;
+
+      for (auto& c : dynamic_cast<const Array*>(&obj)->children)
+      {
+        elements.push_back(to_rt_value(c));
+      }
+
+      return RTValue::vector(elements);
+    }
+    case Form::BOOLEAN:
+      return RTValue::boolean(Value<bool>::value_of(obj));
+    case Form::CHAR:
+      return RTValue::character(Value<char>::value_of(obj));
+    case Form::MAP:
+    {
+      sptr_rtval_v elements;
+
+      for (auto& c : dynamic_cast<const Map*>(&obj)->children)
+      {
+        elements.push_back(to_rt_value(c));
+      }
+
+      return RTValue::map(elements);
+    }
+
+    default:
+      throw LispleException("to_rt_value(Object&): Unsupported value type #" +
+                            std::to_string(static_cast<int>(obj.get_type())));
+    }
+  }
+
   sptr_rtval to_rt_value(std::shared_ptr<Object>& obj)
   {
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(obj.get())) return wrapper->val;
@@ -387,22 +433,10 @@ namespace Lisple
     switch (obj->get_type())
     {
     case Form::ARRAY:
-    {
-      sptr_rtval_v elements;
-
-      for (auto& c : obj->get_children())
-      {
-        elements.push_back(to_rt_value(c));
-      }
-
-      return RTValue::vector(elements);
-    }
     case Form::BOOLEAN:
-      return RTValue::boolean(Value<bool>::value_of(*obj));
-      // To allow polymorphic invocation of Object::execute, all functions and executables
-      // are stored as Object* for the time being.
     case Form::CHAR:
-      return RTValue::character(Value<char>::value_of(*obj));
+    case Form::MAP:
+      return to_rt_value(*obj);
     case Form::FUNCTION:
       return RTValue::executable(obj);
     case Form::MACRO:
@@ -413,17 +447,6 @@ namespace Lisple
       return RTValue::object(obj);
     case Form::KEY:
       return RTValue::keyword(Value<std::string>::value_of(*obj));
-    case Form::MAP:
-    {
-      sptr_rtval_v elements;
-
-      for (auto& c : obj->get_children())
-      {
-        elements.push_back(to_rt_value(c));
-      }
-
-      return RTValue::map(elements);
-    }
     case Form::NIL:
       return Constant::NIL;
     case Form::NUMBER:

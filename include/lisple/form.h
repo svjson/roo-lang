@@ -408,6 +408,7 @@ namespace Lisple
    public:
     sptr_rtval val;
     sptr_sobject delegate;
+    sptr_sobject_v child_memo;
 
     RuntimeValueWrapper(const sptr_rtval& val);
 

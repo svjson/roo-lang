@@ -211,7 +211,7 @@ namespace Lisple
             {
               prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
               sptr_rtval result = sig->invoke(ctx, node_args);
-              return std::make_shared<RuntimeValueWrapper>(result);
+              return RuntimeValueWrapper::make(result);
             }
             else
             {

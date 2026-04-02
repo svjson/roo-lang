@@ -29,6 +29,7 @@ namespace Lisple
       std::get<std::string>(std::get<LiteralNode>(args[0]->data).value->value);
     sptr_rtval& value = std::get<LiteralNode>(args[1]->data).value;
     ctx.store_namespace(key, value);
+
     return value;
   }
 

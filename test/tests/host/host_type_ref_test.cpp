@@ -64,10 +64,8 @@ TEST(HostTypeRef, is_type__RTWrapper)
   Lisple::sptr_rtval vehicle_val = Lisple::RTValue::object(adapter);
   Lisple::sptr_rtval book_val = Lisple::RTValue::object(other_adapter);
 
-  Lisple::sptr_sobject wrapped_vehicle =
-    std::make_shared<Lisple::RuntimeValueWrapper>(vehicle_val);
-  Lisple::sptr_sobject wrapped_book =
-    std::make_shared<Lisple::RuntimeValueWrapper>(book_val);
+  Lisple::sptr_sobject wrapped_vehicle = Lisple::RuntimeValueWrapper::make(vehicle_val);
+  Lisple::sptr_sobject wrapped_book = Lisple::RuntimeValueWrapper::make(book_val);
 
   // Then
   EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*wrapped_vehicle));
