@@ -65,16 +65,22 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/type.cpp
 )
 
-add_library(lisple INTERFACE)
-add_library(lisple_static STATIC ${lisple_SOURCES})
-add_library(lisple_shared SHARED ${lisple_SOURCES})
+add_library(lisple_objects OBJECT ${lisple_SOURCES})
+target_include_directories(lisple_objects
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
+set_target_properties(lisple_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+add_library(lisple INTERFACE)
+add_library(lisple_static STATIC $<TARGET_OBJECTS:lisple_objects>)
+add_library(lisple_shared SHARED $<TARGET_OBJECTS:lisple_objects>)
 
 foreach(target lisple_static lisple_shared)
 
   set_target_properties(${target} PROPERTIES
     OUTPUT_NAME lisple
-    POSITION_INDEPENDENT_CODE ON
   )
 
   target_link_libraries(${target})
