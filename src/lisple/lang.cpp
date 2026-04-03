@@ -1,6 +1,8 @@
 
 #include "lisple/lang.h"
 
+#include "lisple/lang/num.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -149,6 +151,7 @@ namespace Lisple
     lang_symbols.emplace("when", WhenForm::make());
     lang.emplace("when-let", std::make_shared<WhenLetMacro>());
     lang.emplace("while", std::make_shared<WhileMacro>());
+    lang_symbols.emplace("zero?", ZeroPFunction::make());
 
     return Namespace::make_lang(lang, lang_symbols);
   }

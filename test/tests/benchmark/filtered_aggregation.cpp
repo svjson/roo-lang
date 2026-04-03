@@ -28,6 +28,15 @@ const std::string DEFUN_MAKE_ENTITIES = R"(
      :fallback (when (= 0 (mod i 5)) (+ i 7))}))
                                          )";
 
+const std::string DEFUN_MAKE_ENTITIES__ZEROP = R"(
+(defun make-entities [n]
+  (for [i (range 1 n)]
+    {:id i
+     :active (even? i)
+     :value (when (zero? (mod i 3)) (* i 2))
+     :fallback (when (zero? (mod i 5)) (+ i 7))}))
+                                         )";
+
 TEST(Workload, filtered_aggregation_10000_entities)
 {
   LispleTest::SnippetBenchmark bm(
@@ -46,6 +55,41 @@ TEST(Benchmark_Workload, benchmark_filtered_aggregation_100_iterations_10000_ent
     {"(ns process)" + DEFUN_MAKE_ENTITIES + DEFUN_PROCESS_ENTITIES},
     "process",
     "(dotimes [n 100] (process-entities (make-entities 10000)))");
+
+  bm.run();
+}
+
+TEST(Benchmark_Workload, benchmark_filtered_aggregation_100_iterations_100000_entities)
+{
+  LispleTest::SnippetBenchmark bm(
+    "filtered_aggregation__100_iterations_100000_entities",
+    {"(ns process)" + DEFUN_MAKE_ENTITIES + DEFUN_PROCESS_ENTITIES},
+    "process",
+    "(dotimes [n 100] (process-entities (make-entities 100000)))");
+
+  bm.run();
+}
+
+TEST(Benchmark_Workload,
+     benchmark_filtered_aggregation_100_iterations_10000_entities__with_zerop)
+{
+  LispleTest::SnippetBenchmark bm(
+    "filtered_aggregation__100_iterations_10000_entities__with_zerop",
+    {"(ns process)" + DEFUN_MAKE_ENTITIES__ZEROP + DEFUN_PROCESS_ENTITIES},
+    "process",
+    "(dotimes [n 100] (process-entities (make-entities 10000)))");
+
+  bm.run();
+}
+
+TEST(Benchmark_Workload,
+     benchmark_filtered_aggregation_100_iterations_100000_entities__with_zerop)
+{
+  LispleTest::SnippetBenchmark bm(
+    "filtered_aggregation__100_iterations_100000_entities__with_zerop",
+    {"(ns process)" + DEFUN_MAKE_ENTITIES__ZEROP + DEFUN_PROCESS_ENTITIES},
+    "process",
+    "(dotimes [n 100] (process-entities (make-entities 100000)))");
 
   bm.run();
 }
