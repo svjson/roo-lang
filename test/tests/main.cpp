@@ -1,9 +1,11 @@
-#include "benchmark/benchmark.h"
 #include <chrono>
 #include <cstdlib>
+
+#include <lisple/runtime/exec_node.h>
+
+#include "benchmark/benchmark.h"
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <lisple/runtime/exec_node.h>
 
 int main(int argc, char** argv)
 {

@@ -1,4 +1,6 @@
 
+#include "lisple/runtime/value.h"
+
 #include <lisple/form.h>
 #include <lisple/impl.h>
 #include <lisple/runtime.h>
@@ -24,7 +26,7 @@ TEST(subst_sexp_lmnt, substitute_first_element_of_array)
   // Given
   Lisple::Runtime runtime;
   ;
-  Lisple::Array array = runtime.eval("[1 2 3 4]")->as<Lisple::Array>();
+  Lisple::Array array = Lisple::to_AST(*runtime.eval("[1 2 3 4]"))->as<Lisple::Array>();
 
   // When
   auto result = Lisple::subst_sexp_lmnt(array, 0, std::make_shared<Lisple::String>("one"));

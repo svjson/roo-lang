@@ -30,7 +30,7 @@ namespace Lisple
     {
       Scope var_scope;
       auto binding = ArgumentBinding::create(*bindings.get_children()[i]);
-      auto init_expr = ctx.eval(bindings.get_children()[i + 1]);
+      auto init_expr = ctx.eval_ast(bindings.get_children()[i + 1]);
       binding->apply(var_scope, init_expr);
       ctx.push_context(true, var_scope);
     }
@@ -39,7 +39,7 @@ namespace Lisple
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = ctx.eval(args[i]);
+      result = ctx.eval_ast(args[i]);
     }
 
     for (size_t i = 0; i < bindings.size() / 2; i++)
@@ -130,7 +130,7 @@ namespace Lisple
     for (size_t i = 0; i < binding_form.size(); i += 2)
     {
       auto& var_name_obj = *binding_form.get_children()[i];
-      auto var_val_obj = ctx.eval(binding_form.get_children()[i + 1]);
+      auto var_val_obj = ctx.eval_ast(binding_form.get_children()[i + 1]);
 
       if (!var_val_obj->is_truthy())
       {
@@ -155,11 +155,11 @@ namespace Lisple
 
     if (!contains_non_truthy)
     {
-      result = ctx.eval(args[1]);
+      result = ctx.eval_ast(args[1]);
     }
     else
     {
-      result = ctx.eval(args[2]);
+      result = ctx.eval_ast(args[2]);
     }
     for (size_t i = 0; i < scopes; i++)
     {

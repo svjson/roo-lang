@@ -98,9 +98,8 @@ TEST(SeqRef, Array_of_String__is_type_of)
   Lisple::Key key("string");
   Lisple::QSymbol symbol("symbol");
   Lisple::Word word("word");
-  fixture.ctx.push_context(false);
   auto list_of_string =
-    fixture.runtime.eval(fixture.ctx, "(\"stringA\" \"stringB\" \"stringC\")");
+    fixture.runtime.eval(fixture.ctx, "'(\"stringA\" \"stringB\" \"stringC\")");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*array_of_string));

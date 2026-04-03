@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(PlusFunction, simple_addition)
 {
@@ -10,7 +11,7 @@ TEST(PlusFunction, simple_addition)
   auto result = runtime.eval("(+ 10 5)");
 
   // Then
-  EXPECT_EQ(*result, Lisple::Number(15));
+  EXPECT_EQ(*result, *Lisple::RTValue::number(15));
 }
 
 TEST(PlusFunction, multiple_arg_addition)
@@ -22,5 +23,5 @@ TEST(PlusFunction, multiple_arg_addition)
   auto result = runtime.eval("(+ 10 5 2 5)");
 
   // Then
-  EXPECT_EQ(*result, Lisple::Number(22));
+  EXPECT_EQ(*result, *Lisple::RTValue::number(22));
 }

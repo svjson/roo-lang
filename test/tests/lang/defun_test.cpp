@@ -1,8 +1,9 @@
 
-#include "../runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <lisple/lang/func.h>
 #include <lisple/runtime.h>
+
+#include "../runtime_fixture.h"
+#include <gtest/gtest.h>
 
 TEST(DefunForm, define_no_arg_fun)
 {
@@ -66,9 +67,9 @@ TEST(DefunForm, defun_with_static_return_value)
 
   // Then
   ASSERT_TRUE(fixture.runtime.get_current_namespace().has(Lisple::Word("gimme-five")));
-  Lisple::sptr_sobject_v args;
-  auto retval = result->execute(fixture.ctx, args);
-  ASSERT_EQ(retval->as<Lisple::Number>().int_value(), 5);
+  Lisple::sptr_rtval_v args;
+  auto retval = result->exec().execute(fixture.ctx, args);
+  ASSERT_EQ(retval->i64(), 5);
 }
 
 TEST(DefunForm, defun_with_single_argument)
@@ -82,9 +83,9 @@ TEST(DefunForm, defun_with_single_argument)
 
   // Then
   ASSERT_TRUE(fixture.runtime.get_current_namespace().has(Lisple::Word("add-five")));
-  Lisple::sptr_sobject_v args{std::make_shared<Lisple::Number>(6)};
-  auto retval = result->execute(fixture.ctx, args);
-  ASSERT_EQ(retval->as<Lisple::Number>().int_value(), 11);
+  Lisple::sptr_rtval_v args{Lisple::RTValue::number(6)};
+  auto retval = result->exec().execute(fixture.ctx, args);
+  ASSERT_EQ(retval->i64(), 11);
 }
 
 TEST(DefunForm, defun_with_destructuring_argument)

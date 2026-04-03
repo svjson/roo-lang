@@ -1,27 +1,27 @@
 
-#include <gtest/gtest.h>
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest_pred_impl.h>
-
 #include <memory>
 #include <string>
 
 #include <lisple/context.h>
+#include <lisple/dir_root_file_system.h>
 #include <lisple/form.h>
 #include <lisple/namespace.h>
-#include <lisple/type.h>
 #include <lisple/runtime.h>
-#include <lisple/dir_root_file_system.h>
+#include <lisple/runtime/seq.h>
+#include <lisple/type.h>
 
 #include "runtime_fixture.h"
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 const std::string RUNTIME_TEST_DIR = "test_resources/script/runtime_test";
 
 using namespace ::testing;
 
-TEST(LispReader, instantiation_vanilla)
+TEST(Runtime, instantiation_vanilla)
 {
   // When
   Lisple::Runtime runtime;
@@ -68,7 +68,7 @@ TEST(Runtime, instantiation_with_multiple_namespaces)
   // When
   Lisple::Runtime runtime("custard", namespaces);
 
-    // Then
+  // Then
   EXPECT_EQ(runtime.get_current_namespace().get_name(), "custard");
   EXPECT_FALSE(runtime.has_file_system_access());
 }
@@ -78,7 +78,7 @@ TEST(Runtime, eval__word__lookup)
   // Given
   LispleTest::RuntimeFixture fixture;
   std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  std::shared_ptr<Lisple::Object> my_string  = std::make_shared<Lisple::String>("my-string");
+  std::shared_ptr<Lisple::Object> my_string = std::make_shared<Lisple::String>("my-string");
   fixture.runtime.get_current_namespace().store(Lisple::Word("my-word"), my_string);
 
   // When
@@ -115,14 +115,12 @@ TEST(Runtime, eval__quoted_list)
   // Then
   ASSERT_TRUE(Lisple::Type::LIST.is_type_of(*result));
 
-  Lisple::List& list = result->as<Lisple::List>();
-  ASSERT_TRUE(list.is_quoted());
-  ASSERT_EQ(list.size(), 4);
+  ASSERT_EQ(Lisple::count(*result), 4);
 
-  EXPECT_EQ(*list.get_children().at(0), Lisple::Word("these"));
-  EXPECT_EQ(*list.get_children().at(1), Lisple::Word("are"));
-  EXPECT_EQ(*list.get_children().at(2), Lisple::Word("bare"));
-  EXPECT_EQ(*list.get_children().at(3), Lisple::Word("words"));
+  EXPECT_EQ(*result->elements().at(0), *Lisple::RTValue::symbol("these"));
+  EXPECT_EQ(*result->elements().at(1), *Lisple::RTValue::symbol("are"));
+  EXPECT_EQ(*result->elements().at(2), *Lisple::RTValue::symbol("bare"));
+  EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("words"));
 }
 
 TEST(Runtime, no_matching_signature_exception_bubbles_up_to_client)
@@ -131,12 +129,11 @@ TEST(Runtime, no_matching_signature_exception_bubbles_up_to_client)
   LispleTest::RuntimeFixture fixture;
 
   // When
-  Lisple::sptr_sobject result = nullptr;
+  Lisple::sptr_rtval result = nullptr;
   std::string msg;
   try
   {
     result = fixture.runtime.eval("(+ \"4\" 2)");
-
   }
   catch (std::exception& e)
   {

@@ -1,7 +1,8 @@
 
-#include <gtest/gtest.h>
 #include <lisple/lang/base.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(DefForm, exec_def__string)
 {
@@ -72,19 +73,8 @@ TEST(DefForm, def_returns_defined_value)
   Lisple::Runtime runtime;
 
   // When
-  std::cout << "------------ DEFINE my-var ------------------" << std::endl;
-  Lisple::sptr_sobject defined = runtime.eval("(def my-var {:a 1000 :b 2000})");
-  std::cout << "------------ COMPLETE - DEFINE my-var--------" << std::endl;
+  auto defined = runtime.eval("(def my-var {:a 1000 :b 2000})");
 
   // Then
   ASSERT_EQ(defined->to_string(), "{:a 1000 :b 2000}");
-  if (auto* wrapped = dynamic_cast<Lisple::RuntimeValueWrapper*>(defined.get()))
-  {
-    std::cout << "Defined Value is RuntimeValueWrapper, RTValue(" << wrapped->val.get()
-              << ")" << std::endl;
-  }
-  else
-  {
-    std::cout << "Defined Value is NOT RuntimeValueWrapper" << std::endl;
-  }
 }

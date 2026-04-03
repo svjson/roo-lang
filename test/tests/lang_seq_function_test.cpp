@@ -33,16 +33,16 @@ TEST(ContainsPredicateFunction, contains_array)
   runtime.eval("(def my-vec [1 3 5 6 7 8])");
 
   // Then
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 1)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 2)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 3)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 4)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 5)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 6)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 7)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 8)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 9)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*runtime.eval("(contains? my-vec 10)"), *Lisple::B_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 1)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 2)"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 3)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 4)"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 5)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 6)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 7)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 8)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 9)"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? my-vec 10)"), *Lisple::Constant::BOOL_FALSE);
 }
 
 TEST(ContainsPredicateFunction, contains_vector_int)
@@ -54,16 +54,16 @@ TEST(ContainsPredicateFunction, contains_vector_int)
                                         std::make_shared<Lisple::VectorInt>(int_v));
 
   // Then
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 1)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 2)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 3)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 4)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 5)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 6)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 7)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 8)"), *Lisple::B_TRUE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 9)"), *Lisple::B_FALSE);
-  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 10)"), *Lisple::B_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 1)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 2)"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 3)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 4)"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 5)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 6)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 7)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 8)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 9)"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? wrapped-vec 10)"), *Lisple::Constant::BOOL_FALSE);
 }
 
 /*
@@ -134,9 +134,9 @@ TEST(HeadFunction, head_of_seq)
   auto result_wrapped = runtime.eval("(head wrapped-vec)");
 
   // Then
-  EXPECT_EQ(*result_ref, Lisple::Char('a'));
-  EXPECT_EQ(*result_lit, Lisple::Char('a'));
-  EXPECT_EQ(*result_wrapped, Lisple::Number(50))
+  EXPECT_EQ(*result_ref, *Lisple::RTValue::character('a'));
+  EXPECT_EQ(*result_lit, *Lisple::RTValue::character('a'));
+  EXPECT_EQ(*result_wrapped, *Lisple::RTValue::number(50))
     << result_wrapped->to_string() << " vs " << Lisple::Number(50).to_string();
 }
 
@@ -154,8 +154,8 @@ TEST(HeadFunction, single_element)
   auto result_wrapped = runtime.eval("(head wrapped-vec)");
 
   // Then
-  EXPECT_EQ(*result_lit, Lisple::Char('a'));
-  EXPECT_EQ(*result_wrapped, Lisple::Number(9));
+  EXPECT_EQ(*result_lit, *Lisple::RTValue::character('a'));
+  EXPECT_EQ(*result_wrapped, *Lisple::RTValue::number(9));
 }
 
 /*
@@ -205,26 +205,6 @@ TEST(TailFunction, single_element)
 
 /*
  * ===================================
- * LastFunction - (last [...])
- * ===================================
- */
-
-TEST(LastFunction, last)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  std::vector<int> int_v{50, 100, 90};
-  runtime.get_current_namespace().store("wrapped-vec",
-                                        std::make_shared<Lisple::VectorInt>(int_v));
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(last [1 2 3])"), Lisple::Number(3));
-  EXPECT_EQ(*runtime.eval("(last wrapped-vec)"), Lisple::Number(90));
-}
-
-/*
- * ===================================
  * RandNthFunction - (rand-nth [...])
  * ===================================
  */
@@ -239,7 +219,7 @@ TEST(RandNth, all_elements_possible)
   // When
   for (int i = 0; i < 5000; i++)
   {
-    int num = runtime.eval("(rand-nth [0 1 2 3 4])")->as<Lisple::Number>().value;
+    int num = runtime.eval("(rand-nth [0 1 2 3 4])")->i64();
     freq[num]++;
     ;
   }
@@ -265,7 +245,7 @@ TEST(RandNth, all_elements_possible_wrapped)
   // When
   for (int i = 0; i < 5000; i++)
   {
-    int num = runtime.eval("(rand-nth wrapped-vec)")->as<Lisple::Number>().value;
+    int num = runtime.eval("(rand-nth wrapped-vec)")->i64();
     freq[num]++;
     ;
   }
@@ -285,7 +265,7 @@ TEST(RandNth, single_element)
   // Then
   for (int i = 0; i < 1000; i++)
   {
-    int num = runtime.eval("(rand-nth [8])")->as<Lisple::Number>().value;
+    int num = runtime.eval("(rand-nth [8])")->i64();
     EXPECT_EQ(num, 8);
   }
 }

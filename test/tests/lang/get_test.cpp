@@ -1,6 +1,7 @@
 
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(GetFunction, get_from_map)
 {
@@ -12,5 +13,5 @@ TEST(GetFunction, get_from_map)
   auto result = runtime.eval("(get my-map :b)");
 
   // Then
-  ASSERT_EQ(*result, Lisple::Number(2));
+  ASSERT_EQ(result->i64(), 2);
 }

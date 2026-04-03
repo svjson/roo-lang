@@ -1,8 +1,10 @@
 
-#include <gtest/gtest.h>
-#include <lisple/runtime.h>
-
 #include "lisple/form.h"
+
+#include <lisple/runtime.h>
+#include <lisple/runtime/dict.h>
+
+#include <gtest/gtest.h>
 
 TEST(AssocFunction, add_key_to_map)
 {
@@ -15,7 +17,7 @@ TEST(AssocFunction, add_key_to_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c 3}"));
-  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup_value(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST(AssocFunction, replace_key_in_map)
@@ -29,39 +31,25 @@ TEST(AssocFunction, replace_key_in_map)
 
   // Then
   EXPECT_EQ(result->to_string(), "{:a 10 :b 2}");
-  EXPECT_EQ(*runtime.lookup(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup_value(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST(AssocFunction, replace_key_in_map__retains_sibling_identities)
 {
   // Given
   Lisple::Runtime runtime;
-  Lisple::sptr_sobject instance = runtime.eval(R"(
+  Lisple::sptr_rtval instance = runtime.eval(R"(
      (def my-map {:a {:name "Olle"} :b 100})
                                                 )");
   // When
-  Lisple::sptr_sobject assoc_result = runtime.eval("(assoc my-map :b 50)");
+  Lisple::sptr_rtval assoc_result = runtime.eval("(assoc my-map :b 50)");
 
   // Then
   EXPECT_EQ(*assoc_result, *runtime.eval(R"({:a {:name "Olle"} :b 50})"));
 
-  Lisple::sptr_sobject org_nested_obj = instance->get_sptr_property(Lisple::Key("a"));
-  Lisple::sptr_sobject mod_nested_obj = assoc_result->get_sptr_property(Lisple::Key("a"));
+  auto org_nested_obj = Lisple::Dict::get_property(instance, Lisple::RTValue::keyword("a"));
+  auto mod_nested_obj =
+    Lisple::Dict::get_property(assoc_result, Lisple::RTValue::keyword("a"));
 
   EXPECT_EQ(*org_nested_obj, *mod_nested_obj);
-
-  if (auto* org_wrapped = dynamic_cast<Lisple::RuntimeValueWrapper*>(org_nested_obj.get()))
-  {
-    std::cout << "Nested Original is RuntimeValueWrapper" << std::endl;
-    if (auto* mod_wrapped = dynamic_cast<Lisple::RuntimeValueWrapper*>(mod_nested_obj.get()))
-    {
-      std::cout << "Nested Modified is RuntimeValueWrapper" << std::endl;
-
-      EXPECT_EQ(org_wrapped->val.get(), mod_wrapped->val.get());
-    }
-  }
-  else
-  {
-    std::cout << "Nested Original is NOT RuntimeValueWrapper" << std::endl;
-  }
 }

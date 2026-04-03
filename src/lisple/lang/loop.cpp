@@ -31,7 +31,7 @@ namespace Lisple
 
     std::unique_ptr<ArgumentBinding> bind_var = nullptr;
 
-    sptr_sobject num_iter = ctx.eval(seq_expr.children.back());
+    sptr_sobject num_iter = ctx.eval_ast(seq_expr.children.back());
     if (num_iter->get_type() == Form::NUMBER)
     {
       int iterations = num_iter->as<Number>().int_value();
@@ -54,7 +54,7 @@ namespace Lisple
           sptr_sobject iter_result;
           for (size_t i = 1; i < n_args; i++)
           {
-            iter_result = ctx.eval(args[i]);
+            iter_result = ctx.eval_ast(args[i]);
           }
           result.push_back(std::move(iter_result));
           iter_scope.clear();
@@ -141,7 +141,7 @@ namespace Lisple
     sptr_sobject_v result;
     sptr_sobject_v& seq_expr = args[0]->get_children();
 
-    sptr_sobject obj_iterable = ctx.eval(seq_expr.back());
+    sptr_sobject obj_iterable = ctx.eval_ast(seq_expr.back());
     if (*Lisple::NIL != *obj_iterable)
     {
       if (!Type::SEQ.is_type_of(*obj_iterable) && !Type::STRING.is_type_of(*obj_iterable))
@@ -163,7 +163,7 @@ namespace Lisple
         sptr_sobject iter_result;
         for (size_t i = 1; i < n_args; i++)
         {
-          iter_result = ctx.eval(args[i]);
+          iter_result = ctx.eval_ast(args[i]);
         }
         result.push_back(std::move(iter_result));
         iter_scope.clear();

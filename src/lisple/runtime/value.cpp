@@ -371,6 +371,11 @@ namespace Lisple
     return std::get<sptr_native_obj>(value);
   }
 
+  const sptr_rtval_v& RTValue::elements() const
+  {
+    return std::get<sptr_rtval_v>(value);
+  }
+
   Executable& RTValue::exec() const
   {
     return *dynamic_cast<Executable*>(std::get<sptr_sobject>(value).get());

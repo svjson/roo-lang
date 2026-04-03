@@ -114,14 +114,19 @@ namespace Lisple
     return frame_stack.size();
   }
 
-  sptr_sobject Context::eval(const sptr_sobject& form)
+  sptr_rtval Context::eval(const sptr_sobject& form)
   {
     return runtime.eval(*this, form);
   }
 
-  sptr_sobject Context::eval(const std::string& str)
+  sptr_rtval Context::eval(const std::string& str)
   {
     return runtime.eval(str);
+  }
+
+  sptr_sobject Context::eval_ast(const sptr_sobject& form)
+  {
+    return runtime.eval_ast(*this, form);
   }
 
   void Context::read_file(const std::string& file_name)

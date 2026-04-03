@@ -150,10 +150,12 @@ namespace Lisple
     void read_file(const std::string& file_name);
     void read_file(Context& ctx, const std::string& file_name);
 
-    sptr_sobject eval(const std::string& str);
-    sptr_sobject eval(Context& ctx, const std::string& str);
-    sptr_sobject eval(const sptr_sobject& sexp);
-    sptr_sobject eval(Context& ctx, const sptr_sobject& sexp);
+    sptr_rtval eval(const std::string& str);
+    sptr_rtval eval(Context& ctx, const std::string& str);
+    sptr_rtval eval(const sptr_sobject& sexp);
+    sptr_rtval eval(Context& ctx, const sptr_sobject& sexp);
+    sptr_sobject eval_ast(const std::string& str);
+    sptr_sobject eval_ast(Context& ctx, const sptr_sobject& sexp);
 
     sptr_rtval invoke(const std::string& function, sptr_rtval_v& args);
 
@@ -176,6 +178,7 @@ namespace Lisple
 
     sptr_sobject lookup(const Word& identifier);
     sptr_rtval lookup_value(const Word& identifier);
+    sptr_rtval lookup_value(const std::string& identifier);
     sptr_sobject lookup(const Word& identifier, sptr_sobject fallback);
     sptr_sobject lookup(const std::string& identifier);
     Namespace& get_ns_of(const Word& identifier);

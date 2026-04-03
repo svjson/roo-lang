@@ -193,11 +193,11 @@ namespace Lisple
     switch_namespace(current_ns); // Revert any namespace changes from evaluating the file
   }
 
-  sptr_sobject Runtime::eval(Context& ctx, const std::string& str)
+  sptr_rtval Runtime::eval(Context& ctx, const std::string& str)
   {
     sptr_sobject_v script = sexp_reader.read_sexps(str);
 
-    sptr_sobject result;
+    sptr_rtval result;
 
     for (auto& sexp : script)
     {
@@ -206,23 +206,35 @@ namespace Lisple
     return result;
   }
 
-  sptr_sobject Runtime::eval(const std::string& str)
+  sptr_rtval Runtime::eval(const std::string& str)
   {
     Context ctx(*this);
     return this->eval(ctx, str);
   }
 
-  sptr_sobject Runtime::eval(const sptr_sobject& statement)
+  sptr_rtval Runtime::eval(const sptr_sobject& statement)
   {
     Context ctx(*this);
     return this->eval(ctx, statement);
   }
 
-  sptr_sobject Runtime::eval(Context& ctx, const sptr_sobject& statement)
+  sptr_rtval Runtime::eval(Context& ctx, const sptr_sobject& form)
+  {
+    auto exec_node = lower_expr(form);
+    return Lisple::exec(ctx, *exec_node);
+  }
+
+  sptr_sobject Runtime::eval_ast(const std::string& str)
+  {
+    Context ctx(*this);
+    return RuntimeValueWrapper::make(this->eval(ctx, str));
+  }
+
+  sptr_sobject Runtime::eval_ast(Context& ctx, const sptr_sobject& statement)
   {
     if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(statement.get()))
     {
-      return eval(ctx, wrapper->delegate);
+      return eval_ast(ctx, wrapper->delegate);
     }
 
     switch (statement->get_type())
@@ -274,7 +286,7 @@ namespace Lisple
       if (ctx.evalp() && i == 0 && sexp.get_type() == Form::LIST &&
           children[i]->get_type() == Form::WORD)
       {
-        auto head = this->eval(ctx, children[i]);
+        auto head = this->eval_ast(ctx, children[i]);
         if (head->get_type() == Form::MACRO)
         {
           auto tail = sexp.tail();
@@ -285,12 +297,12 @@ namespace Lisple
       else if (sig)
       {
         ctx.push_context(sig->should_eval_arg(i - 1));
-        elements.push_back(this->eval(ctx, children[i]));
+        elements.push_back(this->eval_ast(ctx, children[i]));
         ctx.pop_context();
       }
       else
       {
-        elements.push_back(this->eval(ctx, children[i]));
+        elements.push_back(this->eval_ast(ctx, children[i]));
       }
     }
 
@@ -390,6 +402,11 @@ namespace Lisple
   sptr_sobject Runtime::lookup(const Word& identifier)
   {
     return lookup(identifier, nullptr);
+  }
+
+  sptr_rtval Runtime::lookup_value(const std::string& identifier)
+  {
+    return lookup_value(Lisple::Word(identifier));
   }
 
   sptr_rtval Runtime::lookup_value(const Word& identifier)

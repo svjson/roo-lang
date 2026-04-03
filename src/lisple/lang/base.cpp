@@ -64,7 +64,7 @@ namespace Lisple
     ctx.push_context(true);
     for (auto& arg : args)
     {
-      sptr_sobject lmnt = ctx.eval(arg);
+      sptr_sobject lmnt = ctx.eval_ast(arg);
       if (!lmnt->is_truthy())
       {
         ctx.pop_context();
@@ -99,7 +99,7 @@ namespace Lisple
     ctx.push_context(true);
     for (auto& arg : args)
     {
-      sptr_sobject lmnt = ctx.eval(arg);
+      sptr_sobject lmnt = ctx.eval_ast(arg);
       if (lmnt->is_truthy())
       {
         ctx.pop_context();

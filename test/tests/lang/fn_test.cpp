@@ -16,7 +16,7 @@ TEST(FnForm, define_and_exec_lambda)
 
   // When
   auto fn = fixture.runtime.eval(code.front());
-  auto retval = fn->execute(fixture.ctx, exec_args);
+  auto retval = fn->exec().execute(fixture.ctx, exec_args);
 
   // Then
   EXPECT_TRUE(Lisple::Type::NUMBER.is_type_of(*retval));
@@ -31,18 +31,18 @@ TEST(FnForm, with_bound_scope)
   fixture.runtime.eval("(def four-adder (bind-for-add 4))");
 
   // When
-  Lisple::sptr_sobject result = fixture.runtime.eval("(apply four-adder [3])");
+  auto result = fixture.runtime.eval("(apply four-adder [3])");
 
   // Then
-  EXPECT_EQ(*result, Lisple::Number(7));
+  EXPECT_EQ(*result, *Lisple::RTValue::number(7));
 }
 
 TEST(FnForm, signals_correct_exec_path)
 {
   // Given
   Lisple::Runtime runtime;
-  Lisple::sptr_sobject result = runtime.eval("(fn [n] (+ n 10))");
-  Lisple::Executable& fn = result->as<Lisple::Executable>();
+  auto result = runtime.eval("(fn [n] (+ n 10))");
+  Lisple::Executable& fn = result->exec();
 
   // When
   EXPECT_FALSE(fn.supports_exec_tree());

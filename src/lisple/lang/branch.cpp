@@ -25,10 +25,10 @@ namespace Lisple
     ctx.push_context(true);
     for (size_t i = 0; i < args.size(); i += 2)
     {
-      sptr_sobject condition = ctx.eval(args[i]);
+      sptr_sobject condition = ctx.eval_ast(args[i]);
       if (*condition != *B_FALSE && *condition != *NIL)
       {
-        retval = ctx.eval(args[i + 1]);
+        retval = ctx.eval_ast(args[i + 1]);
         break;
       }
     }
@@ -80,14 +80,14 @@ namespace Lisple
     sptr_sobject retval = Lisple::NIL;
 
     ctx.push_context(true);
-    auto condition = ctx.eval(args[0]);
+    auto condition = ctx.eval_ast(args[0]);
     if (*condition != *Lisple::B_FALSE && *condition != *Lisple::NIL)
     {
-      retval = ctx.eval(args[1]);
+      retval = ctx.eval_ast(args[1]);
     }
     else if (args.size() == 3)
     {
-      retval = ctx.eval(args[2]);
+      retval = ctx.eval_ast(args[2]);
     }
     ctx.pop_context();
     return retval;

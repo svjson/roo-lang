@@ -8,6 +8,7 @@
 #include <lisple/lang.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
+#include <lisple/runtime/seq.h>
 #include <lisple/type.h>
 
 #include "gmock/gmock.h"
@@ -37,11 +38,11 @@ TEST(FilterFunction, filter_array)
   // Then
   ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
 
-  ASSERT_EQ(result->get_children().size(), 3);
+  ASSERT_EQ(Lisple::count(*result), 3);
 
-  EXPECT_EQ(*result->get_children().at(0), Lisple::Number(2));
-  EXPECT_EQ(*result->get_children().at(1), Lisple::Number(4));
-  EXPECT_EQ(*result->get_children().at(2), Lisple::Number(6));
+  EXPECT_EQ(result->elements().at(0)->i64(), 2);
+  EXPECT_EQ(result->elements().at(1)->i64(), 4);
+  EXPECT_EQ(result->elements().at(2)->i64(), 6);
 }
 
 TEST(FilterFunction, filter_vector_int)
@@ -59,11 +60,11 @@ TEST(FilterFunction, filter_vector_int)
   // Then
   ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
 
-  ASSERT_EQ(result->get_children().size(), 3);
+  ASSERT_EQ(result->elements().size(), 3);
 
-  EXPECT_EQ(*result->get_children().at(0), Lisple::Number(2));
-  EXPECT_EQ(*result->get_children().at(1), Lisple::Number(4));
-  EXPECT_EQ(*result->get_children().at(2), Lisple::Number(6));
+  EXPECT_EQ(result->elements().at(0)->i64(), 2);
+  EXPECT_EQ(result->elements().at(1)->i64(), 4);
+  EXPECT_EQ(result->elements().at(2)->i64(), 6);
 }
 
 /*
@@ -79,19 +80,17 @@ TEST(FindFirstFunction, find_first_array)
   fixture.runtime.eval(R"((def my-array ["AA" "BB" "CCC" "DDDD" "EEE" "FF"]))");
 
   // When
-  std::cout << "===============================================" << std::endl;
   auto three_letter =
     fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 3 (count lmnt))))");
-  std::cout << "===============================================" << std::endl;
-  // auto four_letter =
-  //   fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 4 (count lmnt))))");
-  // auto five_letter =
-  //   fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 5 (count lmnt))))");
+  auto four_letter =
+    fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 4 (count lmnt))))");
+  auto five_letter =
+    fixture.runtime.eval("(find-first my-array (fn [lmnt] (= 5 (count lmnt))))");
 
   // Then
-  EXPECT_EQ(*three_letter, Lisple::String("CCC"));
-  // EXPECT_EQ(*four_letter, Lisple::String("DDDD"));
-  // EXPECT_EQ(*five_letter, *Lisple::NIL);
+  EXPECT_EQ(*three_letter, *Lisple::RTValue::string("CCC"));
+  EXPECT_EQ(*four_letter, *Lisple::RTValue::string("DDDD"));
+  EXPECT_EQ(*five_letter, *Lisple::Constant::NIL);
 }
 
 /*
@@ -110,9 +109,9 @@ TEST(KeepFunction, transform_even)
     runtime.eval("(keep [1 2 3 4] (fn [x] (when (even? x) (str \"Number \" x))))");
 
   // Then
-  ASSERT_EQ(
-    *result,
-    Lisple::Array({Lisple::String::make("Number 2"), Lisple::String::make("Number 4")}));
+  ASSERT_EQ(*result,
+            *Lisple::RTValue::vector(
+              {Lisple::RTValue::string("Number 2"), Lisple::RTValue::string("Number 4")}));
 }
 
 /*
@@ -131,12 +130,11 @@ TEST(RemoveBangFunction, remove_even_from_array)
   runtime.eval("(remove! (fn [n] (even? n)) my-seq)");
 
   // Then
-  Lisple::sptr_sobject my_seq = runtime.lookup("my-seq");
+  auto my_seq = runtime.lookup_value("my-seq");
 
-  EXPECT_EQ(my_seq->get_children().size(), 2);
-  std::cout << "Got: " << my_seq->to_string() << std::endl;
-  EXPECT_EQ(my_seq->get_children().at(0)->as<Lisple::Number>().int_value(), 1);
-  EXPECT_EQ(my_seq->get_children().at(1)->as<Lisple::Number>().int_value(), 3);
+  EXPECT_EQ(Lisple::count(*my_seq), 2);
+  EXPECT_EQ(my_seq->elements().at(0)->i64(), 1);
+  EXPECT_EQ(my_seq->elements().at(1)->i64(), 3);
 }
 
 TEST(RemoveBangFunction, remove_even_from_vector_int)
@@ -151,10 +149,12 @@ TEST(RemoveBangFunction, remove_even_from_vector_int)
   runtime.eval("(remove! (fn [n] (even? n)) wrapped-vec)");
 
   // Then
-  auto my_seq = runtime.lookup(Lisple::Word("wrapped-vec"));
-  EXPECT_EQ(my_seq->get_children().size(), 2);
-  EXPECT_EQ(my_seq->get_children().at(0)->as<Lisple::Number>().int_value(), 1);
-  EXPECT_EQ(my_seq->get_children().at(1)->as<Lisple::Number>().int_value(), 3);
+  auto my_seq = runtime.lookup_value("wrapped-vec");
+  ASSERT_EQ(Lisple::count(*my_seq), 2);
+  ASSERT_EQ(Lisple::get_children(*my_seq).at(0)->type, Lisple::RTValue::Type::NUMBER);
+  EXPECT_EQ(Lisple::get_children(*my_seq).at(0)->i64(), 1);
+  ASSERT_EQ(Lisple::get_children(*my_seq).at(1)->type, Lisple::RTValue::Type::NUMBER);
+  EXPECT_EQ(Lisple::get_children(*my_seq).at(1)->i64(), 3);
 
   EXPECT_THAT(int_v, ElementsAre(1, 3));
 }

@@ -1,6 +1,7 @@
 
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(Semantic_FunctionArgumentDestructuring, destructure_literal_map)
 {
@@ -15,7 +16,7 @@ TEST(Semantic_FunctionArgumentDestructuring, destructure_literal_map)
                 )");
 
   // When
-  Lisple::sptr_sobject result = runtime.eval(R"(
+  Lisple::sptr_rtval result = runtime.eval(R"(
     (my-func {:request-id 16
               :mode :mode/UPDATE
               :records [{:record-id 8 :state :state/NEW}
@@ -45,7 +46,7 @@ TEST(Semantic_FunctionArgumentDestructuring, nil_argument_is_bound_and_shadows_g
                 )");
 
   // When
-  Lisple::sptr_sobject result = runtime.eval("(my-func nil)");
+  Lisple::sptr_rtval result = runtime.eval("(my-func nil)");
 
   // Then
   EXPECT_EQ(result->to_string(), "nil");

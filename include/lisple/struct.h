@@ -36,7 +36,7 @@ namespace Lisple
     {
       if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&map_obj))
       {
-        return get_value<T>(*wrapper->delegate, key);
+        return get_value<T>(*to_AST(*wrapper->val), key);
       }
       Lisple::Map& map = map_obj.as<Lisple::Map>();
       for (auto keyptr : map.keys())

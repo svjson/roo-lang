@@ -1,7 +1,8 @@
 
-#include <gtest/gtest.h>
 #include <lisple/adapter.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 /*
  * ======================================================================
@@ -18,7 +19,7 @@ TEST(ReduceFunction, reduce_array_of_num)
   auto retval = runtime.eval("(reduce [128 64 32 16 8 4 2 1] 0 +)");
 
   // Then
-  EXPECT_EQ(*retval, Lisple::Number(255));
+  EXPECT_EQ(*retval, *Lisple::RTValue::number(255));
 }
 
 TEST(ReduceFunction, reduce_vector_int)
@@ -34,5 +35,5 @@ TEST(ReduceFunction, reduce_vector_int)
   auto retval = runtime.eval("(reduce wrapped-vec 0 +)");
 
   // Then
-  EXPECT_EQ(*retval, Lisple::Number(255));
+  EXPECT_EQ(*retval, *Lisple::RTValue::number(255));
 }

@@ -27,21 +27,21 @@ namespace Lisple
         fn_list.reserve(ifn->size() + 1);
         if (ifn_size)
         {
-          fn_list.push_back(ctx.eval(ifn_children[0]));
+          fn_list.push_back(ctx.eval_ast(ifn_children[0]));
         }
 
         fn_list.push_back(value);
 
         for (size_t n = 1; n < ifn_size; n++)
         {
-          fn_list.push_back(ctx.eval(ifn_children[n]));
+          fn_list.push_back(ctx.eval_ast(ifn_children[n]));
         }
 
         value = List(fn_list).execute(ctx);
       }
       else
       {
-        value = List({ctx.eval(ifn), value}).execute(ctx);
+        value = List({ctx.eval_ast(ifn), value}).execute(ctx);
       }
     }
 

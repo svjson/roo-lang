@@ -164,11 +164,7 @@ namespace Lisple
   void throw_ns_exception(Word& ns, List& req_list, std::string msg = "")
   {
     std::string ns_decl = "(ns " + ns.value;
-
-    for (size_t i = 0; i < req_list.get_children().size(); i++)
-    {
-      ns_decl += " " + req_list.get_children()[i]->to_string();
-    }
+    ns_decl += " " + req_list.to_string();
     ns_decl += ")";
 
     throw NamespaceException("Invalid ns form: " + ns_decl + msg);
@@ -287,7 +283,7 @@ namespace Lisple
     for (size_t i = 0; i < var_def_array.size(); i += 2)
     {
       auto& var_name_obj = *var_def_array.get_children()[i];
-      auto var_val_obj = ctx.eval(var_def_array.get_children()[i + 1]);
+      auto var_val_obj = ctx.eval_ast(var_def_array.get_children()[i + 1]);
 
       if (*var_val_obj == *NIL)
       {
@@ -314,7 +310,7 @@ namespace Lisple
     {
       for (size_t i = 1; i < args.size(); i++)
       {
-        result = ctx.eval(args[i]);
+        result = ctx.eval_ast(args[i]);
       }
     }
 
@@ -336,7 +332,7 @@ namespace Lisple
     ctx.push_context(true);
     for (auto& arg : args)
     {
-      ret = ctx.eval(arg);
+      ret = ctx.eval_ast(arg);
     }
     ctx.pop_context();
     return ret;
@@ -393,7 +389,7 @@ namespace Lisple
     }
     else if (member_ref.size() == 2)
     {
-      auto actual_mem_ref = ctx.eval(args[0]);
+      auto actual_mem_ref = ctx.eval_ast(args[0]);
       Lisple::Object& prop = *actual_mem_ref->get_children()[0];
       Lisple::Object& owner = *actual_mem_ref->get_children().back();
 
@@ -417,11 +413,11 @@ namespace Lisple
     Lisple::sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    while (ctx.eval(args[0])->is_truthy())
+    while (ctx.eval_ast(args[0])->is_truthy())
     {
       for (size_t i = 1; i < args.size(); i++)
       {
-        retval = ctx.eval(args[i]);
+        retval = ctx.eval_ast(args[i]);
       }
     }
     ctx.pop_context();
@@ -439,12 +435,12 @@ namespace Lisple
     sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    auto condition = ctx.eval(args[0]);
+    auto condition = ctx.eval_ast(args[0]);
     if (condition->is_truthy())
     {
       for (size_t i = 1; i < args.size(); i++)
       {
-        retval = ctx.eval(args[i]);
+        retval = ctx.eval_ast(args[i]);
       }
     }
     ctx.pop_context();
@@ -472,13 +468,13 @@ namespace Lisple
     sptr_sobject retval = NIL;
 
     ctx.push_context(true);
-    sptr_sobject value = ctx.eval(args[0]);
+    sptr_sobject value = ctx.eval_ast(args[0]);
 
     for (size_t i = 1; i < args.size(); i += 2)
     {
-      if (*ctx.eval(args[i]) == *value || *args[i] == DEFAULT)
+      if (*ctx.eval_ast(args[i]) == *value || *args[i] == DEFAULT)
       {
-        retval = ctx.eval(args[i + 1]);
+        retval = ctx.eval_ast(args[i + 1]);
         break;
       }
     }
@@ -513,7 +509,7 @@ namespace Lisple
       throw TypeError("for-indexed macro requires the iteration variable to be a word");
     }
 
-    auto seq = ctx.eval(bind_form[2]);
+    auto seq = ctx.eval_ast(bind_form[2]);
     if (!Type::SEQ.is_type_of(*seq))
     {
       throw TypeError("for-indexed macro requires an iterable. Wrong type: " +
@@ -537,7 +533,7 @@ namespace Lisple
       sptr_sobject iter_result;
       for (size_t e = 1; e < args.size(); e++)
       {
-        iter_result = ctx.eval(args[e]);
+        iter_result = ctx.eval_ast(args[e]);
       }
       result.push_back(std::move(iter_result));
       iter_scope.clear();
@@ -1133,12 +1129,12 @@ namespace Lisple
   FUNC_BODY(EvalFunction, eval_string)
   {
     const std::string& str = args[0]->as<Lisple::String>().value;
-    return ctx.eval(str);
+    return RuntimeValueWrapper::make(ctx.eval(str));
   }
 
   FUNC_BODY(EvalFunction, eval_form)
   {
-    return ctx.eval(args[0]);
+    return ctx.eval_ast(args[0]);
   }
 
   /* ResolveFunction - resolve */

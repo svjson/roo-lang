@@ -1,12 +1,12 @@
 
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest_pred_impl.h>
-#include <gmock/gmock-matchers.h>
-
 #include <string>
 
 #include <lisple/lexer.h>
+
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest_pred_impl.h>
 
 Lisple::Lexer lexer;
 
@@ -51,7 +51,6 @@ TEST(Lexer, parse_single_number_in_hexadecimal_format)
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::NUMBER, "15")));
 }
 
-
 TEST(Lexer, parse_simple_form)
 {
   // Given
@@ -61,11 +60,12 @@ TEST(Lexer, parse_simple_form)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "trait"),
-                                   sym(tkn::SQUOT, "'"),
-                                   sym(tkn::WORD, "UNOBSERVABLE"),
-                                   sym(tkn::RPAREN, ")")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "trait"),
+                          sym(tkn::SQUOT, "'"),
+                          sym(tkn::WORD, "UNOBSERVABLE"),
+                          sym(tkn::RPAREN, ")")));
 }
 
 TEST(Lexer, parse_form_with_string)
@@ -77,35 +77,37 @@ TEST(Lexer, parse_form_with_string)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "actor-stereotype"),
-                                   sym(tkn::STRING, "maggot"),
-                                   sym(tkn::RPAREN, ")")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "actor-stereotype"),
+                          sym(tkn::STRING, "maggot"),
+                          sym(tkn::RPAREN, ")")));
 }
 
 TEST(Lexer, parse_form_with_map)
 {
   // Given
-  std::string input = "(interaction {:trigger (action-trigger 'SEARCH) :reactions \"bogus\"})";
+  std::string input =
+    "(interaction {:trigger (action-trigger 'SEARCH) :reactions \"bogus\"})";
 
   // When
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "interaction"),
-                                   sym(tkn::LCURLY, "{"),
-                                   sym(tkn::KEY, "trigger"),
-                                   sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "action-trigger"),
-                                   sym(tkn::SQUOT, "'"),
-                                   sym(tkn::WORD, "SEARCH"),
-                                   sym(tkn::RPAREN, ")"),
-                                   sym(tkn::KEY, "reactions"),
-                                   sym(tkn::STRING, "bogus"),
-                                   sym(tkn::RCURLY, "}"),
-                                   sym(tkn::RPAREN, ")")
-                                   ));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "interaction"),
+                          sym(tkn::LCURLY, "{"),
+                          sym(tkn::KEY, "trigger"),
+                          sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "action-trigger"),
+                          sym(tkn::SQUOT, "'"),
+                          sym(tkn::WORD, "SEARCH"),
+                          sym(tkn::RPAREN, ")"),
+                          sym(tkn::KEY, "reactions"),
+                          sym(tkn::STRING, "bogus"),
+                          sym(tkn::RCURLY, "}"),
+                          sym(tkn::RPAREN, ")")));
 }
 
 TEST(Lexer, parse_map_with_char_key)
@@ -117,46 +119,49 @@ TEST(Lexer, parse_map_with_char_key)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LCURLY, "{"),
-                                   sym(tkn::CHAR, "A"),
-                                   sym(tkn::STRING, "Alpha"),
-                                   sym(tkn::CHAR, "B"),
-                                   sym(tkn::STRING, "Beta"),
-                                   sym(tkn::RCURLY, "}")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LCURLY, "{"),
+                          sym(tkn::CHAR, "A"),
+                          sym(tkn::STRING, "Alpha"),
+                          sym(tkn::CHAR, "B"),
+                          sym(tkn::STRING, "Beta"),
+                          sym(tkn::RCURLY, "}")));
 }
 
 TEST(Lexer, parse_form_with_lists_array_and_map)
 {
   // Given
-  std::string input = "(actor-stereotype {:name (name \"Test\") :traits [(marker-trait 'UNOBSERVABLE)(marker-trait 'NPC)]})";
+  std::string input = "(actor-stereotype {:name (name \"Test\") :traits [(marker-trait "
+                      "'UNOBSERVABLE)(marker-trait 'NPC)]})";
 
   // When
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "actor-stereotype"),
-                                   sym(tkn::LCURLY, "{"),
-                                   sym(tkn::KEY, "name"),
-                                   sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "name"),
-                                   sym(tkn::STRING, "Test"),
-                                   sym(tkn::RPAREN, ")"),
-                                   sym(tkn::KEY, "traits"),
-                                   sym(tkn::LBRACKET, "["),
-                                   sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "marker-trait"),
-                                   sym(tkn::SQUOT, "'"),
-                                   sym(tkn::WORD, "UNOBSERVABLE"),
-                                   sym(tkn::RPAREN, ")"),
-                                   sym(tkn::LPAREN, "("),
-                                   sym(tkn::WORD, "marker-trait"),
-                                   sym(tkn::SQUOT, "'"),
-                                   sym(tkn::WORD, "NPC"),
-                                   sym(tkn::RPAREN, ")"),
-                                   sym(tkn::RBRACKET, "]"),
-                                   sym(tkn::RCURLY, "}"),
-                                   sym(tkn::RPAREN, ")")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "actor-stereotype"),
+                          sym(tkn::LCURLY, "{"),
+                          sym(tkn::KEY, "name"),
+                          sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "name"),
+                          sym(tkn::STRING, "Test"),
+                          sym(tkn::RPAREN, ")"),
+                          sym(tkn::KEY, "traits"),
+                          sym(tkn::LBRACKET, "["),
+                          sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "marker-trait"),
+                          sym(tkn::SQUOT, "'"),
+                          sym(tkn::WORD, "UNOBSERVABLE"),
+                          sym(tkn::RPAREN, ")"),
+                          sym(tkn::LPAREN, "("),
+                          sym(tkn::WORD, "marker-trait"),
+                          sym(tkn::SQUOT, "'"),
+                          sym(tkn::WORD, "NPC"),
+                          sym(tkn::RPAREN, ")"),
+                          sym(tkn::RBRACKET, "]"),
+                          sym(tkn::RCURLY, "}"),
+                          sym(tkn::RPAREN, ")")));
 }
 
 TEST(Lexer, parse_bare_string)
@@ -179,7 +184,7 @@ TEST(Lexer, parse_bare_string_with_escaped_quote)
   // When
   auto symbols = lexer.read_symbols(input);
 
-  //Then
+  // Then
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::STRING, "the \"REAL\" deal")));
 }
 
@@ -192,14 +197,15 @@ TEST(Lexer, array_of_numbers)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LBRACKET, "["),
-                                   sym(tkn::NUMBER, "2"),
-                                   sym(tkn::NUMBER, "1"),
-                                   sym(tkn::NUMBER, "0"),
-                                   sym(tkn::NUMBER, "-1"),
-                                   sym(tkn::NUMBER, "-2"),
-                                   sym(tkn::NUMBER, "4.5"),
-                                   sym(tkn::RBRACKET, "]")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LBRACKET, "["),
+                          sym(tkn::NUMBER, "2"),
+                          sym(tkn::NUMBER, "1"),
+                          sym(tkn::NUMBER, "0"),
+                          sym(tkn::NUMBER, "-1"),
+                          sym(tkn::NUMBER, "-2"),
+                          sym(tkn::NUMBER, "4.5"),
+                          sym(tkn::RBRACKET, "]")));
 }
 
 TEST(Lexer, array_of_numbers_including_hexadecimal)
@@ -211,12 +217,13 @@ TEST(Lexer, array_of_numbers_including_hexadecimal)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LBRACKET, "["),
-                                   sym(tkn::NUMBER, "2"),
-                                   sym(tkn::NUMBER, "1"),
-                                   sym(tkn::NUMBER, "15"),
-                                   sym(tkn::NUMBER, "2"),
-                                   sym(tkn::RBRACKET, "]")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LBRACKET, "["),
+                          sym(tkn::NUMBER, "2"),
+                          sym(tkn::NUMBER, "1"),
+                          sym(tkn::NUMBER, "15"),
+                          sym(tkn::NUMBER, "2"),
+                          sym(tkn::RBRACKET, "]")));
 }
 
 TEST(Lexer, array_of_numbers_with_hexadecimal_at_endl)
@@ -228,13 +235,13 @@ TEST(Lexer, array_of_numbers_with_hexadecimal_at_endl)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LBRACKET, "["),
-                                   sym(tkn::NUMBER, "2"),
-                                   sym(tkn::NUMBER, "1"),
-                                   sym(tkn::NUMBER, "15"),
-                                   sym(tkn::RBRACKET, "]")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LBRACKET, "["),
+                          sym(tkn::NUMBER, "2"),
+                          sym(tkn::NUMBER, "1"),
+                          sym(tkn::NUMBER, "15"),
+                          sym(tkn::RBRACKET, "]")));
 }
-
 
 TEST(Lexer, negative_number_at_end_of_array)
 {
@@ -245,14 +252,14 @@ TEST(Lexer, negative_number_at_end_of_array)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LBRACKET, "["),
-                                   sym(tkn::NUMBER, "2"),
-                                   sym(tkn::NUMBER, "1"),
-                                   sym(tkn::NUMBER, "0"),
-                                   sym(tkn::NUMBER, "-1"),
-                                   sym(tkn::RBRACKET, "]")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LBRACKET, "["),
+                          sym(tkn::NUMBER, "2"),
+                          sym(tkn::NUMBER, "1"),
+                          sym(tkn::NUMBER, "0"),
+                          sym(tkn::NUMBER, "-1"),
+                          sym(tkn::RBRACKET, "]")));
 }
-
 
 TEST(Lexer, comment_only)
 {
@@ -272,7 +279,8 @@ TEST(Lexer, comment_only)
 TEST(Lexer, comment_on_same_line_as_sexp)
 {
   // Given
-  std::string input = ";; I am a comment and thus don't care about (defun add-five [x] (+ x 5))";
+  std::string input =
+    ";; I am a comment and thus don't care about (defun add-five [x] (+ x 5))";
 
   // Then
   EXPECT_EQ(lexer.read_symbols(input).size(), 0);
@@ -287,11 +295,12 @@ TEST(Lexer, comment_on_line_above)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::LBRACKET, "["),
-                                   sym(tkn::CHAR, "a"),
-                                   sym(tkn::NUMBER, "1"),
-                                   sym(tkn::KEY, "key"),
-                                   sym(tkn::RBRACKET, "]")));
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LBRACKET, "["),
+                          sym(tkn::CHAR, "a"),
+                          sym(tkn::NUMBER, "1"),
+                          sym(tkn::KEY, "key"),
+                          sym(tkn::RBRACKET, "]")));
 }
 
 TEST(Lexer, comment_on_end_of_line)
@@ -341,8 +350,7 @@ TEST(Lexer, discard__string)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols,
-              ElementsAre(sym(tkn::HASH, "#"),
-                          sym(tkn::USCORE, "_"),
-                          sym(tkn::STRING, "Cheese")));
+  ASSERT_THAT(
+    symbols,
+    ElementsAre(sym(tkn::HASH, "#"), sym(tkn::USCORE, "_"), sym(tkn::STRING, "Cheese")));
 }

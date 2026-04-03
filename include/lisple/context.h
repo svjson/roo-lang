@@ -55,8 +55,9 @@ namespace Lisple
     std::vector<std::unique_ptr<ContextFrame>>& get_stack_frames();
     std::shared_ptr<Array> get_scope_identifiers();
 
-    sptr_sobject eval(const std::string& str);
-    sptr_sobject eval(const sptr_sobject& list);
+    sptr_rtval eval(const std::string& str);
+    sptr_rtval eval(const sptr_sobject& list);
+    sptr_sobject eval_ast(const sptr_sobject& list);
 
     Scope& current_scope();
     Scope& get_scope_of(const Word& identifier) const;

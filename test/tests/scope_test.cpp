@@ -1,13 +1,13 @@
 
-#include <gtest/gtest.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest_pred_impl.h>
-
 #include <memory>
 
 #include <lisple/form.h>
 #include <lisple/scope.h>
+
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using namespace Lisple;
 

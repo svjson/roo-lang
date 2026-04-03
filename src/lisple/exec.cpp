@@ -4,6 +4,7 @@
 #include <memory>
 #include <sstream>
 #include <utility>
+#include <variant>
 
 #include <lisple/bind.h>
 #include <lisple/context.h>
@@ -163,8 +164,12 @@ namespace Lisple
     return type->is_type_of(obj);
   }
 
-  bool Argument::matches(const uptr_exec_node&) const
+  bool Argument::matches(const uptr_exec_node& node) const
   {
+    if (auto* lit_node = std::get_if<LiteralNode>(&node->data))
+    {
+      return matches(*lit_node->value);
+    }
     return true;
   }
 

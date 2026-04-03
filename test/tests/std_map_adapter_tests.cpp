@@ -89,36 +89,36 @@ TEST(StdMapAdapter_int_string, script_usage)
   runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
 
   // Then
-  EXPECT_EQ(runtime.eval("my-map"), adapter);
+  EXPECT_EQ(runtime.eval_ast("my-map"), adapter);
 
   EXPECT_EQ(*runtime.eval("(str my-map)"),
-            *Lisple::String::make(R"({1 "one" 2 "two" 3 "three"})"))
+            *Lisple::RTValue::string(R"({1 "one" 2 "two" 3 "three"})"))
     << "Why though?";
   EXPECT_EQ(runtime.eval("(str my-map)")->to_string(), R"("{1 "one" 2 "two" 3 "three"}")");
 
   /* Get keys */
-  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::String::make("one"));
-  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
-  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
-  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
-  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::RTValue::string("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::Constant::NIL);
 
   /* assoc and count */
-  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(3));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
   runtime.eval(R"((def updated-map (assoc my-map 4 "four")))");
-  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::Number::make(4));
-  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(3));
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
 
   /* assoc! and count */
   runtime.eval(R"((assoc! my-map 8 "eight"))");
   EXPECT_EQ(*runtime.eval("(count updated-map)"),
-            *Lisple::Number::make(4)); // Map counts both keys and values for now
-  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(4));
-  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::String::make("one"));
-  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
-  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
-  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
-  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::String::make("eight"));
+            *Lisple::RTValue::number(4)); // Map counts both keys and values for now
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::RTValue::string("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::RTValue::string("eight"));
 }
 
 /*
@@ -518,37 +518,36 @@ TEST(StdMapAdapter_int_const_string, script_usage)
   runtime.get_current_namespace().store("my-map", adapter);
 
   // Then
-  EXPECT_EQ(runtime.eval("my-map"), adapter);
+  EXPECT_EQ(runtime.eval("my-map")->obj(), adapter);
 
   EXPECT_EQ(*runtime.eval("(str my-map)"),
-            *Lisple::String::make(R"({1 "one" 2 "two" 3 "three"})"));
+            *Lisple::RTValue::string(R"({1 "one" 2 "two" 3 "three"})"));
 
   EXPECT_EQ(runtime.eval("(str my-map)")->to_string(), R"("{1 "one" 2 "two" 3 "three"}")");
 
   /* Get keys */
-  EXPECT_EQ(runtime.eval("(get my-map 1)")->to_string(),
-            Lisple::String::make("one")->to_string());
-  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
-  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
-  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
-  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::NIL);
+  EXPECT_EQ(runtime.eval("(get my-map 1)")->to_string(), "\"one\"");
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::Constant::NIL);
 
   /* assoc and count */
-  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(3));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
   runtime.eval(R"((def updated-map (assoc my-map 4 "four")))");
-  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::Number::make(4));
-  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(3));
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
 
   /* assoc! and count */
   runtime.eval(R"((assoc! my-map 8 "eight"))");
   EXPECT_EQ(*runtime.eval("(count updated-map)"),
-            *Lisple::Number::make(4)); // Map counts both keys and values for now
-  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::Number::make(4));
-  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::String::make("one"));
-  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::String::make("two"));
-  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::String::make("three"));
-  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::NIL);
-  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::String::make("eight"));
+            *Lisple::RTValue::number(4)); // Map counts both keys and values for now
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::RTValue::string("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::RTValue::string("eight"));
 }
 
 /*

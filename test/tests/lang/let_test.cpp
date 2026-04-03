@@ -8,7 +8,7 @@ TEST(LetForm, define_and_exec_let)
   LispleTest::RuntimeFixture fixture;
 
   // When
-  Lisple::sptr_sobject retval = fixture.runtime.eval("(let [x 10 y 20] (+ x y))");
+  auto retval = fixture.runtime.eval("(let [x 10 y 20] (+ x y))");
 
   // Then
   ASSERT_EQ(retval->to_string(), "30");
@@ -21,10 +21,10 @@ TEST(LetForm, define_and_exec_let_with_dynamic_value)
   LispleTest::RuntimeFixture fixture;
 
   // When
-  Lisple::sptr_sobject retval = fixture.runtime.eval("(let [x (+ 20 20)] (+ x 10))");
+  auto retval = fixture.runtime.eval("(let [x (+ 20 20)] (+ x 10))");
 
   // Then
-  ASSERT_EQ(*retval, Lisple::Number(50));
+  ASSERT_EQ(retval->i64(), 50);
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
@@ -34,10 +34,10 @@ TEST(LetForm, define_and_exec_let_with_dependent_bindings)
   LispleTest::RuntimeFixture fixture;
 
   // When
-  Lisple::sptr_sobject retval = fixture.runtime.eval("(let [x 10 y (+ x 20)] (+ x y))");
+  auto retval = fixture.runtime.eval("(let [x 10 y (+ x 20)] (+ x y))");
 
   // Then
-  ASSERT_EQ(*retval, Lisple::Number(40));
+  ASSERT_EQ(retval->i64(), 40);
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
@@ -47,11 +47,10 @@ TEST(LetForm, define_and_exec_let_with_dynamic_values)
   LispleTest::RuntimeFixture fixture;
 
   // When
-  Lisple::sptr_sobject retval =
-    fixture.runtime.eval("(let [x (+ 20 20) y (/ 90 2)] (+ x y))");
+  auto retval = fixture.runtime.eval("(let [x (+ 20 20) y (/ 90 2)] (+ x y))");
 
   // Then
-  ASSERT_EQ(retval->to_string(), "85");
+  ASSERT_EQ(retval->i64(), 85);
   ASSERT_EQ(fixture.ctx.stack_size(), 1);
 }
 
@@ -61,7 +60,7 @@ TEST(LetForm, destructure_array)
   Lisple::Runtime runtime;
 
   // When
-  Lisple::sptr_sobject result = runtime.eval("(let [[a b] [10 25]] (+ a b))");
+  auto result = runtime.eval("(let [[a b] [10 25]] (+ a b))");
 
   // Then
   ASSERT_EQ(result->to_string(), "35");
@@ -73,10 +72,10 @@ TEST(LetForm, destructure_map)
   Lisple::Runtime runtime;
 
   // When
-  Lisple::sptr_sobject result = runtime.eval("(let [{:keys [a b]} {:a 10 :b 25}] (+ a b))");
+  auto result = runtime.eval("(let [{:keys [a b]} {:a 10 :b 25}] (+ a b))");
 
   // Then
-  ASSERT_EQ(*result, *Lisple::Number::make(35));
+  ASSERT_EQ(result->i64(), 35);
 }
 
 TEST(LetForm, bound_value_and_source_are_the_same)
@@ -87,8 +86,7 @@ TEST(LetForm, bound_value_and_source_are_the_same)
   runtime.eval("(def state {:nested {:x 10 :y 8}})");
 
   // When
-  Lisple::sptr_sobject result =
-    runtime.eval("(let [nested (:nested state)] (assoc! nested :y 100))");
+  auto result = runtime.eval("(let [nested (:nested state)] (assoc! nested :y 100))");
 
   // Then
   EXPECT_EQ(runtime.lookup("state")->to_string(), "{:nested {:x 10 :y 100}}");

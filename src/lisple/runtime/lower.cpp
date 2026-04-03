@@ -63,16 +63,23 @@ namespace Lisple
 
       if (children.empty()) throw LispleException("Cannot lower empty list");
 
-      uptr_exec_node callee = lower_expr(children[0]);
-      uptr_exec_node_v args;
-      args.reserve(children.size() - 1);
-
-      for (size_t i = 1; i < children.size(); i++)
+      if (list.is_quoted())
       {
-        args.push_back(lower_expr(children[i]));
+        return lower_literal(obj);
       }
+      else
+      {
+        uptr_exec_node callee = lower_expr(children[0]);
+        uptr_exec_node_v args;
+        args.reserve(children.size() - 1);
 
-      return std::make_unique<ExecNode>(obj, CallNode(std::move(callee), std::move(args)));
+        for (size_t i = 1; i < children.size(); i++)
+        {
+          args.push_back(lower_expr(children[i]));
+        }
+
+        return std::make_unique<ExecNode>(obj, CallNode(std::move(callee), std::move(args)));
+      }
     }
 
     case Form::DISCARD:
