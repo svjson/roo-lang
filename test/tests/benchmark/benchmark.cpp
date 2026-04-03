@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include <lisple/context.h>
+#include <lisple/debug.h>
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/runtime.h>
@@ -179,6 +180,7 @@ namespace LispleTest
 
   Lisple::sptr_rtval SnippetBenchmark::run()
   {
+    Lisple::execution_started = false;
     if (skip_benchmark_tests) return Lisple::Constant::NIL;
     Lisple::Runtime runtime(native_namespaces);
 
@@ -201,6 +203,8 @@ namespace LispleTest
       throw Lisple::LispleException("SnippetBenchmark expects a single root form. Got" +
                                     Lisple::Array::make(parse_result)->to_string());
     }
+
+    Lisple::execution_started = true;
 
     Lisple::Context ctx(runtime);
     lower_start_time = now();
@@ -225,6 +229,9 @@ namespace LispleTest
       log_result();
     }
     apply_counter_snapshot();
+
+    Lisple::execution_started = false;
+
     return result;
   }
 
@@ -243,7 +250,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "023_nobj_wrapper_and_less_delegate_11f4f7c";
+    const std::string CHANGE_ME = "024_avoid_lookup_rewrapping_c5b3072";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 

@@ -1,0 +1,4 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+85411026,workload_1000_native_adapters_handle_collisions__inline_argset_1,1,0,8,37,46
+85485175,workload_1000_native_adapters_handle_collisions__inline_argset_1,0,0,8,39,47
+85668883,workload_1000_native_adapters_handle_collisions__inline_argset_1,0,0,8,38,46

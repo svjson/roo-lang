@@ -1,7 +1,6 @@
 #include "vectorgfx_native_adapters.h"
 
 #include <cmath>
-#include <iostream>
 
 #include <lisple/host/object.h>
 #include <lisple/runtime/dict.h>
