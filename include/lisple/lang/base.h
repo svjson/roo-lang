@@ -26,6 +26,24 @@ namespace Lisple
   SPECIAL_FORM_DECL(DefForm, def, def_docstring)
 
   /*!
+   * @brief Evaluates the body forms sequentially and returns the
+   * value of the last form.
+   *
+   * Usage:
+   * @code
+   * (do (prn "Hello") (prn "World"))
+   * => nil
+   *
+   * (do
+   *   (some-side-effect! 10)
+   *   (other-side-effect! 20)
+   *   :status/success)
+   * => :status/success
+   * @endcode
+   */
+  SPECIAL_FORM_DECL(DoForm, do)
+
+  /*!
    * @brief Tests if all arguments are truthy
    *
    * Returns true if all arguments evaluate as true/truthy, or false if any

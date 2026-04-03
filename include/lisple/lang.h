@@ -39,8 +39,6 @@ namespace Lisple
    */
   MACRO_DECL(WhenLetMacro, make_when_let)
 
-  MACRO_DECL(DoMacro, make_do)
-
   MACRO_DECL(WhileMacro, make_while)
 
   /*!

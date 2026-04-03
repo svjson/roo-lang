@@ -51,6 +51,35 @@ namespace Lisple
     return value;
   }
 
+  /**
+   * DoForm - do
+   */
+  SPECIAL_FORM_IMPL(DoForm,
+                    SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&DoForm::inv_do, &DoForm::execnode_do))))
+
+  MACRO_BODY(DoForm, inv_do)
+  {
+    Lisple::sptr_sobject ret;
+    ctx.push_context(true);
+    for (auto& arg : args)
+    {
+      ret = ctx.eval_ast(arg);
+    }
+    ctx.pop_context();
+    return ret;
+  }
+
+  EXECNODE_BODY(DoForm, execnode_do)
+  {
+    Lisple::sptr_rtval ret;
+    for (auto& arg : args)
+    {
+      ret = exec(ctx, *arg);
+    }
+    return ret;
+  }
+
   /** AndForm - and */
   SPECIAL_FORM_IMPL(AndForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),

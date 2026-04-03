@@ -79,7 +79,7 @@ namespace Lisple
     lang_symbols.emplace("def", DefForm::make());
     lang_symbols.emplace("defun", DefunForm::make());
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
-    lang.emplace("do", std::make_shared<DoMacro>());
+    lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
     lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
     lang.emplace("eval", std::make_shared<EvalFunction>());
@@ -324,22 +324,6 @@ namespace Lisple
     }
 
     return result;
-  }
-
-  MACRO_IMPL(DoMacro,
-             SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&DoMacro::make_do))))
-
-  MACRO_BODY(DoMacro, make_do)
-  {
-    Lisple::sptr_sobject ret;
-    ctx.push_context(true);
-    for (auto& arg : args)
-    {
-      ret = ctx.eval_ast(arg);
-    }
-    ctx.pop_context();
-    return ret;
   }
 
   /* PrintFunction - prn */
