@@ -271,9 +271,9 @@ namespace Lisple
   typedef std::unordered_map<sptr_rtval, NAccessors> key_n_acc_map;
 
   /*! @brief Convenience type definition for GETTER function references */
-  typedef std::function<sptr_rtval(const NativeObjectBase*)> n_acc_get_t;
+  using n_acc_get_t = sptr_rtval (*)(const NativeObjectBase*);
   /*! @brief Convenience type definition for SETTER function references */
-  typedef std::function<void(NativeObjectBase*, Context*, Lisple::sptr_rtval&)> n_acc_set_t;
+  using n_acc_set_t = void (*)(NativeObjectBase*, Context*, Lisple::sptr_rtval&);
 
   /*!
    * @brief Stock getter-implementation for non-gettable properties that will
