@@ -2,3 +2,5 @@ timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms
 121237040,dotimes_1_000_000_mixed_basic_arithmetic,0,0,668,0,668,0,10000007,4997939,0,4,0,0,0,0,0,0,0,0
 121319445,dotimes_1_000_000_mixed_basic_arithmetic,0,0,673,0,673,0,10000007,4997939,0,4,0,0,0,0,0,0,0,0
 121368289,dotimes_1_000_000_mixed_basic_arithmetic,0,0,665,0,665,0,10000007,4997939,0,4,0,0,0,0,0,0,0,0
+128890588,dotimes_1_000_000_mixed_basic_arithmetic,0,0,669,0,669,0,10000007,4997939,0,4,0,0,0,0,0,0,0,0
+129019687,dotimes_1_000_000_mixed_basic_arithmetic,0,0,668,0,668,0,10000007,4997939,0,4,0,0,0,0,0,0,0,0

@@ -2,3 +2,5 @@ timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms
 121226909,dotimes_1_000_000_with_map_construction,0,0,371,0,371,0,6000004,2998980,0,4,0,0,0,0,0,0,0,0
 121309281,dotimes_1_000_000_with_map_construction,1,0,375,0,376,0,6000004,2998980,0,4,0,0,0,0,0,0,0,0
 121358167,dotimes_1_000_000_with_map_construction,0,0,374,0,374,0,6000004,2998980,0,4,0,0,0,0,0,0,0,0
+128820613,dotimes_1_000_000_with_map_construction,0,0,382,0,382,0,6000004,2998980,0,4,0,0,0,0,0,0,0,0
+128950410,dotimes_1_000_000_with_map_construction,0,0,375,0,375,0,6000004,2998980,0,4,0,0,0,0,0,0,0,0

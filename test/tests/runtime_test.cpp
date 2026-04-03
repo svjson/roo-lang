@@ -142,5 +142,5 @@ TEST(Runtime, no_matching_signature_exception_bubbles_up_to_client)
 
   // Then
   EXPECT_FALSE(result.get());
-  EXPECT_THAT(msg, HasSubstr("No matching signature"));
+  EXPECT_THAT(msg, HasSubstr("Could not apply"));
 }

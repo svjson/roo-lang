@@ -39,7 +39,7 @@ TEST(Workload, filtered_aggregation_10000_entities)
   bm.run();
 }
 
-TEST(Benchmark_Workload, benchmark_filtered_aggregation_1000_iterations_10000_entities)
+TEST(Benchmark_Workload, benchmark_filtered_aggregation_100_iterations_10000_entities)
 {
   LispleTest::SnippetBenchmark bm(
     "filtered_aggregation__100_iterations_10000_entities",

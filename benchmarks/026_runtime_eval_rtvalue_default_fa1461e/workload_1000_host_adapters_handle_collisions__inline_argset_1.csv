@@ -2,3 +2,5 @@ timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms
 121239761,workload_1000_host_adapters_handle_collisions__inline_argset_1,1,0,8,37,46,0,21103,5843,1250,2339,235,5819,1663,9,9,0,430,0
 121322173,workload_1000_host_adapters_handle_collisions__inline_argset_1,1,0,8,37,46,0,21103,5859,1250,2339,235,5819,1663,9,9,0,430,0
 121371014,workload_1000_host_adapters_handle_collisions__inline_argset_1,0,0,8,37,45,0,21103,5857,1250,2339,235,5819,1663,9,9,0,430,0
+128821478,workload_1000_host_adapters_handle_collisions__inline_argset_1,0,0,10,42,52,0,21103,5853,1250,2339,235,5819,1663,9,9,0,430,0
+128951256,workload_1000_host_adapters_handle_collisions__inline_argset_1,1,0,7,39,47,0,21103,5844,1250,2339,235,5819,1663,9,9,0,430,0
