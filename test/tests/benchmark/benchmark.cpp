@@ -1,6 +1,8 @@
 #include "benchmark.h"
 
 #include "lisple/form.h"
+#include "lisple/runtime/node.h"
+#include "lisple/runtime/value.h"
 
 #include <chrono>
 #include <filesystem>
@@ -272,12 +274,22 @@ namespace LispleTest
     if (empty)
     {
       out << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
-             "unaccounted_time_ms,total_time_ms"
+             "unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,"
+             "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
+             "ast_inv"
           << std::endl;
     }
 
     out << timestamp << "," << case_name << "," << parse_time << "," << lower_time << ","
-        << exec_time << "," << unacc_time << "," << total_time << std::endl;
+        << exec_time << "," << unacc_time << "," << total_time << ","
+        << Lisple::eval_executions << "," << Lisple::exec_executions << ","
+        << Lisple::rtvalues_constructed << "," << Lisple::rtvalue_wrappers_constructed << ","
+        << Lisple::literal_nodes_constructed << "," << Lisple::lookup_nodes_constructed
+        << "," << Lisple::to_ast_conversions << "," << Lisple::to_rtvalue_conversions << ","
+        << Lisple::user_functions_created << "," << Lisple::user_functions_rtval_created
+        << "," << Lisple::user_functions_ast_created << ","
+        << Lisple::user_function_rtval_invocations << ","
+        << Lisple::user_function_ast_invocations << std::endl;
 
     out.close();
   }
