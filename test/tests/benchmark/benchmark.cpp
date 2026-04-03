@@ -252,7 +252,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "025_nobj_micro_opts_f0cec2d";
+    const std::string CHANGE_ME = "026_runtime_eval_rtvalue_default_fa1461e";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 

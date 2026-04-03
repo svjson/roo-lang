@@ -1,0 +1,4 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+121226362,dotimes_1_000_000_with_addition,0,0,243,0,243,0,3000004,1997956,0,4,0,0,0,0,0,0,0,0
+121308730,dotimes_1_000_000_with_addition,0,0,244,0,244,0,3000004,1997956,0,4,0,0,0,0,0,0,0,0
+121357618,dotimes_1_000_000_with_addition,0,0,245,0,245,0,3000004,1997956,0,4,0,0,0,0,0,0,0,0
