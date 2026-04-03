@@ -107,4 +107,43 @@ namespace Lisple
     return Constant::NIL;
   }
 
+  /* WhenForm - when */
+  MACRO_IMPL(WhenForm,
+             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
+                  EXEC_DISPATCH(&WhenForm::inv_when, &WhenForm::execnode_when))))
+
+  MACRO_BODY(WhenForm, inv_when)
+  {
+    sptr_sobject retval = NIL;
+
+    ctx.push_context(true);
+    auto condition = ctx.eval_ast(args[0]);
+    if (condition->is_truthy())
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        retval = RuntimeValueWrapper::make(ctx.eval(args[i]));
+      }
+    }
+    ctx.pop_context();
+    return retval;
+  }
+
+  EXECNODE_BODY(WhenForm, execnode_when)
+  {
+    sptr_rtval retval = Constant::NIL;
+
+    ctx.push_context(true);
+    auto condition = exec(ctx, *args[0]);
+    if (Lisple::is_truthy(*condition))
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        retval = exec(ctx, *args[i]);
+      }
+    }
+    ctx.pop_context();
+    return retval;
+  }
+
 } // namespace Lisple

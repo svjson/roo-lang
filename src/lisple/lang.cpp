@@ -146,7 +146,7 @@ namespace Lisple
     lang_symbols.emplace("true", Constant::BOOL_TRUE);
     lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
     lang.emplace("vector", std::make_shared<VectorFunction>());
-    lang.emplace("when", std::make_shared<WhenMacro>());
+    lang_symbols.emplace("when", WhenForm::make());
     lang.emplace("when-let", std::make_shared<WhenLetMacro>());
     lang.emplace("while", std::make_shared<WhileMacro>());
 
@@ -431,28 +431,6 @@ namespace Lisple
     }
     ctx.pop_context();
 
-    return retval;
-  }
-
-  /* when */
-  MACRO_IMPL(WhenMacro,
-             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&WhenMacro::make_when))))
-
-  MACRO_BODY(WhenMacro, make_when)
-  {
-    sptr_sobject retval = NIL;
-
-    ctx.push_context(true);
-    auto condition = ctx.eval_ast(args[0]);
-    if (condition->is_truthy())
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        retval = RuntimeValueWrapper::make(ctx.eval(args[i]));
-      }
-    }
-    ctx.pop_context();
     return retval;
   }
 

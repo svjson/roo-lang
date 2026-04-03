@@ -44,34 +44,6 @@ namespace Lisple
   MACRO_DECL(WhileMacro, make_while)
 
   /*!
-   * @brief Optionally execute forms if conditional expression evaluates
-   * to a truthy value.
-   *
-   * If multiple forms are provided after the conditional, they are evaluated as
-   * if implicitly wrapped in a (do form1 form2 ...) form.
-   *
-   * Usage:
-   * @code
-   * (when condition
-   *   (prn "It's true!"))
-   *
-   * (when condition
-   *   (prn "It's true!")
-   *   {:result "successful"})
-   *
-   * (when my-var
-   *   (my-fun))
-   * @endcode
-   *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | A conditional form - anything that can be considered truthy or falsy |
-   * | 1...  | Any number of forms to be evaluated if the conditional evaluates to a truthy
-   * value |
-   */
-  MACRO_DECL(WhenMacro, make_when)
-
-  /*!
    * @brief branching construct based on testing a single value against an
    * arbitrary number of constant values.
    *
