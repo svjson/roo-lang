@@ -17,9 +17,7 @@
  */
 #define __NOBJ_TRAITS_DECL                                              \
   protected:                                                            \
-   static Lisple::NativeObjectTraits* _traits;                          \
    const Lisple::NativeObjectTraits* get_traits() const override;       \
-   static const Lisple::NativeObjectTraits* traits();                   \
 
 
 /*
@@ -173,31 +171,16 @@
   __SELECT_MACRO__4(0, ##__VA_ARGS__, NATIVE_ADAPTER__WITH_PROPS_AND_CUSTOM_FIELDS, NATIVE_ADAPTER__WITH_PROPS, NATIVE_ADAPTER__WITH_GETTERS, NATIVE_ADAPTER__NO_PROPS) \
   (AD_CLASS, H_CLASS, ##__VA_ARGS__)
 
-/* __ADAPTER_TRAITS_COMMON
+/* __NOBJ_TRAITS_IMPL
  *
  * Generates AdapterTraits facilities common between regular host adapters
  * and derived host adapters.
  */
-#define __NOBJ_TRAITS_COMMON(AD_CLASS)                                  \
-  Lisple::NativeObjectTraits* AD_CLASS::_traits = nullptr;                   \
+#define __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ACCESSOR_MAP)              \
   const Lisple::NativeObjectTraits* AD_CLASS::get_traits() const             \
   {                                                                     \
-    return AD_CLASS::traits();                                          \
-  }
-
-/* __NOBJ_TRAITS_IMPL
- *
- * Generates AdapterTraits facilities for regular host adapters.
- */
-#define __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ACCESSOR_MAP)              \
-  __NOBJ_TRAITS_COMMON(AD_CLASS)                                        \
-  const Lisple::NativeObjectTraits* AD_CLASS::traits()                       \
-  {                                                                     \
-    if (!AD_CLASS::_traits)                                             \
-    {                                                                   \
-      AD_CLASS::_traits = new Lisple::NativeObjectTraits(HOBJ_T, Lisple::NAccessorTable ACCESSOR_MAP); \
-    }                                                                   \
-    return AD_CLASS::_traits;                                           \
+    static const Lisple::NativeObjectTraits traits(HOBJ_T, Lisple::NAccessorTable ACCESSOR_MAP); \
+    return &traits; \
   }
 
 #define __NOBJ_P_GETTER(AD_CLASS, FN) [](const Lisple::NativeObjectBase* adapter) { return dynamic_cast<const AD_CLASS*>(adapter)->FN(); }
