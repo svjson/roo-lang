@@ -125,7 +125,11 @@ namespace Lisple
 
   bool Namespace::has(const Word& identifier) const
   {
-    return this->find(identifier) != nullptr;
+    auto val_it = this->values.find(identifier.to_string());
+    if (val_it != this->values.end()) return true;
+
+    auto obj_it = this->objects.find(identifier.to_string());
+    return obj_it != this->objects.end();
   }
 
   sptr_sobject Namespace::lookup(const Word& identifier) const
