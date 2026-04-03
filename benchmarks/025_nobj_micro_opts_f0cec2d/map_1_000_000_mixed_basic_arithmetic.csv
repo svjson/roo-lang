@@ -1,0 +1,7 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+92046778,map_1_000_000_mixed_basic_arithmetic,0,0,978,0,978
+92048115,map_1_000_000_mixed_basic_arithmetic,0,0,1239,0,1239
+92230522,map_1_000_000_mixed_basic_arithmetic,0,0,978,0,978
+92231859,map_1_000_000_mixed_basic_arithmetic,0,0,1241,0,1241
+92374288,map_1_000_000_mixed_basic_arithmetic,0,0,976,0,976
+92375629,map_1_000_000_mixed_basic_arithmetic,0,0,1245,0,1245

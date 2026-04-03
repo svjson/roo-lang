@@ -250,7 +250,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "024_avoid_lookup_rewrapping_c5b3072";
+    const std::string CHANGE_ME = "025_nobj_micro_opts_f0cec2d";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
