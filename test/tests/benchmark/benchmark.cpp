@@ -252,7 +252,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "027_when_form_on_execnode_740282d";
+    const std::string CHANGE_ME = "028_zerop_function_04553bd";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
