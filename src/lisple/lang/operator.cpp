@@ -70,11 +70,11 @@ namespace Lisple
     return RTValue::number(result);
   }
 
+  /** DivideFunction - / */
   FUNC_IMPL(DivideFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&DivideFunction::exec_divide))))
 
-  /** DivideFunction - / */
   EXEC_BODY(DivideFunction, exec_divide)
   {
     if (args.size() == 0)
@@ -107,7 +107,7 @@ namespace Lisple
     return RTValue::number(result);
   }
 
-  /** DivideFunction - * */
+  /** MultiplyFunction - * */
   FUNC_IMPL(MultiplyFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&MultiplyFunction::exec_multiply))));
@@ -137,6 +137,16 @@ namespace Lisple
     }
 
     return RTValue::number(result);
+  }
+
+  /** ModulusFunction - mod */
+  FUNC_IMPL(ModulusFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&ModulusFunction::exec_modulus))))
+
+  EXEC_BODY(ModulusFunction, exec_modulus)
+  {
+    return RTValue::number(args[0]->i64() % args[1]->i64());
   }
 
   /* LessThanFunction */

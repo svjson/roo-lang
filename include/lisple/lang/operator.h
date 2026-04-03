@@ -73,6 +73,22 @@ namespace Lisple
   FUNC(DivideFunction, divide)
 
   /**
+   * @brief Divides the first numeric argument by the second, and then divides the
+   * result by each subsequent argument, returning the quotient.
+   *
+   * Usage:
+   * @code
+   * (* 80 2 10)
+   * => 4
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0...  | The numbers to divide. Must be at least one argument.            |
+   */
+  FUNC(ModulusFunction, modulus)
+
+  /**
    * @brief Multiplies any number of numeric arguments together, and
    * returns the product.
    *

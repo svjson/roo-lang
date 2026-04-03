@@ -648,6 +648,7 @@ namespace Lisple
 
   Signature* Executable::get_signature([[maybe_unused]] Context& ctx, uptr_exec_node_v& args)
   {
+    if (signatures.size() == 1) return signatures[0].get();
     for (auto& sig : signatures)
     {
       if (sig->matches(args))

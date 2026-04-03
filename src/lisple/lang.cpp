@@ -106,6 +106,7 @@ namespace Lisple
     lang.emplace("max", std::make_shared<MinMaxFunction>(false));
     lang.emplace("merge", std::make_shared<MergeFunction>());
     lang.emplace("min", std::make_shared<MinMaxFunction>(true));
+    lang_symbols.emplace("mod", ModulusFunction::make());
     lang.emplace("name", std::make_shared<NameFunction>());
     lang.emplace("namespace", std::make_shared<NamespaceFunction>());
     lang_symbols.emplace("nil", Constant::NIL);
@@ -283,7 +284,8 @@ namespace Lisple
     for (size_t i = 0; i < var_def_array.size(); i += 2)
     {
       auto& var_name_obj = *var_def_array.get_children()[i];
-      auto var_val_obj = ctx.eval_ast(var_def_array.get_children()[i + 1]);
+      sptr_sobject var_expr = var_def_array.get_children()[i + 1];
+      auto var_val_obj = RuntimeValueWrapper::make(ctx.eval(var_expr));
 
       if (*var_val_obj == *NIL)
       {
@@ -305,7 +307,6 @@ namespace Lisple
     }
 
     sptr_sobject result = NIL;
-
     if (!contains_nil)
     {
       for (size_t i = 1; i < args.size(); i++)
@@ -393,7 +394,15 @@ namespace Lisple
       Lisple::Object& prop = *actual_mem_ref->get_children()[0];
       Lisple::Object& owner = *actual_mem_ref->get_children().back();
 
-      owner.set_property(&ctx, prop, args.back());
+      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&owner))
+      {
+        auto val = to_rt_value(args.back());
+        Lisple::Dict::set_property(wrapper->val, to_rt_value(prop), val);
+      }
+      else
+      {
+        owner.set_property(&ctx, prop, args.back());
+      }
     }
     else
     {
@@ -440,7 +449,7 @@ namespace Lisple
     {
       for (size_t i = 1; i < args.size(); i++)
       {
-        retval = ctx.eval_ast(args[i]);
+        retval = RuntimeValueWrapper::make(ctx.eval(args[i]));
       }
     }
     ctx.pop_context();

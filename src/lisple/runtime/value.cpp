@@ -408,10 +408,23 @@ namespace Lisple
 
       return RTValue::vector(elements);
     }
+    case Form::LIST:
+    {
+      sptr_rtval_v elements;
+
+      for (auto& c : dynamic_cast<const List*>(&obj)->children)
+      {
+        elements.push_back(to_rt_value(c));
+      }
+
+      return RTValue::list(elements);
+    }
     case Form::BOOLEAN:
       return RTValue::boolean(Value<bool>::value_of(obj));
     case Form::CHAR:
       return RTValue::character(Value<char>::value_of(obj));
+    case Form::KEY:
+      return RTValue::keyword(Value<std::string>::value_of(obj));
     case Form::MAP:
     {
       sptr_rtval_v elements;
@@ -441,6 +454,7 @@ namespace Lisple
     case Form::BOOLEAN:
     case Form::CHAR:
     case Form::MAP:
+    case Form::LIST:
       return to_rt_value(*obj);
     case Form::FUNCTION:
       return RTValue::executable(obj);

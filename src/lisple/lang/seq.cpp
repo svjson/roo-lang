@@ -69,7 +69,7 @@ namespace Lisple
     return RTValue::vector(std::move(result));
   }
 
-  /* CountFunction - count */
+  /** CountFunction - count */
   FUNC_IMPL(CountFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&CountFunction::exec_count))));
 
@@ -78,6 +78,7 @@ namespace Lisple
     return RTValue::number((int)Lisple::count(*args[0]));
   }
 
+  /** NthFunction - nth */
   FUNC_IMPL(NthFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::NUMBER)),
                  EXEC_DISPATCH(&NthFunction::exec_nth))))
@@ -95,7 +96,7 @@ namespace Lisple
     return children[n];
   }
 
-  /* HeadFunction */
+  /** HeadFunction */
   FUNC_IMPL(HeadFunction,
             SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&HeadFunction::exec_head))))
 
@@ -105,7 +106,7 @@ namespace Lisple
     return Lisple::get_child(*args[0], 0);
   }
 
-  /* LastFunction */
+  /** LastFunction */
   FUNC_IMPL(LastFunction,
             SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&LastFunction::exec_last))))
 
@@ -115,7 +116,7 @@ namespace Lisple
     return Lisple::get_children(*args[0]).back();
   }
 
-  /* RandNth - rand-nth */
+  /** RandNth - rand-nth */
   FUNC_IMPL(RandNthFunction,
             SIG((FN_ARGS((&Lisple::Type::SEQ)),
                  EXEC_DISPATCH(&RandNthFunction::exec_rand_nth))))
@@ -179,7 +180,7 @@ namespace Lisple
     return RTValue::vector(std::move(result));
   }
 
-  /* RemoveNthFunction - remove-nth! */
+  /** RemoveNthFunction - remove-nth! */
   FUNC_IMPL(RemoveNthFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
                  EXEC_DISPATCH(&RemoveNthFunction::exec_remove_nth))))
