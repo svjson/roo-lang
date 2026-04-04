@@ -1,0 +1,3 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+194190613,workload_1000_handle_collisions__inline_argset_2,1,0,192,52,245,0,583016,152002,0,238003,140000,0,1000,7000,7000,0,12000,0
+194758223,workload_1000_handle_collisions__inline_argset_2,1,0,194,51,246,0,583016,152002,0,238003,140000,0,1000,7000,7000,0,12000,0
