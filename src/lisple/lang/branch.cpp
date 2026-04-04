@@ -5,9 +5,11 @@
 namespace Lisple
 {
   /** CondForm - cond */
-  MACRO_IMPL(CondForm,
-             SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&CondForm::inv_cond, &CondForm::execnode_cond))))
+  SPECIAL_FORM_IMPL(CondForm,
+                    SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&CondForm::inv_cond, &CondForm::execnode_cond))))
+
+  SFORM_OMIT_LOWER_IMPL(CondForm)
 
   MACRO_BODY(CondForm, inv_cond)
   {
@@ -67,13 +69,15 @@ namespace Lisple
   }
 
   /** IfForm - if */
-  MACRO_IMPL(IfForm,
-             MULTI_SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if)),
-                       (FN_ARGS((&Lisple::Type::ANY),
-                                (&Lisple::Type::ANY, NO_EVAL),
-                                (&Lisple::Type::ANY, NO_EVAL)),
-                        EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if))))
+  SPECIAL_FORM_IMPL(IfForm,
+                    MULTI_SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY, NO_EVAL)),
+                               EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if)),
+                              (FN_ARGS((&Lisple::Type::ANY),
+                                       (&Lisple::Type::ANY, NO_EVAL),
+                                       (&Lisple::Type::ANY, NO_EVAL)),
+                               EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if))))
+
+  SFORM_OMIT_LOWER_IMPL(IfForm)
 
   MACRO_BODY(IfForm, inv_if)
   {
@@ -108,9 +112,11 @@ namespace Lisple
   }
 
   /* WhenForm - when */
-  MACRO_IMPL(WhenForm,
-             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&WhenForm::inv_when, &WhenForm::execnode_when))))
+  SPECIAL_FORM_IMPL(WhenForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&WhenForm::inv_when, &WhenForm::execnode_when))))
+
+  SFORM_OMIT_LOWER_IMPL(WhenForm)
 
   MACRO_BODY(WhenForm, inv_when)
   {

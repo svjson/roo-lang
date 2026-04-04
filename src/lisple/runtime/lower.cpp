@@ -3,8 +3,10 @@
 
 #include <lisple/context.h>
 #include <lisple/exception.h>
+#include <lisple/exec.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime/node.h>
+
 namespace Lisple
 {
   int lowered_expressions = 0;
@@ -94,6 +96,10 @@ namespace Lisple
       if (ctx.is_allow_lookup() && ctx.ctx)
       {
         auto static_val = ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
+        if (!static_val)
+        {
+          static_val = ctx.ctx->lang().lookup_symbol(obj->as<Word>());
+        }
         if (static_val)
         {
           lowered_literals++;
@@ -136,6 +142,19 @@ namespace Lisple
             lower_time_exec_resolutions++;
             return std::make_unique<ExecNode>(
               KeyLookupNode(literal_callee->value, lower_expr(ctx, children[1])));
+          }
+          else if (literal_callee->value->type == RTValue::Type::FUNCTION)
+          {
+            if (auto* sform = dynamic_cast<SpecialForm*>(&literal_callee->value->exec()))
+            {
+              uptr_exec_node sform_lowered = sform->lower_form(ctx, obj);
+              if (sform_lowered)
+              {
+                lowered_expressions++;
+                lower_time_exec_resolutions++;
+                return sform_lowered;
+              }
+            }
           }
         }
 

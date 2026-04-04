@@ -2,6 +2,8 @@
 #ifndef __SEXP_EXEC_H_
 #define __SEXP_EXEC_H_
 
+#include "lisple/runtime/lower.h"
+
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -10,6 +12,7 @@
 
 #include <lisple/bind.h>
 #include <lisple/form.h>
+#include <lisple/macro_support.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime/eval_plan.h>
 #include <lisple/runtime/node.h>
@@ -76,6 +79,16 @@
   return Lisple::RTValue::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
 }
 
+#define SFORM_LOWER_DECL Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx, const Lisple::sptr_sobject& ast_node);
+
+#define SFORM_LOWER_IMPL(SFORM_NAME) \
+  Lisple::uptr_exec_node SFORM_NAME::lower_form([[maybe_unused]] Lisple::LowerContext& ctx, \
+                                                [[maybe_unused]] const Lisple::sptr_sobject& ast_node)
+
+#define SFORM_OMIT_LOWER_IMPL(SFORM_NAME) \
+  SFORM_LOWER_IMPL(SFORM_NAME) \
+  { return nullptr; }
+
 #define EXECNODE_DISPATCH(NAME)                                                                  \
   DISP_DECL(inv_##NAME)                                                                 \
   EXECNODE_DECL(execnode_##NAME)
@@ -125,6 +138,7 @@
 #define SFORM_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                   \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   EXECNODE_DISPATCH(DISP_NAME1)                                                         \
+  SFORM_LOWER_DECL                                                                      \
   FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
@@ -132,6 +146,7 @@
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
   EXECNODE_DISPATCH(DISP_NAME1)                                                         \
   EXECNODE_DISPATCH(DISP_NAME2)                                                         \
+  SFORM_LOWER_DECL                                                                      \
   FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
@@ -140,15 +155,14 @@
   EXECNODE_DISPATCH(DISP_NAME1)                                                         \
   EXECNODE_DISPATCH(DISP_NAME2)                                                         \
   EXECNODE_DISPATCH(DISP_NAME3)                                                         \
+  SFORM_LOWER_DECL                                                                      \
   FUNC_MAKE(EXEC_NAME)                                                                  \
   END_CLASS
 
-#define SELECT_EXEC_DECL_MACRO(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
-
 // clang-format off
-#define FUNC_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
+#define FUNC_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
 
-#define FUNC(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, FUNC_DECL3, FUNC_DECL2, FUNC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
+#define FUNC(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, FUNC_DECL3, FUNC_DECL2, FUNC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
 
 #define FUNC_IMPL(FUNC_NAME, SIGNATURE)                                                 \
   FUNC_NAME::FUNC_NAME()                                                                \
@@ -160,9 +174,9 @@
 
 #define EXECNODE_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::ptr_exec_node_v& args)
 
-#define MACRO_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
+#define MACRO_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
 
-#define SPECIAL_FORM_DECL(FUNC_NAME, ...) SELECT_EXEC_DECL_MACRO(__VA_ARGS__, SFORM_DECL3, SFORM_DECL2, SFORM_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
+#define SPECIAL_FORM_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, SFORM_DECL3, SFORM_DECL2, SFORM_DECL1)(FUNC_NAME, Lisple::SpecialForm, __VA_ARGS__)
 
 // clang-format on
 
@@ -181,7 +195,7 @@
 
 #define SPECIAL_FORM_IMPL(FORM_NAME, SIGNATURE) \
 FORM_NAME::FORM_NAME() \
-  : Lisple::Macro(SIGNATURE) \
+  : Lisple::SpecialForm(SIGNATURE) \
 { \
 }
 
@@ -467,6 +481,18 @@ namespace Lisple
     Macro(Lisple::uptr_sig_v signatures);
 
     std::string to_string(int depth = -1) const override;
+  };
+
+  class SpecialForm : public Executable
+  {
+   public:
+    SpecialForm(std::unique_ptr<Signature> signature);
+    SpecialForm(Lisple::uptr_sig_v signatures);
+
+    std::string to_string(int depth = -1) const override;
+
+    virtual Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx,
+                                              const Lisple ::sptr_sobject& ast_node) = 0;
   };
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,

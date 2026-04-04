@@ -6,12 +6,14 @@
 namespace Lisple
 {
   /* DefForm */
-  MACRO_IMPL(DefForm,
-             MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
-                        EXEC_DISPATCH(&DefForm::inv_def, &DefForm::execnode_def)),
-                       (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
-                        EXEC_DISPATCH(&DefForm::inv_def_docstring,
-                                      &DefForm::execnode_def_docstring))))
+  SPECIAL_FORM_IMPL(DefForm,
+                    MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
+                               EXEC_DISPATCH(&DefForm::inv_def, &DefForm::execnode_def)),
+                              (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
+                               EXEC_DISPATCH(&DefForm::inv_def_docstring,
+                                             &DefForm::execnode_def_docstring))))
+
+  SFORM_OMIT_LOWER_IMPL(DefForm)
 
   /**
    * Legacy AST-based implementation.
@@ -58,6 +60,8 @@ namespace Lisple
                     SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoForm::inv_do, &DoForm::execnode_do))))
 
+  SFORM_OMIT_LOWER_IMPL(DoForm)
+
   MACRO_BODY(DoForm, inv_do)
   {
     Lisple::sptr_sobject ret;
@@ -84,6 +88,8 @@ namespace Lisple
   SPECIAL_FORM_IMPL(AndForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&AndForm::inv_and, &AndForm::execnode_and))))
+
+  SFORM_OMIT_LOWER_IMPL(AndForm)
 
   /**
    * Legacy AST-based implementation.
@@ -122,6 +128,8 @@ namespace Lisple
   SPECIAL_FORM_IMPL(OrForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&OrForm::inv_or, &OrForm::execnode_or))))
+
+  SFORM_OMIT_LOWER_IMPL(OrForm)
 
   MACRO_BODY(OrForm, inv_or)
   {
@@ -177,9 +185,12 @@ namespace Lisple
     return RTValue::number((std::rand() % (max - min)) + min);
   }
 
+  /** SetBangForm - set! */
   SPECIAL_FORM_IMPL(SetBangForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
                          EXEC_DISPATCH(&SetBangForm::inv_set, &SetBangForm::execnode_set))))
+
+  SFORM_OMIT_LOWER_IMPL(SetBangForm)
 
   MACRO_BODY(SetBangForm, inv_set)
   {

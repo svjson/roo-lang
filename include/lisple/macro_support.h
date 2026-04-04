@@ -10,6 +10,7 @@
 #define __SELECT_MACRO__3(_1, _2, _3, MACRO_NAME, ...) MACRO_NAME
 #define __SELECT_MACRO__4(_1, _2, _3, _4, MACRO_NAME, ...) MACRO_NAME
 #define __SELECT_MACRO__5(_1, _2, _3, _4, _5, MACRO_NAME, ...) MACRO_NAME
+#define __SELECT_MACRO__6(_1, _2, _3, _4, _5, _6, MACRO_NAME, ...) MACRO_NAME
 
 /*
  * Helper macro for expanding values eliminating containing parentheses.

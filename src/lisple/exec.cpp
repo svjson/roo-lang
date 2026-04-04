@@ -1021,6 +1021,7 @@ namespace Lisple
     return arg_bindings;
   }
 
+  /** Macro */
   Macro::Macro(uptr_sig signature)
     : Executable(Form::MACRO, std::move(signature))
   {
@@ -1036,6 +1037,25 @@ namespace Lisple
     return "<macro>";
   }
 
+  /** SpecialForm */
+  SpecialForm::SpecialForm(uptr_sig signature)
+    : Executable(Form::MACRO, std::move(signature))
+  {
+  }
+
+  SpecialForm::SpecialForm(uptr_sig_v signatures)
+    : Executable(Form::MACRO, std::move(signatures))
+  {
+  }
+
+  std::string SpecialForm::to_string(int) const
+  {
+    return "<special-form>";
+  }
+
+  /**
+   * Function creation ergonomics
+   */
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
                                                 Object& arg_array,
                                                 sptr_sobject_v& body)

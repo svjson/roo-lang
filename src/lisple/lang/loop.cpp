@@ -15,6 +15,8 @@ namespace Lisple
                          EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
                                        &DoTimesForm::execnode_dotimes))))
 
+  SFORM_OMIT_LOWER_IMPL(DoTimesForm)
+
   /**
    * Legacy AST-based implementation
    */
@@ -135,6 +137,8 @@ namespace Lisple
                     SIG((FN_ARGS((&Type::SEQ, &Eval::BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&ForForm::inv_for, &ForForm::execnode_for))))
+
+  SFORM_OMIT_LOWER_IMPL(ForForm)
 
   MACRO_BODY(ForForm, inv_for)
   {

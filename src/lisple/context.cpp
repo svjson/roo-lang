@@ -144,6 +144,11 @@ namespace Lisple
     return &runtime.get_current_namespace();
   }
 
+  Namespace& Context::lang()
+  {
+    return runtime.lang;
+  }
+
   void Context::import_namespace(const std::string& namespace_name)
   {
     runtime.import_namespace(namespace_name);

@@ -88,6 +88,8 @@ namespace Lisple
      */
     Namespace* get_current_namespace();
 
+    Namespace& lang();
+
     /*!
      * @brief Call a named function with a single argument
      *

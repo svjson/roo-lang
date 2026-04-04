@@ -52,7 +52,7 @@ TEST(LowerTest, list__call_node__ctx__literal_node_callee)
   // Then
   ASSERT_TRUE(std::holds_alternative<Lisple::CallNode>(node->data));
   Lisple::CallNode& call_node = std::get<Lisple::CallNode>(node->data);
-  ASSERT_TRUE(std::holds_alternative<Lisple::LookupNode>(call_node.callee->data));
+  ASSERT_TRUE(std::holds_alternative<Lisple::LiteralNode>(call_node.callee->data));
 }
 
 TEST(LowerTest, list__key_lookup__no_ctx__lookup_node)
@@ -87,4 +87,22 @@ TEST(LowerTest, list__key_lookup__ctx__lookup_node)
   Lisple::KeyLookupNode& key_node = std::get<Lisple::KeyLookupNode>(node->data);
   EXPECT_EQ(*key_node.keyword, *Lisple::RTValue::keyword("name"));
   EXPECT_TRUE(std::holds_alternative<Lisple::LookupNode>(key_node.target->data));
+}
+
+TEST(LowerTest, list_special_form__ctx__custom_lower)
+{
+  Lisple::Runtime runtime;
+  Lisple::Context ctx(runtime);
+  Lisple::LowerContext lctx{&ctx};
+  Lisple::sptr_sobject expr = Lisple::List::make(
+    {Lisple::Word::make("->"),
+     Lisple::Number::make(10),
+     Lisple::List::make({Lisple::Word::make("+"), Lisple::Number::make(5)}),
+     Lisple::Word::make("range")});
+
+  // When
+  auto node = Lisple::lower_expr(lctx, expr);
+
+  // Then
+  ASSERT_TRUE(std::holds_alternative<Lisple::CallNode>(node->data));
 }

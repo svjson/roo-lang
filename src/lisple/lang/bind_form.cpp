@@ -13,6 +13,9 @@ namespace Lisple
                     SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&LetForm::inv_let, &LetForm::execnode_let))))
+
+  SFORM_OMIT_LOWER_IMPL(LetForm)
+
   /**
    * Legacy AST-based implementation
    */
@@ -113,6 +116,8 @@ namespace Lisple
                                  (&Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&IfLetForm::inv_if_let,
                                        &IfLetForm::execnode_if_let))))
+
+  SFORM_OMIT_LOWER_IMPL(IfLetForm)
 
   FUNC_BODY(IfLetForm, inv_if_let)
   {

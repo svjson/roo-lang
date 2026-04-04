@@ -17,6 +17,8 @@ namespace Lisple
                (VARARG, &Type::ANY, NO_EVAL)),
        EXEC_DISPATCH(&DefunForm::inv_decl_docstring, &DefunForm::execnode_decl_docstring))))
 
+  SFORM_OMIT_LOWER_IMPL(DefunForm)
+
   /** Legacy AST-based implementation */
   MACRO_BODY(DefunForm, inv_decl)
   {
@@ -73,6 +75,8 @@ namespace Lisple
   SPECIAL_FORM_IMPL(FnForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::execnode_decl))))
+
+  SFORM_OMIT_LOWER_IMPL(FnForm)
 
   /**
    * Legacy AST-based implementation
