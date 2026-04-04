@@ -95,6 +95,14 @@ namespace Lisple
 
           return result;
         }
+        else if constexpr (std::is_same_v<T, KeyLookupNode>)
+        {
+          std::string result = indent + " - KeyLookupNode(" + n.keyword->to_string() + ")\n";
+          indent += "  ";
+          result += indent + " - Target:\n";
+          result += to_string(*n.target, indent + "  ");
+          return result;
+        }
         else if constexpr (std::is_same_v<T, ExecNodeList>)
         {
           std::string result = indent + " - ExecNodeList\n";
@@ -153,6 +161,11 @@ namespace Lisple
 
           return RuntimeValueWrapper::make(RTValue::vector(elements));
         }
+        else if constexpr (std::is_same_v<T, KeyLookupNode>)
+        {
+          sptr_rtval target = exec(ctx, *n.target);
+          return RuntimeValueWrapper::make(Lisple::Dict::get_property(target, *n.keyword));
+        }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
           sptr_sobject fn = n.cached_fn;
@@ -160,12 +173,7 @@ namespace Lisple
           {
             sptr_rtval fn_val = exec(ctx, *n.callee);
 
-            if (fn_val->type == RTValue::Type::KEYWORD)
-            {
-              fn = Lisple::Key::make(std::get<std::string>(fn_val->value));
-              n.cached_fn = fn;
-            }
-            else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+            if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
             {
               fn = *ssptr;
               n.cached_fn = fn;
@@ -303,6 +311,11 @@ namespace Lisple
 
           return RTValue::vector(elements);
         }
+        else if constexpr (std::is_same_v<T, KeyLookupNode>)
+        {
+          sptr_rtval target = exec(ctx, *n.target);
+          return Lisple::Dict::get_property(target, *n.keyword);
+        }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
           sptr_sobject fn = n.cached_fn;
@@ -310,19 +323,7 @@ namespace Lisple
           if (!fn)
           {
             sptr_rtval fn_val = exec(ctx, *n.callee);
-            if (fn_val->type == RTValue::Type::KEYWORD)
-            {
-              if (n.args.size() == 1)
-              {
-                sptr_rtval target = exec(ctx, *n.args[0]);
-                return Lisple::Dict::get_property(target, fn_val);
-              }
-              else
-              {
-                throw LispleException("Invalid map dereference: ");
-              }
-            }
-            else if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+            if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
             {
               fn = *ssptr;
               n.cached_fn = fn;

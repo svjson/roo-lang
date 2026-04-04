@@ -32,6 +32,7 @@ TEST(Semantic_NamespaceInclude, symbols_from_included_unaliased_namespace_are_av
 
   // Then
   auto reversed = runtime.eval(R"((reverse-string "Caramba!"))");
+
   EXPECT_EQ(reversed->to_string(), R"("!abmaraC")");
 }
 

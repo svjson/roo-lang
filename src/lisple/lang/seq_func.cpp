@@ -1,4 +1,6 @@
 
+#include "lisple/runtime/node.h"
+
 #include <algorithm>
 
 #include <lisple/lang/seq_func.h>
@@ -62,8 +64,22 @@ namespace Lisple
                        [](const auto& a, const auto& b) { return a.size() < b.size(); });
 
     result.reserve((*max_lmnts_it).size());
-    ExecNode enode(CallNode(std::make_unique<ExecNode>(map_fn), {}));
-    std::vector<uptr_exec_node>& arg_nodes = std::get<CallNode>(enode.data).args;
+
+    // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
+    bool is_kw = map_fn->type == RTValue::Type::KEYWORD;
+
+    std::vector<uptr_exec_node> NULLARGS;
+    uptr_exec_node NULLTARGET;
+
+    ExecNode enode = (is_kw ? ExecNode(KeyLookupNode(map_fn, nullptr))
+                            : ExecNode(CallNode(std::make_unique<ExecNode>(map_fn), {})));
+
+    uptr_exec_node& kw_target =
+      is_kw ? std::get<KeyLookupNode>(enode.data).target : NULLTARGET;
+
+    std::vector<uptr_exec_node>& arg_nodes =
+      is_kw ? NULLARGS : std::get<CallNode>(enode.data).args;
+
     for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
     {
       arg_nodes.push_back(nullptr);
@@ -78,7 +94,14 @@ namespace Lisple
         if (i < seqs[seq_i].size())
         {
           auto p = std::make_unique<ExecNode>(seqs[seq_i].at(i));
-          arg_nodes[seq_i].swap(p);
+          if (is_kw)
+          {
+            kw_target.swap(p);
+          }
+          else
+          {
+            arg_nodes[seq_i].swap(p);
+          }
         }
         else
         {

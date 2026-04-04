@@ -73,6 +73,14 @@ namespace Lisple
     std::string to_string(size_t indent_level = 0);
   };
 
+  struct KeyLookupNode
+  {
+    sptr_rtval keyword;
+    uptr_exec_node target;
+
+    KeyLookupNode(const sptr_rtval& keyword, uptr_exec_node target);
+  };
+
   struct ExecNodeList
   {
     std::vector<ExecNode*> nodes;
@@ -80,8 +88,13 @@ namespace Lisple
     ExecNodeList(const std::vector<ExecNode*>& nodes);
   };
 
-  using ExecNodeData =
-    std::variant<LiteralNode, LookupNode, MapNode, CallNode, VectorNode, ExecNodeList>;
+  using ExecNodeData = std::variant<LiteralNode,
+                                    LookupNode,
+                                    MapNode,
+                                    CallNode,
+                                    VectorNode,
+                                    KeyLookupNode,
+                                    ExecNodeList>;
 
   struct ExecNode
   {

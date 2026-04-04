@@ -13,10 +13,22 @@ namespace Lisple
   extern int lower_time_exec_resolutions;
   extern int lower_time_exec_unresolved;
 
+  struct LCtxFrame
+  {
+    bool allow_lookup = false;
+    bool literal_mode = false;
+  };
+
   struct LowerContext
   {
     Context* ctx = nullptr;
-    bool allow_lookup = false;
+    std::vector<LCtxFrame> frames = {{false}};
+    bool is_allow_lookup() const;
+    bool is_literal_mode() const;
+
+    void push(const LCtxFrame& frame);
+    void push_literal_mode();
+    void pop();
   };
 
   /**

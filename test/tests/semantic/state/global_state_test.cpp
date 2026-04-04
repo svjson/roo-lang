@@ -1,6 +1,7 @@
 
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(Semantic_GlobalState, assoc_bang_on_nested_map__in_function)
 {

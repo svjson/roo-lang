@@ -5,13 +5,40 @@
 #include <lisple/exception.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime/node.h>
-
 namespace Lisple
 {
   int lowered_expressions = 0;
   int lowered_literals = 0;
   int lower_time_exec_resolutions = 0;
   int lower_time_exec_unresolved = 0;
+
+  bool LowerContext::is_allow_lookup() const
+  {
+    return frames.back().allow_lookup;
+  }
+
+  bool LowerContext::is_literal_mode() const
+  {
+    return frames.back().literal_mode;
+  }
+
+  void LowerContext::push_literal_mode()
+  {
+    frames.push_back({false, true});
+  }
+
+  void LowerContext::push(const LCtxFrame& frame)
+  {
+    frames.push_back(frame);
+  }
+
+  void LowerContext::pop()
+  {
+    if (frames.size() > 1)
+    {
+      frames.pop_back();
+    }
+  }
 
   std::unique_ptr<ExecNode> lower_expr(LowerContext& ctx, const sptr_sobject& obj)
   {
@@ -64,7 +91,7 @@ namespace Lisple
 
     case Form::WORD:
     {
-      if (ctx.allow_lookup && ctx.ctx)
+      if (ctx.is_allow_lookup() && ctx.ctx)
       {
         auto static_val = ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
         if (static_val)
@@ -84,26 +111,56 @@ namespace Lisple
 
       if (children.empty()) throw LispleException("Cannot lower empty list");
 
-      if (list.is_quoted())
+      if (list.is_quoted() || ctx.is_literal_mode())
       {
         return lower_literal(obj);
       }
       else
       {
-        ctx.allow_lookup = true;
+        ctx.push({true});
         uptr_exec_node callee = lower_expr(ctx, children[0]);
-        ctx.allow_lookup = false;
+        ctx.pop();
+
+        auto* literal_callee = std::get_if<LiteralNode>(&callee.get()->data);
+
+        if (literal_callee)
+        {
+          if (literal_callee->value->type == RTValue::Type::KEYWORD)
+          {
+            if (children.size() != 2)
+            {
+              throw LispleException("Invalid key lookup form: " + list.to_string());
+            }
+
+            lowered_expressions++;
+            lower_time_exec_resolutions++;
+            return std::make_unique<ExecNode>(
+              KeyLookupNode(literal_callee->value, lower_expr(ctx, children[1])));
+          }
+        }
+
         uptr_exec_node_v args;
         args.reserve(children.size() - 1);
+
+        // FIXME: Temporary hack to stop (:require ..) from lowering as keylookupnode
+        if (children[0]->to_string() == "ns")
+        {
+          ctx.push_literal_mode();
+        }
 
         for (size_t i = 1; i < children.size(); i++)
         {
           args.push_back(lower_expr(ctx, children[i]));
         }
 
+        if (children[0]->to_string() == "ns")
+        {
+          ctx.pop();
+        }
+
         CallNode call_node = CallNode(std::move(callee), std::move(args));
 
-        if (auto* literal_callee = std::get_if<LiteralNode>(&call_node.callee.get()->data))
+        if (literal_callee)
         {
           if (auto* sptr_sobject_val =
                 std::get_if<sptr_sobject>(&literal_callee->value->value))
@@ -119,7 +176,10 @@ namespace Lisple
         }
 
         lowered_expressions++;
-        return std::make_unique<ExecNode>(obj, std::move(call_node));
+
+        auto node = std::make_unique<ExecNode>(obj, std::move(call_node));
+
+        return node;
       }
     }
 

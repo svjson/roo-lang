@@ -1,4 +1,7 @@
 
+#include "lisple/runtime/node.h"
+#include "lisple/runtime/value.h"
+
 #include <variant>
 
 #include <lisple/lang/rewrite.h>
@@ -54,7 +57,6 @@ namespace Lisple
 
     for (size_t i = 1; i < args.size(); i++)
     {
-
       if (auto* call_node = std::get_if<CallNode>(&args[i]->data))
       {
         auto new_exec_node =
@@ -73,6 +75,16 @@ namespace Lisple
       else if (std::holds_alternative<LookupNode>(args[i]->data) ||
                std::holds_alternative<LiteralNode>(args[i]->data))
       {
+        if (auto* lit_node = std::get_if<LiteralNode>(&args[i]->data))
+        {
+          if (lit_node->value->type == RTValue::Type::KEYWORD)
+          {
+            ExecNode lnode(
+              KeyLookupNode(lit_node->value, std::make_unique<ExecNode>(value)));
+            value = exec(ctx, lnode);
+            continue;
+          }
+        }
         auto callee = args[i]->clone();
         uptr_exec_node_v call_args;
         call_args.push_back(std::make_unique<ExecNode>(value));

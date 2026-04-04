@@ -40,6 +40,12 @@ namespace Lisple
   {
   }
 
+  KeyLookupNode::KeyLookupNode(const sptr_rtval& keyword, uptr_exec_node target)
+    : keyword(keyword)
+    , target(std::move(target))
+  {
+  }
+
   CallNode::CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args)
     : callee(std::move(callee))
     , args(std::move(args))
@@ -112,6 +118,10 @@ namespace Lisple
               elements.push_back(lmnt->clone());
 
             return VectorNode(std::move(elements));
+          }
+          else if constexpr (std::is_same_v<T, KeyLookupNode>)
+          {
+            return KeyLookupNode(n.keyword, n.target->clone());
           }
           else if constexpr (std::is_same_v<T, ExecNodeList>)
           {
