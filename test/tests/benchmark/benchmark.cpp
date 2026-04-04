@@ -329,7 +329,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "032_lower_time_exec_resolution_682bb0d";
+    const std::string CHANGE_ME = "033_key_lookup_node_64e682c";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
@@ -354,7 +354,7 @@ namespace LispleTest
         << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
            "unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,"
            "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
-           "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres"
+           "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,"
            "setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres"
         << std::endl;
     }
