@@ -13,6 +13,8 @@ namespace Lisple
   extern int lower_time_exec_resolutions;
   extern int lower_time_exec_unresolved;
 
+  extern int deprecated_special_form_invocations;
+
   struct LCtxFrame
   {
     bool allow_lookup = false;

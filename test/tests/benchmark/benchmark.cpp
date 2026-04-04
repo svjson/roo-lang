@@ -78,6 +78,10 @@ namespace LispleTest
               << Lisple::user_functions_ast_created << std::endl;
     std::cout << "UserFunction(AST Body) invocations: "
               << Lisple::user_function_ast_invocations << std::endl;
+    std::cout << "-----------------------------------------------" << std::endl;
+    std::cout << "Invocations of legacy special form exec: "
+              << Lisple::deprecated_special_form_invocations << std::endl;
+    std::cout << "-----------------------------------------------" << std::endl;
   }
 
   void snapshot_counters()

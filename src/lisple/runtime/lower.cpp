@@ -14,6 +14,12 @@ namespace Lisple
   int lower_time_exec_resolutions = 0;
   int lower_time_exec_unresolved = 0;
 
+  /**
+   * Tracks invocations of exec-implementations of special forms that
+   * should have rewritten the exec tree
+   */
+  int deprecated_special_form_invocations = 0;
+
   bool LowerContext::is_allow_lookup() const
   {
     return frames.back().allow_lookup;

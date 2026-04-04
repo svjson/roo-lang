@@ -1,4 +1,5 @@
 
+#include "lisple/runtime/lower.h"
 #include "lisple/runtime/node.h"
 #include "lisple/runtime/value.h"
 #include "lisple/type.h"
@@ -18,6 +19,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(ThreadFirstForm)
   {
+    deprecated_special_form_invocations++;
     sptr_sobject_v elements = ast_node->get_children();
     if (elements.size() == 1) return lower_literal(Lisple::NIL);
     if (elements.size() == 2) return lower_expr(ctx, elements[1]);
@@ -51,6 +53,7 @@ namespace Lisple
 
   MACRO_BODY(ThreadFirstForm, inv_thread_first)
   {
+    deprecated_special_form_invocations++;
     sptr_sobject value = args[0];
     for (size_t i = 1; i < args.size(); i++)
     {
