@@ -329,7 +329,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "031_set_bang_special_form_eb385aa";
+    const std::string CHANGE_ME = "032_lower_time_exec_resolution_682bb0d";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
