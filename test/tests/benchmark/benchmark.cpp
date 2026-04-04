@@ -333,7 +333,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "033_key_lookup_node_64e682c";
+    const std::string CHANGE_ME = "034_thread_first_exec_tree_rewrite_24845ec";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 

@@ -1,0 +1,2 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres
+214161174,dotimes_1_000_000_mixed_basic_arithmetic,0,0,677,0,677,0,10000002,4997939,0,4,0,0,0,0,0,0,0,0, 0,4,0,0, 8,11,5,0
