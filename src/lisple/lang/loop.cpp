@@ -80,7 +80,8 @@ namespace Lisple
         throw LispleException("Invalid binding form: " + bnd->ast_node->to_string());
       }
 
-      uptr_exec_node num_iter_node = lower_expr(bnd->ast_node->get_children().back());
+      LowerContext lctx{&ctx};
+      uptr_exec_node num_iter_node = lower_expr(lctx, bnd->ast_node->get_children().back());
       sptr_rtval num_iter_value = exec(ctx, *num_iter_node);
 
       if (num_iter_value->type == RTValue::Type::NUMBER)

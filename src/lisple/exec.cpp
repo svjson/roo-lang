@@ -932,9 +932,10 @@ namespace Lisple
     user_functions_ast_created++;
     this->uptr_body.reserve(body.size());
     this->body.reserve(body.size());
+    LowerContext lctx;
     for (auto& node : body)
     {
-      uptr_exec_node unode = lower_expr(node);
+      uptr_exec_node unode = lower_expr(lctx, node);
       this->uptr_body.push_back(std::move(unode));
       this->body.push_back(uptr_body.back().get());
     }

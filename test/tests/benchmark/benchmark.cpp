@@ -23,11 +23,34 @@ namespace LispleTest
 {
   Counters counter_snapshot;
 
-  void print_counters()
+  SetupCounters setup_counters;
+
+  void print_counters(bool include_setup_phase)
   {
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "EVAL path executions: " << Lisple::eval_executions << std::endl;
     std::cout << "EXEC path executions: " << Lisple::exec_executions << std::endl;
+
+    if (include_setup_phase)
+    {
+      std::cout << "-----------------------------------------------" << std::endl;
+      std::cout << "SETUP PHASE - Lowered expressions: "
+                << setup_counters.lowered_expressions << std::endl;
+      std::cout << "SETUP PHASE - Lowered literals: " << setup_counters.lowered_literals
+                << std::endl;
+      std::cout << "SETUP PHASE - Callees resolved at lower time: "
+                << setup_counters.lower_time_exec_resolutions << std::endl;
+      std::cout << "SETUP PHASE - Callees unresolved at lower time: "
+                << setup_counters.lower_time_exec_unresolved << std::endl;
+    }
+
+    std::cout << "-----------------------------------------------" << std::endl;
+    std::cout << "Lowered expressions: " << Lisple::lowered_expressions << std::endl;
+    std::cout << "Lowered literals: " << Lisple::lowered_literals << std::endl;
+    std::cout << "Callees resolved at lower time: " << Lisple::lower_time_exec_resolutions
+              << std::endl;
+    std::cout << "Callees unresolved at lower time: " << Lisple::lower_time_exec_unresolved
+              << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
 
     std::cout << "RTValue constructions: " << Lisple::rtvalues_constructed << std::endl;
@@ -61,6 +84,10 @@ namespace LispleTest
   {
     counter_snapshot.eval_executions = Lisple::eval_executions;
     counter_snapshot.exec_executions = Lisple::exec_executions;
+    counter_snapshot.lowered_literals = Lisple::lowered_literals;
+    counter_snapshot.lowered_expressions = Lisple::lowered_expressions;
+    counter_snapshot.lower_time_exec_resolutions = Lisple::lower_time_exec_resolutions;
+    counter_snapshot.lower_time_exec_unresolved = Lisple::lower_time_exec_unresolved;
     counter_snapshot.rtvalues_constructed = Lisple::rtvalues_constructed;
     counter_snapshot.rtvalue_wrappers_constructed = Lisple::rtvalue_wrappers_constructed;
     counter_snapshot.to_ast_conversions = Lisple::to_ast_conversions;
@@ -83,6 +110,10 @@ namespace LispleTest
   {
     Lisple::eval_executions = 0;
     Lisple::exec_executions = 0;
+    Lisple::lowered_expressions = 0;
+    Lisple::lowered_literals = 0;
+    Lisple::lower_time_exec_resolutions = 0;
+    Lisple::lower_time_exec_unresolved = 0;
     Lisple::rtvalues_constructed = 0;
     Lisple::rtvalue_wrappers_constructed = 0;
     Lisple::to_ast_conversions = 0;
@@ -103,6 +134,10 @@ namespace LispleTest
   {
     Lisple::eval_executions = counter_snapshot.eval_executions;
     Lisple::exec_executions = counter_snapshot.exec_executions;
+    Lisple::lowered_expressions = counter_snapshot.lowered_expressions;
+    Lisple::lowered_literals = counter_snapshot.lowered_literals;
+    Lisple::lower_time_exec_resolutions = counter_snapshot.lower_time_exec_resolutions;
+    Lisple::lower_time_exec_unresolved = counter_snapshot.lower_time_exec_unresolved;
     Lisple::rtvalues_constructed = counter_snapshot.rtvalues_constructed;
     Lisple::rtvalue_wrappers_constructed = counter_snapshot.rtvalue_wrappers_constructed;
     Lisple::to_ast_conversions = counter_snapshot.to_ast_conversions;
@@ -125,6 +160,10 @@ namespace LispleTest
   {
     Lisple::eval_executions += counter_snapshot.eval_executions;
     Lisple::exec_executions += counter_snapshot.exec_executions;
+    Lisple::lowered_expressions += counter_snapshot.lowered_expressions;
+    Lisple::lowered_literals += counter_snapshot.lowered_literals;
+    Lisple::lower_time_exec_resolutions += counter_snapshot.lower_time_exec_resolutions;
+    Lisple::lower_time_exec_unresolved += counter_snapshot.lower_time_exec_unresolved;
     Lisple::rtvalues_constructed += counter_snapshot.rtvalues_constructed;
     Lisple::rtvalue_wrappers_constructed += counter_snapshot.rtvalue_wrappers_constructed;
     Lisple::to_ast_conversions += counter_snapshot.to_ast_conversions;
@@ -210,6 +249,9 @@ namespace LispleTest
 
     start_time = now();
 
+    snapshot_counters();
+    reset_counters();
+
     for (auto& pe : pre_evaluated)
     {
       runtime.eval(pe);
@@ -231,10 +273,18 @@ namespace LispleTest
     Lisple::execution_started = true;
 
     Lisple::Context ctx(runtime);
+    Lisple::LowerContext lctx{&ctx};
     lower_start_time = now();
-    auto node = Lisple::lower_expr(parse_result[0]);
+    auto node = Lisple::lower_expr(lctx, parse_result[0]);
     lower_end_time = now();
     lower_time = lower_end_time - lower_start_time;
+
+    setup_counters.lowered_expressions = Lisple::lowered_expressions;
+    setup_counters.lowered_literals = Lisple::lowered_literals;
+    setup_counters.lower_time_exec_resolutions = Lisple::lower_time_exec_resolutions;
+    setup_counters.lower_time_exec_unresolved = Lisple::lower_time_exec_unresolved;
+
+    apply_counter_snapshot();
 
     snapshot_counters();
     reset_counters();
@@ -256,6 +306,11 @@ namespace LispleTest
 
     Lisple::execution_started = false;
 
+    setup_counters.lowered_expressions = 0;
+    setup_counters.lowered_literals = 0;
+    setup_counters.lower_time_exec_resolutions = 0;
+    setup_counters.lower_time_exec_unresolved = 0;
+
     return result;
   }
 
@@ -269,7 +324,7 @@ namespace LispleTest
     std::cout << "| * Lower time: " << lower_time << " ms" << std::endl;
     std::cout << "| *  Exec time: " << exec_time << " ms" << std::endl;
     std::cout << "+---------------------------------------------------" << std::endl;
-    print_counters();
+    print_counters(true);
   }
 
   void SnippetBenchmark::log_result()
@@ -295,11 +350,13 @@ namespace LispleTest
 
     if (empty)
     {
-      out << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
-             "unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,"
-             "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
-             "ast_inv"
-          << std::endl;
+      out
+        << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
+           "unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,"
+           "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
+           "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres"
+           "setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres"
+        << std::endl;
     }
 
     out << timestamp << "," << case_name << "," << parse_time << "," << lower_time << ","
@@ -311,7 +368,14 @@ namespace LispleTest
         << Lisple::user_functions_created << "," << Lisple::user_functions_rtval_created
         << "," << Lisple::user_functions_ast_created << ","
         << Lisple::user_function_rtval_invocations << ","
-        << Lisple::user_function_ast_invocations << std::endl;
+        << Lisple::user_function_ast_invocations << ", " << Lisple::lowered_expressions
+        << "," << Lisple::lowered_literals << "," << Lisple::lower_time_exec_resolutions
+        << "," << Lisple::lower_time_exec_unresolved << ", "
+        << setup_counters.lowered_expressions << "," << setup_counters.lowered_literals
+        << "," << setup_counters.lower_time_exec_resolutions << ","
+        << setup_counters.lower_time_exec_unresolved
+
+        << std::endl;
 
     out.close();
   }

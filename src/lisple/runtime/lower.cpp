@@ -1,12 +1,19 @@
 
 #include "lisple/runtime/lower.h"
 
+#include <lisple/context.h>
 #include <lisple/exception.h>
+#include <lisple/namespace.h>
 #include <lisple/runtime/node.h>
 
 namespace Lisple
 {
-  std::unique_ptr<ExecNode> lower_expr(const sptr_sobject& obj)
+  int lowered_expressions = 0;
+  int lowered_literals = 0;
+  int lower_time_exec_resolutions = 0;
+  int lower_time_exec_unresolved = 0;
+
+  std::unique_ptr<ExecNode> lower_expr(LowerContext& ctx, const sptr_sobject& obj)
   {
     switch (obj->get_type())
     {
@@ -20,9 +27,10 @@ namespace Lisple
 
       for (auto& child : children)
       {
-        elements.push_back(lower_expr(child));
+        elements.push_back(lower_expr(ctx, child));
       }
 
+      lowered_expressions++;
       return std::make_unique<ExecNode>(obj, MapNode(std::move(elements)));
     }
     case Form::ARRAY:
@@ -35,9 +43,10 @@ namespace Lisple
 
       for (auto& child : children)
       {
-        elements.push_back(lower_expr(child));
+        elements.push_back(lower_expr(ctx, child));
       }
 
+      lowered_expressions++;
       return std::make_unique<ExecNode>(obj, VectorNode(std::move(elements)));
     }
     case Form::FUNCTION:
@@ -54,7 +63,19 @@ namespace Lisple
       return lower_literal(obj);
 
     case Form::WORD:
+    {
+      if (ctx.allow_lookup && ctx.ctx)
+      {
+        auto static_val = ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
+        if (static_val)
+        {
+          lowered_literals++;
+          return std::make_unique<ExecNode>(static_val);
+        }
+      }
+      lowered_expressions++;
       return std::make_unique<ExecNode>(obj, LookupNode(obj->as<Word>()));
+    }
 
     case Form::LIST:
     {
@@ -69,20 +90,41 @@ namespace Lisple
       }
       else
       {
-        uptr_exec_node callee = lower_expr(children[0]);
+        ctx.allow_lookup = true;
+        uptr_exec_node callee = lower_expr(ctx, children[0]);
+        ctx.allow_lookup = false;
         uptr_exec_node_v args;
         args.reserve(children.size() - 1);
 
         for (size_t i = 1; i < children.size(); i++)
         {
-          args.push_back(lower_expr(children[i]));
+          args.push_back(lower_expr(ctx, children[i]));
         }
 
-        return std::make_unique<ExecNode>(obj, CallNode(std::move(callee), std::move(args)));
+        CallNode call_node = CallNode(std::move(callee), std::move(args));
+
+        if (auto* literal_callee = std::get_if<LiteralNode>(&call_node.callee.get()->data))
+        {
+          if (auto* sptr_sobject_val =
+                std::get_if<sptr_sobject>(&literal_callee->value->value))
+          {
+            call_node.cached_fn = *sptr_sobject_val;
+            lower_time_exec_resolutions++;
+          }
+        }
+
+        if (call_node.cached_fn == nullptr)
+        {
+          lower_time_exec_unresolved++;
+        }
+
+        lowered_expressions++;
+        return std::make_unique<ExecNode>(obj, std::move(call_node));
       }
     }
 
     case Form::DISCARD:
+      lowered_expressions++;
       return std::make_unique<ExecNode>(Lisple::Constant::NIL);
 
     default:
@@ -93,6 +135,7 @@ namespace Lisple
 
   std::unique_ptr<ExecNode> lower_literal(const sptr_sobject& obj)
   {
+    lowered_literals++;
     switch (obj->get_type())
     {
     case Form::CHAR:

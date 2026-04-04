@@ -220,7 +220,8 @@ namespace Lisple
 
   sptr_rtval Runtime::eval(Context& ctx, const sptr_sobject& form)
   {
-    auto exec_node = lower_expr(form);
+    LowerContext lctx{&ctx};
+    auto exec_node = lower_expr(lctx, form);
     return Lisple::exec(ctx, *exec_node);
   }
 
@@ -322,7 +323,8 @@ namespace Lisple
       try
       {
         // FIXME: Temporary rewrap into shared_ptr
-        auto node = lower_expr(wrapped);
+        LowerContext lctx{&ctx};
+        auto node = lower_expr(lctx, wrapped);
 
         return Lisple::eval(ctx, *node);
       }

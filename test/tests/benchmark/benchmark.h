@@ -17,6 +17,11 @@ namespace LispleTest
     int eval_executions = 0;
     int exec_executions = 0;
 
+    int lowered_expressions = 0;
+    int lowered_literals = 0;
+    int lower_time_exec_resolutions = 0;
+    int lower_time_exec_unresolved = 0;
+
     int rtvalues_constructed = 0;
     int rtvalue_wrappers_constructed = 0;
     int to_ast_conversions = 0;
@@ -35,9 +40,18 @@ namespace LispleTest
     int user_function_wrong_path_invocations = 0;
   };
 
-  extern Counters counter_snapshot;
+  struct SetupCounters
+  {
+    int lowered_expressions = 0;
+    int lowered_literals = 0;
+    int lower_time_exec_resolutions = 0;
+    int lower_time_exec_unresolved = 0;
+  };
 
-  void print_counters();
+  extern Counters counter_snapshot;
+  extern SetupCounters setup_counters;
+
+  void print_counters(bool include_setup_phase = false);
   void snapshot_counters();
   void restore_counter_snapshot();
 
