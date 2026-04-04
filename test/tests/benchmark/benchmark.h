@@ -46,7 +46,12 @@ namespace LispleTest
     Lisple::Reader reader;
 
    public:
+    SnippetBenchmark(const std::string& input);
     SnippetBenchmark(const std::string& case_name, const std::string& input);
+    SnippetBenchmark(std::map<const std::string, Lisple::Namespace> native_namespaces,
+                     const std::vector<std::string>& pre_evaluated,
+                     const std::string& ns,
+                     const std::string& input);
     SnippetBenchmark(const std::string& case_name,
                      std::map<const std::string, Lisple::Namespace> native_namespaces,
                      const std::vector<std::string>& pre_evaluated,

@@ -17,6 +17,8 @@
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 
+#include <gtest/gtest.h>
+
 namespace LispleTest
 {
   Counters counter_snapshot;
@@ -148,6 +150,13 @@ namespace LispleTest
       .count();
   }
 
+  SnippetBenchmark::SnippetBenchmark(const std::string& input)
+    : case_name(::testing::UnitTest::GetInstance()->current_test_info()->name())
+    , ns("user")
+    , input(input)
+  {
+  }
+
   SnippetBenchmark::SnippetBenchmark(const std::string& case_name, const std::string& input)
     : case_name(case_name)
     , ns("user")
@@ -166,6 +175,19 @@ namespace LispleTest
     , pre_evaluated(pre_evaluated)
     , ns(ns)
     , input(input)
+  {
+  }
+
+  SnippetBenchmark::SnippetBenchmark(
+    std::map<const std::string, Lisple::Namespace> native_namespaces,
+    const std::vector<std::string>& pre_evaluated,
+    const std::string& ns,
+    const std::string& input)
+    : SnippetBenchmark(::testing::UnitTest::GetInstance()->current_test_info()->name(),
+                       native_namespaces,
+                       pre_evaluated,
+                       ns,
+                       input)
   {
   }
 
