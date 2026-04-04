@@ -88,11 +88,6 @@ namespace Lisple
   FUNC_DECL(PrintFunction, do_print)
 
   /*!
-   * @brief Set a new value for a symbol in the lexical scope
-   */
-  MACRO_DECL(SetBangMacro, do_set_member)
-
-  /*!
    * @brief Tests if the result of an expression is nil.
    *
    * Usage:

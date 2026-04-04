@@ -86,6 +86,12 @@ namespace Lisple
 
   FUNC(RndFunction, rnd)
 
+  /*!
+   * @brief Set a new value for a symbol in the lexical scope, namespace or
+   * nested structure.
+   */
+  SPECIAL_FORM_DECL(SetBangForm, set)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__BASE_H */

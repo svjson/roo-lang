@@ -37,6 +37,12 @@ namespace Lisple
     objects.emplace(name.value, obj);
   }
 
+  void Scope::mutate(const std::string& name, const sptr_rtval& val)
+  {
+    remove(name);
+    values.emplace(name, val);
+  }
+
   void Scope::remove(const Word& name)
   {
     if (objects.count(name.value))

@@ -25,6 +25,7 @@ namespace Lisple
     void store(const std::string& symbol, const sptr_rtval& value);
 
     virtual void mutate(const Word& identifier, const sptr_sobject& obj);
+    virtual void mutate(const std::string& identifier, const sptr_rtval& val);
     void remove(const Word& identifier);
     void clear();
     virtual bool has(const Word& identifier) const;

@@ -1,5 +1,5 @@
-
 #include <lisple/lang/base.h>
+#include <lisple/runtime/dict.h>
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/value.h>
 
@@ -175,6 +175,75 @@ namespace Lisple
       std::get<const RTValue::Number>(args[args.size() == 1 ? 0 : 1]->value).get_int();
 
     return RTValue::number((std::rand() % (max - min)) + min);
+  }
+
+  SPECIAL_FORM_IMPL(SetBangForm,
+                    SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
+                         EXEC_DISPATCH(&SetBangForm::inv_set, &SetBangForm::execnode_set))))
+
+  MACRO_BODY(SetBangForm, inv_set)
+  {
+    Lisple::Array& member_ref = args[0]->as<Lisple::Array>();
+
+    if (member_ref.size() == 1)
+    {
+      auto identifier = member_ref.get_children()[0]->as<Lisple::Word>();
+      Scope& scope = ctx.get_scope_of(identifier);
+      scope.mutate(identifier, args.back());
+    }
+    else if (member_ref.size() == 2)
+    {
+      auto actual_mem_ref = ctx.eval_ast(args[0]);
+      Lisple::Object& prop = *actual_mem_ref->get_children()[0];
+      Lisple::Object& owner = *actual_mem_ref->get_children().back();
+
+      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&owner))
+      {
+        auto val = to_rt_value(args.back());
+        Lisple::Dict::set_property(wrapper->val, to_rt_value(prop), val);
+      }
+      else
+      {
+        owner.set_property(&ctx, prop, args.back());
+      }
+    }
+    else
+    {
+      throw Lisple::InvocationException("Incorrect member reference: " +
+                                        member_ref.to_string());
+    }
+
+    return args.back();
+  }
+
+  EXECNODE_BODY(SetBangForm, execnode_set)
+  {
+    auto member_ref_vec = std::get<LiteralNode>(args[0]->data).value;
+
+    auto member_refs = member_ref_vec->elements();
+    auto value = std::get<LiteralNode>(args.back()->data).value;
+
+    if (member_refs.size() == 1)
+    {
+      auto identifier = Lisple::Word::make(member_refs[0]->str());
+      Scope& scope = ctx.get_scope_of(*identifier);
+      scope.mutate(identifier->value, value);
+    }
+    else if (member_refs.size() == 2)
+    {
+      auto actual_mem_ref = ctx.eval(member_ref_vec->to_string());
+      auto& prop = actual_mem_ref->elements()[0];
+      sptr_rtval owner = actual_mem_ref->elements().back();
+
+      Lisple::Dict::set_property(owner, prop, value);
+    }
+    else
+    {
+      throw Lisple::InvocationException("Incorrect member reference: " +
+                                        member_ref_vec->to_string());
+    }
+
+    return value;
   }
 
 } // namespace Lisple

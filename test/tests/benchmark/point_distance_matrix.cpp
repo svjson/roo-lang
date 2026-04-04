@@ -20,7 +20,7 @@ const std::string NS__MATRIX = R"(
  *
  * Kept for potential re-generation purposes
  */
-TEST(DISTANCE_GeneratePoints, gen_points)
+TEST(DISABLED_GeneratePoints, gen_points)
 {
   Lisple::Runtime runtime;
   runtime.eval(LispleTest::DEFUN_GENERATE_POINTS);

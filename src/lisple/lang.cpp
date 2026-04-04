@@ -136,7 +136,7 @@ namespace Lisple
     lang_symbols.emplace("rnd", RndFunction::make());
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
-    lang.emplace("set!", std::make_shared<SetBangMacro>());
+    lang_symbols.emplace("set!", SetBangForm::make());
     lang.emplace("sin", std::make_shared<SinFunction>());
     lang.emplace("some?", std::make_shared<SomeFunction>());
     lang_symbols.emplace("sort", SortFunction::make());
@@ -357,47 +357,6 @@ namespace Lisple
   FUNC_BODY(NilPredicateFunction, is_nil)
   {
     return args[0]->get_type() == Lisple::Form::NIL ? B_TRUE : B_FALSE;
-  }
-
-  SetBangMacro::SetBangMacro()
-    : Macro(SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
-                 EXEC_DISPATCH(&SetBangMacro::do_set_member))))
-  {
-  }
-
-  MACRO_BODY(SetBangMacro, do_set_member)
-  {
-    Lisple::Array& member_ref = args[0]->as<Lisple::Array>();
-
-    if (member_ref.size() == 1)
-    {
-      auto identifier = member_ref.get_children()[0]->as<Lisple::Word>();
-      Scope& scope = ctx.get_scope_of(identifier);
-      scope.mutate(identifier, args.back());
-    }
-    else if (member_ref.size() == 2)
-    {
-      auto actual_mem_ref = ctx.eval_ast(args[0]);
-      Lisple::Object& prop = *actual_mem_ref->get_children()[0];
-      Lisple::Object& owner = *actual_mem_ref->get_children().back();
-
-      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&owner))
-      {
-        auto val = to_rt_value(args.back());
-        Lisple::Dict::set_property(wrapper->val, to_rt_value(prop), val);
-      }
-      else
-      {
-        owner.set_property(&ctx, prop, args.back());
-      }
-    }
-    else
-    {
-      throw Lisple::InvocationException("Incorrect member reference: " +
-                                        member_ref.to_string());
-    }
-
-    return args.back();
   }
 
   MACRO_IMPL(WhileMacro,
