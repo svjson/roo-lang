@@ -1,0 +1,5 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+189534336,workload_1000_handle_collisions__inline_argset_1,1,0,8,37,46,0,59790,22077,0,5611,235,0,21,9,9,0,2073,0
+189626400,workload_1000_handle_collisions__inline_argset_1,1,0,7811,38,7850,0,59738055,22083645,0,5611003,235000,0,16005,9000,9000,0,2073000,0
+189784285,workload_1000_handle_collisions__inline_argset_1,0,0,8,37,45,0,59790,22099,0,5611,235,0,21,9,9,0,2073,0
+189876019,workload_1000_handle_collisions__inline_argset_1,1,0,7944,37,7982,0,59738055,22082627,0,5611003,235000,0,16005,9000,9000,0,2073000,0
