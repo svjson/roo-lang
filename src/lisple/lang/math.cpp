@@ -1,5 +1,6 @@
 
 #include <cmath>
+
 #include <lisple/lang/math.h>
 
 namespace Lisple
@@ -10,7 +11,8 @@ namespace Lisple
 
   EXEC_BODY(AbsFunction, exec_abs)
   {
-    return RTValue::number(std::abs(std::get<RTValue::Number>(args[0]->value).get_float()));
+    return RTValue::number(
+      std::abs(std::get<const RTValue::Number>(args[0]->value).get_float()));
   }
 
   /* SinFunction - sin */
@@ -19,7 +21,8 @@ namespace Lisple
 
   EXEC_BODY(SinFunction, exec_sin)
   {
-    return RTValue::number(std::sin(std::get<RTValue::Number>(args[0]->value).get_float()));
+    return RTValue::number(
+      std::sin(std::get<const RTValue::Number>(args[0]->value).get_float()));
   }
 
   /* CosFunction - cos */
@@ -28,7 +31,8 @@ namespace Lisple
 
   EXEC_BODY(CosFunction, exec_cos)
   {
-    return RTValue::number(std::cos(std::get<RTValue::Number>(args[0]->value).get_float()));
+    return RTValue::number(
+      std::cos(std::get<const RTValue::Number>(args[0]->value).get_float()));
   }
 
   /* SqrtFunction - sqrt */
@@ -37,7 +41,8 @@ namespace Lisple
 
   EXEC_BODY(SqrtFunction, exec_sqrt)
   {
-    return RTValue::number(std::sqrt(std::get<RTValue::Number>(args[0]->value).get_float()));
+    return RTValue::number(
+      std::sqrt(std::get<const RTValue::Number>(args[0]->value).get_float()));
   }
 
 } // namespace Lisple

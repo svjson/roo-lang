@@ -34,7 +34,7 @@ namespace Lisple
         throw TypeError("Cannot perform arithmetic with nil. Arguments: " +
                         RTValue::vector(args)->to_string() + ".");
       }
-      result += std::get<RTValue::Number>(args[i]->value).get_float();
+      result += std::get<const RTValue::Number>(args[i]->value).get_float();
     }
 
     return RTValue::number(result);
@@ -52,7 +52,7 @@ namespace Lisple
       throw LispleException("No arguments given to -");
     }
 
-    float result = std::get<RTValue::Number>(args[0]->value).get_float();
+    float result = std::get<const RTValue::Number>(args[0]->value).get_float();
     if (args.size() == 1)
     {
       result = -result;
@@ -65,7 +65,7 @@ namespace Lisple
         throw TypeError("Cannot perform arithmetic with nil. Arguments: " +
                         RTValue::vector(args)->to_string() + ".");
       }
-      result -= std::get<RTValue::Number>(args[i]->value).get_float();
+      result -= std::get<const RTValue::Number>(args[i]->value).get_float();
     }
     return RTValue::number(result);
   }
@@ -87,7 +87,7 @@ namespace Lisple
       return args[0];
     }
 
-    float result = std::get<RTValue::Number>(args[0]->value).get_float();
+    float result = std::get<const RTValue::Number>(args[0]->value).get_float();
 
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -96,7 +96,7 @@ namespace Lisple
         throw TypeError("Cannot divide by nil/non-number. Arguments: " +
                         RTValue::vector(args)->to_string() + ".");
       }
-      float divisor = std::get<RTValue::Number>(args[i]->value).get_float();
+      float divisor = std::get<const RTValue::Number>(args[i]->value).get_float();
       if (divisor == 0)
       {
         throw LispleException("Division by zero");
@@ -124,7 +124,7 @@ namespace Lisple
       return args[0];
     }
 
-    float result = std::get<RTValue::Number>(args[0]->value).get_float();
+    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
 
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -133,7 +133,7 @@ namespace Lisple
         throw TypeError("Cannot multiply by nil/non-number. Arguments: " +
                         RTValue::vector(args)->to_string() + ".");
       }
-      result *= std::get<RTValue::Number>(args[i]->value).get_float();
+      result = result * std::get<const RTValue::Number>(args[i]->value);
     }
 
     return RTValue::number(result);
@@ -164,8 +164,8 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return std::get<RTValue::Number>(args[0]->value).get_float() <
-               std::get<RTValue::Number>(args[1]->value).get_float()
+    return std::get<const RTValue::Number>(args[0]->value).get_float() <
+               std::get<const RTValue::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -196,8 +196,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return std::get<RTValue::Number>(args[0]->value).get_float() <=
-               std::get<RTValue::Number>(args[1]->value).get_float()
+    return std::get<const RTValue::Number>(args[0]->value).get_float() <=
+               std::get<const RTValue::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -228,8 +228,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return std::get<RTValue::Number>(args[0]->value).get_float() >
-               std::get<RTValue::Number>(args[1]->value).get_float()
+    return std::get<const RTValue::Number>(args[0]->value).get_float() >
+               std::get<const RTValue::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -260,8 +260,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return std::get<RTValue::Number>(args[0]->value).get_float() >=
-               std::get<RTValue::Number>(args[1]->value).get_float()
+    return std::get<const RTValue::Number>(args[0]->value).get_float() >=
+               std::get<const RTValue::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }

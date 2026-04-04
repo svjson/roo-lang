@@ -85,7 +85,7 @@ namespace Lisple
 
       if (num_iter_value->type == RTValue::Type::NUMBER)
       {
-        int iterations = std::get<RTValue::Number>(num_iter_value->value).get_int();
+        int iterations = std::get<const RTValue::Number>(num_iter_value->value).get_int();
 
         if (iterations > 0)
         {

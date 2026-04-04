@@ -404,8 +404,10 @@ namespace Lisple
    */
   Number::Number(int value)
     : Value(Form::NUMBER, static_cast<float>(value))
+    , i32val(value)
     , num_type(NumberType::INT)
   {
+    i32val = value;
   }
 
   Number::Number(unsigned int value)
@@ -420,18 +422,21 @@ namespace Lisple
 
   Number::Number(float value)
     : Value(Form::NUMBER, value)
+    , f32val(value)
     , num_type(NumberType::FLOAT)
   {
   }
 
   Number::Number(double value)
     : Value(Form::NUMBER, value)
+    , f32val(value)
     , num_type(NumberType::FLOAT)
   {
   }
 
   Number::Number(long value)
     : Value(Form::NUMBER, value)
+    , i64val(value)
     , num_type(NumberType::LONG)
   {
   }
@@ -443,17 +448,47 @@ namespace Lisple
 
   int Number::int_value() const
   {
-    return round(value);
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return i32val;
+    case NumberType::LONG:
+      return static_cast<int>(i64val);
+    case NumberType::FLOAT:
+      return static_cast<int>(f32val);
+    }
+
+    return static_cast<int>(value);
   }
 
   float Number::float_value() const
   {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return static_cast<float>(i32val);
+    case NumberType::LONG:
+      return static_cast<float>(i64val);
+    case NumberType::FLOAT:
+      return f32val;
+    }
+
     return value;
   }
 
   long Number::long_value() const
   {
-    return value;
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return i32val;
+    case NumberType::LONG:
+      return i64val;
+    case NumberType::FLOAT:
+      return static_cast<long>(f32val);
+    }
+
+    return static_cast<long>(value);
   }
 
   std::shared_ptr<Number> Number::operator+(const Number& other)
@@ -529,11 +564,11 @@ namespace Lisple
     switch (num_type)
     {
     case NumberType::INT:
-      return std::to_string(static_cast<int>(value));
+      return std::to_string(i32val);
     case NumberType::LONG:
-      return std::to_string(static_cast<long>(value));
+      return std::to_string(i64val);
     case NumberType::FLOAT:
-      return std::to_string(value);
+      return std::to_string(f32val);
     }
 
     return std::to_string(value);
@@ -579,6 +614,10 @@ namespace Lisple
     {
       if (str_value.find(".") == std::string::npos)
       {
+        if (str_value.size() >= 10)
+        {
+          return Number::make(stol(str_value));
+        }
         return Number::make(stoi(str_value));
       }
       else

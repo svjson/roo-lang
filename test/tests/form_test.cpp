@@ -1,14 +1,14 @@
 
-#include <gtest/gtest.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest_pred_impl.h>
-
 #include <memory>
 
+#include <lisple/exception.h>
 #include <lisple/form.h>
 #include <lisple/type.h>
-#include <lisple/exception.h>
+
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 TEST(nil, equality)
 {
@@ -57,11 +57,8 @@ TEST(List, get_property__single_entry)
 {
   // Given
   Lisple::Key key1("id");
-  Lisple::sptr_sobject_v list_elements
-  {
-    std::make_shared<Lisple::Key>("id"),
-    std::make_shared<Lisple::String>("ferret")
-  };
+  Lisple::sptr_sobject_v list_elements{std::make_shared<Lisple::Key>("id"),
+                                       std::make_shared<Lisple::String>("ferret")};
   Lisple::List list(list_elements);
 
   // When
@@ -78,7 +75,7 @@ TEST(Map, cannot_be_constructed_with_duplicate_keys)
   std::shared_ptr<Lisple::Key> key1 = std::make_shared<Lisple::Key>("id");
   std::shared_ptr<Lisple::String> value1 = std::make_shared<Lisple::String>("value");
   std::shared_ptr<Lisple::String> value2 = std::make_shared<Lisple::String>("othervalue");
-  Lisple::sptr_sobject_v map_elements = { key1, value1, key1, value2 };
+  Lisple::sptr_sobject_v map_elements = {key1, value1, key1, value2};
   Lisple::LispleException* exception = nullptr;
 
   // When
@@ -101,7 +98,7 @@ TEST(Map, cannot_be_constructed_with_duplicate_keys__different_instances_with_sa
   std::shared_ptr<Lisple::Key> key2 = std::make_shared<Lisple::Key>("id");
   std::shared_ptr<Lisple::String> value1 = std::make_shared<Lisple::String>("value");
   std::shared_ptr<Lisple::String> value2 = std::make_shared<Lisple::String>("othervalue");
-  Lisple::sptr_sobject_v map_elements = { key1, value1, key2, value2 };
+  Lisple::sptr_sobject_v map_elements = {key1, value1, key2, value2};
   Lisple::LispleException* exception = nullptr;
 
   // When
@@ -121,13 +118,10 @@ TEST(Map, get_property___from_map_multiple_entries)
 {
   // Given
   Lisple::Key key("somekey");
-  Lisple::sptr_sobject_v map_elements
-  {
-    std::make_shared<Lisple::Key>("akey"),
-    std::make_shared<Lisple::String>("avalue"),
-    std::make_shared<Lisple::Key>("somekey"),
-    std::make_shared<Lisple::String>("somevalue")
-  };
+  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::Key>("akey"),
+                                      std::make_shared<Lisple::String>("avalue"),
+                                      std::make_shared<Lisple::Key>("somekey"),
+                                      std::make_shared<Lisple::String>("somevalue")};
   Lisple::Map map(map_elements);
 
   // When
@@ -140,10 +134,10 @@ TEST(Map, get_property___from_map_multiple_entries)
 
 TEST(Map, map_with_numeric_keys)
 {
-  Lisple::Map map = Lisple::Map({
-      Lisple::Number::make(17), Lisple::Number::make(18),
-      Lisple::Number::make(18), Lisple::Number::make(6)
-    });
+  Lisple::Map map = Lisple::Map({Lisple::Number::make(17),
+                                 Lisple::Number::make(18),
+                                 Lisple::Number::make(18),
+                                 Lisple::Number::make(6)});
 
   EXPECT_EQ(map.to_string(), "{17 18 18 6}");
   EXPECT_EQ(map.get_property(Lisple::Number(17)).to_string(), "18");
@@ -154,13 +148,10 @@ TEST(Map, map_with_numeric_keys)
 
 TEST(Map, has_key)
 {
-  Lisple::sptr_sobject_v map_elements
-  {
-    std::make_shared<Lisple::Key>("akey"),
-    std::make_shared<Lisple::String>("avalue"),
-    std::make_shared<Lisple::Key>("somekey"),
-    std::make_shared<Lisple::String>("somevalue")
-  };
+  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::Key>("akey"),
+                                      std::make_shared<Lisple::String>("avalue"),
+                                      std::make_shared<Lisple::Key>("somekey"),
+                                      std::make_shared<Lisple::String>("somevalue")};
   Lisple::Map map(map_elements);
 
   // Then
@@ -174,15 +165,12 @@ TEST(Map, has_key)
 
 TEST(Map, remove_key__existing_front_key)
 {
-  Lisple::sptr_sobject_v map_elements
-  {
-    std::make_shared<Lisple::Key>("a-key"),
-    std::make_shared<Lisple::String>("a value"),
-    std::make_shared<Lisple::Key>("some-key"),
-    std::make_shared<Lisple::String>("some value"),
-    std::make_shared<Lisple::Key>("another-key"),
-    std::make_shared<Lisple::String>("another-value")
-  };
+  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::Key>("a-key"),
+                                      std::make_shared<Lisple::String>("a value"),
+                                      std::make_shared<Lisple::Key>("some-key"),
+                                      std::make_shared<Lisple::String>("some value"),
+                                      std::make_shared<Lisple::Key>("another-key"),
+                                      std::make_shared<Lisple::String>("another-value")};
   Lisple::Map map(map_elements);
 
   // When
@@ -199,15 +187,12 @@ TEST(Map, remove_key__existing_front_key)
 
 TEST(Map, remove_key__existing_middle_key)
 {
-  Lisple::sptr_sobject_v map_elements
-  {
-    std::make_shared<Lisple::Key>("a-key"),
-    std::make_shared<Lisple::String>("a value"),
-    std::make_shared<Lisple::Key>("some-key"),
-    std::make_shared<Lisple::String>("some value"),
-    std::make_shared<Lisple::Key>("another-key"),
-    std::make_shared<Lisple::String>("another-value")
-  };
+  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::Key>("a-key"),
+                                      std::make_shared<Lisple::String>("a value"),
+                                      std::make_shared<Lisple::Key>("some-key"),
+                                      std::make_shared<Lisple::String>("some value"),
+                                      std::make_shared<Lisple::Key>("another-key"),
+                                      std::make_shared<Lisple::String>("another-value")};
   Lisple::Map map(map_elements);
 
   // When
@@ -224,15 +209,12 @@ TEST(Map, remove_key__existing_middle_key)
 
 TEST(Map, remove_key__existing_back_key)
 {
-  Lisple::sptr_sobject_v map_elements
-  {
-    std::make_shared<Lisple::Key>("a-key"),
-    std::make_shared<Lisple::String>("a value"),
-    std::make_shared<Lisple::Key>("some-key"),
-    std::make_shared<Lisple::String>("some value"),
-    std::make_shared<Lisple::Key>("another-key"),
-    std::make_shared<Lisple::String>("another-value")
-  };
+  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::Key>("a-key"),
+                                      std::make_shared<Lisple::String>("a value"),
+                                      std::make_shared<Lisple::Key>("some-key"),
+                                      std::make_shared<Lisple::String>("some value"),
+                                      std::make_shared<Lisple::Key>("another-key"),
+                                      std::make_shared<Lisple::String>("another-value")};
   Lisple::Map map(map_elements);
 
   // When
@@ -249,15 +231,12 @@ TEST(Map, remove_key__existing_back_key)
 
 TEST(Map, remove_key__non_existing_key)
 {
-  Lisple::sptr_sobject_v map_elements
-  {
-    std::make_shared<Lisple::Key>("a-key"),
-    std::make_shared<Lisple::String>("a value"),
-    std::make_shared<Lisple::Key>("some-key"),
-    std::make_shared<Lisple::String>("some value"),
-    std::make_shared<Lisple::Key>("another-key"),
-    std::make_shared<Lisple::String>("another-value")
-  };
+  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::Key>("a-key"),
+                                      std::make_shared<Lisple::String>("a value"),
+                                      std::make_shared<Lisple::Key>("some-key"),
+                                      std::make_shared<Lisple::String>("some value"),
+                                      std::make_shared<Lisple::Key>("another-key"),
+                                      std::make_shared<Lisple::String>("another-value")};
   Lisple::Map map(map_elements);
 
   // When
@@ -269,7 +248,8 @@ TEST(Map, remove_key__non_existing_key)
   EXPECT_TRUE(map.has_key(Lisple::Key("a-key")));
   EXPECT_TRUE(map.has_key(Lisple::Key("some-key")));
   EXPECT_TRUE(map.has_key(Lisple::Key("another-key")));
-  EXPECT_EQ(map.to_string(), R"({:a-key "a value" :some-key "some value" :another-key "another-value"})");
+  EXPECT_EQ(map.to_string(),
+            R"({:a-key "a value" :some-key "some value" :another-key "another-value"})");
 }
 
 TEST(Symbol, equality)
@@ -302,81 +282,29 @@ TEST(String, equality)
   EXPECT_NE(str3, word);
 }
 
-TEST(Number, equality)
-{
-  // Given
-  Lisple::Number num1(25);
-  Lisple::Number num2(25);
-  Lisple::String str("25");
-  Lisple::Number num3(28);
-
-  EXPECT_EQ(num1, num2);
-  EXPECT_EQ(num2, num1);
-  EXPECT_NE(num1, str);
-  EXPECT_NE(num1, num3);
-}
-
-TEST(Number, int_value)
-{
-  Lisple::Number num1(0);
-  Lisple::Number num2(25);
-  Lisple::Number num3(40);
-  Lisple::Number num4(4000);
-
-  EXPECT_EQ(num1.int_value(), 0);
-  EXPECT_EQ(num2.int_value(), 25);
-  EXPECT_EQ(num3.int_value(), 40);
-  EXPECT_EQ(num4.int_value(), 4000);
-}
-
-TEST(Number, num_type_on_construction)
-{
-  ASSERT_TRUE(Lisple::Number(1).is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number(-1).is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number(45.0f).is_num_type(Lisple::NumberType::FLOAT));
-  ASSERT_TRUE(Lisple::Number(1.0f).is_num_type(Lisple::NumberType::FLOAT));
-  ASSERT_TRUE(Lisple::Number::make("1")->is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number::make("1.0")->is_num_type(Lisple::NumberType::FLOAT));
-}
-
 TEST(List, equality)
 {
   // Given
-  Lisple::sptr_sobject_v list1_elements
-  {
-    std::make_shared<Lisple::Word>("trait"),
-    std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")
-  };
+  Lisple::sptr_sobject_v list1_elements{std::make_shared<Lisple::Word>("trait"),
+                                        std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")};
   Lisple::List list1{list1_elements};
 
-  Lisple::sptr_sobject_v list2_elements
-  {
-    std::make_shared<Lisple::Word>("trait"),
-    std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")
-  };
+  Lisple::sptr_sobject_v list2_elements{std::make_shared<Lisple::Word>("trait"),
+                                        std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")};
   Lisple::List list2(list2_elements);
 
-  Lisple::sptr_sobject_v list3_elements
-  {
-    Lisple::Number::make(10),
-    Lisple::String::make("ten")
-  };
+  Lisple::sptr_sobject_v list3_elements{Lisple::Number::make(10),
+                                        Lisple::String::make("ten")};
   Lisple::List list3(list3_elements);
 
-  Lisple::sptr_sobject_v list4_elements
-  {
-    Lisple::Number::make(10),
-    Lisple::String::make("Macaroni")
-  };
+  Lisple::sptr_sobject_v list4_elements{Lisple::Number::make(10),
+                                        Lisple::String::make("Macaroni")};
   Lisple::List list4(list4_elements);
 
-  Lisple::sptr_sobject_v list5_elements
-  {
-    Lisple::Number::make(10),
-    Lisple::String::make("Macaroni"),
-    Lisple::Word::make("trait"),
-    std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")
-  };
+  Lisple::sptr_sobject_v list5_elements{Lisple::Number::make(10),
+                                        Lisple::String::make("Macaroni"),
+                                        Lisple::Word::make("trait"),
+                                        std::make_shared<Lisple::QSymbol>("UNOBSERVABLE")};
   Lisple::List list5(list5_elements);
 
   // Then

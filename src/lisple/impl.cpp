@@ -105,7 +105,7 @@ namespace Lisple
     {
       if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
       {
-        return std::get<Lisple::RTValue::Number>(wrapper->val->value).get_int();
+        return std::get<const Lisple::RTValue::Number>(wrapper->val->value).get_int();
       }
 
       return obj.as<Number>().int_value();
@@ -130,7 +130,7 @@ namespace Lisple
     {
       if (wrapper->val->type == RTValue::Type::NUMBER)
       {
-        return std::get<RTValue::Number>(wrapper->val->value).get_int();
+        return std::get<const RTValue::Number>(wrapper->val->value).get_int();
       }
     }
 
@@ -158,7 +158,7 @@ namespace Lisple
     {
       if (wrapper->val->type == RTValue::Type::NUMBER)
       {
-        return std::get<RTValue::Number>(wrapper->val->value).get_float();
+        return std::get<const RTValue::Number>(wrapper->val->value).get_float();
       }
     }
 

@@ -85,7 +85,7 @@ namespace Lisple
 
   EXEC_BODY(NthFunction, exec_nth)
   {
-    int n = std::get<RTValue::Number>(args.back()->value).get_int();
+    int n = std::get<const RTValue::Number>(args.back()->value).get_int();
     if (n >= static_cast<int>(Lisple::count(*args.front())) || n < 0)
     {
       return Constant::NIL;
@@ -151,8 +151,8 @@ namespace Lisple
 
     if (args[0]->type == RTValue::Type::NUMBER && args[1]->type == RTValue::Type::NUMBER)
     {
-      RTValue::Number& begin_num = std::get<RTValue::Number>(args[0]->value);
-      RTValue::Number& end_num = std::get<RTValue::Number>(args[1]->value);
+      const RTValue::Number& begin_num = std::get<const RTValue::Number>(args[0]->value);
+      const RTValue::Number& end_num = std::get<const RTValue::Number>(args[1]->value);
 
       if (begin_num.num_type == RTValue::NumberType::INT)
       {
@@ -189,7 +189,7 @@ namespace Lisple
   {
     if (*args[0] == *Constant::NIL) return Constant::NIL;
 
-    int n = std::get<RTValue::Number>(args.back()->value).get_int();
+    int n = std::get<const RTValue::Number>(args.back()->value).get_int();
     if (n >= static_cast<int>(Lisple::count(*args.back())) || n < 0)
     {
       return args[0];

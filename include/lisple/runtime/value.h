@@ -65,11 +65,13 @@ namespace Lisple
       long get_long() const;
       float get_float() const;
       double get_double() const;
+
+      Number operator*(const Number& other) const;
     };
 
     using Data = std::variant<sptr_sobject,
                               std::string,
-                              RTValue::Number,
+                              const RTValue::Number,
                               sptr_rtval_v,
                               sptr_native_obj,
                               bool,
@@ -78,6 +80,7 @@ namespace Lisple
 
     RTValue() = default;
     explicit RTValue(int);
+    RTValue(const RTValue::Number&);
     explicit RTValue(bool);
     RTValue(const std::string&, Type type);
     RTValue(std::monostate);
@@ -91,6 +94,7 @@ namespace Lisple
     static sptr_rtval number(int);
     static sptr_rtval number(long);
     static sptr_rtval number(double);
+    static sptr_rtval number(const RTValue::Number&);
     static sptr_rtval string(const std::string&);
     static sptr_rtval character(char);
     static sptr_rtval keyword(const std::string&);

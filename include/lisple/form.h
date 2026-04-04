@@ -244,6 +244,12 @@ namespace Lisple
    */
   class Number : public Value<float>
   {
+    union
+    {
+      int i32val;
+      long i64val;
+      float f32val;
+    };
 
    public:
     Number(int value);

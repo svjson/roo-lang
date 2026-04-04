@@ -21,6 +21,13 @@ namespace Lisple
     rtvalues_constructed++;
   }
 
+  RTValue::RTValue(const RTValue::Number& num)
+    : value(num)
+    , type(RTValue::Type::NUMBER)
+  {
+    rtvalues_constructed++;
+  }
+
   RTValue::RTValue(const std::string& s, Type type)
     : value(s)
     , type(type)
@@ -98,6 +105,56 @@ namespace Lisple
     }
   }
 
+  RTValue::Number RTValue::Number::operator*(const Number& other) const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::INT,
+                               .int_value = int_value * other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = int_value * other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = int_value * other.float_value};
+      }
+    case NumberType::LONG:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = long_value * other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = long_value * other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = long_value * other.float_value};
+      }
+    case NumberType::FLOAT:
+    default:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value * other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value * other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value * other.float_value};
+      }
+    }
+  }
+
   sptr_rtval RTValue::boolean(bool b)
   {
     return b ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
@@ -110,11 +167,17 @@ namespace Lisple
 
   sptr_rtval RTValue::number(long v)
   {
-    rtvalues_constructed++;
-    sptr_rtval val = std::make_shared<RTValue>();
-    val->type = RTValue::Type::NUMBER;
-    val->value = RTValue::Number{.num_type = NumberType::LONG, .long_value = v};
-    return val;
+    return std::make_shared<RTValue>(
+      RTValue::Number{.num_type = NumberType::LONG, .long_value = v});
+  }
+
+  sptr_rtval RTValue::number(const RTValue::Number& num)
+  {
+    if (num.num_type == NumberType::INT)
+    {
+      return IntegerPool::get(num.int_value);
+    }
+    return std::make_shared<RTValue>(num);
   }
 
   sptr_rtval RTValue::number(double v)
@@ -125,10 +188,8 @@ namespace Lisple
       return RTValue::number(intval);
     }
     rtvalues_constructed++;
-    sptr_rtval val = std::make_shared<RTValue>();
-    val->type = RTValue::Type::NUMBER;
-    val->value = RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v};
-    return val;
+    return std::make_shared<RTValue>(
+      RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v});
   }
 
   sptr_rtval RTValue::character(char c)
@@ -262,7 +323,7 @@ namespace Lisple
       break;
     case RTValue::Type::NUMBER:
     {
-      auto num = std::get<RTValue::Number>(value);
+      auto num = std::get<const RTValue::Number>(value);
       switch (num.num_type)
       {
       case NumberType::INT:
@@ -312,8 +373,8 @@ namespace Lisple
     case Type::NIL:
       return other.type == Type::NIL;
     case Type::NUMBER:
-      return std::get<RTValue::Number>(this->value).get_float() ==
-             std::get<RTValue::Number>(other.value).get_float();
+      return std::get<const RTValue::Number>(this->value).get_float() ==
+             std::get<const RTValue::Number>(other.value).get_float();
     case Type::KEYWORD:
     case Type::STRING:
     case Type::SYMBOL:
@@ -338,27 +399,27 @@ namespace Lisple
 
   uint8_t RTValue::ui8() const
   {
-    return std::get<Number>(value).get_int();
+    return std::get<const RTValue::Number>(value).get_int();
   }
 
   int RTValue::i32() const
   {
-    return std::get<Number>(value).get_int();
+    return std::get<const Number>(value).get_int();
   }
 
   long RTValue::i64() const
   {
-    return std::get<Number>(value).get_long();
+    return std::get<const Number>(value).get_long();
   }
 
   float RTValue::f32() const
   {
-    return std::get<Number>(value).get_float();
+    return std::get<const Number>(value).get_float();
   }
 
   double RTValue::f64() const
   {
-    return std::get<Number>(value).get_double();
+    return std::get<const Number>(value).get_double();
   }
 
   sptr_sobject RTValue::obj() const
@@ -395,7 +456,7 @@ namespace Lisple
   {
     if (type == RTValue::Type::NUMBER)
     {
-      auto& num = std::get<RTValue::Number>(value);
+      auto& num = std::get<const RTValue::Number>(value);
       if (num.num_type == NumberType::INT)
       {
         return n == num.int_value;
@@ -408,7 +469,7 @@ namespace Lisple
   {
     if (type == RTValue::Type::NUMBER)
     {
-      auto& num = std::get<RTValue::Number>(value);
+      auto& num = std::get<const RTValue::Number>(value);
       if (num.num_type == NumberType::LONG)
       {
         return n == num.long_value;
@@ -421,7 +482,7 @@ namespace Lisple
   {
     if (type == RTValue::Type::NUMBER)
     {
-      auto& num = std::get<RTValue::Number>(value);
+      auto& num = std::get<const RTValue::Number>(value);
       if (num.num_type == NumberType::FLOAT)
       {
         return n == num.float_value;
@@ -580,7 +641,7 @@ namespace Lisple
       return Lisple::NIL;
     case RTValue::Type::NUMBER:
     {
-      if (RTValue::Number* num = std::get_if<RTValue::Number>(&val.value))
+      if (const RTValue::Number* num = std::get_if<const RTValue::Number>(&val.value))
       {
         switch (num->num_type)
         {

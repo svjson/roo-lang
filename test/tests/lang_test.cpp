@@ -502,7 +502,9 @@ TEST(IntFunction, float_to_int)
   // Then
   EXPECT_EQ(*fixture.runtime.eval("(int 12.0)"), *Lisple::RTValue::number(12));
   EXPECT_EQ(*fixture.runtime.eval("(int 15.4)"), *Lisple::RTValue::number(15));
-  EXPECT_EQ(*fixture.runtime.eval("(int 15.5)"), *Lisple::RTValue::number(16));
+  EXPECT_EQ(*fixture.runtime.eval("(int 15.5)"), *Lisple::RTValue::number(15));
+  EXPECT_EQ(*fixture.runtime.eval("(int 15.9)"), *Lisple::RTValue::number(15));
+  EXPECT_EQ(*fixture.runtime.eval("(int 16)"), *Lisple::RTValue::number(16));
 }
 
 TEST(CeilFunction, ceil)

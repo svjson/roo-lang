@@ -31,9 +31,9 @@ namespace LispleTest::Native
       throw Lisple::LispleException("Invalid input");
 
     return PointAdapter::make_unique(
-      std::get<Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], X)->value)
+      std::get<const Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], X)->value)
         .get_float(),
-      std::get<Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], Y)->value)
+      std::get<const Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], Y)->value)
         .get_float());
   }
 
@@ -46,7 +46,7 @@ namespace LispleTest::Native
   {
     const Point& point = args.front()->adapter<PointAdapter>().get_object();
     const Point origin = {0, 0};
-    float amount = std::get<Lisple::RTValue::Number>(args[1]->value).get_float();
+    float amount = std::get<const Lisple::RTValue::Number>(args[1]->value).get_float();
 
     if (amount == 0.0) return args[0];
 
@@ -82,7 +82,7 @@ namespace LispleTest::Native
   EXEC_BODY(PointDivideFunction, exec_divide)
   {
     const Point& a = args[0]->adapter<PointAdapter>().get_object();
-    float amount = std::get<Lisple::RTValue::Number>(args[1]->value).get_float();
+    float amount = std::get<const Lisple::RTValue::Number>(args[1]->value).get_float();
 
     return PointAdapter::make_unique(a.x / amount, a.y / amount);
   }

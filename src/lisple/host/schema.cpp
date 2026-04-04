@@ -184,44 +184,44 @@ namespace Lisple
   uint8_t MapSchema::Inspector::ui8(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<RTValue::Number>(value->value).get_int();
+    return std::get<const RTValue::Number>(value->value).get_int();
   }
   uint8_t MapSchema::Inspector::ui8(const std::string& key, uint8_t default_value) const
   {
     sptr_rtval value = _get_value(key, RTValue::Type::NUMBER);
     if (value)
     {
-      return std::get<RTValue::Number>(value->value).get_int();
+      return std::get<const RTValue::Number>(value->value).get_int();
     }
     return default_value;
   }
   int MapSchema::Inspector::i32(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<RTValue::Number>(value->value).get_int();
+    return std::get<const RTValue::Number>(value->value).get_int();
   }
   long MapSchema::Inspector::i64(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<RTValue::Number>(value->value).get_long();
+    return std::get<const RTValue::Number>(value->value).get_long();
   }
   float MapSchema::Inspector::f32(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<RTValue::Number>(value->value).get_float();
+    return std::get<const RTValue::Number>(value->value).get_float();
   }
   float MapSchema::Inspector::f32(const std::string& key, float default_value) const
   {
     if (sptr_rtval value = _get_value(key, RTValue::Type::NUMBER))
     {
-      return std::get<RTValue::Number>(value->value).get_float();
+      return std::get<const RTValue::Number>(value->value).get_float();
     }
     return default_value;
   }
   double MapSchema::Inspector::f64(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<RTValue::Number>(value->value).get_double();
+    return std::get<const RTValue::Number>(value->value).get_double();
   }
 
   const std::string& MapSchema::Inspector::str(const std::string& key) const
