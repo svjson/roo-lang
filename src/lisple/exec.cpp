@@ -849,6 +849,7 @@ namespace Lisple
 
   sptr_sobject DetachedFunction::dispatch_detached_ast(Context&, sptr_sobject_v& args)
   {
+    user_function_ast_invocations++;
     if (bound_args.empty())
     {
       return execute_bound(args);
@@ -871,6 +872,7 @@ namespace Lisple
 
   sptr_rtval DetachedFunction::dispatch_detached(Context&, sptr_rtval_v& args)
   {
+    user_function_rtval_invocations++;
     if (bound_args.empty())
     {
       return fun->execute(*this->ctx, args);
@@ -879,22 +881,10 @@ namespace Lisple
     {
       throw LispleException(
         "DetachedFunction::dispatch_detached with bounds args not supported for rtval");
-      // return fun->execute(*this->ctx, bound_args);
     }
 
     throw LispleException("DetachedFunction::dispatch_detached with merged bound+literal "
                           "args not supported for rtval");
-
-    // sptr_sobject_v merged_args;
-    // for (auto& arg : args)
-    // {
-    //   merged_args.push_back(arg);
-    // }
-    // for (auto& arg : bound_args)
-    // {
-    //   merged_args.push_back(arg);
-    // }
-    // return execute_bound(merged_args);
   }
 
   sptr_sobject DetachedFunction::execute_bound(sptr_sobject_v& args)
@@ -920,61 +910,6 @@ namespace Lisple
     }
   }
 
-  UserFunction::UserFunction(const std::string& home_ns,
-                             arg_v args,
-                             std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
-                             sptr_sobject_v& body)
-    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_ast_body)))
-    , home_ns(home_ns)
-    , arg_bindings(std::move(arg_bindings))
-  {
-    user_functions_created++;
-    user_functions_ast_created++;
-    this->uptr_body.reserve(body.size());
-    this->body.reserve(body.size());
-    LowerContext lctx;
-    for (auto& node : body)
-    {
-      uptr_exec_node unode = lower_expr(lctx, node);
-      this->uptr_body.push_back(std::move(unode));
-      this->body.push_back(uptr_body.back().get());
-    }
-  }
-
-  sptr_sobject UserFunction::exec_ast_body(Context& ctx, sptr_sobject_v& args)
-  {
-    user_function_ast_invocations++;
-    const std::string current_namespace = ctx.get_current_namespace()->get_name();
-    ctx.switch_namespace(home_ns);
-    Scope fn_scope;
-    if (arg_bindings.size() > 0)
-    {
-      for (size_t i = 0; i < args.size(); i++)
-      {
-        arg_bindings[i]->apply(fn_scope, args[i]);
-      }
-    }
-    else if (arg_binding.size() > 0)
-    {
-      user_function_wrong_path_invocations++;
-      for (size_t i = 0; i < args.size(); i++)
-      {
-        arg_binding[i]->apply(fn_scope, to_rt_value(args[i]));
-      }
-    }
-    ctx.push_context(true, fn_scope);
-    sptr_sobject retval = body.empty() ? NIL : nullptr;
-
-    for (auto& node : body)
-    {
-      retval = eval(ctx, *node);
-    }
-    ctx.pop_context();
-    ctx.switch_namespace(current_namespace);
-
-    return retval;
-  }
-
   sptr_rtval UserFunction::exec_body(Context& ctx, sptr_rtval_v& args)
   {
     user_function_rtval_invocations++;
@@ -988,13 +923,12 @@ namespace Lisple
         arg_binding[i]->apply(fn_scope, args[i]);
       }
     }
-    else if (arg_bindings.size() > 0)
+    else if (arg_binding.size() > 0)
     {
       user_function_wrong_path_invocations++;
       for (size_t i = 0; i < args.size(); i++)
       {
-        sptr_sobject wrapped = RuntimeValueWrapper::make(args[i]);
-        arg_bindings[i]->apply(fn_scope, wrapped);
+        arg_binding[i]->apply(fn_scope, args[i]);
       }
     }
     ctx.push_context(true, fn_scope);
@@ -1015,10 +949,10 @@ namespace Lisple
     return uptr_body;
   }
 
-  const std::vector<std::unique_ptr<ArgumentBinding>>& UserFunction::get_argument_bindings()
+  const std::vector<std::unique_ptr<LexicalBinding>>& UserFunction::get_argument_bindings()
     const
   {
-    return arg_bindings;
+    return arg_binding;
   }
 
   /** Macro */
@@ -1056,12 +990,13 @@ namespace Lisple
   /**
    * Function creation ergonomics
    */
-  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+  std::shared_ptr<UserFunction> create_function(Context& ctx,
+                                                const Namespace* home_ns,
                                                 Object& arg_array,
                                                 sptr_sobject_v& body)
   {
     std::vector<Argument> arg_types;
-    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
+    std::vector<std::unique_ptr<LexicalBinding>> arg_bindings;
     arg_types.reserve(arg_array.size());
     arg_bindings.reserve(arg_array.size());
     for (auto& arg : arg_array.get_children())
@@ -1071,12 +1006,23 @@ namespace Lisple
         throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
       }
       arg_types.push_back(Lisple::arg(&Type::ANY));
-      arg_bindings.push_back(ArgumentBinding::create(*arg));
+      auto rt_arg = to_rt_value(*arg);
+      arg_bindings.push_back(LexicalBinding::create(rt_arg));
     }
+
+    uptr_exec_node_v node_body;
+    node_body.reserve(body.size());
+    LowerContext lctx{&ctx};
+    for (auto& node : body)
+    {
+      uptr_exec_node unode = lower_expr(lctx, node);
+      node_body.push_back(std::move(unode));
+    }
+
     return std::make_shared<UserFunction>(home_ns->get_name(),
                                           std::move(arg_types),
                                           arg_bindings,
-                                          body);
+                                          std::move(node_body));
   }
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
@@ -1115,7 +1061,7 @@ namespace Lisple
                                                              sptr_sobject_v& body)
   {
     std::shared_ptr<Function> fn =
-      create_function(ctx.get_current_namespace(), arg_array, body);
+      create_function(ctx, ctx.get_current_namespace(), arg_array, body);
     return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
   }
 

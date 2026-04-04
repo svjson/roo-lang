@@ -451,7 +451,6 @@ namespace Lisple
      * Executable base class
      */
     const std::string home_ns;
-    std::vector<std::unique_ptr<ArgumentBinding>> arg_bindings;
     std::vector<std::unique_ptr<LexicalBinding>> arg_binding;
     uptr_exec_node_v uptr_body;
     ptr_exec_node_v body;
@@ -462,15 +461,9 @@ namespace Lisple
                  std::vector<std::unique_ptr<LexicalBinding>>& arg_bindings,
                  uptr_exec_node_v&& body);
 
-    UserFunction(const std::string& home_ns,
-                 Lisple::arg_v,
-                 std::vector<std::unique_ptr<ArgumentBinding>>& arg_bindings,
-                 sptr_sobject_v& body);
-
-    const std::vector<std::unique_ptr<ArgumentBinding>>& get_argument_bindings() const;
+    const std::vector<std::unique_ptr<LexicalBinding>>& get_argument_bindings() const;
     const uptr_exec_node_v& get_body() const;
 
-    sptr_sobject exec_ast_body(Lisple::Context& ctx, sptr_sobject_v& args);
     sptr_rtval exec_body(Lisple::Context& ctx, sptr_rtval_v& args);
   };
 
@@ -495,7 +488,8 @@ namespace Lisple
                                               const Lisple ::sptr_sobject& ast_node) = 0;
   };
 
-  std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
+  std::shared_ptr<UserFunction> create_function(Context& ctx,
+                                                const Namespace* home_ns,
                                                 Object& arg_array,
                                                 sptr_sobject_v& body);
 

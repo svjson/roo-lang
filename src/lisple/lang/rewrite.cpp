@@ -19,7 +19,6 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(ThreadFirstForm)
   {
-    deprecated_special_form_invocations++;
     sptr_sobject_v elements = ast_node->get_children();
     if (elements.size() == 1) return lower_literal(Lisple::NIL);
     if (elements.size() == 2) return lower_expr(ctx, elements[1]);
@@ -90,6 +89,7 @@ namespace Lisple
 
   EXECNODE_BODY(ThreadFirstForm, execnode_thread_first)
   {
+    deprecated_special_form_invocations++;
     sptr_rtval value = std::get<LiteralNode>(args[0]->data).value;
 
     for (size_t i = 1; i < args.size(); i++)

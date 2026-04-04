@@ -29,7 +29,7 @@ namespace Lisple
     {
       body.push_back(args[i]);
     }
-    auto fn = create_function(ctx.get_current_namespace(), *args[1], body);
+    auto fn = create_function(ctx, ctx.get_current_namespace(), *args[1], body);
     ctx.store_namespace(fun_name, fn);
 
     return fn;

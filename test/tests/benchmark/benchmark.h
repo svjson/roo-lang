@@ -38,6 +38,8 @@ namespace LispleTest
     int user_function_ast_invocations = 0;
     int user_function_rtval_invocations = 0;
     int user_function_wrong_path_invocations = 0;
+
+    int deprecated_special_form_invocations = 0;
   };
 
   struct SetupCounters
@@ -46,6 +48,8 @@ namespace LispleTest
     int lowered_literals = 0;
     int lower_time_exec_resolutions = 0;
     int lower_time_exec_unresolved = 0;
+
+    int deprecated_special_form_invocations = 0;
   };
 
   extern Counters counter_snapshot;

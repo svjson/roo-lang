@@ -81,6 +81,11 @@ namespace LispleTest
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "Invocations of legacy special form exec: "
               << Lisple::deprecated_special_form_invocations << std::endl;
+    if (include_setup_phase)
+    {
+      std::cout << "SETUP PHASE - Invocations of legacy special form exec: "
+                << Lisple::deprecated_special_form_invocations << std::endl;
+    }
     std::cout << "-----------------------------------------------" << std::endl;
   }
 
@@ -108,6 +113,8 @@ namespace LispleTest
       Lisple::user_function_rtval_invocations;
     counter_snapshot.user_function_wrong_path_invocations =
       Lisple::user_function_wrong_path_invocations;
+    counter_snapshot.deprecated_special_form_invocations =
+      Lisple::deprecated_special_form_invocations;
   }
 
   void reset_counters()
@@ -132,6 +139,7 @@ namespace LispleTest
     Lisple::user_function_ast_invocations = 0;
     Lisple::user_function_rtval_invocations = 0;
     Lisple::user_function_wrong_path_invocations = 0;
+    Lisple::deprecated_special_form_invocations = 0;
   }
 
   void restore_counter_snapshot()
@@ -158,6 +166,8 @@ namespace LispleTest
       counter_snapshot.user_function_rtval_invocations;
     Lisple::user_function_wrong_path_invocations =
       counter_snapshot.user_function_wrong_path_invocations;
+    Lisple::deprecated_special_form_invocations =
+      counter_snapshot.deprecated_special_form_invocations;
   }
 
   void apply_counter_snapshot()
@@ -184,6 +194,8 @@ namespace LispleTest
       counter_snapshot.user_function_rtval_invocations;
     Lisple::user_function_wrong_path_invocations +=
       counter_snapshot.user_function_wrong_path_invocations;
+    Lisple::deprecated_special_form_invocations +=
+      counter_snapshot.deprecated_special_form_invocations;
   }
 
   long now()
@@ -287,6 +299,8 @@ namespace LispleTest
     setup_counters.lowered_literals = Lisple::lowered_literals;
     setup_counters.lower_time_exec_resolutions = Lisple::lower_time_exec_resolutions;
     setup_counters.lower_time_exec_unresolved = Lisple::lower_time_exec_unresolved;
+    setup_counters.deprecated_special_form_invocations =
+      Lisple::deprecated_special_form_invocations;
 
     apply_counter_snapshot();
 
@@ -314,6 +328,7 @@ namespace LispleTest
     setup_counters.lowered_literals = 0;
     setup_counters.lower_time_exec_resolutions = 0;
     setup_counters.lower_time_exec_unresolved = 0;
+    setup_counters.deprecated_special_form_invocations = 0;
 
     return result;
   }
