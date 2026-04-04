@@ -536,6 +536,8 @@ namespace Lisple
 
       return RTValue::map(elements);
     }
+    case Form::WORD:
+      return RTValue::symbol(Value<std::string>::value_of(obj));
 
     default:
       throw LispleException("to_rt_value(Object&): Unsupported value type #" +

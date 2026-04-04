@@ -442,6 +442,7 @@ namespace Lisple
   class UserFunction : public Function
   {
    private:
+    const std::string name;
     /*!
      * @brief The namespace in which the function is defined. When execution occurs,
      * the Context will effectively switch temporarily to this namespace so that any
@@ -456,13 +457,16 @@ namespace Lisple
     ptr_exec_node_v body;
 
    public:
-    UserFunction(const std::string& home_ns,
+    UserFunction(const std::string& name,
+                 const std::string& home_ns,
                  arg_v,
                  std::vector<std::unique_ptr<LexicalBinding>>& arg_bindings,
                  uptr_exec_node_v&& body);
 
     const std::vector<std::unique_ptr<LexicalBinding>>& get_argument_bindings() const;
     const uptr_exec_node_v& get_body() const;
+
+    std::string to_string(int depth = -1) const override;
 
     sptr_rtval exec_body(Lisple::Context& ctx, sptr_rtval_v& args);
   };
@@ -488,7 +492,8 @@ namespace Lisple
                                               const Lisple ::sptr_sobject& ast_node) = 0;
   };
 
-  std::shared_ptr<UserFunction> create_function(Context& ctx,
+  std::shared_ptr<UserFunction> create_function(const std::string& name,
+                                                Context& ctx,
                                                 const Namespace* home_ns,
                                                 Object& arg_array,
                                                 sptr_sobject_v& body);

@@ -872,7 +872,6 @@ namespace Lisple
 
   sptr_rtval DetachedFunction::dispatch_detached(Context&, sptr_rtval_v& args)
   {
-    user_function_rtval_invocations++;
     if (bound_args.empty())
     {
       return fun->execute(*this->ctx, args);
@@ -892,11 +891,13 @@ namespace Lisple
     return fun->execute(*ctx, args);
   }
 
-  UserFunction::UserFunction(const std::string& home_ns,
+  UserFunction::UserFunction(const std::string& name,
+                             const std::string& home_ns,
                              arg_v args,
                              std::vector<std::unique_ptr<LexicalBinding>>& arg_binding,
                              uptr_exec_node_v&& body)
     : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
+    , name(name)
     , home_ns(home_ns)
     , arg_binding(std::move(arg_binding))
     , uptr_body(std::move(body))
@@ -908,6 +909,11 @@ namespace Lisple
     {
       this->body.push_back(node.get());
     }
+  }
+
+  std::string UserFunction::to_string([[maybe_unused]] int depth) const
+  {
+    return "#'" + home_ns + "/" + name;
   }
 
   sptr_rtval UserFunction::exec_body(Context& ctx, sptr_rtval_v& args)
@@ -990,7 +996,8 @@ namespace Lisple
   /**
    * Function creation ergonomics
    */
-  std::shared_ptr<UserFunction> create_function(Context& ctx,
+  std::shared_ptr<UserFunction> create_function(const std::string& name,
+                                                Context& ctx,
                                                 const Namespace* home_ns,
                                                 Object& arg_array,
                                                 sptr_sobject_v& body)
@@ -1019,7 +1026,8 @@ namespace Lisple
       node_body.push_back(std::move(unode));
     }
 
-    return std::make_shared<UserFunction>(home_ns->get_name(),
+    return std::make_shared<UserFunction>(name,
+                                          home_ns->get_name(),
                                           std::move(arg_types),
                                           arg_bindings,
                                           std::move(node_body));
@@ -1050,7 +1058,8 @@ namespace Lisple
       new_body.push_back(node->clone());
     }
 
-    return std::make_shared<UserFunction>(home_ns->get_name(),
+    return std::make_shared<UserFunction>("<user-fn>",
+                                          home_ns->get_name(),
                                           std::move(arg_types),
                                           arg_bindings,
                                           std::move(new_body));
@@ -1061,7 +1070,7 @@ namespace Lisple
                                                              sptr_sobject_v& body)
   {
     std::shared_ptr<Function> fn =
-      create_function(ctx, ctx.get_current_namespace(), arg_array, body);
+      create_function("<lambda>", ctx, ctx.get_current_namespace(), arg_array, body);
     return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
   }
 
