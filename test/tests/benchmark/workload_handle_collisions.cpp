@@ -1,42 +1,10 @@
 #include "benchmark/benchmark.h"
+#include "fixtures/pixils_point.h"
 #include "host/test_adapters/vectorgfx_host_adapters.h"
 #include "host/test_adapters/vectorgfx_native_adapters.h"
 #include <gtest/gtest.h>
 
 const std::string DEF_TAU = "(def TAU 6.28318531)";
-
-const std::string NS_PIXILS_POINT = R"(
-  (ns pixils.point)
-                                     )";
-
-const std::string DEFUN_PT_PLUS = R"(
-(defun plus [p1 p2]
-  {:x (+ (:x p1) (:x p2))
-   :y (+ (:y p1) (:y p2))})
-                                   )";
-
-const std::string DEFUN_PT_DIV = R"(
-(defun div [p n]
-  {:x (/ (:x p) n)
-   :y (/ (:y p) n)})
-                                   )";
-
-const std::string DEFUN_PT_ROTATE = R"(
-(defun rotate [p amount]
-  (let [s (sin amount)
-        c (cos amount)]
-    {:x (- (* (:x p) c) (* (:y p) s))
-     :y (+ (* (:x p) s) (* (:y p) c))}))
-                                     )";
-
-const std::string DEFUN_PT_DISTANCE = R"(
-(defun distance [p1 p2]
-  (sqrt (+ (* (- (:x p2) (:x p1)) (- (:x p2) (:x p1)))
-           (* (- (:y p2) (:y p1)) (- (:y p2) (:y p1))))))
-                                       )";
-
-const std::string PIXILS__POINT =
-  NS_PIXILS_POINT + DEFUN_PT_PLUS + DEFUN_PT_DIV + DEFUN_PT_ROTATE + DEFUN_PT_DISTANCE;
 
 const std::string NS_ASTEROIDS_ASTEROID = R"(
 (ns asteroids.asteroid
@@ -4419,7 +4387,7 @@ const std::string DEF_ARG_SET_2 = DEF_PLAYER_2 + DEF_ASTEROIDS_2 + DEF_PARTICLES
 TEST(Workload, handle_collisions_inline_argset_1)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
-                                  {PIXILS__POINT,
+                                  {LispleTest::PIXILS__POINT__PURE_LISP,
                                    ASTEROIDS__ASTEROID,
                                    ASTEROIDS__DEBRIS,
                                    NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
@@ -4464,7 +4432,7 @@ TEST(Workload, handle_collisions_pure_lisple_inline_1000_argset_1)
 {
   LispleTest::SnippetBenchmark bm(
     "workload_1000_pure_lisple_handle_collisions__inline_argset_1",
-    {PIXILS__POINT,
+    {LispleTest::PIXILS__POINT__PURE_LISP,
      ASTEROIDS__ASTEROID,
      ASTEROIDS__DEBRIS,
      NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
@@ -4478,7 +4446,7 @@ TEST(Workload, handle_collisions_pure_lisple_inline_1000_argset_1)
 TEST(Benchmark_Workload, benchmark_handle_collisions_inline_1000_argset_1)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
-                                  {PIXILS__POINT,
+                                  {LispleTest::PIXILS__POINT__PURE_LISP,
                                    ASTEROIDS__ASTEROID,
                                    ASTEROIDS__DEBRIS,
                                    NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_1},
@@ -4493,7 +4461,7 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_funcall_1000_argset_1)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__funcall_argset_1",
                                   {
-                                    PIXILS__POINT,
+                                    LispleTest::PIXILS__POINT__PURE_LISP,
                                     ASTEROIDS__ASTEROID,
                                     ASTEROIDS__DEBRIS,
                                     ASTEROIDS__COLLISION + DEF_AREA + DEF_ARG_SET_1,
@@ -4550,7 +4518,7 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_host_adapters_funcall_1000_
 TEST(Benchmark_Workload, benchmark_handle_collisions_inline_1000_argset_2)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_2",
-                                  {PIXILS__POINT,
+                                  {LispleTest::PIXILS__POINT__PURE_LISP,
                                    ASTEROIDS__ASTEROID,
                                    ASTEROIDS__DEBRIS,
                                    NS_ASTEROIDS_COLLISION + DEF_AREA + DEF_ARG_SET_2},
@@ -4565,7 +4533,7 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_funcall_1000_argset_2)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__funcall_argset_2",
                                   {
-                                    PIXILS__POINT,
+                                    LispleTest::PIXILS__POINT__PURE_LISP,
                                     ASTEROIDS__ASTEROID,
                                     ASTEROIDS__DEBRIS,
                                     ASTEROIDS__COLLISION + DEF_AREA + DEF_ARG_SET_2,
