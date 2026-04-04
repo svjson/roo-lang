@@ -2,6 +2,7 @@
 #include "fixtures/pixils_point.h"
 #include "host/test_adapters/vectorgfx_host_adapters.h"
 #include "host/test_adapters/vectorgfx_native_adapters.h"
+#include "host/test_adapters/vectorgfx_native_cachedprops_adapters.h"
 #include <gtest/gtest.h>
 
 const std::string DEF_TAU = "(def TAU 6.28318531)";
@@ -4501,6 +4502,26 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_host_adapters_funcall_1000_
   LispleTest::SnippetBenchmark bm(
     "workload_1000_handle_collisions_host_adapters__inline_argset_1",
     {{"pixils.point", LispleTest::Native::PointNamespace("pixils.point")}},
+    {
+      ASTEROIDS__ASTEROID,
+      ASTEROIDS__DEBRIS,
+      ASTEROIDS__COLLISION + DEF_AREA + DEF_ARG_SET_1,
+    },
+    "asteroids.collision",
+    R"(
+(dotimes [1000] (handle-collisions {:player player
+                                    :asteroids asteroids
+                                    :particles particles} area))
+                                     )");
+  bm.run();
+}
+
+TEST(Benchmark_Workload,
+     workload_handle_collisions_propcache_host_adapters_funcall_1000_argset_1)
+{
+
+  LispleTest::SnippetBenchmark bm(
+    {{"pixils.point", LispleTest::CachedNative::PointNamespace("pixils.point")}},
     {
       ASTEROIDS__ASTEROID,
       ASTEROIDS__DEBRIS,

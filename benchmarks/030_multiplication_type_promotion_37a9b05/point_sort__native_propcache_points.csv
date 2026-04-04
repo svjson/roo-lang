@@ -1,0 +1,4 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+190497110,point_sort__native_propcache_points,0,0,3648,5,3653,0,47432218,10433331,0,5,8,0,3,1,1,0,2004178,0
+190879163,point_sort__native_propcache_points,0,0,3622,4,3626,0,47432218,10433331,0,5,8,0,3,1,1,0,2004178,0
+191420569,point_sort__native_propcache_points,0,0,3725,4,3729,0,47432218,10433331,0,5,8,0,3,1,1,0,2004178,0
