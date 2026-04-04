@@ -15,8 +15,8 @@ namespace LispleTest::Native
                       &POINT,
                       ({NOBJ_GET(PointAdapter, X, x), NOBJ_GET(PointAdapter, Y, y)}));
 
-  NOBJ_PROP_GET__FIELD(PointAdapter, x, number);
-  NOBJ_PROP_GET__FIELD(PointAdapter, y, number);
+  NOBJ_NOCACHE_PROP_GET__FIELD(PointAdapter, x, number);
+  NOBJ_NOCACHE_PROP_GET__FIELD(PointAdapter, y, number);
 
   /** MakePointFunction -  make-point */
   FUNC_IMPL(MakePointFunction,

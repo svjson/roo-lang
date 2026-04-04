@@ -54,8 +54,24 @@
 #define __NOBJ_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                          \
   {                                                                           \
-    return Lisple::RTValue::LISPLE_FORM(get_object().OBJ_METHOD());           \
+    auto& obj = get_object(); \
+    if (nullptr == vcache_##PROP_NAME.cached || !vcache_##PROP_NAME.cached->is_##LISPLE_FORM(obj.OBJ_METHOD())) \
+    { \
+      vcache_##PROP_NAME.cached = Lisple::RTValue::LISPLE_FORM(obj.OBJ_METHOD()); \
+    } \
+    return vcache_##PROP_NAME.cached;               \
   }
+
+/* __NOBJ_NOCACHE_PROP_GET__METHOD
+ *
+ * For internal use only
+ */
+#define __NOBJ_NOCACHE_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                          \
+  {                                                                           \
+     return Lisple::RTValue::LISPLE_FORM(get_object().OBJ_METHOD()); \
+  }
+
 
 #define __NOBJ_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)     \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                          \
@@ -70,7 +86,12 @@
 #define __NOBJ_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                          \
   {                                                                           \
-    return Lisple::RTValue::LISPLE_FORM(get_object().OBJ_FIELD);              \
+    auto& obj = get_object(); \
+    if (nullptr == vcache_##PROP_NAME.cached || !vcache_##PROP_NAME.cached->is_##LISPLE_FORM(obj.OBJ_FIELD)) \
+    { \
+      vcache_##PROP_NAME.cached = Lisple::RTValue::LISPLE_FORM(obj.OBJ_FIELD); \
+    } \
+    return vcache_##PROP_NAME.cached;               \
   }
 
 #define __NOBJ_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
@@ -78,6 +99,17 @@
   {                                                                           \
     get_self_object().OBJ_FIELD = value.as<LISPLE_FORM>().value;              \
   }
+
+/* __NOBJ_NOCACHE_PROP_GET__FIELD
+ *
+ * For internal use only.
+ */
+#define __NOBJ_NOCACHE_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                            \
+  {                                                                             \
+    return Lisple::RTValue::LISPLE_FORM(get_object().OBJ_FIELD);                \
+  }
+
 
 /* NOBJ_PROP_GET__METHOD - get value by field
  *
@@ -90,6 +122,16 @@
 
 #define NOBJ_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
   __NOBJ_FIELD_ACCESSOR_MACROS(__NOBJ_PROP_SET__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* NOBJ_NOCACHE_PROP_GET__METHOD - get value by field
+ *
+ * Generates a property getter implementation that retrives the property value
+ * using a member function. This means that the field in question needs to be
+ * public, or otherwise accessible from the adapter class.
+ */
+#define NOBJ_NOCACHE_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...) \
+  __NOBJ_FIELD_ACCESSOR_MACROS(__NOBJ_NOCACHE_PROP_GET__METHOD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
 
 /* NOBJ_PROP_GET__FIELD - get value by field
  *
@@ -111,6 +153,20 @@
 #define NOBJ_PROP_GET_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)   \
   NOBJ_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)   \
   NOBJ_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
+
+/* NOBJ_NOCACHE_PROP_GET__FIELD - get value by field
+ *
+ * Generates a property getter implementation that retrieves the property value
+ * directly via the object field. This means that the field in question needs to
+ * be public, or otherwise accessible from the adapter class.
+ *
+ * The Lisple Form class needs to be supplied to construct the return value.
+ *
+ * Usage:
+ * ADAPER_PROP_GET__FIELD(SomeHostAdapter, some_string, Lisple::String);
+ */
+#define NOBJ_NOCACHE_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, ...)    \
+  __NOBJ_FIELD_ACCESSOR_MACROS(__NOBJ_NOCACHE_PROP_GET__FIELD, AD_CLASS, PROP_NAME, LISPLE_FORM, ##__VA_ARGS__)
 
 // clang-format on
 

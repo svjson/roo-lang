@@ -24,8 +24,8 @@ namespace LispleTest::Native
                       ({NOBJ_GET(RegNumberAdapter, LETTERS, letters),
                         NOBJ_GET(RegNumberAdapter, NUMBERS, numbers)}));
 
-  NOBJ_PROP_GET__METHOD(RegNumberAdapter, letters, string, get_letters);
-  NOBJ_PROP_GET__METHOD(RegNumberAdapter, numbers, string, get_numbers);
+  NOBJ_NOCACHE_PROP_GET__METHOD(RegNumberAdapter, letters, string, get_letters);
+  NOBJ_NOCACHE_PROP_GET__METHOD(RegNumberAdapter, numbers, string, get_numbers);
 
   /* VehicleAdapter */
   NATIVE_ADAPTER_IMPL(VehicleAdapter,
@@ -34,8 +34,8 @@ namespace LispleTest::Native
                       ({NOBJ_GET(VehicleAdapter, MODEL_NAME, model_name),
                         NOBJ_GET(VehicleAdapter, SEATS, seats)}));
 
-  NOBJ_PROP_GET__METHOD(VehicleAdapter, model_name, string, get_model_name)
-  NOBJ_PROP_GET__METHOD(VehicleAdapter, seats, number, get_seats);
+  NOBJ_NOCACHE_PROP_GET__METHOD(VehicleAdapter, model_name, string, get_model_name)
+  NOBJ_NOCACHE_PROP_GET__METHOD(VehicleAdapter, seats, number, get_seats);
 
   // ===============================================================
   // Vehicle example - functions

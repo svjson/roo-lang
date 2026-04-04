@@ -120,6 +120,10 @@ namespace Lisple
       return *dynamic_cast<T*>(std::get<sptr_native_obj>(value).get());
     }
     std::pair<std::string, std::string> qual() const;
+
+    bool is_number(int) const;
+    bool is_number(long) const;
+    bool is_number(double) const;
   };
 
   namespace Constant

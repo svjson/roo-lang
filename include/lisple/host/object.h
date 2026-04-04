@@ -112,6 +112,7 @@
  */
 #define NATIVE_ADAPTER_GETTER_DECL(PROP_NAME)             \
   /*! @brief Auto-generated getter */                   \
+  mutable Lisple::NCacheSlot vcache_##PROP_NAME; \
   Lisple::sptr_rtval get_##PROP_NAME() const;
 
 /* __NATIVE_ADAPTER_GETTERS
@@ -298,6 +299,11 @@ namespace Lisple
     n_acc_set_t setter;
 
     NAccessors(const n_acc_get_t& getter, const n_acc_set_t& setter);
+  };
+
+  struct NCacheSlot
+  {
+    sptr_rtval cached = nullptr;
   };
 
   /*!

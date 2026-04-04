@@ -391,6 +391,45 @@ namespace Lisple
     return Lisple::split_qualifiable(str());
   }
 
+  bool RTValue::is_number(int n) const
+  {
+    if (type == RTValue::Type::NUMBER)
+    {
+      auto& num = std::get<RTValue::Number>(value);
+      if (num.num_type == NumberType::INT)
+      {
+        return n == num.int_value;
+      }
+    }
+    return false;
+  }
+
+  bool RTValue::is_number(long n) const
+  {
+    if (type == RTValue::Type::NUMBER)
+    {
+      auto& num = std::get<RTValue::Number>(value);
+      if (num.num_type == NumberType::LONG)
+      {
+        return n == num.long_value;
+      }
+    }
+    return false;
+  }
+
+  bool RTValue::is_number(double n) const
+  {
+    if (type == RTValue::Type::NUMBER)
+    {
+      auto& num = std::get<RTValue::Number>(value);
+      if (num.num_type == NumberType::FLOAT)
+      {
+        return n == num.float_value;
+      }
+    }
+    return false;
+  }
+
   sptr_rtval to_rt_value(const Object& obj)
   {
     if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj)) return wrapper->val;
