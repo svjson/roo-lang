@@ -397,7 +397,7 @@ namespace Lisple
     return Constant::NIL;
   }
 
-  /* SomeFunction */
+  /** SomeFunction - some? */
   FUNC_IMPL(SomeFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
                  EXEC_DISPATCH(&SomeFunction::exec_some))))
@@ -410,7 +410,7 @@ namespace Lisple
     {
       val_arg[0] = element;
       sptr_rtval result = fn.execute(ctx, val_arg);
-      if (!Lisple::is_truthy(*result))
+      if (Lisple::is_truthy(*result))
       {
         return Constant::BOOL_TRUE;
       }
