@@ -151,7 +151,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(result);
+    return RTValue::vector(std::move(result));
   }
 
   /* ForForm - for */

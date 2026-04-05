@@ -40,7 +40,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(result);
+    return RTValue::vector(std::move(result));
   }
 
   /** FindFirstFunction - find-first */
@@ -118,7 +118,7 @@ namespace Lisple
       if (*r != *Constant::NIL) result.push_back(r);
     }
 
-    return RTValue::vector(result);
+    return RTValue::vector(std::move(result));
   }
 
   /** MapFunction - map */
@@ -274,7 +274,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(result);
+    return RTValue::vector(std::move(result));
   }
 
   /** RemoveBangFunction - remove! */
@@ -351,7 +351,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(result);
+    return RTValue::vector(std::move(result));
   }
 
   /* SeqMatchFunction */

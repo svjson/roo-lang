@@ -308,7 +308,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(tail);
+    return RTValue::vector(std::move(tail));
   }
 
   /* FlattenFunction - flatten */

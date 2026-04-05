@@ -506,7 +506,7 @@ namespace Lisple
         elements.push_back(to_rt_value(c));
       }
 
-      return RTValue::vector(elements);
+      return RTValue::vector(std::move(elements));
     }
     case Form::LIST:
     {
@@ -517,7 +517,7 @@ namespace Lisple
         elements.push_back(to_rt_value(c));
       }
 
-      return RTValue::list(elements);
+      return RTValue::list(std::move(elements));
     }
     case Form::BOOLEAN:
       return RTValue::boolean(Value<bool>::value_of(obj));
@@ -534,7 +534,7 @@ namespace Lisple
         elements.push_back(to_rt_value(c));
       }
 
-      return RTValue::map(elements);
+      return RTValue::map(std::move(elements));
     }
     case Form::NUMBER:
     {
@@ -651,7 +651,7 @@ namespace Lisple
         elements.push_back(RuntimeValueWrapper::make(element));
       }
 
-      return Lisple::Map::make(elements);
+      return Lisple::Map::make(std::move(elements));
     }
     case RTValue::Type::NIL:
       return Lisple::NIL;
@@ -687,7 +687,7 @@ namespace Lisple
         elements.push_back(to_AST(*element));
       }
 
-      return Lisple::Array::make(elements);
+      return Lisple::Array::make(std::move(elements));
     }
 
     default:
