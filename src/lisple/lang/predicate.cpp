@@ -7,7 +7,21 @@
 
 namespace Lisple
 {
-  /* EmptyPFunction */
+  /** BetweenPredicateFunction - between? */
+  FUNC_IMPL(BetweenPredicateFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&BetweenPredicateFunction::exec_between))))
+
+  EXEC_BODY(BetweenPredicateFunction, exec_between)
+  {
+    float num = std::get<const RTValue::Number>(args[0]->value).get_float();
+    float min = std::get<const RTValue::Number>(args[1]->value).get_float();
+    float max = std::get<const RTValue::Number>(args[2]->value).get_float();
+
+    return num > min && num < max ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+  }
+
+  /** EmptyPFunction - empty? */
   FUNC_IMPL(EmptyPFunction,
             SIG((FN_ARGS((&Lisple::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&EmptyPFunction::exec_emptyp))))
@@ -17,7 +31,7 @@ namespace Lisple
     return Lisple::count(*args[0]) == 0 ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /* NotEmptyPFunction */
+  /** NotEmptyPFunction */
   FUNC_IMPL(NotEmptyPFunction,
             SIG((FN_ARGS((&Lisple::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&NotEmptyPFunction::exec_not_emptyp))))

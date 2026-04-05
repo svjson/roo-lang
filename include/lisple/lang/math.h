@@ -26,6 +26,25 @@ namespace Lisple
    * @endcode
    */
   FUNC(AbsFunction, abs)
+
+  /*!
+   * @brief Rounds a number up to the nearest integer
+   *
+   * Usage:
+   * @code
+   * (ceil 10.2)
+   * => 11
+   *
+   * (ceil 10.0)
+   * => 10
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to round up                                           |
+   */
+  FUNC(CeilFunction, ceil)
+
   FUNC(CosFunction, cos);
   FUNC(SinFunction, sin);
   FUNC(SqrtFunction, sqrt);

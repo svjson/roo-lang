@@ -86,59 +86,6 @@ namespace Lisple
    */
   FUNC_DECL(ApplyFunction, apply_fn)
 
-  /*!
-   * @brief Rounds a number up to the nearest integer
-   *
-   * Usage:
-   * @code
-   * (ceil 10.2)
-   * => 11
-   *
-   * (ceil 10.0)
-   * => 10
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The number to round up                                           |
-   */
-  FUNC_DECL(CeilFunction, ceil)
-
-  FUNC_DECL(IntFunction, to_int)
-
-  /*!
-   * @brief Tests if a numeric value has a value that is between
-   * a lower and an upper bound
-   *
-   * Usage:
-   * @code
-   * (between? 10 0 20)
-   * => true
-   *
-   * (between? 5 10 20)
-   * => false
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     |Value to test                                                     |
-   * | 1     |Lower bounds, exclusive                                           |
-   * | 2     |Upper bounds, inclusive                                           |
-   */
-  FUNC_DECL(BetweenPredicateFunction, between);
-
-  FUNC_DECL(ThresholdFunction, cap_value)
-
-  class MinMaxFunction : public Function
-  {
-    const bool min;
-
-   public:
-    MinMaxFunction(bool min);
-
-    sptr_sobject select_min_or_max(Context&, sptr_sobject_v& args);
-  };
-
   FUNC_DECL(TailFunction, tail)
 
   /*!

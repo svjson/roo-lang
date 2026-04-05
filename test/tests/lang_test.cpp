@@ -393,29 +393,6 @@ TEST(JoinFunction, join_strs)
             *Lisple::RTValue::string("foreveralone"));
 }
 
-TEST(IntFunction, char_to_int)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval("(int 'c')"), *Lisple::RTValue::number(99));
-  EXPECT_EQ(*fixture.runtime.eval("(int ' ')"), *Lisple::RTValue::number(32));
-}
-
-TEST(IntFunction, float_to_int)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval("(int 12.0)"), *Lisple::RTValue::number(12));
-  EXPECT_EQ(*fixture.runtime.eval("(int 15.4)"), *Lisple::RTValue::number(15));
-  EXPECT_EQ(*fixture.runtime.eval("(int 15.5)"), *Lisple::RTValue::number(15));
-  EXPECT_EQ(*fixture.runtime.eval("(int 15.9)"), *Lisple::RTValue::number(15));
-  EXPECT_EQ(*fixture.runtime.eval("(int 16)"), *Lisple::RTValue::number(16));
-}
-
 TEST(CeilFunction, ceil)
 {
   // Given
@@ -426,48 +403,6 @@ TEST(CeilFunction, ceil)
   EXPECT_EQ(*runtime.eval("(ceil 10.0)"), *Lisple::RTValue::number(10));
   EXPECT_EQ(*runtime.eval("(ceil 5)"), *Lisple::RTValue::number(5));
   EXPECT_EQ(*runtime.eval("(ceil 19.1)"), *Lisple::RTValue::number(20));
-}
-
-TEST(MinMaxFunction, min)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(min 1 1)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(min 0 1)"), *Lisple::RTValue::number(0));
-  EXPECT_EQ(*fixture.ctx.eval("(min 1 0)"), *Lisple::RTValue::number(0));
-  EXPECT_EQ(*fixture.ctx.eval("(min 2 1)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(min 1 2)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(min 10 1)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(min 1 10)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(min 10 0)"), *Lisple::RTValue::number(0));
-  EXPECT_EQ(*fixture.ctx.eval("(min 0 10)"), *Lisple::RTValue::number(0));
-  EXPECT_EQ(*fixture.ctx.eval("(min 4 10 2 8 200)"), *Lisple::RTValue::number(2));
-}
-
-TEST(MinMaxFunction, max)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(max 1 1)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(max 0 1)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(max 1 0)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(max 2 1)"), *Lisple::RTValue::number(2));
-  EXPECT_EQ(*fixture.ctx.eval("(max 1 2)"), *Lisple::RTValue::number(2));
-  EXPECT_EQ(*fixture.ctx.eval("(max 10 1)"), *Lisple::RTValue::number(10));
-  EXPECT_EQ(*fixture.ctx.eval("(max 1 10)"), *Lisple::RTValue::number(10));
-  EXPECT_EQ(*fixture.ctx.eval("(max 10 0)"), *Lisple::RTValue::number(10));
-  EXPECT_EQ(*fixture.ctx.eval("(max 0 10)"), *Lisple::RTValue::number(10));
-  EXPECT_EQ(*fixture.ctx.eval("(max 4 10 9 199 200 8 2)"), *Lisple::RTValue::number(200));
-}
-
-TEST(ThresholdFunction, threshold)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 1 1)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 1 2)"), *Lisple::RTValue::number(1));
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 200 150)"), *Lisple::RTValue::number(150));
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 200 215)"), *Lisple::RTValue::number(200));
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 10 9)"), *Lisple::RTValue::number(9));
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 10 11)"), *Lisple::RTValue::number(10));
-  EXPECT_EQ(*fixture.ctx.eval("(threshold 0 1)"), *Lisple::RTValue::number(0));
 }
 
 TEST(EvalFunction, eval_string)

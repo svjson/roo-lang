@@ -15,6 +15,16 @@ namespace Lisple
       std::abs(std::get<const RTValue::Number>(args[0]->value).get_float()));
   }
 
+  /* CeilFunction - ceil */
+  FUNC_IMPL(CeilFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CeilFunction::exec_ceil))))
+
+  EXEC_BODY(CeilFunction, exec_ceil)
+  {
+    const RTValue::Number& num = std::get<const RTValue::Number>(args[0]->value);
+    return RTValue::number(static_cast<int>(std::ceil(num.get_float())));
+  }
+
   /* SinFunction - sin */
   FUNC_IMPL(SinFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SinFunction::exec_sin))))

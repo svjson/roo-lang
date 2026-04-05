@@ -20,6 +20,11 @@ namespace Lisple
    */
   FUNC(EvenPFunction, even)
 
+  FUNC(IntFunction, to_int)
+
+  FUNC(MinFunction, min)
+  FUNC(MaxFunction, max)
+
   /**
    * @brief Check if a number is odd
    *

@@ -7,6 +7,27 @@
 namespace Lisple
 {
   /*!
+   * @brief Tests if a numeric value has a value that is between
+   * a lower and an upper bound
+   *
+   * Usage:
+   * @code
+   * (between? 10 0 20)
+   * => true
+   *
+   * (between? 5 10 20)
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     |Value to test                                                     |
+   * | 1     |Lower bounds, exclusive                                           |
+   * | 2     |Upper bounds, inclusive                                           |
+   */
+  FUNC(BetweenPredicateFunction, between);
+
+  /*!
    * @brief Tests a seq or string(sequence of characters) for the presence of
    * any elements.
    *

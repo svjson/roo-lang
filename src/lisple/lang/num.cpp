@@ -7,10 +7,9 @@
 namespace Lisple
 {
 
-  /* EvenPFunction - even? */
+  /** EvenPFunction - even? */
   FUNC_IMPL(EvenPFunction,
-            SIG((FN_ARGS((&Lisple::Type::NUMBER)),
-                 EXEC_DISPATCH(&EvenPFunction::exec_even))))
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&EvenPFunction::exec_even))))
 
   EXEC_BODY(EvenPFunction, exec_even)
   {
@@ -19,7 +18,73 @@ namespace Lisple
              : Constant::BOOL_FALSE;
   }
 
-  /* OddPFunction - odd? */
+  /** IntFunction - int */
+  FUNC_IMPL(IntFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&IntFunction::exec_to_int))))
+
+  EXEC_BODY(IntFunction, exec_to_int)
+  {
+    sptr_rtval& obj = args[0];
+
+    if (Type::NUMBER.is_type_of(*obj))
+    {
+      return RTValue::number(std::get<const RTValue::Number>(obj->value).get_int());
+    }
+    else if (Type::CHAR.is_type_of(*obj))
+    {
+      return RTValue::number(static_cast<int>(std::get<char>(obj->value)));
+    }
+
+    throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
+  }
+
+  /** MaxFunction - max */
+  FUNC_IMPL(MaxFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),
+                 EXEC_DISPATCH(&MaxFunction::exec_max))))
+
+  EXEC_BODY(MaxFunction, exec_max)
+  {
+    float result_val = std::get<const RTValue::Number>(args[0]->value).get_float();
+    size_t result_index = 0;
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      float num = std::get<const RTValue::Number>(args[i]->value).get_float();
+      if (num > result_val)
+      {
+        result_val = num;
+        result_index = i;
+      }
+    }
+
+    return args[result_index];
+  }
+
+  /** MinFunction - min */
+  FUNC_IMPL(MinFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),
+                 EXEC_DISPATCH(&MinFunction::exec_min))))
+
+  EXEC_BODY(MinFunction, exec_min)
+  {
+    float result_val = std::get<const RTValue::Number>(args[0]->value).get_float();
+    size_t result_index = 0;
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      float num = std::get<const RTValue::Number>(args[i]->value).get_float();
+      if (num < result_val)
+      {
+        result_val = num;
+        result_index = i;
+      }
+    }
+
+    return args[result_index];
+  }
+
+  /** OddPFunction - odd? */
   FUNC_IMPL(OddPFunction,
             SIG((FN_ARGS((&Lisple::Type::NUMBER)), EXEC_DISPATCH(&OddPFunction::exec_odd))))
 

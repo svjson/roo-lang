@@ -4,7 +4,6 @@
 #include "lisple/lang/num.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdlib>
 #include <ctype.h>
 #include <iostream>
@@ -66,9 +65,9 @@ namespace Lisple
     lang_symbols.emplace("assoc", AssocFunction::make());
     lang_symbols.emplace("assoc!", AssocBangFunction::make());
     lang_symbols.emplace("assoc-in!", AssocInBangFunction::make());
-    lang.emplace("between?", std::make_shared<BetweenPredicateFunction>());
+    lang_symbols.emplace("between?", BetweenPredicateFunction::make());
     lang.emplace("case", std::make_shared<CaseMacro>());
-    lang.emplace("ceil", std::make_shared<CeilFunction>());
+    lang_symbols.emplace("ceil", CeilFunction::make());
     lang.emplace("comment", std::make_shared<CommentMacro>());
     lang_symbols.emplace("concat", ConcatFunction::make());
     lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
@@ -88,7 +87,7 @@ namespace Lisple
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
     lang_symbols.emplace("filter", FilterFunction::make());
-    lang.emplace("find-first", std::make_shared<FindFirstFunction>());
+    lang_symbols.emplace("find-first", FindFirstFunction::make());
     lang_symbols.emplace("find-index", FindIndexFunction::make());
     lang_symbols.emplace("fn", FnForm::make());
     lang_symbols.emplace("for", ForForm::make());
@@ -98,7 +97,7 @@ namespace Lisple
     lang_symbols.emplace("if", IfForm::make());
     lang_symbols.emplace("if-let", IfLetForm::make());
     lang.emplace("include", std::make_shared<IncludeFunction>());
-    lang.emplace("int", std::make_shared<IntFunction>());
+    lang_symbols.emplace("int", IntFunction::make());
     lang.emplace("join", std::make_shared<JoinFunction>());
     lang_symbols.emplace("keep", KeepFunction::make());
     lang.emplace("keys", std::make_shared<KeysFunction>());
@@ -106,9 +105,9 @@ namespace Lisple
     lang_symbols.emplace("let", LetForm::make());
     lang.emplace("lower-case", std::make_shared<LowerCaseFunction>());
     lang_symbols.emplace("map", MapFunction::make());
-    lang.emplace("max", std::make_shared<MinMaxFunction>(false));
+    lang_symbols.emplace("max", MaxFunction::make());
     lang.emplace("merge", std::make_shared<MergeFunction>());
-    lang.emplace("min", std::make_shared<MinMaxFunction>(true));
+    lang_symbols.emplace("min", MinFunction::make());
     lang_symbols.emplace("mod", ModulusFunction::make());
     lang.emplace("name", std::make_shared<NameFunction>());
     lang.emplace("namespace", std::make_shared<NamespaceFunction>());
@@ -145,7 +144,6 @@ namespace Lisple
     lang_symbols.emplace("str", StrFunction::make());
     lang.emplace("tail", std::make_shared<TailFunction>());
     lang.emplace("take", std::make_shared<TakeFunction>());
-    lang.emplace("threshold", std::make_shared<ThresholdFunction>());
     lang_symbols.emplace("true", Constant::BOOL_TRUE);
     lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
     lang.emplace("vector", std::make_shared<VectorFunction>());
@@ -405,86 +403,6 @@ namespace Lisple
     ctx.pop_context();
 
     return std::make_shared<Array>(std::move(result));
-  }
-
-  /* CeilFunction - ceil */
-  FUNC_IMPL(CeilFunction,
-            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CeilFunction::ceil))))
-
-  FUNC_BODY(CeilFunction, ceil)
-  {
-    Number& num = args[0]->as<Number>();
-    return Number::make(static_cast<int>(std::ceil(num.float_value())));
-  }
-
-  /* IntFunction - int */
-  FUNC_IMPL(IntFunction, SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&IntFunction::to_int))))
-
-  FUNC_BODY(IntFunction, to_int)
-  {
-    sptr_sobject& obj = args[0];
-
-    if (Type::NUMBER.is_type_of(*obj))
-    {
-      return Number::make(obj->as<Number>().int_value());
-    }
-    else if (Type::CHAR.is_type_of(*obj))
-    {
-      return Number::make(static_cast<int>(obj->as<Char>().value));
-    }
-
-    throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
-  }
-
-  /* BetweenPredicateFunction - between? */
-  FUNC_IMPL(BetweenPredicateFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&BetweenPredicateFunction::between))))
-
-  FUNC_BODY(BetweenPredicateFunction, between)
-  {
-    return Lisple::float_val(*args[0]) > Lisple::float_val(*args[1]) &&
-               Lisple::float_val(*args[0]) < Lisple::float_val(*args[2])
-             ? B_TRUE
-             : B_FALSE;
-  }
-
-  /* ThresholdFunction */
-  FUNC_IMPL(ThresholdFunction,
-            SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::NUMBER)),
-                 EXEC_DISPATCH(&ThresholdFunction::cap_value))))
-
-  FUNC_BODY(ThresholdFunction, cap_value)
-  {
-    int a = args[0]->as<Lisple::Number>().value;
-    int b = args[1]->as<Lisple::Number>().value;
-
-    return b > a ? args[0] : args[1];
-  }
-
-  MinMaxFunction::MinMaxFunction(bool min)
-    : Function(SIG((FN_ARGS((&Lisple::Type::NUMBER), (VARARG, &Lisple::Type::NUMBER)),
-                    EXEC_DISPATCH(&MinMaxFunction::select_min_or_max))))
-    , min(min)
-  {
-  }
-
-  FUNC_BODY(MinMaxFunction, select_min_or_max)
-  {
-    float result_val = args[0]->as<Lisple::Number>().value;
-    size_t result_index = 0;
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      float num = args[i]->as<Lisple::Number>().value;
-      if (min == (num < result_val))
-      {
-        result_val = num;
-        result_index = i;
-      }
-    }
-
-    return args[result_index];
   }
 
   /* MergeFunction - merge */
