@@ -18,6 +18,8 @@ namespace Lisple
 
   struct ExecNode;
   class Function;
+  class SpecialForm;
+  class LexicalBinding;
   using uptr_exec_node = std::unique_ptr<ExecNode>;
   using ptr_exec_node_v = std::vector<ExecNode*>;
   using uptr_exec_node_v = std::vector<uptr_exec_node>;
@@ -89,6 +91,20 @@ namespace Lisple
     LambdaNode(const std::shared_ptr<Function>& lambda_fn);
   };
 
+  struct SpecialFormNode
+  {
+    const SpecialForm* form;
+    std::vector<RTValue> values;
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms;
+    uptr_exec_node_v exec_nodes;
+
+    SpecialFormNode(const SpecialFormNode& other);
+    SpecialFormNode(
+      const SpecialForm* form,
+      std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms,
+      uptr_exec_node_v exec_nodes);
+  };
+
   struct ExecNodeList
   {
     std::vector<ExecNode*> nodes;
@@ -103,6 +119,7 @@ namespace Lisple
                                     VectorNode,
                                     KeyLookupNode,
                                     LambdaNode,
+                                    SpecialFormNode,
                                     ExecNodeList>;
 
   struct ExecNode

@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <lisple/bind.h>
+
 namespace Lisple
 {
   int exec_nodes_constructed = 0;
@@ -56,6 +58,30 @@ namespace Lisple
     , args(std::move(args))
   {
     call_nodes_constructed++;
+  }
+
+  SpecialFormNode::SpecialFormNode(
+    const SpecialForm* form,
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms,
+    uptr_exec_node_v exec_nodes)
+    : form(form)
+    , bind_forms(std::move(bind_forms))
+    , exec_nodes(std::move(exec_nodes))
+  {
+  }
+
+  SpecialFormNode::SpecialFormNode(const SpecialFormNode& other)
+    : form(other.form)
+  {
+    for (auto& [b, v] : other.bind_forms)
+    {
+      bind_forms.push_back(std::make_pair(b->clone(), v->clone()));
+    }
+
+    for (auto& node : other.exec_nodes)
+    {
+      exec_nodes.push_back(node->clone());
+    }
   }
 
   bool CallNode::is_literal_arg_list()
@@ -127,6 +153,10 @@ namespace Lisple
           else if constexpr (std::is_same_v<T, LambdaNode>)
           {
             return LambdaNode(n.lambda_fn);
+          }
+          else if constexpr (std::is_same_v<T, SpecialFormNode>)
+          {
+            return SpecialFormNode(n);
           }
           else if constexpr (std::is_same_v<T, KeyLookupNode>)
           {

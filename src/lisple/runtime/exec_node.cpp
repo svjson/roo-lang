@@ -174,6 +174,10 @@ namespace Lisple
         {
           return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), n.lambda_fn);
         }
+        else if constexpr (std::is_same_v<T, SpecialFormNode>)
+        {
+          return RuntimeValueWrapper::make(n.form->exec_node(ctx, n));
+        }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
           sptr_sobject fn = n.cached_fn;
@@ -328,6 +332,10 @@ namespace Lisple
         {
           return RTValue::executable(
             std::make_shared<Lisple::DetachedFunction>(ctx.detach(), n.lambda_fn));
+        }
+        else if constexpr (std::is_same_v<T, SpecialFormNode>)
+        {
+          return n.form->exec_node(ctx, n);
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {

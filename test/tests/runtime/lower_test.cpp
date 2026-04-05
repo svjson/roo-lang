@@ -2,6 +2,7 @@
 #include "lisple/runtime/node.h"
 #include "lisple/type.h"
 
+#include <lisple/bind.h>
 #include <lisple/context.h>
 #include <lisple/form.h>
 #include <lisple/runtime.h>

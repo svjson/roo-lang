@@ -1,4 +1,7 @@
 
+#include "lisple/runtime/lower.h"
+
+#include <utility>
 
 #include <lisple/bind.h>
 #include <lisple/exception.h>
@@ -14,13 +17,42 @@ namespace Lisple
                                  (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&LetForm::inv_let, &LetForm::execnode_let))))
 
-  SFORM_OMIT_LOWER_IMPL(LetForm)
+  SFORM_LOWER_IMPL(LetForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+    if (elements[1]->get_type() != Form::ARRAY)
+    {
+      throw TypeError("let: Invalid bind form: " + elements[1]->to_string());
+    }
+
+    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+
+    for (size_t i = 0; i < bind_forms.size(); i += 2)
+    {
+      auto sym_node = lower_literal(bind_forms[i]);
+      bindings.push_back(
+        std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                       lower_expr(ctx, bind_forms[i + 1])));
+    }
+
+    uptr_exec_node_v body;
+    body.reserve(elements.size() - 2);
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      body.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(body)));
+  }
 
   /**
    * Legacy AST-based implementation
    */
   MACRO_BODY(LetForm, inv_let)
   {
+    deprecated_special_form_invocations++;
     Object& bindings = *args[0];
 
     if (bindings.get_children().size() % 2 != 0)
@@ -56,54 +88,26 @@ namespace Lisple
 
   EXECNODE_BODY(LetForm, execnode_let)
   {
+
     sptr_rtval result;
 
-    if (ExecNodeList* bnd = std::get_if<ExecNodeList>(&args[0]->data))
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
+
+    for (auto& [b, v] : snode.bind_forms)
     {
-      if (bnd->nodes.size() % 2 != 0)
-      {
-        throw LispleException(
-          "Wrong number of parameters in binding form of let expression: " +
-          std::to_string(bnd->nodes.size()));
-      }
-
-      uptr_exec_node_v bound_values;
-      for (size_t i = 0; i < bnd->nodes.size(); i += 2)
-      {
-        Scope binding_scope;
-
-        LiteralNode& bind_expr = std::get<LiteralNode>(bnd->nodes[i]->data);
-
-        auto binding = LexicalBinding::create(bind_expr);
-
-        bound_values.push_back(std::make_unique<ExecNode>(
-          Lisple::NIL,
-          LiteralNode(exec(ctx, *bnd->nodes[i + 1]), Lisple::NIL)));
-
-        if (auto* value = std::get_if<LiteralNode>(&bound_values.back()->data))
-        {
-          binding->apply(binding_scope, value->value);
-          ctx.push_context(true, binding_scope);
-        }
-        else
-        {
-          throw LispleException("let: Invalid value node.");
-        }
-      }
-
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        result = exec(ctx, *args[i]);
-      }
-
-      for (size_t i = 0; i < bnd->nodes.size() / 2; i++)
-      {
-        ctx.pop_context();
-      }
+      Scope bind_scope;
+      b->apply(bind_scope, exec(ctx, *v));
+      ctx.push_context(true, bind_scope);
     }
-    else
+
+    for (auto& body_node : snode.exec_nodes)
     {
-      throw LispleException("let: Invalid bind form.");
+      result = exec(ctx, *body_node);
+    }
+
+    for (size_t i = 0; i < snode.bind_forms.size(); i++)
+    {
+      ctx.pop_context();
     }
 
     return result;

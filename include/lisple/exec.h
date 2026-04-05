@@ -490,6 +490,8 @@ namespace Lisple
 
     virtual Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx,
                                               const Lisple ::sptr_sobject& ast_node) = 0;
+
+    sptr_rtval exec_node(Context& ctx, const SpecialFormNode& node) const;
   };
 
   std::shared_ptr<UserFunction> create_function(const std::string& name,

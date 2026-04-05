@@ -36,6 +36,8 @@ namespace Lisple
 
     static std::unique_ptr<LexicalBinding> create(LiteralNode& pattern);
     static std::unique_ptr<LexicalBinding> create(sptr_rtval& pattern);
+
+    virtual std::unique_ptr<LexicalBinding> clone() const = 0;
   };
 
   class SymbolBinding : public LexicalBinding
@@ -44,8 +46,11 @@ namespace Lisple
 
    public:
     SymbolBinding(const std::string& symbol);
+    SymbolBinding(const SymbolBinding& other);
 
     void apply(Scope& scope, const sptr_rtval& value_expr) const override;
+
+    std::unique_ptr<LexicalBinding> clone() const override;
   };
 
   class MapDestructureBinding : public LexicalBinding
@@ -55,8 +60,11 @@ namespace Lisple
 
    public:
     MapDestructureBinding(const sptr_rtval_v& map);
+    MapDestructureBinding(const MapDestructureBinding& other);
 
     void apply(Scope& scope, const sptr_rtval& value_expr) const override;
+
+    std::unique_ptr<LexicalBinding> clone() const override;
   };
 
   class VectorDestructureBinding : public LexicalBinding
@@ -65,8 +73,11 @@ namespace Lisple
 
    public:
     VectorDestructureBinding(const sptr_rtval_v& vector);
+    VectorDestructureBinding(const VectorDestructureBinding& other);
 
     void apply(Scope& scope, const sptr_rtval& value_expr) const override;
+
+    std::unique_ptr<LexicalBinding> clone() const override;
   };
 
 } // namespace Lisple

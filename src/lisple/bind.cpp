@@ -1,5 +1,7 @@
 #include "lisple/bind.h"
 
+#include <memory>
+
 #include <lisple/exception.h>
 #include <lisple/form.h>
 #include <lisple/runtime/dict.h>
@@ -58,9 +60,19 @@ namespace Lisple
   {
   }
 
+  SymbolBinding::SymbolBinding(const SymbolBinding& other)
+    : SymbolBinding(other.symbol)
+  {
+  }
+
   void SymbolBinding::apply(Scope& scope, const sptr_rtval& value_expr) const
   {
     scope.store(symbol, value_expr);
+  }
+
+  std::unique_ptr<LexicalBinding> SymbolBinding::clone() const
+  {
+    return std::make_unique<SymbolBinding>(symbol);
   }
 
   /** MapDestructureBinding */
@@ -101,6 +113,16 @@ namespace Lisple
     }
   }
 
+  MapDestructureBinding::MapDestructureBinding(const MapDestructureBinding& other)
+    : map_symbol(other.map_symbol ? std::make_unique<SymbolBinding>(*other.map_symbol)
+                                  : nullptr)
+  {
+    for (auto& [s, v] : other.bindings)
+    {
+      bindings.push_back(std::make_pair(*RTValue::keyword(s.str()), v->clone()));
+    }
+  }
+
   void MapDestructureBinding::apply(Scope& scope, const sptr_rtval& value) const
   {
     static const sptr_rtval_v EMPTY_V{};
@@ -126,6 +148,11 @@ namespace Lisple
     }
   }
 
+  std::unique_ptr<LexicalBinding> MapDestructureBinding::clone() const
+  {
+    return std::make_unique<MapDestructureBinding>(*this);
+  }
+
   /** VectorDestructureBinding */
   VectorDestructureBinding::VectorDestructureBinding(const sptr_rtval_v& vector)
   {
@@ -143,6 +170,14 @@ namespace Lisple
     }
   }
 
+  VectorDestructureBinding::VectorDestructureBinding(const VectorDestructureBinding& other)
+  {
+    for (auto& binding : other.bindings)
+    {
+      bindings.push_back(binding->clone());
+    }
+  }
+
   void VectorDestructureBinding::apply(Scope& scope, const sptr_rtval& vector_expr) const
   {
     sptr_rtval_v& vec = std::get<sptr_rtval_v>(vector_expr->value);
@@ -152,6 +187,11 @@ namespace Lisple
     {
       this->bindings[i]->apply(scope, vec[i]);
     }
+  }
+
+  std::unique_ptr<LexicalBinding> VectorDestructureBinding::clone() const
+  {
+    return std::make_unique<VectorDestructureBinding>(*this);
   }
 
 } // namespace Lisple

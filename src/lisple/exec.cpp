@@ -988,6 +988,21 @@ namespace Lisple
   {
   }
 
+  sptr_rtval SpecialForm::exec_node(Context& ctx, const SpecialFormNode& node) const
+  {
+    for (auto& sig : signatures)
+    {
+      if (sig->supports_exec_tree())
+      {
+        auto wrapper = std::make_unique<ExecNode>(SpecialFormNode(node));
+        ptr_exec_node_v arg = {wrapper.get()};
+        return sig->invoke(ctx, arg);
+      }
+    }
+
+    throw InvocationException("Invalid SpecialFormNode");
+  }
+
   std::string SpecialForm::to_string(int) const
   {
     return "<special-form>";
