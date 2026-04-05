@@ -11,6 +11,26 @@
 
 namespace Lisple
 {
+  /** CommentForm - comment */
+  SPECIAL_FORM_IMPL(CommentForm,
+                    SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&CommentForm::inv_comment,
+                                       &CommentForm::execnode_comment))))
+  SFORM_LOWER_IMPL(CommentForm)
+  {
+    return std::make_unique<ExecNode>(Constant::NIL);
+  }
+
+  MACRO_BODY(CommentForm, inv_comment)
+  {
+    return NIL;
+  }
+
+  EXECNODE_BODY(CommentForm, execnode_comment)
+  {
+    return Constant::NIL;
+  }
+
   /** ThreadFirstForm - -> */
   SPECIAL_FORM_IMPL(ThreadFirstForm,
                     SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, NO_EVAL)),

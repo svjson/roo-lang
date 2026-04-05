@@ -446,7 +446,8 @@ namespace Lisple
 
     if (auto* self = dynamic_cast<OT*>(this)) return *self;
 
-    throw LispleException("Unexpected AST node type: " + std::to_string((int)this->type));
+    throw LispleException("::as - Unexpected AST node type: " +
+                          std::to_string((int)this->type));
   }
 
   template <typename T> T Value<T>::value_of(const Object& obj)

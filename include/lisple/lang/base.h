@@ -63,6 +63,8 @@ namespace Lisple
    */
   SPECIAL_FORM_DECL(AndForm, and)
 
+  SPECIAL_FORM_DECL(NsForm, ns);
+
   /*!
    * @brief Tests if any of the arguments are truthy, and returns
    * the first truthy argument. Otherwise, nil

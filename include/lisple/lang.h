@@ -12,14 +12,6 @@ namespace Lisple
 
   Namespace make_language_namespace();
 
-  MACRO_DECL(NsMacro, switch_ns);
-
-  /*!
-   * @brief Allows retaining code in a source file without risk of evaluation in
-   * runtime.
-   */
-  MACRO_DECL(CommentMacro, comment);
-
   FUNC_DECL(PrintFunction, do_print)
 
   FUNC_DECL(IncludeFunction, include_file)

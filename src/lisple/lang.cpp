@@ -68,7 +68,7 @@ namespace Lisple
     lang_symbols.emplace("between?", BetweenPredicateFunction::make());
     lang_symbols.emplace("case", CaseForm::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
-    lang.emplace("comment", std::make_shared<CommentMacro>());
+    lang_symbols.emplace("comment", CommentForm::make());
     lang_symbols.emplace("concat", ConcatFunction::make());
     lang_symbols.emplace("concat!", ConcatBangFunction::make());
     lang_symbols.emplace("cond", CondForm::make());
@@ -116,7 +116,7 @@ namespace Lisple
     lang_symbols.emplace("not", NotFunction::make());
     lang_symbols.emplace("not=", NotEqualsFunction::make());
     lang_symbols.emplace("not-empty?", NotEmptyPFunction::make());
-    lang.emplace("ns", std::make_shared<NsMacro>());
+    lang_symbols.emplace("ns", NsForm::make());
     lang_symbols.emplace("nth", NthFunction::make());
     lang_symbols.emplace("odd?", OddPFunction::make());
     lang_symbols.emplace("or", OrForm::make());
@@ -153,115 +153,6 @@ namespace Lisple
     lang_symbols.emplace("zero?", ZeroPFunction::make());
 
     return Namespace::make_lang(lang, lang_symbols);
-  }
-
-  /* NsMacro */
-  MACRO_IMPL(NsMacro,
-             MULTI_SIG((FN_ARGS((&Type::WORD, DATA)), EXEC_DISPATCH(&NsMacro::switch_ns)),
-                       (FN_ARGS((&Type::WORD, DATA), (&Type::LIST, DATA)),
-                        EXEC_DISPATCH(&NsMacro::switch_ns))))
-
-  Key KEY_REQUIRE("require");
-  Key KEY_AS("as");
-
-  void throw_ns_exception(Word& ns, List& req_list, std::string msg = "")
-  {
-    std::string ns_decl = "(ns " + ns.value;
-    ns_decl += " " + req_list.to_string();
-    ns_decl += ")";
-
-    throw NamespaceException("Invalid ns form: " + ns_decl + msg);
-  }
-
-  MACRO_BODY(NsMacro, switch_ns)
-  {
-    Word& ns_word = args[0]->as<Word>();
-    Lisple::sptr_sobject_v imports;
-    if (args.size() == 2)
-    {
-      Lisple::List& list = args.back()->as<List>();
-      if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
-      {
-        throw_ns_exception(ns_word, list);
-      }
-      imports = list.tail();
-
-      // Verify the require forms the brute-ish and tedious way...
-      // FIXME: Maybe implement some kind of Matcher system for forms?
-      for (auto& imp : imports)
-      {
-        if (Type::WORD.is_type_of(*imp))
-        {
-          if (imp->as<Word>().is_qualified())
-          {
-            throw_ns_exception(ns_word,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
-          }
-        }
-        else if (Type::ARRAY.is_type_of(*imp))
-        {
-          if (imp->get_children().size() != 3)
-          {
-            throw_ns_exception(ns_word,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
-          }
-
-          if (*imp->get_children()[1] == KEY_AS)
-          {
-            if (!Type::WORD.is_type_of(*imp->get_children().back()) ||
-                imp->get_children().back()->as<Word>().is_qualified())
-            {
-              throw_ns_exception(ns_word,
-                                 list,
-                                 ". Invalid require-entry: " + imp->to_string());
-            }
-          }
-          else
-          {
-            throw_ns_exception(ns_word,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
-          }
-        }
-        else
-        {
-          throw_ns_exception(ns_word, list, ". Invalid require-entry: " + imp->to_string());
-        }
-      }
-    }
-
-    ctx.switch_namespace(ns_word.value);
-    for (auto& imp : imports)
-    {
-      if (Type::WORD.is_type_of(*imp))
-      {
-        // Full import
-        Word& imp_word = imp->as<Word>();
-        ctx.import_namespace(imp_word.value);
-      }
-      else if (Type::ARRAY.is_type_of(*imp))
-      {
-        // Aliased import
-        Array& imp_array = imp->as<Array>();
-        Word& imp_word = imp_array.head()->as<Word>();
-        Word& alias_word = imp_array.get_children().back()->as<Word>();
-        ctx.define_namespace_alias(imp_word.value, alias_word.value);
-      }
-    }
-
-    return NIL;
-  }
-
-  /* CommentMacro */
-  MACRO_IMPL(CommentMacro,
-             SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&CommentMacro::comment))))
-
-  MACRO_BODY(CommentMacro, comment)
-  {
-    return NIL;
   }
 
   /* PrintFunction - prn */
@@ -393,7 +284,7 @@ namespace Lisple
     return args[0];
   }
 
-  /* EvalFunction - eval */
+  /** EvalFunction - eval */
   FUNC_IMPL(
     EvalFunction,
     MULTI_SIG((FN_ARGS((&Lisple::Type::STRING)), EXEC_DISPATCH(&EvalFunction::eval_string)),
@@ -410,7 +301,7 @@ namespace Lisple
     return ctx.eval_ast(args[0]);
   }
 
-  /* ResolveFunction - resolve */
+  /** ResolveFunction - resolve */
   FUNC_IMPL(
     ResolveFunction,
     MULTI_SIG((FN_ARGS((&Lisple::Type::SYMBOL)), EXEC_DISPATCH(&ResolveFunction::resolve)),

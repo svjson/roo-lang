@@ -1,5 +1,9 @@
+#include "lisple/exec.h"
+#include "lisple/form.h"
 #include "lisple/runtime/lower.h"
 #include "lisple/runtime/node.h"
+
+#include <iostream>
 
 #include <lisple/lang/base.h>
 #include <lisple/runtime/dict.h>
@@ -175,6 +179,195 @@ namespace Lisple
       }
     }
     return val;
+  }
+
+  /* NsMacro */
+  SPECIAL_FORM_IMPL(NsForm,
+                    MULTI_SIG((FN_ARGS((&Type::WORD, DATA)),
+                               EXEC_DISPATCH(&NsForm::inv_ns, &NsForm::execnode_ns)),
+                              (FN_ARGS((&Type::WORD, DATA), (&Type::LIST, DATA)),
+                               EXEC_DISPATCH(&NsForm::inv_ns, &NsForm::execnode_ns))))
+
+  Key KEY_REQUIRE("require");
+  Key KEY_AS("as");
+
+  void throw_ns_exception(Word& ns, List& req_list, std::string msg = "")
+  {
+    std::string ns_decl = "(ns " + ns.value;
+    ns_decl += " " + req_list.to_string();
+    ns_decl += ")";
+
+    throw NamespaceException("Invalid ns form: " + ns_decl + msg);
+  }
+
+  SFORM_LOWER_IMPL(NsForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    Word& ns_word = elements[1]->as<Word>();
+
+    Lisple::sptr_sobject_v imports;
+    if (elements.size() == 3)
+    {
+      Lisple::List& list = elements.back()->as<List>();
+      if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
+      {
+        throw_ns_exception(ns_word, list);
+      }
+      imports = list.tail();
+
+      // Verify the require forms the brute-ish and tedious way...
+      // FIXME: Maybe implement some kind of Matcher system for forms?
+      for (auto& imp : imports)
+      {
+        if (Type::WORD.is_type_of(*imp))
+        {
+          if (imp->as<Word>().is_qualified())
+          {
+            throw_ns_exception(ns_word,
+                               list,
+                               ". Invalid require-entry: " + imp->to_string());
+          }
+        }
+        else if (Type::ARRAY.is_type_of(*imp))
+        {
+          if (imp->get_children().size() != 3)
+          {
+            throw_ns_exception(ns_word,
+                               list,
+                               ". Invalid require-entry: " + imp->to_string());
+          }
+
+          if (*imp->get_children()[1] == KEY_AS)
+          {
+            if (!Type::WORD.is_type_of(*imp->get_children().back()) ||
+                imp->get_children().back()->as<Word>().is_qualified())
+            {
+              throw_ns_exception(ns_word,
+                                 list,
+                                 ". Invalid require-entry: " + imp->to_string());
+            }
+          }
+          else
+          {
+            throw_ns_exception(ns_word,
+                               list,
+                               ". Invalid require-entry: " + imp->to_string());
+          }
+        }
+        else
+        {
+          throw_ns_exception(ns_word, list, ". Invalid require-entry: " + imp->to_string());
+        }
+      }
+    }
+
+    ctx.ctx->switch_namespace(ns_word.value);
+    for (auto& imp : imports)
+    {
+      if (Type::WORD.is_type_of(*imp))
+      {
+        // Full import
+        Word& imp_word = imp->as<Word>();
+        ctx.ctx->import_namespace(imp_word.value);
+      }
+      else if (Type::ARRAY.is_type_of(*imp))
+      {
+        // Aliased import
+        Array& imp_array = imp->as<Array>();
+        Word& imp_word = imp_array.head()->as<Word>();
+        Word& alias_word = imp_array.get_children().back()->as<Word>();
+        ctx.ctx->define_namespace_alias(imp_word.value, alias_word.value);
+      }
+    }
+
+    return std::make_unique<ExecNode>(Constant::NIL);
+  }
+
+  MACRO_BODY(NsForm, inv_ns)
+  {
+    Word& ns_word = args[0]->as<Word>();
+    Lisple::sptr_sobject_v imports;
+    if (args.size() == 2)
+    {
+      Lisple::List& list = args.back()->as<List>();
+      if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
+      {
+        throw_ns_exception(ns_word, list);
+      }
+      imports = list.tail();
+
+      // Verify the require forms the brute-ish and tedious way...
+      // FIXME: Maybe implement some kind of Matcher system for forms?
+      for (auto& imp : imports)
+      {
+        if (Type::WORD.is_type_of(*imp))
+        {
+          if (imp->as<Word>().is_qualified())
+          {
+            throw_ns_exception(ns_word,
+                               list,
+                               ". Invalid require-entry: " + imp->to_string());
+          }
+        }
+        else if (Type::ARRAY.is_type_of(*imp))
+        {
+          if (imp->get_children().size() != 3)
+          {
+            throw_ns_exception(ns_word,
+                               list,
+                               ". Invalid require-entry: " + imp->to_string());
+          }
+
+          if (*imp->get_children()[1] == KEY_AS)
+          {
+            if (!Type::WORD.is_type_of(*imp->get_children().back()) ||
+                imp->get_children().back()->as<Word>().is_qualified())
+            {
+              throw_ns_exception(ns_word,
+                                 list,
+                                 ". Invalid require-entry: " + imp->to_string());
+            }
+          }
+          else
+          {
+            throw_ns_exception(ns_word,
+                               list,
+                               ". Invalid require-entry: " + imp->to_string());
+          }
+        }
+        else
+        {
+          throw_ns_exception(ns_word, list, ". Invalid require-entry: " + imp->to_string());
+        }
+      }
+    }
+
+    ctx.switch_namespace(ns_word.value);
+    for (auto& imp : imports)
+    {
+      if (Type::WORD.is_type_of(*imp))
+      {
+        // Full import
+        Word& imp_word = imp->as<Word>();
+        ctx.import_namespace(imp_word.value);
+      }
+      else if (Type::ARRAY.is_type_of(*imp))
+      {
+        // Aliased import
+        Array& imp_array = imp->as<Array>();
+        Word& imp_word = imp_array.head()->as<Word>();
+        Word& alias_word = imp_array.get_children().back()->as<Word>();
+        ctx.define_namespace_alias(imp_word.value, alias_word.value);
+      }
+    }
+
+    return NIL;
+  }
+
+  EXECNODE_BODY(NsForm, execnode_ns)
+  {
+    throw LispleException("Invocation of namespace");
   }
 
   /** OrForm - or */

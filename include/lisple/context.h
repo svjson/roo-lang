@@ -145,7 +145,7 @@ namespace Lisple
      */
     void define_namespace_alias(const std::string& ns_name, const std::string& alias);
 
-    friend class NsMacro;
+    friend class NsForm;
   };
 } // namespace Lisple
 

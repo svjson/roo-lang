@@ -167,20 +167,9 @@ namespace Lisple
         uptr_exec_node_v args;
         args.reserve(children.size() - 1);
 
-        // FIXME: Temporary hack to stop (:require ..) from lowering as keylookupnode
-        if (children[0]->to_string() == "ns")
-        {
-          ctx.push_literal_mode();
-        }
-
         for (size_t i = 1; i < children.size(); i++)
         {
           args.push_back(lower_expr(ctx, children[i]));
-        }
-
-        if (children[0]->to_string() == "ns")
-        {
-          ctx.pop();
         }
 
         CallNode call_node = CallNode(std::move(callee), std::move(args));
