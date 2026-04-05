@@ -91,6 +91,27 @@ namespace Lisple
                             std::to_string((int)seq.type));
     }
   }
+
+  sptr_rtval peek_child(RTValue& seq)
+  {
+    switch (seq.type)
+    {
+    case RTValue::Type::VECTOR:
+    {
+      auto& vec = std::get<sptr_rtval_v>(seq.value);
+      if (vec.empty()) return Constant::NIL;
+      return vec.back();
+    }
+    case RTValue::Type::OBJECT:
+    {
+      return to_rt_value(seq.obj()->get_children().back());
+    }
+    default:
+      throw LispleException("peek_child is not implemented for type: " +
+                            std::to_string((int)seq.type));
+    }
+  }
+
   size_t count(RTValue& v)
   {
     switch (v.type)

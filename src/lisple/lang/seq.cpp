@@ -123,9 +123,7 @@ namespace Lisple
       return Constant::NIL;
     }
 
-    sptr_rtval_v children = Lisple::get_children(*args.front());
-
-    return children[n];
+    return Lisple::get_child(*args.front(), n);
   }
 
   /** HeadFunction */
@@ -145,7 +143,7 @@ namespace Lisple
   EXEC_BODY(LastFunction, exec_last)
   {
     if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
-    return Lisple::get_children(*args[0]).back();
+    return Lisple::peek_child(*args[0]);
   }
 
   /** RandNth - rand-nth */
