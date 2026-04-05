@@ -220,7 +220,7 @@ namespace Lisple
     if (*args[0] == *Constant::NIL) return Constant::NIL;
 
     int n = std::get<const RTValue::Number>(args.back()->value).get_int();
-    if (n >= static_cast<int>(Lisple::count(*args.back())) || n < 0)
+    if (n >= static_cast<int>(Lisple::count(*args[0])) || n < 0)
     {
       return args[0];
     }
