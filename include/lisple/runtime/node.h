@@ -17,6 +17,7 @@ namespace Lisple
   extern int lookup_nodes_constructed;
 
   struct ExecNode;
+  class Function;
   using uptr_exec_node = std::unique_ptr<ExecNode>;
   using ptr_exec_node_v = std::vector<ExecNode*>;
   using uptr_exec_node_v = std::vector<uptr_exec_node>;
@@ -81,6 +82,13 @@ namespace Lisple
     KeyLookupNode(const sptr_rtval& keyword, uptr_exec_node target);
   };
 
+  struct LambdaNode
+  {
+    std::shared_ptr<Function> lambda_fn;
+
+    LambdaNode(const std::shared_ptr<Function>& lambda_fn);
+  };
+
   struct ExecNodeList
   {
     std::vector<ExecNode*> nodes;
@@ -94,6 +102,7 @@ namespace Lisple
                                     CallNode,
                                     VectorNode,
                                     KeyLookupNode,
+                                    LambdaNode,
                                     ExecNodeList>;
 
   struct ExecNode

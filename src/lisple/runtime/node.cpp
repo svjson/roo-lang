@@ -46,6 +46,11 @@ namespace Lisple
   {
   }
 
+  LambdaNode::LambdaNode(const std::shared_ptr<Function>& lambda_fn)
+    : lambda_fn(lambda_fn)
+  {
+  }
+
   CallNode::CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args)
     : callee(std::move(callee))
     , args(std::move(args))
@@ -118,6 +123,10 @@ namespace Lisple
               elements.push_back(lmnt->clone());
 
             return VectorNode(std::move(elements));
+          }
+          else if constexpr (std::is_same_v<T, LambdaNode>)
+          {
+            return LambdaNode(n.lambda_fn);
           }
           else if constexpr (std::is_same_v<T, KeyLookupNode>)
           {

@@ -95,6 +95,10 @@ namespace Lisple
 
           return result;
         }
+        else if constexpr (std::is_same_v<T, LambdaNode>)
+        {
+          return indent + "<lambda>";
+        }
         else if constexpr (std::is_same_v<T, KeyLookupNode>)
         {
           std::string result = indent + " - KeyLookupNode(" + n.keyword->to_string() + ")\n";
@@ -165,6 +169,10 @@ namespace Lisple
         {
           sptr_rtval target = exec(ctx, *n.target);
           return RuntimeValueWrapper::make(Lisple::Dict::get_property(target, *n.keyword));
+        }
+        else if constexpr (std::is_same_v<T, LambdaNode>)
+        {
+          return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), n.lambda_fn);
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
@@ -315,6 +323,11 @@ namespace Lisple
         {
           sptr_rtval target = exec(ctx, *n.target);
           return Lisple::Dict::get_property(target, *n.keyword);
+        }
+        else if constexpr (std::is_same_v<T, LambdaNode>)
+        {
+          return RTValue::executable(
+            std::make_shared<Lisple::DetachedFunction>(ctx.detach(), n.lambda_fn));
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
