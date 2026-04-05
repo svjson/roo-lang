@@ -1,16 +1,73 @@
 
-#include "lisple/runtime/node.h"
+#include "lisple/host/object.h"
 
 #include <algorithm>
 
+#include <lisple/host.h>
 #include <lisple/lang/seq_func.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/exec_node.h>
+#include <lisple/runtime/node.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
 
 namespace Lisple
 {
+  /* FilterFunction */
+  FUNC_IMPL(FilterFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                 EXEC_DISPATCH(&FilterFunction::exec_filter))))
+
+  EXEC_BODY(FilterFunction, exec_filter)
+  {
+    auto original = args[0];
+    if (*Constant::NIL == *original) return RTValue::vector({});
+
+    sptr_rtval_v result;
+    result.reserve(count(*original));
+
+    auto& filter_fn = args.back()->exec();
+
+    sptr_rtval_v val_args{Constant::NIL};
+    sptr_rtval_v elements = Lisple::get_children(*original);
+    for (auto val : elements)
+    {
+      val_args[0] = val;
+      sptr_rtval pred_result = filter_fn.execute(ctx, val_args);
+      if (Lisple::is_truthy(*pred_result))
+      {
+        result.push_back(val);
+      }
+    }
+
+    return RTValue::vector(result);
+  }
+
+  /** FindFirstFunction - find-first */
+  FUNC_IMPL(FindFirstFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+                 EXEC_DISPATCH(&FindFirstFunction::exec_find_first))))
+
+  EXEC_BODY(FindFirstFunction, exec_find_first)
+  {
+    auto original = args[0];
+
+    auto& filter_fn = args.back()->exec();
+
+    sptr_rtval_v val_args{nullptr};
+    for (auto val : args[0]->elements())
+    {
+      val_args[0] = val;
+      sptr_rtval pred_result = filter_fn.execute(ctx, val_args);
+      if (Lisple::is_truthy(*pred_result))
+      {
+        return val;
+      }
+    }
+
+    return Constant::NIL;
+  }
+
   /** FindIndexFunction - find-index */
   FUNC_IMPL(FindIndexFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
@@ -39,6 +96,29 @@ namespace Lisple
     }
 
     return Constant::NIL;
+  }
+
+  /* KeepFunction - keep */
+  FUNC_IMPL(KeepFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                 EXEC_DISPATCH(&KeepFunction::exec_keep))))
+
+  EXEC_BODY(KeepFunction, exec_keep)
+  {
+    const sptr_rtval_v& values = args[0]->elements();
+    Executable& exec = args[1]->exec();
+
+    sptr_rtval_v result;
+
+    sptr_rtval_v arg{nullptr};
+    for (auto& v : values)
+    {
+      arg[0] = v;
+      sptr_rtval r = exec.execute(ctx, arg);
+      if (*r != *Constant::NIL) result.push_back(r);
+    }
+
+    return RTValue::vector(result);
   }
 
   /** MapFunction - map */
@@ -157,6 +237,123 @@ namespace Lisple
     return result;
   }
 
+  /** RemoveFunction - remove */
+  FUNC_IMPL(RemoveFunction,
+            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                       EXEC_DISPATCH(&RemoveFunction::exec_remove)),
+                      (FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                       EXEC_DISPATCH(&RemoveFunction::exec_remove))))
+
+  EXEC_BODY(RemoveFunction, exec_remove)
+  {
+    RTValue* original;
+    Executable* remove_fn;
+
+    if (Type::SEQ.is_type_of(*args[0]))
+    {
+      original = args[0].get();
+      remove_fn = &args[1]->exec();
+    }
+    else
+    {
+      original = args[1].get();
+      remove_fn = &args[0]->exec();
+    }
+
+    sptr_rtval_v result;
+    result.reserve(Lisple::count(*original));
+    sptr_rtval_v elements = Lisple::get_children(*original);
+    Lisple::sptr_rtval_v val_args{nullptr};
+    for (auto val : elements)
+    {
+      val_args[0] = val;
+      auto pred_result = remove_fn->execute(ctx, val_args);
+      if (!Lisple::is_truthy(*pred_result))
+      {
+        result.push_back(val);
+      }
+    }
+
+    return RTValue::vector(result);
+  }
+
+  /** RemoveBangFunction - remove! */
+  FUNC_IMPL(RemoveBangFunction,
+            SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                 EXEC_DISPATCH(&RemoveBangFunction::exec_remove_bang))))
+
+  EXEC_BODY(RemoveBangFunction, exec_remove_bang)
+  {
+    auto& remove_fn = args[0]->exec();
+
+    if (Type::HOST_SEQ.is_type_of(*args[1]))
+    {
+      sptr_sobject obj = args[1]->obj();
+      Seq& host_seq = obj->as<Seq>();
+      sptr_sobject_v& children = host_seq.get_children();
+      auto it = std::remove_if(children.begin(),
+                               children.end(),
+                               [&](const Lisple::sptr_sobject& element)
+                               {
+                                 Lisple::sptr_sobject_v val_args{element};
+                                 return remove_fn.execute(ctx, val_args)->is_truthy();
+                               });
+      children.erase(it, children.end());
+
+      host_seq.replace_children(children);
+    }
+    else
+    {
+      sptr_rtval_v& children = std::get<sptr_rtval_v>(args[1]->value);
+
+      auto it = std::remove_if(children.begin(),
+                               children.end(),
+                               [&](const Lisple::sptr_rtval& element)
+                               {
+                                 Lisple::sptr_rtval_v val_args{element};
+                                 auto pred_result = remove_fn.execute(ctx, val_args);
+                                 return Lisple::is_truthy(*pred_result);
+                               });
+
+      children.erase(it, children.end());
+    }
+
+    return args.back();
+  }
+
+  /* RemoveFirstFunction - find-first */
+  FUNC_IMPL(RemoveFirstFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+                 EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first))))
+
+  EXEC_BODY(RemoveFirstFunction, exec_remove_first)
+  {
+    auto original = args.back();
+
+    sptr_rtval_v result;
+    result.reserve(Lisple::count(*original));
+
+    auto& remove_fn = args[0]->exec();
+
+    bool removed = false;
+    sptr_rtval_v val_args{nullptr};
+    for (auto val : original->elements())
+    {
+      val_args[0] = val;
+      auto test_result = remove_fn.execute(ctx, val_args);
+      if (removed || !Lisple::is_truthy(*test_result))
+      {
+        result.push_back(val);
+      }
+      else
+      {
+        removed = true;
+      }
+    }
+
+    return RTValue::vector(result);
+  }
+
   /* SeqMatchFunction */
   FUNC_IMPL(SeqMatchFunction,
             SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::MAP)),
@@ -198,6 +395,27 @@ namespace Lisple
     }
 
     return Constant::NIL;
+  }
+
+  /* SomeFunction */
+  FUNC_IMPL(SomeFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                 EXEC_DISPATCH(&SomeFunction::exec_some))))
+
+  EXEC_BODY(SomeFunction, exec_some)
+  {
+    sptr_rtval_v val_arg = {nullptr};
+    auto& fn = args.back()->exec();
+    for (auto& element : args[0]->elements())
+    {
+      val_arg[0] = element;
+      sptr_rtval result = fn.execute(ctx, val_arg);
+      if (!Lisple::is_truthy(*result))
+      {
+        return Constant::BOOL_TRUE;
+      }
+    }
+    return Constant::BOOL_FALSE;
   }
 
   /* SortFunction - sort */

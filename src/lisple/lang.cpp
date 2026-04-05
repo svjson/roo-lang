@@ -87,7 +87,7 @@ namespace Lisple
     lang_symbols.emplace("even?", EvenPFunction::make());
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
-    lang.emplace("filter", std::make_shared<FilterFunction>());
+    lang_symbols.emplace("filter", FilterFunction::make());
     lang.emplace("find-first", std::make_shared<FindFirstFunction>());
     lang_symbols.emplace("find-index", FindIndexFunction::make());
     lang_symbols.emplace("fn", FnForm::make());
@@ -100,7 +100,7 @@ namespace Lisple
     lang.emplace("include", std::make_shared<IncludeFunction>());
     lang.emplace("int", std::make_shared<IntFunction>());
     lang.emplace("join", std::make_shared<JoinFunction>());
-    lang.emplace("keep", std::make_shared<KeepFunction>());
+    lang_symbols.emplace("keep", KeepFunction::make());
     lang.emplace("keys", std::make_shared<KeysFunction>());
     lang_symbols.emplace("last", LastFunction::make());
     lang_symbols.emplace("let", LetForm::make());
@@ -127,9 +127,9 @@ namespace Lisple
     lang_symbols.emplace("range", RangeFunction::make());
     lang_symbols.emplace("reduce", ReduceFunction::make());
     lang_symbols.emplace("reduce-kv", ReduceKeyValueFunction::make());
-    lang.emplace("remove", std::make_shared<RemoveFunction>());
-    lang.emplace("remove-first", std::make_shared<RemoveFirstFunction>());
-    lang.emplace("remove!", std::make_shared<RemoveBangFunction>());
+    lang_symbols.emplace("remove", RemoveFunction::make());
+    lang_symbols.emplace("remove-first", RemoveFirstFunction::make());
+    lang_symbols.emplace("remove!", RemoveBangFunction::make());
     lang_symbols.emplace("remove-nth", RemoveNthFunction::make());
     lang.emplace("remove-nth!", std::make_shared<RemoveNthBangFunction>());
     lang.emplace("repeat", std::make_shared<RepeatFunction>());
@@ -139,7 +139,7 @@ namespace Lisple
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());
-    lang.emplace("some?", std::make_shared<SomeFunction>());
+    lang_symbols.emplace("some?", SomeFunction::make());
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());
@@ -584,166 +584,6 @@ namespace Lisple
     return Array::make(tail);
   }
 
-  /* FilterFunction */
-  FUNC_IMPL(FilterFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
-                 EXEC_DISPATCH(&FilterFunction::filter_seq))))
-
-  FUNC_BODY(FilterFunction, filter_seq)
-  {
-    auto original = args[0];
-    if (NIL == original) return Array::make({});
-
-    sptr_sobject result = Seq::new_sequence(original->get_type(), original->size());
-
-    auto& filter_fn = args.back()->as<Executable>();
-
-    for (auto val : original->get_children())
-    {
-      sptr_sobject_v val_args{val};
-      sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
-      if (*pred_result != *NIL && *pred_result != *B_FALSE)
-      {
-        result->append(val);
-      }
-    }
-
-    return result;
-  }
-
-  /* SomeFunction */
-  FUNC_IMPL(SomeFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)), EXEC_DISPATCH(&SomeFunction::some))))
-
-  FUNC_BODY(SomeFunction, some)
-  {
-    for (auto& element : args[0]->get_children())
-    {
-      sptr_sobject_v args = {element};
-      sptr_sobject result = args.back()->execute(ctx, args);
-      if (*result != *NIL && *result != *B_FALSE)
-      {
-        return B_TRUE;
-      }
-    }
-    return B_FALSE;
-  }
-
-  /* RemoveFunction */
-  FUNC_IMPL(RemoveFunction,
-            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
-                       EXEC_DISPATCH(&RemoveFunction::remove_seq)),
-                      (FN_ARGS((&Type::SEQ), (&Type::EXEC)),
-                       EXEC_DISPATCH(&RemoveFunction::remove_seq))))
-
-  FUNC_BODY(RemoveFunction, remove_seq)
-  {
-    Object* original;
-    Executable* remove_fn;
-
-    if (Type::SEQ.is_type_of(*args[0]))
-    {
-      original = args[0].get();
-      remove_fn = &args[1]->as<Executable>();
-    }
-    else
-    {
-      original = args[1].get();
-      remove_fn = &args[0]->as<Executable>();
-    }
-
-    Lisple::sptr_sobject result =
-      Lisple::Seq::new_sequence(original->get_type(), original->size());
-
-    for (auto val : original->get_children())
-    {
-      Lisple::sptr_sobject_v val_args{val};
-      Lisple::sptr_sobject test_result = remove_fn->execute(ctx, val_args);
-      if (*test_result == *Lisple::B_FALSE || *test_result == *Lisple::NIL)
-      {
-        result->append(val);
-      }
-    }
-
-    return result;
-  }
-
-  /* RemoveFirstFunction - find-first */
-  FUNC_IMPL(RemoveFirstFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&RemoveFirstFunction::remove_first))))
-
-  FUNC_BODY(RemoveFirstFunction, remove_first)
-  {
-    auto original = args.back();
-    Lisple::sptr_sobject result =
-      Lisple::Seq::new_sequence(original->get_type(), original->size());
-
-    auto& remove_fn = args[0]->as<Lisple::Executable>();
-
-    bool removed = false;
-    for (auto val : original->get_children())
-    {
-      Lisple::sptr_sobject_v val_args{val};
-      Lisple::sptr_sobject test_result = remove_fn.execute(ctx, val_args);
-      if (removed || *test_result == *Lisple::B_FALSE || *test_result == *Lisple::NIL)
-      {
-        result->append(val);
-      }
-      else
-      {
-        removed = true;
-      }
-    }
-
-    return result;
-  }
-
-  /* RemoveBangFunction - remove! */
-  FUNC_IMPL(RemoveBangFunction,
-            SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
-                 EXEC_DISPATCH(&RemoveBangFunction::remove_seq))))
-
-  FUNC_BODY(RemoveBangFunction, remove_seq)
-  {
-    auto& remove_fn = args[0]->as<Lisple::Executable>();
-
-    sptr_sobject_v& children = args[1]->get_children();
-
-    auto it = std::remove_if(children.begin(),
-                             children.end(),
-                             [&](const Lisple::sptr_sobject& element)
-                             {
-                               Lisple::sptr_sobject_v val_args{element};
-                               return remove_fn.execute(ctx, val_args)->is_truthy();
-                             });
-
-    children.erase(it, children.end());
-
-    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[1].get()))
-    {
-      if (wrapper->val->type == RTValue::Type::OBJECT &&
-          Type::HOST_SEQ.is_type_of(*wrapper->delegate))
-      {
-        wrapper->val->obj()->as<Seq>().replace_children(children);
-      }
-      else
-      {
-        sptr_rtval_v& vec = std::get<sptr_rtval_v>(wrapper->val->value);
-        vec.clear();
-        for (auto& c : children)
-        {
-          vec.push_back(to_rt_value(c));
-        }
-      }
-    }
-    else if (Type::HOST_SEQ.is_type_of(*args[1]))
-    {
-      args[1]->as<Seq>().replace_children(children);
-    }
-    return args.back();
-  }
-
   /* RemoveNthBangFunction - remove-nth! */
   FUNC_IMPL(RemoveNthBangFunction,
             SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
@@ -769,51 +609,6 @@ namespace Lisple
       seq.replace_children(children);
     }
     return to_delete;
-  }
-
-  /* FindFirstFunction - find-first */
-  FUNC_IMPL(FindFirstFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&FindFirstFunction::find_first_in_seq))))
-
-  FUNC_BODY(FindFirstFunction, find_first_in_seq)
-  {
-    auto original = args[0];
-
-    auto& filter_fn = args.back()->as<Executable>();
-
-    for (auto val : args[0]->get_children())
-    {
-      sptr_sobject_v val_args{val};
-      sptr_sobject pred_result = filter_fn.execute(ctx, val_args);
-      if (*pred_result != *B_FALSE && *pred_result != *NIL)
-      {
-        return val;
-      }
-    }
-
-    return NIL;
-  }
-
-  /* KeepFunction - keep */
-  FUNC_IMPL(KeepFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)), EXEC_DISPATCH(&KeepFunction::keep))))
-
-  FUNC_BODY(KeepFunction, keep)
-  {
-    sptr_sobject_v values = args[0]->get_children();
-    sptr_sobject exec = args[1];
-
-    sptr_sobject_v result;
-
-    for (auto& v : values)
-    {
-      sptr_sobject_v arg{v};
-      sptr_sobject r = exec->execute(ctx, arg);
-      if (*r != *NIL) result.push_back(r);
-    }
-
-    return Array::make(result);
   }
 
   /* KeysFunction - keys */
