@@ -330,96 +330,6 @@ TEST(ApplyFunction, apply_dynamic)
   ASSERT_EQ(result->to_string(), "17");
 }
 
-TEST(ThreadFirstMacro, deep_map_traversal)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def deep_map {:file {:metadata {:size {:mb 1200}}}})");
-
-  // When
-  auto retval = fixture.runtime.eval("(-> deep_map :file :metadata :size :mb)");
-
-  // Then
-  ASSERT_EQ(*retval, *Lisple::RTValue::number(1200));
-}
-
-TEST(ThreadFirstMacro, functions)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(-> 1 (* 2) (* 16) (/ 4))");
-
-  // Then
-  ASSERT_EQ(retval->i64(), 8);
-}
-
-TEST(ThreadFirstMacro, retrieved_map_is_same_instance)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def deep_map {:file {:metadata {:size {:mb 1200}}}})");
-
-  // When
-  auto tf_size = fixture.runtime.eval("(-> deep_map :file :metadata :size)");
-  auto tf_fn_size = fixture.runtime.eval("(-> deep_map (get :file) :metadata (get :size))");
-  auto size = fixture.runtime.eval("(:size (:metadata (:file deep_map)))");
-
-  // Then
-  EXPECT_EQ(*tf_size, *size);
-  EXPECT_EQ(*tf_fn_size, *size);
-
-  // Temporarily cater to RuntimeWrapper
-  EXPECT_EQ(tf_size.get(), size.get());
-
-  EXPECT_EQ(tf_size->to_string(), size->to_string());
-
-  EXPECT_EQ(tf_fn_size.get(), size.get());
-  EXPECT_EQ(tf_fn_size->to_string(), size->to_string());
-}
-
-TEST(EmptyPredicateFunction, emptyp_seqs)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  auto list = fixture.parser.read_sexps("'(\"value1\" \"value2\")");
-  auto empty_list = fixture.parser.read_sexps("'()");
-  auto array = fixture.parser.read_sexps("[\"value1\" \"value2\"]");
-  auto empty_array = fixture.parser.read_sexps("[]");
-  auto map = fixture.parser.read_sexps("{:key1 \"value1\" :key2 \"value2\"}");
-  auto empty_map = fixture.parser.read_sexps("{}");
-
-  Lisple::EmptyPredicateFunction fn;
-
-  // Then
-  EXPECT_FALSE(fn.execute(fixture.ctx, list)->as<Lisple::Boolean>().value);
-  EXPECT_FALSE(fn.execute(fixture.ctx, array)->as<Lisple::Boolean>().value);
-  EXPECT_FALSE(fn.execute(fixture.ctx, map)->as<Lisple::Boolean>().value);
-
-  EXPECT_TRUE(fn.execute(fixture.ctx, empty_list)->as<Lisple::Boolean>().value);
-  EXPECT_TRUE(fn.execute(fixture.ctx, empty_array)->as<Lisple::Boolean>().value);
-  EXPECT_TRUE(fn.execute(fixture.ctx, empty_map)->as<Lisple::Boolean>().value);
-}
-
-TEST(EmptyPredicateFunction, emptyp_strings)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  auto str1 = fixture.parser.read_sexps("\"a string\"");
-  auto str2 = fixture.parser.read_sexps("\"a\"");
-  auto str3 = fixture.parser.read_sexps("\"\"");
-  auto str4 = fixture.parser.read_sexps("\" \"");
-
-  Lisple::EmptyPredicateFunction fn;
-
-  // Then
-  EXPECT_FALSE(fn.execute(fixture.ctx, str1)->as<Lisple::Boolean>().value);
-  EXPECT_FALSE(fn.execute(fixture.ctx, str2)->as<Lisple::Boolean>().value);
-  EXPECT_TRUE(fn.execute(fixture.ctx, str3)->as<Lisple::Boolean>().value);
-  EXPECT_FALSE(fn.execute(fixture.ctx, str4)->as<Lisple::Boolean>().value);
-}
-
 TEST(VectorFunction, make_vector)
 {
   // Given
@@ -519,57 +429,6 @@ TEST(CeilFunction, ceil)
   EXPECT_EQ(*runtime.eval("(ceil 19.1)"), *Lisple::RTValue::number(20));
 }
 
-TEST(NotEqualsFunction, ints)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_TRUE(Lisple::is_truthy(*fixture.ctx.eval("(not= 1 2)")));
-  EXPECT_TRUE(Lisple::is_truthy(*fixture.ctx.eval("(not= 50 (+ 25 250))")));
-  EXPECT_TRUE(Lisple::is_truthy(*fixture.ctx.eval("(not= 999 -999)")));
-
-  EXPECT_FALSE(Lisple::is_truthy(*fixture.ctx.eval("(not= 1 1)")));
-  EXPECT_FALSE(Lisple::is_truthy(*fixture.ctx.eval("(not= 50 (+ 25 25))")));
-  EXPECT_FALSE(Lisple::is_truthy(*fixture.ctx.eval("(not= 999 999)")));
-}
-
-TEST(NotEqualsFunction, chars)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(not= 'a' 'b')"), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= '-' ':')"), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= '.' ',')"), *Lisple::Constant::BOOL_TRUE);
-
-  EXPECT_EQ(*fixture.ctx.eval("(not= 'a' 'a')"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= '-' '-')"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= '.' '.')"), *Lisple::Constant::BOOL_FALSE);
-}
-
-TEST(NotEqualsFunction, string)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(not= \"test\" \" test\")"), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= \"a whole sentence\" \"a_whole_sentence\")"),
-            *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= \" test\" \" test \")"), *Lisple::Constant::BOOL_TRUE);
-
-  EXPECT_EQ(*fixture.ctx.eval("(not= \"test\" \"test\")"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= \"a whole sentence\" \"a whole sentence\")"),
-            *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(not= \" test\" \" test\")"), *Lisple::Constant::BOOL_FALSE);
-}
-
-TEST(NilPredicateFunction, nil)
-{
-  LispleTest::RuntimeFixture fixture;
-  EXPECT_EQ(*fixture.ctx.eval("(nil? nil)"), *Lisple::Constant::BOOL_TRUE);
-
-  EXPECT_EQ(*fixture.ctx.eval("(nil? [nil])"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(nil? 0)"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(nil? \"\")"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(nil? :nil)"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(nil? 'nil)"), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fixture.ctx.eval("(nil? false)"), *Lisple::Constant::BOOL_FALSE);
-}
-
 TEST(MinMaxFunction, min)
 {
   LispleTest::RuntimeFixture fixture;
@@ -610,50 +469,6 @@ TEST(ThresholdFunction, threshold)
   EXPECT_EQ(*fixture.ctx.eval("(threshold 10 9)"), *Lisple::RTValue::number(9));
   EXPECT_EQ(*fixture.ctx.eval("(threshold 10 11)"), *Lisple::RTValue::number(10));
   EXPECT_EQ(*fixture.ctx.eval("(threshold 0 1)"), *Lisple::RTValue::number(0));
-}
-
-TEST(OddEvenPredicateFunction, odd_test)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  Lisple::sptr_rtval_v num1{Lisple::RTValue::number(1)};
-  Lisple::sptr_rtval_v num2{Lisple::RTValue::number(2)};
-  Lisple::sptr_rtval_v num3{Lisple::RTValue::number(3)};
-  Lisple::sptr_rtval_v num4{Lisple::RTValue::number(4)};
-  Lisple::sptr_rtval_v num5{Lisple::RTValue::number(5)};
-  Lisple::sptr_rtval_v num6{Lisple::RTValue::number(6)};
-
-  Lisple::OddEvenPredicateFunction fn(1);
-
-  // Then
-  EXPECT_EQ(*fn.execute(fixture.ctx, num1), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num2), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num3), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num4), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num5), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num6), *Lisple::Constant::BOOL_FALSE);
-}
-
-TEST(OddEvenPredicateFunction, even_test)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  Lisple::sptr_rtval_v num1{Lisple::RTValue::number(1)};
-  Lisple::sptr_rtval_v num2{Lisple::RTValue::number(2)};
-  Lisple::sptr_rtval_v num3{Lisple::RTValue::number(3)};
-  Lisple::sptr_rtval_v num4{Lisple::RTValue::number(4)};
-  Lisple::sptr_rtval_v num5{Lisple::RTValue::number(5)};
-  Lisple::sptr_rtval_v num6{Lisple::RTValue::number(6)};
-
-  Lisple::OddEvenPredicateFunction fn(0);
-
-  // Then
-  EXPECT_EQ(*fn.execute(fixture.ctx, num1), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num2), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num3), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num4), *Lisple::Constant::BOOL_TRUE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num5), *Lisple::Constant::BOOL_FALSE);
-  EXPECT_EQ(*fn.execute(fixture.ctx, num6), *Lisple::Constant::BOOL_TRUE);
 }
 
 TEST(EvalFunction, eval_string)

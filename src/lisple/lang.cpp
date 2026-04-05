@@ -81,9 +81,9 @@ namespace Lisple
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
-    lang.emplace("empty?", std::make_shared<EmptyPredicateFunction>());
+    lang_symbols.emplace("empty?", EmptyPFunction::make());
     lang.emplace("eval", std::make_shared<EvalFunction>());
-    lang.emplace("even?", std::make_shared<OddEvenPredicateFunction>(0));
+    lang_symbols.emplace("even?", EvenPFunction::make());
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
     lang.emplace("flatten", std::make_shared<FlattenFunction>());
     lang.emplace("filter", std::make_shared<FilterFunction>());
@@ -112,13 +112,13 @@ namespace Lisple
     lang.emplace("name", std::make_shared<NameFunction>());
     lang.emplace("namespace", std::make_shared<NamespaceFunction>());
     lang_symbols.emplace("nil", Constant::NIL);
-    lang.emplace("nil?", std::make_shared<NilPredicateFunction>());
+    lang_symbols.emplace("nil?", NilPFunction::make());
     lang_symbols.emplace("not", NotFunction::make());
-    lang.emplace("not=", std::make_shared<NotEqualsFunction>());
-    lang.emplace("not-empty?", std::make_shared<NotEmptyPredicateFunction>());
+    lang_symbols.emplace("not=", NotEqualsFunction::make());
+    lang_symbols.emplace("not-empty?", NotEmptyPFunction::make());
     lang.emplace("ns", std::make_shared<NsMacro>());
     lang_symbols.emplace("nth", NthFunction::make());
-    lang.emplace("odd?", std::make_shared<OddEvenPredicateFunction>(1));
+    lang_symbols.emplace("odd?", OddPFunction::make());
     lang_symbols.emplace("or", OrForm::make());
     lang.emplace("partition", std::make_shared<PartitionFunction>());
     lang.emplace("prn", std::make_shared<PrintFunction>());
@@ -137,7 +137,7 @@ namespace Lisple
     lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
-    lang.emplace("sin", std::make_shared<SinFunction>());
+    lang_symbols.emplace("sin", SinFunction::make());
     lang.emplace("some?", std::make_shared<SomeFunction>());
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
@@ -350,15 +350,6 @@ namespace Lisple
     return NIL;
   }
 
-  /* NilPredicateFunction */
-  FUNC_IMPL(NilPredicateFunction,
-            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NilPredicateFunction::is_nil))))
-
-  FUNC_BODY(NilPredicateFunction, is_nil)
-  {
-    return args[0]->get_type() == Lisple::Form::NIL ? B_TRUE : B_FALSE;
-  }
-
   MACRO_IMPL(WhileMacro,
              SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                   EXEC_DISPATCH(&WhileMacro::make_while))))
@@ -474,15 +465,6 @@ namespace Lisple
     ctx.pop_context();
 
     return std::make_shared<Array>(std::move(result));
-  }
-
-  FUNC_IMPL(NotEqualsFunction,
-            SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
-                 EXEC_DISPATCH(&NotEqualsFunction::not_equals_any))))
-
-  FUNC_BODY(NotEqualsFunction, not_equals_any)
-  {
-    return *args[0] == *args[1] ? B_FALSE : B_TRUE;
   }
 
   /* CeilFunction - ceil */
@@ -993,54 +975,6 @@ namespace Lisple
     }
 
     return result;
-  }
-
-  /* OddEvenPredicateFunction */
-  OddEvenPredicateFunction::OddEvenPredicateFunction(uint8_t modulus)
-    : Function(SIG((FN_ARGS((&Lisple::Type::NUMBER)),
-                    EXEC_DISPATCH(&OddEvenPredicateFunction::exec_oddevenp))))
-    , modulus(modulus)
-  {
-  }
-
-  FUNC_BODY(OddEvenPredicateFunction, exec_oddevenp)
-  {
-    return args[0]->as<Lisple::Number>().int_value() % 2 == modulus ? Lisple::B_TRUE
-                                                                    : Lisple::B_FALSE;
-  }
-
-  /* EmptyPredicateFunction */
-  FUNC_IMPL(EmptyPredicateFunction,
-            MULTI_SIG((FN_ARGS((&Lisple::Type::SEQ)),
-                       EXEC_DISPATCH(&EmptyPredicateFunction::exec_emptyp_seq)),
-                      (FN_ARGS((&Lisple::Type::STRING)),
-                       EXEC_DISPATCH(&EmptyPredicateFunction::exec_emptyp_string))))
-
-  FUNC_BODY(EmptyPredicateFunction, exec_emptyp_seq)
-  {
-    return Lisple::Boolean::wrap(args[0]->get_children().empty());
-  }
-
-  FUNC_BODY(EmptyPredicateFunction, exec_emptyp_string)
-  {
-    return Lisple::Boolean::wrap(args[0]->as<Lisple::String>().value.empty());
-  }
-
-  /* NotEmptyPredicateFunction */
-  FUNC_IMPL(NotEmptyPredicateFunction,
-            MULTI_SIG((FN_ARGS((&Lisple::Type::SEQ)),
-                       EXEC_DISPATCH(&NotEmptyPredicateFunction::exec_not_emptyp_seq)),
-                      (FN_ARGS((&Lisple::Type::STRING)),
-                       EXEC_DISPATCH(&NotEmptyPredicateFunction::exec_not_emptyp_string))))
-
-  FUNC_BODY(NotEmptyPredicateFunction, exec_not_emptyp_seq)
-  {
-    return Lisple::Boolean::wrap(!args[0]->get_children().empty());
-  }
-
-  FUNC_BODY(NotEmptyPredicateFunction, exec_not_emptyp_string)
-  {
-    return Lisple::Boolean::wrap(!args[0]->as<Lisple::String>().value.empty());
   }
 
   FUNC_IMPL(IncludeFunction,

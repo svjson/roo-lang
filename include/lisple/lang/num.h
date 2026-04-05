@@ -5,6 +5,36 @@
 
 namespace Lisple
 {
+  /**
+   * @brief Check if a number is even
+   *
+   * Usage:
+   * @code
+   * (even? 2)
+   * => true
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to test for evenness                                  |
+   */
+  FUNC(EvenPFunction, even)
+
+  /**
+   * @brief Check if a number is odd
+   *
+   * Usage:
+   * @code
+   * (odd? 2)
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to test for oddness                                   |
+   */
+  FUNC(OddPFunction, odd)
+
   /*!
    * @brief Check one or more numbers for equality with zero
    *

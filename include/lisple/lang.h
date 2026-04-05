@@ -2,8 +2,6 @@
 #ifndef __LANG_H_
 #define __LANG_H_
 
-#include <cstdint>
-
 #include <lisple/exec.h>
 #include <lisple/namespace.h>
 #include <lisple/type.h>
@@ -86,19 +84,6 @@ namespace Lisple
   MACRO_DECL(ForIndexedMacro, make_for)
 
   FUNC_DECL(PrintFunction, do_print)
-
-  /*!
-   * @brief Tests if the result of an expression is nil.
-   *
-   * Usage:
-   * @code
-   * (nil? (:key1 {:key2 "value"}))
-   * => true
-   * @endcode
-   *
-   * Param 0: The expression, value or identifier to test
-   */
-  FUNC_DECL(NilPredicateFunction, is_nil)
 
   FUNC_DECL(IncludeFunction, include_file)
 
@@ -507,72 +492,6 @@ namespace Lisple
    * => [[1 2 3 4] [5 6]]
    */
   FUNC_DECL(PartitionFunction, partition)
-
-  /*!
-   * @brief Tests a seq or string(sequence of characters) for the presence of
-   * any elements.
-   *
-   * The inverse of @code not-empty? @endcode.
-   *
-   * Usage:
-   * @code
-   * (empty? [])
-   * => true
-   *
-   * (empty? [1 2 3])
-   * => false
-   *
-   * (empty? "")
-   * => true
-   *
-   * (empty? "content")
-   * => false)
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq or string to test                                        |
-   */
-  FUNC_DECL(EmptyPredicateFunction, exec_emptyp_seq, exec_emptyp_string)
-
-  /*!
-   * @brief Tests a seq or string(sequence of characters) for the presence of any
-   * elements.
-   *
-   * The inverse of @code empty? @endcode
-   *
-   * Usage:
-   * @code
-   * (not-empty? [])
-   * => false
-   *
-   * (not-empty? [1 2 3])
-   * => true
-   *
-   * (not-empty? "")
-   * => false
-   *
-   * (not-empty? "content"
-   * => true)
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq or string to test                                        |
-   */
-  FUNC_DECL(NotEmptyPredicateFunction, exec_not_emptyp_seq, exec_not_emptyp_string)
-
-  FUNC_DECL(NotEqualsFunction, not_equals_any)
-
-  class OddEvenPredicateFunction : public Function
-  {
-    uint8_t modulus;
-
-   public:
-    OddEvenPredicateFunction(uint8_t modulus);
-
-    sptr_sobject exec_oddevenp(Context&, sptr_sobject_v& args);
-  };
 
   /*!
    * @brief Evaluate a Lisple form or a string containing lisple code
