@@ -1,11 +1,84 @@
 
 #include "lisple/exception.h"
+#include "lisple/exec.h"
 
 #include <lisple/lang/branch.h>
 #include <lisple/runtime/exec_node.h>
 
 namespace Lisple
 {
+  /** CaseForm - case */
+  SPECIAL_FORM_IMPL(CaseForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&CaseForm::inv_case, &CaseForm::execnode_case))))
+
+  SFORM_LOWER_IMPL(CaseForm)
+  {
+    uptr_exec_node_v exec_nodes;
+
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() % 2 != 0)
+    {
+      throw LispleException("case: Unmatched case pairs: " + ast_node->to_string());
+    }
+
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
+
+  Key DEFAULT = Key("default");
+
+  MACRO_BODY(CaseForm, inv_case)
+  {
+    if ((args.size() - 1) % 2 != 0)
+    {
+      throw InvocationException("Incomplete condition-expression pair passed to case");
+    }
+    else if (args.size() == 1)
+    {
+      throw InvocationException("Empty case-form");
+    }
+
+    sptr_sobject retval = NIL;
+
+    ctx.push_context(true);
+    sptr_sobject value = ctx.eval_ast(args[0]);
+
+    for (size_t i = 1; i < args.size(); i += 2)
+    {
+      if (*ctx.eval_ast(args[i]) == *value || *args[i] == DEFAULT)
+      {
+        retval = ctx.eval_ast(args[i + 1]);
+        break;
+      }
+    }
+
+    ctx.pop_context();
+    return retval;
+  }
+
+  EXECNODE_BODY(CaseForm, execnode_case)
+  {
+    static sptr_rtval DEFAULT_KEY = RTValue::keyword("default");
+    sptr_rtval value = exec(ctx, *snode.exec_nodes[0]);
+
+    for (size_t i = 1; i < snode.exec_nodes.size(); i += 2)
+    {
+      sptr_rtval case_selector = exec(ctx, *snode.exec_nodes[i]);
+      if (*value == *case_selector || *DEFAULT_KEY == *case_selector)
+      {
+        return exec(ctx, *snode.exec_nodes[i + 1]);
+      }
+    }
+    return Constant::NIL;
+  }
+
   /** CondForm - cond */
   SPECIAL_FORM_IMPL(CondForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),

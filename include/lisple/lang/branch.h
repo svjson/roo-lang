@@ -7,6 +7,32 @@
 namespace Lisple
 {
   /*!
+   * @brief branching construct based on testing a single value against an
+   * arbitrary number of constant values.
+   *
+   * The condition and expression pairs
+   * will be evaluated sequentially until a match is found.
+   * Optionally, :default can be provided as a last condition that will always
+   * evaluate to true if no other match has been made.
+   *
+   * Usage:
+   * @code
+   * (case x
+   *   10 "x is equal to 10"
+   *   20 "x is equal to 20"
+   *   :default "x is not 10 or 20")
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value to match                                               |
+   * | 1     | A value of expression to match against Arg #0                    |
+   * | 2     | An expression that will be evaluated if Param 1 matches Arg #0   |
+   * | 3...  | Repetitions of 1-2                                               |
+   */
+  SPECIAL_FORM_DECL(CaseForm, case)
+
+  /*!
    * @brief Defines a sequence of condition and expression pairs that will be
    * sequentially evaluated until a condition evaluates to a truthy, upon
    * which the corresponding expression will be evaluated and returned.

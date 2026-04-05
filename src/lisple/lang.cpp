@@ -68,7 +68,7 @@ namespace Lisple
     lang_symbols.emplace("assoc!", AssocBangFunction::make());
     lang_symbols.emplace("assoc-in!", AssocInBangFunction::make());
     lang_symbols.emplace("between?", BetweenPredicateFunction::make());
-    lang.emplace("case", std::make_shared<CaseMacro>());
+    lang_symbols.emplace("case", CaseForm::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
     lang.emplace("comment", std::make_shared<CommentMacro>());
     lang_symbols.emplace("concat", ConcatFunction::make());
@@ -288,42 +288,6 @@ namespace Lisple
 
     std::cout << std::endl;
     return NIL;
-  }
-
-  /* case */
-  MACRO_IMPL(CaseMacro,
-             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&CaseMacro::make_case))))
-
-  Key DEFAULT = Key("default");
-
-  MACRO_BODY(CaseMacro, make_case)
-  {
-    if ((args.size() - 1) % 2 != 0)
-    {
-      throw InvocationException("Incomplete condition-expression pair passed to case");
-    }
-    else if (args.size() == 1)
-    {
-      throw InvocationException("Empty case-form");
-    }
-
-    sptr_sobject retval = NIL;
-
-    ctx.push_context(true);
-    sptr_sobject value = ctx.eval_ast(args[0]);
-
-    for (size_t i = 1; i < args.size(); i += 2)
-    {
-      if (*ctx.eval_ast(args[i]) == *value || *args[i] == DEFAULT)
-      {
-        retval = ctx.eval_ast(args[i + 1]);
-        break;
-      }
-    }
-
-    ctx.pop_context();
-    return retval;
   }
 
   /* MergeFunction - merge */
