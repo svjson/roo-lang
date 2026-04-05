@@ -358,7 +358,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "038_no_sform_node_rewrap_a589aac";
+    const std::string CHANGE_ME = "039_predicates_on_rt_path_279ce52";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
