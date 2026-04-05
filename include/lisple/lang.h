@@ -24,22 +24,6 @@ namespace Lisple
 
   FUNC_DECL(IncludeFunction, include_file)
 
-  /*!
-   * @brief Apply a function or executable form to a seq of arguments.
-   *
-   * Usage:
-   * @code
-   * (apply + [1 2 3])
-   * => 6
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The function to invoke                                           |
-   * | 1     | The seq of arguments                                             |
-   */
-  FUNC_DECL(ApplyFunction, apply_fn)
-
   FUNC_DECL(TailFunction, tail)
 
   /*!

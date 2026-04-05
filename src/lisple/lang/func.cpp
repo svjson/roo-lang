@@ -8,8 +8,19 @@
 
 namespace Lisple
 {
-  /* DefunForm - defun */
+  /** ApplyFunction - apply */
+  FUNC_IMPL(ApplyFunction,
+            SIG((FN_ARGS((&Lisple::Type::EXEC), (&Lisple::Type::SEQ)),
+                 EXEC_DISPATCH(&ApplyFunction::exec_apply))))
 
+  EXEC_BODY(ApplyFunction, exec_apply)
+  {
+    auto& fn = args[0]->exec();
+    sptr_rtval_v& fn_args = std::get<sptr_rtval_v>(args.back()->value);
+    return fn.execute(ctx, fn_args);
+  }
+
+  /** DefunForm - defun */
   SPECIAL_FORM_IMPL(
     DefunForm,
     MULTI_SIG(

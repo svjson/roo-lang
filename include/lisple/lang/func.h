@@ -6,13 +6,28 @@
 
 namespace Lisple
 {
+  /*!
+   * @brief Apply a function or executable form to a seq of arguments.
+   *
+   * Usage:
+   * @code
+   * (apply + [1 2 3])
+   * => 6
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The function to invoke                                           |
+   * | 1     | The seq of arguments                                             |
+   */
+  FUNC(ApplyFunction, apply)
 
   /**
    * @brief Define a function in the current namespace
    */
   SPECIAL_FORM_DECL(DefunForm, decl, decl_docstring)
 
-  /**
+  /*!
    * @brief Define an anonymous lambda function with optional argument
    * destructuring.
    *

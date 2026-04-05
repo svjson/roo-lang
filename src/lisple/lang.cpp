@@ -63,7 +63,7 @@ namespace Lisple
     lang_symbols.emplace("abs", AbsFunction::make());
     lang_symbols.emplace("and", AndForm::make());
     lang_symbols.emplace("append!", AppendBangFunction::make());
-    lang.emplace("apply", std::make_shared<ApplyFunction>());
+    lang_symbols.emplace("apply", ApplyFunction::make());
     lang_symbols.emplace("assoc", AssocFunction::make());
     lang_symbols.emplace("assoc!", AssocBangFunction::make());
     lang_symbols.emplace("assoc-in!", AssocInBangFunction::make());
@@ -535,19 +535,6 @@ namespace Lisple
   {
     if (*args[0] == *NIL) return NIL;
     return ctx.lookup(args[0]->as<Value<std::string>>().value);
-  }
-
-  /* ApplyFunction - apply */
-  FUNC_IMPL(ApplyFunction,
-            SIG((FN_ARGS((&Lisple::Type::EXEC), (&Lisple::Type::SEQ)),
-                 EXEC_DISPATCH(&ApplyFunction::apply_fn))))
-
-  FUNC_BODY(ApplyFunction, apply_fn)
-  {
-    auto& fn = *args[0];
-    auto& fn_args = args.back()->get_children();
-
-    return fn.execute(ctx, fn_args);
   }
 
   FUNC_IMPL(VectorFunction,

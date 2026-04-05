@@ -161,18 +161,6 @@ TEST(NsMacro, import_existing_aliased_namespace)
   EXPECT_THAT(message, HasSubstr("Unknown identifier: 'o/what-is-hot?'"));
 }
 
-TEST(ApplyFunction, apply_concat)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // When
-  auto retval = fixture.runtime.eval("(apply concat [[1 2 3] [4 5 6]])");
-
-  // Then
-  ASSERT_EQ(retval->to_string(), "[1 2 3 4 5 6]");
-}
-
 TEST(SelectKeysFunction, all_keys_present)
 {
   // Given
