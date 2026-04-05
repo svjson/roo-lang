@@ -321,26 +321,38 @@ namespace Lisple
     return args.back();
   }
 
-  /* RemoveFirstFunction - find-first */
+  /* RemoveFirstFunction - remove-first */
   FUNC_IMPL(RemoveFirstFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first))))
+            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                       EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first)),
+                      (FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                       EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first))))
 
   EXEC_BODY(RemoveFirstFunction, exec_remove_first)
   {
-    auto original = args.back();
+    RTValue* original;
+    Executable* remove_fn;
+
+    if (Type::SEQ.is_type_of(*args[0]))
+    {
+      original = args[0].get();
+      remove_fn = &args[1]->exec();
+    }
+    else
+    {
+      original = args[1].get();
+      remove_fn = &args[0]->exec();
+    }
 
     sptr_rtval_v result;
     result.reserve(Lisple::count(*original));
-
-    auto& remove_fn = args[0]->exec();
 
     bool removed = false;
     sptr_rtval_v val_args{nullptr};
     for (auto val : original->elements())
     {
       val_args[0] = val;
-      auto test_result = remove_fn.execute(ctx, val_args);
+      auto test_result = remove_fn->execute(ctx, val_args);
       if (removed || !Lisple::is_truthy(*test_result))
       {
         result.push_back(val);
