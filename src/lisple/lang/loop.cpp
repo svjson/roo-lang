@@ -107,8 +107,6 @@ namespace Lisple
   {
     sptr_rtval_v result;
 
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     auto* binding =
       snode.bind_forms.empty() ? nullptr : snode.bind_forms.front().first.get();
 
@@ -231,8 +229,6 @@ namespace Lisple
   EXECNODE_BODY(ForForm, execnode_for)
   {
     sptr_rtval_v result;
-
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
     auto* binding = snode.bind_forms.front().first.get();
 

@@ -1,8 +1,6 @@
 
 #include "lisple/exception.h"
 
-#include <iostream>
-
 #include <lisple/lang/branch.h>
 #include <lisple/runtime/exec_node.h>
 
@@ -64,8 +62,6 @@ namespace Lisple
 
   EXECNODE_BODY(CondForm, execnode_cond)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     Lisple::sptr_rtval cond_result;
     for (size_t i = 0; i < snode.exec_nodes.size(); i += 2)
     {
@@ -127,8 +123,6 @@ namespace Lisple
 
   EXECNODE_BODY(IfForm, execnode_if)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     if (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
     {
       return exec(ctx, *snode.exec_nodes[1]);
@@ -184,8 +178,6 @@ namespace Lisple
 
   EXECNODE_BODY(WhenForm, execnode_when)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     sptr_rtval result = Constant::NIL;
 
     if (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))

@@ -83,25 +83,8 @@ namespace Lisple
   EXECNODE_BODY(DefunForm, execnode_decl)
   {
     deprecated_special_form_invocations++;
-    std::string& fun_name =
-      std::get<std::string>(std::get<LiteralNode>(args[0]->data).value->value);
 
-    ptr_exec_node_v body;
-
-    body.reserve(args.size() - 2);
-    for (size_t i = 2; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-
-    sptr_rtval_v& arg_form =
-      std::get<sptr_rtval_v>(std::get<LiteralNode>(args[1]->data).value->value);
-
-    sptr_sobject func = create_function(ctx.get_current_namespace(), arg_form, body);
-    sptr_rtval fn = RTValue::executable(func);
-    ctx.store_namespace(fun_name, func);
-
-    return fn;
+    return Constant::NIL;
   }
 
   /** Legacy AST-based implementation */
@@ -113,8 +96,9 @@ namespace Lisple
 
   EXECNODE_BODY(DefunForm, execnode_decl_docstring)
   {
-    args.erase(args.begin() + 1);
-    return this->execnode_decl(ctx, args);
+    deprecated_special_form_invocations++;
+
+    return Constant::NIL;
   }
 
   /** FnForm - fn */
@@ -171,19 +155,8 @@ namespace Lisple
   EXECNODE_BODY(FnForm, execnode_decl)
   {
     deprecated_special_form_invocations++;
-    ptr_exec_node_v body;
 
-    body.reserve(args.size() - 1);
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-
-    sptr_rtval_v& arg_form =
-      std::get<sptr_rtval_v>(std::get<LiteralNode>(args[0]->data).value->value);
-
-    sptr_sobject fn = create_detached_function(ctx, arg_form, body);
-    return RTValue::executable(fn);
+    return Constant::NIL;
   }
 
 } // namespace Lisple

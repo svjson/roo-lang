@@ -59,7 +59,7 @@
 
 #define EXECNODE_DECL(DISP_NAME) \
   /*! @brief Native special form executable implementation */                        \
-  Lisple::sptr_rtval DISP_NAME(Lisple::Context& ctx, Lisple::ptr_exec_node_v& args);
+  Lisple::sptr_rtval DISP_NAME(Lisple::Context& ctx, Lisple::SpecialFormNode& snode);
 
 // clang-format on
 
@@ -172,7 +172,7 @@
 
 #define EXEC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_rtval_v& args)
 
-#define EXECNODE_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::ptr_exec_node_v& args)
+#define EXECNODE_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::SpecialFormNode& snode)
 
 #define MACRO_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
 
@@ -305,7 +305,7 @@ namespace Lisple
   };
 
   typedef std::function<std::shared_ptr<Object>(Context&, sptr_sobject_v&)> exec_fn;
-  typedef std::function<sptr_rtval(Context&, ptr_exec_node_v&)> exec_node_fn;
+  typedef std::function<sptr_rtval(Context&, SpecialFormNode&)> exec_node_fn;
   typedef std::function<sptr_rtval(Context&, sptr_rtval_v&)> exec_rtval_fn;
 
   /*!
@@ -355,7 +355,7 @@ namespace Lisple
     sptr_rtval_v coerce_args(Context& ctx, sptr_rtval_v& args);
 
     sptr_sobject invoke(Context& ctx, sptr_sobject_v& args);
-    sptr_rtval invoke(Context& ctx, ptr_exec_node_v& args);
+    sptr_rtval invoke(Context& ctx, SpecialFormNode& args);
     sptr_rtval invoke(Context& ctx, sptr_rtval_v& args);
     std::string to_string() const;
   };
@@ -491,7 +491,7 @@ namespace Lisple
     virtual Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx,
                                               const Lisple ::sptr_sobject& ast_node) = 0;
 
-    sptr_rtval exec_node(Context& ctx, const SpecialFormNode& node) const;
+    sptr_rtval exec_node(Context& ctx, SpecialFormNode& node) const;
   };
 
   std::shared_ptr<UserFunction> create_function(const std::string& name,

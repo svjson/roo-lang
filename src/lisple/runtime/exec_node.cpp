@@ -251,9 +251,7 @@ namespace Lisple
 
             if (sig->supports_exec_tree())
             {
-              prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
-              sptr_rtval result = sig->invoke(ctx, node_args);
-              return RuntimeValueWrapper::make(result);
+              throw new LispleException("Invalid execution path");
             }
             else
             {
@@ -402,14 +400,7 @@ namespace Lisple
 
             if (sig->supports_exec_tree())
             {
-              ptr_exec_node_v node_args;
-              uptr_exec_node_v uptr_node_args;
-              node_args.reserve(n.args.size());
-              uptr_node_args.reserve(n.args.size());
-
-              prepare_sequence(ctx, *sig->eval_pattern, n.args, uptr_node_args, node_args);
-
-              return sig->invoke(ctx, node_args);
+              throw new LispleException("Invalid execution path");
             }
             else
             {

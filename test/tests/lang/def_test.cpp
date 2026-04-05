@@ -13,8 +13,8 @@ TEST(DefForm, exec_def__string)
   runtime.eval("(def var-name \"Var Value\")");
 
   // Then
-  auto obj = runtime.get_current_namespace().lookup(Lisple::Word("var-name"));
-  EXPECT_TRUE(obj.get());
+  auto obj = runtime.get_current_namespace().lookup_value("var-name");
+  ASSERT_TRUE(obj.get());
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }
 

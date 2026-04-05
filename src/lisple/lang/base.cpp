@@ -56,8 +56,6 @@ namespace Lisple
 
   EXECNODE_BODY(DefForm, execnode_def)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     std::string symbol = snode.values.front()->str();
     sptr_rtval value = exec(ctx, *snode.exec_nodes.front());
     ctx.store_namespace(symbol, value);
@@ -77,11 +75,8 @@ namespace Lisple
   EXECNODE_BODY(DefForm, execnode_def_docstring)
   {
     deprecated_special_form_invocations++;
-    sptr_rtval& value = std::get<LiteralNode>(args[2]->data).value;
-    ctx.store_namespace(
-      std::get<std::string>(std::get<LiteralNode>(args[0]->data).value->value),
-      value);
-    return value;
+
+    return Constant::NIL;
   }
 
   /**
@@ -121,8 +116,6 @@ namespace Lisple
 
   EXECNODE_BODY(DoForm, execnode_do)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     Lisple::sptr_rtval ret;
     for (auto& form : snode.exec_nodes)
     {
@@ -172,8 +165,6 @@ namespace Lisple
 
   EXECNODE_BODY(AndForm, execnode_and)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     Lisple::sptr_rtval val;
     for (auto& form : snode.exec_nodes)
     {
@@ -225,8 +216,6 @@ namespace Lisple
 
   EXECNODE_BODY(OrForm, execnode_or)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     Lisple::sptr_rtval val;
     for (auto& form : snode.exec_nodes)
     {
@@ -323,8 +312,6 @@ namespace Lisple
 
   EXECNODE_BODY(SetBangForm, execnode_set)
   {
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     sptr_rtval_v member_refs = snode.values;
 
     auto value = exec(ctx, *snode.exec_nodes.front());

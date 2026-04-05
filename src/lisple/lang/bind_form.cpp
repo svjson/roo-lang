@@ -91,8 +91,6 @@ namespace Lisple
   {
     sptr_rtval result;
 
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
-
     for (auto& [b, v] : snode.bind_forms)
     {
       Scope bind_scope;
@@ -215,8 +213,6 @@ namespace Lisple
   EXECNODE_BODY(IfLetForm, execnode_if_let)
   {
     sptr_rtval result = Constant::NIL;
-
-    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
     bool truthy = true;
     Scope bind_scope;

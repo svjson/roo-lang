@@ -527,11 +527,11 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Signature::invoke(Context& ctx, ptr_exec_node_v& args)
+  sptr_rtval Signature::invoke(Context& ctx, SpecialFormNode& snode)
   {
     if (exec_func)
     {
-      return exec_func(ctx, args);
+      return exec_func(ctx, snode);
     }
     throw LispleException("Bad execution path - Exec node execution not supported");
   }
@@ -560,21 +560,6 @@ namespace Lisple
       }
     }
 
-    if (exec_func != nullptr)
-    {
-      ptr_exec_node_v node_args;
-      uptr_exec_node_v uptr_node_args;
-      node_args.reserve(args.size());
-      uptr_node_args.reserve(args.size());
-
-      for (auto& val : args)
-      {
-        uptr_node_args.push_back(std::make_unique<ExecNode>(LiteralNode(val)));
-        node_args.push_back(uptr_node_args.back().get());
-      }
-      return exec_func(ctx, node_args);
-    }
-
     if (target_func != nullptr)
     {
       sptr_sobject_v obj_args;
@@ -585,6 +570,11 @@ namespace Lisple
 
       sptr_sobject result = target_func(ctx, obj_args);
       return Lisple::to_rt_value(result);
+    }
+
+    if (exec_func != nullptr)
+    {
+      throw new LispleException("Invalid execution path");
     }
 
     throw LispleException("Bad execution path");
@@ -988,15 +978,13 @@ namespace Lisple
   {
   }
 
-  sptr_rtval SpecialForm::exec_node(Context& ctx, const SpecialFormNode& node) const
+  sptr_rtval SpecialForm::exec_node(Context& ctx, SpecialFormNode& node) const
   {
     for (auto& sig : signatures)
     {
       if (sig->supports_exec_tree())
       {
-        auto wrapper = std::make_unique<ExecNode>(SpecialFormNode(node));
-        ptr_exec_node_v arg = {wrapper.get()};
-        return sig->invoke(ctx, arg);
+        return sig->invoke(ctx, node);
       }
     }
 

@@ -90,54 +90,8 @@ namespace Lisple
   EXECNODE_BODY(ThreadFirstForm, execnode_thread_first)
   {
     deprecated_special_form_invocations++;
-    sptr_rtval value = std::get<LiteralNode>(args[0]->data).value;
 
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      if (auto* call_node = std::get_if<CallNode>(&args[i]->data))
-      {
-        auto new_exec_node =
-          std::make_unique<ExecNode>(CallNode(call_node->callee->clone(), {}));
-
-        auto& call_args = std::get<CallNode>(new_exec_node->data).args;
-        call_args.reserve(call_node->args.size() + 1);
-        call_args.push_back(std::make_unique<ExecNode>(value));
-        for (auto& arg : call_node->args)
-        {
-          call_args.push_back(arg->clone());
-        }
-
-        value = exec(ctx, *new_exec_node);
-      }
-      else if (std::holds_alternative<LookupNode>(args[i]->data) ||
-               std::holds_alternative<LiteralNode>(args[i]->data))
-      {
-        if (auto* lit_node = std::get_if<LiteralNode>(&args[i]->data))
-        {
-          if (lit_node->value->type == RTValue::Type::KEYWORD)
-          {
-            ExecNode lnode(
-              KeyLookupNode(lit_node->value, std::make_unique<ExecNode>(value)));
-            value = exec(ctx, lnode);
-            continue;
-          }
-        }
-        auto callee = args[i]->clone();
-        uptr_exec_node_v call_args;
-        call_args.push_back(std::make_unique<ExecNode>(value));
-        auto new_exec_node =
-          std::make_unique<ExecNode>(CallNode(std::move(callee), std::move(call_args)));
-
-        value = exec(ctx, *new_exec_node);
-      }
-
-      else
-      {
-        throw LispleException("Invalid in thread-first form: " +
-                              Lisple::to_string(*args[i], ""));
-      }
-    }
-    return value;
+    return Constant::NIL;
   }
 
 } // namespace Lisple
