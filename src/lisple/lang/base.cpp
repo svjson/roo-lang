@@ -325,7 +325,7 @@ namespace Lisple
     else if (member_refs.size() == 2)
     {
       auto& prop = member_refs[0];
-      sptr_rtval owner = ctx.eval(member_refs.back()->to_string());
+      sptr_rtval owner = ctx.lookup_value(member_refs.back()->to_string());
 
       Lisple::Dict::set_property(owner, prop, value);
     }
