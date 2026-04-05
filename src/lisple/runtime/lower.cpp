@@ -121,14 +121,14 @@ namespace Lisple
       auto& list = obj->as<List>();
       const auto& children = list.get_children();
 
-      if (children.empty()) throw LispleException("Cannot lower empty list");
-
       if (list.is_quoted() || ctx.is_literal_mode())
       {
         return lower_literal(obj);
       }
       else
       {
+        if (children.empty()) throw LispleException("Cannot lower empty list");
+
         ctx.push({true});
         uptr_exec_node callee = lower_expr(ctx, children[0]);
         ctx.pop();

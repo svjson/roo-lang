@@ -77,6 +77,8 @@ namespace Lisple
    */
   FUNC(GetFunction, get);
 
+  FUNC(DissocFunction, dissoc);
+
   /*!
    * @brief Perform a functional reduce on all key-value pairs of a Map.
    *

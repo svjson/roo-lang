@@ -246,6 +246,16 @@ namespace LispleTest
   {
   }
 
+  SnippetBenchmark::SnippetBenchmark(const std::vector<std::string>& pre_evaluated,
+                                     const std::string& ns,
+                                     const std::string& input)
+    : case_name(::testing::UnitTest::GetInstance()->current_test_info()->name())
+    , pre_evaluated(pre_evaluated)
+    , ns(ns)
+    , input(input)
+  {
+  }
+
   SnippetBenchmark::SnippetBenchmark(const std::string& case_name,
                                      const std::vector<std::string>& pre_evaluated,
                                      const std::string& ns,

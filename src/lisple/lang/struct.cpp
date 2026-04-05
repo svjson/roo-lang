@@ -125,6 +125,32 @@ namespace Lisple
     return Dict::get_property(args[0], args[1]);
   }
 
+  FUNC_IMPL(DissocFunction,
+            SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
+                 EXEC_DISPATCH(&DissocFunction::exec_dissoc))))
+
+  EXEC_BODY(DissocFunction, exec_dissoc)
+  {
+    if (*Constant::NIL == *args[0])
+    {
+      return Constant::NIL;
+    }
+
+    const sptr_rtval_v& map_elements = args[0]->elements();
+    sptr_rtval_v new_map_elements;
+
+    for (size_t i = 0; i < map_elements.size(); i += 2)
+    {
+      if (*map_elements[i] != *args[1])
+      {
+        new_map_elements.push_back(map_elements[i]);
+        new_map_elements.push_back(map_elements[i + 1]);
+      }
+    }
+
+    return RTValue::map(new_map_elements);
+  }
+
   /* ReduceKeyValueFunction - reduce-kv */
   FUNC_IMPL(ReduceKeyValueFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::EXEC)),

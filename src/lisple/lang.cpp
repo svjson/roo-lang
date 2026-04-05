@@ -78,6 +78,7 @@ namespace Lisple
     lang_symbols.emplace("count", CountFunction::make());
     lang_symbols.emplace("def", DefForm::make());
     lang_symbols.emplace("defun", DefunForm::make());
+    lang_symbols.emplace("dissoc", DissocFunction::make());
     lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
