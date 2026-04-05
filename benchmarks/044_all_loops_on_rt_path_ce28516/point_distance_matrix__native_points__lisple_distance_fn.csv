@@ -1,0 +1,3 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres
+295087516,point_distance_matrix__native_points__lisple_distance_fn,0,0,1464,5,1469,0,15189003,5577037,0,0,0,0,0,0,0,0,562500,0, 0,0,0,0, 839,3071,51,0
+295506736,point_distance_matrix__native_points__lisple_distance_fn,0,0,1440,6,1446,0,15189003,5577037,0,0,0,0,0,0,0,0,562500,0, 0,0,0,0, 839,3071,51,0

@@ -14,7 +14,7 @@ const std::string DEFUN_SLIDING_WINDOW = R"(
         (let [window (take window-size remaining)
               mn (apply min window)
               mx (apply max window)]
-          (set! [result] (conj result {:min mn :max mx})))
+          (append! result {:min mn :max mx}))
         (set! [remaining] (tail remaining))))
     result))
                               )";
