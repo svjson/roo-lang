@@ -1,0 +1,2 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres
+299144468,nested_stats_var_groups__500_events__20_group_size__50_iterations,0,0,312,3,315,0,1048587,649253,75150,262150,0,861600,861600,0,0,0,52,0, 0,0,0,0, 60,65,35,0
