@@ -1,0 +1,2 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres
+231218193,nested_for_100_x_100_x_100_map_construction,1,0,186,0,187,0,7232729,1050910,0,20666,36,0,0,0,0,0,0,0, 0,10303,0,0, 20,19,7,0
