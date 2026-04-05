@@ -20,8 +20,6 @@ namespace Lisple
    */
   MACRO_DECL(CommentMacro, comment);
 
-  MACRO_DECL(WhileMacro, make_while)
-
   /*!
    * @brief branching construct based on testing a single value against an
    * arbitrary number of constant values.
@@ -47,24 +45,6 @@ namespace Lisple
    * | 3...  | Repetitions of 1-2                                               |
    */
   MACRO_DECL(CaseMacro, make_case)
-
-  /*!
-   * @brief Executes a form for every element in a sequence, just like
-   * (for ...), but takes a leading binding in the binding form containing
-   * the zero-based iteration index
-   *
-   * Usage:
-   * @code
-   * (for-indexed [index num [1 2 3 4]]
-   *   (* index num) => [0 2 6 12])
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Binding form, [<index-var-name> <var-name> <seq>]                |
-   * | 1     | Form body to execute                                             |
-   */
-  MACRO_DECL(ForIndexedMacro, make_for)
 
   FUNC_DECL(PrintFunction, do_print)
 

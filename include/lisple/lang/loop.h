@@ -41,6 +41,26 @@ namespace Lisple
    */
   SPECIAL_FORM_DECL(ForForm, for)
 
+  /*!
+   * @brief Executes a form for every element in a sequence, just like
+   * (for ...), but takes a leading binding in the binding form containing
+   * the zero-based iteration index
+   *
+   * Usage:
+   * @code
+   * (for-indexed [index num [1 2 3 4]]
+   *   (* index num) => [0 2 6 12])
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Binding form, [<index-var-name> <var-name> <seq>]                |
+   * | 1     | Form body to execute                                             |
+   */
+  SPECIAL_FORM_DECL(ForIndexedForm, for_indexed)
+
+  SPECIAL_FORM_DECL(WhileForm, while)
+
 } // namespace Lisple
 
 #endif

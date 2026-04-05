@@ -140,7 +140,7 @@ namespace Lisple
   sptr_rtval to_rt_value(sptr_sobject& obj);
   sptr_rtval to_rt_value(const Object& obj);
   sptr_sobject to_AST(RTValue& val);
-  bool is_truthy(RTValue& val);
+  bool is_truthy(const RTValue& val);
 
 } // namespace Lisple
 

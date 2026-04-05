@@ -682,7 +682,7 @@ namespace Lisple
     }
   }
 
-  bool is_truthy(RTValue& val)
+  bool is_truthy(const RTValue& val)
   {
     switch (val.type)
     {

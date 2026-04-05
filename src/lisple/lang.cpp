@@ -2,6 +2,8 @@
 #include "lisple/lang.h"
 
 #include "lisple/lang/num.h"
+#include "lisple/runtime/seq.h"
+#include "lisple/runtime/value.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -91,7 +93,7 @@ namespace Lisple
     lang_symbols.emplace("find-index", FindIndexFunction::make());
     lang_symbols.emplace("fn", FnForm::make());
     lang_symbols.emplace("for", ForForm::make());
-    lang.emplace("for-indexed", std::make_shared<ForIndexedMacro>());
+    lang_symbols.emplace("for-indexed", ForIndexedForm::make());
     lang_symbols.emplace("get", GetFunction::make());
     lang_symbols.emplace("head", HeadFunction::make());
     lang_symbols.emplace("if", IfForm::make());
@@ -149,7 +151,7 @@ namespace Lisple
     lang.emplace("vector", std::make_shared<VectorFunction>());
     lang_symbols.emplace("when", WhenForm::make());
     lang_symbols.emplace("when-let", WhenLetForm::make());
-    lang.emplace("while", std::make_shared<WhileMacro>());
+    lang_symbols.emplace("while", WhileForm::make());
     lang_symbols.emplace("zero?", ZeroPFunction::make());
 
     return Namespace::make_lang(lang, lang_symbols);
@@ -288,27 +290,6 @@ namespace Lisple
     return NIL;
   }
 
-  MACRO_IMPL(WhileMacro,
-             SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&WhileMacro::make_while))))
-
-  MACRO_BODY(WhileMacro, make_while)
-  {
-    Lisple::sptr_sobject retval = NIL;
-
-    ctx.push_context(true);
-    while (ctx.eval_ast(args[0])->is_truthy())
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        retval = ctx.eval_ast(args[i]);
-      }
-    }
-    ctx.pop_context();
-
-    return retval;
-  }
-
   /* case */
   MACRO_IMPL(CaseMacro,
              SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
@@ -343,66 +324,6 @@ namespace Lisple
 
     ctx.pop_context();
     return retval;
-  }
-
-  /* ForIndexedMacro - for-indexed */
-  MACRO_IMPL(ForIndexedMacro,
-             SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&ForIndexedMacro::make_for))))
-
-  MACRO_BODY(ForIndexedMacro, make_for)
-  {
-    sptr_sobject_v& bind_form = args[0]->get_children();
-
-    if (bind_form.size() != 3)
-    {
-      throw InvocationException(
-        "Invalid number of elements in for-indexed bind form, expected 3: " +
-        args[0]->to_string());
-    }
-
-    if (!Type::WORD.is_type_of(*bind_form[0]))
-    {
-      throw TypeError("for-indexed macro requires the index variable to be a word");
-    }
-
-    if (!Type::WORD.is_type_of(*bind_form[1]))
-    {
-      throw TypeError("for-indexed macro requires the iteration variable to be a word");
-    }
-
-    auto seq = ctx.eval_ast(bind_form[2]);
-    if (!Type::SEQ.is_type_of(*seq))
-    {
-      throw TypeError("for-indexed macro requires an iterable. Wrong type: " +
-                      bind_form[2]->to_string());
-    }
-
-    auto index_binding = ArgumentBinding::create(*bind_form[0]);
-    auto seq_binding = ArgumentBinding::create(*bind_form[1]);
-
-    sptr_sobject_v result;
-    result.reserve(seq->size());
-
-    ctx.push_context(true);
-    Scope& iter_scope = ctx.current_scope();
-    for (size_t i = 0; i < seq->size(); i++)
-    {
-      auto& lmnt = seq->get_children()[i];
-      sptr_sobject index = Number::make(static_cast<int>(i));
-      index_binding->apply(iter_scope, index);
-      seq_binding->apply(iter_scope, lmnt);
-      sptr_sobject iter_result;
-      for (size_t e = 1; e < args.size(); e++)
-      {
-        iter_result = ctx.eval_ast(args[e]);
-      }
-      result.push_back(std::move(iter_result));
-      iter_scope.clear();
-    }
-    ctx.pop_context();
-
-    return std::make_shared<Array>(std::move(result));
   }
 
   /* MergeFunction - merge */
@@ -509,6 +430,16 @@ namespace Lisple
 
   FUNC_BODY(RemoveNthBangFunction, remove_nth)
   {
+    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[0].get()))
+    {
+      sptr_rtval_v& children = std::get<sptr_rtval_v>(wrapper->val->value);
+      size_t n = args[1]->as<Lisple::Number>().int_value();
+      sptr_rtval to_delete = children.at(n);
+
+      children.erase(children.begin() + n);
+
+      return RuntimeValueWrapper::make(to_delete);
+    }
     auto& seq = args[0]->as<Lisple::Seq>();
     int n = args[1]->as<Lisple::Number>().int_value();
 

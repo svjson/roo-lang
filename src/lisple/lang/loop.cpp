@@ -1,5 +1,10 @@
 
 
+#include "lisple/exec.h"
+#include "lisple/runtime/value.h"
+
+#include <iostream>
+
 #include <lisple/bind.h>
 #include <lisple/exception.h>
 #include <lisple/lang/loop.h>
@@ -7,6 +12,7 @@
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 #include <lisple/runtime/seq.h>
+
 namespace Lisple
 {
   /** DoTimes - dotimes */
@@ -265,6 +271,208 @@ namespace Lisple
     }
 
     return RTValue::vector(std::move(result));
+  }
+
+  /** ForIndexedForm - for-indexed */
+  SPECIAL_FORM_IMPL(ForIndexedForm,
+                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&ForIndexedForm::inv_for_indexed,
+                                       &ForIndexedForm::execnode_for_indexed))))
+
+  SFORM_LOWER_IMPL(ForIndexedForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw LispleException("for-indexed: No loop expression - " + ast_node->to_string());
+    }
+
+    if (elements[1]->get_type() != Form::ARRAY || elements[1]->size() != 3)
+    {
+      throw LispleException("for-indexed: Invalid loop expression - " +
+                            ast_node->to_string());
+    }
+
+    sptr_sobject_v& bind_form = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+
+    auto index_node = lower_literal(bind_form[0]);
+    bindings.push_back(
+      std::make_pair(LexicalBinding::create(std::get<LiteralNode>(index_node->data)),
+                     std::make_unique<ExecNode>(Constant::NIL)));
+
+    auto sym_node = lower_literal(bind_form[1]);
+    bindings.push_back(
+      std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                     std::make_unique<ExecNode>(Constant::NIL)));
+
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.push_back(lower_expr(ctx, bind_form.back()));
+
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+  }
+
+  MACRO_BODY(ForIndexedForm, inv_for_indexed)
+  {
+    sptr_sobject_v& bind_form = args[0]->get_children();
+
+    if (bind_form.size() != 3)
+    {
+      throw InvocationException(
+        "Invalid number of elements in for-indexed bind form, expected 3: " +
+        args[0]->to_string());
+    }
+
+    if (!Type::WORD.is_type_of(*bind_form[0]))
+    {
+      throw TypeError("for-indexed macro requires the index variable to be a word");
+    }
+
+    if (!Type::WORD.is_type_of(*bind_form[1]))
+    {
+      throw TypeError("for-indexed macro requires the iteration variable to be a word");
+    }
+
+    auto seq = ctx.eval_ast(bind_form[2]);
+    if (!Type::SEQ.is_type_of(*seq))
+    {
+      throw TypeError("for-indexed macro requires an iterable. Wrong type: " +
+                      bind_form[2]->to_string());
+    }
+
+    auto index_binding = ArgumentBinding::create(*bind_form[0]);
+    auto seq_binding = ArgumentBinding::create(*bind_form[1]);
+
+    sptr_sobject_v result;
+    result.reserve(seq->size());
+
+    ctx.push_context(true);
+    Scope& iter_scope = ctx.current_scope();
+    for (size_t i = 0; i < seq->size(); i++)
+    {
+      auto& lmnt = seq->get_children()[i];
+      sptr_sobject index = Number::make(static_cast<int>(i));
+      index_binding->apply(iter_scope, index);
+      seq_binding->apply(iter_scope, lmnt);
+      sptr_sobject iter_result;
+      for (size_t e = 1; e < args.size(); e++)
+      {
+        iter_result = ctx.eval_ast(args[e]);
+      }
+      result.push_back(std::move(iter_result));
+      iter_scope.clear();
+    }
+    ctx.pop_context();
+
+    return std::make_shared<Array>(std::move(result));
+  }
+
+  EXECNODE_BODY(ForIndexedForm, execnode_for_indexed)
+  {
+    sptr_rtval_v result;
+
+    auto* index_binding = snode.bind_forms.front().first.get();
+    auto* val_binding = snode.bind_forms.back().first.get();
+
+    sptr_rtval seq = exec(ctx, *snode.exec_nodes[0]);
+
+    if (seq->type != RTValue::Type::NIL && Type::SEQ.is_type_of(*seq))
+    {
+      const sptr_rtval_v& elements = seq->elements();
+      if (elements.size() > 0)
+      {
+        result.reserve(elements.size());
+
+        ctx.push_context(true);
+        Scope& iter_scope = ctx.current_scope();
+        size_t n_args = snode.exec_nodes.size();
+
+        int index = 0;
+        for (auto& item : elements)
+        {
+          index_binding->apply(iter_scope, RTValue::number(index));
+          val_binding->apply(iter_scope, item);
+
+          sptr_rtval iter_result;
+
+          for (size_t j = 1; j < n_args; j++)
+          {
+            iter_result = exec(ctx, *snode.exec_nodes[j]);
+          }
+
+          result.push_back(iter_result);
+          iter_scope.clear();
+          index++;
+        }
+
+        ctx.pop_context();
+      }
+    }
+
+    return RTValue::vector(std::move(result));
+  }
+
+  /** WhileForm - while */
+  SPECIAL_FORM_IMPL(WhileForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&WhileForm::inv_while, &WhileForm::execnode_while))))
+
+  SFORM_LOWER_IMPL(WhileForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw LispleException("while: No loop condition expression - " +
+                            ast_node->to_string());
+    }
+
+    uptr_exec_node_v exec_nodes;
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
+
+  MACRO_BODY(WhileForm, inv_while)
+  {
+    Lisple::sptr_sobject retval = NIL;
+
+    ctx.push_context(true);
+    while (ctx.eval_ast(args[0])->is_truthy())
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        retval = ctx.eval_ast(args[i]);
+      }
+    }
+    ctx.pop_context();
+
+    return retval;
+  }
+
+  EXECNODE_BODY(WhileForm, execnode_while)
+  {
+    sptr_rtval result = Constant::NIL;
+    while (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
+    {
+      for (size_t i = 1; i < snode.exec_nodes.size(); i++)
+      {
+        result = exec(ctx, *snode.exec_nodes[i]);
+      }
+    }
+
+    return result;
   }
 
 } // namespace Lisple
