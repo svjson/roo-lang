@@ -242,4 +242,133 @@ namespace Lisple
     return result;
   }
 
+  /** WhenLetForm - when-let */
+  SPECIAL_FORM_IMPL(WhenLetForm,
+                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&WhenLetForm::inv_when_let,
+                                       &WhenLetForm::execnode_when_let))))
+
+  SFORM_LOWER_IMPL(WhenLetForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+    if (elements[1]->get_type() != Form::ARRAY)
+    {
+      throw TypeError("when-let: Invalid bind form: " + elements[1]->to_string());
+    }
+    if (elements.size() < 2 || elements.size() > 3)
+    {
+      throw LispleException("when-let: Invalid form: " +
+                            std::to_string(elements.size() - 2));
+    }
+
+    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+
+    for (size_t i = 0; i < bind_forms.size(); i += 2)
+    {
+      auto sym_node = lower_literal(bind_forms[i]);
+      bindings.push_back(
+        std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                       lower_expr(ctx, bind_forms[i + 1])));
+    }
+
+    uptr_exec_node_v body;
+    body.reserve(elements.size() - 2);
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      body.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(body)));
+  }
+
+  MACRO_BODY(WhenLetForm, inv_when_let)
+  {
+    deprecated_special_form_invocations++;
+    Object& var_def_array = *args[0];
+
+    if (var_def_array.get_children().size() % 2 != 0)
+    {
+      throw LispleException(
+        "Wrong number of parameters in binding form of when-let expression: " +
+        var_def_array.to_string());
+    }
+
+    bool contains_nil = false;
+
+    size_t scopes = 0;
+    for (size_t i = 0; i < var_def_array.size(); i += 2)
+    {
+      auto& var_name_obj = *var_def_array.get_children()[i];
+      sptr_sobject var_expr = var_def_array.get_children()[i + 1];
+      auto var_val_obj = RuntimeValueWrapper::make(ctx.eval(var_expr));
+
+      if (*var_val_obj == *NIL)
+      {
+        contains_nil = true;
+        break;
+      }
+
+      if (!Type::WORD.is_type_of(var_name_obj))
+      {
+        throw TypeError(
+          "Invalid variable identifier in binding form of when-let expression: " +
+          var_name_obj.to_string() + " in " + var_def_array.to_string());
+      }
+
+      Scope var_scope;
+      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
+      ctx.push_context(true, var_scope);
+      scopes++;
+    }
+
+    sptr_sobject result = NIL;
+    if (!contains_nil)
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        result = ctx.eval_ast(args[i]);
+      }
+    }
+
+    for (size_t i = 0; i < scopes; i++)
+    {
+      ctx.pop_context();
+    }
+
+    return result;
+  }
+
+  EXECNODE_BODY(WhenLetForm, execnode_when_let)
+  {
+    sptr_rtval result = Constant::NIL;
+
+    bool truthy = true;
+    Scope bind_scope;
+    ctx.push_context(true, bind_scope);
+    for (auto& [b, v] : snode.bind_forms)
+    {
+      sptr_rtval val = exec(ctx, *v);
+      if (!Lisple::is_truthy(*val))
+      {
+        truthy = false;
+        ctx.pop_context();
+        break;
+      }
+      b->apply(ctx.current_scope(), val);
+    }
+
+    if (truthy)
+    {
+      for (auto& node : snode.exec_nodes)
+      {
+        result = exec(ctx, *node);
+      }
+      ctx.pop_context();
+    }
+
+    return result;
+  }
+
 } // namespace Lisple

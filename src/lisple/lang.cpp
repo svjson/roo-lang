@@ -150,7 +150,7 @@ namespace Lisple
     lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
     lang.emplace("vector", std::make_shared<VectorFunction>());
     lang_symbols.emplace("when", WhenForm::make());
-    lang.emplace("when-let", std::make_shared<WhenLetMacro>());
+    lang_symbols.emplace("when-let", WhenLetForm::make());
     lang.emplace("while", std::make_shared<WhileMacro>());
     lang_symbols.emplace("zero?", ZeroPFunction::make());
 
@@ -264,67 +264,6 @@ namespace Lisple
   MACRO_BODY(CommentMacro, comment)
   {
     return NIL;
-  }
-
-  /* WhenLetMacro */
-  MACRO_IMPL(WhenLetMacro,
-             SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                  EXEC_DISPATCH(&WhenLetMacro::make_when_let))))
-
-  MACRO_BODY(WhenLetMacro, make_when_let)
-  {
-    Object& var_def_array = *args[0];
-
-    if (var_def_array.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of when-let expression: " +
-        var_def_array.to_string());
-    }
-
-    bool contains_nil = false;
-
-    size_t scopes = 0;
-    for (size_t i = 0; i < var_def_array.size(); i += 2)
-    {
-      auto& var_name_obj = *var_def_array.get_children()[i];
-      sptr_sobject var_expr = var_def_array.get_children()[i + 1];
-      auto var_val_obj = RuntimeValueWrapper::make(ctx.eval(var_expr));
-
-      if (*var_val_obj == *NIL)
-      {
-        contains_nil = true;
-        break;
-      }
-
-      if (!Type::WORD.is_type_of(var_name_obj))
-      {
-        throw TypeError(
-          "Invalid variable identifier in binding form of when-let expression: " +
-          var_name_obj.to_string() + " in " + var_def_array.to_string());
-      }
-
-      Scope var_scope;
-      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
-      ctx.push_context(true, var_scope);
-      scopes++;
-    }
-
-    sptr_sobject result = NIL;
-    if (!contains_nil)
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        result = ctx.eval_ast(args[i]);
-      }
-    }
-
-    for (size_t i = 0; i < scopes; i++)
-    {
-      ctx.pop_context();
-    }
-
-    return result;
   }
 
   /* PrintFunction - prn */

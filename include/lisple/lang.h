@@ -20,23 +20,6 @@ namespace Lisple
    */
   MACRO_DECL(CommentMacro, comment);
 
-  /*!
-   * @brief Temporarily bind values to variables that will exist only
-   * within the scope of the body of the when-let macro. The body will execute
-   * only if all the bound variables have non-nil values.
-   *
-   * Usage:
-   * @code
-   * (when-let [var value] body...)
-   * @endcode
-   *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | Array containing variable name and variable value pairs    |
-   * | 1...  | Body forms to execute with the temporary bindings          |
-   */
-  MACRO_DECL(WhenLetMacro, make_when_let)
-
   MACRO_DECL(WhileMacro, make_while)
 
   /*!

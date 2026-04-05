@@ -24,6 +24,23 @@ namespace Lisple
 
   SPECIAL_FORM_DECL(IfLetForm, if_let)
 
+  /*!
+   * @brief Temporarily bind values to variables that will exist only
+   * within the scope of the body of the when-let macro. The body will execute
+   * only if all the bound variables have non-nil values.
+   *
+   * Usage:
+   * @code
+   * (when-let [var value] body...)
+   * @endcode
+   *
+   * | Arg # | Description                                                |
+   * |-------|------------------------------------------------------------|
+   * | 0     | Array containing variable name and variable value pairs    |
+   * | 1...  | Body forms to execute with the temporary bindings          |
+   */
+  SPECIAL_FORM_DECL(WhenLetForm, when_let)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__BIND_FORM_H */
