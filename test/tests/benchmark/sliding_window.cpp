@@ -51,20 +51,20 @@ TEST(Benchmark_Workload, sliding_window__1000_values__20_window_size__20_iterati
   bm.run();
 }
 
-// TEST(Benchmark_Workload, sliding_window__10000_values__10_window_size__20_iterations)
-// {
-//   LispleTest::SnippetBenchmark bm({BENCHMARK__SLIDING_WINDOW},
-//                                   "benchmark.sliding-window",
-//                                   "(benchmark-sliding-window 10000 25 20)");
+TEST(Benchmark_Workload, sliding_window__10000_values__10_window_size__20_iterations)
+{
+  LispleTest::SnippetBenchmark bm({BENCHMARK__SLIDING_WINDOW},
+                                  "benchmark.sliding-window",
+                                  "(benchmark-sliding-window 10000 25 20)");
 
-//   bm.run();
-// }
+  bm.run();
+}
 
-// TEST(Benchmark_Workload, sliding_window__20000_values__10_window_size__10_iterations)
-// {
-//   LispleTest::SnippetBenchmark bm({BENCHMARK__SLIDING_WINDOW},
-//                                   "benchmark.sliding-window",
-//                                   "(benchmark-sliding-window 20000 30 10)");
+TEST(Benchmark_Workload, sliding_window__20000_values__10_window_size__10_iterations)
+{
+  LispleTest::SnippetBenchmark bm({BENCHMARK__SLIDING_WINDOW},
+                                  "benchmark.sliding-window",
+                                  "(benchmark-sliding-window 20000 30 10)");
 
-//   bm.run();
-// }
+  bm.run();
+}
