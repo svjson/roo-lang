@@ -97,7 +97,7 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, LambdaNode>)
         {
-          return indent + "<lambda>";
+          return indent + " - <lambda>\n";
         }
         else if constexpr (std::is_same_v<T, KeyLookupNode>)
         {
@@ -105,6 +105,28 @@ namespace Lisple
           indent += "  ";
           result += indent + " - Target:\n";
           result += to_string(*n.target, indent + "  ");
+          return result;
+        }
+        else if constexpr (std::is_same_v<T, SpecialFormNode>)
+        {
+          std::string result = indent + " - SpecialFormNode(" + n.form->to_string() + ")\n";
+          indent += "  ";
+          if (n.values.size())
+          {
+            result += indent + " - Values:\n";
+            for (auto& v : n.values)
+            {
+              result += indent + "   - " + v->to_string() + "\n";
+            }
+          }
+          if (n.exec_nodes.size())
+          {
+            result += indent + " - Nodes:\n";
+            for (auto& n : n.exec_nodes)
+            {
+              result += to_string(*n, indent + "  ");
+            }
+          }
           return result;
         }
         else if constexpr (std::is_same_v<T, ExecNodeList>)

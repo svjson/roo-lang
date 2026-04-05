@@ -1,5 +1,6 @@
 
 #include "lisple/runtime/lower.h"
+#include "lisple/runtime/value.h"
 
 #include <utility>
 
@@ -88,7 +89,6 @@ namespace Lisple
 
   EXECNODE_BODY(LetForm, execnode_let)
   {
-
     sptr_rtval result;
 
     auto snode = std::get<SpecialFormNode>(args[0]->data);
@@ -121,7 +121,40 @@ namespace Lisple
                          EXEC_DISPATCH(&IfLetForm::inv_if_let,
                                        &IfLetForm::execnode_if_let))))
 
-  SFORM_OMIT_LOWER_IMPL(IfLetForm)
+  SFORM_LOWER_IMPL(IfLetForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+    if (elements[1]->get_type() != Form::ARRAY)
+    {
+      throw TypeError("if-let: Invalid bind form: " + elements[1]->to_string());
+    }
+    if (elements.size() < 3 || elements.size() > 4)
+    {
+      throw LispleException("if-let: Invalid number of branches: " +
+                            std::to_string(elements.size() - 2));
+    }
+
+    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+
+    for (size_t i = 0; i < bind_forms.size(); i += 2)
+    {
+      auto sym_node = lower_literal(bind_forms[i]);
+      bindings.push_back(
+        std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                       lower_expr(ctx, bind_forms[i + 1])));
+    }
+
+    uptr_exec_node_v body;
+    body.reserve(elements.size() - 2);
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      body.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(body)));
+  }
 
   FUNC_BODY(IfLetForm, inv_if_let)
   {
@@ -181,59 +214,33 @@ namespace Lisple
 
   EXECNODE_BODY(IfLetForm, execnode_if_let)
   {
-    sptr_rtval result;
+    sptr_rtval result = Constant::NIL;
 
-    if (ExecNodeList* bnd = std::get_if<ExecNodeList>(&args[0]->data))
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
+
+    bool truthy = true;
+    Scope bind_scope;
+    ctx.push_context(true, bind_scope);
+    for (auto& [b, v] : snode.bind_forms)
     {
-      if (bnd->nodes.size() % 2 != 0)
+      sptr_rtval val = exec(ctx, *v);
+      if (!Lisple::is_truthy(*val))
       {
-        throw LispleException(
-          "Wrong number of parameters in binding form of let expression: " +
-          std::to_string(bnd->nodes.size()));
-      }
-
-      uptr_exec_node_v bound_values;
-      for (size_t i = 0; i < bnd->nodes.size(); i += 2)
-      {
-        Scope binding_scope;
-
-        LiteralNode& bind_expr = std::get<LiteralNode>(bnd->nodes[i]->data);
-
-        auto binding = LexicalBinding::create(bind_expr);
-
-        sptr_rtval bind_val = exec(ctx, *bnd->nodes[i + 1]);
-
-        if (!Lisple::is_truthy(*bind_val))
-        {
-          for (size_t si = 0; si < i / 2; i++)
-          {
-            ctx.pop_context();
-          }
-          if (args.size() == 3)
-          {
-            return exec(ctx, *args[2]);
-          }
-          else
-          {
-            return Constant::NIL;
-          }
-          break;
-        }
-
-        binding->apply(binding_scope, bind_val);
-        ctx.push_context(true, binding_scope);
-      }
-
-      result = exec(ctx, *args[1]);
-
-      for (size_t i = 0; i < bnd->nodes.size() / 2; i++)
-      {
+        truthy = false;
         ctx.pop_context();
+        break;
       }
+      b->apply(ctx.current_scope(), val);
     }
-    else
+
+    if (truthy)
     {
-      throw LispleException("if-let: Invalid bind form.");
+      result = exec(ctx, *snode.exec_nodes[0]);
+      ctx.pop_context();
+    }
+    else if (snode.exec_nodes.size() == 2)
+    {
+      result = exec(ctx, *snode.exec_nodes[1]);
     }
 
     return result;

@@ -7,19 +7,10 @@
 TEST(DefForm, exec_def__string)
 {
   // Given
-  Lisple::DefForm def;
-
   Lisple::Runtime runtime;
-  Lisple::Context ctx(runtime);
-
-  Lisple::ptr_exec_node_v args;
-  Lisple::ExecNode var_name(Lisple::RTValue::symbol("var-name"));
-  Lisple::ExecNode str_value(Lisple::RTValue::string("Var Value"));
-  args.push_back(&var_name);
-  args.push_back(&str_value);
 
   // When
-  def.execnode_def(ctx, args);
+  runtime.eval("(def var-name \"Var Value\")");
 
   // Then
   auto obj = runtime.get_current_namespace().lookup(Lisple::Word("var-name"));

@@ -60,6 +60,15 @@ namespace Lisple
     call_nodes_constructed++;
   }
 
+  SpecialFormNode::SpecialFormNode(const SpecialForm* form,
+                                   const sptr_rtval_v& values,
+                                   uptr_exec_node_v exec_nodes)
+    : form(form)
+    , values(values)
+    , exec_nodes(std::move(exec_nodes))
+  {
+  }
+
   SpecialFormNode::SpecialFormNode(
     const SpecialForm* form,
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms,
@@ -76,6 +85,11 @@ namespace Lisple
     for (auto& [b, v] : other.bind_forms)
     {
       bind_forms.push_back(std::make_pair(b->clone(), v->clone()));
+    }
+
+    for (auto& v : other.values)
+    {
+      values.push_back(v);
     }
 
     for (auto& node : other.exec_nodes)

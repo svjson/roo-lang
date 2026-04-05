@@ -94,11 +94,14 @@ namespace Lisple
   struct SpecialFormNode
   {
     const SpecialForm* form;
-    std::vector<RTValue> values;
+    sptr_rtval_v values;
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms;
     uptr_exec_node_v exec_nodes;
 
     SpecialFormNode(const SpecialFormNode& other);
+    SpecialFormNode(const SpecialForm* form,
+                    const sptr_rtval_v& values,
+                    uptr_exec_node_v exec_nodes);
     SpecialFormNode(
       const SpecialForm* form,
       std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms,

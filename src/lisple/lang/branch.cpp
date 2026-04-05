@@ -1,4 +1,8 @@
 
+#include "lisple/exception.h"
+
+#include <iostream>
+
 #include <lisple/lang/branch.h>
 #include <lisple/runtime/exec_node.h>
 
@@ -9,10 +13,29 @@ namespace Lisple
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&CondForm::inv_cond, &CondForm::execnode_cond))))
 
-  SFORM_OMIT_LOWER_IMPL(CondForm)
+  SFORM_LOWER_IMPL(CondForm)
+  {
+    uptr_exec_node_v exec_nodes;
+
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() % 2 != 1)
+    {
+      throw LispleException("cond: Unmatched condition pairs: " + ast_node->to_string());
+    }
+
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
 
   MACRO_BODY(CondForm, inv_cond)
   {
+    deprecated_special_form_invocations++;
     if (args.size() % 2 != 0)
     {
       throw InvocationException("Uneven number of forms passed to cond");
@@ -41,31 +64,18 @@ namespace Lisple
 
   EXECNODE_BODY(CondForm, execnode_cond)
   {
-    if (args.size() % 2 != 0)
-    {
-      throw InvocationException("Uneven number of forms passed to cond");
-    }
-    else if (args.size() == 0)
-    {
-      throw InvocationException("Empty cond-form");
-    }
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
-    sptr_rtval retval = Constant::NIL;
-    sptr_rtval cnd_eval = Constant::NIL;
-
-    ctx.push_context(true);
-    for (size_t i = 0; i < args.size(); i += 2)
+    Lisple::sptr_rtval cond_result;
+    for (size_t i = 0; i < snode.exec_nodes.size(); i += 2)
     {
-      cnd_eval = exec(ctx, *args[i]);
-      if (Lisple::is_truthy(*cnd_eval))
+      cond_result = exec(ctx, *snode.exec_nodes[i]);
+      if (Lisple::is_truthy(*cond_result))
       {
-        retval = exec(ctx, *args[i + 1]);
-        break;
+        return exec(ctx, *snode.exec_nodes[i + 1]);
       }
     }
-
-    ctx.pop_context();
-    return retval;
+    return Constant::NIL;
   }
 
   /** IfForm - if */
@@ -77,7 +87,25 @@ namespace Lisple
                                        (&Lisple::Type::ANY, NO_EVAL)),
                                EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if))))
 
-  SFORM_OMIT_LOWER_IMPL(IfForm)
+  SFORM_LOWER_IMPL(IfForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() < 3 || elements.size() > 4)
+    {
+      throw LispleException("if: Invalid number of branches: " +
+                            std::to_string(elements.size() - 2));
+    }
+
+    uptr_exec_node_v exec_nodes;
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
 
   MACRO_BODY(IfForm, inv_if)
   {
@@ -99,13 +127,15 @@ namespace Lisple
 
   EXECNODE_BODY(IfForm, execnode_if)
   {
-    if (Lisple::is_truthy(*std::get<LiteralNode>(args[0]->data).value))
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
+
+    if (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
     {
-      return exec(ctx, *args[1]);
+      return exec(ctx, *snode.exec_nodes[1]);
     }
-    else if (args.size() == 3)
+    else if (snode.exec_nodes.size() == 3)
     {
-      return exec(ctx, *args[2]);
+      return exec(ctx, *snode.exec_nodes[2]);
     }
 
     return Constant::NIL;
@@ -116,7 +146,24 @@ namespace Lisple
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&WhenForm::inv_when, &WhenForm::execnode_when))))
 
-  SFORM_OMIT_LOWER_IMPL(WhenForm)
+  SFORM_LOWER_IMPL(WhenForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw LispleException("when: No condition given: " + ast_node->to_string());
+    }
+
+    uptr_exec_node_v exec_nodes;
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
 
   MACRO_BODY(WhenForm, inv_when)
   {
@@ -137,19 +184,19 @@ namespace Lisple
 
   EXECNODE_BODY(WhenForm, execnode_when)
   {
-    sptr_rtval retval = Constant::NIL;
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
-    ctx.push_context(true);
-    auto condition = exec(ctx, *args[0]);
-    if (Lisple::is_truthy(*condition))
+    sptr_rtval result = Constant::NIL;
+
+    if (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
     {
-      for (size_t i = 1; i < args.size(); i++)
+      for (size_t i = 1; i < snode.exec_nodes.size(); i++)
       {
-        retval = exec(ctx, *args[i]);
+        result = exec(ctx, *snode.exec_nodes[i]);
       }
     }
-    ctx.pop_context();
-    return retval;
+
+    return result;
   }
 
 } // namespace Lisple

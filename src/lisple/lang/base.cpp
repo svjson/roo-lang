@@ -1,3 +1,6 @@
+#include "lisple/runtime/lower.h"
+#include "lisple/runtime/node.h"
+
 #include <lisple/lang/base.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/exec_node.h>
@@ -13,13 +16,39 @@ namespace Lisple
                                EXEC_DISPATCH(&DefForm::inv_def_docstring,
                                              &DefForm::execnode_def_docstring))))
 
-  SFORM_OMIT_LOWER_IMPL(DefForm)
+  SFORM_LOWER_IMPL(DefForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+    if (elements.size() < 3 || elements.size() > 4)
+    {
+      throw LispleException("Invalid def form: " + ast_node->to_string());
+    }
+    if (elements[1]->get_type() != Lisple::Form::WORD)
+    {
+      throw TypeError("Invalid symbol name: " + elements[0]->to_string());
+    }
+    if (elements.size() == 4 && elements[2]->get_type() != Lisple::Form::STRING)
+    {
+      throw LispleException("Invalid def form: " + ast_node->to_string());
+    }
+
+    Lisple::Word& symbol = elements[1]->as<Lisple::Word>();
+    sptr_sobject doc_string = elements.size() == 4 ? elements[2] : nullptr;
+    sptr_sobject value = !doc_string ? elements[2] : elements[3];
+
+    uptr_exec_node_v value_node;
+    value_node.push_back(lower_expr(ctx, value));
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, {RTValue::symbol(symbol.value)}, std::move(value_node)));
+  }
 
   /**
    * Legacy AST-based implementation.
    */
   MACRO_BODY(DefForm, inv_def)
   {
+    deprecated_special_form_invocations++;
     Lisple::Word& symbol = args[0]->as<Lisple::Word>();
     ctx.store_namespace(symbol, args[1]);
     return ctx.get_current_namespace()->lookup(symbol);
@@ -27,11 +56,11 @@ namespace Lisple
 
   EXECNODE_BODY(DefForm, execnode_def)
   {
-    std::string& key =
-      std::get<std::string>(std::get<LiteralNode>(args[0]->data).value->value);
-    sptr_rtval& value = std::get<LiteralNode>(args[1]->data).value;
-    ctx.store_namespace(key, value);
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
+    std::string symbol = snode.values.front()->str();
+    sptr_rtval value = exec(ctx, *snode.exec_nodes.front());
+    ctx.store_namespace(symbol, value);
     return value;
   }
 
@@ -40,12 +69,14 @@ namespace Lisple
    */
   MACRO_BODY(DefForm, inv_def_docstring)
   {
+    deprecated_special_form_invocations++;
     ctx.store_namespace(args[0]->as<Lisple::Word>(), args[2]);
     return args[2];
   }
 
   EXECNODE_BODY(DefForm, execnode_def_docstring)
   {
+    deprecated_special_form_invocations++;
     sptr_rtval& value = std::get<LiteralNode>(args[2]->data).value;
     ctx.store_namespace(
       std::get<std::string>(std::get<LiteralNode>(args[0]->data).value->value),
@@ -60,10 +91,24 @@ namespace Lisple
                     SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoForm::inv_do, &DoForm::execnode_do))))
 
-  SFORM_OMIT_LOWER_IMPL(DoForm)
+  SFORM_LOWER_IMPL(DoForm)
+  {
+    uptr_exec_node_v exec_nodes;
+
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
 
   MACRO_BODY(DoForm, inv_do)
   {
+    deprecated_special_form_invocations++;
     Lisple::sptr_sobject ret;
     ctx.push_context(true);
     for (auto& arg : args)
@@ -76,10 +121,12 @@ namespace Lisple
 
   EXECNODE_BODY(DoForm, execnode_do)
   {
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
+
     Lisple::sptr_rtval ret;
-    for (auto& arg : args)
+    for (auto& form : snode.exec_nodes)
     {
-      ret = exec(ctx, *arg);
+      ret = exec(ctx, *form);
     }
     return ret;
   }
@@ -89,13 +136,26 @@ namespace Lisple
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&AndForm::inv_and, &AndForm::execnode_and))))
 
-  SFORM_OMIT_LOWER_IMPL(AndForm)
+  SFORM_LOWER_IMPL(AndForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    uptr_exec_node_v exec_nodes;
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
 
   /**
    * Legacy AST-based implementation.
    */
   MACRO_BODY(AndForm, inv_and)
   {
+    deprecated_special_form_invocations++;
     ctx.push_context(true);
     for (auto& arg : args)
     {
@@ -112,10 +172,12 @@ namespace Lisple
 
   EXECNODE_BODY(AndForm, execnode_and)
   {
-    sptr_rtval val;
-    for (auto& arg : args)
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
+
+    Lisple::sptr_rtval val;
+    for (auto& form : snode.exec_nodes)
     {
-      val = exec(ctx, *arg);
+      val = exec(ctx, *form);
       if (!Lisple::is_truthy(*val))
       {
         return Constant::BOOL_FALSE;
@@ -129,10 +191,24 @@ namespace Lisple
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&OrForm::inv_or, &OrForm::execnode_or))))
 
-  SFORM_OMIT_LOWER_IMPL(OrForm)
+  SFORM_LOWER_IMPL(OrForm)
+  {
+    uptr_exec_node_v exec_nodes;
+
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+  }
 
   MACRO_BODY(OrForm, inv_or)
   {
+    deprecated_special_form_invocations++;
     ctx.push_context(true);
     for (auto& arg : args)
     {
@@ -149,11 +225,12 @@ namespace Lisple
 
   EXECNODE_BODY(OrForm, execnode_or)
   {
-    sptr_rtval val;
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
-    for (auto& arg : args)
+    Lisple::sptr_rtval val;
+    for (auto& form : snode.exec_nodes)
     {
-      val = exec(ctx, *arg);
+      val = exec(ctx, *form);
       if (Lisple::is_truthy(*val))
       {
         return val;
@@ -190,10 +267,27 @@ namespace Lisple
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
                          EXEC_DISPATCH(&SetBangForm::inv_set, &SetBangForm::execnode_set))))
 
-  SFORM_OMIT_LOWER_IMPL(SetBangForm)
+  SFORM_LOWER_IMPL(SetBangForm)
+  {
+    auto& elements = ast_node->get_children();
+    if (elements.size() != 3 || elements[1]->get_type() != Form::ARRAY)
+    {
+      throw TypeError("Invalid set! form: " + ast_node->to_string());
+    }
+
+    uptr_exec_node_v value_node;
+    value_node.push_back(lower_expr(ctx, elements.back()));
+
+    sptr_rtval_v bind_path = to_rt_value(*elements[1])->elements();
+
+    return std::make_unique<ExecNode>(
+      ast_node,
+      SpecialFormNode(this, bind_path, std::move(value_node)));
+  }
 
   MACRO_BODY(SetBangForm, inv_set)
   {
+    deprecated_special_form_invocations++;
     Lisple::Array& member_ref = args[0]->as<Lisple::Array>();
 
     if (member_ref.size() == 1)
@@ -229,10 +323,11 @@ namespace Lisple
 
   EXECNODE_BODY(SetBangForm, execnode_set)
   {
-    auto member_ref_vec = std::get<LiteralNode>(args[0]->data).value;
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
-    auto member_refs = member_ref_vec->elements();
-    auto value = std::get<LiteralNode>(args.back()->data).value;
+    sptr_rtval_v member_refs = snode.values;
+
+    auto value = exec(ctx, *snode.exec_nodes.front());
 
     if (member_refs.size() == 1)
     {
@@ -242,16 +337,15 @@ namespace Lisple
     }
     else if (member_refs.size() == 2)
     {
-      auto actual_mem_ref = ctx.eval(member_ref_vec->to_string());
-      auto& prop = actual_mem_ref->elements()[0];
-      sptr_rtval owner = actual_mem_ref->elements().back();
+      auto& prop = member_refs[0];
+      sptr_rtval owner = ctx.eval(member_refs.back()->to_string());
 
       Lisple::Dict::set_property(owner, prop, value);
     }
     else
     {
       throw Lisple::InvocationException("Incorrect member reference: " +
-                                        member_ref_vec->to_string());
+                                        RTValue::vector(member_refs)->to_string());
     }
 
     return value;

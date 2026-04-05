@@ -1,4 +1,5 @@
 
+
 #include <lisple/bind.h>
 #include <lisple/exception.h>
 #include <lisple/lang/loop.h>
@@ -6,7 +7,6 @@
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 #include <lisple/runtime/seq.h>
-
 namespace Lisple
 {
   /** DoTimes - dotimes */
@@ -15,7 +15,43 @@ namespace Lisple
                          EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
                                        &DoTimesForm::execnode_dotimes))))
 
-  SFORM_OMIT_LOWER_IMPL(DoTimesForm)
+  SFORM_LOWER_IMPL(DoTimesForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw LispleException("dotimes: No bind form - " + ast_node->to_string());
+    }
+
+    if (elements[1]->get_type() != Form::ARRAY || elements[1]->size() < 1 ||
+        elements[1]->size() > 2)
+    {
+      throw LispleException("dotimes: Invalid bind form - " + ast_node->to_string());
+    }
+
+    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+
+    if (bind_forms.size() == 2)
+    {
+      auto sym_node = lower_literal(bind_forms[0]);
+      bindings.push_back(
+        std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                       std::make_unique<ExecNode>(Constant::NIL)));
+    }
+
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
+
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+  }
 
   /**
    * Legacy AST-based implementation
@@ -71,61 +107,43 @@ namespace Lisple
   {
     sptr_rtval_v result;
 
-    auto* bnd = std::get_if<LiteralNode>(&args[0]->data);
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
 
-    if (bnd->value->type == RTValue::Type::VECTOR)
+    auto* binding =
+      snode.bind_forms.empty() ? nullptr : snode.bind_forms.front().first.get();
+
+    sptr_rtval iterations_val = exec(ctx, *snode.exec_nodes[0]);
+
+    if (iterations_val->type == RTValue::Type::NUMBER)
     {
-      sptr_rtval_v& bind_forms = std::get<sptr_rtval_v>(bnd->value->value);
-
-      if (bind_forms.size() < 1 || bind_forms.size() > 2)
+      long iterations = std::get<const RTValue::Number>(iterations_val->value).get_long();
+      if (iterations > 0)
       {
-        throw LispleException("Invalid binding form: " + bnd->ast_node->to_string());
-      }
+        result.reserve(iterations);
 
-      LowerContext lctx{&ctx};
-      uptr_exec_node num_iter_node = lower_expr(lctx, bnd->ast_node->get_children().back());
-      sptr_rtval num_iter_value = exec(ctx, *num_iter_node);
+        ctx.push_context(true);
+        Scope& iter_scope = ctx.current_scope();
+        size_t n_args = snode.exec_nodes.size();
 
-      if (num_iter_value->type == RTValue::Type::NUMBER)
-      {
-        int iterations = std::get<const RTValue::Number>(num_iter_value->value).get_int();
-
-        if (iterations > 0)
+        for (long i = 0; i < iterations; i++)
         {
-          std::unique_ptr<LexicalBinding> bind_var = nullptr;
-
-          if (bind_forms.size() == 2)
+          if (binding)
           {
-            bind_var =
-              std::make_unique<SymbolBinding>(std::get<std::string>(bind_forms[0]->value));
+            binding->apply(iter_scope, RTValue::number(i));
           }
 
-          result.reserve(iterations);
+          sptr_rtval iter_result;
 
-          ctx.push_context(true);
-          Scope& iter_scope = ctx.current_scope();
-          size_t n_args = args.size();
-
-          for (int i = 0; i < iterations; i++)
+          for (size_t j = 1; j < n_args; j++)
           {
-            if (bind_var)
-            {
-              bind_var->apply(iter_scope, RTValue::number(i));
-            }
-
-            sptr_rtval iter_result;
-
-            for (size_t j = 1; j < n_args; j++)
-            {
-              iter_result = exec(ctx, *args[j]);
-            }
-
-            result.push_back(iter_result);
-            iter_scope.clear();
+            iter_result = exec(ctx, *snode.exec_nodes[j]);
           }
 
-          ctx.pop_context();
+          result.push_back(iter_result);
+          iter_scope.clear();
         }
+
+        ctx.pop_context();
       }
     }
 
@@ -138,7 +156,39 @@ namespace Lisple
                                  (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&ForForm::inv_for, &ForForm::execnode_for))))
 
-  SFORM_OMIT_LOWER_IMPL(ForForm)
+  SFORM_LOWER_IMPL(ForForm)
+  {
+    sptr_sobject_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw LispleException("for: No loop expression - " + ast_node->to_string());
+    }
+
+    if (elements[1]->get_type() != Form::ARRAY || elements[1]->size() != 2)
+    {
+      throw LispleException("for: Invalid loop expression - " + ast_node->to_string());
+    }
+
+    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+
+    auto sym_node = lower_literal(bind_forms[0]);
+    bindings.push_back(
+      std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                     std::make_unique<ExecNode>(Constant::NIL)));
+
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
+
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+  }
 
   MACRO_BODY(ForForm, inv_for)
   {
@@ -182,31 +232,38 @@ namespace Lisple
   {
     sptr_rtval_v result;
 
-    if (ExecNodeList* bnd = std::get_if<ExecNodeList>(&args[0]->data))
+    auto snode = std::get<SpecialFormNode>(args[0]->data);
+
+    auto* binding = snode.bind_forms.front().first.get();
+
+    sptr_rtval seq = exec(ctx, *snode.exec_nodes[0]);
+
+    if (seq->type != RTValue::Type::NIL && Type::SEQ.is_type_of(*seq))
     {
-      if (bnd->nodes.size() != 2)
+      const sptr_rtval_v& elements = seq->elements();
+      if (elements.size() > 0)
       {
-        throw LispleException("for: Invalid bind form.");
-      }
+        result.reserve(elements.size());
 
-      auto binding = LexicalBinding::create(std::get<LiteralNode>(bnd->nodes.front()->data));
-      sptr_rtval seq = std::get<LiteralNode>(bnd->nodes.back()->data).value;
-
-      sptr_rtval_v elements = Lisple::get_children(*seq);
-
-      sptr_rtval iter_result;
-      for (auto& item : elements)
-      {
         ctx.push_context(true);
         Scope& iter_scope = ctx.current_scope();
-        binding->apply(iter_scope, item);
+        size_t n_args = snode.exec_nodes.size();
 
-        for (size_t bi = 1; bi < args.size(); bi++)
+        for (auto& item : elements)
         {
-          iter_result = exec(ctx, *args[bi]);
+          binding->apply(iter_scope, item);
+
+          sptr_rtval iter_result;
+
+          for (size_t j = 1; j < n_args; j++)
+          {
+            iter_result = exec(ctx, *snode.exec_nodes[j]);
+          }
+
+          result.push_back(iter_result);
+          iter_scope.clear();
         }
 
-        result.push_back(iter_result);
         ctx.pop_context();
       }
     }
