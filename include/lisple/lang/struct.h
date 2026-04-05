@@ -58,7 +58,7 @@ namespace Lisple
    * | 1     | The path to the nested key to set                                |
    * | 2     | The value to associate with the last key of the key path         |
    */
-  FUNC_DECL(AssocInBangFunction, inv_assoc_in_bang)
+  FUNC(AssocInBangFunction, assoc_in_bang)
 
   /*!
    * @brief Get a property by value from a complex object, ie a map
@@ -78,6 +78,20 @@ namespace Lisple
   FUNC(GetFunction, get);
 
   FUNC(DissocFunction, dissoc);
+
+  /*!
+   * @brief Remove a key from a map.
+   *
+   * Does nothing if the key does not exist in the map.
+   *
+   * Returns the removed value.
+   *
+   * Usage:
+   * @code
+   * (dissoc! my-map :key)
+   * @endcode
+   */
+  FUNC(DissocBangFunction, dissoc_bang)
 
   /*!
    * @brief Perform a functional reduce on all key-value pairs of a Map.

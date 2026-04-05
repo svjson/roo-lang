@@ -80,37 +80,25 @@ namespace Lisple
   /* AssocInBangFunction - assoc-in! */
   FUNC_IMPL(AssocInBangFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
-                 EXEC_DISPATCH(&AssocInBangFunction::inv_assoc_in_bang))))
+                 EXEC_DISPATCH(&AssocInBangFunction::exec_assoc_in_bang))))
 
-  FUNC_BODY(AssocInBangFunction, inv_assoc_in_bang)
+  EXEC_BODY(AssocInBangFunction, exec_assoc_in_bang)
   {
-    sptr_sobject assoc_path = args[1];
-    if (assoc_path->get_children().empty())
+    const sptr_rtval_v& assoc_path = args[1]->elements();
+    if (assoc_path.empty())
     {
       throw InvocationException("Path for assoc-in! cannot be empty.");
     }
-    sptr_sobject value = args.back();
-    sptr_sobject assoc_key = assoc_path->get_children().back();
+    sptr_rtval value = args.back();
+    const sptr_rtval& assoc_key = assoc_path.back();
 
-    sptr_sobject& target = args[0];
-    for (size_t i = 0; i < assoc_path->get_children().size() - 1; i++)
+    sptr_rtval target = args[0];
+    for (size_t i = 0; i < assoc_path.size() - 1; i++)
     {
-      target = target->get_sptr_property(*assoc_path->get_children()[i]);
+      target = Dict::get_property(target, *assoc_path[i]);
     }
 
-    if (Lisple::Type::MAP.is_type_of(*args[0]))
-    {
-      args[0]->set_property(assoc_key, value);
-    }
-    else if (Lisple::Type::HOST_OBJECT.is_type_of(*args[0]))
-    {
-      args[0]->set_property(&ctx, *assoc_key, value);
-    }
-    else
-    {
-      throw Lisple::TypeError("Cannot set key " + assoc_key->to_string() + " of " +
-                              args[0]->to_string());
-    }
+    Dict::set_property(target, assoc_key, value);
 
     return args[0];
   }
@@ -125,6 +113,7 @@ namespace Lisple
     return Dict::get_property(args[0], args[1]);
   }
 
+  /** DissocFunction - dissoc */
   FUNC_IMPL(DissocFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
                  EXEC_DISPATCH(&DissocFunction::exec_dissoc))))
@@ -149,6 +138,21 @@ namespace Lisple
     }
 
     return RTValue::map(new_map_elements);
+  }
+
+  /* DissocBangFunction - dissoc! */
+  FUNC_IMPL(DissocBangFunction,
+            SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
+                 EXEC_DISPATCH(&DissocBangFunction::exec_dissoc_bang))))
+
+  EXEC_BODY(DissocBangFunction, exec_dissoc_bang)
+  {
+    if (*Constant::NIL == *args[0])
+    {
+      return Constant::NIL;
+    }
+
+    return Dict::remove_property(args[0], args[1]);
   }
 
   /* ReduceKeyValueFunction - reduce-kv */

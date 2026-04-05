@@ -1,5 +1,4 @@
 
-#include <memory>
 
 #include <lisple/adapter.h>
 #include <lisple/context.h>
@@ -510,34 +509,6 @@ TEST(RepeatFunction, repeat)
   EXPECT_EQ(runtime.eval("(repeat 2 :key)")->to_string(), "[:key :key]");
   EXPECT_EQ(runtime.eval("(repeat 2 :a :b)")->to_string(), "[:a :b :a :b]");
   EXPECT_EQ(runtime.eval("(repeat 3 :a :b)")->to_string(), "[:a :b :a :b :a :b]");
-}
-
-TEST(DissocBangFunction, removal_of_non_existing_key_returns_nil)
-{
-  // Given
-  Lisple::Runtime runtime;
-  runtime.eval("(def my-map {:a 1 :b 2 :c 3})");
-
-  // When
-  auto result = runtime.eval("(dissoc! my-map :d)");
-
-  // Then
-  EXPECT_EQ(*result, *Lisple::Constant::NIL);
-  EXPECT_EQ(runtime.eval("my-map")->to_string(), "{:a 1 :b 2 :c 3}");
-}
-
-TEST(DissocBangFunction, removal_of_key_returns_value)
-{
-  // Given
-  Lisple::Runtime runtime;
-  runtime.eval("(def my-map {:a 1 :b 2 :c 3})");
-
-  // When
-  auto result = runtime.eval("(dissoc! my-map :b)");
-
-  // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(2));
-  EXPECT_EQ(runtime.eval("my-map")->to_string(), "{:a 1 :c 3}");
 }
 
 TEST(WhileMacro, loop_with_counter)

@@ -65,7 +65,7 @@ namespace Lisple
     lang.emplace("apply", std::make_shared<ApplyFunction>());
     lang_symbols.emplace("assoc", AssocFunction::make());
     lang_symbols.emplace("assoc!", AssocBangFunction::make());
-    lang.emplace("assoc-in!", std::make_shared<AssocInBangFunction>());
+    lang_symbols.emplace("assoc-in!", AssocInBangFunction::make());
     lang.emplace("between?", std::make_shared<BetweenPredicateFunction>());
     lang.emplace("case", std::make_shared<CaseMacro>());
     lang.emplace("ceil", std::make_shared<CeilFunction>());
@@ -79,7 +79,7 @@ namespace Lisple
     lang_symbols.emplace("def", DefForm::make());
     lang_symbols.emplace("defun", DefunForm::make());
     lang_symbols.emplace("dissoc", DissocFunction::make());
-    lang.emplace("dissoc!", std::make_shared<DissocBangFunction>());
+    lang_symbols.emplace("dissoc!", DissocBangFunction::make());
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
     lang_symbols.emplace("empty?", EmptyPFunction::make());
@@ -546,33 +546,6 @@ namespace Lisple
     }
 
     return args[result_index];
-  }
-
-  /* DissocBangFunction */
-  FUNC_IMPL(DissocBangFunction,
-            SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
-                 EXEC_DISPATCH(&DissocBangFunction::dissoc_bang))))
-
-  FUNC_BODY(DissocBangFunction, dissoc_bang)
-  {
-    if (*NIL == *args[0])
-    {
-      return NIL;
-    }
-
-    sptr_sobject removed = Lisple::NIL;
-
-    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[0].get()))
-    {
-      removed =
-        RuntimeValueWrapper::make(Dict::remove_property(wrapper->val, to_rt_value(args[1])));
-    }
-    else
-    {
-      removed = args[0]->as<Lisple::Map>().remove_key(*args[1]);
-    }
-
-    return removed;
   }
 
   /* MergeFunction - merge */

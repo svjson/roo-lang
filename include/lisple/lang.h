@@ -202,20 +202,6 @@ namespace Lisple
   FUNC_DECL(RepeatFunction, repeat)
 
   /*!
-   * @brief Remove a key from a map.
-   *
-   * Does nothing if the key does not exist in the map.
-   *
-   * Returns the removed value.
-   *
-   * Usage:
-   * @code
-   * (dissoc! my-map :key)
-   * @endcode
-   */
-  FUNC_DECL(DissocBangFunction, dissoc_bang)
-
-  /*!
    * @brief Merge keys and values from two or more maps into a new map containing
    * all keys and values. Any duplicates will be overwritten with the last
    * encountered value
