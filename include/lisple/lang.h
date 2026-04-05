@@ -24,8 +24,6 @@ namespace Lisple
 
   FUNC_DECL(IncludeFunction, include_file)
 
-  FUNC_DECL(TailFunction, tail)
-
   /*!
    * @brief Tests if a Seq contains a specific value
    *
@@ -40,21 +38,6 @@ namespace Lisple
    * | 1     | The value to test for                                            |
    */
   FUNC_DECL(ContainsPredicateFunction, contains)
-
-  /*!
-   * @brief Creates a new sequence from the n first elements of a sequence.
-   * If n is larger than the size of the sequence, all elements are kept.
-   *
-   * Usage:
-   * @code
-   * (take 2 [1 2 3 4 5])
-   * => [1 2]
-   *
-   * (take 200 [1 2 3 4 5])
-   * => [1 2 3 4 5]
-   * @endcode
-   */
-  FUNC_DECL(TakeFunction, take_fn)
 
   /*!
    * @brief Repeat a value or series of values n times into an array.
@@ -140,44 +123,6 @@ namespace Lisple
    * @endcode
    */
   FUNC_DECL(NamespaceFunction, extract_namespace)
-
-  /*!
-   * @brief ConcatBangFunction - splice two or more forms together
-   * into an the first argument array. Any subsequent non-sequence arguments
-   * will be treated as arrays of that argument.
-   *
-   * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
-   *        (concat! [1] 2 [3 4]) => [1 2 3 4]
-   *
-   * Param 0... - The sequences to splice together
-   */
-  FUNC_DECL(ConcatBangFunction, concat_array)
-
-  /*!
-   * @brief FlattenFunction - flatten an array or arrays or objects
-   * into a single level array
-   *
-   * Usage: (flatten [[1 2 3] [4 5 6]]) => [1 2 3 4 5 6]
-   */
-  FUNC_DECL(FlattenFunction, flatten_array)
-
-  /*!
-   * @brief Remove the nth value of a Seq
-   *
-   * Usage:
-   * @code
-   * (remove-nth! seq n)
-   *
-   * (remove-nth! [1 2 3] 1)
-   * => [1 3]
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq to mutate                                                |
-   * | 1     | The index of the element to remove                               |
-   */
-  FUNC_DECL(RemoveNthBangFunction, remove_nth)
 
   /*!
    * @brief Extracts an array of all keys present in a complex type, ie a map.

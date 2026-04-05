@@ -1,4 +1,7 @@
 
+#include "lisple/runtime/value.h"
+#include "lisple/type.h"
+
 #include <cmath>
 
 #include <lisple/lang/seq.h>
@@ -67,6 +70,35 @@ namespace Lisple
     }
 
     return RTValue::vector(std::move(result));
+  }
+
+  /* ConcatBangFunction - concat */
+  FUNC_IMPL(ConcatBangFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&ConcatBangFunction::exec_concat_bang))))
+
+  EXEC_BODY(ConcatBangFunction, exec_concat_bang)
+  {
+    sptr_rtval_v& result = std::get<sptr_rtval_v>(args[0]->value);
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      auto& vec = args[i];
+      if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) &&
+          *vec != *Constant::NIL)
+      {
+        for (auto& element : vec->elements())
+        {
+          result.push_back(element);
+        }
+      }
+      else
+      {
+        result.push_back(vec);
+      }
+    }
+
+    return args[0];
   }
 
   /** CountFunction - count */
@@ -208,6 +240,158 @@ namespace Lisple
     }
 
     return RTValue::vector(std::move(new_seq));
+  }
+
+  /** RemoveNthBangFunction - remove-nth! */
+  FUNC_IMPL(RemoveNthBangFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&RemoveNthBangFunction::exec_remove_nth_bang))))
+
+  EXEC_BODY(RemoveNthBangFunction, exec_remove_nth_bang)
+  {
+    auto& seq = *args[0];
+    int n = std::get<const RTValue::Number>(args[1]->value).get_int();
+
+    if (Type::HOST_SEQ.is_type_of(seq))
+    {
+      auto obj = seq.obj();
+      sptr_sobject_v& children = obj->get_children();
+
+      if (n < 0 || n >= static_cast<int>(children.size()))
+      {
+        return Lisple::Constant::NIL;
+      }
+
+      sptr_sobject to_delete = children[n];
+
+      children.erase(children.begin() + n);
+
+      obj->as<Seq>().replace_children(children);
+
+      return to_rt_value(to_delete);
+    }
+
+    sptr_rtval_v& children = std::get<sptr_rtval_v>(seq.value);
+    sptr_rtval to_delete = children.at(n);
+
+    children.erase(children.begin() + n);
+
+    return to_delete;
+  }
+
+  /** TailFunction - tail */
+  FUNC_IMPL(TailFunction,
+            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&TailFunction::exec_tail))))
+
+  EXEC_BODY(TailFunction, exec_tail)
+  {
+    sptr_rtval_v tail;
+    size_t count = Lisple::count(*args[0]);
+    if (count > 1)
+    {
+      tail.reserve(count - 1);
+      if (Type::HOST_SEQ.is_type_of(*args[0]))
+      {
+        auto obj_children = args[0]->obj()->get_children();
+        for (size_t i = 1; i < obj_children.size(); i++)
+        {
+          tail.push_back(to_rt_value(*obj_children[i]));
+        }
+      }
+      else
+      {
+        auto& children = args[0]->elements();
+        for (size_t i = 1; i < children.size(); i++)
+        {
+          tail.push_back(children[i]);
+        }
+      }
+    }
+
+    return RTValue::vector(tail);
+  }
+
+  /* FlattenFunction - flatten */
+  FUNC_IMPL(FlattenFunction,
+            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&FlattenFunction::exec_flatten))))
+
+  EXEC_BODY(FlattenFunction, exec_flatten)
+  {
+    sptr_rtval_v result;
+
+    sptr_rtval_v children = Lisple::get_children(*args[0]);
+    for (auto& obj : children)
+    {
+      if (Type::HOST_SEQ.is_type_of(*obj))
+      {
+        for (auto& cobj : obj->obj()->get_children())
+        {
+          if (Type::SEQ.is_type_of(*cobj))
+          {
+            auto flat_args = sptr_rtval_v{to_rt_value(*cobj)};
+            auto flattened = exec_flatten(ctx, flat_args);
+            for (auto fl_obj : flattened->elements())
+            {
+              result.push_back(fl_obj);
+            }
+          }
+          else
+          {
+            result.push_back(to_rt_value(*cobj));
+          }
+        }
+      }
+      else if (Type::SEQ.is_type_of(*obj))
+      {
+        auto flat_args = sptr_rtval_v{obj};
+        auto flattened = exec_flatten(ctx, flat_args);
+        for (auto& fl_obj : flattened->elements())
+        {
+          result.push_back(fl_obj);
+        }
+      }
+      else
+      {
+        result.push_back(obj);
+      }
+    }
+
+    return RTValue::vector(std::move(result));
+  }
+
+  /*
+   * TakeFunction - take
+   */
+  FUNC_IMPL(TakeFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
+                 EXEC_DISPATCH(&TakeFunction::exec_take))))
+
+  EXEC_BODY(TakeFunction, exec_take)
+  {
+    size_t amount = std::get<const RTValue::Number>(args[0]->value).get_int();
+    sptr_rtval_v result;
+
+    if (Type::HOST_SEQ.is_type_of(*args[1]))
+    {
+      sptr_sobject_v vector = args.back()->obj()->get_children();
+
+      result.reserve(vector.size());
+      for (size_t i = 0; i < std::min(amount, vector.size()); i++)
+      {
+        result.push_back(to_rt_value(*vector[i]));
+      }
+    }
+    else
+    {
+      sptr_rtval_v elements = args.back()->elements();
+      result.reserve(elements.size());
+      for (size_t i = 0; i < std::min(amount, elements.size()); i++)
+      {
+        result.push_back(elements[i]);
+      }
+    }
+
+    return RTValue::vector(std::move(result));
   }
 
 } // namespace Lisple

@@ -2,7 +2,6 @@
 #include "lisple/lang.h"
 
 #include "lisple/lang/num.h"
-#include "lisple/runtime/seq.h"
 #include "lisple/runtime/value.h"
 
 #include <algorithm>
@@ -13,7 +12,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <lisple/bind.h>
 #include <lisple/context.h>
@@ -72,7 +70,7 @@ namespace Lisple
     lang_symbols.emplace("ceil", CeilFunction::make());
     lang.emplace("comment", std::make_shared<CommentMacro>());
     lang_symbols.emplace("concat", ConcatFunction::make());
-    lang.emplace("concat!", std::make_shared<ConcatBangFunction>());
+    lang_symbols.emplace("concat!", ConcatBangFunction::make());
     lang_symbols.emplace("cond", CondForm::make());
     lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
     lang_symbols.emplace("cos", CosFunction::make());
@@ -87,7 +85,7 @@ namespace Lisple
     lang.emplace("eval", std::make_shared<EvalFunction>());
     lang_symbols.emplace("even?", EvenPFunction::make());
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
-    lang.emplace("flatten", std::make_shared<FlattenFunction>());
+    lang_symbols.emplace("flatten", FlattenFunction::make());
     lang_symbols.emplace("filter", FilterFunction::make());
     lang_symbols.emplace("find-first", FindFirstFunction::make());
     lang_symbols.emplace("find-index", FindIndexFunction::make());
@@ -132,7 +130,7 @@ namespace Lisple
     lang_symbols.emplace("remove-first", RemoveFirstFunction::make());
     lang_symbols.emplace("remove!", RemoveBangFunction::make());
     lang_symbols.emplace("remove-nth", RemoveNthFunction::make());
-    lang.emplace("remove-nth!", std::make_shared<RemoveNthBangFunction>());
+    lang_symbols.emplace("remove-nth!", RemoveNthBangFunction::make());
     lang.emplace("repeat", std::make_shared<RepeatFunction>());
     lang.emplace("resolve", std::make_shared<ResolveFunction>());
     lang_symbols.emplace("rnd", RndFunction::make());
@@ -144,8 +142,8 @@ namespace Lisple
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());
-    lang.emplace("tail", std::make_shared<TailFunction>());
-    lang.emplace("take", std::make_shared<TakeFunction>());
+    lang_symbols.emplace("tail", TailFunction::make());
+    lang_symbols.emplace("take", TakeFunction::make());
     lang_symbols.emplace("true", Constant::BOOL_TRUE);
     lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
     lang.emplace("vector", std::make_shared<VectorFunction>());
@@ -309,119 +307,6 @@ namespace Lisple
     }
 
     return result;
-  }
-
-  /* ConcatBangFunction - concat */
-  FUNC_IMPL(ConcatBangFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
-                 EXEC_DISPATCH(&ConcatBangFunction::concat_array))))
-
-  FUNC_BODY(ConcatBangFunction, concat_array)
-  {
-    auto result = args[0];
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      auto& vec = args[i];
-      if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) && *vec != *NIL)
-      {
-        for (auto& element : vec->get_children())
-        {
-          result->append(element);
-        }
-      }
-      else
-      {
-        result->append(vec);
-      }
-    }
-
-    return result;
-  }
-
-  /* FlattenFunction - flatten */
-  FUNC_IMPL(FlattenFunction,
-            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&FlattenFunction::flatten_array))))
-
-  FUNC_BODY(FlattenFunction, flatten_array)
-  {
-    sptr_sobject_v result;
-
-    for (auto obj : args[0]->get_children())
-    {
-      if (Type::ARRAY.is_type_of(*obj) || Type::LIST.is_type_of(*obj) ||
-          Type::HOST_SEQ.is_type_of(*obj))
-      {
-        auto flat_args = sptr_sobject_v{obj};
-        auto flattened = flatten_array(ctx, flat_args);
-        for (auto fl_obj : flattened->get_children())
-        {
-          result.push_back(fl_obj);
-        }
-      }
-      else
-      {
-        result.push_back(obj);
-      }
-    }
-
-    return std::make_shared<Array>(std::move(result));
-  }
-
-  /* TailFunction */
-  FUNC_IMPL(TailFunction, SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&TailFunction::tail))))
-
-  FUNC_BODY(TailFunction, tail)
-  {
-    sptr_sobject_v tail;
-    if (args[0]->size() > 1)
-    {
-      auto children = args[0]->get_children();
-      tail.reserve(children.size() - 1);
-      for (size_t i = 1; i < children.size(); i++)
-      {
-        tail.push_back(children[i]);
-      }
-    }
-
-    return Array::make(tail);
-  }
-
-  /* RemoveNthBangFunction - remove-nth! */
-  FUNC_IMPL(RemoveNthBangFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&RemoveNthBangFunction::remove_nth))))
-
-  FUNC_BODY(RemoveNthBangFunction, remove_nth)
-  {
-    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(args[0].get()))
-    {
-      sptr_rtval_v& children = std::get<sptr_rtval_v>(wrapper->val->value);
-      size_t n = args[1]->as<Lisple::Number>().int_value();
-      sptr_rtval to_delete = children.at(n);
-
-      children.erase(children.begin() + n);
-
-      return RuntimeValueWrapper::make(to_delete);
-    }
-    auto& seq = args[0]->as<Lisple::Seq>();
-    int n = args[1]->as<Lisple::Number>().int_value();
-
-    sptr_sobject_v& children = seq.get_children();
-
-    if (n < 0 || n >= static_cast<int>(children.size()))
-    {
-      return Lisple::NIL;
-    }
-
-    sptr_sobject to_delete = children[n];
-
-    children.erase(children.begin() + n);
-    if (Type::HOST_SEQ.is_type_of(seq))
-    {
-      seq.replace_children(children);
-    }
-    return to_delete;
   }
 
   /* KeysFunction - keys */
@@ -594,28 +479,6 @@ namespace Lisple
     }
 
     return std::make_shared<Lisple::Array>(std::move(array));
-  }
-
-  /*
-   * TakeFunction - take
-   */
-  FUNC_IMPL(TakeFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
-                 EXEC_DISPATCH(&TakeFunction::take_fn))))
-
-  FUNC_BODY(TakeFunction, take_fn)
-  {
-    int amount = args[0]->as<Number>().int_value();
-    sptr_sobject_v vector = args.back()->get_children();
-
-    sptr_sobject_v result;
-    result.reserve(vector.size());
-    for (int i = 0; i < std::min(amount, static_cast<int>(vector.size())); i++)
-    {
-      result.push_back(vector[i]);
-    }
-
-    return std::make_shared<Array>(std::move(result));
   }
 
   /*

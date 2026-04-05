@@ -27,7 +27,27 @@ namespace Lisple
    */
   FUNC(ConcatFunction, concat)
 
+  /*!
+   * @brief ConcatBangFunction - splice two or more forms together
+   * into an the first argument array. Any subsequent non-sequence arguments
+   * will be treated as arrays of that argument.
+   *
+   * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
+   *        (concat! [1] 2 [3 4]) => [1 2 3 4]
+   *
+   * Param 0... - The sequences to splice together
+   */
+  FUNC(ConcatBangFunction, concat_bang)
+
   FUNC(CountFunction, count)
+
+  /*!
+   * @brief FlattenFunction - flatten one or more sequences objects
+   * into a single level vector
+   *
+   * Usage: (flatten [[1 2 3] [4 5 6]]) => [1 2 3 4 5 6]
+   */
+  FUNC(FlattenFunction, flatten)
 
   /*!
    * @brief Get the first element of a sequence
@@ -121,6 +141,41 @@ namespace Lisple
    * | 1     | The index of the element to omit                                 |
    */
   FUNC(RemoveNthFunction, remove_nth)
+
+  /*!
+   * @brief Remove the nth value of a Seq
+   *
+   * Usage:
+   * @code
+   * (remove-nth! seq n)
+   *
+   * (remove-nth! [1 2 3] 1)
+   * => [1 3]
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The seq to mutate                                                |
+   * | 1     | The index of the element to remove                               |
+   */
+  FUNC(RemoveNthBangFunction, remove_nth_bang)
+
+  FUNC(TailFunction, tail)
+
+  /*!
+   * @brief Creates a new sequence from the n first elements of a sequence.
+   * If n is larger than the size of the sequence, all elements are kept.
+   *
+   * Usage:
+   * @code
+   * (take 2 [1 2 3 4 5])
+   * => [1 2]
+   *
+   * (take 200 [1 2 3 4 5])
+   * => [1 2 3 4 5]
+   * @endcode
+   */
+  FUNC(TakeFunction, take)
 
 } // namespace Lisple
 

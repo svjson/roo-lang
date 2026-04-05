@@ -536,6 +536,20 @@ namespace Lisple
 
       return RTValue::map(elements);
     }
+    case Form::NUMBER:
+    {
+      const auto& n = obj.as<Number>();
+      switch (n.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::number(n.int_value());
+      case NumberType::LONG:
+        return RTValue::number(n.long_value());
+      case NumberType::FLOAT:
+        return RTValue::number(n.float_value());
+      };
+      throw LispleException("to_rt_value: Unsupported NumberType: " + obj.to_string());
+    }
     case Form::WORD:
       return RTValue::symbol(Value<std::string>::value_of(obj));
 

@@ -1,7 +1,54 @@
 
+#include <lisple/adapter.h>
 #include <lisple/runtime.h>
 
 #include <gtest/gtest.h>
+
+/*
+ * ===================================
+ * HeadFunction - (head [...])
+ * ===================================
+ */
+
+TEST(HeadFunction, head_of_seq)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(def my-array ['a' 'b' 'c'])");
+
+  std::vector<int> int_v{50, 100, 90};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
+
+  // When
+  auto result_ref = runtime.eval("(head my-array)");
+  auto result_lit = runtime.eval("(head ['a' 'b' 'c'])");
+  auto result_wrapped = runtime.eval("(head wrapped-vec)");
+
+  // Then
+  EXPECT_EQ(*result_ref, *Lisple::RTValue::character('a'));
+  EXPECT_EQ(*result_lit, *Lisple::RTValue::character('a'));
+  EXPECT_EQ(*result_wrapped, *Lisple::RTValue::number(50))
+    << result_wrapped->to_string() << " vs " << Lisple::Number(50).to_string();
+}
+
+TEST(HeadFunction, single_element)
+{
+  // Given
+  Lisple::Runtime runtime;
+
+  std::vector<int> int_v{9};
+  runtime.get_current_namespace().store("wrapped-vec",
+                                        std::make_shared<Lisple::VectorInt>(int_v));
+
+  // When
+  auto result_lit = runtime.eval("(head ['a'])");
+  auto result_wrapped = runtime.eval("(head wrapped-vec)");
+
+  // Then
+  EXPECT_EQ(*result_lit, *Lisple::RTValue::character('a'));
+  EXPECT_EQ(*result_wrapped, *Lisple::RTValue::number(9));
+}
 
 TEST(HeadFunction, head_vector)
 {
