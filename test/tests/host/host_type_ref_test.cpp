@@ -13,11 +13,11 @@ TEST(HostTypeRef, is_type__ast_host_object)
     LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Spruttibangbang", 8);
 
   Lisple::sptr_sobject other_adapter =
-    Tests::BookAdapter::make<Tests::Book>("How to befriend hostile organisms",
-                                          120.0,
-                                          38388383,
-                                          "M. Elting Face",
-                                          "8888-1000");
+    Tests::BookAdapter::make<LispleTest::Book>("How to befriend hostile organisms",
+                                               120.0,
+                                               38388383,
+                                               "M. Elting Face",
+                                               "8888-1000");
 
   // Then
   EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*adapter));
@@ -55,11 +55,11 @@ TEST(HostTypeRef, is_type__RTWrapper)
     LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Spruttibangbang", 8);
 
   Lisple::sptr_sobject other_adapter =
-    Tests::BookAdapter::make<Tests::Book>("How to befriend hostile organisms",
-                                          120.0,
-                                          38388383,
-                                          "M. Elting Face",
-                                          "8888-1000");
+    Tests::BookAdapter::make<LispleTest::Book>("How to befriend hostile organisms",
+                                               120.0,
+                                               38388383,
+                                               "M. Elting Face",
+                                               "8888-1000");
 
   Lisple::sptr_rtval vehicle_val = Lisple::RTValue::object(adapter);
   Lisple::sptr_rtval book_val = Lisple::RTValue::object(other_adapter);

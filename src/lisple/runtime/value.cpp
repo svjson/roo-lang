@@ -653,6 +653,15 @@ namespace Lisple
     return false;
   }
 
+  bool RTValue::is_string(const std::string& s) const
+  {
+    if (type == RTValue::Type::STRING)
+    {
+      return str() == s;
+    }
+    return false;
+  }
+
   sptr_rtval to_rt_value(const Object& obj)
   {
     if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj)) return wrapper->val;

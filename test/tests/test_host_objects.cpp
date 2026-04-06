@@ -8,7 +8,7 @@
 #include <lisple/impl.h>
 #include <lisple/runtime/dict.h>
 
-namespace Tests
+namespace LispleTest
 {
 
   // ===============================================================
@@ -74,6 +74,9 @@ namespace Tests
     , material(material)
   {
   }
+} // namespace LispleTest
+namespace Tests
+{
 
   // ===============================================================
   // Product example - adapters

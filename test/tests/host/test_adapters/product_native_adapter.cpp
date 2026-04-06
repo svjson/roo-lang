@@ -1,0 +1,31 @@
+
+#include <lisple/host.h>
+#include <lisple/host/accessor.h>
+#include <lisple/host/object.h>
+
+#include "product_native_adapters.h"
+
+namespace LispleTest::Native
+{
+  const Lisple::sptr_rtval NAME = Lisple::RTValue::keyword("name");
+  const Lisple::sptr_rtval PRICE = Lisple::RTValue::keyword("price");
+  const Lisple::sptr_rtval SKU = Lisple::RTValue::keyword("sku");
+  const Lisple::sptr_rtval AUTHOR = Lisple::RTValue::keyword("author");
+  const Lisple::sptr_rtval ISBN = Lisple::RTValue::keyword("isbn");
+  const Lisple::sptr_rtval SIZE = Lisple::RTValue::keyword("size");
+  const Lisple::sptr_rtval MATERIAL = Lisple::RTValue::keyword("material");
+
+  NATIVE_ADAPTER_IMPL(ProductAdapter,
+                      Product,
+                      &PRODUCT,
+                      ({NOBJ_GET(ProductAdapter, NAME, name),
+                        NOBJ_GET(ProductAdapter, PRICE, price),
+                        NOBJ_GET(ProductAdapter, SKU, sku)}));
+
+  NOBJ_PROP_GET__METHOD(ProductAdapter, name, string, get_name);
+  NOBJ_PROP_GET__METHOD(ProductAdapter, price, number, get_price);
+  //  NOBJ_PROP_SET__METHOD(ProductAdapter, price, number, set_price);
+  NOBJ_PROP_GET__METHOD(ProductAdapter, sku, number, get_sku);
+  //  NOBJ_PROP_SET__METHOD(ProductAdapter, sku, number, set_sku);
+
+} // namespace LispleTest::Native

@@ -131,6 +131,7 @@ namespace Lisple
     bool is_number(int) const;
     bool is_number(long) const;
     bool is_number(double) const;
+    bool is_string(const std::string&) const;
   };
 
   namespace Constant

@@ -52,11 +52,11 @@ TEST(HostObjectAdapter_Vehicle, get_property)
 TEST(HostObjectAdapter_Clothing, type)
 {
   // Given
-  Lisple::sptr_sobject obj = Tests::ClothingAdapter::make<Tests::Clothing>("Silly Hat",
-                                                                           20.0,
-                                                                           159124743,
-                                                                           "L",
-                                                                           "Paper");
+  Lisple::sptr_sobject obj = Tests::ClothingAdapter::make<LispleTest::Clothing>("Silly Hat",
+                                                                                20.0,
+                                                                                159124743,
+                                                                                "L",
+                                                                                "Paper");
   Tests::ClothingAdapter& adapter = obj->as<Tests::ClothingAdapter>();
 
   // Then
@@ -79,11 +79,12 @@ TEST(HostObjectAdapter_Clothing, type)
 TEST(HostObjectAdapter_Clothing, get_property)
 {
   // Given
-  Lisple::sptr_sobject adapter = Tests::ClothingAdapter::make<Tests::Clothing>("Mankini",
-                                                                               150.50,
-                                                                               889922123,
-                                                                               "XS",
-                                                                               "Silk");
+  Lisple::sptr_sobject adapter =
+    Tests::ClothingAdapter::make<LispleTest::Clothing>("Mankini",
+                                                       150.50,
+                                                       889922123,
+                                                       "XS",
+                                                       "Silk");
 
   // Then
   EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("name")), Lisple::String("Mankini"));

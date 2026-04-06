@@ -185,7 +185,7 @@
   }
 
 #define __NOBJ_P_GETTER(AD_CLASS, FN) [](const Lisple::NativeObjectBase* adapter) { return dynamic_cast<const AD_CLASS*>(adapter)->FN(); }
-#define __NOBJ_P_SETTER(AD_CLASS, FN) [](Lisple::NativeObjectBase* adapter, Lisple::Context* ctx, Lisple::Object& value) { dynamic_cast<AD_CLASS*>(adapter)->FN(ctx, value); }
+#define __NOBJ_P_SETTER(AD_CLASS, FN) [](Lisple::NativeObjectBase* adapter, Lisple::Context* ctx, Lisple::sptr_rtval& value) { dynamic_cast<AD_CLASS*>(adapter)->FN(ctx, value); }
 
 #define __NOBJ_P_NO_GETTER Lisple::n_no_getter
 #define __NOBJ_P_NO_SETTER Lisple::n_no_setter
@@ -200,8 +200,8 @@
 
 #define __NOBJ_P_GET_SET(AD_CLASS, FN, ...) {\
     #FN, \
-    Lisple::Accessors(P_GETTER(AD_CLASS, &AD_CLASS::__SELECT_MACRO__2(0, ##__VA_ARGS__, P_GET_DUAL, P_GET_SINGLE)(FN, ##__VA_ARGS__)), \
-                      P_SETTER(AD_CLASS, &AD_CLASS::__SELECT_MACRO__2(0, ##__VA_ARGS__, P_SET_DUAL, P_SET_SINGLE)(FN, ##__VA_ARGS__)))}
+    Lisple::Accessors(__NOBJ_P_GETTER(AD_CLASS, &AD_CLASS::__SELECT_MACRO__2(0, ##__VA_ARGS__, P_GET_DUAL, P_GET_SINGLE)(FN, ##__VA_ARGS__)), \
+                      __NOBJ_P_SETTER(AD_CLASS, &AD_CLASS::__SELECT_MACRO__2(0, ##__VA_ARGS__, P_SET_DUAL, P_SET_SINGLE)(FN, ##__VA_ARGS__)))}
 
 
 
