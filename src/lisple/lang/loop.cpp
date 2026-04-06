@@ -398,6 +398,10 @@ namespace Lisple
         Scope& iter_scope = ctx.current_scope();
         size_t n_args = snode.exec_nodes.size();
 
+        // FIXME: This should be size_t, but until such a time that RTValue::Number
+        // natively supports unsigned numbers, we will have to stick to int or
+        // redundantly reinterpret size_t to int for each iteration, which is not
+        // very attractive.
         int index = 0;
         for (auto& item : elements)
         {
