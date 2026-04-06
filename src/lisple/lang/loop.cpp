@@ -2,6 +2,7 @@
 
 #include "lisple/exec.h"
 #include "lisple/runtime/value.h"
+#include "lisple/type.h"
 
 #include <iostream>
 
@@ -240,9 +241,12 @@ namespace Lisple
 
     sptr_rtval seq = exec(ctx, *snode.exec_nodes[0]);
 
-    if (seq->type != RTValue::Type::NIL && Type::SEQ.is_type_of(*seq))
+    if (seq->type != RTValue::Type::NIL && Type::SEQ_OR_STRING.is_type_of(*seq))
     {
-      const sptr_rtval_v& elements = seq->elements();
+      sptr_rtval_v ch_v;
+      if (seq->type == RTValue::Type::STRING) ch_v = Lisple::get_children(*seq);
+      const sptr_rtval_v& elements =
+        seq->type == RTValue::Type::STRING ? ch_v : seq->elements();
       if (elements.size() > 0)
       {
         result.reserve(elements.size());

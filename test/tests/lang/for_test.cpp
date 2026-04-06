@@ -1,7 +1,8 @@
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
 
-TEST(ForMacro, transform_vector_of_int)
+#include <gtest/gtest.h>
+
+TEST(ForForm, transform_vector_of_int)
 {
   // Given
   Lisple::Runtime runtime;
@@ -14,7 +15,7 @@ TEST(ForMacro, transform_vector_of_int)
   ASSERT_EQ(retval->to_string(), "[2 4 6 8 10 12]");
 }
 
-TEST(ForMacro, with_map_destructuring)
+TEST(ForForm, with_map_destructuring)
 {
   // Given
   Lisple::Runtime runtime;
@@ -25,4 +26,16 @@ TEST(ForMacro, with_map_destructuring)
 
   // Then
   ASSERT_EQ(retval->to_string(), "[11 9]");
+}
+
+TEST(ForForm, each_char_in_string)
+{
+  // Given
+  Lisple::Runtime runtime;
+
+  // When
+  auto retval = runtime.eval("(for [ch \"Beer Gnome!\"] ch)");
+
+  // Then
+  ASSERT_EQ(retval->to_string(), "['B' 'e' 'e' 'r' ' ' 'G' 'n' 'o' 'm' 'e' '!']");
 }
