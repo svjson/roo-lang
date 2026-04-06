@@ -423,41 +423,38 @@ namespace Lisple
 
   /* SortFunction - sort */
   FUNC_IMPL(SortFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
-                 EXEC_DISPATCH(&SortFunction::exec_sort))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                       EXEC_DISPATCH(&SortFunction::exec_sort)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                       EXEC_DISPATCH(&SortFunction::exec_sort))))
 
   EXEC_BODY(SortFunction, exec_sort)
   {
-    Lisple::sptr_rtval_v elements = Lisple::get_children(*args[0]);
+    RTValue* seq_arg;
+    Executable* comparator;
+
+    if (Type::SEQ.is_type_of(*args[0]))
+    {
+      seq_arg    = args[0].get();
+      comparator = &args[1]->exec();
+    }
+    else
+    {
+      seq_arg    = args[1].get();
+      comparator = &args[0]->exec();
+    }
+
+    Lisple::sptr_rtval_v elements = Lisple::get_children(*seq_arg);
+
     if (elements.size() > 1)
     {
-      Lisple::sptr_sobject fn_obj = args.back()->obj();
-      Executable& comparator = fn_obj->as<Executable>();
-
-      bool modified = false;
-      Lisple::sptr_rtval tmp;
-      Lisple::sptr_rtval_v sort_cell = {Constant::NIL, Constant::NIL};
-      Lisple::sptr_rtval_v sort_cell_reverse = {Constant::NIL, Constant::NIL};
-      do
-      {
-        modified = false;
-        for (size_t i = 0; i < elements.size() - 1; i++)
-        {
-          sort_cell[0] = elements[i];
-          sort_cell[1] = elements[i + 1];
-          sort_cell_reverse[0] = elements[i + 1];
-          sort_cell_reverse[1] = elements[i];
-
-          if (Lisple::is_truthy(*comparator.execute(ctx, sort_cell)) &&
-              !Lisple::is_truthy(*comparator.execute(ctx, sort_cell_reverse)))
-          {
-            tmp = elements[i];
-            elements[i] = elements[i + 1];
-            elements[i + 1] = tmp;
-            modified = true;
-          }
-        }
-      } while (modified);
+      sptr_rtval_v cmp_args{nullptr, nullptr};
+      std::sort(elements.begin(), elements.end(),
+                [&](const sptr_rtval& a, const sptr_rtval& b) {
+                  cmp_args[0] = a;
+                  cmp_args[1] = b;
+                  return Lisple::is_truthy(*comparator->execute(ctx, cmp_args));
+                });
     }
 
     return RTValue::vector(std::move(elements));
