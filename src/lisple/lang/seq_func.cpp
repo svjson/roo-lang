@@ -77,19 +77,16 @@ namespace Lisple
   {
     if (*args[0] == *Constant::NIL) return Constant::NIL;
 
-    auto& filter_fn = args.back();
-
-    ExecNode enode(CallNode(std::make_unique<ExecNode>(filter_fn), {}));
-    std::vector<uptr_exec_node>& arg_nodes = std::get<CallNode>(enode.data).args;
-    arg_nodes.push_back(nullptr);
+    auto& filter_fn = args.back()->exec();
 
     sptr_rtval_v children = Lisple::get_children(*args[0]);
 
+    sptr_rtval_v val_args{nullptr};
     for (size_t i = 0; i < children.size(); i++)
     {
+      val_args[0] = children[i];
       auto item = std::make_unique<ExecNode>(children[i]);
-      arg_nodes[0].swap(item);
-      if (Lisple::is_truthy(*exec(ctx, enode)))
+      if (Lisple::is_truthy(*filter_fn.execute(ctx, val_args)))
       {
         return RTValue::number(static_cast<int>(i));
       }
@@ -128,7 +125,7 @@ namespace Lisple
 
   EXEC_BODY(MapFunction, exec_map)
   {
-    auto& map_fn = args.back();
+    auto& mapper = args.back();
     sptr_rtval_v result;
 
     std::vector<sptr_rtval_v> seqs;
@@ -146,23 +143,13 @@ namespace Lisple
     result.reserve((*max_lmnts_it).size());
 
     // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
-    bool is_kw = map_fn->type == RTValue::Type::KEYWORD;
+    bool is_kw = mapper->type == RTValue::Type::KEYWORD;
+    Executable* map_fn = is_kw ? nullptr : &mapper->exec();
 
-    std::vector<uptr_exec_node> NULLARGS;
-    uptr_exec_node NULLTARGET;
-
-    ExecNode enode = (is_kw ? ExecNode(KeyLookupNode(map_fn, nullptr))
-                            : ExecNode(CallNode(std::make_unique<ExecNode>(map_fn), {})));
-
-    uptr_exec_node& kw_target =
-      is_kw ? std::get<KeyLookupNode>(enode.data).target : NULLTARGET;
-
-    std::vector<uptr_exec_node>& arg_nodes =
-      is_kw ? NULLARGS : std::get<CallNode>(enode.data).args;
-
+    sptr_rtval_v map_args;
     for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
     {
-      arg_nodes.push_back(nullptr);
+      map_args.push_back(nullptr);
     }
 
     bool valid;
@@ -173,15 +160,7 @@ namespace Lisple
       {
         if (i < seqs[seq_i].size())
         {
-          auto p = std::make_unique<ExecNode>(seqs[seq_i].at(i));
-          if (is_kw)
-          {
-            kw_target.swap(p);
-          }
-          else
-          {
-            arg_nodes[seq_i].swap(p);
-          }
+          map_args[seq_i] = seqs[seq_i][i];
         }
         else
         {
@@ -192,7 +171,26 @@ namespace Lisple
 
       if (valid)
       {
-        result.push_back(exec(ctx, enode));
+        if (is_kw)
+        {
+          if (seqs.size() == 1)
+          {
+            result.push_back(Dict::get_property(map_args[0], mapper));
+          }
+          else
+          {
+            sptr_rtval_v unit;
+            for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
+            {
+              unit.push_back(Dict::get_property(map_args[seq_i], mapper));
+            }
+            result.push_back(RTValue::vector(std::move(unit)));
+          }
+        }
+        else
+        {
+          result.push_back(map_fn->execute(ctx, map_args));
+        }
       }
       else
       {
@@ -212,25 +210,18 @@ namespace Lisple
   {
     sptr_rtval_v children = Lisple::get_children(*args[0]);
     sptr_rtval result = args[1];
-    auto& reducer = args.back();
-
-    ExecNode enode(CallNode(std::make_unique<ExecNode>(reducer), {}));
-    std::vector<uptr_exec_node>& arg_nodes = std::get<CallNode>(enode.data).args;
-    arg_nodes.push_back(std::make_unique<ExecNode>(args[1]));
-    arg_nodes.push_back(nullptr);
+    auto& reducer = args.back()->exec();
 
     sptr_rtval iter_result;
+    sptr_rtval_v reduce_args{result, nullptr};
     for (auto& lmnt : children)
     {
-      auto lmnt_node = std::make_unique<ExecNode>(lmnt);
-      arg_nodes[1].swap(lmnt_node);
-      iter_result = exec(ctx, enode);
+      reduce_args[1] = lmnt;
+      result = reducer.execute(ctx, reduce_args);
 
       if (iter_result.get() != result.get())
       {
-        result.swap(iter_result);
-        auto acc_node = std::make_unique<ExecNode>(result);
-        arg_nodes[0].swap(acc_node);
+        reduce_args[0] = result;
       }
     }
 
