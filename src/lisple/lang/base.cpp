@@ -441,6 +441,8 @@ namespace Lisple
     int max =
       std::get<const RTValue::Number>(args[args.size() == 1 ? 0 : 1]->value).get_int();
 
+    if (min == max) return RTValue::number(min);
+
     return RTValue::number((std::rand() % (max - min)) + min);
   }
 
