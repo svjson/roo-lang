@@ -4,14 +4,7 @@
 #include "lisple/lang/num.h"
 #include "lisple/runtime/value.h"
 
-#include <algorithm>
-#include <cstdlib>
-#include <ctype.h>
-#include <iostream>
 #include <map>
-#include <memory>
-#include <string>
-#include <utility>
 
 #include <lisple/bind.h>
 #include <lisple/context.h>
@@ -42,7 +35,6 @@
 
 namespace Lisple
 {
-
   Namespace make_language_namespace()
   {
     std::map<std::string, Lisple::sptr_sobject> lang;
@@ -82,7 +74,7 @@ namespace Lisple
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
     lang_symbols.emplace("empty?", EmptyPFunction::make());
-    lang.emplace("eval", std::make_shared<EvalFunction>());
+    lang_symbols.emplace("eval", EvalFunction::make());
     lang_symbols.emplace("even?", EvenPFunction::make());
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
     lang_symbols.emplace("flatten", FlattenFunction::make());
@@ -96,7 +88,7 @@ namespace Lisple
     lang_symbols.emplace("head", HeadFunction::make());
     lang_symbols.emplace("if", IfForm::make());
     lang_symbols.emplace("if-let", IfLetForm::make());
-    lang.emplace("include", std::make_shared<IncludeFunction>());
+    lang_symbols.emplace("include", IncludeFunction::make());
     lang_symbols.emplace("int", IntFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());
@@ -120,7 +112,7 @@ namespace Lisple
     lang_symbols.emplace("odd?", OddPFunction::make());
     lang_symbols.emplace("or", OrForm::make());
     lang_symbols.emplace("partition", PartitionFunction::make());
-    lang.emplace("prn", std::make_shared<PrintFunction>());
+    lang_symbols.emplace("prn", PrnFunction::make());
     lang_symbols.emplace("qualifier", QualifierFunction::make());
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
     lang_symbols.emplace("range", RangeFunction::make());
@@ -131,8 +123,8 @@ namespace Lisple
     lang_symbols.emplace("remove!", RemoveBangFunction::make());
     lang_symbols.emplace("remove-nth", RemoveNthFunction::make());
     lang_symbols.emplace("remove-nth!", RemoveNthBangFunction::make());
-    lang.emplace("repeat", std::make_shared<RepeatFunction>());
-    lang.emplace("resolve", std::make_shared<ResolveFunction>());
+    lang_symbols.emplace("repeat", RepeatFunction::make());
+    lang_symbols.emplace("resolve", ResolveFunction::make());
     lang_symbols.emplace("rnd", RndFunction::make());
     lang_symbols.emplace("select-keys", SelectKeysFunction::make());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
@@ -153,69 +145,6 @@ namespace Lisple
     lang_symbols.emplace("zero?", ZeroPFunction::make());
 
     return Namespace::make_lang(lang, lang_symbols);
-  }
-
-  /* PrintFunction - prn */
-  FUNC_IMPL(PrintFunction,
-            SIG((FN_ARGS((&VARARG, &Type::ANY)), EXEC_DISPATCH(&PrintFunction::do_print))))
-
-  FUNC_BODY(PrintFunction, do_print)
-  {
-    for (size_t i = 0; i < args.size(); i++)
-    {
-      auto obj = args[i];
-      if (i > 0) std::cout << " ";
-      if (obj->get_type() == Form::STRING)
-      {
-        std::cout << obj->as<String>().value;
-      }
-      else
-      {
-        std::cout << obj->to_string();
-      }
-    }
-
-    std::cout << std::endl;
-    return NIL;
-  }
-
-  FUNC_IMPL(IncludeFunction,
-            SIG((FN_ARGS((&Lisple::Type::STRING)),
-                 EXEC_DISPATCH(&IncludeFunction::include_file))))
-
-  FUNC_BODY(IncludeFunction, include_file)
-  {
-    ctx.read_file(Lisple::Value<std::string>::value_of(*args[0]));
-    return args[0];
-  }
-
-  /** EvalFunction - eval */
-  FUNC_IMPL(
-    EvalFunction,
-    MULTI_SIG((FN_ARGS((&Lisple::Type::STRING)), EXEC_DISPATCH(&EvalFunction::eval_string)),
-              (FN_ARGS((&Lisple::Type::ANY)), EXEC_DISPATCH(&EvalFunction::eval_form))))
-
-  FUNC_BODY(EvalFunction, eval_string)
-  {
-    const std::string& str = args[0]->as<Lisple::String>().value;
-    return RuntimeValueWrapper::make(ctx.eval(str));
-  }
-
-  FUNC_BODY(EvalFunction, eval_form)
-  {
-    return ctx.eval_ast(args[0]);
-  }
-
-  /** ResolveFunction - resolve */
-  FUNC_IMPL(
-    ResolveFunction,
-    MULTI_SIG((FN_ARGS((&Lisple::Type::SYMBOL)), EXEC_DISPATCH(&ResolveFunction::resolve)),
-              (FN_ARGS((&Lisple::Type::WORD)), EXEC_DISPATCH(&ResolveFunction::resolve))));
-
-  FUNC_BODY(ResolveFunction, resolve)
-  {
-    if (*args[0] == *NIL) return NIL;
-    return ctx.lookup(args[0]->as<Value<std::string>>().value);
   }
 
 } // namespace Lisple

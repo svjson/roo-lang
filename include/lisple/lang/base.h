@@ -44,6 +44,27 @@ namespace Lisple
   SPECIAL_FORM_DECL(DoForm, do)
 
   /*!
+   * @brief Evaluate a Lisple form or a string containing Lisple code.
+   *
+   * Usage:
+   * @code
+   * (eval '(+ 1 1)) => 2
+   * (eval "(+ 1 1)") => 2
+   * @endcode
+   */
+  FUNC(EvalFunction, eval_string, eval_form)
+
+  /*!
+   * @brief Evaluate a file, loading all forms it contains.
+   *
+   * Usage:
+   * @code
+   * (include "my-file.lsp")
+   * @endcode
+   */
+  FUNC(IncludeFunction, include)
+
+  /*!
    * @brief Tests if all arguments are truthy
    *
    * Returns true if all arguments evaluate as true/truthy, or false if any
@@ -96,6 +117,26 @@ namespace Lisple
    * @endcode
    */
   SPECIAL_FORM_DECL(OrForm, or)
+
+  /*!
+   * @brief Print arguments to stdout, separated by spaces, followed by a newline.
+   *
+   * Usage:
+   * @code
+   * (prn "Hello" "World")
+   * @endcode
+   */
+  FUNC(PrnFunction, prn)
+
+  /*!
+   * @brief Resolve the value of a symbol programmatically.
+   *
+   * Usage:
+   * @code
+   * (resolve '+) => <fn>
+   * @endcode
+   */
+  FUNC(ResolveFunction, resolve)
 
   FUNC(RndFunction, rnd)
 

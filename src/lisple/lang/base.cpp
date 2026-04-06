@@ -128,6 +128,34 @@ namespace Lisple
     return ret;
   }
 
+  /** EvalFunction - eval */
+  FUNC_IMPL(EvalFunction,
+            MULTI_SIG((FN_ARGS((&Lisple::Type::STRING)),
+                       EXEC_DISPATCH(&EvalFunction::exec_eval_string)),
+                      (FN_ARGS((&Lisple::Type::ANY)),
+                       EXEC_DISPATCH(&EvalFunction::exec_eval_form))))
+
+  EXEC_BODY(EvalFunction, exec_eval_string)
+  {
+    return ctx.eval(args[0]->str());
+  }
+
+  EXEC_BODY(EvalFunction, exec_eval_form)
+  {
+    return ctx.eval(to_AST(*args[0]));
+  }
+
+  /** IncludeFunction - include */
+  FUNC_IMPL(IncludeFunction,
+            SIG((FN_ARGS((&Lisple::Type::STRING)),
+                 EXEC_DISPATCH(&IncludeFunction::exec_include))))
+
+  EXEC_BODY(IncludeFunction, exec_include)
+  {
+    ctx.read_file(args[0]->str());
+    return args[0];
+  }
+
   /** AndForm - and */
   SPECIAL_FORM_IMPL(AndForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
@@ -430,6 +458,35 @@ namespace Lisple
     }
 
     return Constant::BOOL_FALSE;
+  }
+
+  /** PrnFunction - prn */
+  FUNC_IMPL(PrnFunction,
+            SIG((FN_ARGS((&VARARG, &Type::ANY)), EXEC_DISPATCH(&PrnFunction::exec_prn))))
+
+  EXEC_BODY(PrnFunction, exec_prn)
+  {
+    for (size_t i = 0; i < args.size(); i++)
+    {
+      if (i > 0) std::cout << " ";
+      std::cout << (args[i]->type == RTValue::Type::STRING ? args[i]->str()
+                                                           : args[i]->to_string());
+    }
+    std::cout << std::endl;
+    return Constant::NIL;
+  }
+
+  /** ResolveFunction - resolve */
+  FUNC_IMPL(ResolveFunction,
+            MULTI_SIG((FN_ARGS((&Lisple::Type::SYMBOL)),
+                       EXEC_DISPATCH(&ResolveFunction::exec_resolve)),
+                      (FN_ARGS((&Lisple::Type::WORD)),
+                       EXEC_DISPATCH(&ResolveFunction::exec_resolve))))
+
+  EXEC_BODY(ResolveFunction, exec_resolve)
+  {
+    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    return ctx.lookup_value(Word(args[0]->str()));
   }
 
   /** RndFunction - rnd */

@@ -818,6 +818,17 @@ namespace Lisple
         throw LispleException("Invalid RTValue(KEYWORD)");
       }
     }
+    case RTValue::Type::LIST:
+    {
+      sptr_sobject_v elements;
+
+      for (auto& element : std::get<sptr_rtval_v>(val.value))
+      {
+        elements.push_back(to_AST(*element));
+      }
+
+      return Lisple::List::make(std::move(elements));
+    }
     case RTValue::Type::MAP:
     {
       sptr_sobject_v elements;
