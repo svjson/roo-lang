@@ -1,24 +1,7 @@
-
-#include <memory>
-#include <vector>
-
 #include <lisple/adapter.h>
-#include <lisple/context.h>
-#include <lisple/exec.h>
-#include <lisple/form.h>
-#include <lisple/lang.h>
-#include <lisple/namespace.h>
-#include <lisple/reader.h>
 #include <lisple/runtime.h>
-#include <lisple/type.h>
 
-#include <ext/alloc_traits.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
-
-using namespace ::testing;
 
 /*
  * ======================================================================

@@ -39,6 +39,21 @@ namespace Lisple
    */
   FUNC(ConcatBangFunction, concat_bang)
 
+  /*!
+   * @brief Tests if a Seq contains a specific value
+   *
+   * Usage:
+   * @code
+   * (contains? my-array "a value")
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The Seq to test                                                  |
+   * | 1     | The value to test for                                            |
+   */
+  FUNC(ContainsPFunction, contains)
+
   FUNC(CountFunction, count)
 
   /*!

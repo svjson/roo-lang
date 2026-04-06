@@ -72,7 +72,7 @@ namespace Lisple
     lang_symbols.emplace("concat", ConcatFunction::make());
     lang_symbols.emplace("concat!", ConcatBangFunction::make());
     lang_symbols.emplace("cond", CondForm::make());
-    lang.emplace("contains?", std::make_shared<ContainsPredicateFunction>());
+    lang_symbols.emplace("contains?", ContainsPFunction::make());
     lang_symbols.emplace("cos", CosFunction::make());
     lang_symbols.emplace("count", CountFunction::make());
     lang_symbols.emplace("def", DefForm::make());
@@ -327,26 +327,6 @@ namespace Lisple
     }
 
     return std::make_shared<Array>(vector);
-  }
-
-  /*
-   * ContainsPredicateFunction - contains?
-   */
-  FUNC_IMPL(ContainsPredicateFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::ANY)),
-                 EXEC_DISPATCH(&ContainsPredicateFunction::contains))))
-
-  FUNC_BODY(ContainsPredicateFunction, contains)
-  {
-    if (*NIL == *args[0]) return B_FALSE;
-
-    sptr_sobject_v& vector = args[0]->get_children();
-    return std::find_if(vector.begin(),
-                        vector.end(),
-                        [&args](sptr_sobject lmnt)
-                        { return *lmnt == *args.back(); }) != vector.end()
-             ? B_TRUE
-             : B_FALSE;
   }
 
   /*

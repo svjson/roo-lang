@@ -17,21 +17,6 @@ namespace Lisple
   FUNC_DECL(IncludeFunction, include_file)
 
   /*!
-   * @brief Tests if a Seq contains a specific value
-   *
-   * Usage:
-   * @code
-   * (contains? my-array "a value")
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The Seq to test                                                  |
-   * | 1     | The value to test for                                            |
-   */
-  FUNC_DECL(ContainsPredicateFunction, contains)
-
-  /*!
    * @brief Repeat a value or series of values n times into an array.
    *
    * Usage:

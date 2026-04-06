@@ -2,6 +2,7 @@
 #include "lisple/runtime/value.h"
 #include "lisple/type.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include <lisple/lang/seq.h>
@@ -99,6 +100,26 @@ namespace Lisple
     }
 
     return args[0];
+  }
+
+  /**
+   * ContainsPFunction - contains?
+   */
+  FUNC_IMPL(ContainsPFunction,
+            SIG((FN_ARGS((&Type::SEQ), (&Type::ANY)),
+                 EXEC_DISPATCH(&ContainsPFunction::exec_contains))))
+
+  EXEC_BODY(ContainsPFunction, exec_contains)
+  {
+    if (*Constant::NIL == *args[0]) return Constant::BOOL_FALSE;
+
+    sptr_rtval_v vector = Lisple::get_children(*args[0]);
+    return std::find_if(vector.begin(),
+                        vector.end(),
+                        [&args](const sptr_rtval& lmnt)
+                        { return *lmnt == *args.back(); }) != vector.end()
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
   }
 
   /** CountFunction - count */
