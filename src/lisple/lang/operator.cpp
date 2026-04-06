@@ -51,7 +51,8 @@ namespace Lisple
 
     if (args.size() == 1)
     {
-      result = RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 0} - result;
+      result =
+        RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 0} - result;
     }
 
     for (size_t i = 1; i < args.size(); i++)
@@ -165,8 +166,7 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return args[0]->to_string() < args[1]->to_string() ? Constant::BOOL_TRUE
-                                                       : Constant::BOOL_FALSE;
+    return args[0]->str() < args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /* LessThanOrEqualsFunction */
@@ -197,8 +197,7 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return args[0]->to_string() <= args[1]->to_string() ? Constant::BOOL_TRUE
-                                                        : Constant::BOOL_FALSE;
+    return args[0]->str() <= args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /* GreaterThanFunction */
@@ -229,8 +228,7 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return args[0]->to_string() > args[1]->to_string() ? Constant::BOOL_TRUE
-                                                       : Constant::BOOL_FALSE;
+    return args[0]->str() > args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /* GreaterThanOrEqualsFunction */
@@ -260,8 +258,7 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return args[0]->to_string() >= args[1]->to_string() ? Constant::BOOL_TRUE
-                                                        : Constant::BOOL_FALSE;
+    return args[0]->str() >= args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
 } // namespace Lisple
