@@ -15,12 +15,7 @@ namespace LispleTest::Native
   const Lisple::sptr_rtval SIZE = Lisple::RTValue::keyword("size");
   const Lisple::sptr_rtval MATERIAL = Lisple::RTValue::keyword("material");
 
-  NATIVE_ADAPTER_IMPL(ProductAdapter,
-                      Product,
-                      &PRODUCT,
-                      ({NOBJ_GET(ProductAdapter, NAME, name),
-                        NOBJ_GET(ProductAdapter, PRICE, price),
-                        NOBJ_GET(ProductAdapter, SKU, sku)}));
+  NATIVE_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT, (name), (price), (sku));
 
   NOBJ_PROP_GET__METHOD(ProductAdapter, name, string, get_name);
   NOBJ_PROP_GET__METHOD(ProductAdapter, price, number, get_price);

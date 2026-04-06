@@ -8,7 +8,7 @@ namespace Lisple
    * HOST_ADAPTER_IMPL whenever a Host Object Adapter object without accessors
    * is constructed.
    */
-  const NAccessorTable NO_ACCESSORS = NAccessorTable();
+  const NAccessorTable NO_N_ACCESSORS = NAccessorTable();
 
   /*!
    * @brief Default function that is spliced in by accessor macros when a property
@@ -63,6 +63,16 @@ namespace Lisple
     {
       keys.push_back(k);
       accessor_map.emplace(k->str(), a);
+    }
+  }
+
+  NAccessorTable::NAccessorTable(
+    std::initializer_list<std::pair<std::string, NAccessors>> entries)
+  {
+    for (auto& [k, a] : entries)
+    {
+      keys.push_back(RTValue::keyword(k));
+      accessor_map.emplace(k, a);
     }
   }
 

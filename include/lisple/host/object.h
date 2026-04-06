@@ -89,11 +89,6 @@
     */                                                                  \
    AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr);                        \
    /*!                                                                  \
-    * @brief Constructs a new instance of the adapter class holding a   \
-    * shared pointer to the wrapped value.                              \
-    */                                                                  \
-   AD_CLASS(std::shared_ptr<H_CLASS>&& obj_ptr);                        \
-   /*!                                                                  \
     * @brief Constructs a new instance of the adapter class that holds  \
     * the supplied reference. This effectively means that the adapter   \
     * object is not responsible for the life-cycle of the referenced    \
@@ -191,24 +186,97 @@
 #define __NOBJ_P_NO_SETTER Lisple::n_no_setter
 
 #define __NOBJ_P_GET_SINGLE(FN) get_##FN
-#define __NOBJ_P_GET_DUAL(_1, FN) get_##FN
-
 #define __NOBJ_P_SET_SINGLE(FN) set_##FN
-#define __NOBJ_P_SET_DUAL(_1, FN) set_##FN
-
-#define __NOBJ_P_GET(AD_CLASS, FN, ...) {std::make_shared<Lisple::Key>(#FN), Lisple::Accessors(P_GETTER(AD_CLASS, __SELECT_MACRO__2(0, ##__VA_ARGS__, P_GET_DUAL, P_GET_SINGLE)(FN, ##__VA_ARGS__)), P_NO_SETTER)}
-
-#define __NOBJ_P_GET_SET(AD_CLASS, FN, ...) {\
-    #FN, \
-    Lisple::Accessors(__NOBJ_P_GETTER(AD_CLASS, &AD_CLASS::__SELECT_MACRO__2(0, ##__VA_ARGS__, P_GET_DUAL, P_GET_SINGLE)(FN, ##__VA_ARGS__)), \
-                      __NOBJ_P_SETTER(AD_CLASS, &AD_CLASS::__SELECT_MACRO__2(0, ##__VA_ARGS__, P_SET_DUAL, P_SET_SINGLE)(FN, ##__VA_ARGS__)))}
 
 
+/*
+ * Accessor spec expansion - __NOBJ_EXP_SPEC(AD_CLASS, SPEC)
+ *
+ * A SPEC is a parenthesised tuple that describes one accessor map entry,
+ * resolved by arity:
+ *
+ *   (field)              key = #field,         getter only
+ *   ("key", field)       explicit string key,  getter only
+ *   (rw, "key", field)   explicit string key,  getter + setter
+ *   (wo, "key", field)   explicit string key,  setter only
+ *
+ * Tags (rw, wo) only appear in 3-element specs, so there is never any
+ * ambiguity with string-literal keys in 2-element specs.  The 2-element
+ * form is unconditionally (key, field) - no tag detection needed.
+ */
 
-#define NOBJ_GET(AD_CLASS, KEY, FN) {KEY, Lisple::NAccessors(__NOBJ_P_GETTER(AD_CLASS, P_GET_SINGLE(FN)), __NOBJ_P_NO_SETTER)}
-#define NOBJ_SET(AD_CLASS, KEY, FN) {KEY, Lisple::NAccessors(__NOBJ_P_NO_GETTER, __NOBJ_P_SETTER(__NOBJ_P_SET_SINGLE(AD_CLASS, FN)))}
-#define NOBJ_GET_SET(AD_CLASS, KEY, FN) {KEY, Lisple::NAccessors(__NOBJ_P_GETTER(AD_CLASS, __NOBJ_P_GET_SINGLE(FN)), \
-                                                             __NOBJ_P_SETTER(AD_CLASS, __NOBJ_P_SET_SINGLE(FN))) }
+/* Access-mode expanders for 3-element specs */
+#define __NOBJ_EXP_TAG_rw(AD, KEY, FIELD) \
+  {KEY, Lisple::NAccessors(__NOBJ_P_GETTER(AD, get_##FIELD), __NOBJ_P_SETTER(AD, set_##FIELD))}
+#define __NOBJ_EXP_TAG_wo(AD, KEY, FIELD) \
+  {KEY, Lisple::NAccessors(__NOBJ_P_NO_GETTER, __NOBJ_P_SETTER(AD, set_##FIELD))}
+
+/* 1-element spec: (field) - key inferred via stringification */
+#define __NOBJ_EXP_1EL(AD, FIELD) \
+  {#FIELD, Lisple::NAccessors(__NOBJ_P_GETTER(AD, get_##FIELD), __NOBJ_P_NO_SETTER)}
+
+/* 2-element spec: ("key", field) - explicit string key, getter only */
+#define __NOBJ_EXP_2EL(AD, KEY, FIELD) \
+  {KEY, Lisple::NAccessors(__NOBJ_P_GETTER(AD, get_##FIELD), __NOBJ_P_NO_SETTER)}
+
+/* 3-element spec: (tag, "key", field) */
+#define __NOBJ_EXP_3EL(AD, TAG, KEY, FIELD) __NOBJ_EXP_TAG_##TAG(AD, KEY, FIELD)
+
+/* Dispatch a single spec tuple by arity */
+#define __NOBJ_EXP_SPEC(AD, SPEC)         __NOBJ_EXP_SPEC_IMPL(AD, ESC SPEC)
+#define __NOBJ_EXP_SPEC_IMPL(AD, ...)     \
+  __SELECT_MACRO__3(__VA_ARGS__, __NOBJ_EXP_3EL, __NOBJ_EXP_2EL, __NOBJ_EXP_1EL)(AD, __VA_ARGS__)
+
+
+/*
+ * __NOBJ_CMAP(AD_CLASS, spec1, spec2, ...)
+ *
+ * Expands a comma-separated list of accessor spec tuples, injecting
+ * AD_CLASS into each entry.  Uses __VA_SELECT_MACRO (from macro_support.h)
+ * to pick the right __NOBJ_CMAP_N overload based on the number of specs.
+ */
+#define __NOBJ_CMAP_1(AD, S)       __NOBJ_EXP_SPEC(AD, S)
+#define __NOBJ_CMAP_2(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_1(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_3(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_2(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_4(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_3(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_5(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_4(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_6(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_5(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_7(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_6(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_8(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_7(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_9(AD, S, ...)  __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_8(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_10(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_9(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_11(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_10(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_12(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_11(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_13(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_12(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_14(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_13(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_15(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_14(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_16(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_15(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_17(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_16(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_18(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_17(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_19(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_18(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_20(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_19(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_21(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_20(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_22(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_21(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_23(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_22(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_24(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_23(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_25(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_24(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_26(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_25(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_27(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_26(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_28(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_27(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_29(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_28(AD, __VA_ARGS__)
+#define __NOBJ_CMAP_30(AD, S, ...) __NOBJ_EXP_SPEC(AD, S), __NOBJ_CMAP_29(AD, __VA_ARGS__)
+
+#define __NOBJ_CMAP(AD, ...)                                           \
+  __VA_SELECT_MACRO(__VA_ARGS__,                                       \
+    __NOBJ_CMAP_30, __NOBJ_CMAP_29, __NOBJ_CMAP_28, __NOBJ_CMAP_27,   \
+    __NOBJ_CMAP_26, __NOBJ_CMAP_25, __NOBJ_CMAP_24, __NOBJ_CMAP_23,   \
+    __NOBJ_CMAP_22, __NOBJ_CMAP_21, __NOBJ_CMAP_20, __NOBJ_CMAP_19,   \
+    __NOBJ_CMAP_18, __NOBJ_CMAP_17, __NOBJ_CMAP_16, __NOBJ_CMAP_15,   \
+    __NOBJ_CMAP_14, __NOBJ_CMAP_13, __NOBJ_CMAP_12, __NOBJ_CMAP_11,   \
+    __NOBJ_CMAP_10, __NOBJ_CMAP_9,  __NOBJ_CMAP_8,  __NOBJ_CMAP_7,    \
+    __NOBJ_CMAP_6,  __NOBJ_CMAP_5,  __NOBJ_CMAP_4,  __NOBJ_CMAP_3,    \
+    __NOBJ_CMAP_2,  __NOBJ_CMAP_1)                                     \
+  (AD, ##__VA_ARGS__)
 
 
 /*
@@ -226,32 +294,58 @@
 
 /**
  * NATIVE_ADAPTER_IMPL variants
+ *
+ * SPEC_LIST is a parenthesised, comma-separated list of accessor spec
+ * tuples, e.g. ((x), ("my-key", field), (rw, w)).  The outer parens keep
+ * it a single macro argument; ESC unwraps them inside the macro body.
  */
 
-#define NATIVE_ADAPTER_IMPL__NO_ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T)      \
-  __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, (Lisple::NO_N_ACCESSORS))         \
-  AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr)                  \
-    : NativeObject(obj_ptr) { }                                             \
-  AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                    \
-    : NativeObject(obj_ref) { }                                             \
-  __GET_BASE_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+#define NATIVE_ADAPTER_IMPL__NO_ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T)         \
+  __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, (Lisple::NO_N_ACCESSORS))             \
+  AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr)                      \
+    : NativeObject(obj_ptr) {}                                                \
+  AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
+    : NativeObject(obj_ref) {}                                                \
+  __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)
 
-#define NATIVE_ADAPTER_IMPL__ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T, ACCESSOR_MAP)   \
-  __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ACCESSOR_MAP) \
-  AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr)                  \
-    : NativeObject(obj_ptr) {}                                              \
-  AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                    \
-    : NativeObject(obj_ref) {}                                              \
+#define NATIVE_ADAPTER_IMPL__ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T, ...)        \
+  __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ({__NOBJ_CMAP(AD_CLASS, __VA_ARGS__)})) \
+  AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr)                      \
+    : NativeObject(obj_ptr) {}                                                \
+  AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
+    : NativeObject(obj_ref) {}                                                \
   __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)
 
 
-
-
 /**
- * NATIVE_ADAPTER_IMPL implementation
+ * NATIVE_ADAPTER_IMPL - main implementation macro
+ *
+ * Usage (no properties):
+ *   NATIVE_ADAPTER_IMPL(MyAdapter, MyClass, &MY_TYPE);
+ *
+ * Usage (with accessor specs):
+ *   NATIVE_ADAPTER_IMPL(MyAdapter, MyClass, &MY_TYPE,
+ *     (field1), ("kebab-key", field2), (rw, field3));
  */
-
-#define NATIVE_ADAPTER_IMPL(AD_CLASS, H_CLASS, HOBJ_T, ...) __SELECT_MACRO__2(0, ##__VA_ARGS__, NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__NO_ACCESSORS)(AD_CLASS, H_CLASS, HOBJ_T, ##__VA_ARGS__)
+#define NATIVE_ADAPTER_IMPL(AD_CLASS, H_CLASS, HOBJ_T, ...)                   \
+  __VA_SELECT_MACRO(__VA_ARGS__,                                               \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
+    NATIVE_ADAPTER_IMPL__NO_ACCESSORS)                                         \
+  (AD_CLASS, H_CLASS, HOBJ_T, ##__VA_ARGS__)
 
 // clang-format on
 
@@ -332,9 +426,16 @@ namespace Lisple
 
     /*!
      * @brief Constructs an AccessorTable instance from a map of accessor
-     * specifications.
+     * specifications keyed by RTValue keyword objects.
      */
     NAccessorTable(const key_n_acc_map& accessors);
+
+    /*!
+     * @brief Constructs an AccessorTable from a braced list of
+     * (string-key, NAccessors) pairs.  String keys are used directly; the
+     * corresponding keyword RTValues are interned into the keys vector.
+     */
+    NAccessorTable(std::initializer_list<std::pair<std::string, NAccessors>> entries);
 
     /*!
      * @brief Tests if an accessor is provided for a specific key.

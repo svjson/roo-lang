@@ -10,10 +10,7 @@ namespace LispleTest::CachedNative
   const Lisple::sptr_rtval X = Lisple::RTValue::keyword("x");
   const Lisple::sptr_rtval Y = Lisple::RTValue::keyword("y");
 
-  NATIVE_ADAPTER_IMPL(PointAdapter,
-                      Point,
-                      &POINT,
-                      ({NOBJ_GET(PointAdapter, X, x), NOBJ_GET(PointAdapter, Y, y)}));
+  NATIVE_ADAPTER_IMPL(PointAdapter, Point, &POINT, (x), (y));
 
   NOBJ_PROP_GET__FIELD(PointAdapter, x, number);
   NOBJ_PROP_GET__FIELD(PointAdapter, y, number);
