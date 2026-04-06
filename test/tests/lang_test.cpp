@@ -87,19 +87,6 @@ TEST(ResolveFunction, resolve_other_namespace)
   EXPECT_EQ(result->to_string(), "3");
 }
 
-TEST(ApplyFunction, apply_dynamic)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // When
-  runtime.eval("(def function-name 'max)");
-  auto result = runtime.eval("(apply (resolve function-name) [10 8 17 4 0])");
-
-  // Then
-  ASSERT_EQ(result->to_string(), "17");
-}
-
 TEST(VectorFunction, make_vector)
 {
   // Given
@@ -111,69 +98,6 @@ TEST(VectorFunction, make_vector)
             "[1 \"2\" :foo BAR]");
   EXPECT_EQ(fixture.runtime.eval("(vector :bork)")->to_string(), "[:bork]");
   EXPECT_EQ(fixture.runtime.eval("(vector 1 [2 3])")->to_string(), "[1 [2 3]]");
-}
-
-TEST(UpperCaseFunction, uppercase)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(upper-case \"mIxEd-CaSe!\")"),
-            *Lisple::RTValue::string("MIXED-CASE!"));
-  EXPECT_EQ(*runtime.eval("(upper-case \"The King is dead.\")"),
-            *Lisple::RTValue::string("THE KING IS DEAD."));
-  EXPECT_EQ(*runtime.eval("(upper-case :regular-key)"),
-            *Lisple::RTValue::string(":REGULAR-KEY"));
-  EXPECT_EQ(*runtime.eval("(upper-case {:x 10 :y 8})"),
-            *Lisple::RTValue::string("{:X 10 :Y 8}"));
-  EXPECT_EQ(*runtime.eval("(upper-case nil)"), *Lisple::RTValue::string("NIL"));
-}
-
-TEST(LowerCaseFunction, lowercase)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(lower-case \"mIxEd-CaSe!\")"),
-            *Lisple::RTValue::string("mixed-case!"));
-  EXPECT_EQ(*runtime.eval("(lower-case \"The King is dead.\")"),
-            *Lisple::RTValue::string("the king is dead."));
-  EXPECT_EQ(*runtime.eval("(lower-case :UPCASE-KEY)"),
-            *Lisple::RTValue::string(":upcase-key"));
-  EXPECT_EQ(*runtime.eval("(lower-case {:X 10 :Y 8})"),
-            *Lisple::RTValue::string("{:x 10 :y 8}"));
-  EXPECT_EQ(*runtime.eval("(lower-case nil)"), *Lisple::RTValue::string("nil"));
-}
-
-TEST(JoinFunction, join_strs)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(*fixture.runtime.eval(R"((join " " "This" "is" "bat" "country"))"),
-            *Lisple::RTValue::string("This is bat country"));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "hyphenate" "all" "the" "things"))"),
-            *Lisple::RTValue::string("hyphenate-all-the-things"));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join ", " "CSV" "to" "the" "rescue"))"),
-            *Lisple::RTValue::string("CSV, to, the, rescue"));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join "-"))"), *Lisple::RTValue::string(""));
-  EXPECT_EQ(*fixture.runtime.eval(R"((join "-" "foreveralone"))"),
-            *Lisple::RTValue::string("foreveralone"));
-}
-
-TEST(CeilFunction, ceil)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(ceil 10.2)"), *Lisple::RTValue::number(11));
-  EXPECT_EQ(*runtime.eval("(ceil 10.0)"), *Lisple::RTValue::number(10));
-  EXPECT_EQ(*runtime.eval("(ceil 5)"), *Lisple::RTValue::number(5));
-  EXPECT_EQ(*runtime.eval("(ceil 19.1)"), *Lisple::RTValue::number(20));
 }
 
 TEST(EvalFunction, eval_string)

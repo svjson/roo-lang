@@ -51,57 +51,57 @@ TEST(DefunForm, define_no_arg_fun_with_docstring)
 TEST(DefunForm, defun_with_static_return_value)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-  Lisple::sptr_sobject_v code = fixture.parser.read_sexps("(defun gimme-five [] 5)");
+  Lisple::Runtime runtime;
 
   // When
-  auto result = fixture.runtime.eval(code.at(0));
+  auto result = runtime.eval("(defun gimme-five [] 5)");
 
   // Then
-  ASSERT_TRUE(fixture.runtime.get_current_namespace().has(Lisple::Word("gimme-five")));
+  ASSERT_TRUE(runtime.get_current_namespace().has(Lisple::Word("gimme-five")));
   Lisple::sptr_rtval_v args;
-  auto retval = result->exec().execute(fixture.ctx, args);
+  Lisple::Context ctx(runtime);
+  auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 5);
 }
 
 TEST(DefunForm, defun_with_single_argument)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-  Lisple::sptr_sobject_v code = fixture.parser.read_sexps("(defun add-five [x] (+ x 5))");
+  Lisple::Runtime runtime;
 
   // When
-  auto result = fixture.runtime.eval(code.at(0));
+  auto result = runtime.eval("(defun add-five [x] (+ x 5))");
 
   // Then
-  ASSERT_TRUE(fixture.runtime.get_current_namespace().has(Lisple::Word("add-five")));
+  ASSERT_TRUE(runtime.get_current_namespace().has(Lisple::Word("add-five")));
   Lisple::sptr_rtval_v args{Lisple::RTValue::number(6)};
-  auto retval = result->exec().execute(fixture.ctx, args);
+  Lisple::Context ctx(runtime);
+  auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 11);
 }
 
 TEST(DefunForm, defun_with_destructuring_argument)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(defun myfun [{:keys [one two]}] [one two])");
+  Lisple::Runtime runtime;
+  runtime.eval("(defun myfun [{:keys [one two]}] [one two])");
 
   // When
-  auto result = fixture.runtime.eval("(myfun {:one 1 :two 2})");
+  auto result = runtime.eval("(myfun {:one 1 :two 2})");
 
   // Then
-  ASSERT_EQ(*result, *fixture.runtime.eval("[1 2]"));
+  ASSERT_EQ(*result, *runtime.eval("[1 2]"));
 }
 
 TEST(DefunForm, defun_with_destructuring_argument_and_alias)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(defun myfun [{:keys [one two] :as seq}] [one two seq])");
+  Lisple::Runtime runtime;
+  runtime.eval("(defun myfun [{:keys [one two] :as seq}] [one two seq])");
 
   // When
-  auto result = fixture.runtime.eval("(myfun {:one 1 :two 2})");
+  auto result = runtime.eval("(myfun {:one 1 :two 2})");
 
   // Then
-  ASSERT_EQ(*result, *fixture.runtime.eval("[1 2 {:one 1 :two 2}]"));
+  ASSERT_EQ(*result, *runtime.eval("[1 2 {:one 1 :two 2}]"));
 }
