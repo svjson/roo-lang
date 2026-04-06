@@ -163,15 +163,14 @@ namespace Lisple
 
   /** RangeFunction - range */
   FUNC_IMPL(RangeFunction,
-            MULTI_SIG((FN_ARGS((&Type::NUMBER)),
-                       EXEC_DISPATCH(&RangeFunction::exec_range)),
+            MULTI_SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&RangeFunction::exec_range)),
                       (FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                        EXEC_DISPATCH(&RangeFunction::exec_range))))
 
   EXEC_BODY(RangeFunction, exec_range)
   {
     int begin = args.size() == 1 ? 0 : args[0]->i32();
-    int end   = args.back()->i32();
+    int end = args.back()->i32();
 
     sptr_rtval_v result;
     result.reserve(std::abs(end - begin) + 1);
@@ -346,9 +345,10 @@ namespace Lisple
     if (Type::HOST_SEQ.is_type_of(*args[1]))
     {
       sptr_sobject_v vector = args.back()->obj()->get_children();
+      size_t actual_amount = std::min(amount, vector.size());
 
-      result.reserve(vector.size());
-      for (size_t i = 0; i < std::min(amount, vector.size()); i++)
+      result.reserve(actual_amount);
+      for (size_t i = 0; i < actual_amount; i++)
       {
         result.push_back(to_rt_value(*vector[i]));
       }
@@ -356,8 +356,9 @@ namespace Lisple
     else
     {
       sptr_rtval_v elements = args.back()->elements();
-      result.reserve(elements.size());
-      for (size_t i = 0; i < std::min(amount, elements.size()); i++)
+      size_t actual_amount = std::min(amount, elements.size());
+      result.reserve(actual_amount);
+      for (size_t i = 0; i < actual_amount; i++)
       {
         result.push_back(elements[i]);
       }
