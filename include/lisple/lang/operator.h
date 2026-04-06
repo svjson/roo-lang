@@ -23,7 +23,7 @@ namespace Lisple
    * | 0     | Left hand side value.                                            |
    * | 1     | Right hand side value.                                           |
    */
-  FUNC(EqualsPredicateFunction, equals)
+  FUNC(EqualsPFunction, equals)
 
   /**
    * @brief Adds any number of numeric arguments together, and returns the sum.

@@ -4,12 +4,12 @@
 
 namespace Lisple
 {
-  /** EqualsPredicatefunction - = */
-  FUNC_IMPL(EqualsPredicateFunction,
+  /** EqualsPFunction - = */
+  FUNC_IMPL(EqualsPFunction,
             SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY)),
-                 EXEC_DISPATCH(&EqualsPredicateFunction::exec_equals))))
+                 EXEC_DISPATCH(&EqualsPFunction::exec_equals))))
 
-  EXEC_BODY(EqualsPredicateFunction, exec_equals)
+  EXEC_BODY(EqualsPFunction, exec_equals)
   {
     return *args[0] == *args[1] ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }

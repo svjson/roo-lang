@@ -52,7 +52,7 @@ namespace Lisple
     lang_symbols.emplace("-", MinusFunction::make());
     lang_symbols.emplace("/", DivideFunction::make());
     lang_symbols.emplace("*", MultiplyFunction::make());
-    lang_symbols.emplace("=", EqualsPredicateFunction::make());
+    lang_symbols.emplace("=", EqualsPFunction::make());
     lang_symbols.emplace("<", LessThanFunction::make());
     lang_symbols.emplace("<=", LessThanOrEqualsFunction::make());
     lang_symbols.emplace(">", GreaterThanFunction::make());
