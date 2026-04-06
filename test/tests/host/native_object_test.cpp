@@ -9,6 +9,7 @@
 #include <lisple/type.h>
 
 #include "host/test_adapters/vehicle_host_adapters.h"
+#include "host/test_adapters/vehicle_impl.h"
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include "test_host_objects.h"
 #include <gtest/gtest.h>
@@ -53,4 +54,26 @@ TEST(NativeObjectAdapter_Vehicle, get_property)
 
   EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("does-not-exist")),
             *Lisple::Constant::NIL);
+}
+
+TEST(NativeObjectAdapter_Vehicle, set_property)
+{
+  // Given
+  Lisple::sptr_rtval val =
+    LispleTest::Native::VehicleAdapter::make_unique("Runaway Train", 500);
+  LispleTest::Native::VehicleAdapter& adapter =
+    val->adapter<LispleTest::Native::VehicleAdapter>();
+
+  Vehicle& vehicle = adapter.get_object();
+  EXPECT_EQ(vehicle.get_model_name(), "Runaway Train");
+  EXPECT_EQ(vehicle.get_seats(), 500);
+
+  // When
+  vehicle.set_seats(800);
+
+  // Then
+  EXPECT_EQ(*adapter.get_seats(), *Lisple::RTValue::number(800));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("seats")),
+            *Lisple::RTValue::number(800));
+  EXPECT_EQ(vehicle.get_seats(), 800);
 }

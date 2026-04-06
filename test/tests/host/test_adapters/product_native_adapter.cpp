@@ -17,10 +17,8 @@ namespace LispleTest::Native
 
   NATIVE_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT, (name), (price), (sku));
 
-  NOBJ_PROP_GET__METHOD(ProductAdapter, name, string, get_name);
-  NOBJ_PROP_GET__METHOD(ProductAdapter, price, number, get_price);
-  //  NOBJ_PROP_SET__METHOD(ProductAdapter, price, number, set_price);
-  NOBJ_PROP_GET__METHOD(ProductAdapter, sku, number, get_sku);
-  //  NOBJ_PROP_SET__METHOD(ProductAdapter, sku, number, set_sku);
+  NOBJ_PROP_GET__METHOD(ProductAdapter, name);
+  NOBJ_PROP_GET_SET__METHOD(ProductAdapter, price);
+  NOBJ_PROP_GET_SET__METHOD(ProductAdapter, sku);
 
 } // namespace LispleTest::Native

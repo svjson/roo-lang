@@ -12,8 +12,8 @@ namespace LispleTest::CachedNative
 
   NATIVE_ADAPTER_IMPL(PointAdapter, Point, &POINT, (x), (y));
 
-  NOBJ_PROP_GET__FIELD(PointAdapter, x, number);
-  NOBJ_PROP_GET__FIELD(PointAdapter, y, number);
+  NOBJ_CACHED_PROP_GET__FIELD(PointAdapter, x);
+  NOBJ_CACHED_PROP_GET__FIELD(PointAdapter, y);
 
   /** MakePointFunction -  make-point */
   FUNC_IMPL(MakePointFunction,
