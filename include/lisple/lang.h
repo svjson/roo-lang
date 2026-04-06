@@ -29,35 +29,7 @@ namespace Lisple
    */
   FUNC_DECL(RepeatFunction, repeat)
 
-  /*!
-   * @brief Merge keys and values from two or more maps into a new map containing
-   * all keys and values. Any duplicates will be overwritten with the last
-   * encountered value
-   *
-   * Usage:
-   * @code
-   * (merge {:a 1 :b 2}
-   *        {:c 3 :d 4})
-   * => {:a 1 :b 2 :c 3 :d 4}
-   *
-   * (merge {:a 1} {:b 2}
-   *        {:a 4 :c 3})
-   * => {:a 4 :b 2 :c 3}
-   */
-  FUNC_DECL(MergeFunction, merge_maps)
-
   FUNC_DECL(VectorFunction, make_vector)
-
-  /*!
-   * @brief Extracts an array of all keys present in a complex type, ie a map.
-   *
-   * Usage:
-   * @code
-   * (keys {:name "A name" :age 23}) => [:name :age]
-   * @endcode
-   */
-  FUNC_DECL(KeysFunction, keys_fn)
-  FUNC_DECL(SelectKeysFunction, select_keys_fn)
 
   /*! @brief Partition a sequence into an array of equally sized arrays.
    *

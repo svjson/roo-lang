@@ -100,13 +100,13 @@ namespace Lisple
     lang_symbols.emplace("int", IntFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());
-    lang.emplace("keys", std::make_shared<KeysFunction>());
+    lang_symbols.emplace("keys", KeysFunction::make());
     lang_symbols.emplace("last", LastFunction::make());
     lang_symbols.emplace("let", LetForm::make());
     lang_symbols.emplace("lower-case", LowerCaseFunction::make());
     lang_symbols.emplace("map", MapFunction::make());
     lang_symbols.emplace("max", MaxFunction::make());
-    lang.emplace("merge", std::make_shared<MergeFunction>());
+    lang_symbols.emplace("merge", MergeFunction::make());
     lang_symbols.emplace("min", MinFunction::make());
     lang_symbols.emplace("mod", ModulusFunction::make());
     lang_symbols.emplace("name", NameFunction::make());
@@ -134,7 +134,7 @@ namespace Lisple
     lang.emplace("repeat", std::make_shared<RepeatFunction>());
     lang.emplace("resolve", std::make_shared<ResolveFunction>());
     lang_symbols.emplace("rnd", RndFunction::make());
-    lang.emplace("select-keys", std::make_shared<SelectKeysFunction>());
+    lang_symbols.emplace("select-keys", SelectKeysFunction::make());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());
@@ -177,73 +177,6 @@ namespace Lisple
 
     std::cout << std::endl;
     return NIL;
-  }
-
-  /* MergeFunction - merge */
-  FUNC_IMPL(MergeFunction,
-            SIG((FN_ARGS((&Type::MAP), (&VARARG, &Type::MAP)),
-                 EXEC_DISPATCH(&MergeFunction::merge_maps))))
-
-  FUNC_BODY(MergeFunction, merge_maps)
-  {
-    std::shared_ptr<Map> result = std::make_shared<Map>(args[0]->as<Map>());
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      if (*args[i] == *NIL) continue;
-      for (auto& key : args[i]->as<Map>().key_ptrs())
-      {
-        result->set_property(key, args[i]->get_sptr_property(*key));
-      }
-    }
-
-    return result;
-  }
-
-  /* KeysFunction - keys */
-  FUNC_IMPL(KeysFunction,
-            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&KeysFunction::keys_fn))))
-
-  FUNC_BODY(KeysFunction, keys_fn)
-  {
-    sptr_sobject_v result;
-
-    if (args[0]->get_type() == Form::HOST_OBJECT)
-    {
-      for (auto& k : args[0]->as<Lisple::AbstractHostObject>().keys())
-      {
-        result.push_back(k);
-      }
-    }
-    else if (args[0]->get_type() == Form::MAP)
-    {
-      result = args[0]->as<Map>().key_ptrs();
-    }
-
-    return std::make_shared<Array>(result);
-  }
-
-  /* SelectKeysFunction */
-  FUNC_IMPL(SelectKeysFunction,
-            SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::SEQ)),
-                 EXEC_DISPATCH(&SelectKeysFunction::select_keys_fn))));
-
-  FUNC_BODY(SelectKeysFunction, select_keys_fn)
-  {
-    auto& obj = *args[0];
-
-    sptr_sobject_v new_content;
-    for (auto& key : args.back()->get_children())
-    {
-      sptr_sobject value = obj.get_sptr_property(*key);
-      if (value->get_type() != Form::NIL)
-      {
-        new_content.push_back(key);
-        new_content.push_back(value);
-      }
-    }
-
-    return std::make_shared<Lisple::Map>(new_content);
   }
 
   /* PartitionFunction */

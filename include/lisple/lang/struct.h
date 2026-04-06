@@ -94,6 +94,28 @@ namespace Lisple
   FUNC(DissocBangFunction, dissoc_bang)
 
   /*!
+   * @brief Returns a vector of all keys present in a map or complex object.
+   *
+   * Usage:
+   * @code
+   * (keys {:name "A name" :age 23}) => [:name :age]
+   * @endcode
+   */
+  FUNC(KeysFunction, keys)
+
+  /*!
+   * @brief Merges keys and values from two or more maps into a new map.
+   * Duplicate keys are overwritten by the last encountered value.
+   *
+   * Usage:
+   * @code
+   * (merge {:a 1 :b 2} {:c 3 :d 4}) => {:a 1 :b 2 :c 3 :d 4}
+   * (merge {:a 1} {:b 2} {:a 4 :c 3}) => {:a 4 :b 2 :c 3}
+   * @endcode
+   */
+  FUNC(MergeFunction, merge)
+
+  /*!
    * @brief Perform a functional reduce on all key-value pairs of a Map.
    *
    * Usage:
@@ -114,6 +136,16 @@ namespace Lisple
    * |       | the value for each pair in the map accumulated result            |
    */
   FUNC(ReduceKeyValueFunction, reduce_kv)
+
+  /*!
+   * @brief Returns a new map containing only the specified keys.
+   *
+   * Usage:
+   * @code
+   * (select-keys {:a 1 :b 2 :c 3} [:a :c]) => {:a 1 :c 3}
+   * @endcode
+   */
+  FUNC(SelectKeysFunction, select_keys)
 
 } // namespace Lisple
 

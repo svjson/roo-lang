@@ -155,6 +155,51 @@ namespace Lisple
     return Dict::remove_property(args[0], args[1]);
   }
 
+  /** KeysFunction - keys */
+  FUNC_IMPL(KeysFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&KeysFunction::exec_keys))))
+
+  EXEC_BODY(KeysFunction, exec_keys)
+  {
+    return RTValue::vector(Dict::map_sptr_keys(args[0]));
+  }
+
+  /** MergeFunction - merge */
+  FUNC_IMPL(MergeFunction,
+            SIG((FN_ARGS((&Type::MAP), (&VARARG, &Type::MAP)),
+                 EXEC_DISPATCH(&MergeFunction::exec_merge))))
+
+  EXEC_BODY(MergeFunction, exec_merge)
+  {
+    sptr_rtval_v new_content = args[0]->elements();
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      if (args[i]->type == RTValue::Type::NIL) continue;
+      const sptr_rtval_v& other = args[i]->elements();
+      for (size_t j = 0; j < other.size(); j += 2)
+      {
+        bool found = false;
+        for (size_t k = 0; k < new_content.size(); k += 2)
+        {
+          if (*new_content[k] == *other[j])
+          {
+            new_content[k + 1] = other[j + 1];
+            found = true;
+            break;
+          }
+        }
+        if (!found)
+        {
+          new_content.push_back(other[j]);
+          new_content.push_back(other[j + 1]);
+        }
+      }
+    }
+
+    return RTValue::map(std::move(new_content));
+  }
+
   /* ReduceKeyValueFunction - reduce-kv */
   FUNC_IMPL(ReduceKeyValueFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::EXEC)),
@@ -177,6 +222,26 @@ namespace Lisple
     }
 
     return result;
+  }
+
+  /** SelectKeysFunction - select-keys */
+  FUNC_IMPL(SelectKeysFunction,
+            SIG((FN_ARGS((&Type::ANY), (&Type::SEQ)),
+                 EXEC_DISPATCH(&SelectKeysFunction::exec_select_keys))))
+
+  EXEC_BODY(SelectKeysFunction, exec_select_keys)
+  {
+    sptr_rtval_v new_content;
+    for (auto& key : Lisple::get_children(*args[1]))
+    {
+      sptr_rtval value = Dict::get_property(args[0], *key);
+      if (value->type != RTValue::Type::NIL)
+      {
+        new_content.push_back(key);
+        new_content.push_back(value);
+      }
+    }
+    return RTValue::map(std::move(new_content));
   }
 
 } // namespace Lisple

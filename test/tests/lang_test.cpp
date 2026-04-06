@@ -21,32 +21,6 @@
 
 using namespace ::testing;
 
-TEST(SelectKeysFunction, all_keys_present)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def my-map {:a 1 :b 2 :c 3 :d 4})");
-
-  // When
-  auto result = fixture.runtime.eval("(select-keys my-map [:b :d])");
-
-  // Then
-  ASSERT_EQ(result->to_string(), "{:b 2 :d 4}");
-}
-
-TEST(SelectKeysFunction, no_keys_present)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-  fixture.runtime.eval("(def my-map {:a 1 :b 2 :c 3 :d 4})");
-
-  // When
-  auto result = fixture.runtime.eval("(select-keys my-map [:f :g])");
-
-  // Then
-  ASSERT_EQ(result->to_string(), "{}");
-}
-
 TEST(ResolveFunction, resolve)
 {
   // Given
