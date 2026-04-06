@@ -3,15 +3,24 @@
 
 namespace Lisple
 {
-  /*
+  /**
    * StrFunction - str
    */
   FUNC_IMPL(StrFunction,
             SIG((FN_ARGS((VARARG, &Type::ANY)), EXEC_DISPATCH(&StrFunction::exec_str))))
 
+  /**
+   * Uses regular string concatenation with += which forces re-allocation as the string
+   * content grows.
+   *
+   * Attempts to pre-reserve by computing the total length up front were
+   * benchmarked and found to be consistently slower, as the cost of the measurement
+   * pass outweighs the savings from avoiding reallocations - the allocator's
+   * geometric growth strategy wins at every arg count tested (5–1000 args).
+   */
   EXEC_BODY(StrFunction, exec_str)
   {
-    std::string result = "";
+    std::string result;
 
     for (auto& arg : args)
     {
