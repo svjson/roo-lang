@@ -147,6 +147,35 @@ namespace Lisple
     return Lisple::get_child(*args.front(), n);
   }
 
+  /** PartitionFunction - partition */
+  FUNC_IMPL(PartitionFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
+                 EXEC_DISPATCH(&PartitionFunction::exec_partition))))
+
+  EXEC_BODY(PartitionFunction, exec_partition)
+  {
+    size_t part_size = static_cast<size_t>(args[0]->i32());
+    sptr_rtval_v children = Lisple::get_children(*args[1]);
+    sptr_rtval_v result;
+
+    sptr_rtval_v part;
+    for (auto& child : children)
+    {
+      part.push_back(child);
+      if (part.size() == part_size)
+      {
+        result.push_back(RTValue::vector(std::move(part)));
+        part = sptr_rtval_v{};
+      }
+    }
+    if (!part.empty())
+    {
+      result.push_back(RTValue::vector(std::move(part)));
+    }
+
+    return RTValue::vector(std::move(result));
+  }
+
   /** HeadFunction */
   FUNC_IMPL(HeadFunction,
             SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&HeadFunction::exec_head))))
@@ -271,6 +300,29 @@ namespace Lisple
     return to_delete;
   }
 
+  /*
+   * RepeatFunction - repeat
+   */
+  FUNC_IMPL(RepeatFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&RepeatFunction::exec_repeat))))
+
+  EXEC_BODY(RepeatFunction, exec_repeat)
+  {
+    int n = args[0]->num().get_int();
+    Lisple::sptr_rtval_v array;
+    array.reserve(n * (args.size() - 1));
+    for (int ni = 0; ni < n; ni++)
+    {
+      for (size_t i = 1; i < args.size(); i++)
+      {
+        array.push_back(args[i]);
+      }
+    }
+
+    return RTValue::vector(std::move(array));
+  }
+
   /** TailFunction - tail */
   FUNC_IMPL(TailFunction,
             SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&TailFunction::exec_tail))))
@@ -386,6 +438,16 @@ namespace Lisple
     }
 
     return RTValue::vector(std::move(result));
+  }
+
+  /** VectorFunction - vector */
+  FUNC_IMPL(VectorFunction,
+            SIG((FN_ARGS((&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&VectorFunction::exec_vector))))
+
+  EXEC_BODY(VectorFunction, exec_vector)
+  {
+    return RTValue::vector(args);
   }
 
 } // namespace Lisple

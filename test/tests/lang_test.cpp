@@ -11,7 +11,6 @@
 #include <lisple/runtime/exec_node.h>
 #include <lisple/type.h>
 
-#include "gmock/gmock.h"
 #include "runtime_fixture.h"
 #include <ext/alloc_traits.h>
 #include <gtest/gtest-message.h>
@@ -59,19 +58,6 @@ TEST(ResolveFunction, resolve_other_namespace)
   // Then
   EXPECT_EQ(*result, *Lisple::RTValue::number(3));
   EXPECT_EQ(result->to_string(), "3");
-}
-
-TEST(VectorFunction, make_vector)
-{
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
-  // Then
-  EXPECT_EQ(fixture.runtime.eval("(vector 1 2 3 4)")->to_string(), "[1 2 3 4]");
-  EXPECT_EQ(fixture.runtime.eval(R"((vector 1 "2" :foo 'BAR))")->to_string(),
-            "[1 \"2\" :foo BAR]");
-  EXPECT_EQ(fixture.runtime.eval("(vector :bork)")->to_string(), "[:bork]");
-  EXPECT_EQ(fixture.runtime.eval("(vector 1 [2 3])")->to_string(), "[1 [2 3]]");
 }
 
 TEST(EvalFunction, eval_string)

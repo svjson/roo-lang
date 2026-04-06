@@ -594,6 +594,11 @@ namespace Lisple
     return std::get<sptr_native_obj>(value);
   }
 
+  const RTValue::Number& RTValue::num() const
+  {
+    return std::get<const RTValue::Number>(value);
+  }
+
   const sptr_rtval_v& RTValue::elements() const
   {
     return std::get<sptr_rtval_v>(value);

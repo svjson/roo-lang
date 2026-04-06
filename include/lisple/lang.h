@@ -17,33 +17,6 @@ namespace Lisple
   FUNC_DECL(IncludeFunction, include_file)
 
   /*!
-   * @brief Repeat a value or series of values n times into an array.
-   *
-   * Usage:
-   * @code
-   * (repeat 3 "value")
-   * => ["value" "value" "value"]
-   * (repeat 3 :a :b)
-   * => [:a :b :a :b :a :b]
-   * @endcode
-   */
-  FUNC_DECL(RepeatFunction, repeat)
-
-  FUNC_DECL(VectorFunction, make_vector)
-
-  /*! @brief Partition a sequence into an array of equally sized arrays.
-   *
-   * Usage:
-   * @code
-   * (partition 2 [1 2 3 4 5 6])
-   * => [[1 2] [3 4] [5 6]]
-   *
-   * (partition 4 [1 2 3 4 5 6])
-   * => [[1 2 3 4] [5 6]]
-   */
-  FUNC_DECL(PartitionFunction, partition)
-
-  /*!
    * @brief Evaluate a Lisple form or a string containing lisple code
    *
    * Usage:

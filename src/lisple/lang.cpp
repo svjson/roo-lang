@@ -119,7 +119,7 @@ namespace Lisple
     lang_symbols.emplace("nth", NthFunction::make());
     lang_symbols.emplace("odd?", OddPFunction::make());
     lang_symbols.emplace("or", OrForm::make());
-    lang.emplace("partition", std::make_shared<PartitionFunction>());
+    lang_symbols.emplace("partition", PartitionFunction::make());
     lang.emplace("prn", std::make_shared<PrintFunction>());
     lang_symbols.emplace("qualifier", QualifierFunction::make());
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
@@ -146,7 +146,7 @@ namespace Lisple
     lang_symbols.emplace("take", TakeFunction::make());
     lang_symbols.emplace("true", Constant::BOOL_TRUE);
     lang_symbols.emplace("upper-case", UpperCaseFunction::make());
-    lang.emplace("vector", std::make_shared<VectorFunction>());
+    lang_symbols.emplace("vector", VectorFunction::make());
     lang_symbols.emplace("when", WhenForm::make());
     lang_symbols.emplace("when-let", WhenLetForm::make());
     lang_symbols.emplace("while", WhileForm::make());
@@ -177,34 +177,6 @@ namespace Lisple
 
     std::cout << std::endl;
     return NIL;
-  }
-
-  /* PartitionFunction */
-  FUNC_IMPL(PartitionFunction,
-            SIG((FN_ARGS((&Lisple::Type::NUMBER), (&Lisple::Type::SEQ)),
-                 EXEC_DISPATCH(&PartitionFunction::partition))))
-
-  FUNC_BODY(PartitionFunction, partition)
-  {
-    std::shared_ptr<Lisple::Array> result = std::make_shared<Lisple::Array>();
-    unsigned int part_size = Lisple::uint_val(*args[0]);
-
-    std::shared_ptr<Lisple::Array> partition = std::make_shared<Lisple::Array>();
-    for (auto& child : args.back()->get_children())
-    {
-      partition->append(child);
-      if (partition->size() == part_size)
-      {
-        result->append(partition);
-        partition = std::make_shared<Lisple::Array>();
-      }
-    }
-    if (partition->size())
-    {
-      result->append(partition);
-    }
-
-    return result;
   }
 
   FUNC_IMPL(IncludeFunction,
@@ -244,45 +216,6 @@ namespace Lisple
   {
     if (*args[0] == *NIL) return NIL;
     return ctx.lookup(args[0]->as<Value<std::string>>().value);
-  }
-
-  FUNC_IMPL(VectorFunction,
-            SIG((FN_ARGS((&VARARG, &Type::ANY)),
-                 EXEC_DISPATCH(&VectorFunction::make_vector))))
-
-  FUNC_BODY(VectorFunction, make_vector)
-  {
-    sptr_sobject_v vector;
-
-    for (auto obj : args)
-    {
-      vector.push_back(obj);
-    }
-
-    return std::make_shared<Array>(vector);
-  }
-
-  /*
-   * RepeatFunction - repeat
-   */
-  FUNC_IMPL(RepeatFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::ANY)),
-                 EXEC_DISPATCH(&RepeatFunction::repeat))))
-
-  FUNC_BODY(RepeatFunction, repeat)
-  {
-    int n = Lisple::int_val(*args[0]);
-    Lisple::sptr_sobject_v array;
-    array.reserve(n * (args.size() - 1));
-    for (int ni = 0; ni < n; ni++)
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        array.push_back(args[i]);
-      }
-    }
-
-    return std::make_shared<Lisple::Array>(std::move(array));
   }
 
 } // namespace Lisple

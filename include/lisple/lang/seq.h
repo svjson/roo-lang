@@ -96,6 +96,19 @@ namespace Lisple
 
   FUNC(NthFunction, nth);
 
+  /*! @brief Partition a sequence into an array of equally sized arrays.
+   *
+   * Usage:
+   * @code
+   * (partition 2 [1 2 3 4 5 6])
+   * => [[1 2] [3 4] [5 6]]
+   *
+   * (partition 4 [1 2 3 4 5 6])
+   * => [[1 2 3 4] [5 6]]
+   * @endcode
+   */
+  FUNC(PartitionFunction, partition)
+
   /*!
    * @brief Select a random element from a sequence.
    * Returns nil if the sequence is empty
@@ -175,6 +188,19 @@ namespace Lisple
    */
   FUNC(RemoveNthBangFunction, remove_nth_bang)
 
+  /*!
+   * @brief Repeat a value or series of values n times into an array.
+   *
+   * Usage:
+   * @code
+   * (repeat 3 "value")
+   * => ["value" "value" "value"]
+   * (repeat 3 :a :b)
+   * => [:a :b :a :b :a :b]
+   * @endcode
+   */
+  FUNC(RepeatFunction, repeat)
+
   FUNC(TailFunction, tail)
 
   /*!
@@ -191,6 +217,16 @@ namespace Lisple
    * @endcode
    */
   FUNC(TakeFunction, take)
+
+  /*!
+   * @brief Creates a vector from its arguments.
+   *
+   * Usage:
+   * @code
+   * (vector 1 2 3) => [1 2 3]
+   * @endcode
+   */
+  FUNC(VectorFunction, vector)
 
 } // namespace Lisple
 
