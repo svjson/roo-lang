@@ -358,7 +358,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "051_number_semantics_fix_67b79b2";
+    const std::string CHANGE_ME = "052_no_execnode_staging_in_map_reduce_find-index_bc7d539";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
