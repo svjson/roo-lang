@@ -105,6 +105,106 @@ namespace Lisple
     }
   }
 
+  RTValue::Number RTValue::Number::operator+(const Number& other) const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::INT,
+                               .int_value = int_value + other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = int_value + other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = int_value + other.float_value};
+      }
+    case NumberType::LONG:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = long_value + other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = long_value + other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = long_value + other.float_value};
+      }
+    case NumberType::FLOAT:
+    default:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value + other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value + other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value + other.float_value};
+      }
+    }
+  }
+
+  RTValue::Number RTValue::Number::operator-(const Number& other) const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::INT,
+                               .int_value = int_value - other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = int_value - other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = int_value - other.float_value};
+      }
+    case NumberType::LONG:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = long_value - other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::LONG,
+                               .long_value = long_value - other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = long_value - other.float_value};
+      }
+    case NumberType::FLOAT:
+    default:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value - other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value - other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value - other.float_value};
+      }
+    }
+  }
+
   RTValue::Number RTValue::Number::operator*(const Number& other) const
   {
     switch (num_type)
@@ -151,6 +251,68 @@ namespace Lisple
       default:
         return RTValue::Number{.num_type = NumberType::FLOAT,
                                .float_value = float_value * other.float_value};
+      }
+    }
+  }
+
+  RTValue::Number RTValue::Number::operator/(const Number& other) const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        if (int_value % other.int_value == 0)
+          return RTValue::Number{.num_type = NumberType::INT,
+                                 .int_value = int_value / other.int_value};
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = (double)int_value / other.int_value};
+      case NumberType::LONG:
+        if (int_value % other.long_value == 0)
+          return RTValue::Number{.num_type = NumberType::LONG,
+                                 .long_value = int_value / other.long_value};
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = (double)int_value / other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = int_value / other.float_value};
+      }
+    case NumberType::LONG:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        if (long_value % other.int_value == 0)
+          return RTValue::Number{.num_type = NumberType::LONG,
+                                 .long_value = long_value / other.int_value};
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = (double)long_value / other.int_value};
+      case NumberType::LONG:
+        if (long_value % other.long_value == 0)
+          return RTValue::Number{.num_type = NumberType::LONG,
+                                 .long_value = long_value / other.long_value};
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = (double)long_value / other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = long_value / other.float_value};
+      }
+    case NumberType::FLOAT:
+    default:
+      switch (other.num_type)
+      {
+      case NumberType::INT:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value / other.int_value};
+      case NumberType::LONG:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value / other.long_value};
+      case NumberType::FLOAT:
+      default:
+        return RTValue::Number{.num_type = NumberType::FLOAT,
+                               .float_value = float_value / other.float_value};
       }
     }
   }

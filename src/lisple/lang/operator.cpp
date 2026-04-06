@@ -25,16 +25,11 @@ namespace Lisple
       throw LispleException("No arguments given to +");
     }
 
-    float result = 0.0;
+    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
 
-    for (size_t i = 0; i < args.size(); i++)
+    for (size_t i = 1; i < args.size(); i++)
     {
-      if (args[i]->type != RTValue::Type::NUMBER)
-      {
-        throw TypeError("Cannot perform arithmetic with nil. Arguments: " +
-                        RTValue::vector(args)->to_string() + ".");
-      }
-      result += std::get<const RTValue::Number>(args[i]->value).get_float();
+      result = result + std::get<const RTValue::Number>(args[i]->value);
     }
 
     return RTValue::number(result);
@@ -52,21 +47,18 @@ namespace Lisple
       throw LispleException("No arguments given to -");
     }
 
-    float result = std::get<const RTValue::Number>(args[0]->value).get_float();
+    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
+
     if (args.size() == 1)
     {
-      result = -result;
+      result = RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 0} - result;
     }
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      if (args[i]->type != RTValue::Type::NUMBER)
-      {
-        throw TypeError("Cannot perform arithmetic with nil. Arguments: " +
-                        RTValue::vector(args)->to_string() + ".");
-      }
-      result -= std::get<const RTValue::Number>(args[i]->value).get_float();
+      result = result - std::get<const RTValue::Number>(args[i]->value);
     }
+
     return RTValue::number(result);
   }
 
@@ -87,21 +79,16 @@ namespace Lisple
       return args[0];
     }
 
-    float result = std::get<const RTValue::Number>(args[0]->value).get_float();
+    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      if (args[i]->type != RTValue::Type::NUMBER)
-      {
-        throw TypeError("Cannot divide by nil/non-number. Arguments: " +
-                        RTValue::vector(args)->to_string() + ".");
-      }
-      float divisor = std::get<const RTValue::Number>(args[i]->value).get_float();
-      if (divisor == 0)
+      const RTValue::Number& divisor = std::get<const RTValue::Number>(args[i]->value);
+      if (divisor.get_double() == 0)
       {
         throw LispleException("Division by zero");
       }
-      result /= divisor;
+      result = result / divisor;
     }
 
     return RTValue::number(result);

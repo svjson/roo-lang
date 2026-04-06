@@ -66,7 +66,10 @@ namespace Lisple
       float get_float() const;
       double get_double() const;
 
+      Number operator+(const Number& other) const;
+      Number operator-(const Number& other) const;
       Number operator*(const Number& other) const;
+      Number operator/(const Number& other) const;
     };
 
     using Data = std::variant<sptr_sobject,
