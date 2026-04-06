@@ -98,12 +98,12 @@ namespace Lisple
     lang_symbols.emplace("if-let", IfLetForm::make());
     lang.emplace("include", std::make_shared<IncludeFunction>());
     lang_symbols.emplace("int", IntFunction::make());
-    lang.emplace("join", std::make_shared<JoinFunction>());
+    lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());
     lang.emplace("keys", std::make_shared<KeysFunction>());
     lang_symbols.emplace("last", LastFunction::make());
     lang_symbols.emplace("let", LetForm::make());
-    lang.emplace("lower-case", std::make_shared<LowerCaseFunction>());
+    lang_symbols.emplace("lower-case", LowerCaseFunction::make());
     lang_symbols.emplace("map", MapFunction::make());
     lang_symbols.emplace("max", MaxFunction::make());
     lang.emplace("merge", std::make_shared<MergeFunction>());
@@ -145,7 +145,7 @@ namespace Lisple
     lang_symbols.emplace("tail", TailFunction::make());
     lang_symbols.emplace("take", TakeFunction::make());
     lang_symbols.emplace("true", Constant::BOOL_TRUE);
-    lang.emplace("upper-case", std::make_shared<UpperCaseFunction>());
+    lang_symbols.emplace("upper-case", UpperCaseFunction::make());
     lang.emplace("vector", std::make_shared<VectorFunction>());
     lang_symbols.emplace("when", WhenForm::make());
     lang_symbols.emplace("when-let", WhenLetForm::make());
@@ -372,35 +372,6 @@ namespace Lisple
     return std::make_shared<Lisple::Array>(std::move(array));
   }
 
-  /*
-   * UpperCaseFunction - upper-case
-   */
-  FUNC_IMPL(UpperCaseFunction,
-            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&UpperCaseFunction::uppercase))));
-
-  FUNC_BODY(UpperCaseFunction, uppercase)
-  {
-    Object& arg = *args[0];
-    std::string str =
-      (arg != *NIL && Type::STRING.is_type_of(arg)) ? str_val(*args[0]) : arg.to_string();
-    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-    return String::make(str);
-  }
-
-  /*
-   * LowerCaseFunction - lower-case
-   */
-  FUNC_IMPL(LowerCaseFunction,
-            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&LowerCaseFunction::lowercase))));
-
-  FUNC_BODY(LowerCaseFunction, lowercase)
-  {
-    Object& arg = *args[0];
-    std::string str =
-      (arg != *NIL && Type::STRING.is_type_of(arg)) ? str_val(*args[0]) : arg.to_string();
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    return String::make(str);
-  }
 
   /*
    * NameFunction - name
@@ -435,28 +406,4 @@ namespace Lisple
     }
     return NIL;
   }
-
-  /*
-   * JoinFunction - join
-   */
-  FUNC_IMPL(JoinFunction,
-            SIG((FN_ARGS((VARARG, &Type::STRING)), EXEC_DISPATCH(&JoinFunction::join_str))))
-
-  FUNC_BODY(JoinFunction, join_str)
-  {
-    if (args.size() < 2)
-    {
-      return std::make_shared<Lisple::String>("");
-    }
-
-    std::string joiner = args[0]->as<Lisple::String>().value;
-    std::string result = args[1]->as<Lisple::String>().value;
-
-    for (size_t i = 2; i < args.size(); i++)
-    {
-      result += joiner + args[i]->as<Lisple::String>().value;
-    }
-    return std::make_shared<Lisple::String>(result);
-  }
-
 } // namespace Lisple

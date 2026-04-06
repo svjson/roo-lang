@@ -1,5 +1,10 @@
 
+#include <algorithm>
+#include <cctype>
+
+#include <lisple/impl.h>
 #include <lisple/lang/string.h>
+#include <lisple/type.h>
 
 namespace Lisple
 {
@@ -39,6 +44,50 @@ namespace Lisple
     }
 
     return RTValue::string(result);
+  }
+
+  /** JoinFunction - join */
+  FUNC_IMPL(JoinFunction,
+            SIG((FN_ARGS((VARARG, &Type::STRING)), EXEC_DISPATCH(&JoinFunction::exec_join))))
+
+  EXEC_BODY(JoinFunction, exec_join)
+  {
+    if (args.size() < 2) return RTValue::string("");
+
+    const std::string& joiner = args[0]->str();
+    std::string result = args[1]->str();
+
+    for (size_t i = 2; i < args.size(); i++)
+    {
+      result += joiner;
+      result += args[i]->str();
+    }
+
+    return RTValue::string(result);
+  }
+
+  /** UpperCaseFunction - upper-case */
+  FUNC_IMPL(UpperCaseFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&UpperCaseFunction::exec_upper_case))))
+
+  EXEC_BODY(UpperCaseFunction, exec_upper_case)
+  {
+    std::string str =
+      args[0]->type == RTValue::Type::STRING ? args[0]->str() : args[0]->to_string();
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    return RTValue::string(str);
+  }
+
+  /** LowerCaseFunction - lower-case */
+  FUNC_IMPL(LowerCaseFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&LowerCaseFunction::exec_lower_case))))
+
+  EXEC_BODY(LowerCaseFunction, exec_lower_case)
+  {
+    std::string str =
+      args[0]->type == RTValue::Type::STRING ? args[0]->str() : args[0]->to_string();
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return RTValue::string(str);
   }
 
 } // namespace Lisple

@@ -63,32 +63,6 @@ namespace Lisple
 
   FUNC_DECL(VectorFunction, make_vector)
 
-  FUNC_DECL(JoinFunction, join_str)
-
-  /*!
-   * @brief Converts string or string representation to all upper-case.
-   *
-   * Usage:
-   * @code
-   * (upper-case "mIxEd-CaSe!") => "MIXED-CASE!"
-   * (upper-case "The King is dead.") => "THE KING IS DEAD."
-   * (upper-case :regular-key) => ":REGULAR-KEY"
-   * (upper-case {:x 10 :y 8}) => "{:X 10 :Y 8}"
-   * @endcode
-   */
-  FUNC_DECL(UpperCaseFunction, uppercase);
-  /*!
-   * @brief Converts string or string representation to all lower-case.
-   *
-   * Usage:
-   * @code
-   * (lower-case "mIxEd-CaSe!") => "mixed-case!"
-   * (lower-case "The King is dead.") => "the king is dead."
-   * (lower-case :UPCASE-KEY) => ":upcase-key"
-   * (lower-case {:X 10 :Y 8}) => "{:x 10 :x 8}"
-   * @endcode
-   */
-  FUNC_DECL(LowerCaseFunction, lowercase);
 
   /*!
    * @brief Extracts the name part of an qualified identifier as a string.

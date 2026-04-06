@@ -21,6 +21,38 @@ namespace Lisple
    */
   FUNC(StrFunction, str)
 
+  /*!
+   * @brief Joins multiple strings with a separator.
+   *
+   * Usage:
+   * @code
+   * (join ", " "a" "b" "c") => "a, b, c"
+   * @endcode
+   */
+  FUNC(JoinFunction, join)
+
+  /*!
+   * @brief Converts string or string representation to all upper-case.
+   *
+   * Usage:
+   * @code
+   * (upper-case "mIxEd-CaSe!") => "MIXED-CASE!"
+   * (upper-case :regular-key) => ":REGULAR-KEY"
+   * @endcode
+   */
+  FUNC(UpperCaseFunction, upper_case)
+
+  /*!
+   * @brief Converts string or string representation to all lower-case.
+   *
+   * Usage:
+   * @code
+   * (lower-case "mIxEd-CaSe!") => "mixed-case!"
+   * (lower-case :UPCASE-KEY) => ":upcase-key"
+   * @endcode
+   */
+  FUNC(LowerCaseFunction, lower_case)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__STRING_H */
