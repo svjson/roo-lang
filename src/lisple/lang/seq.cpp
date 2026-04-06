@@ -163,50 +163,24 @@ namespace Lisple
 
   /** RangeFunction - range */
   FUNC_IMPL(RangeFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&RangeFunction::exec_range))))
-
-  sptr_rtval box_number(float num)
-  {
-    if (floorf(num) || num == 0.0)
-    {
-      return RTValue::number(static_cast<int>(num));
-    }
-    return RTValue::number(num);
-  }
+            MULTI_SIG((FN_ARGS((&Type::NUMBER)),
+                       EXEC_DISPATCH(&RangeFunction::exec_range)),
+                      (FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                       EXEC_DISPATCH(&RangeFunction::exec_range))))
 
   EXEC_BODY(RangeFunction, exec_range)
   {
+    int begin = args.size() == 1 ? 0 : args[0]->i32();
+    int end   = args.back()->i32();
+
     sptr_rtval_v result;
+    result.reserve(std::abs(end - begin) + 1);
 
-    if (args[0]->type == RTValue::Type::NUMBER && args[1]->type == RTValue::Type::NUMBER)
+    for (int i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
     {
-      const RTValue::Number& begin_num = std::get<const RTValue::Number>(args[0]->value);
-      const RTValue::Number& end_num = std::get<const RTValue::Number>(args[1]->value);
-
-      if (begin_num.num_type == RTValue::NumberType::INT)
-      {
-        int begin = begin_num.int_value;
-        int end = end_num.get_int();
-
-        result.reserve(std::abs(end - begin));
-
-        for (int i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
-        {
-          result.push_back(RTValue::number(i));
-        }
-      }
-      else
-      {
-        float begin = begin_num.get_float();
-        float end = end_num.get_float();
-
-        for (float i = begin; begin < end ? i <= end : i >= end; begin < end ? i++ : i--)
-        {
-          result.push_back(box_number(i));
-        }
-      }
+      result.push_back(RTValue::number(i));
     }
+
     return RTValue::vector(std::move(result));
   }
 
