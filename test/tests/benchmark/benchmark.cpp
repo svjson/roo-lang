@@ -358,7 +358,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "050_nth_and_last_vector_copy_fix_875f708";
+    const std::string CHANGE_ME = "051_number_semantics_fix_67b79b2";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
