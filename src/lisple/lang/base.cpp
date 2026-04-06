@@ -365,6 +365,16 @@ namespace Lisple
     return NIL;
   }
 
+  /** NameFunction - name */
+  FUNC_IMPL(NameFunction,
+            SIG((FN_ARGS((&Type::QUALIFIABLE)), EXEC_DISPATCH(&NameFunction::exec_name))))
+
+  EXEC_BODY(NameFunction, exec_name)
+  {
+    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    return RTValue::string(args[0]->qual().second);
+  }
+
   EXECNODE_BODY(NsForm, execnode_ns)
   {
     throw LispleException("Invocation of namespace");
@@ -531,6 +541,18 @@ namespace Lisple
     }
 
     return value;
+  }
+
+  /** QualifierFunction - namespace */
+  FUNC_IMPL(QualifierFunction,
+            SIG((FN_ARGS((&Type::QUALIFIABLE)),
+                 EXEC_DISPATCH(&QualifierFunction::exec_qualifier))))
+
+  EXEC_BODY(QualifierFunction, exec_qualifier)
+  {
+    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    const std::string qualifier = args[0]->qual().first;
+    return qualifier.empty() ? Constant::NIL : RTValue::string(qualifier);
   }
 
 } // namespace Lisple

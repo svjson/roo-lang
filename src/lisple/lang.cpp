@@ -109,8 +109,7 @@ namespace Lisple
     lang.emplace("merge", std::make_shared<MergeFunction>());
     lang_symbols.emplace("min", MinFunction::make());
     lang_symbols.emplace("mod", ModulusFunction::make());
-    lang.emplace("name", std::make_shared<NameFunction>());
-    lang.emplace("namespace", std::make_shared<NamespaceFunction>());
+    lang_symbols.emplace("name", NameFunction::make());
     lang_symbols.emplace("nil", Constant::NIL);
     lang_symbols.emplace("nil?", NilPFunction::make());
     lang_symbols.emplace("not", NotFunction::make());
@@ -122,6 +121,7 @@ namespace Lisple
     lang_symbols.emplace("or", OrForm::make());
     lang.emplace("partition", std::make_shared<PartitionFunction>());
     lang.emplace("prn", std::make_shared<PrintFunction>());
+    lang_symbols.emplace("qualifier", QualifierFunction::make());
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
     lang_symbols.emplace("range", RangeFunction::make());
     lang_symbols.emplace("reduce", ReduceFunction::make());
@@ -372,38 +372,4 @@ namespace Lisple
     return std::make_shared<Lisple::Array>(std::move(array));
   }
 
-
-  /*
-   * NameFunction - name
-   */
-  FUNC_IMPL(NameFunction,
-            SIG((FN_ARGS((&Type::QUALIFIABLE)),
-                 EXEC_DISPATCH(&NameFunction::extract_name))));
-
-  FUNC_BODY(NameFunction, extract_name)
-  {
-    sptr_sobject& arg = args[0];
-    if (*NIL == *arg) return NIL;
-    return String::make(arg->as<QualifiableStringValue>().get_identifier());
-  }
-
-  /*
-   * NamespaceFunction - namespace
-   */
-  FUNC_IMPL(NamespaceFunction,
-            SIG((FN_ARGS((&Type::QUALIFIABLE)),
-                 EXEC_DISPATCH(&NamespaceFunction::extract_namespace))));
-
-  FUNC_BODY(NamespaceFunction, extract_namespace)
-  {
-    sptr_sobject& arg = args[0];
-    if (*NIL == *arg) return NIL;
-
-    if (const std::string& val = arg->as<QualifiableStringValue>().get_qualifier();
-        !val.empty())
-    {
-      return String::make(val);
-    }
-    return NIL;
-  }
 } // namespace Lisple

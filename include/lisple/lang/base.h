@@ -63,6 +63,17 @@ namespace Lisple
    */
   SPECIAL_FORM_DECL(AndForm, and)
 
+  /*!
+   * @brief Extracts the name part of a qualified identifier as a string.
+   *
+   * Usage:
+   * @code
+   * (name :accept/ok) => "ok"
+   * (name :ok) => "ok"
+   * @endcode
+   */
+  FUNC(NameFunction, name)
+
   SPECIAL_FORM_DECL(NsForm, ns);
 
   /*!
@@ -93,6 +104,18 @@ namespace Lisple
    * nested structure.
    */
   SPECIAL_FORM_DECL(SetBangForm, set)
+
+  /*!
+   * @brief Extracts the qualifier/namespace part of a qualified identifier as
+   * a string.
+   *
+   * Usage:
+   * @code
+   * (qualifier :accept/ok) => "accept"
+   * (qualifier :ok) => nil
+   * @endcode
+   */
+  FUNC(QualifierFunction, qualifier)
 
 } // namespace Lisple
 

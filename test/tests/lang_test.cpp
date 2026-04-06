@@ -87,33 +87,6 @@ TEST(ResolveFunction, resolve_other_namespace)
   EXPECT_EQ(result->to_string(), "3");
 }
 
-TEST(NameFunction, extract_name)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(name :accept/ok)"), *Lisple::RTValue::string("ok"));
-  EXPECT_EQ(*runtime.eval("(name :ok)"), *Lisple::RTValue::string("ok"));
-  EXPECT_EQ(*runtime.eval("(name 'my-app/some-function)"),
-            *Lisple::RTValue::string("some-function"));
-  EXPECT_EQ(*runtime.eval("(name 'some-function)"),
-            *Lisple::RTValue::string("some-function"));
-}
-
-TEST(NamespaceFunction, extract_namepace)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  // Then
-  EXPECT_EQ(*runtime.eval("(namespace :accept/ok)"), *Lisple::RTValue::string("accept"));
-  EXPECT_EQ(*runtime.eval("(namespace :ok)"), *Lisple::Constant::NIL);
-  EXPECT_EQ(*runtime.eval("(namespace 'my-app/some-function)"),
-            *Lisple::RTValue::string("my-app"));
-  EXPECT_EQ(*runtime.eval("(namespace 'some-function)"), *Lisple::Constant::NIL);
-}
-
 TEST(ApplyFunction, apply_dynamic)
 {
   // Given

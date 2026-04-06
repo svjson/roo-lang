@@ -63,33 +63,6 @@ namespace Lisple
 
   FUNC_DECL(VectorFunction, make_vector)
 
-
-  /*!
-   * @brief Extracts the name part of an qualified identifier as a string.
-   *
-   * Usage:
-   * @code
-   * (name :accept/ok) => "ok"
-   * (name :ok) => "ok"
-   * (name 'my-app/some-function) => "some-function"
-   * (name 'some-function) => "some-function"
-   * @endcode
-   */
-  FUNC_DECL(NameFunction, extract_name)
-
-  /*!
-   * @brief Extracts the namespace part of an qualified identifier as a string.
-   *
-   * Usage:
-   * @code
-   * (namespace :accept/ok) => "accept""
-   * (namespace :ok) => nil
-   * (namespace 'my-app/some-function) => "my-app"
-   * (namespace 'some-function) => nil
-   * @endcode
-   */
-  FUNC_DECL(NamespaceFunction, extract_namespace)
-
   /*!
    * @brief Extracts an array of all keys present in a complex type, ie a map.
    *
