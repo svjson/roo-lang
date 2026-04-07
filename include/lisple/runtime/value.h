@@ -123,6 +123,7 @@ namespace Lisple
     sptr_native_obj nobj() const;
     Executable& exec() const;
     const sptr_rtval_v& elements() const;
+    sptr_rtval_v& mut_elements();
     template <typename T> T& adapter()
     {
       return *dynamic_cast<T*>(std::get<sptr_native_obj>(value).get());
