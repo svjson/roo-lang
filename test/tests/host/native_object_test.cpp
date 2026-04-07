@@ -14,20 +14,20 @@
 #include "test_host_objects.h"
 #include <gtest/gtest.h>
 
-TEST(NativeObjectAdapter_Vehicle, type)
+TEST(NativeObjectAdapter_VehicleModel, type)
 {
   // Given
   Lisple::sptr_rtval val =
-    LispleTest::Native::VehicleAdapter::make_unique("Runaway Train", 500);
-  LispleTest::Native::VehicleAdapter& adapter =
-    val->adapter<LispleTest::Native::VehicleAdapter>();
+    LispleTest::Native::VehicleModelAdapter::make_unique("Runaway Train", 500);
+  LispleTest::Native::VehicleModelAdapter& adapter =
+    val->adapter<LispleTest::Native::VehicleModelAdapter>();
 
   // Then
   EXPECT_EQ(val->type, Lisple::RTValue::Type::NATIVE_OBJECT);
-  EXPECT_EQ(adapter.get_host_type(), &LispleTest::VEHICLE_TYPE);
+  EXPECT_EQ(adapter.get_host_type(), &LispleTest::VEHICLE_MODEL_TYPE);
 
   EXPECT_TRUE(Lisple::Type::NATIVE_OBJECT.is_type_of(*val));
-  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*val));
+  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*val));
 
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(*val));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(*val));
@@ -35,13 +35,13 @@ TEST(NativeObjectAdapter_Vehicle, type)
   EXPECT_FALSE(Tests::PRODUCT.is_type_of(*val));
 }
 
-TEST(NativeObjectAdapter_Vehicle, get_property)
+TEST(NativeObjectAdapter_VehicleModel, get_property)
 {
   // Given
   Lisple::sptr_rtval val =
-    LispleTest::Native::VehicleAdapter::make_unique("Runaway Train", 500);
-  LispleTest::Native::VehicleAdapter& adapter =
-    val->adapter<LispleTest::Native::VehicleAdapter>();
+    LispleTest::Native::VehicleModelAdapter::make_unique("Runaway Train", 500);
+  LispleTest::Native::VehicleModelAdapter& adapter =
+    val->adapter<LispleTest::Native::VehicleModelAdapter>();
 
   // Then
   EXPECT_EQ(*adapter.get_model_name(), *Lisple::RTValue::string("Runaway Train"));
@@ -56,15 +56,15 @@ TEST(NativeObjectAdapter_Vehicle, get_property)
             *Lisple::Constant::NIL);
 }
 
-TEST(NativeObjectAdapter_Vehicle, set_property)
+TEST(NativeObjectAdapter_VehicleModel, set_property)
 {
   // Given
   Lisple::sptr_rtval val =
-    LispleTest::Native::VehicleAdapter::make_unique("Runaway Train", 500);
-  LispleTest::Native::VehicleAdapter& adapter =
-    val->adapter<LispleTest::Native::VehicleAdapter>();
+    LispleTest::Native::VehicleModelAdapter::make_unique("Runaway Train", 500);
+  LispleTest::Native::VehicleModelAdapter& adapter =
+    val->adapter<LispleTest::Native::VehicleModelAdapter>();
 
-  Vehicle& vehicle = adapter.get_object();
+  VehicleModel& vehicle = adapter.get_object();
   EXPECT_EQ(vehicle.get_model_name(), "Runaway Train");
   EXPECT_EQ(vehicle.get_seats(), 500);
 

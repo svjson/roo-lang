@@ -11,20 +11,20 @@
 #include "test_host_objects.h"
 #include <gtest/gtest.h>
 
-TEST(HostObjectAdapter_Vehicle, type)
+TEST(HostObjectAdapter_VehicleModel, type)
 {
   // Given
   Lisple::sptr_sobject obj =
-    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Runaway Train", 500);
-  LispleTest::VehicleAdapter& adapter = obj->as<LispleTest::VehicleAdapter>();
+    LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Runaway Train", 500);
+  LispleTest::VehicleModelAdapter& adapter = obj->as<LispleTest::VehicleModelAdapter>();
 
   // Then
   EXPECT_EQ(obj->get_type(), Lisple::Form::HOST_OBJECT);
   EXPECT_EQ(adapter.get_type(), Lisple::Form::HOST_OBJECT);
-  EXPECT_EQ(adapter.get_host_type(), &LispleTest::VEHICLE_TYPE);
+  EXPECT_EQ(adapter.get_host_type(), &LispleTest::VEHICLE_MODEL_TYPE);
 
   EXPECT_TRUE(Lisple::Type::HOST_OBJECT.is_type_of(adapter));
-  EXPECT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(adapter));
+  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(adapter));
 
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(adapter));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(adapter));
@@ -34,11 +34,11 @@ TEST(HostObjectAdapter_Vehicle, type)
 
 // Tmp changed to use get_sptr_property, because get_property in its current form does
 // not work for temporary objects.
-TEST(HostObjectAdapter_Vehicle, get_property)
+TEST(HostObjectAdapter_VehicleModel, get_property)
 {
   // Given
   Lisple::sptr_sobject adapter =
-    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Runaway Train", 500);
+    LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Runaway Train", 500);
 
   // Then
   EXPECT_EQ(*adapter->get_sptr_property(Lisple::Key("model-name")),
@@ -71,7 +71,7 @@ TEST(HostObjectAdapter_Clothing, type)
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(adapter));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(adapter));
   EXPECT_FALSE(Lisple::Type::MAP.is_type_of(adapter));
-  EXPECT_FALSE(LispleTest::VEHICLE_TYPE.is_type_of(adapter));
+  EXPECT_FALSE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(adapter));
 }
 
 // Tmp changed to use get_sptr_property, because get_property in its current form does

@@ -1,6 +1,8 @@
 
 #include "vehicle_native_adapters.h"
 
+#include "lisple/host/schema.h"
+
 #include <lisple/host/accessor.h>
 #include <lisple/runtime/dict.h>
 
@@ -17,6 +19,16 @@ namespace LispleTest::Native
   const Lisple::sptr_rtval NUMBERS = Lisple::RTValue::keyword("numbers");
   const Lisple::sptr_rtval SEATS = Lisple::RTValue::keyword("seats");
 
+  /* VehicleAdapter */
+  NATIVE_ADAPTER_IMPL(VehicleAdapter,
+                      Vehicle,
+                      &LispleTest::VEHICLE_TYPE,
+                      (model),
+                      ("reg-number", reg_number))
+
+  NOBJ_PROP_GET__METHOD_ADAPTER(VehicleAdapter, model, VehicleModelAdapter);
+  NOBJ_PROP_GET_SET__METHOD_ADAPTER(VehicleAdapter, reg_number, RegNumberAdapter);
+
   /* RegNumberAdapter */
   NATIVE_ADAPTER_IMPL(RegNumberAdapter,
                       RegNumber,
@@ -27,20 +39,35 @@ namespace LispleTest::Native
   NOBJ_PROP_GET__METHOD(RegNumberAdapter, letters);
   NOBJ_PROP_GET__METHOD(RegNumberAdapter, numbers);
 
-  /* VehicleAdapter */
-  NATIVE_ADAPTER_IMPL(VehicleAdapter,
-                      Vehicle,
-                      &VEHICLE_TYPE,
+  /* VehicleModelAdapter */
+  NATIVE_ADAPTER_IMPL(VehicleModelAdapter,
+                      VehicleModel,
+                      &VEHICLE_MODEL_TYPE,
                       ("model-name", model_name),
                       ("seats", seats));
 
-  NOBJ_PROP_GET__METHOD(VehicleAdapter, model_name);
-  NOBJ_PROP_GET__METHOD(VehicleAdapter, seats);
-  NOBJ_PROP_SET__METHOD(VehicleAdapter, seats);
+  NOBJ_PROP_GET__METHOD(VehicleModelAdapter, model_name);
+  NOBJ_PROP_GET__METHOD(VehicleModelAdapter, seats);
+  NOBJ_PROP_SET__METHOD(VehicleModelAdapter, seats);
 
   // ===============================================================
   // Vehicle example - functions
   // ===============================================================
+
+  /* VehicleModel Make-function */
+  FUNC_IMPL(VehicleModelMakeFunction,
+            SIG((FN_ARGS((&Lisple::Type::MAP)),
+                 EXEC_DISPATCH(&VehicleModelMakeFunction::exec_make))))
+
+  EXEC_BODY(VehicleModelMakeFunction, exec_make)
+  {
+    const std::string model_name =
+      Lisple::Dict::get_property(args.front(), MODEL_NAME)->str();
+
+    int seats = Lisple::Dict::get_property(args.front(), SEATS)->i64();
+
+    return VehicleModelAdapter::make_unique(model_name, seats);
+  }
 
   /* Vehicle Make-function */
   FUNC_IMPL(VehicleMakeFunction,
@@ -49,25 +76,52 @@ namespace LispleTest::Native
 
   EXEC_BODY(VehicleMakeFunction, exec_make)
   {
-    const std::string model_name =
-      Lisple::Dict::get_property(args.front(), MODEL_NAME)->str();
+    static Lisple::MapSchema vehicle_schema(
+      {{"model", &VEHICLE_MODEL_TYPE}, {"reg-number", &REGNUM_TYPE}});
 
-    int seats = Lisple::Dict::get_property(args.front(), SEATS)->i64();
+    auto opts = vehicle_schema.bind(ctx, *args[0]);
 
-    return VehicleAdapter::make_unique(model_name, seats);
+    auto vmodel = opts.obj<VehicleModel>("model");
+
+    return VehicleAdapter::make_unique(vmodel, opts.obj<RegNumber>("reg-number"));
+  }
+
+  /* RegNumber Make-function */
+  FUNC_IMPL(RegNumberMakeFunction,
+            SIG((FN_ARGS((&Lisple::Type::MAP)),
+                 EXEC_DISPATCH(&RegNumberMakeFunction::exec_make))))
+
+  EXEC_BODY(RegNumberMakeFunction, exec_make)
+  {
+    const std::string letters = Lisple::Dict::get_property(args.front(), LETTERS)->str();
+    const std::string numbers = Lisple::Dict::get_property(args.front(), NUMBERS)->str();
+
+    return RegNumberAdapter::make_unique(letters, numbers);
   }
 
   /** PrnVehicle - prn-vehicle */
   FUNC_IMPL(PrnVehicle,
-            SIG((FN_ARGS((&VEHICLE_TYPE)), EXEC_DISPATCH(&PrnVehicle::exec_prn))))
+            SIG((FN_ARGS((&VEHICLE_MODEL_TYPE)), EXEC_DISPATCH(&PrnVehicle::exec_prn))))
 
   EXEC_BODY(PrnVehicle, exec_prn)
   {
-    Vehicle& v = args.front()->adapter<VehicleAdapter>().get_object();
+    VehicleModel& v = args.front()->adapter<VehicleModelAdapter>().get_object();
     ctx.eval("(prn \"The vehicle " + v.get_model_name() + " has " +
              std::to_string(v.get_seats()) + " seats\")");
 
     return args.front();
+  }
+
+  // ===============================================================
+  // Vehicle example - namespace
+  // ===============================================================
+  VehicleNamespace::VehicleNamespace()
+    : Lisple::Namespace("vehicle")
+  {
+    values.emplace("make-vehicle", VehicleMakeFunction::make());
+    values.emplace("make-vehicle-model", VehicleModelMakeFunction::make());
+    values.emplace("make-reg-number", RegNumberMakeFunction::make());
+    values.emplace("prn-vehicle-model", PrnVehicle::make());
   }
 
 } // namespace LispleTest::Native

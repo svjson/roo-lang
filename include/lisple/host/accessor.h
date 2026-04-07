@@ -83,6 +83,44 @@
 
 
 /* -----------------------------------------------------------------------
+ * Adapter accessor dispatch helpers
+ *
+ * Same three families as above, but with a required ADAPTER_TYPE arg
+ * threaded through before the optional field/method name.
+ * ----------------------------------------------------------------------- */
+
+/* With explicit field/method name */
+#define __NOBJ_ADAPTER_FIELD_ACCESSOR(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, NAME) \
+  MACRO(AD_CLASS, PROP_NAME, ADAPTER_TYPE, NAME)
+
+/* Defaults */
+#define __NOBJ_ADAPTER_FIELD_ACCESSOR__SAME_NAME(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE) \
+  MACRO(AD_CLASS, PROP_NAME, ADAPTER_TYPE, PROP_NAME)
+
+#define __NOBJ_ADAPTER_FIELD_ACCESSOR__GET_PREFIX(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE) \
+  MACRO(AD_CLASS, PROP_NAME, ADAPTER_TYPE, get_##PROP_NAME)
+
+#define __NOBJ_ADAPTER_FIELD_ACCESSOR__SET_PREFIX(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE) \
+  MACRO(AD_CLASS, PROP_NAME, ADAPTER_TYPE, set_##PROP_NAME)
+
+/* Dispatchers */
+#define __NOBJ_ADAPTER_ACCESSOR_MACROS(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__,                                                     \
+    __NOBJ_ADAPTER_FIELD_ACCESSOR, __NOBJ_ADAPTER_FIELD_ACCESSOR__SAME_NAME)              \
+  (MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__,                                                     \
+    __NOBJ_ADAPTER_FIELD_ACCESSOR, __NOBJ_ADAPTER_FIELD_ACCESSOR__GET_PREFIX)             \
+  (MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define __NOBJ_ADAPTER_ACCESSOR_MACROS_SET(MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  __SELECT_MACRO__2(0, ##__VA_ARGS__,                                                     \
+    __NOBJ_ADAPTER_FIELD_ACCESSOR, __NOBJ_ADAPTER_FIELD_ACCESSOR__SET_PREFIX)             \
+  (MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+
+/* -----------------------------------------------------------------------
  * Internal implementation macros
  * ----------------------------------------------------------------------- */
 
@@ -136,6 +174,35 @@
     if (!Lisple::rtval_matches(vcache_##PROP_NAME.cached, obj.OBJ_FIELD)) \
       vcache_##PROP_NAME.cached = Lisple::rtval_from(obj.OBJ_FIELD);    \
     return vcache_##PROP_NAME.cached;                                    \
+  }
+
+
+/* Adapter getter via direct field access */
+#define __NOBJ_PROP_GET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                   \
+  {                                                                                    \
+    return ADAPTER_TYPE::make_ref(get_object().OBJ_FIELD);                            \
+  }
+
+/* Adapter getter via member function */
+#define __NOBJ_PROP_GET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
+  {                                                                                     \
+    return ADAPTER_TYPE::make_ref(get_object().OBJ_METHOD());                          \
+  }
+
+/* Adapter setter via direct field access */
+#define __NOBJ_PROP_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                   \
+  {                                                                                    \
+    get_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_object();             \
+  }
+
+/* Adapter setter via member function */
+#define __NOBJ_PROP_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                    \
+  {                                                                                     \
+    get_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_object());              \
   }
 
 
@@ -216,6 +283,49 @@
 #define NOBJ_CACHED_PROP_GET__FIELD(AD_CLASS, PROP_NAME, ...)            \
   __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
     __NOBJ_CACHED_PROP_GET__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* -----------------------------------------------------------------------
+ * Adapter accessor public macros
+ *
+ * Use these when the property value is itself a NativeObject-wrapped type.
+ * Getters wrap via ADAPTER_TYPE::make_ref(); setters unwrap via
+ * value->adapter<ADAPTER_TYPE>().get_object().
+ *
+ * The optional last argument overrides the field or method name on the
+ * underlying host object.
+ *
+ * Usage:
+ *   NOBJ_PROP_GET__FIELD_ADAPTER(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET__METHOD_ADAPTER(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_SET__FIELD_ADAPTER(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_SET__METHOD_ADAPTER(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_SET__FIELD_ADAPTER(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_SET__METHOD_ADAPTER(OrderAdapter, line, LineAdapter);
+ * ----------------------------------------------------------------------- */
+
+#define NOBJ_PROP_GET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                \
+    __NOBJ_PROP_GET__FIELD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(                                            \
+    __NOBJ_PROP_GET__METHOD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                \
+    __NOBJ_PROP_SET__FIELD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS_SET(                                            \
+    __NOBJ_PROP_SET__METHOD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
 // clang-format on
 

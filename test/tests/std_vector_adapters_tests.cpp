@@ -149,50 +149,59 @@ TEST(StdVectorAdapter_string, append)
 
 /*
  * ===================================
- * std::vector<Vehicle>
+ * std::vector<VehicleModel>
  * ===================================
  */
 
-TEST(StdVectorAdapter_Vehicle, size)
+TEST(StdVectorAdapter_VehicleModel, size)
 {
   // Given
-  std::vector<LispleTest::Vehicle> obj_v{LispleTest::Vehicle("Dreamy Boom-Boom", 4),
-                                         LispleTest::Vehicle("Flying Saucer", 12),
-                                         LispleTest::Vehicle("Something Fast", 2)};
+  std::vector<LispleTest::VehicleModel> obj_v{
+    LispleTest::VehicleModel("Dreamy Boom-Boom", 4),
+    LispleTest::VehicleModel("Flying Saucer", 12),
+    LispleTest::VehicleModel("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(obj_v);
+  Lisple::StdVectorAdapter<LispleTest::VehicleModel, LispleTest::VehicleModelAdapter>
+    adapter(obj_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 3);
 }
 
-TEST(StdVectorAdapter_Vehicle, get_children)
+TEST(StdVectorAdapter_VehicleModel, get_children)
 {
   // Given
-  std::vector<LispleTest::Vehicle> obj_v{LispleTest::Vehicle("Dreamy Boom-Boom", 4),
-                                         LispleTest::Vehicle("Flying Saucer", 12),
-                                         LispleTest::Vehicle("Something Fast", 2)};
+  std::vector<LispleTest::VehicleModel> obj_v{
+    LispleTest::VehicleModel("Dreamy Boom-Boom", 4),
+    LispleTest::VehicleModel("Flying Saucer", 12),
+    LispleTest::VehicleModel("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(obj_v);
+  Lisple::StdVectorAdapter<LispleTest::VehicleModel, LispleTest::VehicleModelAdapter>
+    adapter(obj_v);
 
   // Then
   EXPECT_EQ(adapter.size(), 3);
-  EXPECT_EQ(*adapter.get_children()[0],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Dreamy Boom-Boom", 4));
-  EXPECT_EQ(*adapter.get_children()[1],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Flying Saucer", 12));
-  EXPECT_EQ(*adapter.get_children()[2],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Something Fast", 2));
+  EXPECT_EQ(
+    *adapter.get_children()[0],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Dreamy Boom-Boom", 4));
+  EXPECT_EQ(
+    *adapter.get_children()[1],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Flying Saucer", 12));
+  EXPECT_EQ(
+    *adapter.get_children()[2],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Something Fast", 2));
 }
 
-TEST(StdVectorAdapter_Vehicle, to_string)
+TEST(StdVectorAdapter_VehicleModel, to_string)
 {
   // Given
-  std::vector<LispleTest::Vehicle> obj_v{LispleTest::Vehicle("Dreamy Boom-Boom", 4),
-                                         LispleTest::Vehicle("Flying Saucer", 12),
-                                         LispleTest::Vehicle("Something Fast", 2)};
+  std::vector<LispleTest::VehicleModel> obj_v{
+    LispleTest::VehicleModel("Dreamy Boom-Boom", 4),
+    LispleTest::VehicleModel("Flying Saucer", 12),
+    LispleTest::VehicleModel("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(obj_v);
+  Lisple::StdVectorAdapter<LispleTest::VehicleModel, LispleTest::VehicleModelAdapter>
+    adapter(obj_v);
 
   // Then
   EXPECT_EQ(adapter.to_string(),
@@ -200,32 +209,39 @@ TEST(StdVectorAdapter_Vehicle, to_string)
             ":seats 12} {:model-name \"Something Fast\" :seats 2}]");
 }
 
-TEST(StdVectorAdapter_Vehicle, append)
+TEST(StdVectorAdapter_VehicleModel, append)
 {
   // Given
-  std::vector<LispleTest::Vehicle> obj_v{LispleTest::Vehicle("Dreamy Boom-Boom", 4),
-                                         LispleTest::Vehicle("Flying Saucer", 12),
-                                         LispleTest::Vehicle("Something Fast", 2)};
+  std::vector<LispleTest::VehicleModel> obj_v{
+    LispleTest::VehicleModel("Dreamy Boom-Boom", 4),
+    LispleTest::VehicleModel("Flying Saucer", 12),
+    LispleTest::VehicleModel("Something Fast", 2)};
 
-  Lisple::StdVectorAdapter<LispleTest::Vehicle, LispleTest::VehicleAdapter> adapter(obj_v);
+  Lisple::StdVectorAdapter<LispleTest::VehicleModel, LispleTest::VehicleModelAdapter>
+    adapter(obj_v);
 
   // When
-  adapter.append(LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Aniara", 40000));
+  adapter.append(
+    LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Aniara", 40000));
 
   // Then
   EXPECT_THAT(obj_v,
-              ElementsAre(LispleTest::Vehicle("Dreamy Boom-Boom", 4),
-                          LispleTest::Vehicle("Flying Saucer", 12),
-                          LispleTest::Vehicle("Something Fast", 2),
-                          LispleTest::Vehicle("Aniara", 40000)));
+              ElementsAre(LispleTest::VehicleModel("Dreamy Boom-Boom", 4),
+                          LispleTest::VehicleModel("Flying Saucer", 12),
+                          LispleTest::VehicleModel("Something Fast", 2),
+                          LispleTest::VehicleModel("Aniara", 40000)));
 
   EXPECT_EQ(adapter.size(), 4);
-  EXPECT_EQ(*adapter.get_children()[0],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Dreamy Boom-Boom", 4));
-  EXPECT_EQ(*adapter.get_children()[1],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Flying Saucer", 12));
-  EXPECT_EQ(*adapter.get_children()[2],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Something Fast", 2));
-  EXPECT_EQ(*adapter.get_children()[3],
-            *LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Aniara", 40000));
+  EXPECT_EQ(
+    *adapter.get_children()[0],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Dreamy Boom-Boom", 4));
+  EXPECT_EQ(
+    *adapter.get_children()[1],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Flying Saucer", 12));
+  EXPECT_EQ(
+    *adapter.get_children()[2],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Something Fast", 2));
+  EXPECT_EQ(
+    *adapter.get_children()[3],
+    *LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Aniara", 40000));
 }

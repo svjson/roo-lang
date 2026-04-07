@@ -95,7 +95,7 @@
     * object and may end up with a dangling pointer                     \
     */                                                                  \
    AD_CLASS(H_CLASS& obj_ref);                                          \
-   H_CLASS& get_object() const;                                         \
+   H_CLASS& get_object() const override;                                \
    NATIVE_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
 #define NATIVE_ADAPTER_END_DECL                   \
@@ -351,10 +351,6 @@
 
 namespace Lisple
 {
-  template <typename T> T& obj(const RTValue& v)
-  {
-    return v.obj()->as<HostObject<T>>().get_object();
-  }
 
   class NAccessors;
   class NAccessorTable;
@@ -491,7 +487,19 @@ namespace Lisple
       : object(std::make_unique<HostObjectRef<T>>(object))
     {
     }
+
+    virtual T& get_object() const = 0;
   };
+
+  template <typename T> T& obj(const RTValue& v)
+  {
+    if (v.type == RTValue::Type::OBJECT)
+    {
+      return dynamic_cast<HostObject<T>*>(v.obj().get())->get_object();
+    }
+
+    return dynamic_cast<NativeObject<T>*>(v.nobj().get())->get_object();
+  }
 
 } // namespace Lisple
 

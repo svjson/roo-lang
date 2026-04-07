@@ -13,8 +13,8 @@ namespace LispleTest::Native
   // Vehicle example - adapters
   // ===============================================================
 
-  NATIVE_ADAPTER(VehicleAdapter, Vehicle, (model_name, seats), (seats));
-
+  NATIVE_ADAPTER(VehicleAdapter, Vehicle, (model, reg_number), (reg_number));
+  NATIVE_ADAPTER(VehicleModelAdapter, VehicleModel, (model_name, seats), (seats));
   NATIVE_ADAPTER(RegNumberAdapter, RegNumber, (letters, numbers));
 
   // ===============================================================
@@ -22,8 +22,20 @@ namespace LispleTest::Native
   // ===============================================================
 
   FUNC(VehicleMakeFunction, make);
+  FUNC(VehicleModelMakeFunction, make);
+  FUNC(RegNumberMakeFunction, make);
 
   FUNC(PrnVehicle, prn);
+
+  // ===============================================================
+  // Vehicle namespace - functions
+  // ===============================================================
+
+  class VehicleNamespace : public Lisple::Namespace
+  {
+   public:
+    VehicleNamespace();
+  };
 
 } // namespace LispleTest::Native
 

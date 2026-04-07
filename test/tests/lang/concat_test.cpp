@@ -52,7 +52,7 @@ TEST(ConcatFunction, host_objects_and_primitives)
 
   runtime.get_current_namespace().store(
     "cessna",
-    LispleTest::VehicleAdapter::make<LispleTest::Vehicle>("Cessna", 2));
+    LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Cessna", 2));
 
   // When
   auto retval = runtime.eval("(concat [] cessna {:a 2} \"rawk n rawl\")");
