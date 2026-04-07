@@ -1,4 +1,7 @@
 
+#include "lisple/exception.h"
+#include "lisple/exec.h"
+#include "lisple/reader.h"
 #include "lisple/runtime/node.h"
 #include "lisple/type.h"
 
@@ -106,4 +109,58 @@ TEST(LowerTest, list_special_form__ctx__custom_lower)
 
   // Then
   ASSERT_TRUE(std::holds_alternative<Lisple::CallNode>(node->data));
+}
+
+SPECIAL_FORM_DECL(DefThing, def_thing)
+
+SPECIAL_FORM_IMPL(DefThing,
+                  SIG((FN_ARGS((&Lisple::Type::WORD), (&Lisple::Type::MAP)),
+                       EXEC_DISPATCH(&DefThing::inv_def_thing,
+                                     &DefThing::execnode_def_thing))));
+
+SFORM_LOWER_IMPL(DefThing)
+{
+  return std::make_unique<Lisple::ExecNode>(Lisple::Constant::NIL);
+}
+
+MACRO_BODY(DefThing, inv_def_thing)
+{
+  throw Lisple::LispleException("inv_def_thing should not be called");
+}
+
+EXECNODE_BODY(DefThing, execnode_def_thing)
+{
+  throw Lisple::LispleException("execnode_def_thing should not be called");
+}
+
+class CustomNamespace : public Lisple::Namespace
+{
+ public:
+  CustomNamespace()
+    : Lisple::Namespace("custom")
+  {
+    values.emplace("defthing", DefThing::make());
+  }
+};
+
+TEST(LowerTest, lower_custom_special_form)
+{
+  // Given
+  Lisple::Reader reader;
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<CustomNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  runtime.eval("(ns my-app.core (:require custom))");
+  Lisple::Context ctx(runtime);
+  ctx.switch_namespace("my-app.core");
+  Lisple::LowerContext lctx{&ctx};
+  Lisple::sptr_sobject_v def_thing_expr =
+    reader.read_sexps("(defthing my-thing {:value \"a lot\"})");
+
+  // When
+  auto node = Lisple::lower_expr(lctx, def_thing_expr.front());
+
+  // Then
+  auto* literal_node = std::get_if<Lisple::LiteralNode>(&node->data);
+  ASSERT_EQ(*literal_node->value, *Lisple::Constant::NIL);
 }
