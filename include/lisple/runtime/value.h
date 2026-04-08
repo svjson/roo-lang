@@ -117,6 +117,7 @@ namespace Lisple
     long i64() const;
     float f32() const;
     double f64() const;
+    char ch() const;
     const RTValue::Number& num() const;
     const std::string& str() const;
     sptr_sobject obj() const;

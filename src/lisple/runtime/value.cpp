@@ -580,6 +580,11 @@ namespace Lisple
     return std::get<const Number>(value).get_double();
   }
 
+  char RTValue::ch() const
+  {
+    return std::get<char>(value);
+  }
+
   sptr_sobject RTValue::obj() const
   {
     return std::get<sptr_sobject>(value);
