@@ -892,6 +892,7 @@ namespace Lisple
     case RTValue::Type::FUNCTION:
     case RTValue::Type::KEYWORD:
     case RTValue::Type::OBJECT:
+    case RTValue::Type::NATIVE_OBJECT:
     case RTValue::Type::NUMBER:
     case RTValue::Type::SYMBOL:
     case RTValue::Type::VECTOR:
