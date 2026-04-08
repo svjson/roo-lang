@@ -89,13 +89,16 @@ namespace Lisple
     case Form::NUMBER:
     case Form::STRING:
     case Form::BOOLEAN:
-    case Form::SYMBOL:
     case Form::HOST_OBJECT:
     case Form::KEY:
     case Form::B_TRUE:
     case Form::B_FALSE:
     case Form::NIL:
       return lower_literal(obj);
+
+    case Form::SYMBOL:
+      lowered_expressions++;
+      return std::make_unique<ExecNode>(RTValue::symbol(obj->as<QSymbol>().value));
 
     case Form::WORD:
     {
