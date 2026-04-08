@@ -228,6 +228,11 @@ namespace Lisple
     return val;
   }
 
+  sptr_rtval Context::lookup_value(const std::string& identifier) const
+  {
+    return lookup_value(Word(identifier));
+  }
+
   Scope& Context::current_scope()
   {
     return frame_stack.back()->scope;
