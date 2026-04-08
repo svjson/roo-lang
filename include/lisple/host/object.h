@@ -328,7 +328,7 @@
  *     (field1), ("kebab-key", field2), (rw, field3));
  */
 #define NATIVE_ADAPTER_IMPL(AD_CLASS, H_CLASS, HOBJ_T, ...)                   \
-  __VA_SELECT_MACRO(__VA_ARGS__,                                               \
+  __VA_SELECT_MACRO(__VA_OPT__(__VA_ARGS__,)                                   \
     NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
     NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
     NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
@@ -345,7 +345,7 @@
     NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
     NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
     NATIVE_ADAPTER_IMPL__NO_ACCESSORS)                                         \
-  (AD_CLASS, H_CLASS, HOBJ_T, ##__VA_ARGS__)
+  (AD_CLASS, H_CLASS, HOBJ_T __VA_OPT__(, __VA_ARGS__))
 
 // clang-format on
 
