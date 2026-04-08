@@ -25,11 +25,15 @@ TEST(VehicleAdapter_usage, make_with_explicit_make_functions)
   auto vehicle = runtime.eval("my-vehicle");
   auto model = runtime.eval("(:model my-vehicle)");
   auto num = runtime.eval("(:reg-number my-vehicle)");
+  auto stringified = runtime.eval("(str my-vehicle)");
 
   // Then
   ASSERT_TRUE(LispleTest::VEHICLE_TYPE.is_type_of(*vehicle));
   ASSERT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*model));
   ASSERT_TRUE(LispleTest::REGNUM_TYPE.is_type_of(*num));
+  ASSERT_EQ(stringified->str(),
+            "{:model {:model-name \"Vroom Deluxe\" :seats 2} :reg-number {:letters \"XYZ\" "
+            ":numbers \"123\"}}");
 }
 
 TEST(VehicleAdapter_usage, make_with_coercion)

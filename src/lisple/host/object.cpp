@@ -34,6 +34,11 @@ namespace Lisple
     return get_traits()->type_ref;
   }
 
+  const NAccessorTable& NativeObjectBase::accessor_table() const
+  {
+    return get_traits()->accessor_table;
+  }
+
   sptr_rtval NativeObjectBase::get_property(const RTValue& property) const
   {
     auto* accessors = get_traits()->accessor_table.lookup(property);
@@ -43,6 +48,18 @@ namespace Lisple
     }
 
     return accessors->getter(this);
+  }
+
+  std::string NativeObjectBase::to_string() const
+  {
+    sptr_rtval_v elements;
+    for (auto key : this->accessor_table().keys)
+    {
+      elements.push_back(key);
+      elements.push_back(get_property(*key));
+    }
+
+    return RTValue::map(elements)->to_string();
   }
 
   /**

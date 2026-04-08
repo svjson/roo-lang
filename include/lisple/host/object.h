@@ -472,6 +472,7 @@ namespace Lisple
     virtual const NativeObjectTraits* get_traits() const = 0;
     const HostTypeRef* get_host_type() const;
     const NAccessorTable& accessor_table() const;
+    virtual std::string to_string() const;
   };
 
   template <typename T> struct NativeObject : public NativeObjectBase

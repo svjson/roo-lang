@@ -4,6 +4,7 @@
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
+#include <lisple/host/object.h>
 #include <lisple/impl.h>
 #include <lisple/runtime/pool.h>
 
@@ -429,14 +430,6 @@ namespace Lisple
     val->type = RTValue::Type::MAP;
     val->value = v;
 
-    // std::cout << "===> CREATING NEW MAP (" << val.get() << ")" << std::endl;
-    // for (size_t i = 0; i < v.size(); i += 2)
-    // {
-    //   std::cout << " - key(" << v[i].get() << "): " << v[i]->to_string() << std::endl;
-    //   std::cout << " - val(" << v[i + 1].get() << "): " << v[i + 1]->to_string()
-    //             << std::endl;
-    // }
-
     return val;
   }
 
@@ -503,6 +496,9 @@ namespace Lisple
     case RTValue::Type::FUNCTION:
     case RTValue::Type::OBJECT:
       r += std::get<sptr_sobject>(value)->to_string();
+      break;
+    case RTValue::Type::NATIVE_OBJECT:
+      r += this->nobj()->to_string();
       break;
     case RTValue::Type::VECTOR:
       r += "[";
@@ -733,7 +729,6 @@ namespace Lisple
     }
     case Form::WORD:
       return RTValue::symbol(Value<std::string>::value_of(obj));
-
     default:
       throw LispleException("to_rt_value(Object&): Unsupported value type #" +
                             std::to_string(static_cast<int>(obj.get_type())));
