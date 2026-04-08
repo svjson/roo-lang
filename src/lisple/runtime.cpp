@@ -1,6 +1,8 @@
 
 #include "lisple/runtime.h"
 
+#include "lisple/runtime/value.h"
+
 #include <exception>
 #include <memory>
 #include <stddef.h>
@@ -409,6 +411,17 @@ namespace Lisple
   sptr_rtval Runtime::lookup_value(const std::string& identifier)
   {
     return lookup_value(Lisple::Word(identifier));
+  }
+
+  sptr_rtval Runtime::lookup_value(const std::string& identifier,
+                                   const sptr_rtval& default_value)
+  {
+    sptr_rtval value = lookup_value(Lisple::Word(identifier));
+    if (*value == *Constant::NIL)
+    {
+      return default_value;
+    }
+    return value;
   }
 
   sptr_rtval Runtime::lookup_value(const Word& identifier)
