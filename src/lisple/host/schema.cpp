@@ -166,6 +166,12 @@ namespace Lisple
     return override_map.count(key) || Dict::contains_key(source, key);
   }
 
+  sptr_rtval MapSchema::Inspector::val(const std::string& key) const
+  {
+    if (override_map.count(key)) return override_map.at(key);
+    return Dict::get_property(source, key);
+  }
+
   bool MapSchema::Inspector::boolean(const std::string& key) const
   {
     return std::get<bool>(_get_value_or_throw(key, RTValue::Type::BOOL)->value);

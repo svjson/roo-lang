@@ -38,6 +38,7 @@ namespace Lisple
      public:
       bool contains(const std::string& key) const;
 
+      sptr_rtval val(const std::string& key) const;
       bool boolean(const std::string& key) const;
       bool boolean(const std::string& key, bool default_value) const;
       uint8_t ui8(const std::string& key) const;
