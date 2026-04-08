@@ -72,7 +72,8 @@ namespace Lisple
         }
 
         sptr_rtval obj_val = Lisple::Dict::get_property(source, key);
-        if (obj_val && obj_val->type == RTValue::Type::OBJECT)
+        if (obj_val && (obj_val->type == RTValue::Type::OBJECT ||
+                        obj_val->type == RTValue::Type::NATIVE_OBJECT))
         {
           return Lisple::obj<T>(*Lisple::Dict::get_property(source, key));
         }
@@ -89,7 +90,8 @@ namespace Lisple
         }
 
         sptr_rtval obj_val = Lisple::Dict::get_property(source, key);
-        if (obj_val && obj_val->type == RTValue::Type::OBJECT)
+        if (obj_val && (obj_val->type == RTValue::Type::OBJECT ||
+                        obj_val->type == RTValue::Type::NATIVE_OBJECT))
         {
           return Lisple::obj<T>(*Lisple::Dict::get_property(source, key));
         }
@@ -105,7 +107,8 @@ namespace Lisple
         }
 
         sptr_rtval obj_val = Lisple::Dict::get_property(source, key);
-        if (obj_val && obj_val->type == RTValue::Type::OBJECT)
+        if (obj_val && (obj_val->type == RTValue::Type::OBJECT ||
+                        obj_val->type == RTValue::Type::NATIVE_OBJECT))
         {
           return Lisple::obj<T>(*Lisple::Dict::get_property(source, key));
         }

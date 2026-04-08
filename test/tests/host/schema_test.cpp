@@ -1,10 +1,15 @@
 
-#include <gmock/gmock.h>
-#include <gtest/gtest-matchers.h>
-#include <gtest/gtest.h>
+#include "lisple/runtime/value.h"
+
 #include <lisple/context.h>
 #include <lisple/host/schema.h>
 #include <lisple/runtime.h>
+
+#include "host/test_adapters/vectorgfx_impl.h"
+#include "host/test_adapters/vectorgfx_native_adapters.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
+#include <gtest/gtest.h>
 
 using namespace ::testing;
 
@@ -17,6 +22,13 @@ struct MapSchemaFixture
  public:
   MapSchemaFixture(Lisple::MapSchema schema)
     : schema(std::move(schema))
+  {
+  }
+
+  MapSchemaFixture(std::vector<std::unique_ptr<Lisple::Namespace>> ns,
+                   Lisple::MapSchema schema)
+    : runtime(std::move(ns), nullptr)
+    , schema(std::move(schema))
   {
   }
 };
@@ -82,4 +94,108 @@ TEST(MapSchema_Inspector, bound_inspector__get_numbers)
   EXPECT_EQ(i64, 10L);
   EXPECT_EQ(f32, 10.0f);
   EXPECT_EQ(f64, 10.0);
+}
+
+TEST(MapSchema_Inspector, bound_inspected__get_native_object)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("point"),
+                          LispleTest::Native::PointAdapter::make_unique(15, 30)});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  LispleTest::Point& point = inspector.obj<LispleTest::Point>("point");
+
+  // Then
+  EXPECT_EQ(point.x, 15.0);
+  EXPECT_EQ(point.y, 30.0);
+}
+
+TEST(MapSchema_Inspector, bound_inspected__get_native_object__with_default)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
+
+  const LispleTest::Point ZERO_ZERO(0, 0);
+
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("point"),
+                          LispleTest::Native::PointAdapter::make_unique(15, 30)});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  const LispleTest::Point& point = inspector.obj<LispleTest::Point>("point", ZERO_ZERO);
+
+  // Then
+  EXPECT_EQ(point.x, 15.0);
+  EXPECT_EQ(point.y, 30.0);
+}
+
+TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion)
+{
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
+
+  MapSchemaFixture fixture(std::move(namespaces),
+                           Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("point"),
+                          Lisple::RTValue::map({Lisple::RTValue::keyword("x"),
+                                                Lisple::RTValue::number(15),
+                                                Lisple::RTValue::keyword("y"),
+                                                Lisple::RTValue::number(30)})});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  LispleTest::Point& point = inspector.obj<LispleTest::Point>("point");
+
+  // Then
+  EXPECT_EQ(point.x, 15.0);
+  EXPECT_EQ(point.y, 30.0);
+}
+
+TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion__with_default)
+{
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
+
+  const LispleTest::Point ZERO_ZERO(0, 0);
+
+  MapSchemaFixture fixture(std::move(namespaces),
+                           Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("point"),
+                          Lisple::RTValue::map({Lisple::RTValue::keyword("x"),
+                                                Lisple::RTValue::number(15),
+                                                Lisple::RTValue::keyword("y"),
+                                                Lisple::RTValue::number(30)})});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  const LispleTest::Point& point = inspector.obj<LispleTest::Point>("point", ZERO_ZERO);
+
+  // Then
+  EXPECT_EQ(point.x, 15.0);
+  EXPECT_EQ(point.y, 30.0);
+}
+
+TEST(MapSchema_Inspector,
+     bound_inspected__get_missing_native_object_by_coercion__with_default)
+{
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
+
+  const LispleTest::Point ZERO_ZERO(0, 0);
+
+  MapSchemaFixture fixture(std::move(namespaces),
+                           Lisple::MapSchema({}, {{"point", &LispleTest::Native::POINT}}));
+  Lisple::sptr_rtval map_value = Lisple::RTValue::map({});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  const LispleTest::Point& point = inspector.obj<LispleTest::Point>("point", ZERO_ZERO);
+
+  // Then
+  EXPECT_EQ(point.x, 0);
+  EXPECT_EQ(point.y, 0);
 }
