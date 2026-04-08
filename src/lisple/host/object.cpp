@@ -50,6 +50,17 @@ namespace Lisple
     return accessors->getter(this);
   }
 
+  void NativeObjectBase::set_property(const RTValue& property, sptr_rtval& value)
+  {
+    auto* accessors = get_traits()->accessor_table.lookup(property);
+    if (nullptr == accessors || nullptr == accessors->setter)
+    {
+      throw InvocationException("Property '" + property.to_string() + "' not mutable");
+    }
+
+    accessors->setter(this, nullptr, value);
+  }
+
   std::string NativeObjectBase::to_string() const
   {
     sptr_rtval_v elements;

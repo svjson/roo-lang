@@ -145,7 +145,9 @@ namespace Lisple
     inline const MultiRef SEQ_OR_STRING(std::vector<const TypeRef*>({&SEQ, &STRING}),
                                         "SeqLike");
     inline const MultiRef EXEC(std::vector<const TypeRef*>{&FUNCTION, &MACRO, &KEY}, "Exec");
-    inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP, &HOST_OBJECT},
+    inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP,
+                                                              &HOST_OBJECT,
+                                                              &NATIVE_OBJECT},
                                   "Complex");
 
     inline const SeqRef ARRAY_OF_ARRAY(&ARRAY, &ARRAY, "[Array]");

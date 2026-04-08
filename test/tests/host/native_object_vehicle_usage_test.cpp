@@ -60,3 +60,42 @@ TEST(VehicleAdapter_usage, make_with_coercion)
   ASSERT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*model));
   ASSERT_TRUE(LispleTest::REGNUM_TYPE.is_type_of(*num));
 }
+
+TEST(VehicleModelAdapter_usage, write_mutable_property_with_assoc_bang)
+{
+  // Given
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+
+  runtime.eval(
+    "(def model (vehicle/make-vehicle-model {:model-name \"Spruttibangbang\" :seats 2}))");
+
+  // When
+  runtime.eval("(assoc! model :seats 8)");
+
+  // Then
+  EXPECT_EQ(runtime.eval("(str model)")->str(),
+            "{:model-name \"Spruttibangbang\" :seats 8}");
+}
+
+TEST(VehicleModelAdapter_usage, produce_modified_copy_with_assoc)
+{
+  // Given
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+
+  runtime.eval(
+    "(def model (vehicle/make-vehicle-model {:model-name \"Spruttibangbang\" :seats 2}))");
+
+  // When
+  auto result = runtime.eval("(assoc model :seats 8)");
+
+  // Then
+  //  - Original is unmodified
+  EXPECT_EQ(runtime.eval("(str model)")->str(),
+            "{:model-name \"Spruttibangbang\" :seats 2}");
+  //  - Result contains new property
+  EXPECT_EQ(result->to_string(), "{:model-name \"Spruttibangbang\" :seats 8}");
+}

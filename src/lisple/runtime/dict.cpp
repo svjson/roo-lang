@@ -158,6 +158,10 @@ namespace Lisple::Dict
       sptr_sobject& ho = std::get<sptr_sobject>(target->value);
       ho->set_property(to_AST(*property), to_AST(*value));
     }
+    else if (target->type == RTValue::Type::NATIVE_OBJECT)
+    {
+      target->nobj()->set_property(*property, value);
+    }
     else
     {
       std::cout << "RTValue::Type==" << (int)target->type << std::endl;

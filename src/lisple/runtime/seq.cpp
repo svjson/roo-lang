@@ -3,6 +3,7 @@
 
 #include <lisple/exception.h>
 #include <lisple/form.h>
+#include <lisple/host/object.h>
 #include <lisple/runtime/value.h>
 #include <lisple/type.h>
 
@@ -21,6 +22,18 @@ namespace Lisple
         chars.push_back(RTValue::character(str.at(i)));
       }
       return chars;
+    }
+    case RTValue::Type::NATIVE_OBJECT:
+    {
+      sptr_rtval_v elements;
+      sptr_native_obj obj = v.nobj();
+      for (auto& key : obj->accessor_table().keys)
+      {
+        elements.push_back(key);
+        elements.push_back(obj->get_property(*key));
+      }
+
+      return elements;
     }
     case RTValue::Type::NIL:
       return {};

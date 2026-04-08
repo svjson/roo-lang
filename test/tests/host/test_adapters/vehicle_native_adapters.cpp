@@ -44,7 +44,7 @@ namespace LispleTest::Native
                       VehicleModel,
                       &VEHICLE_MODEL_TYPE,
                       ("model-name", model_name),
-                      ("seats", seats));
+                      (rw, "seats", seats));
 
   NOBJ_PROP_GET__METHOD(VehicleModelAdapter, model_name);
   NOBJ_PROP_GET__METHOD(VehicleModelAdapter, seats);
