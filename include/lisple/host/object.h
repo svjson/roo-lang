@@ -39,6 +39,16 @@
     );                                                                  \
   }                                                                     \
   /*!                                                                   \
+   * @brief Static factory method that wraps an existing shared pointed \
+   * underlying object and wraps it in an adapter instance              \
+   */                                                                   \
+  static Lisple::sptr_rtval claim(std::unique_ptr<H_CLASS>&& uptr)      \
+  {                                                                     \
+    return Lisple::RTValue::native_object(                              \
+      std::make_shared<AD_CLASS>(std::move(uptr))                       \
+    );                                                                  \
+  }                                                                     \
+  /*!                                                                   \
    * @brief Static factory method that constructs a new instance of the \
    * underlying object type and wraps it in an adapter instance         \
    */                                                                   \
