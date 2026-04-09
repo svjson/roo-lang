@@ -255,7 +255,7 @@ namespace Lisple
     {
       throw TypeError("when-let: Invalid bind form: " + elements[1]->to_string());
     }
-    if (elements.size() < 2 || elements.size() > 3)
+    if (elements.size() < 2)
     {
       throw LispleException("when-let: Invalid form: " +
                             std::to_string(elements.size() - 2));
