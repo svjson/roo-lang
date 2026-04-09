@@ -770,7 +770,7 @@ namespace Lisple
 
   DetachedFunction::DetachedFunction(std::shared_ptr<Context> ctx,
                                      std::shared_ptr<Function>& fun,
-                                     sptr_sobject_v bound_args)
+                                     sptr_rtval_v bound_args)
     : Function(make_detached_signature(*fun))
     , ctx(ctx)
     , fun(fun)
@@ -781,19 +781,11 @@ namespace Lisple
   std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(
     Context& ctx,
     std::shared_ptr<Object> fun_obj,
-    sptr_sobject_v bound_args)
+    sptr_rtval_v bound_args)
   {
     std::shared_ptr<Function> fun = std::dynamic_pointer_cast<Function>(fun_obj);
-    return make_detached(ctx, fun, bound_args);
-  }
 
-  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(
-    Context& ctx,
-    std::shared_ptr<Function> fun,
-    sptr_sobject_v bound_args)
-  {
-    return fun ? std::make_shared<DetachedFunction>(ctx.detach(), fun, bound_args)
-               : std::shared_ptr<DetachedFunction>();
+    return fun ? std::make_shared<DetachedFunction>(ctx.detach(), fun, bound_args) : nullptr;
   }
 
   std::vector<std::unique_ptr<Signature>> DetachedFunction::make_detached_signature(
@@ -814,50 +806,13 @@ namespace Lisple
       {
         throw LispleException("exec_node dispatch not supported!");
       }
-      else
-      {
-        exec_fn disp_target = std::bind(&DetachedFunction::dispatch_detached_ast,
-                                        this,
-                                        std::placeholders::_1,
-                                        std::placeholders::_2);
-
-        sigs.push_back(std::make_unique<Signature>(sig->get_arguments(), disp_target));
-      }
     }
     return sigs;
-  }
-
-  sptr_sobject DetachedFunction::execute(Context& ctx, sptr_sobject_v& args)
-  {
-    return dispatch_detached_ast(ctx, args);
   }
 
   sptr_rtval DetachedFunction::execute(Context& ctx, sptr_rtval_v& args)
   {
     return dispatch_detached(ctx, args);
-  }
-
-  sptr_sobject DetachedFunction::dispatch_detached_ast(Context&, sptr_sobject_v& args)
-  {
-    user_function_ast_invocations++;
-    if (bound_args.empty())
-    {
-      return execute_bound(args);
-    }
-    if (args.empty())
-    {
-      return execute_bound(bound_args);
-    }
-    sptr_sobject_v merged_args;
-    for (auto& arg : args)
-    {
-      merged_args.push_back(arg);
-    }
-    for (auto& arg : bound_args)
-    {
-      merged_args.push_back(arg);
-    }
-    return execute_bound(merged_args);
   }
 
   sptr_rtval DetachedFunction::dispatch_detached(Context&, sptr_rtval_v& args)
@@ -868,15 +823,22 @@ namespace Lisple
     }
     if (args.empty())
     {
-      throw LispleException(
-        "DetachedFunction::dispatch_detached with bounds args not supported for rtval");
+      return fun->execute(*this->ctx, bound_args);
     }
 
-    throw LispleException("DetachedFunction::dispatch_detached with merged bound+literal "
-                          "args not supported for rtval");
+    sptr_rtval_v merged_args;
+    for (auto& arg : args)
+    {
+      merged_args.push_back(arg);
+    }
+    for (auto& arg : bound_args)
+    {
+      merged_args.push_back(arg);
+    }
+    return fun->execute(*this->ctx, merged_args);
   }
 
-  sptr_sobject DetachedFunction::execute_bound(sptr_sobject_v& args)
+  sptr_rtval DetachedFunction::execute_bound(sptr_rtval_v& args)
   {
     return fun->execute(*ctx, args);
   }
@@ -914,14 +876,6 @@ namespace Lisple
     Scope fn_scope;
     if (arg_binding.size() > 0)
     {
-      for (size_t i = 0; i < args.size(); i++)
-      {
-        arg_binding[i]->apply(fn_scope, args[i]);
-      }
-    }
-    else if (arg_binding.size() > 0)
-    {
-      user_function_wrong_path_invocations++;
       for (size_t i = 0; i < args.size(); i++)
       {
         arg_binding[i]->apply(fn_scope, args[i]);
@@ -1066,24 +1020,6 @@ namespace Lisple
                                           std::move(arg_types),
                                           arg_bindings,
                                           std::move(new_body));
-  }
-
-  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             Object& arg_array,
-                                                             sptr_sobject_v& body)
-  {
-    std::shared_ptr<Function> fn =
-      create_function("<lambda>", ctx, ctx.get_current_namespace(), arg_array, body);
-    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
-  }
-
-  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             sptr_rtval_v& arg_array,
-                                                             ptr_exec_node_v& body)
-  {
-    std::shared_ptr<Function> fn =
-      create_function(ctx.get_current_namespace(), arg_array, body);
-    return std::make_shared<Lisple::DetachedFunction>(ctx.detach(), fn);
   }
 
 } // namespace Lisple

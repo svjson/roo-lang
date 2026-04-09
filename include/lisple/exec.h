@@ -408,30 +408,23 @@ namespace Lisple
   {
     std::shared_ptr<Context> ctx;
     std::shared_ptr<Function> fun;
-    sptr_sobject_v bound_args;
+    sptr_rtval_v bound_args;
 
     std::vector<std::unique_ptr<Signature>> make_detached_signature(Function& fn);
 
    public:
     DetachedFunction(std::shared_ptr<Context> ctx,
                      std::shared_ptr<Function>& function,
-                     sptr_sobject_v bounds_args = {});
+                     sptr_rtval_v bounds_args = {});
 
     static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
                                                            std::shared_ptr<Object> fun_obj,
-                                                           sptr_sobject_v bound_args = {});
+                                                           sptr_rtval_v bound_args = {});
 
-    static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
-                                                           std::shared_ptr<Function> fun,
-                                                           sptr_sobject_v bound_args = {});
+    const sptr_rtval_v get_bound_arguments() const;
 
-    const sptr_sobject_v get_bound_arguments() const;
-
-    sptr_sobject execute(Context&, sptr_sobject_v& args) override;
     sptr_rtval execute(Context&, sptr_rtval_v& args) override;
-
-    sptr_sobject execute_bound(sptr_sobject_v& args);
-    sptr_sobject dispatch_detached_ast(Context&, sptr_sobject_v& args);
+    sptr_rtval execute_bound(sptr_rtval_v& args);
     sptr_rtval dispatch_detached(Context&, sptr_rtval_v& args);
   };
 
@@ -503,14 +496,6 @@ namespace Lisple
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
                                                 sptr_rtval_v& param_form,
                                                 ptr_exec_node_v& body);
-
-  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             Object& arg_array,
-                                                             sptr_sobject_v& body);
-
-  std::shared_ptr<DetachedFunction> create_detached_function(Context& ctx,
-                                                             sptr_rtval_v& arg_array,
-                                                             ptr_exec_node_v& body);
 
 } // namespace Lisple
 

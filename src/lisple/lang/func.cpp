@@ -153,14 +153,7 @@ namespace Lisple
    */
   MACRO_BODY(FnForm, inv_decl)
   {
-    deprecated_special_form_invocations++;
-    sptr_sobject_v body;
-    body.reserve(args.size() - 1);
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-    return create_detached_function(ctx, *args[0], body);
+    throw InvocationException("Legacy FnMacro is no longer valid");
   }
 
   EXECNODE_BODY(FnForm, execnode_decl)
