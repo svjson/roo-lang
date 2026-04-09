@@ -13,6 +13,7 @@ namespace Lisple::Dict
   void set_property(sptr_rtval& target, const sptr_rtval& property, sptr_rtval& value);
   sptr_rtval remove_property(sptr_rtval& target, const sptr_rtval& property);
 
+  const std::vector<sptr_rtval> keys(const RTValue& dict);
   const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data);
   const std::vector<const RTValue*> map_keys(const sptr_rtval_v& map_data);
   const std::vector<const RTValue*> map_keys(const RTValue& map_data);
@@ -21,8 +22,8 @@ namespace Lisple::Dict
 
   sptr_rtval get_property_or_throw(RTValue& source, const std::string& keyword);
   sptr_rtval get_property(RTValue& object, const std::string& property);
-  sptr_rtval get_property(sptr_rtval& object, const sptr_rtval& property);
-  sptr_rtval get_property(sptr_rtval& object, const RTValue& property);
+  sptr_rtval get_property(const sptr_rtval& object, const sptr_rtval& property);
+  sptr_rtval get_property(const sptr_rtval& object, const RTValue& property);
   std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
                                                           const RTValue& key);
   std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key);

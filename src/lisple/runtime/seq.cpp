@@ -61,13 +61,14 @@ namespace Lisple
     throw LispleException("Cannot get children from type: " + std::to_string((int)v.type));
   }
 
-  sptr_rtval get_child(RTValue& seq, size_t index)
+  sptr_rtval get_child(const RTValue& seq, size_t index)
   {
     switch (seq.type)
     {
     case RTValue::Type::VECTOR:
+    case RTValue::Type::MAP:
     {
-      sptr_rtval_v& values = std::get<sptr_rtval_v>(seq.value);
+      const sptr_rtval_v& values = std::get<sptr_rtval_v>(seq.value);
       if (index < values.size())
       {
         return values[index];
@@ -126,7 +127,7 @@ namespace Lisple
     }
   }
 
-  size_t count(RTValue& v)
+  size_t count(const RTValue& v)
   {
     switch (v.type)
     {

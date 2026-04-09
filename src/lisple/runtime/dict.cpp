@@ -9,12 +9,12 @@
 
 namespace Lisple::Dict
 {
-  sptr_rtval get_property(sptr_rtval& target, const sptr_rtval& property)
+  sptr_rtval get_property(const sptr_rtval& target, const sptr_rtval& property)
   {
     return get_property(target, *property);
   }
 
-  sptr_rtval get_property(sptr_rtval& target, const RTValue& property)
+  sptr_rtval get_property(const sptr_rtval& target, const RTValue& property)
   {
     if (target->type == RTValue::Type::MAP)
     {
@@ -167,6 +167,18 @@ namespace Lisple::Dict
       std::cout << "RTValue::Type==" << (int)target->type << std::endl;
       throw LispleException("Cannot mutate target");
     }
+  }
+
+  const std::vector<sptr_rtval> keys(const RTValue& dict)
+  {
+    std::vector<sptr_rtval> keys;
+    size_t count = Lisple::count(dict);
+    keys.reserve(count / 2);
+    for (size_t i = 0; i < count; i += 2)
+    {
+      keys.push_back(Lisple::get_child(dict, i));
+    }
+    return keys;
   }
 
   const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data)
