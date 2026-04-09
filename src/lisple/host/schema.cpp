@@ -192,6 +192,7 @@ namespace Lisple
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
     return std::get<const RTValue::Number>(value->value).get_int();
   }
+
   uint8_t MapSchema::Inspector::ui8(const std::string& key, uint8_t default_value) const
   {
     sptr_rtval value = _get_value(key, RTValue::Type::NUMBER);
@@ -201,6 +202,13 @@ namespace Lisple
     }
     return default_value;
   }
+
+  const RTValue::Number& MapSchema::Inspector::num(const std::string& key) const
+  {
+    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
+    return std::get<const RTValue::Number>(value->value);
+  }
+
   int MapSchema::Inspector::i32(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);

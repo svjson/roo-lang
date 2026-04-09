@@ -61,6 +61,7 @@ namespace Lisple
         double float_value;
       };
 
+      unsigned short get_unsigned_short() const;
       int get_int() const;
       long get_long() const;
       float get_float() const;
@@ -113,6 +114,7 @@ namespace Lisple
     std::string to_string() const;
 
     uint8_t ui8() const;
+    unsigned short ui16() const;
     int i32() const;
     long i64() const;
     float f32() const;

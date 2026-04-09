@@ -43,6 +43,7 @@ namespace Lisple
       bool boolean(const std::string& key, bool default_value) const;
       uint8_t ui8(const std::string& key) const;
       uint8_t ui8(const std::string& key, uint8_t default_value) const;
+      const RTValue::Number& num(const std::string& key) const;
       int i32(const std::string& key) const;
       int i32(const std::string& key, int default_value) const;
       long i64(const std::string& key) const;

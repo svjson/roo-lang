@@ -50,6 +50,20 @@ namespace Lisple
     rtvalues_constructed++;
   }
 
+  unsigned short RTValue::Number::get_unsigned_short() const
+  {
+    switch (num_type)
+    {
+    case NumberType::INT:
+      return static_cast<unsigned short>(int_value);
+    case NumberType::LONG:
+      return static_cast<unsigned short>(long_value);
+    case NumberType::FLOAT:
+    default:
+      return static_cast<unsigned short>(float_value);
+    }
+  }
+
   int RTValue::Number::get_int() const
   {
     switch (num_type)
@@ -563,6 +577,11 @@ namespace Lisple
   uint8_t RTValue::ui8() const
   {
     return std::get<const RTValue::Number>(value).get_int();
+  }
+
+  unsigned short RTValue::ui16() const
+  {
+    return static_cast<unsigned short>(std::get<const Number>(value).get_int());
   }
 
   int RTValue::i32() const
