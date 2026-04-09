@@ -493,6 +493,11 @@ namespace Lisple
       }
     }
     break;
+    case RTValue::Type::LIST:
+      r += "(";
+      r += to_string(std::get<sptr_rtval_v>(value));
+      r += ")";
+      break;
     case RTValue::Type::FUNCTION:
     case RTValue::Type::OBJECT:
       r += std::get<sptr_sobject>(value)->to_string();
