@@ -178,28 +178,28 @@
 
 
 /* Adapter getter via direct field access */
-#define __NOBJ_PROP_GET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
+#define __NOBJ_PROP_GET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                   \
   {                                                                                    \
     return ADAPTER_TYPE::make_ref(get_object().OBJ_FIELD);                            \
   }
 
 /* Adapter getter via member function */
-#define __NOBJ_PROP_GET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+#define __NOBJ_PROP_GET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
   {                                                                                     \
     return ADAPTER_TYPE::make_ref(get_object().OBJ_METHOD());                          \
   }
 
 /* Adapter setter via direct field access */
-#define __NOBJ_PROP_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
+#define __NOBJ_PROP_SET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                   \
   {                                                                                    \
     get_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_object();             \
   }
 
 /* Adapter setter via member function */
-#define __NOBJ_PROP_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+#define __NOBJ_PROP_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                    \
   {                                                                                     \
     get_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_object());              \
@@ -295,37 +295,37 @@
  * underlying host object.
  *
  * Usage:
- *   NOBJ_PROP_GET__FIELD_ADAPTER(OrderAdapter, line, LineAdapter);
- *   NOBJ_PROP_GET__METHOD_ADAPTER(OrderAdapter, line, LineAdapter);
- *   NOBJ_PROP_SET__FIELD_ADAPTER(OrderAdapter, line, LineAdapter);
- *   NOBJ_PROP_SET__METHOD_ADAPTER(OrderAdapter, line, LineAdapter);
- *   NOBJ_PROP_GET_SET__FIELD_ADAPTER(OrderAdapter, line, LineAdapter);
- *   NOBJ_PROP_GET_SET__METHOD_ADAPTER(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_ADAPTER__FIELD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_ADAPTER__METHOD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_SET_ADAPTER__FIELD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_SET_ADAPTER__METHOD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_SET_ADAPTER__FIELD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_SET_ADAPTER__METHOD(OrderAdapter, line, LineAdapter);
  * ----------------------------------------------------------------------- */
 
-#define NOBJ_PROP_GET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+#define NOBJ_PROP_GET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
   __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                \
-    __NOBJ_PROP_GET__FIELD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+    __NOBJ_PROP_GET_ADAPTER__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
-#define NOBJ_PROP_GET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
+#define NOBJ_PROP_GET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
   __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(                                            \
-    __NOBJ_PROP_GET__METHOD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+    __NOBJ_PROP_GET_ADAPTER__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
-#define NOBJ_PROP_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+#define NOBJ_PROP_SET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
   __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                \
-    __NOBJ_PROP_SET__FIELD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+    __NOBJ_PROP_SET_ADAPTER__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
-#define NOBJ_PROP_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
+#define NOBJ_PROP_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
   __NOBJ_ADAPTER_ACCESSOR_MACROS_SET(                                            \
-    __NOBJ_PROP_SET__METHOD_ADAPTER, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+    __NOBJ_PROP_SET_ADAPTER__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
-#define NOBJ_PROP_GET_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
-  NOBJ_PROP_GET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
-  NOBJ_PROP_SET__FIELD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+#define NOBJ_PROP_GET_SET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
-#define NOBJ_PROP_GET_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
-  NOBJ_PROP_GET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
-  NOBJ_PROP_SET__METHOD_ADAPTER(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+#define NOBJ_PROP_GET_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
 // clang-format on
 

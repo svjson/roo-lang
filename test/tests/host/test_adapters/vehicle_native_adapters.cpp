@@ -26,8 +26,8 @@ namespace LispleTest::Native
                       (model),
                       ("reg-number", reg_number))
 
-  NOBJ_PROP_GET__METHOD_ADAPTER(VehicleAdapter, model, VehicleModelAdapter);
-  NOBJ_PROP_GET_SET__METHOD_ADAPTER(VehicleAdapter, reg_number, RegNumberAdapter);
+  NOBJ_PROP_GET_ADAPTER__METHOD(VehicleAdapter, model, VehicleModelAdapter);
+  NOBJ_PROP_GET_SET_ADAPTER__METHOD(VehicleAdapter, reg_number, RegNumberAdapter);
 
   /* RegNumberAdapter */
   NATIVE_ADAPTER_IMPL(RegNumberAdapter,
