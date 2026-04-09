@@ -4,6 +4,8 @@
 #include <lisple/runtime.h>
 #include <lisple/type.h>
 
+#include "host/test_adapters/vehicle_host_adapters.h"
+#include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
@@ -126,4 +128,42 @@ TEST(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_char_with_nils));
 
   EXPECT_FALSE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_mixed));
+}
+
+TEST(SeqRef, Array_of_NativeObject__is_type_of)
+{
+  // Given
+  Lisple::Runtime runtime;
+  Lisple::sptr_rtval model_vector = Lisple::RTValue::vector(
+    {LispleTest::Native::VehicleModelAdapter::make_unique("Vroom Deluxe", 2),
+     LispleTest::Native::VehicleModelAdapter::make_unique("Millenium Falcon", 8),
+     LispleTest::Native::VehicleModelAdapter::make_unique("Apollo 13", 4)});
+
+  // Then
+  EXPECT_TRUE(LispleTest::ARRAY_OF_VEHICLE_MODEL.is_type_of(*model_vector));
+}
+
+TEST(SeqRef, Array_of_Map__coerce_to_Array_of_NativeObject)
+{
+  // Given
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  Lisple::Context ctx(runtime);
+  Lisple::sptr_rtval map_vector =
+    Lisple::RTValue::vector({Lisple::RTValue::map({Lisple::RTValue::keyword("model-name"),
+                                                   Lisple::RTValue::string("Vroom Deluxe"),
+                                                   Lisple::RTValue::keyword("seats"),
+                                                   Lisple::RTValue::number(2)}),
+                             Lisple::RTValue::map({Lisple::RTValue::keyword("model-name"),
+                                                   Lisple::RTValue::string("Vroom Deluxe"),
+                                                   Lisple::RTValue::keyword("seats"),
+                                                   Lisple::RTValue::number(2)})});
+
+  // When
+  auto coercion_result = LispleTest::ARRAY_OF_VEHICLE_MODEL.coerce(ctx, map_vector);
+
+  // Then
+  ASSERT_TRUE(coercion_result.success);
+  ASSERT_TRUE(LispleTest::ARRAY_OF_VEHICLE_MODEL.is_type_of(*coercion_result.result));
 }
