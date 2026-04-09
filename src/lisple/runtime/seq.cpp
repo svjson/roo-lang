@@ -38,6 +38,7 @@ namespace Lisple
     case RTValue::Type::NIL:
       return {};
     case RTValue::Type::MAP:
+    case RTValue::Type::LIST:
     case RTValue::Type::VECTOR:
       return std::get<sptr_rtval_v>(v.value);
     case RTValue::Type::OBJECT:
