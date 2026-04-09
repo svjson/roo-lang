@@ -500,6 +500,7 @@ namespace Lisple
     {
     }
 
+    std::unique_ptr<T> release_pointer() { return std::move(object->get_object_ptr()); }
     virtual T& get_object() const = 0;
   };
 
