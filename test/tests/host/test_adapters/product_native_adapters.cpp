@@ -1,9 +1,9 @@
 
+#include "product_native_adapters.h"
+
 #include <lisple/host.h>
 #include <lisple/host/accessor.h>
 #include <lisple/host/object.h>
-
-#include "product_native_adapters.h"
 
 namespace LispleTest::Native
 {
@@ -16,9 +16,18 @@ namespace LispleTest::Native
   const Lisple::sptr_rtval MATERIAL = Lisple::RTValue::keyword("material");
 
   NATIVE_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT, (name), (price), (sku));
-
   NOBJ_PROP_GET__METHOD(ProductAdapter, name);
   NOBJ_PROP_GET_SET__METHOD(ProductAdapter, price);
   NOBJ_PROP_GET_SET__METHOD(ProductAdapter, sku);
+
+  NATIVE_SUB_ADAPTER_IMPL(ProductAdapter,
+                          Product,
+                          (BookAdapter, Book),
+                          &BOOK,
+                          (author),
+                          (isbn))
+
+  NOBJ_PROP_GET__METHOD(BookAdapter, author);
+  NOBJ_PROP_GET__METHOD(BookAdapter, isbn);
 
 } // namespace LispleTest::Native

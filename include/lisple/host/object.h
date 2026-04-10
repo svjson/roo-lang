@@ -106,6 +106,8 @@
     */                                                                  \
    AD_CLASS(H_CLASS& obj_ref);                                          \
    H_CLASS& get_object() const override;                                \
+   H_CLASS& get_self_object() const;                                    \
+   static const Lisple::NAccessorTable& static_accessor_table();        \
    NATIVE_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
 #define NATIVE_ADAPTER_END_DECL                   \
@@ -177,16 +179,145 @@
   __SELECT_MACRO__4(0, ##__VA_ARGS__, NATIVE_ADAPTER__WITH_PROPS_AND_CUSTOM_FIELDS, NATIVE_ADAPTER__WITH_PROPS, NATIVE_ADAPTER__WITH_GETTERS, NATIVE_ADAPTER__NO_PROPS) \
   (AD_CLASS, H_CLASS, ##__VA_ARGS__)
 
+
+/** NATIVE_SUB_ADAPTER_MAIN_DECL__IMPL
+ *
+ * Inner generator: AD_CLASS and H_CLASS arrive as already-expanded separate
+ * arguments. Never call this directly - use NATIVE_SUB_ADAPTER_MAIN_DECL.
+ */
+#define NATIVE_SUB_ADAPTER_MAIN_DECL__IMPL(AD_CLASS, H_CLASS, AD_SUP_CLASS)    \
+  class AD_CLASS : public AD_SUP_CLASS                                          \
+  {                                                                             \
+  __NOBJ_TRAITS_DECL                                                            \
+  public:                                                                       \
+   /*!                                                                          \
+    * @brief Constructs a new instance wrapping a newly created H_CLASS.       \
+    */                                                                          \
+   AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr);                                \
+   /*!                                                                          \
+    * @brief Constructs a new instance holding a reference to an existing      \
+    * H_CLASS object. The adapter does not own the referenced object.          \
+    */                                                                          \
+   AD_CLASS(H_CLASS& obj_ref);                                                  \
+   H_CLASS& get_self_object() const;                                            \
+   static const Lisple::NAccessorTable& static_accessor_table();                \
+   NATIVE_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
+
+/** __NATIVE_SUB_ADAPTER_MAIN_DECL_DISPATCH
+ *
+ * AD_SUP_CLASS is the first named parameter; the variadic receives ESC
+ * SUB_PAIR as one collected arg. When __VA_ARGS__ is substituted in the
+ * body, ESC expands the pair into two separate tokens (AD_CLASS, H_CLASS).
+ */
+#define __NATIVE_SUB_ADAPTER_MAIN_DECL_DISPATCH(AD_SUP_CLASS, ...)             \
+  NATIVE_SUB_ADAPTER_MAIN_DECL__IMPL(__VA_ARGS__, AD_SUP_CLASS)
+
+/** NATIVE_SUB_ADAPTER_MAIN_DECL
+ *
+ * Entry point. SUB_PAIR stays as one argument until ESC expands it inside
+ * the dispatch helper's variadic substitution.
+ */
+#define NATIVE_SUB_ADAPTER_MAIN_DECL(SUB_PAIR, AD_SUP_CLASS)                   \
+  __NATIVE_SUB_ADAPTER_MAIN_DECL_DISPATCH(AD_SUP_CLASS, ESC SUB_PAIR)
+
+
+/**
+ * NATIVE_SUB_ADAPTER declaration variants
+ *
+ * SUB_PAIR is forwarded as-is; NATIVE_SUB_ADAPTER_MAIN_DECL handles the
+ * ESC expansion internally.
+ */
+
+#define NATIVE_SUB_ADAPTER__NO_PROPS(SUB_PAIR, AD_SUP_CLASS)                   \
+  NATIVE_SUB_ADAPTER_MAIN_DECL(SUB_PAIR, AD_SUP_CLASS)                         \
+  NATIVE_ADAPTER_END_DECL
+
+#define NATIVE_SUB_ADAPTER__WITH_GETTERS(SUB_PAIR, AD_SUP_CLASS, GET_PROPS)    \
+  NATIVE_SUB_ADAPTER_MAIN_DECL(SUB_PAIR, AD_SUP_CLASS)                         \
+  __NATIVE_ADAPTER_GETTERS GET_PROPS                                            \
+  NATIVE_ADAPTER_END_DECL
+
+#define NATIVE_SUB_ADAPTER__WITH_PROPS(SUB_PAIR, AD_SUP_CLASS, GET_PROPS, SET_PROPS) \
+  NATIVE_SUB_ADAPTER_MAIN_DECL(SUB_PAIR, AD_SUP_CLASS)                         \
+  __NATIVE_ADAPTER_GETTERS GET_PROPS                                            \
+  __NATIVE_ADAPTER_SETTERS SET_PROPS                                            \
+  NATIVE_ADAPTER_END_DECL
+
+/**
+ * NATIVE_SUB_ADAPTER main declaration macro
+ *
+ * SUB_PAIR is a parenthesised (AdapterClass, HostClass) pair grouping the
+ * sub-adapter with its host type.
+ *
+ * Usage (inherits base props, no own props):
+ *   NATIVE_SUB_ADAPTER(BaseAdapter, (SubAdapter, SubClass));
+ *
+ * Usage (with own getter props):
+ *   NATIVE_SUB_ADAPTER(BaseAdapter, (SubAdapter, SubClass), (prop1, prop2));
+ *
+ * Usage (with own getter and setter props):
+ *   NATIVE_SUB_ADAPTER(BaseAdapter, (SubAdapter, SubClass), (prop1), (prop1));
+ */
+#define NATIVE_SUB_ADAPTER(AD_SUP_CLASS, SUB_PAIR, ...)                         \
+  __SELECT_MACRO__3(0, ##__VA_ARGS__,                                            \
+    NATIVE_SUB_ADAPTER__WITH_PROPS, NATIVE_SUB_ADAPTER__WITH_GETTERS,           \
+    NATIVE_SUB_ADAPTER__NO_PROPS)(SUB_PAIR, AD_SUP_CLASS, ##__VA_ARGS__)
+
+
 /* __NOBJ_TRAITS_IMPL
  *
- * Generates AdapterTraits facilities common between regular host adapters
- * and derived host adapters.
+ * Generates static_accessor_table() and get_traits() for a base adapter.
+ * ACCESSOR_MAP is a parenthesised constructor argument for NAccessorTable,
+ * e.g. (Lisple::NO_N_ACCESSORS) or ({entry, entry, ...}).
  */
-#define __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ACCESSOR_MAP)              \
-  const Lisple::NativeObjectTraits* AD_CLASS::get_traits() const             \
-  {                                                                     \
-    static const Lisple::NativeObjectTraits traits(HOBJ_T, Lisple::NAccessorTable ACCESSOR_MAP); \
-    return &traits; \
+#define __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ACCESSOR_MAP)                    \
+  const Lisple::NAccessorTable& AD_CLASS::static_accessor_table()              \
+  {                                                                            \
+    static const Lisple::NAccessorTable t ACCESSOR_MAP;                        \
+    return t;                                                                  \
+  }                                                                            \
+  const Lisple::NativeObjectTraits* AD_CLASS::get_traits() const               \
+  {                                                                            \
+    static const Lisple::NativeObjectTraits traits(HOBJ_T, static_accessor_table()); \
+    return &traits;                                                            \
+  }
+
+/*
+ * __NOBJ_TRAITS_SUB_IMPL__NO_ACCESSORS
+ *
+ * Generates static_accessor_table() and get_traits() for a sub-adapter that
+ * adds no own properties - the table is inherited from the base adapter.
+ */
+#define __NOBJ_TRAITS_SUB_IMPL__NO_ACCESSORS(AD_CLASS, AD_SUP_CLASS, HOBJ_T)  \
+  const Lisple::NAccessorTable& AD_CLASS::static_accessor_table()              \
+  {                                                                            \
+    return AD_SUP_CLASS::static_accessor_table();                              \
+  }                                                                            \
+  const Lisple::NativeObjectTraits* AD_CLASS::get_traits() const               \
+  {                                                                            \
+    static const Lisple::NativeObjectTraits traits(HOBJ_T, static_accessor_table()); \
+    return &traits;                                                            \
+  }
+
+/*
+ * __NOBJ_TRAITS_SUB_IMPL__ACCESSORS
+ *
+ * Generates static_accessor_table() and get_traits() for a sub-adapter that
+ * adds its own properties on top of those inherited from the base adapter.
+ * ACCESSOR_MAP is the parenthesised NAccessorTable constructor arg for the
+ * sub-adapter's own entries only.
+ */
+#define __NOBJ_TRAITS_SUB_IMPL__ACCESSORS(AD_CLASS, AD_SUP_CLASS, HOBJ_T, ACCESSOR_MAP) \
+  const Lisple::NAccessorTable& AD_CLASS::static_accessor_table()              \
+  {                                                                            \
+    static const Lisple::NAccessorTable t = Lisple::merge_acc(                 \
+      AD_SUP_CLASS::static_accessor_table(), Lisple::NAccessorTable ACCESSOR_MAP); \
+    return t;                                                                  \
+  }                                                                            \
+  const Lisple::NativeObjectTraits* AD_CLASS::get_traits() const               \
+  {                                                                            \
+    static const Lisple::NativeObjectTraits traits(HOBJ_T, static_accessor_table()); \
+    return &traits;                                                            \
   }
 
 #define __NOBJ_P_GETTER(AD_CLASS, FN) [](const Lisple::NativeObjectBase* adapter) { return dynamic_cast<const AD_CLASS*>(adapter)->FN(); }
@@ -301,6 +432,30 @@
     return object->get_object();                        \
   }
 
+/*
+ * __NOBJ_GET_SELF_OBJECT_IMPL
+ *
+ * Generates get_self_object() for a base adapter - returns the wrapped
+ * object directly via get_object().
+ */
+#define __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)  \
+  H_CLASS& AD_CLASS::get_self_object() const            \
+  {                                                     \
+    return get_object();                                \
+  }
+
+/*
+ * __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL
+ *
+ * Generates get_self_object() for a sub-adapter - downcasts the base
+ * object returned by get_object() to the concrete derived type.
+ */
+#define __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS) \
+  H_CLASS& AD_CLASS::get_self_object() const                   \
+  {                                                            \
+    return dynamic_cast<H_CLASS&>(get_object());               \
+  }
+
 
 /**
  * NATIVE_ADAPTER_IMPL variants
@@ -316,7 +471,8 @@
     : NativeObject(obj_ptr) {}                                                \
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
     : NativeObject(obj_ref) {}                                                \
-  __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)
+  __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)                              \
+  __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
 
 #define NATIVE_ADAPTER_IMPL__ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T, ...)        \
   __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ({__NOBJ_CMAP(AD_CLASS, __VA_ARGS__)})) \
@@ -324,7 +480,28 @@
     : NativeObject(obj_ptr) {}                                                \
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
     : NativeObject(obj_ref) {}                                                \
-  __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)
+  __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)                              \
+  __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+
+/**
+ * NATIVE_ADAPTER_IMPL variants for sub-adapters
+ */
+
+#define NATIVE_ADAPTER_IMPL__SUB_NO_ACCESSORS(AD_CLASS, H_CLASS, AD_SUP_CLASS, H_SUP_CLASS, HOBJ_T) \
+  __NOBJ_TRAITS_SUB_IMPL__NO_ACCESSORS(AD_CLASS, AD_SUP_CLASS, HOBJ_T)        \
+  AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr)                      \
+    : AD_SUP_CLASS(std::unique_ptr<H_SUP_CLASS>(std::move(obj_ptr))) {}       \
+  AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
+    : AD_SUP_CLASS(static_cast<H_SUP_CLASS&>(obj_ref)) {}                     \
+  __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+
+#define NATIVE_ADAPTER_IMPL__SUB_ACCESSORS(AD_CLASS, H_CLASS, AD_SUP_CLASS, H_SUP_CLASS, HOBJ_T, ...) \
+  __NOBJ_TRAITS_SUB_IMPL__ACCESSORS(AD_CLASS, AD_SUP_CLASS, HOBJ_T, ({__NOBJ_CMAP(AD_CLASS, __VA_ARGS__)})) \
+  AD_CLASS::AD_CLASS(std::unique_ptr<H_CLASS>&& obj_ptr)                      \
+    : AD_SUP_CLASS(std::unique_ptr<H_SUP_CLASS>(std::move(obj_ptr))) {}       \
+  AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
+    : AD_SUP_CLASS(static_cast<H_SUP_CLASS&>(obj_ref)) {}                     \
+  __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
 
 
 /**
@@ -356,6 +533,58 @@
     NATIVE_ADAPTER_IMPL__ACCESSORS, NATIVE_ADAPTER_IMPL__ACCESSORS,            \
     NATIVE_ADAPTER_IMPL__NO_ACCESSORS)                                         \
   (AD_CLASS, H_CLASS, HOBJ_T __VA_OPT__(, __VA_ARGS__))
+
+/**
+ * NATIVE_SUB_ADAPTER_IMPL - implementation macro for sub-adapters
+ *
+ * SUB_PAIR is a parenthesised (AdapterClass, HostClass) pair.
+ *
+ * Usage (inherits base props only):
+ *   NATIVE_SUB_ADAPTER_IMPL(BaseAdapter, BaseClass, (SubAdapter, SubClass), &SUB_TYPE);
+ *
+ * Usage (with own accessor specs):
+ *   NATIVE_SUB_ADAPTER_IMPL(BaseAdapter, BaseClass, (SubAdapter, SubClass), &SUB_TYPE,
+ *     (field1), ("key", field2));
+ *
+ * Two-level dispatch is used to expand SUB_PAIR into two separate arguments
+ * (AD_CLASS, H_CLASS) before the variant selector runs. ESC SUB_PAIR enters
+ * DISPATCH1 as one collected arg; when __VA_ARGS__ is substituted in the body
+ * of DISPATCH1, ESC expands the pair so DISPATCH2 sees AD_CLASS and H_CLASS
+ * as distinct positional parameters.
+ */
+#define __NATIVE_SUB_ADAPTER_IMPL_DISPATCH2(AD_SUP_CLASS,                         \
+                                            H_SUP_CLASS,                          \
+                                            HOBJ_T,                               \
+                                            AD_CLASS,                             \
+                                            H_CLASS,                              \
+                                            ...)                                  \
+  __VA_SELECT_MACRO(__VA_OPT__(__VA_ARGS__,)                                      \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_ACCESSORS, NATIVE_ADAPTER_IMPL__SUB_ACCESSORS,       \
+    NATIVE_ADAPTER_IMPL__SUB_NO_ACCESSORS)                                        \
+  (AD_CLASS, H_CLASS, AD_SUP_CLASS, H_SUP_CLASS, HOBJ_T __VA_OPT__(, __VA_ARGS__))
+
+#define __NATIVE_SUB_ADAPTER_IMPL_DISPATCH1(AD_SUP_CLASS, H_SUP_CLASS, HOBJ_T, ...) \
+  __NATIVE_SUB_ADAPTER_IMPL_DISPATCH2(AD_SUP_CLASS, H_SUP_CLASS, HOBJ_T, __VA_ARGS__)
+
+#define NATIVE_SUB_ADAPTER_IMPL(AD_SUP_CLASS, H_SUP_CLASS, SUB_PAIR, HOBJ_T, ...)   \
+  __NATIVE_SUB_ADAPTER_IMPL_DISPATCH1(AD_SUP_CLASS,                                 \
+                                      H_SUP_CLASS,                                  \
+                                      HOBJ_T,                                       \
+                                      ESC SUB_PAIR __VA_OPT__(, __VA_ARGS__))
 
 // clang-format on
 
@@ -460,6 +689,13 @@ namespace Lisple
    * types.
    */
   NAccessorTable merge_acc(const NAccessorTable& al1, const key_n_acc_map& kam2);
+
+  /*!
+   * @brief Constructs a new NAccessorTable by merging a base table with an
+   * additional table. Entries in the base take precedence when the same key
+   * appears in both. Used internally by NATIVE_SUB_ADAPTER_IMPL.
+   */
+  NAccessorTable merge_acc(const NAccessorTable& base, const NAccessorTable& additional);
 
   /*!
    * @brief Defines the type traits of a HostObject specializing, including

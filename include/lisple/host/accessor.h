@@ -128,14 +128,14 @@
 #define __NOBJ_PROP_GET__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD)         \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    return Lisple::rtval_from(get_object().OBJ_METHOD());                \
+    return Lisple::rtval_from(get_self_object().OBJ_METHOD());                \
   }
 
 /* No-cache getter via direct field access */
 #define __NOBJ_PROP_GET__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)           \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    return Lisple::rtval_from(get_object().OBJ_FIELD);                   \
+    return Lisple::rtval_from(get_self_object().OBJ_FIELD);                   \
   }
 
 /* Setter via member function - deduces the parameter type from the method pointer */
@@ -143,8 +143,8 @@
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
     Lisple::invoke_setter(                                               \
-      get_object(),                                                      \
-      &std::decay_t<decltype(get_object())>::OBJ_METHOD,                 \
+      get_self_object(),                                                      \
+      &std::decay_t<decltype(get_self_object())>::OBJ_METHOD,                 \
       value);                                                            \
   }
 
@@ -152,15 +152,15 @@
 #define __NOBJ_PROP_SET__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)           \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    get_object().OBJ_FIELD =                                             \
-      Lisple::rtval_to<std::decay_t<decltype(get_object().OBJ_FIELD)>>(value); \
+    get_self_object().OBJ_FIELD =                                             \
+      Lisple::rtval_to<std::decay_t<decltype(get_self_object().OBJ_FIELD)>>(value); \
   }
 
 /* Cached getter via member function */
 #define __NOBJ_CACHED_PROP_GET__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD)  \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    auto& obj = get_object();                                            \
+    auto& obj = get_self_object();                                            \
     if (!Lisple::rtval_matches(vcache_##PROP_NAME.cached, obj.OBJ_METHOD())) \
       vcache_##PROP_NAME.cached = Lisple::rtval_from(obj.OBJ_METHOD());  \
     return vcache_##PROP_NAME.cached;                                    \
@@ -170,7 +170,7 @@
 #define __NOBJ_CACHED_PROP_GET__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)    \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    auto& obj = get_object();                                            \
+    auto& obj = get_self_object();                                            \
     if (!Lisple::rtval_matches(vcache_##PROP_NAME.cached, obj.OBJ_FIELD)) \
       vcache_##PROP_NAME.cached = Lisple::rtval_from(obj.OBJ_FIELD);    \
     return vcache_##PROP_NAME.cached;                                    \
@@ -181,28 +181,28 @@
 #define __NOBJ_PROP_GET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                   \
   {                                                                                    \
-    return ADAPTER_TYPE::make_ref(get_object().OBJ_FIELD);                            \
+    return ADAPTER_TYPE::make_ref(get_self_object().OBJ_FIELD);                            \
   }
 
 /* Adapter getter via member function */
 #define __NOBJ_PROP_GET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
   {                                                                                     \
-    return ADAPTER_TYPE::make_ref(get_object().OBJ_METHOD());                          \
+    return ADAPTER_TYPE::make_ref(get_self_object().OBJ_METHOD());                          \
   }
 
 /* Adapter setter via direct field access */
 #define __NOBJ_PROP_SET_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                   \
   {                                                                                    \
-    get_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_object();             \
+    get_self_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_self_object();             \
   }
 
 /* Adapter setter via member function */
 #define __NOBJ_PROP_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                    \
   {                                                                                     \
-    get_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_object());              \
+    get_self_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_self_object());              \
   }
 
 
@@ -289,7 +289,7 @@
  *
  * Use these when the property value is itself a NativeObject-wrapped type.
  * Getters wrap via ADAPTER_TYPE::make_ref(); setters unwrap via
- * value->adapter<ADAPTER_TYPE>().get_object().
+ * value->adapter<ADAPTER_TYPE>().get_self_object().
  *
  * The optional last argument overrides the field or method name on the
  * underlying host object.

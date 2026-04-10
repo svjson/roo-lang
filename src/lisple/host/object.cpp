@@ -127,4 +127,33 @@ namespace Lisple
   {
   }
 
+  NAccessorTable merge_acc(const NAccessorTable& base, const key_n_acc_map& additional)
+  {
+    NAccessorTable result;
+    result.keys = base.keys;
+    result.accessor_map = base.accessor_map;
+    for (auto& [k, a] : additional)
+    {
+      auto [it, inserted] = result.accessor_map.emplace(k->str(), a);
+      if (inserted)
+        result.keys.push_back(k);
+    }
+    return result;
+  }
+
+  NAccessorTable merge_acc(const NAccessorTable& base, const NAccessorTable& additional)
+  {
+    NAccessorTable result;
+    result.keys = base.keys;
+    result.accessor_map = base.accessor_map;
+    for (auto& k : additional.keys)
+    {
+      auto [it, inserted] =
+        result.accessor_map.emplace(k->str(), additional.accessor_map.at(k->str()));
+      if (inserted)
+        result.keys.push_back(k);
+    }
+    return result;
+  }
+
 } // namespace Lisple
