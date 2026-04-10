@@ -15,6 +15,7 @@ namespace Lisple
   // -----------------------------------------------------------------------
 
   sptr_rtval rtval_from(int v);
+  sptr_rtval rtval_from(unsigned int v);
   sptr_rtval rtval_from(long v);
   sptr_rtval rtval_from(float v);
   sptr_rtval rtval_from(double v);
