@@ -5,6 +5,7 @@
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/namespace.h>
+#include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/node.h>
 
 namespace Lisple
@@ -104,7 +105,10 @@ namespace Lisple
     {
       if (ctx.is_allow_lookup() && ctx.ctx)
       {
-        auto static_val = ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
+        auto static_val =
+          obj->as<Word>().is_qualified()
+            ? ctx.ctx->lookup_value(obj->as<Word>())
+            : ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
         if (!static_val)
         {
           static_val = ctx.ctx->lang().lookup_symbol(obj->as<Word>());

@@ -164,3 +164,24 @@ TEST(LowerTest, lower_custom_special_form)
   auto* literal_node = std::get_if<Lisple::LiteralNode>(&node->data);
   ASSERT_EQ(*literal_node->value, *Lisple::Constant::NIL);
 }
+
+TEST(LowerTest, lower_namespace_qualified_custom_special_form)
+{
+  // Given
+  Lisple::Reader reader;
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<CustomNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  Lisple::Context ctx(runtime);
+  ctx.switch_namespace("my-app.core");
+  Lisple::LowerContext lctx{&ctx};
+  Lisple::sptr_sobject_v def_thing_expr =
+    reader.read_sexps("(custom/defthing my-thing {:value \"a lot\"})");
+
+  // When
+  Lisple::uptr_exec_node node = Lisple::lower_expr(lctx, def_thing_expr.front());
+
+  // Then
+  auto* literal_node = std::get_if<Lisple::LiteralNode>(&node->data);
+  ASSERT_EQ(*literal_node->value, *Lisple::Constant::NIL);
+}
