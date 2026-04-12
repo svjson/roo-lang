@@ -742,6 +742,8 @@ namespace Lisple
 
       return RTValue::map(std::move(elements));
     }
+    case Form::NIL:
+      return Constant::NIL;
     case Form::NUMBER:
     {
       const auto& n = obj.as<Number>();

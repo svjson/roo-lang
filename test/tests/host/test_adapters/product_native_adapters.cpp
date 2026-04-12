@@ -30,4 +30,14 @@ namespace LispleTest::Native
   NOBJ_PROP_GET__METHOD(BookAdapter, author);
   NOBJ_PROP_GET__METHOD(BookAdapter, isbn);
 
+  NATIVE_SUB_ADAPTER_IMPL(ProductAdapter,
+                          Product,
+                          (ClothingAdapter, Clothing),
+                          &CLOTHING,
+                          (size),
+                          (material))
+
+  NOBJ_PROP_GET__FIELD(ClothingAdapter, size);
+  NOBJ_PROP_GET__FIELD(ClothingAdapter, material);
+
 } // namespace LispleTest::Native

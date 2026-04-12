@@ -39,7 +39,8 @@ namespace Lisple
 
     if (val.type == RTValue::Type::NATIVE_OBJECT)
     {
-      return std::get<sptr_native_obj>(val.value)->get_host_type() == this;
+      const HostTypeRef* obj_type = val.nobj()->get_host_type();
+      return obj_type == this || (obj_type->parent_type && (*obj_type->parent_type) == this);
     }
 
     return false;

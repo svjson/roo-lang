@@ -17,7 +17,7 @@ namespace LispleTest::Native
   NATIVE_ADAPTER(ProductAdapter, Product, (name, price, sku), (price, sku));
 
   NATIVE_SUB_ADAPTER(ProductAdapter, (BookAdapter, Book), (author, isbn));
-  //  NATIVE_SUB_ADAPTER(ProductAdapter, (ClothingAdapter, Clothing), (size, material));
+  NATIVE_SUB_ADAPTER(ProductAdapter, (ClothingAdapter, Clothing), (size, material));
 
 } // namespace LispleTest::Native
 
