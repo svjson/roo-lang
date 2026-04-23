@@ -9,8 +9,10 @@ namespace Lisple
 {
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
-                 EXEC_DISPATCH(&AssocFunction::exec_assoc))))
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
+                       EXEC_DISPATCH(&AssocFunction::exec_assoc)),
+                      (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY)),
+                       EXEC_DISPATCH(&AssocFunction::exec_assoc_seq))))
 
   EXEC_BODY(AssocFunction, exec_assoc)
   {
@@ -36,6 +38,25 @@ namespace Lisple
     }
 
     return RTValue::map(std::move(new_content));
+  }
+
+  EXEC_BODY(AssocFunction, exec_assoc_seq)
+  {
+    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
+    int idx = args[1]->i32();
+    sptr_rtval& value = args.back();
+
+    if (idx >= static_cast<int>(new_content.size()))
+    {
+      for (int i = 0; i < idx - static_cast<int>(new_content.size()); i++)
+      {
+        new_content.push_back(Lisple::Constant::NIL);
+      }
+    }
+
+    new_content[idx] = value;
+
+    return RTValue::vector(std::move(new_content));
   }
 
   /* AssocBangFunction - assoc! */

@@ -25,7 +25,7 @@ namespace Lisple
    * | 1     | The key to set                                                   |
    * | 2     | The value to associate with the key                              |
    */
-  FUNC(AssocFunction, assoc)
+  FUNC(AssocFunction, assoc, assoc_seq)
 
   /*!
    * @brief Set or replace a key in a map or map-like structure, mutating it.
