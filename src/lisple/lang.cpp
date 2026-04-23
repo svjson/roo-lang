@@ -56,6 +56,7 @@ namespace Lisple
     lang_symbols.emplace("apply", ApplyFunction::make());
     lang_symbols.emplace("assoc", AssocFunction::make());
     lang_symbols.emplace("assoc!", AssocBangFunction::make());
+    lang_symbols.emplace("assoc-in", AssocInFunction::make());
     lang_symbols.emplace("assoc-in!", AssocInBangFunction::make());
     lang_symbols.emplace("between?", BetweenPredicateFunction::make());
     lang_symbols.emplace("case", CaseForm::make());

@@ -44,6 +44,23 @@ namespace Lisple
   FUNC(AssocBangFunction, assoc_bang, assoc_seq_bang)
 
   /*!
+   * @brief Create a copy of a map or map-like structure, setting or
+   * replacing a nested key and its value, without mutating the original.
+   *
+   * Usage:
+   * @code
+   * (assoc-in my-nested-map [:key :nested-key] new-value)
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map or map-like from which to produce a modified copy        |
+   * | 1     | The path to the nested key to set                                |
+   * | 2     | The value to associate with the last key of the key path         |
+   */
+  FUNC(AssocInFunction, assoc_in)
+
+  /*!
    * @brief Set or replace a nested key in a map or map-like structure, mutating
    * it.
    *

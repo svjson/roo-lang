@@ -291,4 +291,55 @@ namespace Lisple::Dict
     return {nullptr, nullptr};
   }
 
+  sptr_rtval shallow_copy(const sptr_rtval& source)
+  {
+    if (Type::COMPLEX.is_type_of(*source))
+    {
+      sptr_rtval_v children = Lisple::get_children(*source);
+      return RTValue::map(children);
+    }
+    else if (Type::SEQ.is_type_of(*source))
+    {
+      sptr_rtval_v children = Lisple::get_children(*source);
+      return RTValue::vector(children);
+    }
+
+    return source;
+  }
+
+  static sptr_rtval assoc_in_copy(const sptr_rtval& current,
+                                  const sptr_rtval_v& path,
+                                  size_t index,
+                                  const sptr_rtval& value)
+  {
+    if (index >= path.size())
+    {
+      throw InvocationException("assoc-in path traversal went out of bounds.");
+    }
+
+    sptr_rtval result = Dict::shallow_copy(current);
+
+    const sptr_rtval& key = path[index];
+
+    if (index == path.size() - 1)
+    {
+      Dict::set_property(result, key, value);
+      return result;
+    }
+
+    sptr_rtval child = Dict::get_property(current, *key);
+    sptr_rtval new_child = assoc_in_copy(child, path, index + 1, value);
+
+    Dict::set_property(result, key, new_child);
+
+    return result;
+  }
+
+  sptr_rtval assoc_in(const sptr_rtval& current,
+                      const sptr_rtval_v& path,
+                      const sptr_rtval& value)
+  {
+    return assoc_in_copy(current, path, 0, value);
+  }
+
 } // namespace Lisple::Dict

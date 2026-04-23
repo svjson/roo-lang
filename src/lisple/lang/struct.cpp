@@ -98,6 +98,22 @@ namespace Lisple
     return args[0];
   }
 
+  /* AssocInFunction - assoc-in */
+  FUNC_IMPL(AssocInFunction,
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
+                 EXEC_DISPATCH(&AssocInFunction::exec_assoc_in))))
+
+  EXEC_BODY(AssocInFunction, exec_assoc_in)
+  {
+    const sptr_rtval_v& assoc_path = args[1]->elements();
+    if (assoc_path.empty())
+    {
+      throw InvocationException("Path for assoc-in cannot be empty.");
+    }
+
+    return Dict::assoc_in(args[0], assoc_path, args[2]);
+  }
+
   /* AssocInBangFunction - assoc-in! */
   FUNC_IMPL(AssocInBangFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),

@@ -33,6 +33,11 @@ namespace Lisple::Dict
                                                           const RTValue& key);
   std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key);
 
+  sptr_rtval shallow_copy(const sptr_rtval& source);
+  sptr_rtval assoc_in(const sptr_rtval& source,
+                      const sptr_rtval_v& path,
+                      const sptr_rtval& value);
+
 } // namespace Lisple::Dict
 
 #endif /* LISPLE__RUNTIME__DICT_H */
