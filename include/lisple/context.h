@@ -56,6 +56,7 @@ namespace Lisple
     std::shared_ptr<Array> get_scope_identifiers();
 
     sptr_rtval eval(const std::string& str);
+    sptr_rtval eval(const sptr_rtval& list);
     sptr_rtval eval(const sptr_sobject& list);
     sptr_sobject eval_ast(const sptr_sobject& list);
 

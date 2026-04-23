@@ -119,6 +119,11 @@ namespace Lisple
     return runtime.eval(*this, form);
   }
 
+  sptr_rtval Context::eval(const sptr_rtval& value)
+  {
+    return runtime.eval(*this, to_AST(*value));
+  }
+
   sptr_rtval Context::eval(const std::string& str)
   {
     return runtime.eval(*this, str);
