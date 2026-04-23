@@ -65,6 +65,8 @@ namespace Lisple
   {
     switch (seq.type)
     {
+    case RTValue::Type::NIL:
+      return Constant::NIL;
     case RTValue::Type::VECTOR:
     case RTValue::Type::MAP:
     {
@@ -83,6 +85,12 @@ namespace Lisple
       }
 
       return to_rt_value(seq.obj()->get_children().at(index));
+    }
+    case RTValue::Type::STRING:
+    {
+      const std::string& str = seq.str();
+      if (index >= str.size()) return Lisple::Constant::NIL;
+      return RTValue::character(str.at(index));
     }
     default:
       throw LispleException("get_child is not implemented for type: " +
