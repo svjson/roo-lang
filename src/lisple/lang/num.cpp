@@ -34,6 +34,10 @@ namespace Lisple
     {
       return RTValue::number(static_cast<int>(std::get<char>(obj->value)));
     }
+    else if (Type::STRING.is_type_of(*obj))
+    {
+      return RTValue::number(std::stoi(obj->str()));
+    }
 
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
   }
