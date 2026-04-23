@@ -187,17 +187,17 @@ namespace Lisple
 
   /** MergeFunction - merge */
   FUNC_IMPL(MergeFunction,
-            SIG((FN_ARGS((&Type::MAP), (&VARARG, &Type::MAP)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&VARARG, &Type::COMPLEX)),
                  EXEC_DISPATCH(&MergeFunction::exec_merge))))
 
   EXEC_BODY(MergeFunction, exec_merge)
   {
-    sptr_rtval_v new_content = args[0]->elements();
+    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
 
     for (size_t i = 1; i < args.size(); i++)
     {
       if (args[i]->type == RTValue::Type::NIL) continue;
-      const sptr_rtval_v& other = args[i]->elements();
+      const sptr_rtval_v& other = Lisple::get_children(*args[i]);
       for (size_t j = 0; j < other.size(); j += 2)
       {
         bool found = false;
