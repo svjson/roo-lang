@@ -1,6 +1,8 @@
 
 #include "lisple/host/object.h"
 
+#include "lisple/runtime/value.h"
+
 namespace Lisple
 {
   /*!
@@ -48,6 +50,12 @@ namespace Lisple
     }
 
     return accessors->getter(this);
+  }
+
+  void NativeObjectBase::set_property(const RTValue& property, const sptr_rtval& value)
+  {
+    sptr_rtval v = value;
+    set_property(property, v);
   }
 
   void NativeObjectBase::set_property(const RTValue& property, sptr_rtval& value)
@@ -135,8 +143,7 @@ namespace Lisple
     for (auto& [k, a] : additional)
     {
       auto [it, inserted] = result.accessor_map.emplace(k->str(), a);
-      if (inserted)
-        result.keys.push_back(k);
+      if (inserted) result.keys.push_back(k);
     }
     return result;
   }
@@ -150,8 +157,7 @@ namespace Lisple
     {
       auto [it, inserted] =
         result.accessor_map.emplace(k->str(), additional.accessor_map.at(k->str()));
-      if (inserted)
-        result.keys.push_back(k);
+      if (inserted) result.keys.push_back(k);
     }
     return result;
   }

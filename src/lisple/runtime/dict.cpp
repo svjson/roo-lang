@@ -128,7 +128,7 @@ namespace Lisple::Dict
     return removed_val;
   }
 
-  void set_property(sptr_rtval& target, const sptr_rtval& property, sptr_rtval& value)
+  void set_property(sptr_rtval& target, const sptr_rtval& property, const sptr_rtval& value)
   {
     if (target->type == RTValue::Type::MAP)
     {

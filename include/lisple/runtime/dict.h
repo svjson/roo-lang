@@ -10,7 +10,9 @@
 namespace Lisple::Dict
 {
   bool contains_key(RTValue& source, const std::string& key);
-  void set_property(sptr_rtval& target, const sptr_rtval& property, sptr_rtval& value);
+
+  void set_property(sptr_rtval& target, const sptr_rtval& property, const sptr_rtval& value);
+
   sptr_rtval remove_property(sptr_rtval& target, const sptr_rtval& property);
 
   const std::vector<sptr_rtval> keys(const RTValue& dict);

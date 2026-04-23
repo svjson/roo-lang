@@ -716,6 +716,7 @@ namespace Lisple
 
     sptr_rtval get_property(const RTValue& property) const;
     void set_property(const RTValue& property, sptr_rtval& value);
+    void set_property(const RTValue& property, const sptr_rtval& value);
     virtual const NativeObjectTraits* get_traits() const = 0;
     const HostTypeRef* get_host_type() const;
     const NAccessorTable& accessor_table() const;
