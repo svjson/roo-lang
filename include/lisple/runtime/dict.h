@@ -26,6 +26,9 @@ namespace Lisple::Dict
   sptr_rtval get_property(RTValue& object, const std::string& property);
   sptr_rtval get_property(const sptr_rtval& object, const sptr_rtval& property);
   sptr_rtval get_property(const sptr_rtval& object, const RTValue& property);
+
+  sptr_rtval get_property_path(const sptr_rtval& object, const sptr_rtval_v& path);
+
   std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
                                                           const RTValue& key);
   std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key);

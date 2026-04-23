@@ -134,6 +134,16 @@ namespace Lisple
     return Dict::get_property(args[0], args[1]);
   }
 
+  /** GetInFunction - get-in */
+  FUNC_IMPL(GetInFunction,
+            SIG((FN_ARGS((&Type::ANY), (&Type::ARRAY)),
+                 EXEC_DISPATCH(&GetInFunction::exec_get))))
+
+  EXEC_BODY(GetInFunction, exec_get)
+  {
+    return Dict::get_property_path(args[0], args[1]->elements());
+  }
+
   /** DissocFunction - dissoc */
   FUNC_IMPL(DissocFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),

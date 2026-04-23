@@ -84,6 +84,22 @@ namespace Lisple::Dict
     throw InvocationException("Key :" + keyword + " not present in " + source.to_string());
   }
 
+  sptr_rtval get_property_path(const sptr_rtval& object, const sptr_rtval_v& path)
+  {
+    sptr_rtval result = object;
+    for (size_t i = 0; i < path.size(); i++)
+    {
+      if (*result == *Constant::NIL)
+      {
+        break;
+      }
+
+      result = get_property(result, path[i]);
+    }
+
+    return result;
+  }
+
   bool contains_key(RTValue& source, const std::string& keyword)
   {
     if (source.type == RTValue::Type::MAP)

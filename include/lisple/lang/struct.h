@@ -77,6 +77,23 @@ namespace Lisple
    */
   FUNC(GetFunction, get);
 
+  /*!
+   * @brief Get a nested property by value from a complex object, ie a map
+   * or a host object.
+   *
+   * Usage:
+   * @code
+   * (get-in {:a 1 :b {:c 2}} [:b :c])
+   * => 1
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map or complex object                                        |
+   * | 1     | The property path as vector.                                     |
+   */
+  FUNC(GetInFunction, get);
+
   FUNC(DissocFunction, dissoc);
 
   /*!
