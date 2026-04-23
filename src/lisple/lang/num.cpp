@@ -84,6 +84,16 @@ namespace Lisple
     return args[result_index];
   }
 
+  /** NumberPFunction - number? */
+  FUNC_IMPL(NumberPFunction,
+            SIG((FN_ARGS((&Lisple::Type::ANY)), EXEC_DISPATCH(&NumberPFunction::exec_num))))
+
+  EXEC_BODY(NumberPFunction, exec_num)
+  {
+    return args[0]->type == RTValue::Type::NUMBER ? Constant::BOOL_TRUE
+                                                  : Constant::BOOL_FALSE;
+  }
+
   /** OddPFunction - odd? */
   FUNC_IMPL(OddPFunction,
             SIG((FN_ARGS((&Lisple::Type::NUMBER)), EXEC_DISPATCH(&OddPFunction::exec_odd))))

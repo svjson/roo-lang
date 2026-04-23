@@ -110,6 +110,7 @@ namespace Lisple
     lang_symbols.emplace("not-empty?", NotEmptyPFunction::make());
     lang_symbols.emplace("ns", NsForm::make());
     lang_symbols.emplace("nth", NthFunction::make());
+    lang_symbols.emplace("number?", NumberPFunction::make());
     lang_symbols.emplace("odd?", OddPFunction::make());
     lang_symbols.emplace("or", OrForm::make());
     lang_symbols.emplace("partition", PartitionFunction::make());

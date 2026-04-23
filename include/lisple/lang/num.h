@@ -26,6 +26,25 @@ namespace Lisple
   FUNC(MaxFunction, max)
 
   /**
+   * @brief Query the type of a value, and return true if it is a number and
+   * otherwise false
+   *
+   * Usage:
+   * @code
+   * (number? 2)
+   * => true
+   *
+   * (number? "a string")
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value to test for being a number                             |
+   */
+  FUNC(NumberPFunction, num)
+
+  /**
    * @brief Check if a number is odd
    *
    * Usage:
