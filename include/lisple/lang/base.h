@@ -85,6 +85,21 @@ namespace Lisple
   SPECIAL_FORM_DECL(AndForm, and)
 
   /*!
+   * @brief Create a keyword from the value of a string or symbol.
+   *
+   * Usage:
+   * @code
+   * (keyword "a string") => :a-string
+   * (keyword 'a-symbol) => :a-symbol
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The string or symbol to convert to a keyword.                    |
+   */
+  FUNC(KeywordFunction, keyword);
+
+  /*!
    * @brief Extracts the name part of a qualified identifier as a string.
    *
    * Usage:

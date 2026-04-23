@@ -139,6 +139,7 @@ namespace Lisple
 
     inline const MultiRef QUALIFIABLE({&KEY, &WORD, &SYMBOL}, "Qualifiable");
     inline const MultiRef SYMBOL_VALUE({&SYMBOL, &WORD}, "Symbol");
+    inline const MultiRef STRING_OR_SYMBOL({&STRING, &SYMBOL_VALUE}, "String|Symbol");
 
     inline const MultiRef SEQ(std::vector<const TypeRef*>{&LIST, &ARRAY, &MAP, &HOST_SEQ},
                               "Seq");

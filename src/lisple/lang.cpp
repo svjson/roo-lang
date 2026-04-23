@@ -93,6 +93,7 @@ namespace Lisple
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());
     lang_symbols.emplace("keys", KeysFunction::make());
+    lang_symbols.emplace("keyword", KeywordFunction::make());
     lang_symbols.emplace("last", LastFunction::make());
     lang_symbols.emplace("let", LetForm::make());
     lang_symbols.emplace("lower-case", LowerCaseFunction::make());

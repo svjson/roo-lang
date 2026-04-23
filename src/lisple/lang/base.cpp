@@ -209,6 +209,16 @@ namespace Lisple
     return val;
   }
 
+  /** KeywordFunction - keyword */
+  FUNC_IMPL(KeywordFunction,
+            SIG((FN_ARGS((&Type::STRING_OR_SYMBOL)),
+                 EXEC_DISPATCH(&KeywordFunction::exec_keyword))))
+
+  EXEC_BODY(KeywordFunction, exec_keyword)
+  {
+    return RTValue::keyword(args[0]->str());
+  }
+
   /* NsMacro */
   SPECIAL_FORM_IMPL(NsForm,
                     MULTI_SIG((FN_ARGS((&Type::WORD, DATA)),
@@ -393,6 +403,11 @@ namespace Lisple
     return NIL;
   }
 
+  EXECNODE_BODY(NsForm, execnode_ns)
+  {
+    throw LispleException("Invocation of namespace");
+  }
+
   /** NameFunction - name */
   FUNC_IMPL(NameFunction,
             SIG((FN_ARGS((&Type::QUALIFIABLE)), EXEC_DISPATCH(&NameFunction::exec_name))))
@@ -401,11 +416,6 @@ namespace Lisple
   {
     if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
     return RTValue::string(args[0]->qual().second);
-  }
-
-  EXECNODE_BODY(NsForm, execnode_ns)
-  {
-    throw LispleException("Invocation of namespace");
   }
 
   /** OrForm - or */
