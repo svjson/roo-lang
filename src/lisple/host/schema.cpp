@@ -214,6 +214,15 @@ namespace Lisple
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
     return std::get<const RTValue::Number>(value->value).get_int();
   }
+  int MapSchema::Inspector::i32(const std::string& key, int default_value) const
+  {
+    if (sptr_rtval value = _get_value(key, RTValue::Type::NUMBER))
+    {
+      return std::get<const RTValue::Number>(value->value).get_int();
+    }
+    return default_value;
+  }
+
   long MapSchema::Inspector::i64(const std::string& key) const
   {
     sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
