@@ -56,6 +56,7 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/seq_func.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/string.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/struct.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/time.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lexer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exception.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace.cpp

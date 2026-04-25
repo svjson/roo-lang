@@ -26,6 +26,7 @@
 #include <lisple/lang/seq_func.h>
 #include <lisple/lang/string.h>
 #include <lisple/lang/struct.h>
+#include <lisple/lang/time.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/scope.h>
@@ -75,6 +76,7 @@ namespace Lisple
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
     lang_symbols.emplace("empty?", EmptyPFunction::make());
+    lang_symbols.emplace("epoch-ms", EpochMsFunction::make());
     lang_symbols.emplace("eval", EvalFunction::make());
     lang_symbols.emplace("even?", EvenPFunction::make());
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
