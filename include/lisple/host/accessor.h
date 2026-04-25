@@ -206,6 +206,44 @@
   }
 
 
+/* Optional Adapter getter via direct field access */
+#define __NOBJ_PROP_GET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                      \
+  {                                                                                       \
+    return get_self_object().OBJ_FIELD                                                    \
+      ? ADAPTER_TYPE::make_ref(*get_self_object().OBJ_FIELD)                              \
+      : Lisple::Constant::NIL;                                                            \
+  }
+
+/* Optional Adapter getter via member function */
+#define __NOBJ_PROP_GET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                       \
+  {                                                                                        \
+    return get_self_object().OBJ_METHOD())                                                 \
+      ? ADAPTER_TYPE::make_ref(*get_self_object().OBJ_METHOD())                            \
+      : Lisple::Constant::NIL;                                                             \
+  }
+
+/* Optional Adapter setter via direct field access */
+#define __NOBJ_PROP_SET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                      \
+  {                                                                                       \
+    get_self_object().OBJ_FIELD = value->type == Lisple::RTValue::Type::NIL               \
+      ? std::nullopt                                                                      \
+      : value->adapter<ADAPTER_TYPE>().get_self_object();                                 \
+  }
+
+/* Optional Adapter setter via member function */
+#define __NOBJ_PROP_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                       \
+  {                                                                                        \
+    get_self_object().OBJ_METHOD(value->type == Lisple::RTValue::Type::NIL                 \
+      ? std::nullopt                                                                       \
+      : value->adapter<ADAPTER_TYPE>().get_self_object());                                 \
+  }
+
+
+
 /* -----------------------------------------------------------------------
  * Public macros
  * ----------------------------------------------------------------------- */
@@ -234,7 +272,7 @@
  */
 #define NOBJ_PROP_SET__METHOD(AD_CLASS, PROP_NAME, ...)                  \
   __NOBJ_FIELD_ACCESSOR_MACROS_SET(                                      \
-    __NOBJ_PROP_SET__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+  __NOBJ_PROP_SET__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
 
 /* NOBJ_PROP_GET_SET__METHOD - convenience: generates both getter and setter */
 #define NOBJ_PROP_GET_SET__METHOD(AD_CLASS, PROP_NAME, ...)               \
@@ -253,7 +291,7 @@
 */
 #define NOBJ_PROP_GET__FIELD(AD_CLASS, PROP_NAME, ...)                   \
   __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
-    __NOBJ_PROP_GET__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+  __NOBJ_PROP_GET__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
 
 /* NOBJ_PROP_SET__FIELD
  *
@@ -266,7 +304,7 @@
  */
 #define NOBJ_PROP_SET__FIELD(AD_CLASS, PROP_NAME, ...)                   \
   __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
-    __NOBJ_PROP_SET__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+  __NOBJ_PROP_SET__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
 
 
 /* NOBJ_PROP_GET_SET__FIELD - convenience: generates both getter and setter */
@@ -326,6 +364,52 @@
 #define NOBJ_PROP_GET_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
   NOBJ_PROP_GET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
   NOBJ_PROP_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+/* -----------------------------------------------------------------------
+ * Optional Adapter accessor public macros
+ *
+ * Use these when the property value is itself a NativeObject type wrapped
+ * in std::optional.
+ * Getters wrap via ADAPTER_TYPE::make_ref() if the std::optional has a value,
+ * otherwise returns NIL; setters unwrap non-NIL values via
+ * value->adapter<ADAPTER_TYPE>().get_self_object() or sets the value to
+ * std::nullopt for NIL values.
+ *
+ * The optional last argument overrides the field or method name on the
+ * underlying host object.
+ *
+ * Usage:
+ *   NOBJ_PROP_GET_OPT_ADAPTER__FIELD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_OPT_ADAPTER__METHOD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_SET_OPT_ADAPTER__FIELD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_SET_OPT_ADAPTER__METHOD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_SET_OPT_ADAPTER__FIELD(OrderAdapter, line, LineAdapter);
+ *   NOBJ_PROP_GET_SET_OPT_ADAPTER__METHOD(OrderAdapter, line, LineAdapter);
+ * ----------------------------------------------------------------------- */
+
+#define NOBJ_PROP_GET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                \
+    __NOBJ_PROP_GET_OPT_ADAPTER__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(                                            \
+    __NOBJ_PROP_GET_OPT_ADAPTER__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_SET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                \
+    __NOBJ_PROP_SET_OPT_ADAPTER__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)    \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS_SET(                                            \
+    __NOBJ_PROP_SET_OPT_ADAPTER__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_SET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
 // clang-format on
 
