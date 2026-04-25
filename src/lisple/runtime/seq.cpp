@@ -98,6 +98,27 @@ namespace Lisple
     }
   }
 
+  void set_child(RTValue& seq, size_t index, const sptr_rtval& value)
+  {
+    switch (seq.type)
+    {
+    case RTValue::Type::VECTOR:
+    case RTValue::Type::LIST:
+    {
+      sptr_rtval_v& elements = std::get<sptr_rtval_v>(seq.value);
+      while (elements.size() <= index)
+      {
+        elements.push_back(Lisple::Constant::NIL);
+      }
+      elements[index] = value;
+      break;
+    }
+    default:
+      throw TypeError("set_child is not implemented for type: " +
+                      std::to_string((int)seq.type));
+    }
+  }
+
   sptr_rtval pop_child(RTValue& seq)
   {
     switch (seq.type)

@@ -122,7 +122,7 @@ namespace Lisple
     sptr_sobject_v& elements = ast_node->get_children();
     if (elements.size() < 2)
     {
-      throw LispleException("Invalid defun form: " + ast_node->to_string());
+      throw LispleException("Invalid fn form: " + ast_node->to_string());
     }
     if (elements[1]->get_type() != Lisple::Form::ARRAY)
     {

@@ -8,6 +8,7 @@ namespace Lisple
 {
   sptr_rtval_v get_children(RTValue& v);
   sptr_rtval get_child(const RTValue& seq, size_t index);
+  void set_child(RTValue& seq, size_t index, const sptr_rtval& value);
   sptr_rtval pop_child(RTValue& seq);
   sptr_rtval peek_child(RTValue& seq);
   size_t count(const RTValue& v);

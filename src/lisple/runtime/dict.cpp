@@ -1,6 +1,10 @@
 
 #include "lisple/runtime/dict.h"
 
+#include "lisple/exception.h"
+#include "lisple/runtime/value.h"
+#include "lisple/type.h"
+
 #include <algorithm>
 #include <iostream>
 
@@ -16,7 +20,9 @@ namespace Lisple::Dict
 
   sptr_rtval get_property(const sptr_rtval& target, const RTValue& property)
   {
-    if (target->type == RTValue::Type::MAP)
+    switch (target->type)
+    {
+    case RTValue::Type::MAP:
     {
       auto children = Lisple::get_children(*target);
       for (size_t i = 0; i < children.size(); i += 2)
@@ -26,20 +32,31 @@ namespace Lisple::Dict
           return children[i + 1];
         }
       }
+      return Constant::NIL;
     }
-    else if (target->type == RTValue::Type::NATIVE_OBJECT)
+    case RTValue::Type::LIST:
+    case RTValue::Type::VECTOR:
+    {
+      if (property.type != RTValue::Type::NUMBER)
+      {
+        return Constant::NIL;
+      }
+      return get_child(*target, property.num().get_int());
+    }
+    case RTValue::Type::NATIVE_OBJECT:
     {
       Lisple::sptr_native_obj obj = target->nobj();
       return obj->get_property(property);
     }
-    else if (target->type == RTValue::Type::OBJECT)
+    case RTValue::Type::OBJECT:
     {
       auto key = to_AST(const_cast<RTValue&>(property));
       auto val = std::get<sptr_sobject>(target->value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
-
-    return Constant::NIL;
+    default:
+      return Constant::NIL;
+    };
   }
 
   sptr_rtval get_property(RTValue& target, const std::string& keyword)
@@ -169,6 +186,14 @@ namespace Lisple::Dict
         elements[index + 1] = value;
       }
     }
+    else if (target->type == RTValue::Type::VECTOR)
+    {
+      if (property->type != RTValue::Type::NUMBER)
+      {
+        throw TypeError("Cannot set property " + property->to_string() + " of vector");
+      }
+      Lisple::set_child(*target, property->num().get_int(), value);
+    }
     else if (target->type == RTValue::Type::OBJECT)
     {
       sptr_sobject& ho = std::get<sptr_sobject>(target->value);
@@ -190,9 +215,9 @@ namespace Lisple::Dict
     std::vector<sptr_rtval> keys;
     size_t count = Lisple::count(dict);
     keys.reserve(count / 2);
-    for (size_t i = 0; i < count; i += 2)
+    for (size_t i = 0; i < count; i++)
     {
-      keys.push_back(Lisple::get_child(dict, i));
+      keys.push_back(Lisple::get_child(dict, i * 2));
     }
     return keys;
   }

@@ -54,3 +54,16 @@ TEST(GetInFunction, get_existing_multi_key_path_from_map)
   // Then
   ASSERT_EQ(result->i32(), 2);
 }
+
+TEST(GetInFunction, get_nested_vector_element)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(def my-vec [[1 2 3] [4 5 6]])");
+
+  // When
+  auto result = runtime.eval("(get-in my-vec [1 2])");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "6");
+}

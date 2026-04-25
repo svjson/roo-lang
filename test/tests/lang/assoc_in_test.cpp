@@ -47,3 +47,17 @@ TEST(AssocInFunction, replace_key_in_map)
   EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
             runtime.eval("{:a 1 :b 2}")->to_string());
 }
+
+TEST(AssocInFunction, replace_element_in_vector)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(def my-map {:vec ['a' 'b' 'c']})");
+
+  // When
+  auto result = runtime.eval("(assoc-in my-map [:vec 1] 'x')");
+
+  // Then
+  EXPECT_EQ(result->to_string(), "{:vec ['a' 'x' 'c']}");
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:vec ['a' 'b' 'c']}");
+}
