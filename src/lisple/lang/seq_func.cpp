@@ -15,18 +15,32 @@ namespace Lisple
 {
   /* FilterFunction */
   FUNC_IMPL(FilterFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
-                 EXEC_DISPATCH(&FilterFunction::exec_filter))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                       EXEC_DISPATCH(&FilterFunction::exec_filter)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                       EXEC_DISPATCH(&FilterFunction::exec_filter))))
 
   EXEC_BODY(FilterFunction, exec_filter)
   {
-    auto original = args[0];
+    Lisple::sptr_rtval original;
+    Lisple::sptr_rtval fn;
+    if (Type::SEQ.is_type_of(*args[0]))
+    {
+      original = args[0];
+      fn = args[1];
+    }
+    else
+    {
+      original = args[1];
+      fn = args[0];
+    }
+
     if (*Constant::NIL == *original) return RTValue::vector({});
 
     sptr_rtval_v result;
     result.reserve(count(*original));
 
-    auto& filter_fn = args.back()->exec();
+    auto& filter_fn = fn->exec();
 
     sptr_rtval_v val_args{Constant::NIL};
     sptr_rtval_v elements = Lisple::get_children(*original);
@@ -435,12 +449,12 @@ namespace Lisple
 
     if (Type::SEQ.is_type_of(*args[0]))
     {
-      seq_arg    = args[0].get();
+      seq_arg = args[0].get();
       comparator = &args[1]->exec();
     }
     else
     {
-      seq_arg    = args[1].get();
+      seq_arg = args[1].get();
       comparator = &args[0]->exec();
     }
 
@@ -449,8 +463,10 @@ namespace Lisple
     if (elements.size() > 1)
     {
       sptr_rtval_v cmp_args{nullptr, nullptr};
-      std::sort(elements.begin(), elements.end(),
-                [&](const sptr_rtval& a, const sptr_rtval& b) {
+      std::sort(elements.begin(),
+                elements.end(),
+                [&](const sptr_rtval& a, const sptr_rtval& b)
+                {
                   cmp_args[0] = a;
                   cmp_args[1] = b;
                   return Lisple::is_truthy(*comparator->execute(ctx, cmp_args));
