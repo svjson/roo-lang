@@ -965,7 +965,8 @@ namespace Lisple
     arg_bindings.reserve(arg_array.size());
     for (auto& arg : arg_array.get_children())
     {
-      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP)
+      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP &&
+          arg->get_type() != Form::ARRAY)
       {
         throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
       }
