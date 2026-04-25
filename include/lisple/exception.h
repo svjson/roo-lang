@@ -46,6 +46,12 @@ namespace Lisple
     NamespaceException(const std::string& message);
   };
 
+  class CyclicNamespaceException : public NamespaceException
+  {
+   public:
+    CyclicNamespaceException(const std::string& message);
+  };
+
   class TypeError : public LispleException
   {
   public:

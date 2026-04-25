@@ -38,6 +38,11 @@ namespace Lisple
   {
   }
 
+  CyclicNamespaceException::CyclicNamespaceException(const std::string& message)
+    : NamespaceException(message)
+  {
+  }
+
   TypeError::TypeError(const std::string& message)
     : LispleException(message)
   {

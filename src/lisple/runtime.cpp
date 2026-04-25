@@ -1,8 +1,6 @@
 
 #include "lisple/runtime.h"
 
-#include "lisple/runtime/value.h"
-
 #include <exception>
 #include <memory>
 #include <stddef.h>
@@ -13,17 +11,23 @@
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/file_system.h>
+#include <lisple/file_system_namespace_source.h>
 #include <lisple/form.h>
 #include <lisple/lang.h>
 #include <lisple/namespace.h>
+#include <lisple/namespace_loader.h>
 #include <lisple/reader.h>
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
+#include <lisple/runtime/value.h>
 #include <lisple/type.h>
 
 namespace Lisple
 {
   const std::string DEFAULT_NAMESPACE = "user";
+
+  Runtime::~Runtime() = default;
+  Runtime::Runtime(Runtime&&) = default;
 
   Runtime::Runtime()
     : Runtime(nullptr)
@@ -34,7 +38,20 @@ namespace Lisple
     : lang(make_language_namespace())
     , fs(fs)
   {
+    if (fs)
+    {
+      default_ns_source = std::make_unique<FileSystemNamespaceSource>(fs);
+      namespace_loader = std::make_unique<NamespaceLoader>(default_ns_source.get());
+    }
     switch_namespace(DEFAULT_NAMESPACE);
+  }
+
+  void Runtime::ensure_namespace_loaded(const std::string& ns_name)
+  {
+    if (namespace_loader)
+    {
+      namespace_loader->load(*this, ns_name);
+    }
   }
 
   Runtime::Runtime(Namespace& ns)
@@ -123,6 +140,8 @@ namespace Lisple
    */
   void Runtime::import_namespace(const std::string& namespace_name)
   {
+    ensure_namespace_loaded(namespace_name);
+
     if (!namespaces.count(namespace_name))
     {
       throw NamespaceException("Cannot import namespace '" + namespace_name +
@@ -138,6 +157,8 @@ namespace Lisple
   void Runtime::define_namespace_alias(const std::string& namespace_name,
                                        const std::string& alias)
   {
+    ensure_namespace_loaded(namespace_name);
+
     if (!namespaces.count(namespace_name))
     {
       throw NamespaceException("Cannot create an alias for namespace '" + namespace_name +
@@ -152,6 +173,10 @@ namespace Lisple
     {
       if (!create_if_absent) return nullptr;
       namespaces.emplace(namespace_name, Namespace(namespace_name));
+      if (this->namespace_loader)
+      {
+        this->namespace_loader->apply_metadata(*this, namespace_name);
+      }
     }
 
     return &namespaces.at(namespace_name);
@@ -184,15 +209,28 @@ namespace Lisple
     auto raw_file = fs->read_file_to_string(file_name);
 
     const std::string& current_ns = get_current_namespace().get_name();
+    if (namespace_loader)
+    {
+      namespace_loader->push_file_context(file_name);
+    }
     try
     {
       eval(ctx, raw_file);
     }
     catch (Lisple::LispleException* e)
     {
+      if (namespace_loader)
+      {
+        namespace_loader->pop_file_context();
+      }
       throw Lisple::LispleException("Error reading '" + file_name + "': " + e->what());
     }
-    switch_namespace(current_ns); // Revert any namespace changes from evaluating the file
+    if (namespace_loader)
+    {
+      namespace_loader->pop_file_context();
+    }
+    get_current_namespace().set_origin(Namespace::Origin::file(file_name));
+    switch_namespace(current_ns);
   }
 
   sptr_rtval Runtime::eval(Context& ctx, const std::string& str)

@@ -22,7 +22,6 @@ TEST(RandNth, all_elements_possible)
   {
     int num = runtime.eval("(rand-nth [0 1 2 3 4])")->i64();
     freq[num]++;
-    ;
   }
 
   // Then
@@ -48,7 +47,6 @@ TEST(RandNth, all_elements_possible_wrapped)
   {
     int num = runtime.eval("(rand-nth wrapped-vec)")->i64();
     freq[num]++;
-    ;
   }
 
   // Then

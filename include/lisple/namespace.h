@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,9 +23,25 @@ namespace Lisple
       USER = 0x01
     };
 
+    struct Origin
+    {
+      enum class Type : uint8_t
+      {
+        NATIVE = 0x00,
+        FILE = 0x01
+      };
+
+      Type type = Type::NATIVE;
+      std::optional<std::string> source_path;
+
+      static Origin native() { return {}; }
+      static Origin file(const std::string& path) { return {Type::FILE, path}; }
+    };
+
    private:
     const Type type;
     const std::string name = "";
+    Origin origin;
 
     /*!
      * @brief Fully imported namespaces, ie through (:require somenamespace)
@@ -75,6 +92,9 @@ namespace Lisple
     const std::string& get_name() const;
     Type get_type() const;
     bool empty() const;
+
+    const Origin& get_origin() const { return origin; }
+    void set_origin(Origin o) { origin = std::move(o); }
 
     /*!
      * @brief Tests if an identifier is stored in this namespace, its imported

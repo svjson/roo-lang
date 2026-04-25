@@ -25,6 +25,8 @@ set(lisple_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/bind.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/context.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/dir_root_file_system.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/file_system_namespace_source.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace_loader.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/dict.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/eval_plan.cpp

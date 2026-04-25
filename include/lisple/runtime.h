@@ -3,6 +3,7 @@
 #define __RUNTIME_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include <lisple/namespace.h>
@@ -18,6 +19,8 @@ namespace Lisple
   class Seq;
   class Word;
   class FileSystem;
+  class NamespaceLoader;
+  class NamespaceSource;
 
   class Runtime
   {
@@ -33,7 +36,12 @@ namespace Lisple
 
     Namespace* current_namespace = nullptr;
 
+    std::unique_ptr<NamespaceSource> default_ns_source;
+    std::unique_ptr<NamespaceLoader> namespace_loader;
+
    public:
+    ~Runtime();
+    Runtime(Runtime&&);
     /*!
      * @brief Creates a vanilla Lisple runtime with only the language built-in
      * functions and no file system access.
@@ -186,6 +194,12 @@ namespace Lisple
     Namespace& get_ns_of(const Word& identifier);
 
    private:
+    /*!
+     * @brief If a namespace loader is configured, attempt to load the named
+     * namespace on demand before the caller checks for its existence.
+     */
+    void ensure_namespace_loaded(const std::string& ns_name);
+
     /*!
      * @brief Import another namespace into the current namespace, making all
      * identifiers of that namespace available to the current.
