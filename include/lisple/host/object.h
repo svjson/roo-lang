@@ -107,6 +107,7 @@
    AD_CLASS(H_CLASS& obj_ref);                                          \
    H_CLASS& get_object() const override;                                \
    H_CLASS& get_self_object() const;                                    \
+   void* self_object_ptr() const override;                              \
    static const Lisple::NAccessorTable& static_accessor_table();        \
    NATIVE_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
@@ -200,6 +201,7 @@
     */                                                                          \
    AD_CLASS(H_CLASS& obj_ref);                                                  \
    H_CLASS& get_self_object() const;                                            \
+   void* self_object_ptr() const override;                                      \
    static const Lisple::NAccessorTable& static_accessor_table();                \
    NATIVE_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)
 
@@ -456,6 +458,19 @@
     return dynamic_cast<H_CLASS&>(get_object());               \
   }
 
+/*
+ * __NOBJ_GET_SELF_OBJECT_PTR_IMPL
+ *
+ * Generates self_object_ptr() by forwarding to get_self_object(). Works
+ * for both base adapters (returns Base*) and sub-adapters (returns Derived*)
+ * because each adapter's get_self_object() already returns the right type.
+ */
+#define __NOBJ_GET_SELF_OBJECT_PTR_IMPL(AD_CLASS) \
+  void* AD_CLASS::self_object_ptr() const         \
+  {                                               \
+    return &get_self_object();                    \
+  }
+
 
 /**
  * NATIVE_ADAPTER_IMPL variants
@@ -472,7 +487,8 @@
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
     : NativeObject(obj_ref) {}                                                \
   __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)                              \
-  __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+  __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)                              \
+  __NOBJ_GET_SELF_OBJECT_PTR_IMPL(AD_CLASS)
 
 #define NATIVE_ADAPTER_IMPL__ACCESSORS(AD_CLASS, H_CLASS, HOBJ_T, ...)        \
   __NOBJ_TRAITS_IMPL(AD_CLASS, HOBJ_T, ({__NOBJ_CMAP(AD_CLASS, __VA_ARGS__)})) \
@@ -481,7 +497,8 @@
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
     : NativeObject(obj_ref) {}                                                \
   __NOBJ_GET_BASE_OBJECT_IMPL(AD_CLASS, H_CLASS)                              \
-  __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+  __NOBJ_GET_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)                              \
+  __NOBJ_GET_SELF_OBJECT_PTR_IMPL(AD_CLASS)
 
 /**
  * NATIVE_ADAPTER_IMPL variants for sub-adapters
@@ -493,7 +510,8 @@
     : AD_SUP_CLASS(std::unique_ptr<H_SUP_CLASS>(std::move(obj_ptr))) {}       \
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
     : AD_SUP_CLASS(static_cast<H_SUP_CLASS&>(obj_ref)) {}                     \
-  __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+  __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)                      \
+  __NOBJ_GET_SELF_OBJECT_PTR_IMPL(AD_CLASS)
 
 #define NATIVE_ADAPTER_IMPL__SUB_ACCESSORS(AD_CLASS, H_CLASS, AD_SUP_CLASS, H_SUP_CLASS, HOBJ_T, ...) \
   __NOBJ_TRAITS_SUB_IMPL__ACCESSORS(AD_CLASS, AD_SUP_CLASS, HOBJ_T, ({__NOBJ_CMAP(AD_CLASS, __VA_ARGS__)})) \
@@ -501,7 +519,8 @@
     : AD_SUP_CLASS(std::unique_ptr<H_SUP_CLASS>(std::move(obj_ptr))) {}       \
   AD_CLASS::AD_CLASS(H_CLASS& obj_ref)                                        \
     : AD_SUP_CLASS(static_cast<H_SUP_CLASS&>(obj_ref)) {}                     \
-  __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)
+  __NOBJ_GET_DERIVED_SELF_OBJECT_IMPL(AD_CLASS, H_CLASS)                      \
+  __NOBJ_GET_SELF_OBJECT_PTR_IMPL(AD_CLASS)
 
 
 /**
@@ -721,6 +740,8 @@ namespace Lisple
     const HostTypeRef* get_host_type() const;
     const NAccessorTable& accessor_table() const;
     virtual std::string to_string() const;
+    /** Returns a void* to the concrete host object as known by the adapter. */
+    virtual void* self_object_ptr() const = 0;
   };
 
   template <typename T> struct NativeObject : public NativeObjectBase
@@ -748,7 +769,14 @@ namespace Lisple
       return dynamic_cast<HostObject<T>*>(v.obj().get())->get_object();
     }
 
-    return dynamic_cast<NativeObject<T>*>(v.nobj().get())->get_object();
+    auto* nobj = v.nobj().get();
+    if (auto* typed = dynamic_cast<NativeObject<T>*>(nobj)) return typed->get_object();
+
+    /**
+     * If T is a derived host class held via a base adapter; self_object_ptr()
+     * returns &get_self_object() which yields Derived* directly.
+     */
+    return *static_cast<T*>(nobj->self_object_ptr());
   }
 
 } // namespace Lisple
