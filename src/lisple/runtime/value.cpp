@@ -568,6 +568,11 @@ namespace Lisple
       }
       return true;
     }
+    case Type::NATIVE_OBJECT:
+    {
+      if (this->nobj()->get_host_type() != other.nobj()->get_host_type()) return false;
+      return this->to_string() == other.to_string();
+    }
     default:
       throw LispleException("== not implemented for type: " +
                             std::to_string((int)this->type));
