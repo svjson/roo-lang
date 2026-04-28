@@ -420,3 +420,79 @@ TEST(NamespaceLoading, load_root_imports_aliased_native_defined_namespace)
   // Then
   ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
 }
+
+TEST(NamespaceLoading, load_root_using_both_full_and_aliased_imports)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("lisp/core.lisple",
+         R"(
+           (ns app.core
+             (:require app.construction
+                       [vehicle :as v]))
+
+           (defun mkv [] (construct v/make-vehicle-model {:model-name "FF2" :seats 8}))
+
+           (def v1 (v/make-vehicle-model {:model-name "blargh" :seats 1}))
+           (def v2 (construct v/make-vehicle-model {:model-name "oumph" :seats 2}))
+          )");
+
+  fs.add("lisp/construction.lisple",
+         "(ns app.construction) (defun construct [cfn arg] (apply cfn [arg]))");
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), &fs);
+
+  // When
+  runtime.read_file("lisp/core.lisple");
+  auto result = runtime.eval("(app.core/mkv)");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
+}
+
+TEST(NamespaceLoading, full_import_of_native_ns_survives_subsequent_file_ns_load)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("lisp/core.lisple",
+         R"(
+           (ns app.core (:require vehicle app.construction))
+           (defun mkv [] (construct make-vehicle-model {:model-name "FF2" :seats 8}))
+         )");
+  fs.add("lisp/construction.lisple",
+         "(ns app.construction) (defun construct [cfn arg] (apply cfn [arg]))");
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), &fs);
+
+  // When
+  runtime.read_file("lisp/core.lisple");
+  auto result = runtime.eval("(app.core/mkv)");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
+}
+
+TEST(NamespaceLoading, alias_of_native_ns_survives_subsequent_file_ns_load)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("lisp/core.lisple",
+         R"(
+           (ns app.core (:require [vehicle :as v] app.construction))
+           (defun mkv [] (construct v/make-vehicle-model {:model-name "FF2" :seats 8}))
+         )");
+  fs.add("lisp/construction.lisple",
+         "(ns app.construction) (defun construct [cfn arg] (apply cfn [arg]))");
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
+  Lisple::Runtime runtime(std::move(namespaces), &fs);
+
+  // When
+  runtime.read_file("lisp/core.lisple");
+  auto result = runtime.eval("(app.core/mkv)");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
+}
