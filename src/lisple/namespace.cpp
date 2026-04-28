@@ -172,7 +172,8 @@ namespace Lisple
 
   bool Namespace::empty() const
   {
-    return objects.empty() && values.empty();
+    return objects.empty() && values.empty() && imported_namespaces.empty() &&
+           aliased_namespaces.empty();
   }
 
   void Namespace::mutate(const Word& identifier, const sptr_sobject& obj)
