@@ -208,7 +208,7 @@ namespace Lisple
 
     auto raw_file = fs->read_file_to_string(file_name);
 
-    const std::string& current_ns = get_current_namespace().get_name();
+    const std::string current_ns = get_current_namespace().get_name();
     if (namespace_loader)
     {
       namespace_loader->push_file_context(file_name);
