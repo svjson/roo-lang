@@ -8,6 +8,25 @@
 
 namespace Lisple
 {
+  static sptr_rtval apply_update_fn(Context& ctx,
+                                    const sptr_rtval& updater_fn,
+                                    const sptr_rtval& current_value,
+                                    const sptr_rtval_v& args,
+                                    size_t extra_args_begin)
+  {
+    Executable& updater = updater_fn->exec();
+    sptr_rtval_v updater_args;
+    updater_args.reserve(args.size() - extra_args_begin + 1);
+    updater_args.push_back(current_value);
+
+    for (size_t i = extra_args_begin; i < args.size(); i++)
+    {
+      updater_args.push_back(args[i]);
+    }
+
+    return updater.execute(ctx, updater_args);
+  }
+
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
             MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
@@ -167,6 +186,24 @@ namespace Lisple
     Dict::set_property(target, assoc_key, value);
 
     return args[0];
+  }
+
+  /* UpdateFunction - update */
+  FUNC_IMPL(UpdateFunction,
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC), (&VARARG, &Type::ANY)),
+                       EXEC_DISPATCH(&UpdateFunction::exec_update)),
+                      (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::EXEC), (&VARARG, &Type::ANY)),
+                       EXEC_DISPATCH(&UpdateFunction::exec_update))))
+
+  EXEC_BODY(UpdateFunction, exec_update)
+  {
+    sptr_rtval current_value = Dict::get_property(args[0], args[1]);
+    sptr_rtval updated_value = apply_update_fn(ctx, args[2], current_value, args, 3);
+
+    sptr_rtval result = Dict::shallow_copy(args[0]);
+    Dict::set_property(result, args[1], updated_value);
+
+    return result;
   }
 
   /** GetFunction - get */

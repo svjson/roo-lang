@@ -83,6 +83,26 @@ namespace Lisple
   FUNC(AssocInBangFunction, assoc_in_bang)
 
   /*!
+   * @brief Create a modified copy of a map-like structure or sequence by
+   * applying a function to the current value at a key or index.
+   *
+   * Usage:
+   * @code
+   * (update my-map :count (fn [x] (+ x 1)))
+   * (update my-map :count + 10)
+   * (update my-vec 1 (fn [x] (* x 10)))
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map/object or sequence to create a modified copy of          |
+   * | 1     | The key or index to update                                       |
+   * | 2     | The function to apply to the current value                       |
+   * | 3..n  | Optional extra arguments passed to the update function           |
+   */
+  FUNC(UpdateFunction, update)
+
+  /*!
    * @brief Get a property by value from a complex object, ie a map
    * or a host object.
    *
