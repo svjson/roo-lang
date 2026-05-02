@@ -84,41 +84,43 @@ namespace Lisple
 
   /*!
    * @brief Create a modified copy of a map-like structure or sequence by
-   * applying a function to the current value at a key or index.
+   * applying a function to the current value at one or more keys or indices.
    *
    * Usage:
    * @code
    * (update my-map :count (fn [x] (+ x 1)))
-   * (update my-map :count + 10)
-   * (update my-vec 1 (fn [x] (* x 10)))
+   * (update my-map :count [+ 10])
+   * (update my-map :a (fn [x] (+ x 1)) :b [+ 10])
+   * (update my-vec 1 [* 10])
    * @endcode
    *
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
    * | 0     | The map/object or sequence to create a modified copy of          |
    * | 1     | The key or index to update                                       |
-   * | 2     | The function to apply to the current value                       |
-   * | 3..n  | Optional extra arguments passed to the update function           |
+   * | 2     | The updater spec, executable or sequence of executable + args    |
+   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
    */
   FUNC(UpdateFunction, update)
 
   /*!
    * @brief Create a modified copy of a nested map-like structure or sequence by
-   * applying a function to the current value at a path.
+   * applying a function to the current value at one or more paths.
    *
    * Usage:
    * @code
    * (update-in my-map [:count] (fn [x] (+ x 1)))
-   * (update-in my-map [:count] + 10)
-   * (update-in my-map [:nested :count] (fn [x] (* x 10)))
+   * (update-in my-map [:count] [+ 10])
+   * (update-in my-map [:a] (fn [x] (+ x 1)) [:b :c] [+ 10])
+   * (update-in my-map [:nested :count] [* 10])
    * @endcode
    *
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
    * | 0     | The map/object or sequence to create a modified copy of          |
    * | 1     | The path to the value to update                                  |
-   * | 2     | The function to apply to the current value                       |
-   * | 3..n  | Optional extra arguments passed to the update function           |
+   * | 2     | The updater spec, executable or sequence of executable + args    |
+   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
    */
   FUNC(UpdateInFunction, update_in)
 

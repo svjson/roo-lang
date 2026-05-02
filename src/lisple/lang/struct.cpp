@@ -132,7 +132,7 @@ namespace Lisple
                         assoc_path_value->to_string());
       }
 
-      const sptr_rtval_v& assoc_path = assoc_path_value->elements();
+      const sptr_rtval_v assoc_path = Lisple::get_children(*assoc_path_value);
       if (assoc_path.empty())
       {
         throw InvocationException("Path for assoc-in cannot be empty.");
@@ -172,68 +172,147 @@ namespace Lisple
 
   /* UpdateFunction - update */
   FUNC_IMPL(UpdateFunction,
-            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC), (&VARARG, &Type::ANY)),
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&UpdateFunction::exec_update)),
-                      (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::EXEC), (&VARARG, &Type::ANY)),
+                      (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY), (&VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&UpdateFunction::exec_update))))
 
   EXEC_BODY(UpdateFunction, exec_update)
   {
-    sptr_rtval current_value = Dict::get_property(args[0], args[1]);
-    Executable& updater = args[2]->exec();
-    sptr_rtval_v updater_args;
-    updater_args.reserve(args.size() - 2);
-    updater_args.push_back(current_value);
-
-    for (size_t i = 3; i < args.size(); i++)
+    if (args.size() % 2 == 0)
     {
-      updater_args.push_back(args[i]);
+      throw Lisple::InvocationException("No updater given for key '" +
+                                        args.back()->to_string() + " '");
     }
 
-    sptr_rtval updated_value = updater.execute(ctx, updater_args);
+    sptr_rtval result = args[0];
+    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
+    {
+      sptr_rtval current_value = Dict::get_property(result, args[update_arg_i]);
+      const sptr_rtval& updater_spec = args[update_arg_i + 1];
 
-    sptr_rtval result = Dict::shallow_copy(args[0]);
-    Dict::set_property(result, args[1], updated_value);
+      Executable* updater = nullptr;
+      sptr_rtval_v updater_args{current_value};
+      if (updater_spec->type != RTValue::Type::NIL &&
+          Type::EXEC.is_type_of(*updater_spec))
+      {
+        updater = &updater_spec->exec();
+      }
+      else if (updater_spec->type != RTValue::Type::NIL &&
+               updater_spec->type != RTValue::Type::MAP &&
+               Type::SEQ.is_type_of(*updater_spec))
+      {
+        sptr_rtval_v spec_parts = Lisple::get_children(*updater_spec);
+        if (spec_parts.empty())
+        {
+          throw InvocationException("Updater spec for update cannot be empty.");
+        }
+        if (spec_parts[0]->type == RTValue::Type::NIL ||
+            !Type::EXEC.is_type_of(*spec_parts[0]))
+        {
+          throw TypeError("Updater spec for update must begin with an executable, got: " +
+                          spec_parts[0]->to_string());
+        }
+
+        updater = &spec_parts[0]->exec();
+        updater_args.reserve(spec_parts.size());
+        for (size_t spec_i = 1; spec_i < spec_parts.size(); spec_i++)
+        {
+          updater_args.push_back(spec_parts[spec_i]);
+        }
+      }
+      else
+      {
+        throw TypeError("Updater spec for update must be executable or a sequence, got: " +
+                        updater_spec->to_string());
+      }
+
+      sptr_rtval updated_value = updater->execute(ctx, updater_args);
+      sptr_rtval new_result = Dict::shallow_copy(result);
+      Dict::set_property(new_result, args[update_arg_i], updated_value);
+      result = new_result;
+    }
 
     return result;
   }
 
   /* UpdateInFunction - update-in */
   FUNC_IMPL(UpdateInFunction,
-            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC), (&VARARG, &Type::ANY)),
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&UpdateInFunction::exec_update_in)),
-                      (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::EXEC), (&VARARG, &Type::ANY)),
+                      (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&UpdateInFunction::exec_update_in))))
 
   EXEC_BODY(UpdateInFunction, exec_update_in)
   {
-    const sptr_rtval& assoc_path_value = args[1];
-    if (assoc_path_value->type == RTValue::Type::NIL ||
-        !Type::SEQ.is_type_of(*assoc_path_value))
+    if (args.size() % 2 == 0)
     {
-      throw TypeError("Path for update-in must be a sequence, got: " +
-                      assoc_path_value->to_string());
+      throw Lisple::InvocationException("No updater given for path '" +
+                                        args.back()->to_string() + " '");
     }
 
-    const sptr_rtval_v& assoc_path = assoc_path_value->elements();
-    if (assoc_path.empty())
+    sptr_rtval result = args[0];
+    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
     {
-      throw InvocationException("Path for update-in cannot be empty.");
+      const sptr_rtval& assoc_path_value = args[update_arg_i];
+      if (assoc_path_value->type == RTValue::Type::NIL ||
+          !Type::SEQ.is_type_of(*assoc_path_value))
+      {
+        throw TypeError("Path for update-in must be a sequence, got: " +
+                        assoc_path_value->to_string());
+      }
+
+      const sptr_rtval_v assoc_path = Lisple::get_children(*assoc_path_value);
+      if (assoc_path.empty())
+      {
+        throw InvocationException("Path for update-in cannot be empty.");
+      }
+
+      sptr_rtval current_value = Dict::get_property_path(result, assoc_path);
+      const sptr_rtval& updater_spec = args[update_arg_i + 1];
+
+      Executable* updater = nullptr;
+      sptr_rtval_v updater_args{current_value};
+      if (updater_spec->type != RTValue::Type::NIL &&
+          Type::EXEC.is_type_of(*updater_spec))
+      {
+        updater = &updater_spec->exec();
+      }
+      else if (updater_spec->type != RTValue::Type::NIL &&
+               updater_spec->type != RTValue::Type::MAP &&
+               Type::SEQ.is_type_of(*updater_spec))
+      {
+        sptr_rtval_v spec_parts = Lisple::get_children(*updater_spec);
+        if (spec_parts.empty())
+        {
+          throw InvocationException("Updater spec for update-in cannot be empty.");
+        }
+        if (spec_parts[0]->type == RTValue::Type::NIL ||
+            !Type::EXEC.is_type_of(*spec_parts[0]))
+        {
+          throw TypeError("Updater spec for update-in must begin with an executable, got: " +
+                          spec_parts[0]->to_string());
+        }
+
+        updater = &spec_parts[0]->exec();
+        updater_args.reserve(spec_parts.size());
+        for (size_t spec_i = 1; spec_i < spec_parts.size(); spec_i++)
+        {
+          updater_args.push_back(spec_parts[spec_i]);
+        }
+      }
+      else
+      {
+        throw TypeError(
+          "Updater spec for update-in must be executable or a sequence, got: " +
+          updater_spec->to_string());
+      }
+
+      sptr_rtval updated_value = updater->execute(ctx, updater_args);
+      result = Dict::assoc_in(result, assoc_path, updated_value);
     }
 
-    sptr_rtval current_value = Dict::get_property_path(args[0], assoc_path);
-    Executable& updater = args[2]->exec();
-    sptr_rtval_v updater_args;
-    updater_args.reserve(args.size() - 2);
-    updater_args.push_back(current_value);
-
-    for (size_t i = 3; i < args.size(); i++)
-    {
-      updater_args.push_back(args[i]);
-    }
-
-    sptr_rtval updated_value = updater.execute(ctx, updater_args);
-    return Dict::assoc_in(args[0], assoc_path, updated_value);
+    return result;
   }
 
   /** GetFunction - get */

@@ -41,7 +41,7 @@ TEST(UpdateInFunction, passes_extra_args_to_update_function)
   runtime.eval("(def my-map {:nested {:count 2}})");
 
   // When
-  auto result = runtime.eval("(update-in my-map [:nested :count] + 10 5)");
+  auto result = runtime.eval("(update-in my-map [:nested :count] [+ 10 5])");
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:nested {:count 17}}"));
@@ -55,7 +55,7 @@ TEST(UpdateInFunction, update_nested_sequence_by_index)
   runtime.eval("(def my-map {:vec [1 2 3]})");
 
   // When
-  auto result = runtime.eval("(update-in my-map [:vec 1] (fn [x] (* x 10)))");
+  auto result = runtime.eval("(update-in my-map [:vec 1] [* 10])");
 
   // Then
   EXPECT_EQ(result->to_string(), "{:vec [1 20 3]}");
@@ -69,11 +69,26 @@ TEST(UpdateInFunction, update_root_sequence_by_path)
   runtime.eval("(def my-vec [1 2 3])");
 
   // When
-  auto result = runtime.eval("(update-in my-vec [1] (fn [x] (* x 10)))");
+  auto result = runtime.eval("(update-in my-vec [1] [* 10])");
 
   // Then
   EXPECT_EQ(result->to_string(), "[1 20 3]");
   EXPECT_EQ(runtime.lookup_value("my-vec")->to_string(), "[1 2 3]");
+}
+
+TEST(UpdateInFunction, update_multiple_paths_in_one_call)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(def my-map {:a 1 :nested {:count 2}})");
+
+  // When
+  auto result =
+    runtime.eval("(update-in my-map [:a] (fn [x] (+ x 1)) [:nested :count] [+ 10])");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:a 2 :nested {:count 12}}"));
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1 :nested {:count 2}}");
 }
 
 TEST(UpdateInFunction, throws_on_non_sequence_path)

@@ -37,7 +37,7 @@ TEST(UpdateFunction, passes_extra_args_to_update_function)
   runtime.eval("(def my-map {:count 2})");
 
   // When
-  auto result = runtime.eval("(update my-map :count + 10 5)");
+  auto result = runtime.eval("(update my-map :count [+ 10 5])");
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:count 17}"));
@@ -51,9 +51,23 @@ TEST(UpdateFunction, update_sequence_by_index)
   runtime.eval("(def my-vec [1 2 3])");
 
   // When
-  auto result = runtime.eval("(update my-vec 1 (fn [x] (* x 10)))");
+  auto result = runtime.eval("(update my-vec 1 [* 10])");
 
   // Then
   EXPECT_EQ(result->to_string(), "[1 20 3]");
   EXPECT_EQ(runtime.lookup_value("my-vec")->to_string(), "[1 2 3]");
+}
+
+TEST(UpdateFunction, update_multiple_keys_in_one_call)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(def my-map {:a 1 :b 2})");
+
+  // When
+  auto result = runtime.eval("(update my-map :a (fn [x] (+ x 1)) :b [+ 10])");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:a 2 :b 12}"));
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1 :b 2}");
 }
