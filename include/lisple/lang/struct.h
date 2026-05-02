@@ -23,7 +23,10 @@ namespace Lisple
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
    * | 0     | The object to create a copy of                                   |
-   * | 1..n  | Key/value arguments, passed as complete pairs                    |
+   * | 1     | The key whose value to set or substitute                         |
+   * | 2     | The value to associate with the key                              |
+   * | 3..n  | Optional repetions of #1 and #2, Key/value arguments, passed as  |
+   * |       | complete pairs                                                   |
    */
   FUNC(AssocFunction, assoc, assoc_seq)
 
@@ -50,6 +53,7 @@ namespace Lisple
    * Usage:
    * @code
    * (assoc-in my-nested-map [:key :nested-key] new-value)
+   * (assoc-in my-nested-map [:key1] value1 [:key2 :nested-key] value2)
    * @endcode
    *
    * | Arg # | Description                                                      |
@@ -57,6 +61,7 @@ namespace Lisple
    * | 0     | The map or map-like from which to produce a modified copy        |
    * | 1     | The path to the nested key to set                                |
    * | 2     | The value to associate with the last key of the key path         |
+   * | 3..n  | (Optional) repetitions of Arg #1 and #2                          |
    */
   FUNC(AssocInFunction, assoc_in)
 

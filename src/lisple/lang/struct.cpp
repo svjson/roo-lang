@@ -110,18 +110,37 @@ namespace Lisple
 
   /* AssocInFunction - assoc-in */
   FUNC_IMPL(AssocInFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&AssocInFunction::exec_assoc_in))))
 
   EXEC_BODY(AssocInFunction, exec_assoc_in)
   {
-    const sptr_rtval_v& assoc_path = args[1]->elements();
-    if (assoc_path.empty())
+    if (args.size() % 2 == 0)
     {
-      throw InvocationException("Path for assoc-in cannot be empty.");
+      throw Lisple::InvocationException("No value given for path '" +
+                                        args.back()->to_string() + " '");
     }
 
-    return Dict::assoc_in(args[0], assoc_path, args[2]);
+    sptr_rtval result = args[0];
+    for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
+    {
+      const sptr_rtval& assoc_path_value = args[assoc_arg_i];
+      if (!Type::SEQ.is_type_of(*assoc_path_value))
+      {
+        throw TypeError("Path for assoc-in must be a sequence, got: " +
+                        assoc_path_value->to_string());
+      }
+
+      const sptr_rtval_v& assoc_path = assoc_path_value->elements();
+      if (assoc_path.empty())
+      {
+        throw InvocationException("Path for assoc-in cannot be empty.");
+      }
+
+      result = Dict::assoc_in(result, assoc_path, args[assoc_arg_i + 1]);
+    }
+
+    return result;
   }
 
   /* AssocInBangFunction - assoc-in! */

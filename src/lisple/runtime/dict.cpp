@@ -342,7 +342,22 @@ namespace Lisple::Dict
       throw InvocationException("assoc-in path traversal went out of bounds.");
     }
 
-    sptr_rtval result = Dict::shallow_copy(current);
+    sptr_rtval result;
+    switch (current->type)
+    {
+    case RTValue::Type::NIL:
+      result = RTValue::map({});
+      break;
+    case RTValue::Type::MAP:
+    case RTValue::Type::OBJECT:
+    case RTValue::Type::NATIVE_OBJECT:
+    case RTValue::Type::VECTOR:
+    case RTValue::Type::LIST:
+      result = Dict::shallow_copy(current);
+      break;
+    default:
+      throw TypeError("assoc-in cannot traverse through " + current->to_string());
+    }
 
     const sptr_rtval& key = path[index];
 
