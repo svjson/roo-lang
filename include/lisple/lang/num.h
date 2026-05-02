@@ -6,6 +6,21 @@
 namespace Lisple
 {
   /**
+   * @brief Decrement a number by one.
+   *
+   * Usage:
+   * @code
+   * (dec 2)
+   * => 1
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to decrement                                          |
+   */
+  FUNC(DecFunction, dec)
+
+  /**
    * @brief Check if a number is even
    *
    * Usage:
@@ -19,6 +34,21 @@ namespace Lisple
    * | 0     | The number to test for evenness                                  |
    */
   FUNC(EvenPFunction, even)
+
+  /**
+   * @brief Increment a number by one.
+   *
+   * Usage:
+   * @code
+   * (inc 2)
+   * => 3
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to increment                                          |
+   */
+  FUNC(IncFunction, inc)
 
   FUNC(IntFunction, to_int)
 

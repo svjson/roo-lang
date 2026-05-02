@@ -71,6 +71,7 @@ namespace Lisple
     lang_symbols.emplace("contains?", ContainsPFunction::make());
     lang_symbols.emplace("cos", CosFunction::make());
     lang_symbols.emplace("count", CountFunction::make());
+    lang_symbols.emplace("dec", DecFunction::make());
     lang_symbols.emplace("def", DefForm::make());
     lang_symbols.emplace("defun", DefunForm::make());
     lang_symbols.emplace("dissoc", DissocFunction::make());
@@ -94,6 +95,7 @@ namespace Lisple
     lang_symbols.emplace("head", HeadFunction::make());
     lang_symbols.emplace("if", IfForm::make());
     lang_symbols.emplace("if-let", IfLetForm::make());
+    lang_symbols.emplace("inc", IncFunction::make());
     lang_symbols.emplace("include", IncludeFunction::make());
     lang_symbols.emplace("int", IntFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());

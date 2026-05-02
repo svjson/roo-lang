@@ -18,6 +18,26 @@ namespace Lisple
              : Constant::BOOL_FALSE;
   }
 
+  /** IncFunction - inc */
+  FUNC_IMPL(IncFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&IncFunction::exec_inc))))
+
+  EXEC_BODY(IncFunction, exec_inc)
+  {
+    return RTValue::number(args[0]->num() +
+                           RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 1});
+  }
+
+  /** DecFunction - dec */
+  FUNC_IMPL(DecFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&DecFunction::exec_dec))))
+
+  EXEC_BODY(DecFunction, exec_dec)
+  {
+    return RTValue::number(args[0]->num() -
+                           RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 1});
+  }
+
   /** IntFunction - int */
   FUNC_IMPL(IntFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&IntFunction::exec_to_int))))
