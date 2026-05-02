@@ -8,25 +8,6 @@
 
 namespace Lisple
 {
-  static sptr_rtval apply_update_fn(Context& ctx,
-                                    const sptr_rtval& updater_fn,
-                                    const sptr_rtval& current_value,
-                                    const sptr_rtval_v& args,
-                                    size_t extra_args_begin)
-  {
-    Executable& updater = updater_fn->exec();
-    sptr_rtval_v updater_args;
-    updater_args.reserve(args.size() - extra_args_begin + 1);
-    updater_args.push_back(current_value);
-
-    for (size_t i = extra_args_begin; i < args.size(); i++)
-    {
-      updater_args.push_back(args[i]);
-    }
-
-    return updater.execute(ctx, updater_args);
-  }
-
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
             MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
@@ -144,7 +125,8 @@ namespace Lisple
     for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
     {
       const sptr_rtval& assoc_path_value = args[assoc_arg_i];
-      if (!Type::SEQ.is_type_of(*assoc_path_value))
+      if (assoc_path_value->type == RTValue::Type::NIL ||
+          !Type::SEQ.is_type_of(*assoc_path_value))
       {
         throw TypeError("Path for assoc-in must be a sequence, got: " +
                         assoc_path_value->to_string());
@@ -198,12 +180,60 @@ namespace Lisple
   EXEC_BODY(UpdateFunction, exec_update)
   {
     sptr_rtval current_value = Dict::get_property(args[0], args[1]);
-    sptr_rtval updated_value = apply_update_fn(ctx, args[2], current_value, args, 3);
+    Executable& updater = args[2]->exec();
+    sptr_rtval_v updater_args;
+    updater_args.reserve(args.size() - 2);
+    updater_args.push_back(current_value);
+
+    for (size_t i = 3; i < args.size(); i++)
+    {
+      updater_args.push_back(args[i]);
+    }
+
+    sptr_rtval updated_value = updater.execute(ctx, updater_args);
 
     sptr_rtval result = Dict::shallow_copy(args[0]);
     Dict::set_property(result, args[1], updated_value);
 
     return result;
+  }
+
+  /* UpdateInFunction - update-in */
+  FUNC_IMPL(UpdateInFunction,
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC), (&VARARG, &Type::ANY)),
+                       EXEC_DISPATCH(&UpdateInFunction::exec_update_in)),
+                      (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::EXEC), (&VARARG, &Type::ANY)),
+                       EXEC_DISPATCH(&UpdateInFunction::exec_update_in))))
+
+  EXEC_BODY(UpdateInFunction, exec_update_in)
+  {
+    const sptr_rtval& assoc_path_value = args[1];
+    if (assoc_path_value->type == RTValue::Type::NIL ||
+        !Type::SEQ.is_type_of(*assoc_path_value))
+    {
+      throw TypeError("Path for update-in must be a sequence, got: " +
+                      assoc_path_value->to_string());
+    }
+
+    const sptr_rtval_v& assoc_path = assoc_path_value->elements();
+    if (assoc_path.empty())
+    {
+      throw InvocationException("Path for update-in cannot be empty.");
+    }
+
+    sptr_rtval current_value = Dict::get_property_path(args[0], assoc_path);
+    Executable& updater = args[2]->exec();
+    sptr_rtval_v updater_args;
+    updater_args.reserve(args.size() - 2);
+    updater_args.push_back(current_value);
+
+    for (size_t i = 3; i < args.size(); i++)
+    {
+      updater_args.push_back(args[i]);
+    }
+
+    sptr_rtval updated_value = updater.execute(ctx, updater_args);
+    return Dict::assoc_in(args[0], assoc_path, updated_value);
   }
 
   /** GetFunction - get */

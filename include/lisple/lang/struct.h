@@ -103,6 +103,26 @@ namespace Lisple
   FUNC(UpdateFunction, update)
 
   /*!
+   * @brief Create a modified copy of a nested map-like structure or sequence by
+   * applying a function to the current value at a path.
+   *
+   * Usage:
+   * @code
+   * (update-in my-map [:count] (fn [x] (+ x 1)))
+   * (update-in my-map [:count] + 10)
+   * (update-in my-map [:nested :count] (fn [x] (* x 10)))
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map/object or sequence to create a modified copy of          |
+   * | 1     | The path to the value to update                                  |
+   * | 2     | The function to apply to the current value                       |
+   * | 3..n  | Optional extra arguments passed to the update function           |
+   */
+  FUNC(UpdateInFunction, update_in)
+
+  /*!
    * @brief Get a property by value from a complex object, ie a map
    * or a host object.
    *
