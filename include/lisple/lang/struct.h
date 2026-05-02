@@ -16,14 +16,14 @@ namespace Lisple
    *
    * Usage:
    * @code
-   * (assoc my-map key value)
+   * (assoc my-map :key value)
+   * (assoc my-map :key1 value1 :key2 value2)
    * @endcode
    *
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
    * | 0     | The object to create a copy of                                   |
-   * | 1     | The key to set                                                   |
-   * | 2     | The value to associate with the key                              |
+   * | 1..n  | Key/value arguments, passed as complete pairs                    |
    */
   FUNC(AssocFunction, assoc, assoc_seq)
 

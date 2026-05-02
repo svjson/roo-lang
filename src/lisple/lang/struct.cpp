@@ -10,32 +10,41 @@ namespace Lisple
 {
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
-            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY)),
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&AssocFunction::exec_assoc)),
                       (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY)),
                        EXEC_DISPATCH(&AssocFunction::exec_assoc_seq))))
 
   EXEC_BODY(AssocFunction, exec_assoc)
   {
-    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
-    sptr_rtval& assoc_key = args[1];
-    sptr_rtval& value = args.back();
-
-    bool found = false;
-    for (size_t i = 0; i < new_content.size(); i += 2)
+    if (args.size() % 2 == 0)
     {
-      if (*new_content[i] == *assoc_key)
-      {
-        new_content[i + 1] = value;
-        found = true;
-        break;
-      }
+      throw Lisple::InvocationException("No value given for key '" +
+                                        args.back()->to_string() + " '");
     }
 
-    if (!found)
+    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
+    for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
     {
-      new_content.push_back(assoc_key);
-      new_content.push_back(value);
+      sptr_rtval& assoc_key = args[assoc_arg_i];
+      sptr_rtval& value = args[assoc_arg_i + 1];
+
+      bool found = false;
+      for (size_t i = 0; i < new_content.size(); i += 2)
+      {
+        if (*new_content[i] == *assoc_key)
+        {
+          new_content[i + 1] = value;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found)
+      {
+        new_content.push_back(assoc_key);
+        new_content.push_back(value);
+      }
     }
 
     return RTValue::map(std::move(new_content));
