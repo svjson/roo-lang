@@ -325,12 +325,27 @@ namespace Lisple
      */
     bool vararg = false;
 
+    /*!
+     * @brief Number of trailing arguments in `arguments` that are optional.
+     */
+    size_t optional_count = 0;
+
+    /*!
+     * @brief True when a rest parameter follows the declared arguments.
+     * Allows any number of args beyond the required minimum.
+     */
+    bool has_rest = false;
+
    public:
     std::unique_ptr<EvalPattern> eval_pattern;
 
     Signature(std::vector<Argument> arguments, exec_fn target_func);
     Signature(std::vector<Argument> arguments, exec_fn target_func, exec_node_fn exec_func);
     Signature(std::vector<Argument> arguments, exec_rtval_fn);
+    Signature(std::vector<Argument> arguments,
+              exec_rtval_fn,
+              size_t optional_count,
+              bool has_rest);
 
     const std::vector<Argument>& get_arguments() const;
 

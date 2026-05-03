@@ -191,4 +191,25 @@ namespace Lisple
     return std::make_unique<VectorDestructureBinding>(*this);
   }
 
+  /** RestBinding */
+  RestBinding::RestBinding(const std::string& symbol)
+    : symbol(symbol)
+  {
+  }
+
+  RestBinding::RestBinding(const RestBinding& other)
+    : symbol(other.symbol)
+  {
+  }
+
+  void RestBinding::apply(Scope& scope, const sptr_rtval_v& values) const
+  {
+    scope.store(symbol, RTValue::vector(values));
+  }
+
+  std::unique_ptr<RestBinding> RestBinding::clone() const
+  {
+    return std::make_unique<RestBinding>(symbol);
+  }
+
 } // namespace Lisple

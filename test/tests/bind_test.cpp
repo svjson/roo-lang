@@ -26,6 +26,40 @@ TEST(SymbolBinding, apply)
   ASSERT_EQ(*scope.lookup(Lisple::Word("muffin")), Lisple::Key("blooper"));
 }
 
+TEST(RestBinding, apply_collects_values_into_vector)
+{
+  // Given
+  Lisple::Scope scope;
+  Lisple::RestBinding binding("rest");
+  Lisple::sptr_rtval_v values = {Lisple::RTValue::number(1),
+                                 Lisple::RTValue::number(2),
+                                 Lisple::RTValue::number(3)};
+
+  // When
+  binding.apply(scope, values);
+
+  // Then
+  auto bound = scope.lookup_value("rest");
+  ASSERT_EQ(
+    *bound,
+    *Lisple::RTValue::vector(
+      {Lisple::RTValue::number(1), Lisple::RTValue::number(2), Lisple::RTValue::number(3)}));
+}
+
+TEST(RestBinding, apply_empty_values_binds_empty_vector)
+{
+  // Given
+  Lisple::Scope scope;
+  Lisple::RestBinding binding("rest");
+
+  // When
+  binding.apply(scope, {});
+
+  // Then
+  auto bound = scope.lookup_value("rest");
+  ASSERT_EQ(*bound, *Lisple::RTValue::vector({}));
+}
+
 TEST(MapDestructureBinding, invalid_binding_form_throws_exception)
 {
   // Given

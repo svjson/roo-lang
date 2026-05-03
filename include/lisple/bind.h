@@ -80,6 +80,26 @@ namespace Lisple
     std::unique_ptr<LexicalBinding> clone() const override;
   };
 
+  /**
+   * @brief Binding for rest parameters - collects a slice of arguments into a vector
+   * and binds it to a named symbol.
+   *
+   * Not a LexicalBinding subclass because it takes a vector of values rather
+   * than a single value.
+   */
+  class RestBinding
+  {
+    std::string symbol;
+
+   public:
+    RestBinding(const std::string& symbol);
+    RestBinding(const RestBinding& other);
+
+    void apply(Scope& scope, const sptr_rtval_v& values) const;
+
+    std::unique_ptr<RestBinding> clone() const;
+  };
+
 } // namespace Lisple
 
 #endif /* LISPLE_BIND__H */

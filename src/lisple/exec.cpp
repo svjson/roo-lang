@@ -248,6 +248,16 @@ namespace Lisple
     this->eval_pattern = std::make_unique<EvalPattern>(arg_modes);
   }
 
+  Signature::Signature(arg_v args,
+                       exec_rtval_fn exec_func,
+                       size_t optional_count,
+                       bool has_rest)
+    : Signature(args, exec_func)
+  {
+    this->optional_count = optional_count;
+    this->has_rest = has_rest;
+  }
+
   const std::vector<Argument>& Signature::get_arguments() const
   {
     return arguments;
@@ -369,12 +379,11 @@ namespace Lisple
     }
     else
     {
-      if (arguments_size != args_size)
-      {
-        return false;
-      }
+      if (args_size < arguments_size - optional_count) return false;
+      if (!has_rest && args_size > arguments_size) return false;
 
-      for (size_t i = 0; i < args_size; i++)
+      const size_t check_count = std::min(args_size, arguments_size);
+      for (size_t i = 0; i < check_count; i++)
       {
         if (!arguments[i].matches(args[i]))
         {
@@ -415,12 +424,11 @@ namespace Lisple
     }
     else
     {
-      if (arguments_size != args_size)
-      {
-        return false;
-      }
+      if (args_size < arguments_size - optional_count) return false;
+      if (!has_rest && args_size > arguments_size) return false;
 
-      for (size_t i = 0; i < args_size; i++)
+      const size_t check_count = std::min(args_size, arguments_size);
+      for (size_t i = 0; i < check_count; i++)
       {
         if (!arguments[i].matches(*args[i]))
         {
@@ -461,12 +469,11 @@ namespace Lisple
     }
     else
     {
-      if (arguments_size != args_size)
-      {
-        return false;
-      }
+      if (args_size < arguments_size - optional_count) return false;
+      if (!has_rest && args_size > arguments_size) return false;
 
-      for (size_t i = 0; i < args_size; i++)
+      const size_t check_count = std::min(args_size, arguments_size);
+      for (size_t i = 0; i < check_count; i++)
       {
         if (!arguments[i].matches(*args[i]))
         {
