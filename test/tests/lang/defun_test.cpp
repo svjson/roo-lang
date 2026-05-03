@@ -105,3 +105,29 @@ TEST(DefunForm, defun_with_destructuring_argument_and_alias)
   // Then
   ASSERT_EQ(*result, *runtime.eval("[1 2 {:one 1 :two 2}]"));
 }
+
+TEST(DefunForm, execution_treats_explicit_nil_argument_with_value_as_nil)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun myfun [input] (if input (str \"Input is\" input) \"nil input\"))");
+
+  // When
+  auto result = runtime.eval("(myfun nil)");
+
+  // Then
+  ASSERT_EQ(result->str(), "nil input");
+}
+
+TEST(DefunForm, execution_treats_derived_argument_with_nil_value_as_nil)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun myfun [input] (if input (str \"Input is\" input) \"nil input\"))");
+
+  // When
+  auto result = runtime.eval("(myfun (:value {:no-value 1}))");
+
+  // Then
+  ASSERT_EQ(result->str(), "nil input");
+}
