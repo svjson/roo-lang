@@ -341,6 +341,48 @@ TEST(Lexer, discard__list)
                           sym(tkn::RPAREN, ")")));
 }
 
+TEST(Lexer, ampersand_alone_is_a_word)
+{
+  // Given
+  std::string input = "&";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "&")));
+}
+
+TEST(Lexer, ampersand_prefix_is_a_word)
+{
+  // Given
+  std::string input = "&rest-args";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "&rest-args")));
+}
+
+TEST(Lexer, arg_vector_with_optional_and_rest_markers)
+{
+  // Given
+  std::string input = "[a & b &rest]";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::LBRACKET, "["),
+                          sym(tkn::WORD, "a"),
+                          sym(tkn::WORD, "&"),
+                          sym(tkn::WORD, "b"),
+                          sym(tkn::WORD, "&rest"),
+                          sym(tkn::RBRACKET, "]")));
+}
+
 TEST(Lexer, discard__string)
 {
   // Given

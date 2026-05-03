@@ -45,11 +45,11 @@ namespace Lisple
 
   class Lexer
   {
-    std::regex regex_alpha{"[a-zA-Z\\/\\-_+?!|=\\>\\<\\*]*"};
+    std::regex regex_alpha{"[a-zA-Z\\/\\-_+?!|=\\>\\<\\*&]*"};
     std::regex regex_num{"-?[0-9]+\\.?[0-9]*?"};
     std::regex regex_hexnum{"0x[0-9a-fA-F]*"};
     std::regex regex_key_alphanum{"[a-zA-Z\\/\\-_+?!|\\>\\<\\*0-9=]+"};
-    std::regex regex_alphanum{"[a-zA-Z\\/\\-_+?!|\\>\\<\\*=][a-zA-Z\\/\\-_+?!|\\>\\<\\.\\*0-9=]*"};
+    std::regex regex_alphanum{"[a-zA-Z\\/\\-_+?!|\\>\\<\\*=&][a-zA-Z\\/\\-_+?!|\\>\\<\\.\\*0-9=]*"};
 
   public:
     virtual ~Lexer() = default;
