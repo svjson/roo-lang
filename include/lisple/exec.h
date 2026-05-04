@@ -348,6 +348,8 @@ namespace Lisple
               bool has_rest);
 
     const std::vector<Argument>& get_arguments() const;
+    size_t get_optional_count() const;
+    bool has_rest_parameter() const;
 
     bool supports_exec_tree() const;
     bool supports_rt_value() const;

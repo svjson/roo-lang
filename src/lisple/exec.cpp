@@ -263,6 +263,16 @@ namespace Lisple
     return arguments;
   }
 
+  size_t Signature::get_optional_count() const
+  {
+    return optional_count;
+  }
+
+  bool Signature::has_rest_parameter() const
+  {
+    return has_rest;
+  }
+
   sptr_rtval_v Signature::coerce_args(Context& ctx, sptr_rtval_v& args)
   {
     sptr_rtval_v coerced;
@@ -807,7 +817,10 @@ namespace Lisple
                                               this,
                                               std::placeholders::_1,
                                               std::placeholders::_2);
-        sigs.push_back(std::make_unique<Signature>(sig->get_arguments(), disp_target));
+        sigs.push_back(std::make_unique<Signature>(sig->get_arguments(),
+                                                   disp_target,
+                                                   sig->get_optional_count(),
+                                                   sig->has_rest_parameter()));
       }
       else if (sig->supports_exec_tree())
       {
