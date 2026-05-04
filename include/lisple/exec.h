@@ -463,13 +463,18 @@ namespace Lisple
     std::vector<std::unique_ptr<LexicalBinding>> arg_binding;
     uptr_exec_node_v uptr_body;
     ptr_exec_node_v body;
+    size_t required_count = 0;
+    size_t optional_count = 0;
+    std::unique_ptr<RestBinding> rest_binding;
 
    public:
     UserFunction(const std::string& name,
                  const std::string& home_ns,
                  arg_v,
                  std::vector<std::unique_ptr<LexicalBinding>>& arg_bindings,
-                 uptr_exec_node_v&& body);
+                 uptr_exec_node_v&& body,
+                 size_t optional_count = 0,
+                 std::unique_ptr<RestBinding> rest_binding = nullptr);
 
     const std::vector<std::unique_ptr<LexicalBinding>>& get_argument_bindings() const;
     const uptr_exec_node_v& get_body() const;

@@ -106,6 +106,120 @@ TEST(DefunForm, defun_with_destructuring_argument_and_alias)
   ASSERT_EQ(*result, *runtime.eval("[1 2 {:one 1 :two 2}]"));
 }
 
+TEST(DefunForm, optional_arg_bound_to_value_when_supplied)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun greet [name & title] (str title \" \" name))");
+
+  // When
+  auto result = runtime.eval("(greet \"Smith\" \"Dr.\")");
+
+  // Then
+  ASSERT_EQ(result->str(), "Dr. Smith");
+}
+
+TEST(DefunForm, optional_arg_bound_to_nil_when_omitted)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun greet [name & title] (if title (str title \" \" name) name))");
+
+  // When
+  auto result = runtime.eval("(greet \"Smith\")");
+
+  // Then
+  ASSERT_EQ(result->str(), "Smith");
+}
+
+TEST(DefunForm, multiple_optional_args_all_supplied)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a & b c] [a b c])");
+
+  // When
+  auto result = runtime.eval("(f 1 2 3)");
+
+  // Then
+  ASSERT_EQ(*result, *runtime.eval("[1 2 3]"));
+}
+
+TEST(DefunForm, multiple_optional_args_partially_supplied)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a & b c] [a b c])");
+
+  // When
+  auto result = runtime.eval("(f 1 2)");
+
+  // Then
+  ASSERT_EQ(*result, *runtime.eval("[1 2 nil]"));
+}
+
+TEST(DefunForm, multiple_optional_args_none_supplied)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a & b c] [a b c])");
+
+  // When
+  auto result = runtime.eval("(f 1)");
+
+  // Then
+  ASSERT_EQ(*result, *runtime.eval("[1 nil nil]"));
+}
+
+TEST(DefunForm, too_many_args_with_optional_but_no_rest_throws)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a & b] b)");
+
+  // When / Then
+  EXPECT_THROW(runtime.eval("(f 1 2 3)"), std::exception);
+}
+
+TEST(DefunForm, rest_parameter_collects_all_extra_args)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a &rest] [a rest])");
+
+  // When
+  auto result = runtime.eval("(f 1 2 3 4)");
+
+  // Then
+  ASSERT_EQ(*result, *runtime.eval("[1 [2 3 4]]"));
+}
+
+TEST(DefunForm, rest_parameter_is_empty_vector_when_no_extra_args)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a &rest] [a rest])");
+
+  // When
+  auto result = runtime.eval("(f 1)");
+
+  // Then
+  ASSERT_EQ(*result, *runtime.eval("[1 []]"));
+}
+
+TEST(DefunForm, rest_parameter_after_optional_args)
+{
+  // Given
+  Lisple::Runtime runtime;
+  runtime.eval("(defun f [a & b &rest] [a b rest])");
+
+  // When
+  auto result = runtime.eval("(f 1 2 3 4)");
+
+  // Then
+  ASSERT_EQ(*result, *runtime.eval("[1 2 [3 4]]"));
+}
+
 TEST(DefunForm, execution_treats_explicit_nil_argument_with_value_as_nil)
 {
   // Given

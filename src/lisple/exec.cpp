@@ -854,12 +854,20 @@ namespace Lisple
                              const std::string& home_ns,
                              arg_v args,
                              std::vector<std::unique_ptr<LexicalBinding>>& arg_binding,
-                             uptr_exec_node_v&& body)
-    : Function(std::make_unique<sig>(args, LEGACY_DISPATCH(&UserFunction::exec_body)))
+                             uptr_exec_node_v&& body,
+                             size_t optional_count,
+                             std::unique_ptr<RestBinding> rest_binding)
+    : Function(std::make_unique<sig>(args,
+                                     LEGACY_DISPATCH(&UserFunction::exec_body),
+                                     optional_count,
+                                     rest_binding != nullptr))
     , name(name)
     , home_ns(home_ns)
     , arg_binding(std::move(arg_binding))
     , uptr_body(std::move(body))
+    , required_count(this->arg_binding.size() - optional_count)
+    , optional_count(optional_count)
+    , rest_binding(std::move(rest_binding))
   {
     user_functions_created++;
     user_functions_rtval_created++;
@@ -881,12 +889,25 @@ namespace Lisple
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
     ctx.switch_namespace(home_ns);
     Scope fn_scope;
-    if (arg_binding.size() > 0)
+    for (size_t i = 0; i < this->required_count; i++)
     {
-      for (size_t i = 0; i < args.size(); i++)
+      arg_binding[i]->apply(fn_scope, args[i]);
+    }
+    for (size_t i = 0; i < this->optional_count; i++)
+    {
+      const size_t arg_idx = this->required_count + i;
+      const sptr_rtval& val = arg_idx < args.size() ? args[arg_idx] : Constant::NIL;
+      arg_binding[arg_idx]->apply(fn_scope, val);
+    }
+    if (this->rest_binding)
+    {
+      const size_t rest_start = this->required_count + this->optional_count;
+      sptr_rtval_v rest_args;
+      if (rest_start < args.size())
       {
-        arg_binding[i]->apply(fn_scope, args[i]);
+        rest_args.assign(args.begin() + rest_start, args.end());
       }
+      this->rest_binding->apply(fn_scope, rest_args);
     }
     ctx.push_context(true, fn_scope);
     sptr_rtval retval = body.empty() ? Constant::NIL : nullptr;
@@ -968,18 +989,51 @@ namespace Lisple
   {
     std::vector<Argument> arg_types;
     std::vector<std::unique_ptr<LexicalBinding>> arg_bindings;
-    arg_types.reserve(arg_array.size());
-    arg_bindings.reserve(arg_array.size());
-    for (auto& arg : arg_array.get_children())
+    size_t optional_count = 0;
+    std::unique_ptr<RestBinding> rest_binding;
+    bool in_optional = false;
+
+    auto& children = arg_array.get_children();
+    for (size_t idx = 0; idx < children.size(); idx++)
     {
+      auto& arg = children[idx];
       if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP &&
           arg->get_type() != Form::ARRAY)
       {
         throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
       }
-      arg_types.push_back(Lisple::arg(&Type::ANY));
+
       auto rt_arg = to_rt_value(*arg);
+      if (rt_arg->type == RTValue::Type::SYMBOL)
+      {
+        const std::string& sym = std::get<std::string>(rt_arg->value);
+        if (sym == "&")
+        {
+          if (in_optional)
+          {
+            throw LispleException("Duplicate & in argument list: " + arg_array.to_string());
+          }
+          in_optional = true;
+          continue;
+        }
+        if (sym.size() > 1 && sym[0] == '&')
+        {
+          if (idx != children.size() - 1)
+          {
+            throw LispleException("Rest parameter must be last in argument list: " +
+                                  arg_array.to_string());
+          }
+          rest_binding = std::make_unique<RestBinding>(sym.substr(1));
+          break;
+        }
+      }
+
+      arg_types.push_back(Lisple::arg(&Type::ANY));
       arg_bindings.push_back(LexicalBinding::create(rt_arg));
+      if (in_optional)
+      {
+        optional_count++;
+      }
     }
 
     uptr_exec_node_v node_body;
@@ -995,7 +1049,9 @@ namespace Lisple
                                           home_ns->get_name(),
                                           std::move(arg_types),
                                           arg_bindings,
-                                          std::move(node_body));
+                                          std::move(node_body),
+                                          optional_count,
+                                          std::move(rest_binding));
   }
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
@@ -1004,17 +1060,50 @@ namespace Lisple
   {
     std::vector<Argument> arg_types;
     std::vector<std::unique_ptr<LexicalBinding>> arg_bindings;
-    arg_types.reserve(arg_array.size());
-    arg_bindings.reserve(arg_array.size());
-    for (auto& arg : arg_array)
+    size_t optional_count = 0;
+    std::unique_ptr<RestBinding> rest_binding;
+    bool in_optional = false;
+
+    for (size_t idx = 0; idx < arg_array.size(); idx++)
     {
+      auto& arg = arg_array[idx];
       if (arg->type != RTValue::Type::SYMBOL && arg->type != RTValue::Type::MAP)
       {
         throw LispleException("Illegal fn argument declaration: " +
                               RTValue::vector(arg_array)->to_string());
       }
+
+      if (arg->type == RTValue::Type::SYMBOL)
+      {
+        const std::string& sym = std::get<std::string>(arg->value);
+        if (sym == "&")
+        {
+          if (in_optional)
+          {
+            throw LispleException("Duplicate & in argument list: " +
+                                  RTValue::vector(arg_array)->to_string());
+          }
+          in_optional = true;
+          continue;
+        }
+        if (sym.size() > 1 && sym[0] == '&')
+        {
+          if (idx != arg_array.size() - 1)
+          {
+            throw LispleException("Rest parameter must be last in argument list: " +
+                                  RTValue::vector(arg_array)->to_string());
+          }
+          rest_binding = std::make_unique<RestBinding>(sym.substr(1));
+          break;
+        }
+      }
+
       arg_types.push_back(Lisple::arg(&Type::ANY));
       arg_bindings.push_back(LexicalBinding::create(arg));
+      if (in_optional)
+      {
+        optional_count++;
+      }
     }
 
     uptr_exec_node_v new_body;
@@ -1027,7 +1116,9 @@ namespace Lisple
                                           home_ns->get_name(),
                                           std::move(arg_types),
                                           arg_bindings,
-                                          std::move(new_body));
+                                          std::move(new_body),
+                                          optional_count,
+                                          std::move(rest_binding));
   }
 
 } // namespace Lisple
