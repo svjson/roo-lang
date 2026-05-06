@@ -34,6 +34,9 @@ namespace Lisple
 
   sptr_rtval ContextFrame::lookup_value(const Word& word) const
   {
+    if (word.is_qualified()) {
+      return scope.lookup_value(word.to_string());
+    }
     return scope.lookup_value(word.get_identifier());
   }
 
@@ -213,12 +216,6 @@ namespace Lisple
 
   sptr_rtval Context::lookup_value(const Word& identifier) const
   {
-    if (identifier.is_qualified())
-    {
-      sptr_rtval result = runtime.lookup_value(identifier);
-      return result ? result : Constant::NIL;
-    }
-
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {
       sptr_rtval res = i->get()->lookup_value(identifier);

@@ -1,6 +1,7 @@
 #ifndef LISPLE__VALUE_H
 #define LISPLE__VALUE_H
 
+#include <cstdint>
 #include <memory>
 #include <variant>
 #include <vector>
