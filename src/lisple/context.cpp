@@ -1,6 +1,8 @@
 
 #include "lisple/context.h"
 
+#include <sstream>
+
 #include <lisple/exception.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
@@ -34,7 +36,8 @@ namespace Lisple
 
   sptr_rtval ContextFrame::lookup_value(const Word& word) const
   {
-    if (word.is_qualified()) {
+    if (word.is_qualified())
+    {
       return scope.lookup_value(word.to_string());
     }
     return scope.lookup_value(word.get_identifier());

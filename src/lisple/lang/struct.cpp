@@ -171,11 +171,12 @@ namespace Lisple
   }
 
   /* UpdateFunction - update */
-  FUNC_IMPL(UpdateFunction,
-            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-                       EXEC_DISPATCH(&UpdateFunction::exec_update)),
-                      (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY), (&VARARG, &Type::ANY)),
-                       EXEC_DISPATCH(&UpdateFunction::exec_update))))
+  FUNC_IMPL(
+    UpdateFunction,
+    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateFunction::exec_update)),
+              (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateFunction::exec_update))))
 
   EXEC_BODY(UpdateFunction, exec_update)
   {
@@ -193,8 +194,7 @@ namespace Lisple
 
       Executable* updater = nullptr;
       sptr_rtval_v updater_args{current_value};
-      if (updater_spec->type != RTValue::Type::NIL &&
-          Type::EXEC.is_type_of(*updater_spec))
+      if (updater_spec->type != RTValue::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
       {
         updater = &updater_spec->exec();
       }
@@ -237,11 +237,12 @@ namespace Lisple
   }
 
   /* UpdateInFunction - update-in */
-  FUNC_IMPL(UpdateInFunction,
-            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-                       EXEC_DISPATCH(&UpdateInFunction::exec_update_in)),
-                      (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-                       EXEC_DISPATCH(&UpdateInFunction::exec_update_in))))
+  FUNC_IMPL(
+    UpdateInFunction,
+    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateInFunction::exec_update_in)),
+              (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateInFunction::exec_update_in))))
 
   EXEC_BODY(UpdateInFunction, exec_update_in)
   {
@@ -273,8 +274,7 @@ namespace Lisple
 
       Executable* updater = nullptr;
       sptr_rtval_v updater_args{current_value};
-      if (updater_spec->type != RTValue::Type::NIL &&
-          Type::EXEC.is_type_of(*updater_spec))
+      if (updater_spec->type != RTValue::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
       {
         updater = &updater_spec->exec();
       }
@@ -424,7 +424,7 @@ namespace Lisple
 
   /* ReduceKeyValueFunction - reduce-kv */
   FUNC_IMPL(ReduceKeyValueFunction,
-            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (&Type::EXEC)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC)),
                  EXEC_DISPATCH(&ReduceKeyValueFunction::exec_reduce_kv))))
 
   EXEC_BODY(ReduceKeyValueFunction, exec_reduce_kv)
