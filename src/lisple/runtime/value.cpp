@@ -557,6 +557,7 @@ namespace Lisple
     case Type::SYMBOL:
       return std::get<std::string>(this->value) == std::get<std::string>(other.value);
     case Type::MAP:
+    case Type::LIST:
     case Type::VECTOR:
     {
       const sptr_rtval_v& a = std::get<sptr_rtval_v>(value);
@@ -931,6 +932,7 @@ namespace Lisple
     case RTValue::Type::NATIVE_OBJECT:
     case RTValue::Type::NUMBER:
     case RTValue::Type::SYMBOL:
+    case RTValue::Type::STRING:
     case RTValue::Type::VECTOR:
     case RTValue::Type::MAP:
       return true;
