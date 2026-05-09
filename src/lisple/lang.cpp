@@ -102,6 +102,7 @@ namespace Lisple
     lang_symbols.emplace("keep", KeepFunction::make());
     lang_symbols.emplace("keys", KeysFunction::make());
     lang_symbols.emplace("keyword", KeywordFunction::make());
+    lang_symbols.emplace("keyword?", KeywordPFunction::make());
     lang_symbols.emplace("last", LastFunction::make());
     lang_symbols.emplace("let", LetForm::make());
     lang_symbols.emplace("lower-case", LowerCaseFunction::make());
@@ -144,6 +145,7 @@ namespace Lisple
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());
+    lang_symbols.emplace("string?", StringPFunction::make());
     lang_symbols.emplace("tail", TailFunction::make());
     lang_symbols.emplace("take", TakeFunction::make());
     lang_symbols.emplace("true", Constant::BOOL_TRUE);

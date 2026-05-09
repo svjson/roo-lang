@@ -100,6 +100,21 @@ namespace Lisple
   FUNC(KeywordFunction, keyword);
 
   /*!
+   * @brief Query if a value is a keyword.
+   *
+   * Usage:
+   * @code
+   * (keyword? "a string") => false
+   * (keyword? :thing) => true
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value whose type to query.                                   |
+   */
+  FUNC(KeywordPFunction, keyword);
+
+  /*!
    * @brief Extracts the name part of a qualified identifier as a string.
    *
    * Usage:
@@ -172,6 +187,21 @@ namespace Lisple
    * @endcode
    */
   FUNC(QualifierFunction, qualifier)
+
+  /*!
+   * @brief Query if a value is a string.
+   *
+   * Usage:
+   * @code
+   * (keyword? "a string") => true
+   * (keyword? :thing) => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value whose type to query.                                   |
+   */
+  FUNC(StringPFunction, stringp);
 
 } // namespace Lisple
 

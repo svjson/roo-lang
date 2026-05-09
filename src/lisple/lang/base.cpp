@@ -219,6 +219,16 @@ namespace Lisple
     return RTValue::keyword(args[0]->str());
   }
 
+  /** KeywordPFunction - keyword? */
+  FUNC_IMPL(KeywordPFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&KeywordPFunction::exec_keyword))))
+
+  EXEC_BODY(KeywordPFunction, exec_keyword)
+  {
+    return args[0]->type == RTValue::Type::KEYWORD ? Constant::BOOL_TRUE
+                                                   : Constant::BOOL_FALSE;
+  }
+
   /* NsMacro */
   SPECIAL_FORM_IMPL(NsForm,
                     MULTI_SIG((FN_ARGS((&Type::WORD, DATA)),
@@ -620,6 +630,16 @@ namespace Lisple
     if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
     const std::string qualifier = args[0]->qual().first;
     return qualifier.empty() ? Constant::NIL : RTValue::string(qualifier);
+  }
+
+  /** StringPFunction - keyword? */
+  FUNC_IMPL(StringPFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&StringPFunction::exec_stringp))))
+
+  EXEC_BODY(StringPFunction, exec_stringp)
+  {
+    return args[0]->type == RTValue::Type::STRING ? Constant::BOOL_TRUE
+                                                  : Constant::BOOL_FALSE;
   }
 
 } // namespace Lisple
