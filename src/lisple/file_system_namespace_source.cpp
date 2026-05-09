@@ -12,6 +12,92 @@
 
 namespace Lisple
 {
+  namespace
+  {
+    std::vector<std::string> split(const std::string& value, char delimiter)
+    {
+      std::vector<std::string> parts;
+      size_t start = 0;
+
+      while (start <= value.size())
+      {
+        auto pos = value.find(delimiter, start);
+        if (pos == std::string::npos)
+        {
+          auto part = value.substr(start);
+          if (!part.empty())
+          {
+            parts.push_back(part);
+          }
+          break;
+        }
+
+        auto part = value.substr(start, pos - start);
+        if (!part.empty())
+        {
+          parts.push_back(part);
+        }
+        start = pos + 1;
+      }
+
+      return parts;
+    }
+
+    std::string join(const std::vector<std::string>& parts, char delimiter)
+    {
+      std::string joined;
+
+      for (size_t i = 0; i < parts.size(); ++i)
+      {
+        if (i > 0)
+        {
+          joined += delimiter;
+        }
+        joined += parts[i];
+      }
+
+      return joined;
+    }
+
+    std::string strip_extension(const std::string& file_name)
+    {
+      auto last_dot = file_name.find_last_of('.');
+      if (last_dot == std::string::npos)
+      {
+        return file_name;
+      }
+      return file_name.substr(0, last_dot);
+    }
+
+    std::string normalize_path(const std::vector<std::string>& parts)
+    {
+      std::vector<std::string> normalized;
+
+      for (const auto& part : parts)
+      {
+        if (part == ".")
+        {
+          continue;
+        }
+        if (part == "..")
+        {
+          if (!normalized.empty() && normalized.back() != "..")
+          {
+            normalized.pop_back();
+          }
+          else
+          {
+            normalized.push_back(part);
+          }
+          continue;
+        }
+        normalized.push_back(part);
+      }
+
+      return join(normalized, '/');
+    }
+  } // namespace
+
   FileSystemNamespaceSource::FileSystemNamespaceSource(FileSystem* fs)
     : FileSystemNamespaceSource(fs, {".lisple", ".lspl"})
   {
@@ -36,77 +122,57 @@ namespace Lisple
     const std::string& current_ns_name,
     const std::string& current_source_path) const
   {
-    auto ns_dot = ns_name.find('.');
-    auto cur_dot = current_ns_name.find('.');
-    if (ns_dot == std::string::npos || cur_dot == std::string::npos)
-    {
-      return {};
-    }
-    if (ns_name.substr(0, ns_dot) != current_ns_name.substr(0, cur_dot))
+    const std::vector<std::string> current_ns_segments = split(current_ns_name, '.');
+    const std::vector<std::string> target_ns_segments = split(ns_name, '.');
+    if (current_ns_segments.empty() || target_ns_segments.empty())
     {
       return {};
     }
 
-    const size_t cur_segments =
-      1 +
-      static_cast<size_t>(std::count(current_ns_name.begin(), current_ns_name.end(), '.'));
-    const size_t dir_depth = static_cast<size_t>(
-      std::count(current_source_path.begin(), current_source_path.end(), '/'));
+    const auto last_slash = current_source_path.find_last_of('/');
+    const std::string dir_path =
+      last_slash == std::string::npos ? "" : current_source_path.substr(0, last_slash);
+    const std::string file_name = last_slash == std::string::npos
+                                    ? current_source_path
+                                    : current_source_path.substr(last_slash + 1);
+    const std::string file_stem = strip_extension(file_name);
+    const std::vector<std::string> dir_segments = split(dir_path, '/');
 
-    if (cur_segments - 1 > dir_depth)
+    size_t common_prefix = 0;
+    while (common_prefix < current_ns_segments.size() &&
+           common_prefix < target_ns_segments.size() &&
+           current_ns_segments[common_prefix] == target_ns_segments[common_prefix])
     {
-      /**
-       * Flat case: more namespace segments than path directories.
-       * Strip the segments not reflected in the filesystem structure.
-       */
-      const size_t strip_count = (cur_segments - 1) - dir_depth;
-      std::string remaining = ns_name;
-      for (size_t i = 0; i < strip_count; ++i)
+      common_prefix++;
+    }
+
+    if (common_prefix == 0 || target_ns_segments.size() <= common_prefix)
+    {
+      return {};
+    }
+
+    const bool file_matches_leaf =
+      !file_stem.empty() && file_stem == current_ns_segments.back();
+    std::vector<std::string> resolved_parts = dir_segments;
+
+    if (common_prefix < current_ns_segments.size())
+    {
+      const size_t parent_hops = current_ns_segments.size() - 1 - common_prefix;
+      for (size_t i = 0; i < parent_hops; ++i)
       {
-        auto dot = remaining.find('.');
-        if (dot == std::string::npos)
-        {
-          return {};
-        }
-        remaining = remaining.substr(dot + 1);
+        resolved_parts.push_back("..");
       }
-      if (remaining.empty())
-      {
-        return {};
-      }
-      return ns_to_path(remaining);
+    }
+    else if (file_matches_leaf)
+    {
+      resolved_parts.push_back(file_stem);
     }
 
-    /**
-     * Rooted case: path depth covers the full namespace depth.
-     * The leading (dir_depth - cur_segments + 2) path components are the
-     * package root directory; the required namespace is resolved under it.
-     */
-    const size_t root_dir_depth = dir_depth - cur_segments + 2;
-    std::string root_dir;
-    std::string path_tail = current_source_path;
-    for (size_t i = 0; i < root_dir_depth; ++i)
-    {
-      auto slash = path_tail.find('/');
-      if (slash == std::string::npos)
-      {
-        return {};
-      }
-      root_dir += path_tail.substr(0, slash + 1);
-      path_tail = path_tail.substr(slash + 1);
-    }
+    resolved_parts.insert(resolved_parts.end(),
+                          target_ns_segments.begin() + static_cast<long>(common_prefix),
+                          target_ns_segments.end());
 
-    auto dot = ns_name.find('.');
-    if (dot == std::string::npos)
-    {
-      return {};
-    }
-    std::string ns_tail = ns_name.substr(dot + 1);
-    if (ns_tail.empty())
-    {
-      return {};
-    }
-    return root_dir + ns_to_path(ns_tail);
+    return normalize_path(resolved_parts);
   }
 
   std::optional<NamespaceFetchResult> FileSystemNamespaceSource::fetch(

@@ -18,6 +18,72 @@ using namespace ::testing;
 
 namespace
 {
+  std::vector<std::string> split_path(const std::string& path)
+  {
+    std::vector<std::string> parts;
+    size_t start = 0;
+
+    while (start <= path.size())
+    {
+      auto pos = path.find('/', start);
+      if (pos == std::string::npos)
+      {
+        auto part = path.substr(start);
+        if (!part.empty())
+        {
+          parts.push_back(part);
+        }
+        break;
+      }
+
+      auto part = path.substr(start, pos - start);
+      if (!part.empty())
+      {
+        parts.push_back(part);
+      }
+      start = pos + 1;
+    }
+
+    return parts;
+  }
+
+  std::string normalize_path(const std::string& path)
+  {
+    std::vector<std::string> normalized;
+
+    for (const auto& part : split_path(path))
+    {
+      if (part == ".")
+      {
+        continue;
+      }
+      if (part == "..")
+      {
+        if (!normalized.empty() && normalized.back() != "..")
+        {
+          normalized.pop_back();
+        }
+        else
+        {
+          normalized.push_back(part);
+        }
+        continue;
+      }
+      normalized.push_back(part);
+    }
+
+    std::string result;
+    for (size_t i = 0; i < normalized.size(); ++i)
+    {
+      if (i > 0)
+      {
+        result += "/";
+      }
+      result += normalized[i];
+    }
+    return result;
+  }
+
   class InMemoryFileSystem : public Lisple::FileSystem
   {
     std::map<std::string, std::string> files_;
@@ -27,10 +93,37 @@ namespace
 
     const std::string read_file_to_string(const std::string& name) override
     {
-      auto it = files_.find(name);
+      auto it = files_.find(normalize_path(name));
       if (it == files_.end())
       {
         throw Lisple::LispleException("File not found: " + name);
+      }
+      return it->second;
+    }
+  };
+
+  class RootedInMemoryFileSystem : public Lisple::FileSystem
+  {
+    std::map<std::string, std::string> files_;
+    std::string root_;
+
+   public:
+    explicit RootedInMemoryFileSystem(std::string root)
+      : root_(std::move(root))
+    {
+    }
+
+    void add(const std::string& name, const std::string& content) { files_[name] = content; }
+
+    const std::string read_file_to_string(const std::string& name) override
+    {
+      const std::string resolved_name =
+        normalize_path(root_.empty() ? name : root_ + "/" + name);
+
+      auto it = files_.find(resolved_name);
+      if (it == files_.end())
+      {
+        throw Lisple::LispleException("File not found: " + resolved_name);
       }
       return it->second;
     }
@@ -225,6 +318,67 @@ TEST(FileSystemNamespaceSource, infer_path_does_not_apply_across_different_root_
   EXPECT_EQ(result->resolved_path, "other/lib.lisple");
 }
 
+TEST(FileSystemNamespaceSource,
+     infer_path_resolves_from_package_root_when_entry_filename_is_arbitrary)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("minesweeper/core.lisple", "(ns pixils.test.app.minesweeper.core)");
+  Lisple::FileSystemNamespaceSource source(&fs);
+
+  Lisple::NamespaceResolutionContext ctx;
+  ctx.current_ns_name = "pixils.test.app";
+  ctx.current_source_path = "run.lisple";
+
+  // When
+  auto result = source.fetch("pixils.test.app.minesweeper.core", ctx);
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->resolved_path, "minesweeper/core.lisple");
+}
+
+TEST(FileSystemNamespaceSource,
+     infer_path_resolves_sibling_when_current_filename_is_arbitrary)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("container.lisple", "(ns some.namespace.container)");
+  Lisple::FileSystemNamespaceSource source(&fs);
+
+  Lisple::NamespaceResolutionContext ctx;
+  ctx.current_ns_name = "some.namespace.core";
+  ctx.current_source_path = "game.lisple";
+
+  // When
+  auto result = source.fetch("some.namespace.container", ctx);
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->resolved_path, "container.lisple");
+}
+
+TEST(FileSystemNamespaceSource,
+     infer_path_resolves_sibling_after_cross_branch_inferred_source_path)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("../shared/ui/components/button.lisple",
+         "(ns pixils.test.app.shared.ui.components.button)");
+  Lisple::FileSystemNamespaceSource source(&fs);
+
+  Lisple::NamespaceResolutionContext ctx;
+  ctx.current_ns_name = "pixils.test.app.shared.ui.components.window";
+  ctx.current_source_path = "../shared/ui/components/window.lisple";
+
+  // When
+  auto result = source.fetch("pixils.test.app.shared.ui.components.button", ctx);
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->resolved_path, "../shared/ui/components/button.lisple");
+}
+
 /** NamespaceLoading - integration */
 
 TEST(NamespaceLoading, loads_required_namespace_on_demand)
@@ -380,6 +534,143 @@ TEST(NamespaceLoading, resolves_require_alias_relative_to_entry_file)
   // When
   runtime.read_file("lisp/app.lisple");
   auto result = runtime.eval("(my.app/run)");
+
+  // Then
+  EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST(NamespaceLoading, resolves_cross_branch_requires_from_arbitrary_package_root_entry_file)
+{
+  // Given
+  RootedInMemoryFileSystem fs("app");
+  fs.add("app/run.lisple",
+         "(ns pixils.test.app (:require pixils.test.app.minesweeper.core))");
+  fs.add("app/minesweeper/core.lisple",
+         R"(
+           (ns pixils.test.app.minesweeper.core
+             (:require pixils.test.app.shared.ui.components.window))
+           (defun run [] (window-value))
+         )");
+  fs.add("app/shared/ui/components/window.lisple",
+         R"(
+           (ns pixils.test.app.shared.ui.components.window
+             (:require [pixils.test.app.minesweeper.menu-definition :as md]))
+           (defun window-value [] (+ 40 (md/menu-value)))
+         )");
+  fs.add("app/minesweeper/menu-definition.lisple",
+         "(ns pixils.test.app.minesweeper.menu-definition) (defun menu-value [] 2)");
+  Lisple::Runtime runtime(&fs);
+
+  // When
+  runtime.read_file("run.lisple");
+  auto result = runtime.eval("(pixils.test.app.minesweeper.core/run)");
+
+  // Then
+  EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST(NamespaceLoading, resolves_sibling_require_when_current_filename_is_arbitrary)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add(
+    "game.lisple",
+    "(ns some.namespace.core (:require some.namespace.container)) (defun run [] value)");
+  fs.add("container.lisple", "(ns some.namespace.container) (def value 42)");
+  Lisple::Runtime runtime(&fs);
+
+  // When
+  runtime.read_file("game.lisple");
+  auto result = runtime.eval("(some.namespace.core/run)");
+
+  // Then
+  EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST(NamespaceLoading,
+     resolves_cross_branch_requires_when_loading_core_from_common_parent_root)
+{
+  // Given
+  RootedInMemoryFileSystem fs("app");
+  fs.add("app/minesweeper/core.lisple",
+         R"(
+           (ns pixils.test.app.minesweeper.core
+             (:require pixils.test.app.shared.ui.components.window))
+           (defun run [] (window-value))
+         )");
+  fs.add("app/shared/ui/components/window.lisple",
+         R"(
+           (ns pixils.test.app.shared.ui.components.window
+             (:require [pixils.test.app.minesweeper.menu-definition :as md]))
+           (defun window-value [] (+ 40 (md/menu-value)))
+         )");
+  fs.add("app/minesweeper/menu-definition.lisple",
+         "(ns pixils.test.app.minesweeper.menu-definition) (defun menu-value [] 2)");
+  Lisple::Runtime runtime(&fs);
+
+  // When
+  runtime.read_file("minesweeper/core.lisple");
+  auto result = runtime.eval("(pixils.test.app.minesweeper.core/run)");
+
+  // Then
+  EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_from_branch_root)
+{
+  // Given
+  RootedInMemoryFileSystem fs("app/minesweeper");
+  fs.add("app/minesweeper/core.lisple",
+         R"(
+           (ns pixils.test.app.minesweeper.core
+             (:require pixils.test.app.shared.ui.components.window))
+           (defun run [] (window-value))
+         )");
+  fs.add("app/shared/ui/components/window.lisple",
+         R"(
+           (ns pixils.test.app.shared.ui.components.window
+             (:require [pixils.test.app.minesweeper.menu-definition :as md]))
+           (defun window-value [] (+ 40 (md/menu-value)))
+         )");
+  fs.add("app/minesweeper/menu-definition.lisple",
+         "(ns pixils.test.app.minesweeper.menu-definition) (defun menu-value [] 2)");
+  Lisple::Runtime runtime(&fs);
+
+  // When
+  runtime.read_file("core.lisple");
+  auto result = runtime.eval("(pixils.test.app.minesweeper.core/run)");
+
+  // Then
+  EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST(NamespaceLoading,
+     resolves_cross_branch_then_sibling_imports_when_loading_core_from_branch_root)
+{
+  // Given
+  RootedInMemoryFileSystem fs("app/minesweeper");
+  fs.add("app/minesweeper/core.lisple",
+         R"(
+           (ns pixils.test.app.minesweeper.core
+             (:require [pixils.test.app.shared.ui.components.window :as w]))
+           (defun run [] (w/window-value))
+         )");
+  fs.add("app/shared/ui/components/window.lisple",
+         R"(
+           (ns pixils.test.app.shared.ui.components.window
+             (:require pixils.test.app.shared.ui.components.button
+                       pixils.test.app.shared.ui.components.text-node))
+           (defun window-value [] (+ button-value text-value))
+         )");
+  fs.add("app/shared/ui/components/button.lisple",
+         "(ns pixils.test.app.shared.ui.components.button) (def button-value 40)");
+  fs.add("app/shared/ui/components/text-node.lisple",
+         "(ns pixils.test.app.shared.ui.components.text-node) (def text-value 2)");
+  Lisple::Runtime runtime(&fs);
+
+  // When
+  runtime.read_file("core.lisple");
+  auto result = runtime.eval("(pixils.test.app.minesweeper.core/run)");
 
   // Then
   EXPECT_EQ(result->to_string(), "42");
