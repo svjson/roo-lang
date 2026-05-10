@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include <lisple/runtime.h>
+
+#include <gtest/gtest.h>
 
 TEST(TrimFunction, trims_leading_and_trailing_whitespace)
 {

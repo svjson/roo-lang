@@ -86,6 +86,38 @@ namespace Lisple
     return RTValue::string(result);
   }
 
+  /** SubstrFunction - substr */
+  FUNC_IMPL(
+    SubstrFunction,
+    MULTI_SIG((FN_ARGS((&Type::STRING), (&Type::NUMBER)),
+               EXEC_DISPATCH(&SubstrFunction::exec_substr)),
+              (FN_ARGS((&Type::STRING), (&Type::NUMBER), (&Type::NUMBER)),
+               EXEC_DISPATCH(&SubstrFunction::exec_substr))))
+
+  EXEC_BODY(SubstrFunction, exec_substr)
+  {
+    const std::string& str = args[0]->str();
+    int start = args[1]->i32();
+
+    if (start < 0 || start >= static_cast<int>(str.size()))
+    {
+      return RTValue::string("");
+    }
+
+    if (args.size() == 2)
+    {
+      return RTValue::string(str.substr(static_cast<size_t>(start)));
+    }
+
+    int length = args[2]->i32();
+    if (length <= 0)
+    {
+      return RTValue::string("");
+    }
+
+    return RTValue::string(str.substr(static_cast<size_t>(start), static_cast<size_t>(length)));
+  }
+
   /** TrimFunction - trim */
   FUNC_IMPL(TrimFunction,
             SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&TrimFunction::exec_trim))))

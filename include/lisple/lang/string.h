@@ -32,6 +32,17 @@ namespace Lisple
   FUNC(JoinFunction, join)
 
   /*!
+   * @brief Extracts a substring from a string.
+   *
+   * Usage:
+   * @code
+   * (substr "abcdef" 2) => "cdef"
+   * (substr "abcdef" 2 3) => "cde"
+   * @endcode
+   */
+  FUNC(SubstrFunction, substr)
+
+  /*!
    * @brief Removes leading and trailing whitespace from a string.
    *
    * Usage:

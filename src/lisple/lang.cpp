@@ -146,6 +146,7 @@ namespace Lisple
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());
+    lang_symbols.emplace("substr", SubstrFunction::make());
     lang_symbols.emplace("string?", StringPFunction::make());
     lang_symbols.emplace("tail", TailFunction::make());
     lang_symbols.emplace("take", TakeFunction::make());
