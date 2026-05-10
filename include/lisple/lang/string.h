@@ -32,6 +32,18 @@ namespace Lisple
   FUNC(JoinFunction, join)
 
   /*!
+   * @brief Tests whether a string is empty or contains only whitespace.
+   *
+   * Usage:
+   * @code
+   * (blank? "") => true
+   * (blank? " \n\t ") => true
+   * (blank? nil) => true
+   * @endcode
+   */
+  FUNC(BlankPFunction, blank_p)
+
+  /*!
    * @brief Converts string or string representation to all upper-case.
    *
    * Usage:

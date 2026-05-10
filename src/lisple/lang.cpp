@@ -62,6 +62,7 @@ namespace Lisple
     lang_symbols.emplace("update", UpdateFunction::make());
     lang_symbols.emplace("update-in", UpdateInFunction::make());
     lang_symbols.emplace("between?", BetweenPredicateFunction::make());
+    lang_symbols.emplace("blank?", BlankPFunction::make());
     lang_symbols.emplace("case", CaseForm::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
     lang_symbols.emplace("comment", CommentForm::make());

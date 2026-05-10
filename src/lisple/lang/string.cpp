@@ -8,6 +8,26 @@
 
 namespace Lisple
 {
+  namespace
+  {
+    std::string trim_copy(const std::string& str)
+    {
+      size_t start = 0;
+      while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start])))
+      {
+        start++;
+      }
+
+      size_t end = str.size();
+      while (end > start && std::isspace(static_cast<unsigned char>(str[end - 1])))
+      {
+        end--;
+      }
+
+      return str.substr(start, end - start);
+    }
+  } // namespace
+
   /**
    * StrFunction - str
    */
@@ -64,6 +84,21 @@ namespace Lisple
     }
 
     return RTValue::string(result);
+  }
+
+  /** BlankPFunction - blank? */
+  FUNC_IMPL(BlankPFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&BlankPFunction::exec_blank_p)),
+                      (FN_ARGS((&Type::NIL)), EXEC_DISPATCH(&BlankPFunction::exec_blank_p))))
+
+  EXEC_BODY(BlankPFunction, exec_blank_p)
+  {
+    if (args[0]->type == RTValue::Type::NIL)
+    {
+      return Constant::BOOL_TRUE;
+    }
+
+    return trim_copy(args[0]->str()).empty() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /** UpperCaseFunction - upper-case */
