@@ -39,6 +39,18 @@ TEST(Lexer, parse_single_word_with_gt_and_lt)
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "m<a>c")));
 }
 
+TEST(Lexer, parse_single_word_with_colon_in_body)
+{
+  // Given
+  std::string input = "window:focus-within";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "window:focus-within")));
+}
+
 TEST(Lexer, parse_single_number_in_hexadecimal_format)
 {
   // Given
@@ -66,6 +78,19 @@ TEST(Lexer, parse_simple_form)
                           sym(tkn::SQUOT, "'"),
                           sym(tkn::WORD, "UNOBSERVABLE"),
                           sym(tkn::RPAREN, ")")));
+}
+
+TEST(Lexer, parse_quoted_symbol_with_colon_in_body)
+{
+  // Given
+  std::string input = "'window:focus-within";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::SQUOT, "'"), sym(tkn::WORD, "window:focus-within")));
 }
 
 TEST(Lexer, parse_form_with_string)
@@ -108,6 +133,18 @@ TEST(Lexer, parse_form_with_map)
                           sym(tkn::STRING, "bogus"),
                           sym(tkn::RCURLY, "}"),
                           sym(tkn::RPAREN, ")")));
+}
+
+TEST(Lexer, parse_keyword_with_namespace_and_colon_in_identifier)
+{
+  // Given
+  std::string input = ":ui/menu-item:focus";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::KEY, "ui/menu-item:focus")));
 }
 
 TEST(Lexer, parse_map_with_char_key)
