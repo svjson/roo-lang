@@ -86,6 +86,15 @@ namespace Lisple
     return RTValue::string(result);
   }
 
+  /** TrimFunction - trim */
+  FUNC_IMPL(TrimFunction,
+            SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&TrimFunction::exec_trim))))
+
+  EXEC_BODY(TrimFunction, exec_trim)
+  {
+    return RTValue::string(trim_copy(args[0]->str()));
+  }
+
   /** BlankPFunction - blank? */
   FUNC_IMPL(BlankPFunction,
             MULTI_SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&BlankPFunction::exec_blank_p)),

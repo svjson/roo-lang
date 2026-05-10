@@ -32,6 +32,16 @@ namespace Lisple
   FUNC(JoinFunction, join)
 
   /*!
+   * @brief Removes leading and trailing whitespace from a string.
+   *
+   * Usage:
+   * @code
+   * (trim "  hello  ") => "hello"
+   * @endcode
+   */
+  FUNC(TrimFunction, trim)
+
+  /*!
    * @brief Tests whether a string is empty or contains only whitespace.
    *
    * Usage:
