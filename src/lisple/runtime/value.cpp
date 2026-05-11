@@ -928,6 +928,7 @@ namespace Lisple
       return std::get<bool>(val.value);
     case RTValue::Type::FUNCTION:
     case RTValue::Type::KEYWORD:
+    case RTValue::Type::CHAR:
     case RTValue::Type::OBJECT:
     case RTValue::Type::NATIVE_OBJECT:
     case RTValue::Type::NUMBER:
