@@ -22,6 +22,8 @@ namespace Lisple
   sptr_rtval rtval_from(const std::string& v);
   sptr_rtval rtval_from(bool v);
   sptr_rtval rtval_from(char v);
+  sptr_rtval rtval_from(signed char v);
+  sptr_rtval rtval_from(unsigned char v);
 
   // -----------------------------------------------------------------------
   // rtval_to<T>: sptr_rtval -> C++ value
@@ -38,6 +40,9 @@ namespace Lisple
   // -----------------------------------------------------------------------
 
   bool rtval_matches(const sptr_rtval& c, int v);
+  bool rtval_matches(const sptr_rtval& c, unsigned int v);
+  bool rtval_matches(const sptr_rtval& c, signed char v);
+  bool rtval_matches(const sptr_rtval& c, unsigned char v);
   bool rtval_matches(const sptr_rtval& c, long v);
   bool rtval_matches(const sptr_rtval& c, float v);
   bool rtval_matches(const sptr_rtval& c, double v);

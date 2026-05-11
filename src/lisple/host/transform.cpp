@@ -40,6 +40,14 @@ namespace Lisple
   {
     return RTValue::character(v);
   }
+  sptr_rtval rtval_from(signed char v)
+  {
+    return RTValue::number(static_cast<int>(v));
+  }
+  sptr_rtval rtval_from(unsigned char v)
+  {
+    return RTValue::number(static_cast<int>(v));
+  }
 
   // -----------------------------------------------------------------------
   // rtval_to<T>: sptr_rtval -> C++ value
@@ -84,9 +92,13 @@ namespace Lisple
   {
     return std::get<char>(v->value);
   }
+  template <> signed char rtval_to<signed char>(const sptr_rtval& v)
+  {
+    return static_cast<signed char>(v->i32());
+  }
   template <> unsigned char rtval_to<unsigned char>(const sptr_rtval& v)
   {
-    return std::get<char>(v->value);
+    return v->ui8();
   }
 
   // -----------------------------------------------------------------------
@@ -99,6 +111,14 @@ namespace Lisple
     return c && c->is_number(v);
   }
   bool rtval_matches(const sptr_rtval& c, unsigned int v)
+  {
+    return c && c->is_number(static_cast<int>(v));
+  }
+  bool rtval_matches(const sptr_rtval& c, signed char v)
+  {
+    return c && c->is_number(static_cast<int>(v));
+  }
+  bool rtval_matches(const sptr_rtval& c, unsigned char v)
   {
     return c && c->is_number(static_cast<int>(v));
   }
