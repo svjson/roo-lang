@@ -2,6 +2,8 @@
 #ifndef LISPLE__HOST__ACCESSOR_H
 #define LISPLE__HOST__ACCESSOR_H
 
+#include <optional>
+
 #include <lisple/host/transform.h>
 #include <lisple/macro_support.h>
 
@@ -156,6 +158,26 @@
       Lisple::rtval_to<std::decay_t<decltype(get_self_object().OBJ_FIELD)>>(value); \
   }
 
+/* Optional getter via direct field access */
+#define __NOBJ_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)       \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
+  {                                                                      \
+    return get_self_object().OBJ_FIELD.has_value()                       \
+      ? Lisple::rtval_from(*get_self_object().OBJ_FIELD)                 \
+      : Lisple::Constant::NIL;                                           \
+  }
+
+/* Optional setter via direct field access */
+#define __NOBJ_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)       \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                     \
+  {                                                                      \
+    if (value->type == Lisple::RTValue::Type::NIL)                       \
+      get_self_object().OBJ_FIELD = std::nullopt;                        \
+    else                                                                 \
+      get_self_object().OBJ_FIELD =                                      \
+        Lisple::rtval_to<typename std::decay_t<decltype(get_self_object().OBJ_FIELD)>::value_type>(value); \
+  }
+
 /* Cached getter via member function */
 #define __NOBJ_CACHED_PROP_GET__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD)  \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
@@ -205,6 +227,24 @@
     get_self_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_self_object());              \
   }
 
+/* Pointer adapter getter via direct field access */
+#define __NOBJ_PROP_GET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                   \
+  {                                                                                    \
+    return get_self_object().OBJ_FIELD                                                  \
+      ? ADAPTER_TYPE::make_ref(*get_self_object().OBJ_FIELD)                            \
+      : Lisple::Constant::NIL;                                                          \
+  }
+
+/* Pointer adapter setter via direct field access */
+#define __NOBJ_PROP_SET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                   \
+  {                                                                                    \
+    get_self_object().OBJ_FIELD = value->type == Lisple::RTValue::Type::NIL             \
+      ? nullptr                                                                         \
+      : &value->adapter<ADAPTER_TYPE>().get_self_object();                              \
+  }
+
 
 /* Optional Adapter getter via direct field access */
 #define __NOBJ_PROP_GET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
@@ -219,8 +259,9 @@
 #define __NOBJ_PROP_GET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                       \
   {                                                                                        \
-    return get_self_object().OBJ_METHOD())                                                 \
-      ? ADAPTER_TYPE::make_ref(*get_self_object().OBJ_METHOD())                            \
+    auto maybe_value = get_self_object().OBJ_METHOD();                                      \
+    return maybe_value                                                                     \
+      ? ADAPTER_TYPE::make_ref(*maybe_value)                                               \
       : Lisple::Constant::NIL;                                                             \
   }
 
@@ -228,18 +269,20 @@
 #define __NOBJ_PROP_SET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                      \
   {                                                                                       \
-    get_self_object().OBJ_FIELD = value->type == Lisple::RTValue::Type::NIL               \
-      ? std::nullopt                                                                      \
-      : value->adapter<ADAPTER_TYPE>().get_self_object();                                 \
+    if (value->type == Lisple::RTValue::Type::NIL)                                        \
+      get_self_object().OBJ_FIELD = std::nullopt;                                         \
+    else                                                                                  \
+      get_self_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_self_object();     \
   }
 
 /* Optional Adapter setter via member function */
 #define __NOBJ_PROP_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                       \
   {                                                                                        \
-    get_self_object().OBJ_METHOD(value->type == Lisple::RTValue::Type::NIL                 \
-      ? std::nullopt                                                                       \
-      : value->adapter<ADAPTER_TYPE>().get_self_object());                                 \
+    if (value->type == Lisple::RTValue::Type::NIL)                                         \
+      get_self_object().OBJ_METHOD(std::nullopt);                                          \
+    else                                                                                   \
+      get_self_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_self_object());      \
   }
 
 
@@ -312,6 +355,21 @@
   NOBJ_PROP_GET__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)               \
   NOBJ_PROP_SET__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
 
+/* NOBJ_PROP_GET_OPT__FIELD - get std::optional value by field */
+#define NOBJ_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, ...)               \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_GET_OPT__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_SET_OPT__FIELD - set std::optional value by field */
+#define NOBJ_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, ...)               \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_SET_OPT__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_SET_OPT__FIELD - convenience: generates both getter and setter */
+#define NOBJ_PROP_GET_SET_OPT__FIELD(AD_CLASS, PROP_NAME, ...)           \
+  NOBJ_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)           \
+  NOBJ_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
 /* NOBJ_CACHED_PROP_GET__METHOD - cached getter via member function */
 #define NOBJ_CACHED_PROP_GET__METHOD(AD_CLASS, PROP_NAME, ...)           \
   __NOBJ_FIELD_ACCESSOR_MACROS_GET(                                      \
@@ -364,6 +422,19 @@
 #define NOBJ_PROP_GET_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
   NOBJ_PROP_GET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
   NOBJ_PROP_SET_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+/* Pointer adapter field accessors */
+#define NOBJ_PROP_GET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                  \
+    __NOBJ_PROP_GET_ADAPTER_P__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_SET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...)     \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                  \
+    __NOBJ_PROP_SET_ADAPTER_P__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_SET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  NOBJ_PROP_GET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
+  NOBJ_PROP_SET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
 /* -----------------------------------------------------------------------
  * Optional Adapter accessor public macros
