@@ -225,6 +225,20 @@ TEST(Lexer, parse_bare_string_with_escaped_quote)
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::STRING, "the \"REAL\" deal")));
 }
 
+TEST(Lexer, parse_bare_string_with_common_escapes)
+{
+  // Given
+  std::string input = R"("line 1\nline 2\t\"quoted\"\\tail")";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(
+    symbols,
+    ElementsAre(sym(tkn::STRING, "line 1\nline 2\t\"quoted\"\\tail")));
+}
+
 TEST(Lexer, array_of_numbers)
 {
   // Given

@@ -150,7 +150,28 @@ namespace Lisple
           throw ParseException("Unexpected token: '\\': " + line + " <---");
         }
 
-        val += input.at(offset++);
+        char escaped = input.at(offset++);
+        switch (escaped)
+        {
+        case 'n':
+          val += '\n';
+          break;
+        case 'r':
+          val += '\r';
+          break;
+        case 't':
+          val += '\t';
+          break;
+        case '"':
+          val += '"';
+          break;
+        case '\\':
+          val += '\\';
+          break;
+        default:
+          val += escaped;
+          break;
+        }
         continue;
       }
       else if (ct == Token::WORD && std::regex_match(val + cs, regex_num))

@@ -43,3 +43,17 @@ TEST(Reader, parses_keyword_with_namespace_and_colon_in_identifier)
   ASSERT_EQ(sexps.size(), 1);
   EXPECT_EQ(*sexps.at(0), Key("ui/menu-item:focus"));
 }
+
+TEST(Reader, parses_string_with_common_escapes)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps(R"("line 1\nline 2\t\"quoted\"\\tail")");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::STRING);
+  EXPECT_EQ(sexps.at(0)->as<String>().value, "line 1\nline 2\t\"quoted\"\\tail");
+}
