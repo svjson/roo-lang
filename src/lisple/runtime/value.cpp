@@ -15,6 +15,49 @@ namespace Lisple
   int to_ast_conversions = 0;
   int to_rtvalue_conversions = 0;
 
+  std::string rt_type_name(RTValue::Type type)
+  {
+    switch (type)
+    {
+    case RTValue::Type::ANY:
+      return "ANY";
+    case RTValue::Type::NIL:
+      return "NIL";
+    case RTValue::Type::NUMBER:
+      return "NUMBER";
+    case RTValue::Type::STRING:
+      return "STRING";
+    case RTValue::Type::CHAR:
+      return "CHAR";
+    case RTValue::Type::BOOL:
+      return "BOOL";
+    case RTValue::Type::SYMBOL:
+      return "SYMBOL";
+    case RTValue::Type::KEYWORD:
+      return "KEYWORD";
+    case RTValue::Type::LIST:
+      return "LIST";
+    case RTValue::Type::VECTOR:
+      return "VECTOR";
+    case RTValue::Type::MAP:
+      return "MAP";
+    case RTValue::Type::FUNCTION:
+      return "FUNCTION";
+    case RTValue::Type::OBJECT:
+      return "OBJECT";
+    case RTValue::Type::NATIVE_OBJECT:
+      return "NATIVE_OBJECT";
+    }
+    return "<unknown>";
+  }
+
+  void throw_bad_rt_variant(const RTValue& value, const std::string& accessor)
+  {
+    throw TypeError("RTValue::" + accessor + " cannot read " + rt_type_name(value.type) +
+                    " with variant index " + std::to_string(value.value.index()) + ": " +
+                    value.to_string());
+  }
+
   RTValue::RTValue(int v)
     : value(RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = v})
     , type(RTValue::Type::NUMBER)
@@ -582,32 +625,44 @@ namespace Lisple
 
   uint8_t RTValue::ui8() const
   {
-    return std::get<const RTValue::Number>(value).get_int();
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "ui8");
+    return number->get_int();
   }
 
   unsigned short RTValue::ui16() const
   {
-    return static_cast<unsigned short>(std::get<const Number>(value).get_int());
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "ui16");
+    return static_cast<unsigned short>(number->get_int());
   }
 
   int RTValue::i32() const
   {
-    return std::get<const Number>(value).get_int();
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "i32");
+    return number->get_int();
   }
 
   long RTValue::i64() const
   {
-    return std::get<const Number>(value).get_long();
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "i64");
+    return number->get_long();
   }
 
   float RTValue::f32() const
   {
-    return std::get<const Number>(value).get_float();
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "f32");
+    return number->get_float();
   }
 
   double RTValue::f64() const
   {
-    return std::get<const Number>(value).get_double();
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "f64");
+    return number->get_double();
   }
 
   char RTValue::ch() const
@@ -617,27 +672,37 @@ namespace Lisple
 
   sptr_sobject RTValue::obj() const
   {
-    return std::get<sptr_sobject>(value);
+    const auto* object = std::get_if<sptr_sobject>(&value);
+    if (!object) throw_bad_rt_variant(*this, "obj");
+    return *object;
   }
 
   sptr_native_obj RTValue::nobj() const
   {
-    return std::get<sptr_native_obj>(value);
+    const auto* object = std::get_if<sptr_native_obj>(&value);
+    if (!object) throw_bad_rt_variant(*this, "nobj");
+    return *object;
   }
 
   const RTValue::Number& RTValue::num() const
   {
-    return std::get<const RTValue::Number>(value);
+    const auto* number = std::get_if<const RTValue::Number>(&value);
+    if (!number) throw_bad_rt_variant(*this, "num");
+    return *number;
   }
 
   const sptr_rtval_v& RTValue::elements() const
   {
-    return std::get<sptr_rtval_v>(value);
+    const auto* elements = std::get_if<sptr_rtval_v>(&value);
+    if (!elements) throw_bad_rt_variant(*this, "elements");
+    return *elements;
   }
 
   sptr_rtval_v& RTValue::mut_elements()
   {
-    return std::get<sptr_rtval_v>(value);
+    auto* elements = std::get_if<sptr_rtval_v>(&value);
+    if (!elements) throw_bad_rt_variant(*this, "mut_elements");
+    return *elements;
   }
 
   Executable& RTValue::exec() const
@@ -647,7 +712,9 @@ namespace Lisple
 
   const std::string& RTValue::str() const
   {
-    return std::get<std::string>(value);
+    const auto* str = std::get_if<std::string>(&value);
+    if (!str) throw_bad_rt_variant(*this, "str");
+    return *str;
   }
 
   std::pair<std::string, std::string> RTValue::qual() const
@@ -764,6 +831,10 @@ namespace Lisple
       };
       throw LispleException("to_rt_value: Unsupported NumberType: " + obj.to_string());
     }
+    case Form::STRING:
+      return RTValue::string(Value<std::string>::value_of(obj));
+    case Form::SYMBOL:
+      return RTValue::symbol(Value<std::string>::value_of(obj));
     case Form::WORD:
       return RTValue::symbol(Value<std::string>::value_of(obj));
     default:
