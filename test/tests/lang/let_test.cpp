@@ -66,6 +66,18 @@ TEST(LetForm, destructure_array)
   ASSERT_EQ(result->to_string(), "35");
 }
 
+TEST(LetForm, destructure_array_binds_missing_values_to_nil)
+{
+  // Given
+  Lisple::Runtime runtime;
+
+  // When
+  auto result = runtime.eval("(let [[a b] [:a]] b)");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "nil");
+}
+
 TEST(LetForm, destructure_map)
 {
   // Given

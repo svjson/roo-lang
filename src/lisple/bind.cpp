@@ -182,7 +182,7 @@ namespace Lisple
 
     for (size_t i = 0; i < this->bindings.size(); i++)
     {
-      this->bindings[i]->apply(scope, vec[i]);
+      this->bindings[i]->apply(scope, i < vec.size() ? vec[i] : Constant::NIL);
     }
   }
 
