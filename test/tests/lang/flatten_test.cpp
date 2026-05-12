@@ -33,6 +33,18 @@ TEST(FlattenFunction, nested_arrays)
   ASSERT_EQ(*retval, *runtime.eval("[1 2 3 4 5 6 7 8 9]"));
 }
 
+TEST(FlattenFunction, maps_are_leaf_values)
+{
+  // Given
+  Lisple::Runtime runtime;
+
+  // When
+  auto retval = runtime.eval("(flatten [[{:x 1 :y 2}] [{:x 3 :y 4}]])");
+
+  // Then
+  ASSERT_EQ(*retval, *runtime.eval("[{:x 1 :y 2} {:x 3 :y 4}]"));
+}
+
 TEST(FlattenFunction, nested_vector_int_in_array)
 {
   // Given

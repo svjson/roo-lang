@@ -370,7 +370,7 @@ namespace Lisple
       {
         for (auto& cobj : obj->obj()->get_children())
         {
-          if (Type::SEQ.is_type_of(*cobj))
+          if (Type::STRICT_SEQ.is_type_of(*cobj))
           {
             auto flat_args = sptr_rtval_v{to_rt_value(*cobj)};
             auto flattened = exec_flatten(ctx, flat_args);
@@ -385,7 +385,7 @@ namespace Lisple
           }
         }
       }
-      else if (Type::SEQ.is_type_of(*obj))
+      else if (Type::STRICT_SEQ.is_type_of(*obj))
       {
         auto flat_args = sptr_rtval_v{obj};
         auto flattened = exec_flatten(ctx, flat_args);
