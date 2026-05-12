@@ -25,15 +25,8 @@ namespace Lisple
     }
     case RTValue::Type::NATIVE_OBJECT:
     {
-      sptr_rtval_v elements;
       sptr_native_obj obj = v.nobj();
-      for (auto& key : obj->accessor_table().keys)
-      {
-        elements.push_back(key);
-        elements.push_back(obj->get_property(*key));
-      }
-
-      return elements;
+      return obj->native_children();
     }
     case RTValue::Type::NIL:
       return {};
@@ -85,6 +78,15 @@ namespace Lisple
       }
 
       return to_rt_value(seq.obj()->get_children().at(index));
+    }
+    case RTValue::Type::NATIVE_OBJECT:
+    {
+      sptr_rtval_v values = seq.nobj()->native_children();
+      if (index < values.size())
+      {
+        return values[index];
+      }
+      return Lisple::Constant::NIL;
     }
     case RTValue::Type::STRING:
     {
@@ -169,6 +171,8 @@ namespace Lisple
       return std::get<sptr_rtval_v>(v.value).size() / 2;
     case RTValue::Type::OBJECT:
       return std::get<sptr_sobject>(v.value)->size();
+    case RTValue::Type::NATIVE_OBJECT:
+      return std::get<sptr_native_obj>(v.value)->size();
     default:
       return 1;
     }

@@ -1,0 +1,77 @@
+#include <cstdint>
+#include <map>
+#include <string>
+#include <vector>
+
+#include <lisple/adapter.h>
+#include <lisple/runtime.h>
+#include <lisple/runtime/dict.h>
+#include <lisple/runtime/seq.h>
+#include <lisple/runtime/value.h>
+
+#include <gtest/gtest.h>
+
+TEST(NativeStdVectorAdapter_int, get_set_children_and_count)
+{
+  std::vector<int> values = {1, 2, 3};
+  Lisple::sptr_rtval adapter = Lisple::NativeStdVectorAdapter<int>::make_ref(values);
+
+  EXPECT_EQ(Lisple::count(*adapter), 3);
+  EXPECT_EQ(*Lisple::get_child(*adapter, 1), *Lisple::RTValue::number(2));
+
+  Lisple::sptr_rtval updated = Lisple::RTValue::number(8);
+  Lisple::Dict::set_property(adapter, Lisple::RTValue::number(1), updated);
+
+  EXPECT_EQ(values.at(1), 8);
+  EXPECT_EQ(*Lisple::get_child(*adapter, 1), *Lisple::RTValue::number(8));
+  EXPECT_EQ(adapter->nobj()->to_string(), "[1 8 3]");
+}
+
+TEST(NativeStdVectorAdapter_int, for_iterates_native_vector)
+{
+  Lisple::Runtime runtime;
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  auto result = runtime.eval("(for [value values] (* value 2))");
+
+  EXPECT_EQ(result->to_string(), "[2 4 6]");
+}
+
+TEST(NativeStdMapAdapter_int_string, get_set_keys_and_count)
+{
+  std::map<int, std::string> values = {{1, "one"}, {2, "two"}};
+  Lisple::sptr_rtval adapter =
+    Lisple::NativeStdMapAdapter<int, std::string>::make_ref(values);
+
+  EXPECT_EQ(Lisple::count(*adapter), 2);
+  EXPECT_EQ(*Lisple::Dict::get_property(adapter, Lisple::RTValue::number(1)),
+            *Lisple::RTValue::string("one"));
+
+  Lisple::sptr_rtval updated = Lisple::RTValue::string("three");
+  Lisple::Dict::set_property(adapter, Lisple::RTValue::number(3), updated);
+
+  EXPECT_EQ(values.at(3), "three");
+  EXPECT_EQ(*Lisple::Dict::get_property(adapter, Lisple::RTValue::number(3)),
+            *Lisple::RTValue::string("three"));
+  EXPECT_EQ(Lisple::Dict::map_sptr_keys(adapter).size(), 3);
+  EXPECT_EQ(adapter->nobj()->to_string(), R"({1 "one" 2 "two" 3 "three"})");
+}
+
+TEST(NativeStdMapAdapter_uint8_short, get_set_numeric_map)
+{
+  std::map<uint8_t, short> values = {{1, 8}, {2, 16}};
+  Lisple::sptr_rtval adapter = Lisple::NativeStdMapAdapter<uint8_t, short>::make_ref(values);
+
+  EXPECT_EQ(*Lisple::Dict::get_property(adapter, Lisple::RTValue::number(2)),
+            *Lisple::RTValue::number(16));
+
+  Lisple::sptr_rtval updated = Lisple::RTValue::number(24);
+  Lisple::Dict::set_property(adapter, Lisple::RTValue::number(3), updated);
+
+  EXPECT_EQ(values.at(3), 24);
+  EXPECT_EQ(*Lisple::Dict::get_property(adapter, Lisple::RTValue::number(3)),
+            *Lisple::RTValue::number(24));
+}

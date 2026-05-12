@@ -12,7 +12,15 @@ namespace Lisple
   {
     return RTValue::number(v);
   }
+  sptr_rtval rtval_from(short v)
+  {
+    return RTValue::number(static_cast<int>(v));
+  }
   sptr_rtval rtval_from(unsigned int v)
+  {
+    return RTValue::number(static_cast<int>(v));
+  }
+  sptr_rtval rtval_from(unsigned short v)
   {
     return RTValue::number(static_cast<int>(v));
   }
@@ -59,6 +67,10 @@ namespace Lisple
   template <> int rtval_to<int>(const sptr_rtval& v)
   {
     return v->i32();
+  }
+  template <> short rtval_to<short>(const sptr_rtval& v)
+  {
+    return static_cast<short>(v->i32());
   }
   template <> unsigned int rtval_to<unsigned int>(const sptr_rtval& v)
   {
@@ -110,7 +122,15 @@ namespace Lisple
   {
     return c && c->is_number(v);
   }
+  bool rtval_matches(const sptr_rtval& c, short v)
+  {
+    return c && c->is_number(static_cast<int>(v));
+  }
   bool rtval_matches(const sptr_rtval& c, unsigned int v)
+  {
+    return c && c->is_number(static_cast<int>(v));
+  }
+  bool rtval_matches(const sptr_rtval& c, unsigned short v)
   {
     return c && c->is_number(static_cast<int>(v));
   }

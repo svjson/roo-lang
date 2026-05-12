@@ -79,6 +79,10 @@ namespace Lisple::Dict
       auto val = std::get<sptr_sobject>(target.value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
+    else if (target.type == RTValue::Type::NATIVE_OBJECT)
+    {
+      return target.nobj()->get_property(*RTValue::keyword(keyword));
+    }
 
     return Constant::NIL;
   }
@@ -130,6 +134,10 @@ namespace Lisple::Dict
           return true;
         }
       }
+    }
+    else if (source.type == RTValue::Type::NATIVE_OBJECT)
+    {
+      return *source.nobj()->get_property(*RTValue::keyword(keyword)) != *Constant::NIL;
     }
 
     return false;

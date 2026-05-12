@@ -733,13 +733,15 @@ namespace Lisple
   {
     virtual ~NativeObjectBase() = default;
 
-    sptr_rtval get_property(const RTValue& property) const;
-    void set_property(const RTValue& property, sptr_rtval& value);
-    void set_property(const RTValue& property, const sptr_rtval& value);
+    virtual sptr_rtval get_property(const RTValue& property) const;
+    virtual void set_property(const RTValue& property, sptr_rtval& value);
+    virtual void set_property(const RTValue& property, const sptr_rtval& value);
     virtual const NativeObjectTraits* get_traits() const = 0;
     const HostTypeRef* get_host_type() const;
     const NAccessorTable& accessor_table() const;
     virtual std::string to_string() const;
+    virtual sptr_rtval_v native_children() const;
+    virtual size_t size() const;
     /** Returns a void* to the concrete host object as known by the adapter. */
     virtual void* self_object_ptr() const = 0;
   };

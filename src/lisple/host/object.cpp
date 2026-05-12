@@ -71,6 +71,11 @@ namespace Lisple
 
   std::string NativeObjectBase::to_string() const
   {
+    return RTValue::map(native_children())->to_string();
+  }
+
+  sptr_rtval_v NativeObjectBase::native_children() const
+  {
     sptr_rtval_v elements;
     for (auto key : this->accessor_table().keys)
     {
@@ -78,7 +83,12 @@ namespace Lisple
       elements.push_back(get_property(*key));
     }
 
-    return RTValue::map(elements)->to_string();
+    return elements;
+  }
+
+  size_t NativeObjectBase::size() const
+  {
+    return this->accessor_table().keys.size();
   }
 
   /**
