@@ -105,10 +105,17 @@ namespace Lisple
     {
       if (ctx.is_allow_lookup() && ctx.ctx)
       {
-        auto static_val =
-          obj->as<Word>().is_qualified()
-            ? ctx.ctx->lookup_value(obj->as<Word>())
-            : ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
+        sptr_rtval static_val;
+        try
+        {
+          static_val = obj->as<Word>().is_qualified()
+                         ? ctx.ctx->lookup_value(obj->as<Word>())
+                         : ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
+        }
+        catch (const IdentifierException&)
+        {
+          static_val = nullptr;
+        }
         if (!static_val)
         {
           static_val = ctx.ctx->lang().lookup_symbol(obj->as<Word>());
