@@ -1,6 +1,7 @@
 
 #include <lisple/runtime.h>
 
+#include "host/test_adapters/vectorgfx_native_adapters.h"
 #include "host/test_adapters/vehicle_host_adapters.h"
 #include "test_adapters/vehicle_native_adapters.h"
 #include <gtest/gtest.h>
@@ -98,4 +99,22 @@ TEST(VehicleModelAdapter_usage, produce_modified_copy_with_assoc)
             "{:model-name \"Spruttibangbang\" :seats 2}");
   //  - Result contains new property
   EXPECT_EQ(result->to_string(), "{:model-name \"Spruttibangbang\" :seats 8}");
+}
+
+TEST(NativeObjectAdapter_usage, rt_dispatch_coerces_args_before_ast_fallback)
+{
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
+  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+
+  auto result = runtime.eval(R"(
+    (pixils.point/plus
+      {:x 1 :y 2}
+      {:x 3 :y 4})
+  )");
+
+  ASSERT_TRUE(LispleTest::Native::POINT.is_type_of(*result));
+  auto& point = result->adapter<LispleTest::Native::PointAdapter>().get_object();
+  EXPECT_EQ(point.x, 4);
+  EXPECT_EQ(point.y, 6);
 }

@@ -760,6 +760,17 @@ namespace Lisple
       }
     }
 
+    for (auto& signature : signatures)
+    {
+      if (!signature->supports_rt_value()) continue;
+
+      sptr_rtval_v coerced_args = signature->coerce_args(ctx, args);
+      if (coerced_args.size())
+      {
+        return signature->invoke(ctx, coerced_args);
+      }
+    }
+
     sptr_sobject_v wrapped_args;
     for (auto& arg : args)
     {
