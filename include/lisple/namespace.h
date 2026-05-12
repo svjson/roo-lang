@@ -110,7 +110,9 @@ namespace Lisple
 
     sptr_rtval lookup_symbol(const Word& identifier) const;
 
+    using Scope::mutate;
     void mutate(const Word& identifier, const sptr_sobject& obj) override;
+    void mutate(const Word& identifier, const sptr_rtval& val);
 
     /*
      * Creates a language namespace. Intented for internal use only.

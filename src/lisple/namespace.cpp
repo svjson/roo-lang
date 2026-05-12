@@ -187,6 +187,17 @@ namespace Lisple
     Scope::mutate(identifier, obj);
   }
 
+  void Namespace::mutate(const Word& identifier, const sptr_rtval& val)
+  {
+    if (this->type == Type::LANG)
+    {
+      throw NamespaceException("Cannnot override language identifier: '" + identifier.value +
+                               "'.");
+    }
+
+    Scope::mutate(identifier.value, val);
+  }
+
   void Namespace::import_full(Namespace& ns)
   {
     auto it = std::find(imported_namespaces.begin(), imported_namespaces.end(), &ns);
