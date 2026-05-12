@@ -6,12 +6,47 @@
 
 #include <lisple/form.h>
 #include <lisple/host/object.h>
+#include <lisple/host/transform.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/value.h>
 #include <lisple/type.h>
 
 namespace Lisple
 {
+  template <typename T> struct RTValueReader
+  {
+    static T read(const sptr_rtval& value) { return Lisple::obj<T>(*value); }
+  };
+
+  template <> struct RTValueReader<sptr_rtval>
+  {
+    static sptr_rtval read(const sptr_rtval& value) { return value; }
+  };
+
+#define LISPLE_RTVALUE_READER(TYPE)                                      \
+  template <>                                                            \
+  struct RTValueReader<TYPE>                                             \
+  {                                                                      \
+    static TYPE read(const sptr_rtval& value)                            \
+    {                                                                    \
+      return Lisple::rtval_to<TYPE>(value);                              \
+    }                                                                    \
+  }
+
+  LISPLE_RTVALUE_READER(bool);
+  LISPLE_RTVALUE_READER(char);
+  LISPLE_RTVALUE_READER(signed char);
+  LISPLE_RTVALUE_READER(unsigned char);
+  LISPLE_RTVALUE_READER(int);
+  LISPLE_RTVALUE_READER(unsigned int);
+  LISPLE_RTVALUE_READER(unsigned short);
+  LISPLE_RTVALUE_READER(long);
+  LISPLE_RTVALUE_READER(float);
+  LISPLE_RTVALUE_READER(double);
+  LISPLE_RTVALUE_READER(std::string);
+
+#undef LISPLE_RTVALUE_READER
+
   class MapSchema
   {
     using KVEntryMap = std::unordered_map<std::string, const Lisple::TypeRef*>;
@@ -115,6 +150,27 @@ namespace Lisple
         }
 
         return std::nullopt;
+      }
+
+      template <typename T> std::optional<T> optional(const std::string& key) const
+      {
+        sptr_rtval value = _get_value(key);
+        if (value)
+        {
+          return RTValueReader<T>::read(value);
+        }
+        return std::nullopt;
+      }
+
+      template <typename T>
+      std::optional<T> optional(const std::string& key, std::optional<T> default_value) const
+      {
+        std::optional<T> value = optional<T>(key);
+        if (value)
+        {
+          return value;
+        }
+        return default_value;
       }
 
       friend class MapSchema;

@@ -96,6 +96,76 @@ TEST(MapSchema_Inspector, bound_inspector__get_numbers)
   EXPECT_EQ(f64, 10.0);
 }
 
+TEST(MapSchema_Inspector, bound_inspector__get_optional_number)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("amount"), Lisple::RTValue::number(10)});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<int> amount = inspector.optional<int>("amount");
+
+  // Then
+  EXPECT_THAT(amount, Optional(10));
+}
+
+TEST(MapSchema_Inspector, bound_inspector__get_missing_optional_number)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
+  Lisple::sptr_rtval map_value = Lisple::RTValue::map({});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<int> amount = inspector.optional<int>("amount");
+
+  // Then
+  EXPECT_EQ(amount, std::nullopt);
+}
+
+TEST(MapSchema_Inspector, bound_inspector__get_optional_number_with_default)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
+  Lisple::sptr_rtval map_value = Lisple::RTValue::map({});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<int> amount = inspector.optional<int>("amount", 10);
+
+  // Then
+  EXPECT_THAT(amount, Optional(10));
+}
+
+TEST(MapSchema_Inspector, bound_inspector__get_optional_string)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({}, {{"name", &Lisple::Type::STRING}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("name"), Lisple::RTValue::string("A")});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<std::string> name = inspector.optional<std::string>("name");
+
+  // Then
+  EXPECT_THAT(name, Optional(std::string("A")));
+}
+
+TEST(MapSchema_Inspector, bound_inspector__get_optional_value)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("amount"), Lisple::RTValue::number(10)});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<Lisple::sptr_rtval> amount =
+    inspector.optional<Lisple::sptr_rtval>("amount");
+
+  // Then
+  EXPECT_TRUE(amount.has_value());
+  EXPECT_EQ(amount.value()->i32(), 10);
+}
+
 TEST(MapSchema_Inspector, bound_inspected__get_native_object)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
@@ -110,6 +180,23 @@ TEST(MapSchema_Inspector, bound_inspected__get_native_object)
   // Then
   EXPECT_EQ(point.x, 15.0);
   EXPECT_EQ(point.y, 30.0);
+}
+
+TEST(MapSchema_Inspector, bound_inspected__get_optional_native_object)
+{
+  MapSchemaFixture fixture(Lisple::MapSchema({}, {{"point", &LispleTest::Native::POINT}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("point"),
+                          LispleTest::Native::PointAdapter::make_unique(15, 30)});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<LispleTest::Point> point = inspector.optional<LispleTest::Point>("point");
+
+  // Then
+  ASSERT_TRUE(point.has_value());
+  EXPECT_EQ(point->x, 15.0);
+  EXPECT_EQ(point->y, 30.0);
 }
 
 TEST(MapSchema_Inspector, bound_inspected__get_native_object__with_default)
@@ -152,6 +239,30 @@ TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion)
   // Then
   EXPECT_EQ(point.x, 15.0);
   EXPECT_EQ(point.y, 30.0);
+}
+
+TEST(MapSchema_Inspector, bound_inspected__get_optional_native_object_by_coercion)
+{
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
+
+  MapSchemaFixture fixture(std::move(namespaces),
+                           Lisple::MapSchema({}, {{"point", &LispleTest::Native::POINT}}));
+  Lisple::sptr_rtval map_value =
+    Lisple::RTValue::map({Lisple::RTValue::keyword("point"),
+                          Lisple::RTValue::map({Lisple::RTValue::keyword("x"),
+                                                Lisple::RTValue::number(15),
+                                                Lisple::RTValue::keyword("y"),
+                                                Lisple::RTValue::number(30)})});
+
+  // When
+  auto inspector = fixture.schema.bind(fixture.ctx, *map_value);
+  std::optional<LispleTest::Point> point = inspector.optional<LispleTest::Point>("point");
+
+  // Then
+  ASSERT_TRUE(point.has_value());
+  EXPECT_EQ(point->x, 15.0);
+  EXPECT_EQ(point->y, 30.0);
 }
 
 TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion__with_default)

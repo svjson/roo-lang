@@ -121,6 +121,33 @@
     __NOBJ_ADAPTER_FIELD_ACCESSOR, __NOBJ_ADAPTER_FIELD_ACCESSOR__SET_PREFIX)             \
   (MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
+/* -----------------------------------------------------------------------
+ * Keyword vector-copy accessor dispatch helpers
+ *
+ * Supports both native-style usage with no extra arguments and legacy-style
+ * usage with a value type argument:
+ *
+ *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions);
+ *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions, Lisple::Key);
+ *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions, Lisple::Key, field_name);
+ * ----------------------------------------------------------------------- */
+
+#define __NOBJ_KEYWORD_VECTOR_ACCESSOR(MACRO, AD_CLASS, PROP_NAME, VALUE_TYPE, NAME) \
+  MACRO(AD_CLASS, PROP_NAME, NAME)
+
+#define __NOBJ_KEYWORD_VECTOR_ACCESSOR__IGNORE_TYPE(MACRO, AD_CLASS, PROP_NAME, VALUE_TYPE) \
+  MACRO(AD_CLASS, PROP_NAME, PROP_NAME)
+
+#define __NOBJ_KEYWORD_VECTOR_ACCESSOR__SAME_NAME(MACRO, AD_CLASS, PROP_NAME) \
+  MACRO(AD_CLASS, PROP_NAME, PROP_NAME)
+
+#define __NOBJ_KEYWORD_VECTOR_ACCESSOR_MACROS(MACRO, AD_CLASS, PROP_NAME, ...) \
+  __SELECT_MACRO__3(0, ##__VA_ARGS__,                                          \
+    __NOBJ_KEYWORD_VECTOR_ACCESSOR,                                            \
+    __NOBJ_KEYWORD_VECTOR_ACCESSOR__IGNORE_TYPE,                               \
+    __NOBJ_KEYWORD_VECTOR_ACCESSOR__SAME_NAME)                                 \
+  (MACRO, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
 
 /* -----------------------------------------------------------------------
  * Internal implementation macros
@@ -138,6 +165,53 @@
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
     return Lisple::rtval_from(get_self_object().OBJ_FIELD);                   \
+  }
+
+/* Keyword getter via member function */
+#define __NOBJ_PROP_GET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
+  {                                                                      \
+    return Lisple::RTValue::keyword(get_self_object().OBJ_METHOD());     \
+  }
+
+/* Keyword getter via direct field access */
+#define __NOBJ_PROP_GET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)   \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
+  {                                                                      \
+    return Lisple::RTValue::keyword(get_self_object().OBJ_FIELD);        \
+  }
+
+/* Keyword setter via member function */
+#define __NOBJ_PROP_SET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                     \
+  {                                                                      \
+    get_self_object().OBJ_METHOD(value->str());                          \
+  }
+
+/* Keyword setter via direct field access */
+#define __NOBJ_PROP_SET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)   \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                     \
+  {                                                                      \
+    get_self_object().OBJ_FIELD = value->str();                          \
+  }
+
+/* Optional keyword getter via member function */
+#define __NOBJ_PROP_GET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                         \
+  {                                                                          \
+    auto maybe_value = get_self_object().OBJ_METHOD();                       \
+    return maybe_value                                                       \
+      ? Lisple::RTValue::keyword(*maybe_value)                               \
+      : Lisple::Constant::NIL;                                               \
+  }
+
+/* Optional keyword getter via direct field access */
+#define __NOBJ_PROP_GET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                       \
+  {                                                                        \
+    return get_self_object().OBJ_FIELD.has_value()                         \
+      ? Lisple::RTValue::keyword(*get_self_object().OBJ_FIELD)             \
+      : Lisple::Constant::NIL;                                             \
   }
 
 /* Setter via member function - deduces the parameter type from the method pointer */
@@ -176,6 +250,27 @@
     else                                                                 \
       get_self_object().OBJ_FIELD =                                      \
         Lisple::rtval_to<typename std::decay_t<decltype(get_self_object().OBJ_FIELD)>::value_type>(value); \
+  }
+
+/* Optional keyword setter via direct field access */
+#define __NOBJ_PROP_SET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                       \
+  {                                                                        \
+    if (value->type == Lisple::RTValue::Type::NIL)                         \
+      get_self_object().OBJ_FIELD = std::nullopt;                          \
+    else                                                                   \
+      get_self_object().OBJ_FIELD =                                        \
+        Lisple::rtval_to<typename std::decay_t<decltype(get_self_object().OBJ_FIELD)>::value_type>(value); \
+  }
+
+/* Optional keyword setter via member function */
+#define __NOBJ_PROP_SET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                         \
+  {                                                                          \
+    if (value->type == Lisple::RTValue::Type::NIL)                           \
+      get_self_object().OBJ_METHOD(std::nullopt);                            \
+    else                                                                     \
+      get_self_object().OBJ_METHOD(value->str());                            \
   }
 
 /* Cached getter via member function */
@@ -285,6 +380,113 @@
       get_self_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_self_object());      \
   }
 
+/* Value vector copy getter via direct field access */
+#define __NOBJ_PROP_GET_VALUE_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                             \
+  {                                                                              \
+    Lisple::sptr_rtval_v values;                                                 \
+    values.reserve(get_self_object().OBJ_FIELD.size());                          \
+    for (auto& obj : get_self_object().OBJ_FIELD)                                \
+    {                                                                            \
+      values.push_back(Lisple::rtval_from(obj));                                 \
+    }                                                                            \
+    return Lisple::RTValue::vector(values);                                      \
+  }
+
+/* Value vector copy getter via member function */
+#define __NOBJ_PROP_GET_VALUE_VECTOR_COPY__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                \
+  {                                                                                 \
+    auto& source = get_self_object().OBJ_METHOD();                                  \
+    Lisple::sptr_rtval_v values;                                                    \
+    values.reserve(source.size());                                                  \
+    for (auto& obj : source)                                                        \
+    {                                                                               \
+      values.push_back(Lisple::rtval_from(obj));                                    \
+    }                                                                               \
+    return Lisple::RTValue::vector(values);                                         \
+  }
+
+/* Keyword vector copy getter via direct field access */
+#define __NOBJ_PROP_GET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                               \
+  {                                                                                \
+    Lisple::sptr_rtval_v values;                                                   \
+    values.reserve(get_self_object().OBJ_FIELD.size());                            \
+    for (auto& obj : get_self_object().OBJ_FIELD)                                  \
+    {                                                                              \
+      values.push_back(Lisple::RTValue::keyword(obj));                             \
+    }                                                                              \
+    return Lisple::RTValue::vector(values);                                        \
+  }
+
+/* Keyword vector copy setter via direct field access */
+#define __NOBJ_PROP_SET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                               \
+  {                                                                                \
+    auto& target = get_self_object().OBJ_FIELD;                                    \
+    target.clear();                                                                \
+    if (value->type == Lisple::RTValue::Type::NIL) return;                         \
+    for (auto& obj : value->elements())                                            \
+    {                                                                              \
+      target.push_back(obj->str());                                                \
+    }                                                                              \
+  }
+
+/* Adapter vector copy getter via direct field access */
+#define __NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                             \
+  {                                                                                              \
+    Lisple::sptr_rtval_v values;                                                                 \
+    values.reserve(get_self_object().OBJ_FIELD.size());                                          \
+    for (auto& obj : get_self_object().OBJ_FIELD)                                                \
+    {                                                                                            \
+      values.push_back(ADAPTER_TYPE::make_ref(obj));                                             \
+    }                                                                                            \
+    return Lisple::RTValue::vector(values);                                                      \
+  }
+
+/* Adapter vector copy getter via member function */
+#define __NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                               \
+  {                                                                                                \
+    auto& source = get_self_object().OBJ_METHOD();                                                 \
+    Lisple::sptr_rtval_v values;                                                                   \
+    values.reserve(source.size());                                                                 \
+    for (auto& obj : source)                                                                       \
+    {                                                                                              \
+      values.push_back(ADAPTER_TYPE::make_ref(obj));                                               \
+    }                                                                                              \
+    return Lisple::RTValue::vector(values);                                                        \
+  }
+
+/* Pointer adapter vector copy getter via direct field access */
+#define __NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                               \
+  {                                                                                                \
+    Lisple::sptr_rtval_v values;                                                                   \
+    values.reserve(get_self_object().OBJ_FIELD.size());                                            \
+    for (auto& obj : get_self_object().OBJ_FIELD)                                                   \
+    {                                                                                              \
+      values.push_back(obj ? ADAPTER_TYPE::make_ref(*obj) : Lisple::Constant::NIL);                \
+    }                                                                                              \
+    return Lisple::RTValue::vector(values);                                                        \
+  }
+
+/* Pointer adapter vector copy getter via member function */
+#define __NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                                 \
+  {                                                                                                  \
+    auto& source = get_self_object().OBJ_METHOD();                                                   \
+    Lisple::sptr_rtval_v values;                                                                     \
+    values.reserve(source.size());                                                                   \
+    for (auto& obj : source)                                                                          \
+    {                                                                                                \
+      values.push_back(obj ? ADAPTER_TYPE::make_ref(*obj) : Lisple::Constant::NIL);                  \
+    }                                                                                                \
+    return Lisple::RTValue::vector(values);                                                          \
+  }
+
 
 
 /* -----------------------------------------------------------------------
@@ -354,6 +556,66 @@
 #define NOBJ_PROP_GET_SET__FIELD(AD_CLASS, PROP_NAME, ...)               \
   NOBJ_PROP_GET__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)               \
   NOBJ_PROP_SET__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_KEYWORD__METHOD - get string-like method result as keyword */
+#define NOBJ_PROP_GET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ...)          \
+  __NOBJ_FIELD_ACCESSOR_MACROS_GET(                                      \
+    __NOBJ_PROP_GET_KEYWORD__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_KEYWORD__FIELD - get string-like field as keyword */
+#define NOBJ_PROP_GET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ...)           \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_GET_KEYWORD__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_SET_KEYWORD__METHOD - set string-like method from keyword/string */
+#define NOBJ_PROP_SET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ...)          \
+  __NOBJ_FIELD_ACCESSOR_MACROS_SET(                                      \
+    __NOBJ_PROP_SET_KEYWORD__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_SET_KEYWORD__FIELD - set string-like field from keyword/string */
+#define NOBJ_PROP_SET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ...)           \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_SET_KEYWORD__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_SET_KEYWORD__METHOD - convenience: generates both getter and setter */
+#define NOBJ_PROP_GET_SET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ...)      \
+  NOBJ_PROP_GET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)      \
+  NOBJ_PROP_SET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_SET_KEYWORD__FIELD - convenience: generates both getter and setter */
+#define NOBJ_PROP_GET_SET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ...)       \
+  NOBJ_PROP_GET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)       \
+  NOBJ_PROP_SET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_OPT_KEYWORD__METHOD - get optional string-like method result as keyword or nil */
+#define NOBJ_PROP_GET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ...)      \
+  __NOBJ_FIELD_ACCESSOR_MACROS_GET(                                      \
+    __NOBJ_PROP_GET_OPT_KEYWORD__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_OPT_KEYWORD__FIELD - get optional string-like field as keyword or nil */
+#define NOBJ_PROP_GET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ...)       \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_GET_OPT_KEYWORD__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_SET_OPT_KEYWORD__FIELD - set optional string-like field from keyword/string or nil */
+#define NOBJ_PROP_SET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ...)       \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_SET_OPT_KEYWORD__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_SET_OPT_KEYWORD__METHOD - set optional string-like method from keyword/string or nil */
+#define NOBJ_PROP_SET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ...)      \
+  __NOBJ_FIELD_ACCESSOR_MACROS_SET(                                      \
+    __NOBJ_PROP_SET_OPT_KEYWORD__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_SET_OPT_KEYWORD__FIELD - convenience: generates both getter and setter */
+#define NOBJ_PROP_GET_SET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ...)   \
+  NOBJ_PROP_GET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)   \
+  NOBJ_PROP_SET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+/* NOBJ_PROP_GET_SET_OPT_KEYWORD__METHOD - convenience: generates both getter and setter */
+#define NOBJ_PROP_GET_SET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ...)  \
+  NOBJ_PROP_GET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)  \
+  NOBJ_PROP_SET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
 
 /* NOBJ_PROP_GET_OPT__FIELD - get std::optional value by field */
 #define NOBJ_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, ...)               \
@@ -481,6 +743,58 @@
 #define NOBJ_PROP_GET_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
   NOBJ_PROP_GET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__) \
   NOBJ_PROP_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+/* -----------------------------------------------------------------------
+ * Vector-copy getter public macros
+ *
+ * These intentionally return a new RTValue vector every time. They are useful
+ * for preserving legacy accessor semantics where mutating the returned vector
+ * must not mutate the source native collection. They are not live wrappers.
+ *
+ * Usage:
+ *   NOBJ_PROP_GET_VALUE_VECTOR_COPY__FIELD(OrderAdapter, ids);
+ *   NOBJ_PROP_GET_VALUE_VECTOR_COPY__METHOD(OrderAdapter, ids);
+ *   NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__FIELD(OrderAdapter, lines, LineAdapter);
+ *   NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__METHOD(OrderAdapter, lines, LineAdapter);
+ *   NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__FIELD(OrderAdapter, line_ptrs, LineAdapter);
+ *   NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__METHOD(OrderAdapter, line_ptrs, LineAdapter);
+ * ----------------------------------------------------------------------- */
+
+#define NOBJ_PROP_GET_VALUE_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ...) \
+  __NOBJ_FIELD_ACCESSOR_MACROS(                                          \
+    __NOBJ_PROP_GET_VALUE_VECTOR_COPY__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_VALUE_VECTOR_COPY__METHOD(AD_CLASS, PROP_NAME, ...) \
+  __NOBJ_FIELD_ACCESSOR_MACROS_GET(                                       \
+    __NOBJ_PROP_GET_VALUE_VECTOR_COPY__METHOD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ...) \
+  __NOBJ_KEYWORD_VECTOR_ACCESSOR_MACROS(                                   \
+    __NOBJ_PROP_GET_KEYWORD_VECTOR_COPY__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+#define NOBJ_PROP_SET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ...) \
+  __NOBJ_KEYWORD_VECTOR_ACCESSOR_MACROS(                                   \
+    __NOBJ_PROP_SET_KEYWORD_VECTOR_COPY__FIELD, AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ...) \
+  NOBJ_PROP_GET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__) \
+  NOBJ_PROP_SET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                        \
+    __NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(                                                     \
+    __NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS(                                                          \
+    __NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__FIELD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
+
+#define NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, ...) \
+  __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(                                                       \
+    __NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
 // clang-format on
 
