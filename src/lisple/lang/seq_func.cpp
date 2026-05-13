@@ -300,8 +300,9 @@ namespace Lisple
                                children.end(),
                                [&](const Lisple::sptr_sobject& element)
                                {
-                                 Lisple::sptr_sobject_v val_args{element};
-                                 return remove_fn.execute(ctx, val_args)->is_truthy();
+                                 Lisple::sptr_sobject ast_element = element;
+                                 Lisple::sptr_rtval_v val_args{to_rt_value(ast_element)};
+                                 return Lisple::is_truthy(*remove_fn.execute(ctx, val_args));
                                });
       children.erase(it, children.end());
 

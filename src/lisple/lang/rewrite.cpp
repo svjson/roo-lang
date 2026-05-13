@@ -14,18 +14,11 @@ namespace Lisple
   /** CommentForm - comment */
   SPECIAL_FORM_IMPL(CommentForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&CommentForm::inv_comment,
-                                       &CommentForm::execnode_comment))))
+                         EXEC_DISPATCH(&CommentForm::execnode_comment))))
   SFORM_LOWER_IMPL(CommentForm)
   {
     return std::make_unique<ExecNode>(Constant::NIL);
   }
-
-  MACRO_BODY(CommentForm, inv_comment)
-  {
-    return ast_execution_removed("comment");
-  }
-
   EXECNODE_BODY(CommentForm, execnode_comment)
   {
     return Constant::NIL;
@@ -34,8 +27,7 @@ namespace Lisple
   /** ThreadFirstForm - -> */
   SPECIAL_FORM_IMPL(ThreadFirstForm,
                     SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&ThreadFirstForm::inv_thread_first,
-                                       &ThreadFirstForm::execnode_thread_first))))
+                         EXEC_DISPATCH(&ThreadFirstForm::execnode_thread_first))))
 
   SFORM_LOWER_IMPL(ThreadFirstForm)
   {
@@ -69,12 +61,6 @@ namespace Lisple
 
     return lower_expr(ctx, current);
   }
-
-  MACRO_BODY(ThreadFirstForm, inv_thread_first)
-  {
-    return ast_execution_removed("->");
-  }
-
   EXECNODE_BODY(ThreadFirstForm, execnode_thread_first)
   {
     deprecated_special_form_invocations++;

@@ -19,8 +19,7 @@ namespace Lisple
   /** DoTimes - dotimes */
   SPECIAL_FORM_IMPL(DoTimesForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&DoTimesForm::inv_dotimes,
-                                       &DoTimesForm::execnode_dotimes))))
+                         EXEC_DISPATCH(&DoTimesForm::execnode_dotimes))))
 
   SFORM_LOWER_IMPL(DoTimesForm)
   {
@@ -58,14 +57,6 @@ namespace Lisple
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
-  }
-
-  /**
-   * Legacy AST-based implementation
-   */
-  MACRO_BODY(DoTimesForm, inv_dotimes)
-  {
-    return ast_execution_removed("dotimes");
   }
 
   EXECNODE_BODY(DoTimesForm, execnode_dotimes)
@@ -117,7 +108,7 @@ namespace Lisple
   SPECIAL_FORM_IMPL(ForForm,
                     SIG((FN_ARGS((&Type::SEQ, &Eval::BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&ForForm::inv_for, &ForForm::execnode_for))))
+                         EXEC_DISPATCH(&ForForm::execnode_for))))
 
   SFORM_LOWER_IMPL(ForForm)
   {
@@ -152,12 +143,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
   }
-
-  MACRO_BODY(ForForm, inv_for)
-  {
-    return ast_execution_removed("for");
-  }
-
   EXECNODE_BODY(ForForm, execnode_for)
   {
     sptr_rtval_v result;
@@ -166,7 +151,9 @@ namespace Lisple
 
     sptr_rtval seq = exec(ctx, *snode.exec_nodes[0]);
 
-    if (seq->type != RTValue::Type::NIL && (Type::STRICT_SEQ_OR_STRING.is_type_of(*seq)))
+    if (seq->type != RTValue::Type::NIL &&
+        (Type::STRICT_SEQ_OR_STRING.is_type_of(*seq) ||
+         seq->type == RTValue::Type::NATIVE_OBJECT))
     {
       sptr_rtval_v elements = Lisple::get_children(*seq);
       if (elements.size() > 0)
@@ -202,8 +189,7 @@ namespace Lisple
   /** ForIndexedForm - for-indexed */
   SPECIAL_FORM_IMPL(ForIndexedForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&ForIndexedForm::inv_for_indexed,
-                                       &ForIndexedForm::execnode_for_indexed))))
+                         EXEC_DISPATCH(&ForIndexedForm::execnode_for_indexed))))
 
   SFORM_LOWER_IMPL(ForIndexedForm)
   {
@@ -244,12 +230,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
   }
-
-  MACRO_BODY(ForIndexedForm, inv_for_indexed)
-  {
-    return ast_execution_removed("for-indexed");
-  }
-
   EXECNODE_BODY(ForIndexedForm, execnode_for_indexed)
   {
     sptr_rtval_v result;
@@ -302,7 +282,7 @@ namespace Lisple
   /** WhileForm - while */
   SPECIAL_FORM_IMPL(WhileForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&WhileForm::inv_while, &WhileForm::execnode_while))))
+                         EXEC_DISPATCH(&WhileForm::execnode_while))))
 
   SFORM_LOWER_IMPL(WhileForm)
   {
@@ -323,12 +303,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
-
-  MACRO_BODY(WhileForm, inv_while)
-  {
-    return ast_execution_removed("while");
-  }
-
   EXECNODE_BODY(WhileForm, execnode_while)
   {
     sptr_rtval result = Constant::NIL;

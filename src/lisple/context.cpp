@@ -3,6 +3,7 @@
 
 #include <sstream>
 
+#include <lisple/exec.h>
 #include <lisple/exception.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
@@ -135,6 +136,35 @@ namespace Lisple
     return runtime.eval(*this, str);
   }
 
+  sptr_rtval Context::call(const std::string& fn_name, const sptr_rtval& arg)
+  {
+    sptr_rtval_v args{arg};
+    return call(fn_name, args);
+  }
+
+  sptr_rtval Context::call(const std::string& fn_name, const sptr_rtval_v& args)
+  {
+    sptr_rtval inv = lookup_value(fn_name);
+    if (inv->type != RTValue::Type::FUNCTION)
+    {
+      throw InvocationException(inv->to_string() + " is not executable.");
+    }
+
+    sptr_sobject& fun_obj = std::get<sptr_sobject>(inv->value);
+    Executable& exec = fun_obj->as<Executable>();
+    sptr_rtval_v mutable_args = args;
+
+    try
+    {
+      return exec.execute(*this, mutable_args);
+    }
+    catch (std::exception& e)
+    {
+      throw InvocationException("Error while calling " + fn_name + ":\n" +
+                                inv->to_string() + "\n" + e.what());
+    }
+  }
+
   void Context::read_file(const std::string& file_name)
   {
     runtime.read_file(file_name);
@@ -174,22 +204,6 @@ namespace Lisple
   void Context::store_namespace(const std::string& symbol, sptr_rtval& value)
   {
     runtime.get_current_namespace().store(symbol, value);
-  }
-
-  sptr_sobject Context::call(const std::string& fn_name, sptr_sobject& arg1)
-  {
-    return this->call(fn_name, sptr_sobject_v{arg1});
-  }
-
-  sptr_sobject Context::call(const std::string& fn_name, const sptr_sobject_v& args)
-  {
-    sptr_sobject exec = lookup(Word(fn_name));
-
-    if (*exec == *NIL)
-    {
-      throw IdentifierException("Unknown identifier: '" + fn_name + "'");
-    }
-    return exec->execute(*this, const_cast<sptr_sobject_v&>(args));
   }
 
   sptr_sobject Context::lookup(const Word& identifier) const

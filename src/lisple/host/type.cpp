@@ -84,10 +84,11 @@ namespace Lisple
 
         if (sig->get_arguments().front().matches(*obj))
         {
-          sptr_sobject_v arg_list{obj};
+          sptr_rtval_v arg_list{to_rt_value(obj)};
           try
           {
-            return CoercionResult{true, sig->invoke(ctx, arg_list)};
+            sptr_rtval result = sig->invoke(ctx, arg_list);
+            return CoercionResult{true, to_AST(*result)};
           }
           catch (const LispleException& e)
           {

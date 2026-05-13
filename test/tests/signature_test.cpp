@@ -63,6 +63,12 @@ using SignatureTest::AST_FUNCTION;
 using SignatureTest::AST_NUMBER;
 using SignatureTest::AST_STRING;
 
+Lisple::sptr_rtval signature_noop([[maybe_unused]] Lisple::Context& ctx,
+                                  [[maybe_unused]] Lisple::sptr_rtval_v& args)
+{
+  return Lisple::Constant::NIL;
+}
+
 Lisple::uptr_exec_node_v node_list(const std::vector<Lisple::uptr_exec_node*>& elements)
 {
   Lisple::uptr_exec_node_v nodes;
@@ -76,13 +82,9 @@ Lisple::uptr_exec_node_v node_list(const std::vector<Lisple::uptr_exec_node*>& e
 TEST(Signature, matches_ast_arguments)
 {
   // Given
-  Lisple::AndForm dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    std::bind(&Lisple::AndForm::inv_and,
-              &dummy_func,
-              std::placeholders::_1,
-              std::placeholders::_2));
+    Lisple::exec_rtval_fn{signature_noop});
 
   // Then
   EXPECT_TRUE(signature.matches({AST_STRING, AST_NUMBER}));
@@ -95,13 +97,9 @@ TEST(Signature, matches_ast_arguments)
 TEST(Signature, matches_rtval_arguments)
 {
   // Given
-  Lisple::AndForm dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    std::bind(&Lisple::AndForm::inv_and,
-              &dummy_func,
-              std::placeholders::_1,
-              std::placeholders::_2));
+    Lisple::exec_rtval_fn{signature_noop});
 
   // Then
   EXPECT_TRUE(signature.matches({STRING, NUMBER}));
@@ -114,13 +112,9 @@ TEST(Signature, matches_rtval_arguments)
 TEST(Signature, matches_node_arguments)
 {
   // Given
-  Lisple::AndForm dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    std::bind(&Lisple::AndForm::inv_and,
-              &dummy_func,
-              std::placeholders::_1,
-              std::placeholders::_2));
+    Lisple::exec_rtval_fn{signature_noop});
 
   // Then
   ;
@@ -134,12 +128,8 @@ TEST(Signature, matches_node_arguments)
 TEST(Signature, no_arg_signature_matches_only_empty_arglist)
 {
   // Given
-  Lisple::AndForm dummy_func;
   Lisple::Signature signature(Lisple::arg_v{},
-                              std::bind(&Lisple::AndForm::inv_and,
-                                        &dummy_func,
-                                        std::placeholders::_1,
-                                        std::placeholders::_2));
+                              Lisple::exec_rtval_fn{signature_noop});
 
   // Then
   EXPECT_TRUE(signature.matches(Lisple::sptr_sobject_v{}));
@@ -153,13 +143,9 @@ TEST(Signature, no_arg_signature_matches_only_empty_arglist)
 TEST(Signature, matches_varargs)
 {
   // Given
-  Lisple::AndForm dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(Lisple::VARARG, &Lisple::Type::STRING)},
-    std::bind(&Lisple::AndForm::inv_and,
-              &dummy_func,
-              std::placeholders::_1,
-              std::placeholders::_2));
+    Lisple::exec_rtval_fn{signature_noop});
 
   // Then
   EXPECT_TRUE(signature.matches(Lisple::sptr_sobject_v{}));
@@ -256,10 +242,10 @@ TEST(Signature, coerce_args__map_to_native_type__native_function)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
-    Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
-  reader.get_current_namespace().store(Lisple::Word("prn-vehicle"),
-                                       std::make_shared<LispleTest::Native::PrnVehicle>());
+    "make-vehicle-model",
+    LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store("prn-vehicle",
+                                       LispleTest::Native::PrnVehicle::make());
   reader.switch_namespace("user");
 
   // When
@@ -277,10 +263,11 @@ TEST(Signature, coerce_args__no_coercion_available)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
-    Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
-  reader.get_current_namespace().store(Lisple::Word("double-size-vehicle"),
-                                       std::make_shared<LispleTest::Native::DoubleSizeVehicle>());
+    "make-vehicle-model",
+    LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store(
+    "double-size-vehicle",
+    LispleTest::Native::DoubleSizeVehicle::make());
   reader.switch_namespace("user");
 
   // When/Then
@@ -289,7 +276,7 @@ TEST(Signature, coerce_args__no_coercion_available)
     {
       reader.eval(R"((vehicle/double-size-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
     },
-    ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching signature")));
+    ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching")));
 }
 
 TEST(Signature, coerce_args__coerce_array_of_array_of_native_object)
@@ -298,10 +285,11 @@ TEST(Signature, coerce_args__coerce_array_of_array_of_native_object)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
-    Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
-  reader.get_current_namespace().store(Lisple::Word("a-of-a-taker"),
-                                       std::make_shared<LispleTest::Native::ArrayOfArrayTaker>());
+    "make-vehicle-model",
+    LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store(
+    "a-of-a-taker",
+    LispleTest::Native::ArrayOfArrayTaker::make());
 
   // When
   Lisple::sptr_rtval result = reader.eval(R"((a-of-a-taker
@@ -334,10 +322,10 @@ TEST(Signature, coerce_args__coerce_array_elements)
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
-    Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
-  reader.get_current_namespace().store(Lisple::Word("count-seats"),
-                                       std::make_shared<LispleTest::Native::CountVehicleSeats>());
+    "make-vehicle-model",
+    LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store("count-seats",
+                                       LispleTest::Native::CountVehicleSeats::make());
   reader.switch_namespace("user");
 
   // When

@@ -9,6 +9,7 @@
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
 
+#include "host/test_adapters/vehicle_host_adapters.h"
 #include <gtest/gtest.h>
 
 TEST(NativeStdVectorAdapter_int, get_set_children_and_count)
@@ -58,6 +59,70 @@ TEST(NativeStdMapAdapter_int_string, get_set_keys_and_count)
             *Lisple::RTValue::string("three"));
   EXPECT_EQ(Lisple::Dict::map_sptr_keys(adapter).size(), 3);
   EXPECT_EQ(adapter->nobj()->to_string(), R"({1 "one" 2 "two" 3 "three"})");
+}
+
+TEST(NativeStdMapAdapter_int_string, script_usage)
+{
+  std::map<int, std::string> values = {{1, "one"}, {2, "two"}, {3, "three"}};
+
+  Lisple::Runtime runtime;
+  runtime.get_current_namespace().store(
+    "my-map",
+    Lisple::NativeStdMapAdapter<int, std::string>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("my-map")->type, Lisple::RTValue::Type::NATIVE_OBJECT);
+  EXPECT_EQ(*runtime.eval("(str my-map)"),
+            *Lisple::RTValue::string(R"({1 "one" 2 "two" 3 "three"})"));
+
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::RTValue::string("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::Constant::NIL);
+
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
+  runtime.eval(R"((def updated-map (assoc my-map 4 "four")))");
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
+
+  runtime.eval(R"((assoc! my-map 8 "eight"))");
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::RTValue::string("eight"));
+}
+
+TEST(NativeStdMapAdapter_int_const_string, script_usage)
+{
+  std::map<int, const std::string> values = {{1, "one"}, {2, "two"}, {3, "three"}};
+
+  Lisple::Runtime runtime;
+  runtime.get_current_namespace().store(
+    "my-map",
+    Lisple::NativeStdMapAdapter<int, const std::string>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("my-map")->type, Lisple::RTValue::Type::NATIVE_OBJECT);
+  EXPECT_EQ(*runtime.eval("(str my-map)"),
+            *Lisple::RTValue::string(R"({1 "one" 2 "two" 3 "three"})"));
+
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::RTValue::string("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map \"SEMPRINI!\")"), *Lisple::Constant::NIL);
+
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
+  runtime.eval(R"((def updated-map (assoc my-map 4 "four")))");
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(3));
+
+  runtime.eval(R"((assoc! my-map 8 "eight"))");
+  EXPECT_EQ(*runtime.eval("(count updated-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(count my-map)"), *Lisple::RTValue::number(4));
+  EXPECT_EQ(*runtime.eval("(get my-map 1)"), *Lisple::RTValue::string("one"));
+  EXPECT_EQ(*runtime.eval("(get my-map 2)"), *Lisple::RTValue::string("two"));
+  EXPECT_EQ(*runtime.eval("(get my-map 3)"), *Lisple::RTValue::string("three"));
+  EXPECT_EQ(*runtime.eval("(get my-map 4)"), *Lisple::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::RTValue::string("eight"));
 }
 
 TEST(NativeStdMapAdapter_uint8_short, get_set_numeric_map)

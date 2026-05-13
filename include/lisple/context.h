@@ -59,6 +59,38 @@ namespace Lisple
     sptr_rtval eval(const sptr_rtval& list);
     sptr_rtval eval(const sptr_sobject& list);
 
+    /*!
+     * @brief Call a named function with a single RTValue argument.
+     *
+     * @param fn_name The name of the function to look up and execute.
+     *
+     * @return The execution result as an RTValue.
+     *
+     * The lookup of the named function occurs in this context, so local
+     * bindings, the current namespace, imported namespaces, and aliased
+     * namespaces are honored.
+     *
+     * If the identifier is qualified with a known global namespace, the
+     * current namespace will be ignored.
+     */
+    sptr_rtval call(const std::string& fn_name, const sptr_rtval& arg);
+
+    /*!
+     * @brief Call a named function with a list of RTValue arguments.
+     *
+     * @param fn_name The name of the function to look up and execute.
+     *
+     * @return The execution result as an RTValue.
+     *
+     * The lookup of the named function occurs in this context, so local
+     * bindings, the current namespace, imported namespaces, and aliased
+     * namespaces are honored.
+     *
+     * If the identifier is qualified with a known global namespace, the
+     * current namespace will be ignored.
+     */
+    sptr_rtval call(const std::string& fn_name, const sptr_rtval_v& args);
+
     Scope& current_scope();
     Scope& get_scope_of(const Word& identifier) const;
 
@@ -90,36 +122,6 @@ namespace Lisple
 
     Namespace& lang();
 
-    /*!
-     * @brief Call a named function with a single argument
-     *
-     * @param fn_name The name of the function to look up and execute
-     *
-     * @return The execution result as a shared object.
-     *
-     * The lookup of the named function occurs in the current namespace of
-     * the context, which means that aliased namespaces in the current
-     * namespace will be honored.
-     *
-     * If the identifier is qualified with a known global namespace, the
-     * current namespace will be ignored.
-     */
-    sptr_sobject call(const std::string& fn_name, sptr_sobject& arg);
-    /*!
-     * @brief Call a named function with a list of arguments.
-     *
-     * @param fn_name The name of the function to look up and execute
-     *
-     * @return The execution result as a shared object.
-     *
-     * The lookup of the named function occurs in the current namespace of
-     * the context, which means that aliased namespaces in the current
-     * namespace will be honored.
-     *
-     * If the identifier is qualified with a known global namespace, the
-     * current namespace will be ignored.
-     */
-    sptr_sobject call(const std::string& fn_name, const sptr_sobject_v& args);
     sptr_sobject lookup(const Word& word) const;
     sptr_rtval lookup_value(const Word& word) const;
     sptr_rtval lookup_value(const std::string& identifier) const;

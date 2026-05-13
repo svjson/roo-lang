@@ -54,17 +54,6 @@ namespace LispleTest
 
   HOST_ADAPTER(RegNumberAdapter, RegNumber, (letters, numbers));
 
-  // ===============================================================
-  // Vehicle example - functions
-  // ===============================================================
-  FUNC_DECL(VehicleModelMakeFunction, make);
-
-  FUNC_DECL(PrnVehicle, prn);
-  FUNC_DECL(DoubleSizeVehicle, zoom);
-  FUNC_DECL(CountVehicleSeats, count);
-
-  FUNC_DECL(ArrayOfArrayTaker, accept);
-
 } // namespace LispleTest
 
 DEFINE_LISPLE_TYPE(const LispleTest::VehicleModel, LispleTest::VEHICLE_MODEL_TYPE);

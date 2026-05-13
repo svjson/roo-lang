@@ -10,9 +10,9 @@ TEST(FnForm, define_and_exec_lambda)
   LispleTest::RuntimeFixture fixture;
   Lisple::sptr_sobject_v code = fixture.parser.read_sexps("(fn [x y] (+ (+ x 1) (- y 2)))");
 
-  Lisple::sptr_sobject_v exec_args;
-  exec_args.push_back(std::make_shared<Lisple::Number>(5));
-  exec_args.push_back(std::make_shared<Lisple::Number>(5));
+  Lisple::sptr_rtval_v exec_args;
+  exec_args.push_back(Lisple::RTValue::number(5));
+  exec_args.push_back(Lisple::RTValue::number(5));
 
   // When
   auto fn = fixture.runtime.eval(code.front());
@@ -20,7 +20,7 @@ TEST(FnForm, define_and_exec_lambda)
 
   // Then
   EXPECT_TRUE(Lisple::Type::NUMBER.is_type_of(*retval));
-  EXPECT_EQ(retval->as<Lisple::Number>().value, 9);
+  EXPECT_EQ(retval->i64(), 9);
 }
 
 TEST(FnForm, with_bound_scope)

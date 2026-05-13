@@ -78,8 +78,8 @@ TEST(Runtime, eval__word__lookup)
   // Given
   LispleTest::RuntimeFixture fixture;
   std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  std::shared_ptr<Lisple::Object> my_string = std::make_shared<Lisple::String>("my-string");
-  fixture.runtime.get_current_namespace().store(Lisple::Word("my-word"), my_string);
+  fixture.runtime.get_current_namespace().store("my-word",
+                                                Lisple::RTValue::string("my-string"));
 
   // When
   auto result = fixture.runtime.eval(word);
@@ -93,8 +93,8 @@ TEST(Runtime, eval__word__no_lookup)
   // Given
   LispleTest::RuntimeFixture fixture;
   std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  std::shared_ptr<Lisple::Object> my_string = std::make_shared<Lisple::String>("my-string");
-  fixture.runtime.get_current_namespace().store(Lisple::Word("my-word"), my_string);
+  fixture.runtime.get_current_namespace().store("my-word",
+                                                Lisple::RTValue::string("my-string"));
 
   // When
   fixture.ctx.push_context(false);

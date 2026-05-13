@@ -89,11 +89,6 @@ namespace Lisple
     this->set_property(key, value);
   }
 
-  std::shared_ptr<Object> Object::execute(Context&, sptr_sobject_v&)
-  {
-    throw InvocationException(this->to_string(2) + " cannot be executed");
-  }
-
   sptr_sobject_v& Object::get_children()
   {
     throw InvocationException(this->to_string(2) + " is not a sequence");
@@ -137,11 +132,6 @@ namespace Lisple
     return false;
   }
 
-  std::shared_ptr<Object> Nil::execute(Context&, sptr_sobject_v&)
-  {
-    throw InvocationException("Execution of nil");
-  }
-
   bool Nil::operator==(const Object& other) const
   {
     return type == other.get_type();
@@ -163,11 +153,6 @@ namespace Lisple
   std::string Discard::to_string(int) const
   {
     return "#_" + value->to_string();
-  }
-
-  std::shared_ptr<Object> Discard::execute(Context&, sptr_sobject_v&)
-  {
-    throw InvocationException("Execution of form comment");
   }
 
   bool Discard::operator==(const Object& other) const
@@ -336,15 +321,6 @@ namespace Lisple
   bool Key::operator<(const Key& other) const
   {
     return this->value < other.value;
-  }
-
-  std::shared_ptr<Object> Key::execute(Context&, sptr_sobject_v& args)
-  {
-    if (args.size() == 1)
-    {
-      return args.front()->get_sptr_property(*this);
-    }
-    throw InvocationException("Get value by key requires a single argument.");
   }
 
   std::shared_ptr<Key> Key::make(const std::string& value)
@@ -817,18 +793,6 @@ namespace Lisple
     return std::make_shared<List>(children, !q);
   }
 
-  std::shared_ptr<Object> List::execute(Context& ctx)
-  {
-    auto head = this->head();
-    auto tail = this->tail();
-    return head->execute(ctx, tail);
-  }
-
-  std::shared_ptr<Object> List::execute(Context&, sptr_sobject_v&)
-  {
-    throw InvocationException("Illegal invocation of list: " + this->to_string(2));
-  }
-
   const std::string List::lpar() const
   {
     return q ? "'(" : "(";
@@ -1165,11 +1129,6 @@ namespace Lisple
   unsigned int RuntimeValueWrapper::size() const
   {
     return Lisple::count(*val);
-  }
-
-  std::shared_ptr<Object> RuntimeValueWrapper::execute(Context& ctx, sptr_sobject_v& args)
-  {
-    return delegate->execute(ctx, args);
   }
 
   std::shared_ptr<Object> RuntimeValueWrapper::make(const sptr_rtval& value)

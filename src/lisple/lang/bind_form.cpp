@@ -16,7 +16,7 @@ namespace Lisple
   SPECIAL_FORM_IMPL(LetForm,
                     SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&LetForm::inv_let, &LetForm::execnode_let))))
+                         EXEC_DISPATCH(&LetForm::execnode_let))))
 
   SFORM_LOWER_IMPL(LetForm)
   {
@@ -48,14 +48,6 @@ namespace Lisple
       SpecialFormNode(this, std::move(bindings), std::move(body)));
   }
 
-  /**
-   * Legacy AST-based implementation
-   */
-  MACRO_BODY(LetForm, inv_let)
-  {
-    return ast_execution_removed("let");
-  }
-
   EXECNODE_BODY(LetForm, execnode_let)
   {
     sptr_rtval result;
@@ -85,8 +77,7 @@ namespace Lisple
                     SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (&Type::ANY, NO_EVAL),
                                  (&Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&IfLetForm::inv_if_let,
-                                       &IfLetForm::execnode_if_let))))
+                         EXEC_DISPATCH(&IfLetForm::execnode_if_let))))
 
   SFORM_LOWER_IMPL(IfLetForm)
   {
@@ -122,12 +113,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(body)));
   }
-
-  FUNC_BODY(IfLetForm, inv_if_let)
-  {
-    return ast_execution_removed("if-let");
-  }
-
   EXECNODE_BODY(IfLetForm, execnode_if_let)
   {
     sptr_rtval result = Constant::NIL;
@@ -163,8 +148,7 @@ namespace Lisple
   /** WhenLetForm - when-let */
   SPECIAL_FORM_IMPL(WhenLetForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&WhenLetForm::inv_when_let,
-                                       &WhenLetForm::execnode_when_let))))
+                         EXEC_DISPATCH(&WhenLetForm::execnode_when_let))))
 
   SFORM_LOWER_IMPL(WhenLetForm)
   {
@@ -200,12 +184,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(body)));
   }
-
-  MACRO_BODY(WhenLetForm, inv_when_let)
-  {
-    return ast_execution_removed("when-let");
-  }
-
   EXECNODE_BODY(WhenLetForm, execnode_when_let)
   {
     sptr_rtval result = Constant::NIL;

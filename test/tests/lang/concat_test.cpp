@@ -40,7 +40,7 @@ TEST(ConcatFunction, number_to_vector_int)
 
   // Then
   EXPECT_EQ(retval->to_string(), runtime.eval("[1 2 3 4]")->to_string());
-  EXPECT_EQ(runtime.lookup("wrapped-vec")->to_string(),
+  EXPECT_EQ(runtime.lookup_value("wrapped-vec")->to_string(),
             runtime.eval("[1 2 3]")->to_string());
   EXPECT_THAT(int_v, ElementsAre(1, 2, 3));
 }

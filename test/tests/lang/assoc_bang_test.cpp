@@ -12,7 +12,7 @@ TEST(AssocBangFunction, add_key_to_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c 3}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2 :c 3}")->to_string());
 }
 
@@ -27,7 +27,7 @@ TEST(AssocBangFunction, replace_key_in_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
             runtime.eval("{:a 1 :b 10}")->to_string());
 }
 
@@ -42,6 +42,6 @@ TEST(AssocBangFunction, add_and_replace_multiple)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
             runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}")->to_string());
 }

@@ -15,15 +15,15 @@ TEST(Namespace, store_and_lookup)
   // Given
   Lisple::Namespace ns("test");
   Lisple::Word identifier("myvar");
-  std::shared_ptr<Lisple::Object> obj = std::make_shared<Lisple::String>("my string");
+  Lisple::sptr_rtval obj = Lisple::RTValue::string("my string");
 
   // When
   ns.store(identifier.value, obj);
-  std::shared_ptr<Lisple::Object> mystring = ns.lookup(identifier);
+  Lisple::sptr_rtval mystring = ns.lookup_symbol(identifier);
 
   // Then
   ASSERT_NE(mystring, nullptr);
-  ASSERT_EQ(mystring->as<Lisple::String>().value, "my string");
+  ASSERT_EQ(mystring->str(), "my string");
 }
 
 
@@ -32,11 +32,11 @@ TEST(Namespace, access_identifier_from_other_ns)
   // Given
   Lisple::Runtime runtime;
   runtime.switch_namespace("test-ns.number-one");
-  runtime.get_current_namespace().store(Lisple::Word("my-value"), std::make_shared<Lisple::Number>(123));
+  runtime.get_current_namespace().store("my-value", Lisple::RTValue::number(123));
 
   // When
   runtime.switch_namespace("test-ns.number-two");
-  Lisple::sptr_sobject result = runtime.lookup(Lisple::Word("test-ns.number-one/my-value"));
+  Lisple::sptr_rtval result = runtime.lookup_value(Lisple::Word("test-ns.number-one/my-value"));
 
   // Then
   ASSERT_EQ(result->to_string(), "123");

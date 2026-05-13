@@ -18,7 +18,7 @@ TEST(AssocInFunction, add_key_to_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c 3}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2}")->to_string());
 }
 
@@ -33,7 +33,7 @@ TEST(AssocInFunction, add_key_to_nested_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c {:key1 \"val\" :key2 44}}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2 :c {:key1 \"val\"}}")->to_string());
 }
 
@@ -60,7 +60,7 @@ TEST(AssocInFunction, replaces_intermediate_nil_with_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a {:b 44}}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(), "{:a nil}");
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a nil}");
 }
 
 TEST(AssocInFunction, replace_key_in_map)
@@ -74,7 +74,7 @@ TEST(AssocInFunction, replace_key_in_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10}"));
-  EXPECT_EQ(runtime.lookup(Lisple::Word("my-map"))->to_string(),
+  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2}")->to_string());
 }
 

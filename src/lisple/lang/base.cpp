@@ -15,10 +15,9 @@ namespace Lisple
   /* DefForm */
   SPECIAL_FORM_IMPL(DefForm,
                     MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
-                               EXEC_DISPATCH(&DefForm::inv_def, &DefForm::execnode_def)),
+                               EXEC_DISPATCH(&DefForm::execnode_def)),
                               (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
-                               EXEC_DISPATCH(&DefForm::inv_def_docstring,
-                                             &DefForm::execnode_def_docstring))))
+                               EXEC_DISPATCH(&DefForm::execnode_def_docstring))))
 
   SFORM_LOWER_IMPL(DefForm)
   {
@@ -47,28 +46,12 @@ namespace Lisple
       SpecialFormNode(this, {RTValue::symbol(symbol.value)}, std::move(value_node)));
   }
 
-  /**
-   * Legacy AST-based implementation.
-   */
-  MACRO_BODY(DefForm, inv_def)
-  {
-    return ast_execution_removed("def");
-  }
-
   EXECNODE_BODY(DefForm, execnode_def)
   {
     std::string symbol = snode.values.front()->str();
     sptr_rtval value = exec(ctx, *snode.exec_nodes.front());
     ctx.store_namespace(symbol, value);
     return value;
-  }
-
-  /**
-   * Legacy AST-based implementation.
-   */
-  MACRO_BODY(DefForm, inv_def_docstring)
-  {
-    return ast_execution_removed("def");
   }
 
   EXECNODE_BODY(DefForm, execnode_def_docstring)
@@ -83,7 +66,7 @@ namespace Lisple
    */
   SPECIAL_FORM_IMPL(DoForm,
                     SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&DoForm::inv_do, &DoForm::execnode_do))))
+                         EXEC_DISPATCH(&DoForm::execnode_do))))
 
   SFORM_LOWER_IMPL(DoForm)
   {
@@ -99,12 +82,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
-
-  MACRO_BODY(DoForm, inv_do)
-  {
-    return ast_execution_removed("do");
-  }
-
   EXECNODE_BODY(DoForm, execnode_do)
   {
     Lisple::sptr_rtval ret;
@@ -146,7 +123,7 @@ namespace Lisple
   /** AndForm - and */
   SPECIAL_FORM_IMPL(AndForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&AndForm::inv_and, &AndForm::execnode_and))))
+                         EXEC_DISPATCH(&AndForm::execnode_and))))
 
   SFORM_LOWER_IMPL(AndForm)
   {
@@ -160,14 +137,6 @@ namespace Lisple
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
-  }
-
-  /**
-   * Legacy AST-based implementation.
-   */
-  MACRO_BODY(AndForm, inv_and)
-  {
-    return ast_execution_removed("and");
   }
 
   EXECNODE_BODY(AndForm, execnode_and)
@@ -207,9 +176,9 @@ namespace Lisple
   /* NsMacro */
   SPECIAL_FORM_IMPL(NsForm,
                     MULTI_SIG((FN_ARGS((&Type::WORD, DATA)),
-                               EXEC_DISPATCH(&NsForm::inv_ns, &NsForm::execnode_ns)),
+                               EXEC_DISPATCH(&NsForm::execnode_ns)),
                               (FN_ARGS((&Type::WORD, DATA), (&Type::LIST, DATA)),
-                               EXEC_DISPATCH(&NsForm::inv_ns, &NsForm::execnode_ns))))
+                               EXEC_DISPATCH(&NsForm::execnode_ns))))
 
   Key KEY_REQUIRE("require");
   Key KEY_AS("as");
@@ -306,12 +275,6 @@ namespace Lisple
 
     return std::make_unique<ExecNode>(Constant::NIL);
   }
-
-  MACRO_BODY(NsForm, inv_ns)
-  {
-    return ast_execution_removed("ns");
-  }
-
   EXECNODE_BODY(NsForm, execnode_ns)
   {
     throw LispleException("Invocation of namespace");
@@ -330,7 +293,7 @@ namespace Lisple
   /** OrForm - or */
   SPECIAL_FORM_IMPL(OrForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&OrForm::inv_or, &OrForm::execnode_or))))
+                         EXEC_DISPATCH(&OrForm::execnode_or))))
 
   SFORM_LOWER_IMPL(OrForm)
   {
@@ -346,12 +309,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
-
-  MACRO_BODY(OrForm, inv_or)
-  {
-    return ast_execution_removed("or");
-  }
-
   EXECNODE_BODY(OrForm, execnode_or)
   {
     Lisple::sptr_rtval val;
@@ -423,7 +380,7 @@ namespace Lisple
   /** SetBangForm - set! */
   SPECIAL_FORM_IMPL(SetBangForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
-                         EXEC_DISPATCH(&SetBangForm::inv_set, &SetBangForm::execnode_set))))
+                         EXEC_DISPATCH(&SetBangForm::execnode_set))))
 
   SFORM_LOWER_IMPL(SetBangForm)
   {
@@ -442,12 +399,6 @@ namespace Lisple
       ast_node,
       SpecialFormNode(this, bind_path, std::move(value_node)));
   }
-
-  MACRO_BODY(SetBangForm, inv_set)
-  {
-    return ast_execution_removed("set!");
-  }
-
   EXECNODE_BODY(SetBangForm, execnode_set)
   {
     sptr_rtval_v member_refs = snode.values;

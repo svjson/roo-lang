@@ -23,7 +23,7 @@ TEST(SymbolBinding, apply)
   // Then
   ASSERT_EQ(scope.get_keys()->size(), 1);
   ASSERT_TRUE(scope.has(Lisple::Word("muffin")));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("muffin")), Lisple::Key("blooper"));
+  ASSERT_EQ(*scope.lookup_value("muffin"), *Lisple::RTValue::keyword("blooper"));
 }
 
 TEST(RestBinding, apply_collects_values_into_vector)
@@ -110,8 +110,8 @@ TEST(MapDestructureBinding, apply__keys_only)
   ASSERT_EQ(scope.get_keys()->size(), 2);
   ASSERT_TRUE(scope.has(Lisple::Word("source")));
   ASSERT_TRUE(scope.has(Lisple::Word("target")));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("source")), Lisple::Word("the-thing"));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("target")), Lisple::String("The Thang"));
+  ASSERT_EQ(*scope.lookup_value("source"), *Lisple::RTValue::symbol("the-thing"));
+  ASSERT_EQ(*scope.lookup_value("target"), *Lisple::RTValue::string("The Thang"));
 }
 
 TEST(MapDestructureBinding, apply__keys_and_alias)
@@ -139,7 +139,7 @@ TEST(MapDestructureBinding, apply__keys_and_alias)
   ASSERT_TRUE(scope.has(Lisple::Word("source")));
   ASSERT_TRUE(scope.has(Lisple::Word("target")));
   ASSERT_TRUE(scope.has(Lisple::Word("context")));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("source")), Lisple::Word("the-thing"));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("target")), Lisple::String("The Thang"));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("context")), Lisple::RuntimeValueWrapper(map));
+  ASSERT_EQ(*scope.lookup_value("source"), *Lisple::RTValue::symbol("the-thing"));
+  ASSERT_EQ(*scope.lookup_value("target"), *Lisple::RTValue::string("The Thang"));
+  ASSERT_EQ(*scope.lookup_value("context"), *map);
 }

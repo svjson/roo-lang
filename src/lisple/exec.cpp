@@ -204,9 +204,9 @@ namespace Lisple
   }
 
   /* Signature */
-  Signature::Signature(arg_v args, exec_fn target_func)
+  Signature::Signature(arg_v args, exec_node_fn exec_func)
     : arguments(args)
-    , target_func(target_func)
+    , exec_func(exec_func)
   {
     std::vector<const EvalMode*> arg_modes;
     for (auto& arg : arguments)
@@ -222,16 +222,8 @@ namespace Lisple
     this->eval_pattern = std::make_unique<EvalPattern>(arg_modes);
   }
 
-  Signature::Signature(arg_v args, exec_fn target_func, exec_node_fn exec_func)
-    : Signature(args, target_func)
-  {
-    this->exec_func = exec_func;
-  }
-
   Signature::Signature(arg_v args, exec_rtval_fn exec_func)
     : arguments(args)
-    , target_func(nullptr)
-    , exec_func(nullptr)
     , exec_rtval(exec_func)
   {
     std::vector<const EvalMode*> arg_modes;
@@ -523,27 +515,6 @@ namespace Lisple
                               ". Are varargs correcly applied?");
   }
 
-  sptr_sobject Signature::invoke(Context& ctx, sptr_sobject_v& args)
-  {
-    if (target_func)
-    {
-      return target_func(ctx, args);
-    }
-    else if (exec_rtval)
-    {
-      sptr_rtval_v rt_args;
-      for (auto& arg : args)
-      {
-        rt_args.push_back(to_rt_value(arg));
-      }
-      return RuntimeValueWrapper::make(exec_rtval(ctx, rt_args));
-    }
-    else
-    {
-      throw LispleException("Bad execution path. Args: " + Array::make(args)->to_string());
-    }
-  }
-
   sptr_rtval Signature::invoke(Context& ctx, SpecialFormNode& snode)
   {
     if (exec_func)
@@ -575,18 +546,6 @@ namespace Lisple
       {
         return exec_rtval(ctx, args);
       }
-    }
-
-    if (target_func != nullptr)
-    {
-      sptr_sobject_v obj_args;
-      for (auto& val : args)
-      {
-        obj_args.push_back(RuntimeValueWrapper::make(val));
-      }
-
-      sptr_sobject result = target_func(ctx, obj_args);
-      return Lisple::to_rt_value(result);
     }
 
     if (exec_func != nullptr)
@@ -667,73 +626,9 @@ namespace Lisple
     return nullptr;
   }
 
-  Signature* Executable::get_signature(Context& ctx, sptr_sobject_v& args)
-  {
-    for (auto& sig : signatures)
-    {
-      if (sig->matches(args))
-      {
-        return sig.get();
-      }
-    }
-
-    if (args.empty())
-    {
-      return nullptr;
-    }
-
-    for (auto& sig : signatures)
-    {
-      sptr_sobject_v coerced = sig->coerce_args(ctx, args);
-      if (!coerced.empty())
-      {
-        return sig.get();
-      }
-    }
-
-    return nullptr;
-  }
-
   const std::vector<std::unique_ptr<Signature>>& Executable::get_signatures() const
   {
     return signatures;
-  }
-
-  sptr_sobject Executable::execute(Context& ctx, sptr_sobject_v& args)
-  {
-    for (auto& signature : signatures)
-    {
-      if (signature->matches(args))
-      {
-        return signature->invoke(ctx, args);
-      }
-    }
-
-    for (auto& signature : signatures)
-    {
-      sptr_sobject_v coerced_args = signature->coerce_args(ctx, args);
-      if (coerced_args.size())
-      {
-        return signature->invoke(ctx, coerced_args);
-      }
-    }
-
-    std::string expected;
-    if (signatures.size() == 1)
-    {
-      expected = "Expected: " + signatures[0]->to_string();
-    }
-    else
-    {
-      expected = "Expected one of:";
-      for (auto& signature : signatures)
-      {
-        expected += " " + signature->to_string();
-      }
-    }
-
-    throw InvocationException("No matching signature: " + Array(args).to_string(3) + ". " +
-                              expected + ", but got: " + Array(args).to_string(2) + ".");
   }
 
   sptr_rtval Executable::execute(Context& ctx, sptr_rtval_v& args)
@@ -746,17 +641,8 @@ namespace Lisple
         {
           return signature->invoke(ctx, args);
         }
-        else
-        {
-          sptr_sobject_v wrapped_args;
-          for (auto& arg : args)
-          {
-            wrapped_args.push_back(RuntimeValueWrapper::make(arg));
-          }
-
-          sptr_sobject retval = signature->invoke(ctx, wrapped_args);
-          return to_rt_value(retval);
-        }
+        throw InvocationException("Signature does not support RTValue execution: " +
+                                  signature->to_string());
       }
     }
 
@@ -771,14 +657,8 @@ namespace Lisple
       }
     }
 
-    sptr_sobject_v wrapped_args;
-    for (auto& arg : args)
-    {
-      wrapped_args.push_back(RuntimeValueWrapper::make(arg));
-    }
-
-    sptr_sobject retval = this->execute(ctx, wrapped_args);
-    return to_rt_value(retval);
+    throw InvocationException("No matching signature: " +
+                              Lisple::RTValue::vector(args)->to_string());
   }
 
   Function::Function(uptr_sig signature)
@@ -882,7 +762,7 @@ namespace Lisple
                              size_t optional_count,
                              std::unique_ptr<RestBinding> rest_binding)
     : Function(std::make_unique<sig>(args,
-                                     LEGACY_DISPATCH(&UserFunction::exec_body),
+                                     EXEC_DISPATCH(&UserFunction::exec_body),
                                      optional_count,
                                      rest_binding != nullptr))
     , name(name)

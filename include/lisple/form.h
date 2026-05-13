@@ -83,8 +83,6 @@ namespace Lisple
 
     virtual std::string to_string(int depth = -1) const = 0;
 
-    virtual std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args);
-
     template <class OT> OT& as();
 
     template <class OT> const OT& as() const { return dynamic_cast<const OT&>(*this); }
@@ -97,8 +95,6 @@ namespace Lisple
 
     bool operator==(const Object&) const override;
     bool is_truthy() const override;
-
-    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
     std::string to_string(int depth = -1) const override;
   };
@@ -164,8 +160,6 @@ namespace Lisple
 
     void append(const sptr_sobject& value) override;
 
-    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
-
     std::string to_string(int depth = -1) const override;
   };
 
@@ -218,8 +212,6 @@ namespace Lisple
     bool has_value(const std::string& value) const override;
 
     std::string to_string(int depth = -1) const override;
-
-    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
     bool operator<(const Key& other) const;
 
@@ -367,8 +359,6 @@ namespace Lisple
 
     std::shared_ptr<List> quot_toggle() const;
 
-    std::shared_ptr<Object> execute(Context& ctx);
-    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
   };
 
   class Array : public Seq
@@ -429,8 +419,6 @@ namespace Lisple
     bool is_truthy() const override;
 
     sptr_sobject_v& get_children() override;
-
-    std::shared_ptr<Object> execute(Context& ctx, sptr_sobject_v& args) override;
 
     static std::shared_ptr<Object> make(const sptr_rtval& value);
 

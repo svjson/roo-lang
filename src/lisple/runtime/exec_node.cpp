@@ -146,12 +146,6 @@ namespace Lisple
       node.data);
   }
 
-  sptr_sobject eval(Context& ctx, ExecNode& node)
-  {
-    eval_executions++;
-    return RuntimeValueWrapper::make(exec(ctx, node));
-  }
-
   sptr_rtval exec(Context& ctx, ExecNode& node)
   {
     exec_executions++;
@@ -247,30 +241,8 @@ namespace Lisple
               return retval;
             }
 
-            if (sig->supports_exec_tree())
-            {
-              throw new LispleException("Invalid execution path");
-            }
-            else
-            {
-              sptr_sobject_v args;
-              args.reserve(n.args.size());
-              for (size_t i = 0; i < n.args.size(); i++)
-              {
-                auto& arg = n.args[i];
-                if (sig->should_eval_arg(i))
-                {
-                  args.push_back(eval(ctx, *arg));
-                }
-                else
-                {
-                  args.push_back(arg->form);
-                }
-              }
-
-              sptr_sobject result = fn->execute(ctx, args);
-              return to_rt_value(result);
-            }
+            throw InvocationException("Signature does not support lowered execution: " +
+                                      sig->to_string());
           }
           else if (x)
           {
@@ -282,15 +254,9 @@ namespace Lisple
             return x->execute(ctx, val_args);
           }
 
-          sptr_sobject_v args;
-          args.reserve(n.args.size());
-          for (auto& arg : n.args)
-          {
-            args.push_back(eval(ctx, *arg));
-          }
-
-          sptr_sobject result = fn->execute(ctx, args);
-          return to_rt_value(result);
+          throw InvocationException("Late-bound call target does not support RTValue "
+                                    "execution: " +
+                                    fn->to_string());
         }
         else if constexpr (std::is_same_v<T, ExecNodeList>)
         {

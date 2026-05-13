@@ -15,12 +15,13 @@ TEST(DefunForm, define_no_arg_fun)
 
   // Then
   Lisple::Word fn_name("my-fn");
-  auto fun = runtime.lookup(fn_name);
+  auto fun = runtime.lookup_value(fn_name);
   ASSERT_TRUE(fun.get());
-  ASSERT_EQ(fun->get_type(), Lisple::Form::FUNCTION);
-  EXPECT_TRUE(fun->as<Lisple::UserFunction>().get_argument_bindings().empty());
-  EXPECT_EQ(fun->as<Lisple::UserFunction>().get_body().size(), 1);
-  EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front()->form,
+  ASSERT_EQ(fun->type, Lisple::RTValue::Type::FUNCTION);
+  auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
+  EXPECT_TRUE(user_fun.get_argument_bindings().empty());
+  EXPECT_EQ(user_fun.get_body().size(), 1);
+  EXPECT_EQ(*user_fun.get_body().front()->form,
             *Lisple::Number::make(8));
 }
 
@@ -39,12 +40,13 @@ TEST(DefunForm, define_no_arg_fun_with_docstring)
 
   // Then
   Lisple::Word fn_name("my-fn");
-  auto fun = runtime.lookup(fn_name);
+  auto fun = runtime.lookup_value(fn_name);
   ASSERT_TRUE(fun.get());
-  ASSERT_EQ(fun->get_type(), Lisple::Form::FUNCTION);
-  EXPECT_TRUE(fun->as<Lisple::UserFunction>().get_argument_bindings().empty());
-  EXPECT_EQ(fun->as<Lisple::UserFunction>().get_body().size(), 1);
-  EXPECT_EQ(*fun->as<Lisple::UserFunction>().get_body().front()->form,
+  ASSERT_EQ(fun->type, Lisple::RTValue::Type::FUNCTION);
+  auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
+  EXPECT_TRUE(user_fun.get_argument_bindings().empty());
+  EXPECT_EQ(user_fun.get_body().size(), 1);
+  EXPECT_EQ(*user_fun.get_body().front()->form,
             *Lisple::Number::make(8));
 }
 

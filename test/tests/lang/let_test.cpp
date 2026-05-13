@@ -101,5 +101,5 @@ TEST(LetForm, bound_value_and_source_are_the_same)
   auto result = runtime.eval("(let [nested (:nested state)] (assoc! nested :y 100))");
 
   // Then
-  EXPECT_EQ(runtime.lookup("state")->to_string(), "{:nested {:x 10 :y 100}}");
+  EXPECT_EQ(runtime.lookup_value("state")->to_string(), "{:nested {:x 10 :y 100}}");
 }

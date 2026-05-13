@@ -115,17 +115,11 @@ SPECIAL_FORM_DECL(DefThing, def_thing)
 
 SPECIAL_FORM_IMPL(DefThing,
                   SIG((FN_ARGS((&Lisple::Type::WORD), (&Lisple::Type::MAP)),
-                       EXEC_DISPATCH(&DefThing::inv_def_thing,
-                                     &DefThing::execnode_def_thing))));
+                       EXEC_DISPATCH(&DefThing::execnode_def_thing))));
 
 SFORM_LOWER_IMPL(DefThing)
 {
   return std::make_unique<Lisple::ExecNode>(Lisple::Constant::NIL);
-}
-
-MACRO_BODY(DefThing, inv_def_thing)
-{
-  throw Lisple::LispleException("inv_def_thing should not be called");
 }
 
 EXECNODE_BODY(DefThing, execnode_def_thing)

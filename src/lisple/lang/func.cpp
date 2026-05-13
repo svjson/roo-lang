@@ -25,12 +25,12 @@ namespace Lisple
     DefunForm,
     MULTI_SIG(
       (FN_ARGS((&Type::WORD, DATA), (&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-       EXEC_DISPATCH(&DefunForm::inv_decl, &DefunForm::execnode_decl)),
+       EXEC_DISPATCH(&DefunForm::execnode_decl)),
       (FN_ARGS((&Type::WORD, DATA),
                (&Type::STRING, DATA),
                (&Type::ARRAY, DATA),
                (VARARG, &Type::ANY, NO_EVAL)),
-       EXEC_DISPATCH(&DefunForm::inv_decl_docstring, &DefunForm::execnode_decl_docstring))))
+       EXEC_DISPATCH(&DefunForm::execnode_decl_docstring))))
 
   SFORM_LOWER_IMPL(DefunForm)
   {
@@ -73,26 +73,12 @@ namespace Lisple
 
     return std::make_unique<ExecNode>(RTValue::executable(func));
   }
-
-  /** Legacy AST-based implementation */
-  MACRO_BODY(DefunForm, inv_decl)
-  {
-    return ast_execution_removed("defun");
-  }
-
   EXECNODE_BODY(DefunForm, execnode_decl)
   {
     deprecated_special_form_invocations++;
 
     return Constant::NIL;
   }
-
-  /** Legacy AST-based implementation */
-  MACRO_BODY(DefunForm, inv_decl_docstring)
-  {
-    return ast_execution_removed("defun");
-  }
-
   EXECNODE_BODY(DefunForm, execnode_decl_docstring)
   {
     deprecated_special_form_invocations++;
@@ -103,7 +89,7 @@ namespace Lisple
   /** FnForm - fn */
   SPECIAL_FORM_IMPL(FnForm,
                     SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&FnForm::inv_decl, &FnForm::execnode_decl))))
+                         EXEC_DISPATCH(&FnForm::execnode_decl))))
 
   SFORM_LOWER_IMPL(FnForm)
   {
@@ -134,14 +120,6 @@ namespace Lisple
     sptr_rtval fn = RTValue::executable(func);
 
     return std::make_unique<ExecNode>(LambdaNode(sptr_sobject_cast<Function>(func)));
-  }
-
-  /**
-   * Legacy AST-based implementation
-   */
-  MACRO_BODY(FnForm, inv_decl)
-  {
-    return ast_execution_removed("fn");
   }
 
   EXECNODE_BODY(FnForm, execnode_decl)

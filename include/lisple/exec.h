@@ -39,19 +39,7 @@
 #define SIG(SINGLE_SIG_ARG) std::make_unique<Lisple::sig> SINGLE_SIG_ARG
 #define MULTI_SIG(...) SELECT_MULTI_SIG(__VA_ARGS__, MULTI_SIG3, MULTI_SIG2, MULTI_SIG1)(__VA_ARGS__)
 
-#define LEGACY_DISPATCH(METHOD_REF) std::bind(METHOD_REF, this, std::placeholders::_1, std::placeholders::_2)
-
-#define EXEC_NODE_DISPATCH(METHOD_REF) std::bind(METHOD_REF, this, std::placeholders::_1, std::placeholders::_2)
-
-#define DUAL_DISPATCH(LEGACY_REF, METHOD_REF) LEGACY_DISPATCH(LEGACY_REF), EXEC_NODE_DISPATCH(METHOD_REF)
-
-#define SELECT_EXEC_DISPATCH_MACRO(_1, _2, MACRO_NAME, ...) MACRO_NAME
-
-#define EXEC_DISPATCH(...) SELECT_EXEC_DISPATCH_MACRO(__VA_ARGS__, DUAL_DISPATCH, LEGACY_DISPATCH)(__VA_ARGS__)
-
-#define DISP_DECL(DISP_NAME) \
-  /*! @brief Native executable implementation */                        \
-  Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args);
+#define EXEC_DISPATCH(METHOD_REF) std::bind(METHOD_REF, this, std::placeholders::_1, std::placeholders::_2)
 
 #define EXEC_DECL(DISP_NAME) \
   /*! @brief Native executable implementation */                        \
@@ -90,29 +78,10 @@
   { return nullptr; }
 
 #define EXECNODE_DISPATCH(NAME)                                                                  \
-  DISP_DECL(inv_##NAME)                                                                 \
   EXECNODE_DECL(execnode_##NAME)
 
 #define FUNC_DISPATCH(NAME) \
   EXEC_DECL(exec_##NAME)
-
-#define EXEC_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                    \
-  EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
-  DISP_DECL(DISP_NAME1)                                                                 \
-  END_CLASS
-
-#define EXEC_DECL2(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2)                        \
-  EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
-  DISP_DECL(DISP_NAME1)                                                                 \
-  DISP_DECL(DISP_NAME2)                                                                 \
-  END_CLASS
-
-#define EXEC_DECL3(EXEC_NAME, EXEC_TYPE, DISP_NAME1, DISP_NAME2, DISP_NAME3)            \
-  EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
-  DISP_DECL(DISP_NAME1)                                                                 \
-  DISP_DECL(DISP_NAME2)                                                                 \
-  DISP_DECL(DISP_NAME3)                                                                 \
-  END_CLASS
 
 #define FUNC_DECL1(EXEC_NAME, EXEC_TYPE, DISP_NAME1)                                    \
   EXEC_CLASS_DECL(EXEC_TYPE, EXEC_NAME)                                                 \
@@ -160,34 +129,19 @@
   END_CLASS
 
 // clang-format off
-#define FUNC_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
-
 #define FUNC(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, FUNC_DECL3, FUNC_DECL2, FUNC_DECL1)(FUNC_NAME, Lisple::Function, __VA_ARGS__)
 
 #define FUNC_IMPL(FUNC_NAME, SIGNATURE)                                                 \
   FUNC_NAME::FUNC_NAME()                                                                \
     : Function(SIGNATURE) { }
 
-#define FUNC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_sobject_v& args)
-
 #define EXEC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_rtval_v& args)
 
 #define EXECNODE_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::SpecialFormNode& snode)
 
-#define MACRO_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, EXEC_DECL3, EXEC_DECL2, EXEC_DECL1)(FUNC_NAME, Lisple::Macro, __VA_ARGS__)
-
 #define SPECIAL_FORM_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, SFORM_DECL3, SFORM_DECL2, SFORM_DECL1)(FUNC_NAME, Lisple::SpecialForm, __VA_ARGS__)
 
 // clang-format on
-
-#define MACRO_SUB_DECL(MACRO_BASE, MACRO_NAME, DISP_NAME)                               \
-  class MACRO_NAME : public MACRO_BASE                                                  \
-  {                                                                                     \
-   public:                                                                              \
-    MACRO_NAME();                                                                       \
-                                                                                        \
-  Lisple::sptr_sobject DISP_NAME(Lisple::Context& ctx, Lisple::sptr_sobject_v& args); \
-  };
 
 #define MACRO_IMPL(MACRO_NAME, SIGNATURE)                                                          \
   MACRO_NAME::MACRO_NAME()                                                                         \
@@ -198,16 +152,6 @@ FORM_NAME::FORM_NAME() \
   : Lisple::SpecialForm(SIGNATURE) \
 { \
 }
-
-#define MACRO_SUB_IMPL(MACRO_BASE, MACRO_NAME, SIGNATURE)                                          \
-  MACRO_NAME::MACRO_NAME()                                                                         \
-      : MACRO_BASE(SIGNATURE)                                                                      \
-  {                                                                                                \
-  }
-
-#define MACRO_BODY(FUNC_NAME, DISP_NAME)                                                           \
-  Lisple::sptr_sobject FUNC_NAME::DISP_NAME([[maybe_unused]] Lisple::Context& ctx,                 \
-                                            [[maybe_unused]] Lisple::sptr_sobject_v& args)
 
 #define EVAL &Lisple::Eval::DEFAULT
 #define DATA &Lisple::Eval::LITERAL
@@ -221,11 +165,6 @@ namespace Lisple
   extern int user_function_ast_invocations;
   extern int user_function_rtval_invocations;
   extern int user_function_wrong_path_invocations;
-
-  inline sptr_sobject ast_execution_removed(const char* form_name)
-  {
-    throw InvocationException(std::string("AST execution removed: ") + form_name);
-  }
 
   class Context;
   class Scope;
@@ -309,7 +248,6 @@ namespace Lisple
     std::string to_string() const;
   };
 
-  typedef std::function<std::shared_ptr<Object>(Context&, sptr_sobject_v&)> exec_fn;
   typedef std::function<sptr_rtval(Context&, SpecialFormNode&)> exec_node_fn;
   typedef std::function<sptr_rtval(Context&, sptr_rtval_v&)> exec_rtval_fn;
 
@@ -320,7 +258,6 @@ namespace Lisple
   {
    protected:
     const std::vector<Argument> arguments;
-    exec_fn target_func;
     exec_node_fn exec_func = nullptr;
     exec_rtval_fn exec_rtval = nullptr;
 
@@ -344,8 +281,7 @@ namespace Lisple
    public:
     std::unique_ptr<EvalPattern> eval_pattern;
 
-    Signature(std::vector<Argument> arguments, exec_fn target_func);
-    Signature(std::vector<Argument> arguments, exec_fn target_func, exec_node_fn exec_func);
+    Signature(std::vector<Argument> arguments, exec_node_fn);
     Signature(std::vector<Argument> arguments, exec_rtval_fn);
     Signature(std::vector<Argument> arguments,
               exec_rtval_fn,
@@ -376,7 +312,6 @@ namespace Lisple
 
     sptr_rtval_v coerce_args(Context& ctx, sptr_rtval_v& args);
 
-    sptr_sobject invoke(Context& ctx, sptr_sobject_v& args);
     sptr_rtval invoke(Context& ctx, SpecialFormNode& args);
     sptr_rtval invoke(Context& ctx, sptr_rtval_v& args);
     std::string to_string() const;
@@ -400,12 +335,10 @@ namespace Lisple
 
     const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
 
-    Signature* get_signature(Context& ctx, sptr_sobject_v& args);
     Signature* get_signature(Context& ctx, uptr_exec_node_v& args);
 
     bool requires_late_binding(CallNode& args);
 
-    virtual Lisple::sptr_sobject execute(Context& ctx, sptr_sobject_v& args) override;
     virtual Lisple::sptr_rtval execute(Context& ctx, sptr_rtval_v& args);
 
     friend class HostTypeRef;

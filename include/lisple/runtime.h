@@ -165,8 +165,6 @@ namespace Lisple
 
     sptr_rtval invoke(const std::string& function, sptr_rtval_v& args);
 
-    sptr_sobject exec(Context& ctx, sptr_sobject_v& list);
-
     sptr_sobject lookup(const Word& identifier);
     sptr_rtval lookup_value(const Word& identifier);
     sptr_rtval lookup_value(const std::string& identifier);

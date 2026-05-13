@@ -10,7 +10,7 @@ namespace Lisple
   /** CaseForm - case */
   SPECIAL_FORM_IMPL(CaseForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&CaseForm::inv_case, &CaseForm::execnode_case))))
+                         EXEC_DISPATCH(&CaseForm::execnode_case))))
 
   SFORM_LOWER_IMPL(CaseForm)
   {
@@ -33,12 +33,6 @@ namespace Lisple
   }
 
   Key DEFAULT = Key("default");
-
-  MACRO_BODY(CaseForm, inv_case)
-  {
-    return ast_execution_removed("case");
-  }
-
   EXECNODE_BODY(CaseForm, execnode_case)
   {
     static sptr_rtval DEFAULT_KEY = RTValue::keyword("default");
@@ -58,7 +52,7 @@ namespace Lisple
   /** CondForm - cond */
   SPECIAL_FORM_IMPL(CondForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&CondForm::inv_cond, &CondForm::execnode_cond))))
+                         EXEC_DISPATCH(&CondForm::execnode_cond))))
 
   SFORM_LOWER_IMPL(CondForm)
   {
@@ -79,12 +73,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
-
-  MACRO_BODY(CondForm, inv_cond)
-  {
-    return ast_execution_removed("cond");
-  }
-
   EXECNODE_BODY(CondForm, execnode_cond)
   {
     Lisple::sptr_rtval cond_result;
@@ -102,11 +90,11 @@ namespace Lisple
   /** IfForm - if */
   SPECIAL_FORM_IMPL(IfForm,
                     MULTI_SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY, NO_EVAL)),
-                               EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if)),
+                               EXEC_DISPATCH(&IfForm::execnode_if)),
                               (FN_ARGS((&Lisple::Type::ANY),
                                        (&Lisple::Type::ANY, NO_EVAL),
                                        (&Lisple::Type::ANY, NO_EVAL)),
-                               EXEC_DISPATCH(&IfForm::inv_if, &IfForm::execnode_if))))
+                               EXEC_DISPATCH(&IfForm::execnode_if))))
 
   SFORM_LOWER_IMPL(IfForm)
   {
@@ -127,12 +115,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
-
-  MACRO_BODY(IfForm, inv_if)
-  {
-    return ast_execution_removed("if");
-  }
-
   EXECNODE_BODY(IfForm, execnode_if)
   {
     if (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
@@ -150,7 +132,7 @@ namespace Lisple
   /* WhenForm - when */
   SPECIAL_FORM_IMPL(WhenForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
-                         EXEC_DISPATCH(&WhenForm::inv_when, &WhenForm::execnode_when))))
+                         EXEC_DISPATCH(&WhenForm::execnode_when))))
 
   SFORM_LOWER_IMPL(WhenForm)
   {
@@ -170,12 +152,6 @@ namespace Lisple
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
-
-  MACRO_BODY(WhenForm, inv_when)
-  {
-    return ast_execution_removed("when");
-  }
-
   EXECNODE_BODY(WhenForm, execnode_when)
   {
     sptr_rtval result = Constant::NIL;

@@ -29,7 +29,7 @@ TEST(Scope, has__after_store)
   Scope scope;
 
   // When
-  scope.store(Lisple::Word("ident"), std::make_shared<Lisple::Number>(10));
+  scope.store("ident", Lisple::RTValue::number(10));
   bool result = scope.has(Lisple::Word("ident"));
 
   // Then

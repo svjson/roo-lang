@@ -26,113 +26,6 @@
 
 using namespace ::testing;
 
-TEST(NamedArgument, apply)
-{
-  // Given
-  Lisple::Scope scope;
-  Lisple::NamedArgumentBinding arg("muffin");
-  Lisple::sptr_sobject val = std::make_unique<Lisple::Key>("blooper");
-
-  // When
-  arg.apply(scope, val);
-
-  // Then
-  ASSERT_EQ(scope.get_keys()->size(), 1);
-  ASSERT_TRUE(scope.has(Lisple::Word("muffin")));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("muffin")), Lisple::Key("blooper"));
-}
-
-TEST(DestructuringArgumentBinding, invalid_binding_form_throws_exception)
-{
-  // Given
-  Lisple::Runtime runtime;
-
-  auto arg_form = Lisple::Map::make(
-    {Lisple::sptr_sobject_v{Lisple::Key::make("keys"),
-                            Lisple::Map::make({// Invalid - this should be Array
-                                               Lisple::Word::make("var1"),
-                                               Lisple::Word::make("var2")})}});
-
-  // When / Then
-  try
-  {
-    Lisple::DestructuringArgumentBinding binding{*arg_form};
-
-    FAIL() << "Expected TypeError to be thrown for destructuring binding: "
-           << arg_form->to_string();
-  }
-  catch (Lisple::TypeError& e)
-  {
-    EXPECT_THAT(std::string{e.what()},
-                HasSubstr("Invalid destructuring form: {:keys {var1 var2}}"));
-  }
-  catch (std::runtime_error& e)
-  {
-    FAIL() << "Expected TypeError exception, but got something else: " << e.what();
-  }
-}
-
-TEST(DestructuringArgumentBinding, apply__keys_only)
-{
-  // Given
-  Lisple::Scope scope;
-
-  Lisple::sptr_sobject map = std::make_shared<Lisple::Map>(
-    Lisple::sptr_sobject_v{std::make_shared<Lisple::Key>("source"),
-                           std::make_shared<Lisple::Word>("The Thing"),
-                           std::make_shared<Lisple::Key>("target"),
-                           std::make_shared<Lisple::Word>("The Thang")});
-
-  Lisple::Map arg_map{
-    Lisple::sptr_sobject_v{std::make_shared<Lisple::Key>("keys"),
-                           std::make_shared<Lisple::Array>(Lisple::sptr_sobject_v{
-                             std::make_shared<Lisple::Word>("source"),
-                             std::make_shared<Lisple::Word>("target")})}};
-  Lisple::DestructuringArgumentBinding arg{arg_map};
-
-  // When
-  arg.apply(scope, map);
-
-  // Then
-  ASSERT_EQ(scope.get_keys()->size(), 2);
-  ASSERT_TRUE(scope.has(Lisple::Word("source")));
-  ASSERT_TRUE(scope.has(Lisple::Word("target")));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("source")), Lisple::Word("The Thing"));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("target")), Lisple::Word("The Thang"));
-}
-
-TEST(DestructuringArgumentBinding, apply__keys_and_alias)
-{
-  // Given
-  Lisple::Scope scope;
-
-  Lisple::sptr_sobject map =
-    Lisple::Map::make({std::make_shared<Lisple::Key>("source"),
-                       std::make_shared<Lisple::Word>("The Thing"),
-                       std::make_shared<Lisple::Key>("target"),
-                       std::make_shared<Lisple::Word>("The Thang")});
-
-  Lisple::Map arg_map({std::make_shared<Lisple::Key>("keys"),
-                       Lisple::Array::make({std::make_shared<Lisple::Word>("source"),
-                                            std::make_shared<Lisple::Word>("target")}),
-                       std::make_shared<Lisple::Key>("as"),
-                       std::make_shared<Lisple::Word>("context")});
-
-  Lisple::DestructuringArgumentBinding arg{arg_map};
-
-  // When
-  arg.apply(scope, map);
-
-  // Then
-  ASSERT_EQ(scope.get_keys()->size(), 3);
-  ASSERT_TRUE(scope.has(Lisple::Word("source")));
-  ASSERT_TRUE(scope.has(Lisple::Word("target")));
-  ASSERT_TRUE(scope.has(Lisple::Word("context")));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("source")), Lisple::Word("The Thing"));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("target")), Lisple::Word("The Thang"));
-  ASSERT_EQ(*scope.lookup(Lisple::Word("context")), *map);
-}
-
 TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
 {
   // Given
@@ -178,10 +71,10 @@ TEST(Macro, get_signature__sig_with_varargs__array__form)
   Lisple::Context ctx(runtime);
   Lisple::DoTimesForm dotimes;
 
-  Lisple::sptr_sobject_v array__form{
-    Lisple::Array::make({Lisple::Word::make("n"), Lisple::Number::make(4)}),
-    Lisple::List::make(
-      {Lisple::Word::make("+"), Lisple::Number::make(2), Lisple::Number::make(10)})};
+  Lisple::uptr_exec_node_v array__form;
+  array__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::vector(
+    {Lisple::RTValue::symbol("n"), Lisple::RTValue::number(4)})));
+  array__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(12)));
 
   // When
   Lisple::Signature* sig = dotimes.get_signature(ctx, array__form);
