@@ -26,6 +26,9 @@ namespace LispleTest::Native
   FUNC(RegNumberMakeFunction, make);
 
   FUNC(PrnVehicle, prn);
+  FUNC(DoubleSizeVehicle, zoom);
+  FUNC(CountVehicleSeats, count);
+  FUNC(ArrayOfArrayTaker, accept);
 
   // ===============================================================
   // Vehicle namespace - functions

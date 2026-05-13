@@ -28,6 +28,11 @@ bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& m
   return caught;
 }
 
+Lisple::sptr_sobject eval_object(Lisple::Runtime& runtime, const std::string& source)
+{
+  return Lisple::to_AST(*runtime.eval(source));
+}
+
 TEST(MapStruct, validate_map_with_string_values)
 {
   // Given
@@ -37,7 +42,7 @@ TEST(MapStruct, validate_map_with_string_values)
 
   Lisple::Runtime runtime;
   Lisple::sptr_sobject map =
-    runtime.eval_ast("{ :name \"mystring\" :description \"contains text\"}");
+    eval_object(runtime, "{ :name \"mystring\" :description \"contains text\"}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -54,7 +59,7 @@ TEST(MapStruct, validate_map_with_unknown_key)
 
   Lisple::Runtime runtime;
   Lisple::sptr_sobject map =
-    runtime.eval_ast("{ :name \"mystring\" :description \"contains text\"}");
+    eval_object(runtime, "{ :name \"mystring\" :description \"contains text\"}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -72,7 +77,7 @@ TEST(MapStruct, validate_map_with_wrong_value_type)
 
   Lisple::Runtime runtime;
   Lisple::sptr_sobject map =
-    runtime.eval_ast("{:name \"mystring\" :description \"contains text\"}");
+    eval_object(runtime, "{:name \"mystring\" :description \"contains text\"}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -88,7 +93,7 @@ TEST(MapStruct, validate_map_with_array_of_string_value)
     {{":values", Lisple::MapEntryReq(&Lisple::Type::ARRAY_OF_STRING, false)}});
 
   Lisple::Runtime runtime;
-  Lisple::sptr_sobject map = runtime.eval_ast("{ :values [\"A\" \"B\" \"C\"]}");
+  Lisple::sptr_sobject map = eval_object(runtime, "{ :values [\"A\" \"B\" \"C\"]}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -104,7 +109,7 @@ TEST(MapStruct, get_property_from_map)
     {{":value", Lisple::MapEntryReq(&Lisple::Type::STRING, true)}});
 
   Lisple::Runtime runtime;
-  Lisple::sptr_sobject map = runtime.eval_ast("{ :value \"A fine string!\"}");
+  Lisple::sptr_sobject map = eval_object(runtime, "{ :value \"A fine string!\"}");
   Lisple::Key key = Lisple::Key("value");
 
   // When

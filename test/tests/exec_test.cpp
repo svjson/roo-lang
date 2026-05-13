@@ -136,20 +136,13 @@ TEST(DestructuringArgumentBinding, apply__keys_and_alias)
 TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-  Lisple::PlusFunction plus_func;
-  Lisple::sptr_sobject_v args;
-
-  args.push_back(std::make_shared<Lisple::String>("4"));
-  args.push_back(std::make_shared<Lisple::Number>(4));
-
-  Lisple::sptr_sobject result = nullptr;
+  Lisple::Runtime runtime;
 
   // When
   std::string msg;
   try
   {
-    auto result = plus_func.execute(fixture.ctx, args);
+    runtime.eval(R"((+ "not-a-number" 4))");
   }
   catch (std::exception& e)
   {
@@ -157,8 +150,7 @@ TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
   }
 
   // Then
-  EXPECT_FALSE(result.get());
-  EXPECT_THAT(msg, HasSubstr("No matching signature"));
+  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
 }
 
 TEST(UserFunction, invocation_of_empty_function_returns_nil)
@@ -167,17 +159,16 @@ TEST(UserFunction, invocation_of_empty_function_returns_nil)
   Lisple::Runtime runtime;
   runtime.eval("(defun my-fn [arg])");
 
-  auto fn_sptr = runtime.lookup(Lisple::Word("my-fn"));
-  Lisple::UserFunction& user_fn = fn_sptr->as<Lisple::UserFunction>();
+  auto fn = runtime.lookup_value("my-fn");
 
-  Lisple::sptr_sobject_v args = {Lisple::String::make("A string!")};
+  Lisple::sptr_rtval_v args = {Lisple::RTValue::string("A string!")};
   Lisple::Context ctx(runtime);
 
   // When
-  auto retval = user_fn.execute(ctx, args);
+  auto retval = fn->exec().execute(ctx, args);
 
   // Then
-  ASSERT_EQ(*retval, *Lisple::NIL);
+  ASSERT_EQ(*retval, *Lisple::Constant::NIL);
 }
 
 TEST(Macro, get_signature__sig_with_varargs__array__form)

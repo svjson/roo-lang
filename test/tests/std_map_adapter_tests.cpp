@@ -89,7 +89,7 @@ TEST(StdMapAdapter_int_string, script_usage)
   runtime.get_current_namespace().store(Lisple::Word("my-map"), adapter);
 
   // Then
-  EXPECT_EQ(runtime.eval_ast("my-map"), adapter);
+  EXPECT_EQ(Lisple::to_AST(*runtime.eval("my-map")), adapter);
 
   EXPECT_EQ(*runtime.eval("(str my-map)"),
             *Lisple::RTValue::string(R"({1 "one" 2 "two" 3 "three"})"))

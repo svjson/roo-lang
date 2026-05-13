@@ -250,27 +250,6 @@ TEST(Signature, matches__trailing_varargs_of_same_type)
   EXPECT_FALSE(signature.matches({AST_ARRAY, AST_FUNCTION, AST_ARRAY}));
 }
 
-TEST(Signature, coerce_args__map_to_host_type)
-{
-  // Given
-  Lisple::Runtime reader;
-  reader.switch_namespace("vehicle");
-  reader.get_current_namespace().store(
-    Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::VehicleModelMakeFunction>());
-  reader.get_current_namespace().store(Lisple::Word("prn-vehicle"),
-                                       std::make_shared<LispleTest::PrnVehicle>());
-  reader.switch_namespace("user");
-
-  // When
-  Lisple::sptr_rtval result =
-    reader.eval(R"((vehicle/prn-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
-
-  // Then
-  EXPECT_EQ(result->type, Lisple::RTValue::Type::OBJECT);
-  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
-}
-
 TEST(Signature, coerce_args__map_to_native_type__native_function)
 {
   // Given
@@ -292,27 +271,6 @@ TEST(Signature, coerce_args__map_to_native_type__native_function)
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
 }
 
-TEST(Signature, coerce_args__map_to_native_type__call_ast_based_native_function)
-{
-  // Given
-  Lisple::Runtime reader;
-  reader.switch_namespace("vehicle");
-  reader.get_current_namespace().store(
-    Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
-  reader.get_current_namespace().store(Lisple::Word("prn-vehicle"),
-                                       std::make_shared<LispleTest::PrnVehicle>());
-  reader.switch_namespace("user");
-
-  // When
-  Lisple::sptr_rtval result =
-    reader.eval(R"((vehicle/prn-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
-
-  // Then
-  EXPECT_EQ(result->type, Lisple::RTValue::Type::NATIVE_OBJECT);
-  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
-}
-
 TEST(Signature, coerce_args__no_coercion_available)
 {
   // Given
@@ -320,9 +278,9 @@ TEST(Signature, coerce_args__no_coercion_available)
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::VehicleModelMakeFunction>());
+    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("double-size-vehicle"),
-                                       std::make_shared<LispleTest::DoubleSizeVehicle>());
+                                       std::make_shared<LispleTest::Native::DoubleSizeVehicle>());
   reader.switch_namespace("user");
 
   // When/Then
@@ -334,40 +292,40 @@ TEST(Signature, coerce_args__no_coercion_available)
     ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching signature")));
 }
 
-TEST(Signature, coerce_args__coerce_array_of_array_of_host_object)
+TEST(Signature, coerce_args__coerce_array_of_array_of_native_object)
 {
   // Given
   Lisple::Runtime reader;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::VehicleModelMakeFunction>());
+    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("a-of-a-taker"),
-                                       std::make_shared<LispleTest::ArrayOfArrayTaker>());
+                                       std::make_shared<LispleTest::Native::ArrayOfArrayTaker>());
 
   // When
-  Lisple::sptr_sobject result = reader.eval_ast(R"((a-of-a-taker
+  Lisple::sptr_rtval result = reader.eval(R"((a-of-a-taker
 [[(make-vehicle-model {:model-name "Batmobile" :seats 1}) (make-vehicle-model {:model-name "Dreamy Boom-Boom" :seats 10})]
  [(make-vehicle-model {:model-name "V8 Interceptor" :seats 2}) (make-vehicle-model {:model-name "Clown Car" :seats 1})]]
 ))");
 
   // Then
-  EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
-  EXPECT_EQ(result->size(), 2);
+  EXPECT_EQ(result->type, Lisple::RTValue::Type::VECTOR);
+  EXPECT_EQ(result->elements().size(), 2);
 
-  Lisple::sptr_sobject child1 = result->get_children().at(0);
-  EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*child1));
-  EXPECT_EQ(child1->size(), 2);
+  Lisple::sptr_rtval child1 = result->elements().at(0);
+  EXPECT_EQ(child1->type, Lisple::RTValue::Type::VECTOR);
+  EXPECT_EQ(child1->elements().size(), 2);
 
-  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child1->get_children().at(0)));
-  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child1->get_children().at(1)));
+  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child1->elements().at(0)));
+  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child1->elements().at(1)));
 
-  Lisple::sptr_sobject child2 = result->get_children().at(1);
-  EXPECT_TRUE(Lisple::Type::ARRAY.is_type_of(*child2));
-  EXPECT_EQ(child2->size(), 2);
+  Lisple::sptr_rtval child2 = result->elements().at(1);
+  EXPECT_EQ(child2->type, Lisple::RTValue::Type::VECTOR);
+  EXPECT_EQ(child2->elements().size(), 2);
 
-  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->get_children().at(0)));
-  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->get_children().at(1)));
+  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->elements().at(0)));
+  EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->elements().at(1)));
 }
 
 TEST(Signature, coerce_args__coerce_array_elements)
@@ -377,9 +335,9 @@ TEST(Signature, coerce_args__coerce_array_elements)
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     Lisple::Word("make-vehicle-model"),
-    std::make_shared<LispleTest::VehicleModelMakeFunction>());
+    std::make_shared<LispleTest::Native::VehicleModelMakeFunction>());
   reader.get_current_namespace().store(Lisple::Word("count-seats"),
-                                       std::make_shared<LispleTest::CountVehicleSeats>());
+                                       std::make_shared<LispleTest::Native::CountVehicleSeats>());
   reader.switch_namespace("user");
 
   // When

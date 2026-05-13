@@ -112,6 +112,39 @@ namespace LispleTest::Native
     return args.front();
   }
 
+  FUNC_IMPL(DoubleSizeVehicle,
+            SIG((FN_ARGS((&LispleTest::VEHICLE_MODEL_TYPE__NO_COERCE)),
+                 EXEC_DISPATCH(&DoubleSizeVehicle::exec_zoom))))
+
+  EXEC_BODY(DoubleSizeVehicle, exec_zoom)
+  {
+    VehicleModel& v = args.front()->adapter<VehicleModelAdapter>().get_object();
+    return VehicleModelAdapter::make_unique(v.get_model_name(), v.get_seats() * 2);
+  }
+
+  FUNC_IMPL(CountVehicleSeats,
+            SIG((FN_ARGS((&LispleTest::ARRAY_OF_VEHICLE_MODEL)),
+                 EXEC_DISPATCH(&CountVehicleSeats::exec_count))))
+
+  EXEC_BODY(CountVehicleSeats, exec_count)
+  {
+    long count = 0;
+    for (auto& element : args.front()->elements())
+    {
+      count += element->adapter<VehicleModelAdapter>().get_object().get_seats();
+    }
+    return Lisple::RTValue::number(count);
+  }
+
+  FUNC_IMPL(ArrayOfArrayTaker,
+            SIG((FN_ARGS((&LispleTest::ARRAY_OF_ARRAY_OF_VEHICLE_MODEL)),
+                 EXEC_DISPATCH(&ArrayOfArrayTaker::exec_accept))))
+
+  EXEC_BODY(ArrayOfArrayTaker, exec_accept)
+  {
+    return args.front();
+  }
+
   // ===============================================================
   // Vehicle example - namespace
   // ===============================================================
@@ -122,6 +155,9 @@ namespace LispleTest::Native
     values.emplace("make-vehicle-model", VehicleModelMakeFunction::make());
     values.emplace("make-reg-number", RegNumberMakeFunction::make());
     values.emplace("prn-vehicle-model", PrnVehicle::make());
+    values.emplace("double-size-vehicle", DoubleSizeVehicle::make());
+    values.emplace("count-seats", CountVehicleSeats::make());
+    values.emplace("a-of-a-taker", ArrayOfArrayTaker::make());
   }
 
 } // namespace LispleTest::Native

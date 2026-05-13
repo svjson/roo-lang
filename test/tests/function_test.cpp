@@ -17,14 +17,14 @@
 
 namespace Lisple { class Context; }
 
-std::shared_ptr<Lisple::Object> dummy_exec1(Lisple::Context&, Lisple::sptr_sobject_v&)
+Lisple::sptr_rtval dummy_exec1(Lisple::Context&, Lisple::sptr_rtval_v&)
 {
-  return std::make_shared<Lisple::String>("retval1");
+  return Lisple::RTValue::string("retval1");
 }
 
-std::shared_ptr<Lisple::Object> dummy_exec2(Lisple::Context&, Lisple::sptr_sobject_v&)
+Lisple::sptr_rtval dummy_exec2(Lisple::Context&, Lisple::sptr_rtval_v&)
 {
-  return std::make_shared<Lisple::String>("retval2");
+  return Lisple::RTValue::string("retval2");
 }
 
 
@@ -35,9 +35,9 @@ TEST(FunctionSignature, matches__two_strings)
                                         Lisple::arg(&Lisple::Type::STRING) },
     std::bind(&dummy_exec1, std::placeholders::_1, std::placeholders::_2));
 
-  Lisple::sptr_sobject_v args;
-  args.push_back(std::make_shared<Lisple::String>("string1"));
-  args.push_back(std::make_shared<Lisple::String>("string2"));
+  Lisple::sptr_rtval_v args;
+  args.push_back(Lisple::RTValue::string("string1"));
+  args.push_back(Lisple::RTValue::string("string2"));
 
   // Then
   EXPECT_TRUE(signature.matches(args));
@@ -62,12 +62,12 @@ TEST(Function, execute__delegate)
   Lisple::Function fn(std::move(signatures));
 
   // When
-  Lisple::sptr_sobject_v args;
-  args.push_back(std::make_unique<Lisple::String>("string1"));
+  Lisple::sptr_rtval_v args;
+  args.push_back(Lisple::RTValue::string("string1"));
 
-  std::shared_ptr<Lisple::Object> retval = fn.execute(fixture.ctx, args);
+  Lisple::sptr_rtval retval = fn.execute(fixture.ctx, args);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*retval));
-  EXPECT_EQ(Lisple::Value<std::string>::value_of(*retval), "retval1");
+  EXPECT_EQ(retval->str(), "retval1");
 }
