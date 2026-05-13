@@ -135,11 +135,6 @@ namespace Lisple
     return runtime.eval(*this, str);
   }
 
-  sptr_sobject Context::eval_ast(const sptr_sobject& form)
-  {
-    return runtime.eval_ast(*this, form);
-  }
-
   void Context::read_file(const std::string& file_name)
   {
     runtime.read_file(file_name);

@@ -53,38 +53,7 @@ namespace Lisple
    */
   MACRO_BODY(LetForm, inv_let)
   {
-    deprecated_special_form_invocations++;
-    Object& bindings = *args[0];
-
-    if (bindings.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of let expression: " +
-        bindings.to_string());
-    }
-
-    for (size_t i = 0; i < bindings.size(); i += 2)
-    {
-      Scope var_scope;
-      auto binding = ArgumentBinding::create(*bindings.get_children()[i]);
-      auto init_expr = ctx.eval_ast(bindings.get_children()[i + 1]);
-      binding->apply(var_scope, init_expr);
-      ctx.push_context(true, var_scope);
-    }
-
-    sptr_sobject result;
-
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      result = ctx.eval_ast(args[i]);
-    }
-
-    for (size_t i = 0; i < bindings.size() / 2; i++)
-    {
-      ctx.pop_context();
-    }
-
-    return result;
+    return ast_execution_removed("let");
   }
 
   EXECNODE_BODY(LetForm, execnode_let)
@@ -156,58 +125,7 @@ namespace Lisple
 
   FUNC_BODY(IfLetForm, inv_if_let)
   {
-    Object& binding_form = *args[0];
-
-    if (binding_form.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of if-let expression: " +
-        binding_form.to_string());
-    }
-
-    bool contains_non_truthy = false;
-
-    size_t scopes = 0;
-    for (size_t i = 0; i < binding_form.size(); i += 2)
-    {
-      auto& var_name_obj = *binding_form.get_children()[i];
-      auto var_val_obj = ctx.eval_ast(binding_form.get_children()[i + 1]);
-
-      if (!var_val_obj->is_truthy())
-      {
-        contains_non_truthy = true;
-        break;
-      }
-
-      if (!Type::WORD.is_type_of(var_name_obj))
-      {
-        throw TypeError(
-          "Invalid variable identifier in binding form of if-let expression: " +
-          var_name_obj.to_string() + " in " + binding_form.to_string());
-      }
-
-      Scope var_scope;
-      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
-      ctx.push_context(true, var_scope);
-      scopes++;
-    }
-
-    sptr_sobject result = NIL;
-
-    if (!contains_non_truthy)
-    {
-      result = ctx.eval_ast(args[1]);
-    }
-    else
-    {
-      result = ctx.eval_ast(args[2]);
-    }
-    for (size_t i = 0; i < scopes; i++)
-    {
-      ctx.pop_context();
-    }
-
-    return result;
+    return ast_execution_removed("if-let");
   }
 
   EXECNODE_BODY(IfLetForm, execnode_if_let)
@@ -285,59 +203,7 @@ namespace Lisple
 
   MACRO_BODY(WhenLetForm, inv_when_let)
   {
-    deprecated_special_form_invocations++;
-    Object& var_def_array = *args[0];
-
-    if (var_def_array.get_children().size() % 2 != 0)
-    {
-      throw LispleException(
-        "Wrong number of parameters in binding form of when-let expression: " +
-        var_def_array.to_string());
-    }
-
-    bool contains_nil = false;
-
-    size_t scopes = 0;
-    for (size_t i = 0; i < var_def_array.size(); i += 2)
-    {
-      auto& var_name_obj = *var_def_array.get_children()[i];
-      sptr_sobject var_expr = var_def_array.get_children()[i + 1];
-      auto var_val_obj = RuntimeValueWrapper::make(ctx.eval(var_expr));
-
-      if (*var_val_obj == *NIL)
-      {
-        contains_nil = true;
-        break;
-      }
-
-      if (!Type::WORD.is_type_of(var_name_obj))
-      {
-        throw TypeError(
-          "Invalid variable identifier in binding form of when-let expression: " +
-          var_name_obj.to_string() + " in " + var_def_array.to_string());
-      }
-
-      Scope var_scope;
-      var_scope.store(var_name_obj.as<Word>(), var_val_obj);
-      ctx.push_context(true, var_scope);
-      scopes++;
-    }
-
-    sptr_sobject result = NIL;
-    if (!contains_nil)
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        result = ctx.eval_ast(args[i]);
-      }
-    }
-
-    for (size_t i = 0; i < scopes; i++)
-    {
-      ctx.pop_context();
-    }
-
-    return result;
+    return ast_execution_removed("when-let");
   }
 
   EXECNODE_BODY(WhenLetForm, execnode_when_let)

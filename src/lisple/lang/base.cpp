@@ -52,10 +52,7 @@ namespace Lisple
    */
   MACRO_BODY(DefForm, inv_def)
   {
-    deprecated_special_form_invocations++;
-    Lisple::Word& symbol = args[0]->as<Lisple::Word>();
-    ctx.store_namespace(symbol, args[1]);
-    return ctx.get_current_namespace()->lookup(symbol);
+    return ast_execution_removed("def");
   }
 
   EXECNODE_BODY(DefForm, execnode_def)
@@ -71,9 +68,7 @@ namespace Lisple
    */
   MACRO_BODY(DefForm, inv_def_docstring)
   {
-    deprecated_special_form_invocations++;
-    ctx.store_namespace(args[0]->as<Lisple::Word>(), args[2]);
-    return args[2];
+    return ast_execution_removed("def");
   }
 
   EXECNODE_BODY(DefForm, execnode_def_docstring)
@@ -107,15 +102,7 @@ namespace Lisple
 
   MACRO_BODY(DoForm, inv_do)
   {
-    deprecated_special_form_invocations++;
-    Lisple::sptr_sobject ret;
-    ctx.push_context(true);
-    for (auto& arg : args)
-    {
-      ret = ctx.eval_ast(arg);
-    }
-    ctx.pop_context();
-    return ret;
+    return ast_execution_removed("do");
   }
 
   EXECNODE_BODY(DoForm, execnode_do)
@@ -180,19 +167,7 @@ namespace Lisple
    */
   MACRO_BODY(AndForm, inv_and)
   {
-    deprecated_special_form_invocations++;
-    ctx.push_context(true);
-    for (auto& arg : args)
-    {
-      sptr_sobject lmnt = ctx.eval_ast(arg);
-      if (!lmnt->is_truthy())
-      {
-        ctx.pop_context();
-        return B_FALSE;
-      }
-    }
-    ctx.pop_context();
-    return B_TRUE;
+    return ast_execution_removed("and");
   }
 
   EXECNODE_BODY(AndForm, execnode_and)
@@ -334,83 +309,7 @@ namespace Lisple
 
   MACRO_BODY(NsForm, inv_ns)
   {
-    Word& ns_word = args[0]->as<Word>();
-    Lisple::sptr_sobject_v imports;
-    if (args.size() == 2)
-    {
-      Lisple::List& list = args.back()->as<List>();
-      if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
-      {
-        throw_ns_exception(ns_word, list);
-      }
-      imports = list.tail();
-
-      // Verify the require forms the brute-ish and tedious way...
-      // FIXME: Maybe implement some kind of Matcher system for forms?
-      for (auto& imp : imports)
-      {
-        if (Type::WORD.is_type_of(*imp))
-        {
-          if (imp->as<Word>().is_qualified())
-          {
-            throw_ns_exception(ns_word,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
-          }
-        }
-        else if (Type::ARRAY.is_type_of(*imp))
-        {
-          if (imp->get_children().size() != 3)
-          {
-            throw_ns_exception(ns_word,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
-          }
-
-          if (*imp->get_children()[1] == KEY_AS)
-          {
-            if (!Type::WORD.is_type_of(*imp->get_children().back()) ||
-                imp->get_children().back()->as<Word>().is_qualified())
-            {
-              throw_ns_exception(ns_word,
-                                 list,
-                                 ". Invalid require-entry: " + imp->to_string());
-            }
-          }
-          else
-          {
-            throw_ns_exception(ns_word,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
-          }
-        }
-        else
-        {
-          throw_ns_exception(ns_word, list, ". Invalid require-entry: " + imp->to_string());
-        }
-      }
-    }
-
-    ctx.switch_namespace(ns_word.value);
-    for (auto& imp : imports)
-    {
-      if (Type::WORD.is_type_of(*imp))
-      {
-        // Full import
-        Word& imp_word = imp->as<Word>();
-        ctx.import_namespace(imp_word.value);
-      }
-      else if (Type::ARRAY.is_type_of(*imp))
-      {
-        // Aliased import
-        Array& imp_array = imp->as<Array>();
-        Word& imp_word = imp_array.head()->as<Word>();
-        Word& alias_word = imp_array.get_children().back()->as<Word>();
-        ctx.define_namespace_alias(imp_word.value, alias_word.value);
-      }
-    }
-
-    return NIL;
+    return ast_execution_removed("ns");
   }
 
   EXECNODE_BODY(NsForm, execnode_ns)
@@ -450,19 +349,7 @@ namespace Lisple
 
   MACRO_BODY(OrForm, inv_or)
   {
-    deprecated_special_form_invocations++;
-    ctx.push_context(true);
-    for (auto& arg : args)
-    {
-      sptr_sobject lmnt = ctx.eval_ast(arg);
-      if (lmnt->is_truthy())
-      {
-        ctx.pop_context();
-        return lmnt;
-      }
-    }
-    ctx.pop_context();
-    return B_FALSE;
+    return ast_execution_removed("or");
   }
 
   EXECNODE_BODY(OrForm, execnode_or)
@@ -558,38 +445,7 @@ namespace Lisple
 
   MACRO_BODY(SetBangForm, inv_set)
   {
-    deprecated_special_form_invocations++;
-    Lisple::Array& member_ref = args[0]->as<Lisple::Array>();
-
-    if (member_ref.size() == 1)
-    {
-      auto identifier = member_ref.get_children()[0]->as<Lisple::Word>();
-      Scope& scope = ctx.get_scope_of(identifier);
-      scope.mutate(identifier, args.back());
-    }
-    else if (member_ref.size() == 2)
-    {
-      auto actual_mem_ref = ctx.eval_ast(args[0]);
-      Lisple::Object& prop = *actual_mem_ref->get_children()[0];
-      Lisple::Object& owner = *actual_mem_ref->get_children().back();
-
-      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&owner))
-      {
-        auto val = to_rt_value(args.back());
-        Lisple::Dict::set_property(wrapper->val, to_rt_value(prop), val);
-      }
-      else
-      {
-        owner.set_property(&ctx, prop, args.back());
-      }
-    }
-    else
-    {
-      throw Lisple::InvocationException("Incorrect member reference: " +
-                                        member_ref.to_string());
-    }
-
-    return args.back();
+    return ast_execution_removed("set!");
   }
 
   EXECNODE_BODY(SetBangForm, execnode_set)

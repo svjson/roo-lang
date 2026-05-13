@@ -162,26 +162,9 @@ namespace Lisple
     sptr_rtval eval(Context& ctx, const std::string& str);
     sptr_rtval eval(const sptr_sobject& sexp);
     sptr_rtval eval(Context& ctx, const sptr_sobject& sexp);
-    sptr_sobject eval_ast(const std::string& str);
-    sptr_sobject eval_ast(Context& ctx, const sptr_sobject& sexp);
 
     sptr_rtval invoke(const std::string& function, sptr_rtval_v& args);
 
-    /*!
-     * @brief Call a Lisple function by name with the provided arguments
-     */
-    sptr_sobject call_fn(const std::string& identifier, sptr_sobject_v& args);
-
-    /*!
-     * @brief Call a lisple function by name with a single argument
-     */
-    sptr_sobject call_fn(const std::string& identifier, sptr_sobject& arg);
-
-    sptr_sobject_v eval_sexpression(Context& ctx, Seq& sexp);
-
-    sptr_sobject eval_list(Context& ctx, List& list);
-    sptr_sobject eval_array(Context& ctx, Array& array);
-    sptr_sobject eval_map(Context& ctx, Map& map);
     sptr_sobject exec(Context& ctx, sptr_sobject_v& list);
 
     sptr_sobject lookup(const Word& identifier);

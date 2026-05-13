@@ -222,6 +222,11 @@ namespace Lisple
   extern int user_function_rtval_invocations;
   extern int user_function_wrong_path_invocations;
 
+  inline sptr_sobject ast_execution_removed(const char* form_name)
+  {
+    throw InvocationException(std::string("AST execution removed: ") + form_name);
+  }
+
   class Context;
   class Scope;
 

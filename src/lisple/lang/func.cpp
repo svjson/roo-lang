@@ -77,18 +77,7 @@ namespace Lisple
   /** Legacy AST-based implementation */
   MACRO_BODY(DefunForm, inv_decl)
   {
-    deprecated_special_form_invocations++;
-    std::string fun_name = Lisple::Value<std::string>::value_of(*args[0]);
-    sptr_sobject_v body;
-    body.reserve(args.size() - 2);
-    for (size_t i = 2; i < args.size(); i++)
-    {
-      body.push_back(args[i]);
-    }
-    auto fn = create_function(fun_name, ctx, ctx.get_current_namespace(), *args[1], body);
-    ctx.store_namespace(fun_name, fn);
-
-    return fn;
+    return ast_execution_removed("defun");
   }
 
   EXECNODE_BODY(DefunForm, execnode_decl)
@@ -101,8 +90,7 @@ namespace Lisple
   /** Legacy AST-based implementation */
   MACRO_BODY(DefunForm, inv_decl_docstring)
   {
-    args.erase(args.begin() + 1);
-    return this->inv_decl(ctx, args);
+    return ast_execution_removed("defun");
   }
 
   EXECNODE_BODY(DefunForm, execnode_decl_docstring)
@@ -153,7 +141,7 @@ namespace Lisple
    */
   MACRO_BODY(FnForm, inv_decl)
   {
-    throw InvocationException("Legacy FnMacro is no longer valid");
+    return ast_execution_removed("fn");
   }
 
   EXECNODE_BODY(FnForm, execnode_decl)

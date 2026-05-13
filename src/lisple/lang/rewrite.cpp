@@ -23,7 +23,7 @@ namespace Lisple
 
   MACRO_BODY(CommentForm, inv_comment)
   {
-    return NIL;
+    return ast_execution_removed("comment");
   }
 
   EXECNODE_BODY(CommentForm, execnode_comment)
@@ -72,39 +72,7 @@ namespace Lisple
 
   MACRO_BODY(ThreadFirstForm, inv_thread_first)
   {
-    deprecated_special_form_invocations++;
-    sptr_sobject value = args[0];
-    for (size_t i = 1; i < args.size(); i++)
-    {
-      sptr_sobject ifn = args[i];
-      if (ifn->get_type() == Form::LIST)
-      {
-        sptr_sobject_v ifn_children = ifn->get_children();
-        size_t ifn_size = ifn_children.size();
-        sptr_sobject_v fn_list;
-
-        fn_list.reserve(ifn->size() + 1);
-        if (ifn_size)
-        {
-          fn_list.push_back(ctx.eval_ast(ifn_children[0]));
-        }
-
-        fn_list.push_back(value);
-
-        for (size_t n = 1; n < ifn_size; n++)
-        {
-          fn_list.push_back(ctx.eval_ast(ifn_children[n]));
-        }
-
-        value = List(fn_list).execute(ctx);
-      }
-      else
-      {
-        value = List({ctx.eval_ast(ifn), value}).execute(ctx);
-      }
-    }
-
-    return value;
+    return ast_execution_removed("->");
   }
 
   EXECNODE_BODY(ThreadFirstForm, execnode_thread_first)

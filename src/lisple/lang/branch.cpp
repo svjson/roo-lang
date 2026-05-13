@@ -36,31 +36,7 @@ namespace Lisple
 
   MACRO_BODY(CaseForm, inv_case)
   {
-    if ((args.size() - 1) % 2 != 0)
-    {
-      throw InvocationException("Incomplete condition-expression pair passed to case");
-    }
-    else if (args.size() == 1)
-    {
-      throw InvocationException("Empty case-form");
-    }
-
-    sptr_sobject retval = NIL;
-
-    ctx.push_context(true);
-    sptr_sobject value = ctx.eval_ast(args[0]);
-
-    for (size_t i = 1; i < args.size(); i += 2)
-    {
-      if (*ctx.eval_ast(args[i]) == *value || *args[i] == DEFAULT)
-      {
-        retval = ctx.eval_ast(args[i + 1]);
-        break;
-      }
-    }
-
-    ctx.pop_context();
-    return retval;
+    return ast_execution_removed("case");
   }
 
   EXECNODE_BODY(CaseForm, execnode_case)
@@ -106,31 +82,7 @@ namespace Lisple
 
   MACRO_BODY(CondForm, inv_cond)
   {
-    deprecated_special_form_invocations++;
-    if (args.size() % 2 != 0)
-    {
-      throw InvocationException("Uneven number of forms passed to cond");
-    }
-    else if (args.size() == 0)
-    {
-      throw InvocationException("Empty cond-form");
-    }
-
-    sptr_sobject retval = Lisple::NIL;
-
-    ctx.push_context(true);
-    for (size_t i = 0; i < args.size(); i += 2)
-    {
-      sptr_sobject condition = ctx.eval_ast(args[i]);
-      if (*condition != *B_FALSE && *condition != *NIL)
-      {
-        retval = ctx.eval_ast(args[i + 1]);
-        break;
-      }
-    }
-
-    ctx.pop_context();
-    return retval;
+    return ast_execution_removed("cond");
   }
 
   EXECNODE_BODY(CondForm, execnode_cond)
@@ -178,20 +130,7 @@ namespace Lisple
 
   MACRO_BODY(IfForm, inv_if)
   {
-    sptr_sobject retval = Lisple::NIL;
-
-    ctx.push_context(true);
-    auto condition = ctx.eval_ast(args[0]);
-    if (*condition != *Lisple::B_FALSE && *condition != *Lisple::NIL)
-    {
-      retval = ctx.eval_ast(args[1]);
-    }
-    else if (args.size() == 3)
-    {
-      retval = ctx.eval_ast(args[2]);
-    }
-    ctx.pop_context();
-    return retval;
+    return ast_execution_removed("if");
   }
 
   EXECNODE_BODY(IfForm, execnode_if)
@@ -234,19 +173,7 @@ namespace Lisple
 
   MACRO_BODY(WhenForm, inv_when)
   {
-    sptr_sobject retval = NIL;
-
-    ctx.push_context(true);
-    auto condition = ctx.eval_ast(args[0]);
-    if (condition->is_truthy())
-    {
-      for (size_t i = 1; i < args.size(); i++)
-      {
-        retval = RuntimeValueWrapper::make(ctx.eval(args[i]));
-      }
-    }
-    ctx.pop_context();
-    return retval;
+    return ast_execution_removed("when");
   }
 
   EXECNODE_BODY(WhenForm, execnode_when)
