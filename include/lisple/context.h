@@ -27,7 +27,6 @@ namespace Lisple
 
     bool evalp() const;
     sptr_rtval lookup_value(const Word& word) const;
-    sptr_sobject lookup(const Word& word) const;
     bool has(const Word& word) const;
 
     std::string to_string() const;
@@ -95,8 +94,7 @@ namespace Lisple
     Scope& get_scope_of(const Word& identifier) const;
 
     void read_file(const std::string& file_name);
-    void store_namespace(Word key, sptr_sobject value);
-    void store_namespace(const std::string& symbol, sptr_rtval& value);
+    void store_namespace(const std::string& symbol, const sptr_rtval& value);
 
     /*!
      * @brief Switch the underlying namespace in which execution and unqualified
@@ -122,7 +120,6 @@ namespace Lisple
 
     Namespace& lang();
 
-    sptr_sobject lookup(const Word& word) const;
     sptr_rtval lookup_value(const Word& word) const;
     sptr_rtval lookup_value(const std::string& identifier) const;
 

@@ -69,14 +69,14 @@ namespace Lisple
   {
     if (make_fn)
     {
-      sptr_sobject function = ctx.lookup(*make_fn);
-      if (*function == *NIL || !Type::EXEC.is_type_of(*function))
+      sptr_rtval function = ctx.lookup_value(*make_fn);
+      if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
       {
         throw InvocationException(
           "Coercion failed. Review Host Object configuration - Make Function '" + *make_fn +
-          "' is not executable: " + function->to_string(2));
+          "' is not executable: " + function->to_string());
       }
-      auto& make_exec = function->as<Executable>();
+      auto& make_exec = function->exec();
 
       for (auto& sig : make_exec.signatures)
       {

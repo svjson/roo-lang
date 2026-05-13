@@ -69,7 +69,7 @@ namespace Lisple
                                         *arg_vec,
                                         body);
     sptr_rtval fn = RTValue::executable(func);
-    ctx.ctx->store_namespace(fn_name, func);
+    ctx.ctx->store_namespace(fn_name.value, fn);
 
     return std::make_unique<ExecNode>(RTValue::executable(func));
   }

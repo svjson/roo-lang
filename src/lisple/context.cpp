@@ -30,11 +30,6 @@ namespace Lisple
     return evaluation_mode;
   }
 
-  sptr_sobject ContextFrame::lookup(const Word& word) const
-  {
-    return scope.lookup(word);
-  }
-
   sptr_rtval ContextFrame::lookup_value(const Word& word) const
   {
     if (word.is_qualified())
@@ -196,34 +191,9 @@ namespace Lisple
     runtime.define_namespace_alias(namespace_name, alias);
   }
 
-  void Context::store_namespace(Word key, sptr_sobject value)
-  {
-    runtime.get_current_namespace().store(key.value, value);
-  }
-
-  void Context::store_namespace(const std::string& symbol, sptr_rtval& value)
+  void Context::store_namespace(const std::string& symbol, const sptr_rtval& value)
   {
     runtime.get_current_namespace().store(symbol, value);
-  }
-
-  sptr_sobject Context::lookup(const Word& identifier) const
-  {
-    if (identifier.is_qualified())
-    {
-      sptr_sobject result = runtime.lookup(identifier);
-      return result ? result : NIL;
-    }
-
-    for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
-    {
-      sptr_sobject res = i->get()->lookup(identifier);
-      if (res.get())
-      {
-        return res;
-      }
-    }
-
-    return runtime.lookup(identifier);
   }
 
   sptr_rtval Context::lookup_value(const Word& identifier) const

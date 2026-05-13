@@ -165,13 +165,10 @@ namespace Lisple
 
     sptr_rtval invoke(const std::string& function, sptr_rtval_v& args);
 
-    sptr_sobject lookup(const Word& identifier);
     sptr_rtval lookup_value(const Word& identifier);
     sptr_rtval lookup_value(const std::string& identifier);
     sptr_rtval lookup_value(const std::string& identifier,
                             const Lisple::sptr_rtval& default_value);
-    sptr_sobject lookup(const Word& identifier, sptr_sobject fallback);
-    sptr_sobject lookup(const std::string& identifier);
     Namespace& get_ns_of(const Word& identifier);
 
    private:

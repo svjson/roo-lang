@@ -287,11 +287,6 @@ namespace Lisple
     }
   }
 
-  sptr_sobject Runtime::lookup(const Word& identifier)
-  {
-    return lookup(identifier, nullptr);
-  }
-
   sptr_rtval Runtime::lookup_value(const std::string& identifier)
   {
     return lookup_value(Lisple::Word(identifier));
@@ -337,46 +332,6 @@ namespace Lisple
     }
 
     throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
-  }
-
-  sptr_sobject Runtime::lookup(const Word& identifier, sptr_sobject fallback)
-  {
-    if (identifier.is_qualified())
-    {
-      Namespace* _ns = ns(identifier.get_qualifier());
-      if (_ns)
-      {
-        return _ns->lookup(Word(identifier.get_identifier()));
-      }
-
-      sptr_sobject result = current_namespace->lookup(identifier);
-      if (result) return result;
-
-      throw IdentifierException("Unknown identifier: '" + identifier.to_string() + "'");
-    }
-
-    sptr_sobject lang_obj = lang.lookup(identifier);
-    if (lang_obj.get())
-    {
-      return lang_obj;
-    }
-
-    sptr_sobject ns_obj = current_namespace->lookup(identifier);
-    if (ns_obj.get())
-    {
-      return ns_obj;
-    }
-
-    if (!fallback)
-    {
-      throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
-    }
-    return fallback;
-  }
-
-  sptr_sobject Runtime::lookup(const std::string& identifier)
-  {
-    return this->lookup(Word(identifier));
   }
 
   Namespace& Runtime::get_ns_of(const Word& identifier)
