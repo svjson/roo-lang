@@ -227,11 +227,9 @@ namespace Lisple
     virtual ~Argument() = default;
 
     bool is_vararg() const;
-    bool matches(Lisple::Object&) const;
     bool matches(RTValue&) const;
     bool matches(const uptr_exec_node&) const;
-    CoercionResult<Object> coerce(Context& ctx, sptr_sobject& obj) const;
-    CoercionResult<RTValue> coerce(Context& ctx, sptr_rtval& obj) const;
+    CoercionResult coerce(Context& ctx, sptr_rtval& obj) const;
     /**
      * @brief Query if the argument should be evaluated before being
      * passed to the target executable form, or if it should be passed
@@ -295,7 +293,6 @@ namespace Lisple
     bool supports_exec_tree() const;
     bool supports_rt_value() const;
     bool is_lazy_eval() const;
-    bool matches(const sptr_sobject_v& args) const;
     bool matches(const sptr_rtval_v& args) const;
     bool matches(const uptr_exec_node_v& args) const;
     bool is_literal_arg(std::size_t index) const;
@@ -308,8 +305,6 @@ namespace Lisple
      * @brief Attempt to coerce arguments list to fit the Signature by inspecting
      * the signature types for possible conversions
      */
-    sptr_sobject_v coerce_args(Context& ctx, sptr_sobject_v& args);
-
     sptr_rtval_v coerce_args(Context& ctx, sptr_rtval_v& args);
 
     sptr_rtval invoke(Context& ctx, SpecialFormNode& args);

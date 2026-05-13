@@ -31,20 +31,9 @@ namespace Lisple
     return obj.get_type() == form_type;
   }
 
-  CoercionResult<Object> TypeRef::coerce(Context&, sptr_sobject&) const
+  CoercionResult TypeRef::coerce(Context&, sptr_rtval&) const
   {
-    return CoercionResult<Object>{false, nullptr};
-  }
-
-  CoercionResult<RTValue> TypeRef::coerce(Context&, sptr_rtval&) const
-  {
-    return CoercionResult<RTValue>{false, nullptr};
-  }
-
-  CoercionResult<Object> TypeRef::coerce(Runtime& reader, sptr_sobject& obj) const
-  {
-    Context ctx(reader);
-    return this->coerce(ctx, obj);
+    return CoercionResult{false, nullptr};
   }
 
   bool TypeRef::is_host_object() const
@@ -104,20 +93,7 @@ namespace Lisple
     return false;
   }
 
-  CoercionResult<Object> MultiRef::coerce(Context& ctx, sptr_sobject& obj) const
-  {
-    for (auto type : types)
-    {
-      CoercionResult result = type->coerce(ctx, obj);
-      if (result.success)
-      {
-        return result;
-      }
-    }
-    return TypeRef::coerce(ctx, obj);
-  }
-
-  CoercionResult<RTValue> MultiRef::coerce(Context& ctx, sptr_rtval& obj) const
+  CoercionResult MultiRef::coerce(Context& ctx, sptr_rtval& obj) const
   {
     for (auto type : types)
     {
@@ -177,51 +153,7 @@ namespace Lisple
     return true;
   }
 
-  CoercionResult<Object> SeqRef::coerce(Context& ctx, sptr_sobject& obj) const
-  {
-    if (seq_type->is_type_of(*obj))
-    {
-      sptr_sobject_v coerced_elements;
-
-      for (auto& child : obj->get_children())
-      {
-        if (child_type->is_type_of(*child))
-        {
-          coerced_elements.push_back(child);
-        }
-        else
-        {
-          CoercionResult coercion = child_type->coerce(ctx, child);
-          if (coercion.success)
-          {
-            coerced_elements.push_back(coercion.result);
-          }
-          else
-          {
-            return coercion;
-          }
-        }
-      }
-      sptr_sobject coerced_seq;
-      switch (seq_type->form_type)
-      {
-      case Form::ARRAY:
-        coerced_seq = std::make_shared<Array>(coerced_elements);
-        break;
-      case Form::LIST:
-        coerced_seq = std::make_shared<List>(coerced_elements);
-        break;
-      default:
-        return CoercionResult<Object>{false, nullptr};
-      }
-
-      return CoercionResult{true, coerced_seq};
-    }
-
-    return CoercionResult<Object>{false, nullptr};
-  }
-
-  CoercionResult<RTValue> SeqRef::coerce(Context& ctx, sptr_rtval& obj) const
+  CoercionResult SeqRef::coerce(Context& ctx, sptr_rtval& obj) const
   {
     if (seq_type->is_type_of(*obj))
     {
@@ -256,13 +188,13 @@ namespace Lisple
         coerced_seq = RTValue::list(std::move(coerced_elements));
         break;
       default:
-        return CoercionResult<RTValue>{false, nullptr};
+        return CoercionResult{false, nullptr};
       }
 
       return CoercionResult{true, coerced_seq};
     }
 
-    return CoercionResult<RTValue>{false, nullptr};
+    return CoercionResult{false, nullptr};
   }
 
 } // namespace Lisple

@@ -154,11 +154,6 @@ namespace Lisple
   {
   }
 
-  bool Argument::matches(Object& obj) const
-  {
-    return type->is_type_of(obj);
-  }
-
   bool Argument::matches(RTValue& obj) const
   {
     return type->is_type_of(obj);
@@ -173,12 +168,7 @@ namespace Lisple
     return true;
   }
 
-  CoercionResult<Object> Argument::coerce(Context& ctx, sptr_sobject& obj) const
-  {
-    return type->coerce(ctx, obj);
-  }
-
-  CoercionResult<RTValue> Argument::coerce(Context& ctx, sptr_rtval& obj) const
+  CoercionResult Argument::coerce(Context& ctx, sptr_rtval& obj) const
   {
     return type->coerce(ctx, obj);
   }
@@ -282,7 +272,7 @@ namespace Lisple
         }
         else
         {
-          CoercionResult<RTValue> coercion = arg.coerce(ctx, args[i]);
+          CoercionResult coercion = arg.coerce(ctx, args[i]);
           if (coercion.success)
           {
             coerced.push_back(coercion.result);
@@ -295,41 +285,6 @@ namespace Lisple
         }
       }
     }
-    return coerced;
-  }
-
-  sptr_sobject_v Signature::coerce_args(Context& ctx, sptr_sobject_v& args)
-  {
-    sptr_sobject_v coerced;
-    coerced.reserve(args.size());
-
-    // Non-vararg signatures
-    if (args.size() == arguments.size())
-    {
-      for (size_t i = 0; i < arguments.size(); i++)
-      {
-        const Argument& arg = arguments[i];
-        if (arg.matches(*args[i]))
-        {
-          coerced.push_back(args[i]);
-          continue;
-        }
-        else
-        {
-          CoercionResult<Object> coercion = arg.coerce(ctx, args[i]);
-          if (coercion.success)
-          {
-            coerced.push_back(coercion.result);
-          }
-          else
-          {
-            coerced.clear();
-            return coerced;
-          }
-        }
-      }
-    }
-
     return coerced;
   }
 
@@ -398,51 +353,6 @@ namespace Lisple
   }
 
   bool Signature::matches(const sptr_rtval_v& args) const
-  {
-    size_t args_size = args.size();
-    size_t arguments_size = arguments.size();
-    if (this->vararg)
-    {
-      size_t i = 0;
-      size_t a = 0;
-      while (i < args_size && a < arguments_size)
-      {
-        if (arguments[a].is_vararg())
-        {
-          if (arguments[a].matches(*args[i]))
-            i++;
-          else
-            a++;
-        }
-        else
-        {
-          if (!arguments[a].matches(*args[i])) return false;
-          i++;
-          a++;
-        }
-      }
-
-      if (a < arguments_size - 1 || i < args_size) return false;
-    }
-    else
-    {
-      if (args_size < arguments_size - optional_count) return false;
-      if (!has_rest && args_size > arguments_size) return false;
-
-      const size_t check_count = std::min(args_size, arguments_size);
-      for (size_t i = 0; i < check_count; i++)
-      {
-        if (!arguments[i].matches(*args[i]))
-        {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }
-
-  bool Signature::matches(const sptr_sobject_v& args) const
   {
     size_t args_size = args.size();
     size_t arguments_size = arguments.size();

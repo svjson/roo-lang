@@ -41,11 +41,6 @@ namespace SignatureTest
   Lisple::uptr_exec_node NODE_ARRAY = std::make_unique<Lisple::ExecNode>(ARRAY);
   Lisple::uptr_exec_node NODE_FUNCTION = std::make_unique<Lisple::ExecNode>(FUNCTION);
 
-  Lisple::sptr_sobject AST_STRING = std::make_shared<Lisple::String>("str");
-  Lisple::sptr_sobject AST_NUMBER = std::make_shared<Lisple::Number>(5);
-  Lisple::sptr_sobject AST_ARRAY = std::make_shared<Lisple::Array>();
-  Lisple::sptr_sobject AST_FUNCTION = std::make_shared<Lisple::MapFunction>();
-
 } // namespace SignatureTest
 
 using SignatureTest::ARRAY;
@@ -57,11 +52,6 @@ using SignatureTest::NODE_ARRAY;
 using SignatureTest::NODE_FUNCTION;
 using SignatureTest::NODE_NUMBER;
 using SignatureTest::NODE_STRING;
-
-using SignatureTest::AST_ARRAY;
-using SignatureTest::AST_FUNCTION;
-using SignatureTest::AST_NUMBER;
-using SignatureTest::AST_STRING;
 
 Lisple::sptr_rtval signature_noop([[maybe_unused]] Lisple::Context& ctx,
                                   [[maybe_unused]] Lisple::sptr_rtval_v& args)
@@ -77,21 +67,6 @@ Lisple::uptr_exec_node_v node_list(const std::vector<Lisple::uptr_exec_node*>& e
     nodes.push_back((*node)->clone());
   }
   return nodes;
-}
-
-TEST(Signature, matches_ast_arguments)
-{
-  // Given
-  Lisple::Signature signature(
-    Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    Lisple::exec_rtval_fn{signature_noop});
-
-  // Then
-  EXPECT_TRUE(signature.matches({AST_STRING, AST_NUMBER}));
-
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_NUMBER, AST_NUMBER}));
 }
 
 TEST(Signature, matches_rtval_arguments)
@@ -132,12 +107,12 @@ TEST(Signature, no_arg_signature_matches_only_empty_arglist)
                               Lisple::exec_rtval_fn{signature_noop});
 
   // Then
-  EXPECT_TRUE(signature.matches(Lisple::sptr_sobject_v{}));
+  EXPECT_TRUE(signature.matches(Lisple::sptr_rtval_v{}));
 
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_NUMBER}));
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_NUMBER, AST_NUMBER}));
+  EXPECT_FALSE(signature.matches({STRING, NUMBER}));
+  EXPECT_FALSE(signature.matches({STRING, STRING}));
+  EXPECT_FALSE(signature.matches({STRING}));
+  EXPECT_FALSE(signature.matches({STRING, NUMBER, NUMBER}));
 }
 
 TEST(Signature, matches_varargs)
@@ -148,20 +123,20 @@ TEST(Signature, matches_varargs)
     Lisple::exec_rtval_fn{signature_noop});
 
   // Then
-  EXPECT_TRUE(signature.matches(Lisple::sptr_sobject_v{}));
-  EXPECT_TRUE(signature.matches({AST_STRING}));
-  EXPECT_TRUE(signature.matches({AST_STRING, AST_STRING}));
-  EXPECT_TRUE(signature.matches({AST_STRING, AST_STRING, AST_STRING}));
-  EXPECT_TRUE(signature.matches({AST_STRING, AST_STRING, AST_STRING, AST_STRING}));
+  EXPECT_TRUE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_TRUE(signature.matches({STRING}));
+  EXPECT_TRUE(signature.matches({STRING, STRING}));
+  EXPECT_TRUE(signature.matches({STRING, STRING, STRING}));
+  EXPECT_TRUE(signature.matches({STRING, STRING, STRING, STRING}));
   EXPECT_TRUE(
-    signature.matches({AST_STRING, AST_STRING, AST_STRING, AST_STRING, AST_STRING}));
+    signature.matches({STRING, STRING, STRING, STRING, STRING}));
   EXPECT_TRUE(signature.matches(
-    {AST_STRING, AST_STRING, AST_STRING, AST_STRING, AST_STRING, AST_STRING}));
+    {STRING, STRING, STRING, STRING, STRING, STRING}));
 
-  EXPECT_FALSE(signature.matches({AST_NUMBER, AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_NUMBER, AST_STRING, AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_NUMBER}));
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_NUMBER, AST_NUMBER}));
+  EXPECT_FALSE(signature.matches({NUMBER, STRING}));
+  EXPECT_FALSE(signature.matches({NUMBER, STRING, STRING}));
+  EXPECT_FALSE(signature.matches({STRING, NUMBER}));
+  EXPECT_FALSE(signature.matches({STRING, NUMBER, NUMBER}));
 }
 
 TEST(Signature, matches__leading_varargs)
@@ -176,14 +151,14 @@ TEST(Signature, matches__leading_varargs)
               std::placeholders::_1,
               std::placeholders::_2));
 
-  EXPECT_TRUE(signature.matches({AST_FUNCTION}));
-  EXPECT_TRUE(signature.matches({AST_ARRAY, AST_FUNCTION}));
-  EXPECT_TRUE(signature.matches({AST_ARRAY, AST_ARRAY, AST_FUNCTION}));
-  EXPECT_TRUE(signature.matches({AST_ARRAY, AST_ARRAY, AST_ARRAY, AST_FUNCTION}));
+  EXPECT_TRUE(signature.matches({FUNCTION}));
+  EXPECT_TRUE(signature.matches({ARRAY, FUNCTION}));
+  EXPECT_TRUE(signature.matches({ARRAY, ARRAY, FUNCTION}));
+  EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY, FUNCTION}));
 
-  EXPECT_FALSE(signature.matches(Lisple::sptr_sobject_v{}));
-  EXPECT_FALSE(signature.matches({AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_FUNCTION, AST_ARRAY}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_FALSE(signature.matches({STRING}));
+  EXPECT_FALSE(signature.matches({FUNCTION, ARRAY}));
 }
 
 TEST(Signature, matches__trailing_varargs)
@@ -198,17 +173,17 @@ TEST(Signature, matches__trailing_varargs)
               std::placeholders::_1,
               std::placeholders::_2));
 
-  EXPECT_TRUE(signature.matches({AST_FUNCTION}));
-  EXPECT_TRUE(signature.matches({AST_FUNCTION, AST_ARRAY}));
-  EXPECT_TRUE(signature.matches({AST_FUNCTION, AST_ARRAY, AST_ARRAY}));
-  EXPECT_TRUE(signature.matches({AST_FUNCTION, AST_ARRAY, AST_ARRAY, AST_ARRAY}));
+  EXPECT_TRUE(signature.matches({FUNCTION}));
+  EXPECT_TRUE(signature.matches({FUNCTION, ARRAY}));
+  EXPECT_TRUE(signature.matches({FUNCTION, ARRAY, ARRAY}));
+  EXPECT_TRUE(signature.matches({FUNCTION, ARRAY, ARRAY, ARRAY}));
 
-  EXPECT_FALSE(signature.matches(Lisple::sptr_sobject_v{}));
-  EXPECT_FALSE(signature.matches({AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_ARRAY}));
-  EXPECT_FALSE(signature.matches({AST_ARRAY, AST_FUNCTION}));
-  EXPECT_FALSE(signature.matches({AST_FUNCTION, AST_FUNCTION, AST_ARRAY}));
-  EXPECT_FALSE(signature.matches({AST_ARRAY, AST_FUNCTION, AST_ARRAY}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_FALSE(signature.matches({STRING}));
+  EXPECT_FALSE(signature.matches({ARRAY}));
+  EXPECT_FALSE(signature.matches({ARRAY, FUNCTION}));
+  EXPECT_FALSE(signature.matches({FUNCTION, FUNCTION, ARRAY}));
+  EXPECT_FALSE(signature.matches({ARRAY, FUNCTION, ARRAY}));
 }
 
 TEST(Signature, matches__trailing_varargs_of_same_type)
@@ -223,17 +198,17 @@ TEST(Signature, matches__trailing_varargs_of_same_type)
               std::placeholders::_1,
               std::placeholders::_2));
 
-  EXPECT_TRUE(signature.matches({AST_ARRAY}));
-  EXPECT_TRUE(signature.matches({AST_ARRAY, AST_ARRAY}));
-  EXPECT_TRUE(signature.matches({AST_ARRAY, AST_ARRAY, AST_ARRAY}));
-  EXPECT_TRUE(signature.matches({AST_ARRAY, AST_ARRAY, AST_ARRAY, AST_ARRAY}));
+  EXPECT_TRUE(signature.matches({ARRAY}));
+  EXPECT_TRUE(signature.matches({ARRAY, ARRAY}));
+  EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY}));
+  EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY, ARRAY}));
 
-  EXPECT_FALSE(signature.matches(Lisple::sptr_sobject_v{}));
-  EXPECT_FALSE(signature.matches({AST_ARRAY, AST_STRING}));
-  EXPECT_FALSE(signature.matches({AST_STRING, AST_ARRAY}));
-  EXPECT_FALSE(signature.matches({AST_ARRAY, AST_FUNCTION}));
-  EXPECT_FALSE(signature.matches({AST_FUNCTION, AST_FUNCTION, AST_ARRAY}));
-  EXPECT_FALSE(signature.matches({AST_ARRAY, AST_FUNCTION, AST_ARRAY}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_FALSE(signature.matches({ARRAY, STRING}));
+  EXPECT_FALSE(signature.matches({STRING, ARRAY}));
+  EXPECT_FALSE(signature.matches({ARRAY, FUNCTION}));
+  EXPECT_FALSE(signature.matches({FUNCTION, FUNCTION, ARRAY}));
+  EXPECT_FALSE(signature.matches({ARRAY, FUNCTION, ARRAY}));
 }
 
 TEST(Signature, coerce_args__map_to_native_type__native_function)

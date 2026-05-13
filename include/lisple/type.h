@@ -41,10 +41,10 @@ namespace Lisple
   typedef std::shared_ptr<Object> sptr_sobject;
   typedef std::vector<std::shared_ptr<Object>> sptr_sobject_v;
 
-  template <typename T> struct CoercionResult
+  struct CoercionResult
   {
     bool success;
-    std::shared_ptr<T> result;
+    sptr_rtval result;
   };
 
   /*! @brief Basic type reference and identifier for built-in Lisple types */
@@ -63,10 +63,7 @@ namespace Lisple
     virtual bool is_type_of(const RTValue& val) const;
     virtual bool is_type_of(const Object& obj) const;
 
-    virtual CoercionResult<Object> coerce(Context& ctx, sptr_sobject& obj) const;
-    virtual CoercionResult<RTValue> coerce(Context& ctx, sptr_rtval& val) const;
-
-    CoercionResult<Object> coerce(Runtime& reader, sptr_sobject& obj) const;
+    virtual CoercionResult coerce(Context& ctx, sptr_rtval& val) const;
 
     virtual bool is_host_object() const;
 
@@ -85,8 +82,7 @@ namespace Lisple
 
     bool is_type_of(const RTValue& val) const override;
     bool is_type_of(const Object& obj) const override;
-    CoercionResult<Object> coerce(Context& ctx, sptr_sobject& obj) const override;
-    CoercionResult<RTValue> coerce(Context& ctx, sptr_rtval& val) const override;
+    CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
   };
 
   /*! @brief Type reference for when any type is acceptable */
@@ -112,8 +108,7 @@ namespace Lisple
 
     bool is_type_of(const RTValue& val) const override;
     bool is_type_of(const Object& obj) const override;
-    CoercionResult<Object> coerce(Context& ctx, sptr_sobject& obj) const override;
-    CoercionResult<RTValue> coerce(Context& ctx, sptr_rtval& val) const override;
+    CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
   };
 
   namespace Type
