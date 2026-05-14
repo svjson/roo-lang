@@ -25,8 +25,10 @@ namespace Lisple
     void remove(const std::string& identifier);
     void clear();
     virtual bool has(const std::string& identifier) const;
-    virtual sptr_val lookup(const std::string& identifier) const;
-    virtual sptr_val lookup(const Value& identifier) const;
+    virtual const sptr_val* find(const std::string& identifier) const;
+    virtual const sptr_val* find(const Value& identifier) const;
+    virtual const sptr_val& lookup(const std::string& identifier) const;
+    virtual const sptr_val& lookup(const Value& identifier) const;
     std::shared_ptr<AST::Vector> get_keys() const;
   };
 } // namespace Lisple

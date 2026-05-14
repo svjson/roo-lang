@@ -288,17 +288,51 @@ namespace Lisple
 
   sptr_val Runtime::lookup(const std::string& identifier, const sptr_val& default_value)
   {
-    try
+    if (const sptr_val* value = find(identifier))
     {
-      return lookup(identifier);
+      return *value;
     }
-    catch (IdentifierException&)
-    {
-      return default_value;
-    }
+    return default_value;
   }
 
-  sptr_val Runtime::lookup(const Value& identifier)
+  const sptr_val* Runtime::find(const Value& identifier)
+  {
+    if (identifier.type != Value::Type::SYMBOL)
+    {
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
+    }
+
+    return find(identifier.str());
+  }
+
+  const sptr_val* Runtime::find(const std::string& identifier_s)
+  {
+    AST::Symbol identifier(identifier_s);
+    if (identifier.is_qualified())
+    {
+      Namespace* _ns = ns(identifier.get_qualifier());
+      if (_ns)
+      {
+        return _ns->find(identifier.get_identifier());
+      }
+
+      if (const sptr_val* result = current_namespace->find(identifier.to_string()))
+      {
+        return result;
+      }
+
+      return nullptr;
+    }
+
+    if (const sptr_val* lang_obj = lang.find(identifier.get_identifier()))
+    {
+      return lang_obj;
+    }
+
+    return current_namespace->find(identifier.get_identifier());
+  }
+
+  const sptr_val& Runtime::lookup(const Value& identifier)
   {
     if (identifier.type != Value::Type::SYMBOL)
     {
@@ -308,36 +342,14 @@ namespace Lisple
     return lookup(identifier.str());
   }
 
-  sptr_val Runtime::lookup(const std::string& identifier_s)
+  const sptr_val& Runtime::lookup(const std::string& identifier_s)
   {
-    AST::Symbol identifier(identifier_s);
-    if (identifier.is_qualified())
+    const sptr_val* value = find(identifier_s);
+    if (!value)
     {
-      Namespace* _ns = ns(identifier.get_qualifier());
-      if (_ns)
-      {
-        return _ns->lookup(identifier.get_identifier());
-      }
-
-      sptr_val result = current_namespace->lookup(identifier.to_string());
-      if (result) return result;
-
-      throw IdentifierException("Unknown identifier: '" + identifier.to_string() + "'");
+      throw IdentifierException("Unknown identifier: '" + identifier_s + "'");
     }
-
-    sptr_val lang_obj = lang.lookup(identifier.get_identifier());
-    if (lang_obj.get())
-    {
-      return lang_obj;
-    }
-
-    sptr_val ns_obj = current_namespace->lookup(identifier.get_identifier());
-    if (ns_obj.get())
-    {
-      return ns_obj;
-    }
-
-    throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
+    return *value;
   }
 
   Namespace& Runtime::get_ns_of(const std::string& identifier)

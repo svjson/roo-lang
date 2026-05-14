@@ -37,7 +37,13 @@ namespace Lisple
     }
   }
 
-  sptr_val Namespace::find(const std::string& identifier_s) const
+  const sptr_val* Namespace::find_local(const std::string& identifier) const
+  {
+    auto it = values.find(identifier);
+    return it == values.end() ? nullptr : &it->second;
+  }
+
+  const sptr_val* Namespace::find(const std::string& identifier_s) const
   {
     AST::Symbol identifier(identifier_s);
     if (identifier.is_qualified())
@@ -45,20 +51,20 @@ namespace Lisple
       if (aliased_namespaces.count(identifier.get_qualifier()))
       {
         Namespace* aliased = aliased_namespaces.at(identifier.get_qualifier());
-        return aliased->lookup(identifier.get_identifier());
+        return aliased->find(identifier.get_identifier());
       }
       return nullptr;
     }
 
-    if (this->values.count(identifier.get_identifier()))
+    if (const sptr_val* value = find_local(identifier.get_identifier()))
     {
-      return this->values.at(identifier.get_identifier());
+      return value;
     }
     for (auto* imported : imported_namespaces)
     {
-      if (imported->has(identifier.get_identifier()))
+      if (const sptr_val* value = imported->find_local(identifier.get_identifier()))
       {
-        return imported->lookup(identifier.get_identifier());
+        return value;
       }
     }
 
@@ -71,18 +77,27 @@ namespace Lisple
     return val_it != this->values.end();
   }
 
-  sptr_val Namespace::lookup(const std::string& identifier) const
+  const sptr_val* Namespace::find(const Value& identifier) const
   {
-    sptr_val value = this->find(identifier);
-    if (value)
+    if (identifier.type != Value::Type::SYMBOL)
     {
-      return value;
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }
 
-    return nullptr;
+    return find(identifier.str());
   }
 
-  sptr_val Namespace::lookup(const Value& identifier) const
+  const sptr_val& Namespace::lookup(const std::string& identifier) const
+  {
+    const sptr_val* value = find(identifier);
+    if (!value)
+    {
+      throw IdentifierException("Unknown identifier: '" + identifier + "'");
+    }
+    return *value;
+  }
+
+  const sptr_val& Namespace::lookup(const Value& identifier) const
   {
     if (identifier.type != Value::Type::SYMBOL)
     {

@@ -36,3 +36,35 @@ TEST(Scope, has__after_store)
   // Then
   ASSERT_TRUE(result);
 }
+
+TEST(Scope, find__missing_returns_nullptr)
+{
+  // Given
+  Scope scope;
+
+  // Then
+  ASSERT_EQ(scope.find("ident"), nullptr);
+}
+
+TEST(Scope, lookup__missing_throws)
+{
+  // Given
+  Scope scope;
+
+  // Then
+  ASSERT_THROW(scope.lookup("ident"), Lisple::IdentifierException);
+}
+
+TEST(Scope, lookup__existing_returns_stored_value_reference)
+{
+  // Given
+  Scope scope;
+  Lisple::sptr_val value = Lisple::Value::number(10);
+  scope.store("ident", value);
+
+  // When
+  const Lisple::sptr_val& result = scope.lookup("ident");
+
+  // Then
+  ASSERT_EQ(&result, scope.find("ident"));
+}

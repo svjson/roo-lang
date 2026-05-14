@@ -72,7 +72,7 @@ namespace Lisple
     /*!
      * @brief Used internally to service Namespace::has and Namespace::lookup
      */
-    sptr_val find(const std::string& identifier) const;
+    const sptr_val* find_local(const std::string& identifier) const;
 
    public:
     /*!
@@ -99,8 +99,10 @@ namespace Lisple
      * @brief Find a stored identifier in this namespace, its imported
      * namespaces or, if specifically qualified, its aliased namespaces.
      */
-    sptr_val lookup(const std::string& identifier) const override;
-    sptr_val lookup(const Value& identifier) const override;
+    const sptr_val* find(const std::string& identifier) const override;
+    const sptr_val* find(const Value& identifier) const override;
+    const sptr_val& lookup(const std::string& identifier) const override;
+    const sptr_val& lookup(const Value& identifier) const override;
 
     using Scope::mutate;
     void mutate(const std::string& identifier, const sptr_val& val) override;

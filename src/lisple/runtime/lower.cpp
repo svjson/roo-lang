@@ -108,9 +108,14 @@ namespace Lisple
         try
         {
           const AST::Symbol& symbol = obj->as<AST::Symbol>();
-          static_val = symbol.is_qualified()
-                         ? ctx.ctx->lookup(symbol.to_string())
-                         : ctx.ctx->get_current_namespace()->lookup(symbol.get_identifier());
+          const sptr_val* found =
+            symbol.is_qualified()
+              ? ctx.ctx->find(symbol.to_string())
+              : ctx.ctx->get_current_namespace()->find(symbol.get_identifier());
+          if (found)
+          {
+            static_val = *found;
+          }
         }
         catch (const IdentifierException&)
         {
@@ -118,7 +123,11 @@ namespace Lisple
         }
         if (!static_val)
         {
-          static_val = ctx.ctx->lang().lookup(obj->as<AST::Symbol>().get_identifier());
+          if (const sptr_val* found =
+                ctx.ctx->lang().find(obj->as<AST::Symbol>().get_identifier()))
+          {
+            static_val = *found;
+          }
         }
         if (static_val)
         {

@@ -45,12 +45,12 @@ TEST_F(Context, scope_lookup)
   // When
   auto global_ctx_ref = ctx.lookup(*Lisple::Value::symbol("my-ns-var"));
   auto local_ctx_ref = ctx.lookup("my-local-var");
-  auto non_global_ctx_ref = runtime.get_current_namespace().lookup("my-local-var");
+  auto non_global_ctx_ref = runtime.get_current_namespace().find("my-local-var");
 
   // Then
   EXPECT_EQ(*global_ctx_ref, *ns_string);
   EXPECT_EQ(*local_ctx_ref, *local_string);
-  EXPECT_FALSE(non_global_ctx_ref.get());
+  EXPECT_EQ(non_global_ctx_ref, nullptr);
 }
 
 TEST_F(Context, scoped_vars_go_away_when_context_is_popped)

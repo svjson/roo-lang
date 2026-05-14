@@ -43,17 +43,37 @@ namespace Lisple
     return values.count(identifier);
   }
 
-  sptr_val Scope::lookup(const std::string& symbol) const
+  const sptr_val* Scope::find(const std::string& symbol) const
   {
     auto it = values.find(symbol);
     if (it == values.end())
     {
       return nullptr;
     }
-    return it->second;
+    return &it->second;
   }
 
-  sptr_val Scope::lookup(const Value& identifier) const
+  const sptr_val* Scope::find(const Value& identifier) const
+  {
+    if (identifier.type != Value::Type::SYMBOL)
+    {
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
+    }
+
+    return find(identifier.str());
+  }
+
+  const sptr_val& Scope::lookup(const std::string& symbol) const
+  {
+    const sptr_val* value = find(symbol);
+    if (!value)
+    {
+      throw IdentifierException("Unknown identifier '" + symbol + "'");
+    }
+    return *value;
+  }
+
+  const sptr_val& Scope::lookup(const Value& identifier) const
   {
     if (identifier.type != Value::Type::SYMBOL)
     {

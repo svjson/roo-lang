@@ -30,12 +30,22 @@ namespace Lisple
     return evaluation_mode;
   }
 
-  sptr_val ContextFrame::lookup(const std::string& identifier) const
+  const sptr_val* ContextFrame::find(const std::string& identifier) const
+  {
+    return scope.find(identifier);
+  }
+
+  const sptr_val* ContextFrame::find(const Value& identifier) const
+  {
+    return scope.find(identifier);
+  }
+
+  const sptr_val& ContextFrame::lookup(const std::string& identifier) const
   {
     return scope.lookup(identifier);
   }
 
-  sptr_val ContextFrame::lookup(const Value& identifier) const
+  const sptr_val& ContextFrame::lookup(const Value& identifier) const
   {
     return scope.lookup(identifier);
   }
@@ -196,23 +206,44 @@ namespace Lisple
     runtime.get_current_namespace().store(symbol, value);
   }
 
-  sptr_val Context::lookup(const std::string& identifier) const
+  const sptr_val* Context::find(const std::string& identifier) const
   {
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {
-      sptr_val res = i->get()->lookup(identifier);
-      if (res.get())
+      const sptr_val* res = i->get()->find(identifier);
+      if (res)
       {
         return res;
       }
     }
 
-    auto val = runtime.lookup(identifier);
-
-    return val;
+    return runtime.find(identifier);
   }
 
-  sptr_val Context::lookup(const Value& identifier) const
+  const sptr_val* Context::find(const Value& identifier) const
+  {
+    if (identifier.type != Value::Type::SYMBOL)
+    {
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
+    }
+
+    return find(identifier.str());
+  }
+
+  const sptr_val& Context::lookup(const std::string& identifier) const
+  {
+    for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
+    {
+      if (const sptr_val* res = i->get()->find(identifier))
+      {
+        return *res;
+      }
+    }
+
+    return runtime.lookup(identifier);
+  }
+
+  const sptr_val& Context::lookup(const Value& identifier) const
   {
     if (identifier.type != Value::Type::SYMBOL)
     {

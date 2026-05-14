@@ -26,8 +26,10 @@ namespace Lisple
     ContextFrame(bool evaluation_mode);
 
     bool evalp() const;
-    sptr_val lookup(const std::string& identifier) const;
-    sptr_val lookup(const Value& identifier) const;
+    const sptr_val* find(const std::string& identifier) const;
+    const sptr_val* find(const Value& identifier) const;
+    const sptr_val& lookup(const std::string& identifier) const;
+    const sptr_val& lookup(const Value& identifier) const;
     bool has(const std::string& identifier) const;
 
     std::string to_string() const;
@@ -121,8 +123,10 @@ namespace Lisple
 
     Namespace& lang();
 
-    sptr_val lookup(const std::string& identifier) const;
-    sptr_val lookup(const Value& identifier) const;
+    const sptr_val* find(const std::string& identifier) const;
+    const sptr_val* find(const Value& identifier) const;
+    const sptr_val& lookup(const std::string& identifier) const;
+    const sptr_val& lookup(const Value& identifier) const;
 
     void push_context(bool evaluation_mode);
     void push_context(bool evaluation_mode, Scope& scope);

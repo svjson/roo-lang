@@ -168,8 +168,10 @@ namespace Lisple
 
     sptr_val invoke(const std::string& function, sptr_val_v& args);
 
-    sptr_val lookup(const std::string& identifier);
-    sptr_val lookup(const Value& identifier);
+    const sptr_val* find(const std::string& identifier);
+    const sptr_val* find(const Value& identifier);
+    const sptr_val& lookup(const std::string& identifier);
+    const sptr_val& lookup(const Value& identifier);
     sptr_val lookup(const std::string& identifier, const Lisple::sptr_val& default_value);
     Namespace& get_ns_of(const std::string& identifier);
 
