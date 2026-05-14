@@ -173,46 +173,6 @@ namespace Lisple
 
   inline const vararg_mode VARARG = true;
 
-  class ArgumentBinding
-  {
-   public:
-    virtual ~ArgumentBinding() = default;
-
-    virtual void apply(Scope& scope, sptr_sobject& arg_val) = 0;
-
-    static std::unique_ptr<ArgumentBinding> create(Object& arg_declaration);
-  };
-
-  class NamedArgumentBinding : public ArgumentBinding
-  {
-    std::string arg_name;
-
-   public:
-    NamedArgumentBinding(const std::string& name);
-
-    void apply(Scope& scope, sptr_sobject& arg_val) override;
-  };
-
-  class DestructuringArgumentBinding : public ArgumentBinding
-  {
-    Map binding_form;
-
-   public:
-    DestructuringArgumentBinding(const Map& destr_map);
-
-    void apply(Scope& scope, sptr_sobject& arg_val) override;
-  };
-
-  class ArrayArgumentBinding : public ArgumentBinding
-  {
-    Array binding_form;
-
-   public:
-    ArrayArgumentBinding(const Lisple::Array& array);
-
-    void apply(Scope& scope, sptr_sobject& arg_val) override;
-  };
-
   class Argument
   {
    public:
@@ -235,7 +195,9 @@ namespace Lisple
      * passed to the target executable form, or if it should be passed
      * as-is for the target to handle evaluation itself.
      *
-     * This is for legacy use. DEFAULT = true, LITERAL/POSTPONE = false
+     * DEFAULT arguments are evaluated by the lowered call node. LITERAL and
+     * POSTPONE arguments are passed through for the target form/function to
+     * interpret.
      */
     bool evalp() const;
     /**

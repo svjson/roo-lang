@@ -133,7 +133,8 @@ namespace Lisple
     /**
      * @brief Construct an ExecNode of type T.
      *
-     * Sets the legacy form value to NIL.
+     * Sets the optional source form value to NIL when the lowered node does not
+     * need to retain its originating AST form.
      */
     template <typename T>
     explicit ExecNode(T node)
@@ -151,8 +152,8 @@ namespace Lisple
     /**
      * @brief Construct an ExecNode containing the source AST node.
      *
-     * The AST node (form) is required for compatibility with the legacy
-     * AST-as-runtime implementation.
+     * Some lowered nodes retain the original AST form for diagnostics,
+     * literal-data handling, or host interop.
      */
     template <typename T>
     explicit ExecNode(const sptr_sobject& form, T node)
