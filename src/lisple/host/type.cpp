@@ -43,9 +43,9 @@ namespace Lisple
     return false;
   }
 
-  bool HostTypeRef::is_type_of(const Object& obj) const
+  bool HostTypeRef::is_type_of(const AST::Object& obj) const
   {
-    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
       if (wrapper->val->type == RTValue::Type::NATIVE_OBJECT)
       {
@@ -66,8 +66,8 @@ namespace Lisple
       if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
       {
         throw InvocationException(
-          "Coercion failed. Review Host Object configuration - Make Function '" + *make_fn +
-          "' is not executable: " + function->to_string());
+          "Coercion failed. Review Host AST::Object configuration - Make Function '" +
+          *make_fn + "' is not executable: " + function->to_string());
       }
       auto& make_exec = std::get<sptr_sobject>(function->value)->as<Executable>();
 

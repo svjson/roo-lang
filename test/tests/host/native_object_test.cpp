@@ -105,7 +105,7 @@ namespace
   ADAPTER_PROP_GET(VectorBoxAdapter, FIELD(values), VECTOR_COPY(VALUE));
   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(VectorBoxAdapter,
                                                keyword_values,
-                                               Lisple::Keyword);
+                                               Lisple::AST::Keyword);
   ADAPTER_PROP_GET(VectorBoxAdapter,
                    FIELD(children),
                    VECTOR_COPY(ADAPTER(LispleTest::Native::OptionalChildAdapter)));

@@ -10,7 +10,6 @@
 
 namespace Lisple
 {
-  class Object;
   class TokenSymbol;
   enum class Token : uint8_t;
 
@@ -25,7 +24,7 @@ namespace Lisple
     void begin_hash_context();
     void close_context(Token end_token);
 
-    void append(std::shared_ptr<Object> obj);
+    void append(std::shared_ptr<AST::Object> obj);
   };
 
   class Parser

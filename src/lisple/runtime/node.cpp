@@ -14,7 +14,7 @@ namespace Lisple
 
   LiteralNode::LiteralNode(const sptr_rtval& v)
     : value(v)
-    , ast_node(Lisple::NIL)
+    , ast_node(Lisple::AST::NIL)
   {
     literal_nodes_constructed++;
   }
@@ -26,7 +26,7 @@ namespace Lisple
     literal_nodes_constructed++;
   }
 
-  LookupNode::LookupNode(Symbol id)
+  LookupNode::LookupNode(AST::Symbol id)
     : identifier(id)
   {
     lookup_nodes_constructed++;
@@ -117,7 +117,7 @@ namespace Lisple
   }
 
   ExecNode::ExecNode(const sptr_rtval& runtime_value)
-    : form(Lisple::NIL)
+    : form(Lisple::AST::NIL)
     , data(LiteralNode(runtime_value))
   {
     exec_nodes_constructed++;

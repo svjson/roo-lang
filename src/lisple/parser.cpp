@@ -13,23 +13,23 @@ namespace Lisple
 {
   void ParseContext::begin_list(Token start_type)
   {
-    std::shared_ptr<Object> list;
+    std::shared_ptr<AST::Object> list;
     switch (start_type)
     {
     case Token::LPAREN:
-      list = std::make_shared<List>();
+      list = std::make_shared<AST::List>();
       closing_tokens.push_back(Token::RPAREN);
       break;
     case Token::SQUOT:
-      list = std::make_shared<List>(true);
+      list = std::make_shared<AST::List>(true);
       closing_tokens.push_back(Token::RPAREN);
       break;
     case Token::LBRACKET:
-      list = std::make_shared<Vector>();
+      list = std::make_shared<AST::Vector>();
       closing_tokens.push_back(Token::RBRACKET);
       break;
     case Token::LCURLY:
-      list = std::make_shared<Map>();
+      list = std::make_shared<AST::Map>();
       closing_tokens.push_back(Token::RCURLY);
       break;
     default:
@@ -41,7 +41,7 @@ namespace Lisple
 
   void ParseContext::begin_hash_context()
   {
-    stack.push_back(std::make_shared<Discard>());
+    stack.push_back(std::make_shared<AST::Discard>());
   }
 
   void ParseContext::close_context(Token end_token)
@@ -54,7 +54,7 @@ namespace Lisple
     // Do we really want to automatically add a NIL value for unmatched k/v pairs?
     if (end_token == Token::RCURLY && stack.back()->get_children().size() % 2 == 1)
     {
-      append(NIL);
+      append(AST::NIL);
       // We don't validate keys here, because nothing has actually been evaluated yet.
       // Something like {(inc! num) val (inc! num) val} would be identified as
       // duplicate keys, although evaluation would produce unique keys.
@@ -66,7 +66,7 @@ namespace Lisple
     append(std::move(frame));
   }
 
-  void ParseContext::append(std::shared_ptr<Object> obj)
+  void ParseContext::append(std::shared_ptr<AST::Object> obj)
   {
     if (stack.empty())
     {
@@ -118,19 +118,19 @@ namespace Lisple
         ctx.close_context(sym.token);
         break;
       case Token::STRING:
-        ctx.append(std::make_unique<String>(sym.value));
+        ctx.append(std::make_unique<AST::String>(sym.value));
         break;
       case Token::CHAR:
-        ctx.append(std::make_unique<Char>(sym.value.at(0)));
+        ctx.append(std::make_unique<AST::Char>(sym.value.at(0)));
         break;
       case Token::KEYWORD:
-        ctx.append(Keyword::make(sym.value));
+        ctx.append(AST::Keyword::make(sym.value));
         break;
       case Token::SYMBOL:
-        ctx.append(std::make_unique<Symbol>(sym.value));
+        ctx.append(std::make_unique<AST::Symbol>(sym.value));
         break;
       case Token::NUMBER:
-        ctx.append(Number::make(sym.value));
+        ctx.append(AST::Number::make(sym.value));
         break;
       case Token::SQUOT:
         eof_check(symbols, offset);
@@ -141,7 +141,7 @@ namespace Lisple
         }
         else if (sym.token == Token::SYMBOL)
         {
-          ctx.append(std::make_unique<QuotedSymbol>(sym.value));
+          ctx.append(std::make_unique<AST::QuotedSymbol>(sym.value));
         }
         else
         {

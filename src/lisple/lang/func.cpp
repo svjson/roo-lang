@@ -21,16 +21,16 @@ namespace Lisple
   }
 
   /** DefunForm - defun */
-  SPECIAL_FORM_IMPL(
-    DefunForm,
-    MULTI_SIG(
-      (FN_ARGS((&Type::SYMBOL, DATA), (&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
-       EXEC_DISPATCH(&DefunForm::execnode_decl)),
-      (FN_ARGS((&Type::SYMBOL, DATA),
-               (&Type::STRING, DATA),
-               (&Type::VECTOR, DATA),
-               (VARARG, &Type::ANY, NO_EVAL)),
-       EXEC_DISPATCH(&DefunForm::execnode_decl_docstring))))
+  SPECIAL_FORM_IMPL(DefunForm,
+                    MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA),
+                                       (&Type::VECTOR, DATA),
+                                       (VARARG, &Type::ANY, NO_EVAL)),
+                               EXEC_DISPATCH(&DefunForm::execnode_decl)),
+                              (FN_ARGS((&Type::SYMBOL, DATA),
+                                       (&Type::STRING, DATA),
+                                       (&Type::VECTOR, DATA),
+                                       (VARARG, &Type::ANY, NO_EVAL)),
+                               EXEC_DISPATCH(&DefunForm::execnode_decl_docstring))))
 
   SFORM_LOWER_IMPL(DefunForm)
   {
@@ -50,7 +50,7 @@ namespace Lisple
       throw LispleException("Invalid defun form: " + ast_node->to_string());
     }
 
-    Lisple::Symbol& fn_name = elements[1]->as<Lisple::Symbol>();
+    Lisple::AST::Symbol& fn_name = elements[1]->as<Lisple::AST::Symbol>();
     sptr_sobject doc_string =
       elements[2]->get_type() == Lisple::Form::STRING ? elements[2] : nullptr;
     sptr_sobject arg_vec = !doc_string ? elements[2] : elements[3];

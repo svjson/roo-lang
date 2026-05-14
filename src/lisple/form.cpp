@@ -15,7 +15,7 @@
 #include <lisple/runtime/value.h>
 #include <lisple/type.h>
 
-namespace Lisple
+namespace Lisple::AST
 {
   const int INT_CONSTANTS_SIZE = 1001;
   std::vector<std::shared_ptr<Number>> INT_CONSTANTS = []()
@@ -975,7 +975,7 @@ namespace Lisple
   RuntimeValueWrapper::RuntimeValueWrapper(const sptr_rtval& val)
     : Object(Form::NIL)
     , val(val)
-    , delegate(Lisple::NIL)
+    , delegate(NIL)
   {
     rtvalue_wrappers_constructed++;
 
@@ -1100,7 +1100,7 @@ namespace Lisple
     {
     }
 
-    return Lisple::NIL;
+    return NIL;
   }
 
   bool RuntimeValueWrapper::has_key(const Object& key) const
@@ -1133,9 +1133,9 @@ namespace Lisple
 
   std::shared_ptr<Object> RuntimeValueWrapper::make(const sptr_rtval& value)
   {
-    if (*value == *Constant::NIL) return Lisple::NIL;
-    if (*value == *Constant::BOOL_FALSE) return Lisple::B_FALSE;
-    if (*value == *Constant::BOOL_TRUE) return Lisple::B_TRUE;
+    if (*value == *Constant::NIL) return NIL;
+    if (*value == *Constant::BOOL_FALSE) return B_FALSE;
+    if (*value == *Constant::BOOL_TRUE) return B_TRUE;
     switch (value->type)
     {
     case RTValue::Type::CHAR:
@@ -1161,4 +1161,4 @@ namespace Lisple
   template class Value<char>;
   template class Value<float>;
 
-} // namespace Lisple
+} // namespace Lisple::AST

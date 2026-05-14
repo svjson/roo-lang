@@ -35,7 +35,7 @@ TEST(HostTypeRef, is_type__RTWrapped_native_object)
   Lisple::sptr_rtval adapter =
     LispleTest::Native::VehicleModelAdapter::make_unique("Spruttibangbang", 8);
 
-  Lisple::sptr_sobject wrapped = Lisple::RuntimeValueWrapper::make(adapter);
+  Lisple::sptr_sobject wrapped = Lisple::AST::RuntimeValueWrapper::make(adapter);
 
   // Then
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*wrapped));

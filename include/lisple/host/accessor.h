@@ -128,8 +128,8 @@
  * usage with a value type argument:
  *
  *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions);
- *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions, Lisple::Keyword);
- *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions, Lisple::Keyword, field_name);
+ *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions, Lisple::AST::Keyword);
+ *   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(Adapter, transitions, Lisple::AST::Keyword, field_name);
  * ----------------------------------------------------------------------- */
 
 #define __NOBJ_KEYWORD_VECTOR_ACCESSOR(MACRO, AD_CLASS, PROP_NAME, VALUE_TYPE, NAME) \

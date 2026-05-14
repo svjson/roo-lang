@@ -35,7 +35,7 @@ namespace Lisple
       throw LispleException("Invalid def form: " + ast_node->to_string());
     }
 
-    Lisple::Symbol& symbol = elements[1]->as<Lisple::Symbol>();
+    Lisple::AST::Symbol& symbol = elements[1]->as<Lisple::AST::Symbol>();
     sptr_sobject doc_string = elements.size() == 4 ? elements[2] : nullptr;
     sptr_sobject value = !doc_string ? elements[2] : elements[3];
 
@@ -180,10 +180,10 @@ namespace Lisple
                               (FN_ARGS((&Type::SYMBOL, DATA), (&Type::LIST, DATA)),
                                EXEC_DISPATCH(&NsForm::execnode_ns))))
 
-  Keyword KEY_REQUIRE("require");
-  Keyword KEY_AS("as");
+  AST::Keyword KEY_REQUIRE("require");
+  AST::Keyword KEY_AS("as");
 
-  void throw_ns_exception(Symbol& ns, List& req_list, std::string msg = "")
+  void throw_ns_exception(AST::Symbol& ns, AST::List& req_list, std::string msg = "")
   {
     std::string ns_decl = "(ns " + ns.value;
     ns_decl += " " + req_list.to_string();
@@ -196,12 +196,12 @@ namespace Lisple
   {
     sptr_sobject_v& elements = ast_node->get_children();
 
-    Symbol& ns_symbol = elements[1]->as<Symbol>();
+    AST::Symbol& ns_symbol = elements[1]->as<AST::Symbol>();
 
     Lisple::sptr_sobject_v imports;
     if (elements.size() == 3)
     {
-      Lisple::List& list = elements.back()->as<List>();
+      Lisple::AST::List& list = elements.back()->as<AST::List>();
       if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
       {
         throw_ns_exception(ns_symbol, list);
@@ -214,7 +214,7 @@ namespace Lisple
       {
         if (Type::SYMBOL.is_type_of(*imp))
         {
-          if (imp->as<Symbol>().is_qualified())
+          if (imp->as<AST::Symbol>().is_qualified())
           {
             throw_ns_exception(ns_symbol,
                                list,
@@ -233,7 +233,7 @@ namespace Lisple
           if (*imp->get_children()[1] == KEY_AS)
           {
             if (!Type::SYMBOL.is_type_of(*imp->get_children().back()) ||
-                imp->get_children().back()->as<Symbol>().is_qualified())
+                imp->get_children().back()->as<AST::Symbol>().is_qualified())
             {
               throw_ns_exception(ns_symbol,
                                  list,
@@ -249,7 +249,9 @@ namespace Lisple
         }
         else
         {
-          throw_ns_exception(ns_symbol, list, ". Invalid require-entry: " + imp->to_string());
+          throw_ns_exception(ns_symbol,
+                             list,
+                             ". Invalid require-entry: " + imp->to_string());
         }
       }
     }
@@ -260,15 +262,15 @@ namespace Lisple
       if (Type::SYMBOL.is_type_of(*imp))
       {
         // Full import
-        Symbol& imp_symbol = imp->as<Symbol>();
+        AST::Symbol& imp_symbol = imp->as<AST::Symbol>();
         ctx.ctx->import_namespace(imp_symbol.value);
       }
       else if (Type::VECTOR.is_type_of(*imp))
       {
         // Aliased import
-        Vector& imp_vector = imp->as<Vector>();
-        Symbol& imp_symbol = imp_vector.head()->as<Symbol>();
-        Symbol& alias_symbol = imp_vector.get_children().back()->as<Symbol>();
+        AST::Vector& imp_vector = imp->as<AST::Vector>();
+        AST::Symbol& imp_symbol = imp_vector.head()->as<AST::Symbol>();
+        AST::Symbol& alias_symbol = imp_vector.get_children().back()->as<AST::Symbol>();
         ctx.ctx->define_namespace_alias(imp_symbol.value, alias_symbol.value);
       }
     }

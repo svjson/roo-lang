@@ -287,7 +287,7 @@ namespace Lisple
 
       children.erase(children.begin() + n);
 
-      obj->as<Seq>().replace_children(children);
+      obj->as<AST::Seq>().replace_children(children);
 
       return to_rt_value(to_delete);
     }

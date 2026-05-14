@@ -97,11 +97,11 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       return static_cast<unsigned short>(int_value);
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       return static_cast<unsigned short>(long_value);
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       return static_cast<unsigned short>(float_value);
     }
@@ -111,11 +111,11 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       return int_value;
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       return static_cast<int>(long_value);
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       return float_value;
     }
@@ -125,11 +125,11 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       return static_cast<long>(int_value);
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       return long_value;
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       return float_value;
     }
@@ -139,11 +139,11 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       return int_value;
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       return static_cast<int>(long_value);
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       return float_value;
     }
@@ -153,11 +153,11 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       return int_value;
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       return long_value;
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       return float_value;
     }
@@ -167,47 +167,47 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::INT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::INT,
                                .int_value = int_value + other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = int_value + other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = int_value + other.float_value};
       }
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = long_value + other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = long_value + other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = long_value + other.float_value};
       }
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value + other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value + other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value + other.float_value};
       }
     }
@@ -217,47 +217,47 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::INT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::INT,
                                .int_value = int_value - other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = int_value - other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = int_value - other.float_value};
       }
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = long_value - other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = long_value - other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = long_value - other.float_value};
       }
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value - other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value - other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value - other.float_value};
       }
     }
@@ -267,47 +267,47 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::INT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::INT,
                                .int_value = int_value * other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = int_value * other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = int_value * other.float_value};
       }
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = long_value * other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::LONG,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                .long_value = long_value * other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = long_value * other.float_value};
       }
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value * other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value * other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value * other.float_value};
       }
     }
@@ -317,59 +317,59 @@ namespace Lisple
   {
     switch (num_type)
     {
-    case NumberType::INT:
+    case RTValue::NumberType::INT:
       switch (other.num_type)
       {
-      case NumberType::INT:
+      case RTValue::NumberType::INT:
         if (int_value % other.int_value == 0)
-          return RTValue::Number{.num_type = NumberType::INT,
+          return RTValue::Number{.num_type = RTValue::NumberType::INT,
                                  .int_value = int_value / other.int_value};
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = (double)int_value / other.int_value};
-      case NumberType::LONG:
+      case RTValue::NumberType::LONG:
         if (int_value % other.long_value == 0)
-          return RTValue::Number{.num_type = NumberType::LONG,
+          return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                  .long_value = int_value / other.long_value};
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = (double)int_value / other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = int_value / other.float_value};
       }
-    case NumberType::LONG:
+    case RTValue::NumberType::LONG:
       switch (other.num_type)
       {
-      case NumberType::INT:
+      case RTValue::NumberType::INT:
         if (long_value % other.int_value == 0)
-          return RTValue::Number{.num_type = NumberType::LONG,
+          return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                  .long_value = long_value / other.int_value};
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = (double)long_value / other.int_value};
-      case NumberType::LONG:
+      case RTValue::NumberType::LONG:
         if (long_value % other.long_value == 0)
-          return RTValue::Number{.num_type = NumberType::LONG,
+          return RTValue::Number{.num_type = RTValue::NumberType::LONG,
                                  .long_value = long_value / other.long_value};
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = (double)long_value / other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = long_value / other.float_value};
       }
-    case NumberType::FLOAT:
+    case RTValue::NumberType::FLOAT:
     default:
       switch (other.num_type)
       {
-      case NumberType::INT:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::INT:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value / other.int_value};
-      case NumberType::LONG:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+      case RTValue::NumberType::LONG:
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value / other.long_value};
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
       default:
-        return RTValue::Number{.num_type = NumberType::FLOAT,
+        return RTValue::Number{.num_type = RTValue::NumberType::FLOAT,
                                .float_value = float_value / other.float_value};
       }
     }
@@ -388,12 +388,12 @@ namespace Lisple
   sptr_rtval RTValue::number(long v)
   {
     return std::make_shared<RTValue>(
-      RTValue::Number{.num_type = NumberType::LONG, .long_value = v});
+      RTValue::Number{.num_type = RTValue::NumberType::LONG, .long_value = v});
   }
 
   sptr_rtval RTValue::number(const RTValue::Number& num)
   {
-    if (num.num_type == NumberType::INT)
+    if (num.num_type == RTValue::NumberType::INT)
     {
       return IntegerPool::get(num.int_value);
     }
@@ -409,7 +409,7 @@ namespace Lisple
     }
     rtvalues_constructed++;
     return std::make_shared<RTValue>(
-      RTValue::Number{.num_type = NumberType::FLOAT, .float_value = v});
+      RTValue::Number{.num_type = RTValue::NumberType::FLOAT, .float_value = v});
   }
 
   sptr_rtval RTValue::character(char c)
@@ -538,13 +538,13 @@ namespace Lisple
       auto num = std::get<const RTValue::Number>(value);
       switch (num.num_type)
       {
-      case NumberType::INT:
+      case RTValue::NumberType::INT:
         r += std::to_string(num.int_value);
         break;
-      case NumberType::LONG:
+      case RTValue::NumberType::LONG:
         r += std::to_string(num.long_value);
         break;
-      case NumberType::FLOAT:
+      case RTValue::NumberType::FLOAT:
         r += std::to_string(num.float_value);
         break;
       }
@@ -727,7 +727,7 @@ namespace Lisple
     if (type == RTValue::Type::NUMBER)
     {
       auto& num = std::get<const RTValue::Number>(value);
-      if (num.num_type == NumberType::INT)
+      if (num.num_type == RTValue::NumberType::INT)
       {
         return n == num.int_value;
       }
@@ -740,7 +740,7 @@ namespace Lisple
     if (type == RTValue::Type::NUMBER)
     {
       auto& num = std::get<const RTValue::Number>(value);
-      if (num.num_type == NumberType::LONG)
+      if (num.num_type == RTValue::NumberType::LONG)
       {
         return n == num.long_value;
       }
@@ -753,7 +753,7 @@ namespace Lisple
     if (type == RTValue::Type::NUMBER)
     {
       auto& num = std::get<const RTValue::Number>(value);
-      if (num.num_type == NumberType::FLOAT)
+      if (num.num_type == RTValue::NumberType::FLOAT)
       {
         return n == num.float_value;
       }
@@ -770,9 +770,10 @@ namespace Lisple
     return false;
   }
 
-  sptr_rtval to_rt_value(const Object& obj)
+  sptr_rtval to_rt_value(const AST::Object& obj)
   {
-    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj)) return wrapper->val;
+    if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
+      return wrapper->val;
 
     switch (obj.get_type())
     {
@@ -780,7 +781,7 @@ namespace Lisple
     {
       sptr_rtval_v elements;
 
-      for (auto& c : dynamic_cast<const Vector*>(&obj)->children)
+      for (auto& c : dynamic_cast<const AST::Vector*>(&obj)->children)
       {
         elements.push_back(to_rt_value(c));
       }
@@ -791,7 +792,7 @@ namespace Lisple
     {
       sptr_rtval_v elements;
 
-      for (auto& c : dynamic_cast<const List*>(&obj)->children)
+      for (auto& c : dynamic_cast<const AST::List*>(&obj)->children)
       {
         elements.push_back(to_rt_value(c));
       }
@@ -799,16 +800,16 @@ namespace Lisple
       return RTValue::list(std::move(elements));
     }
     case Form::BOOLEAN:
-      return RTValue::boolean(Value<bool>::value_of(obj));
+      return RTValue::boolean(AST::Value<bool>::value_of(obj));
     case Form::CHAR:
-      return RTValue::character(Value<char>::value_of(obj));
+      return RTValue::character(AST::Value<char>::value_of(obj));
     case Form::KEYWORD:
-      return RTValue::keyword(Value<std::string>::value_of(obj));
+      return RTValue::keyword(AST::Value<std::string>::value_of(obj));
     case Form::MAP:
     {
       sptr_rtval_v elements;
 
-      for (auto& c : dynamic_cast<const Map*>(&obj)->children)
+      for (auto& c : dynamic_cast<const AST::Map*>(&obj)->children)
       {
         elements.push_back(to_rt_value(c));
       }
@@ -819,33 +820,34 @@ namespace Lisple
       return Constant::NIL;
     case Form::NUMBER:
     {
-      const auto& n = obj.as<Number>();
+      const auto& n = obj.as<AST::Number>();
       switch (n.num_type)
       {
-      case NumberType::INT:
+      case AST::NumberType::INT:
         return RTValue::number(n.int_value());
-      case NumberType::LONG:
+      case AST::NumberType::LONG:
         return RTValue::number(n.long_value());
-      case NumberType::FLOAT:
+      case AST::NumberType::FLOAT:
         return RTValue::number(n.float_value());
       };
-      throw LispleException("to_rt_value: Unsupported NumberType: " + obj.to_string());
+      throw LispleException("to_rt_value: Unsupported AST::NumberType: " + obj.to_string());
     }
     case Form::STRING:
-      return RTValue::string(Value<std::string>::value_of(obj));
+      return RTValue::string(AST::Value<std::string>::value_of(obj));
     case Form::QUOTED_SYMBOL:
-      return RTValue::symbol(Value<std::string>::value_of(obj));
+      return RTValue::symbol(AST::Value<std::string>::value_of(obj));
     case Form::SYMBOL:
-      return RTValue::symbol(Value<std::string>::value_of(obj));
+      return RTValue::symbol(AST::Value<std::string>::value_of(obj));
     default:
-      throw LispleException("to_rt_value(Object&): Unsupported value type #" +
+      throw LispleException("to_rt_value(AST::Object&): Unsupported value type #" +
                             std::to_string(static_cast<int>(obj.get_type())));
     }
   }
 
-  sptr_rtval to_rt_value(std::shared_ptr<Object>& obj)
+  sptr_rtval to_rt_value(std::shared_ptr<AST::Object>& obj)
   {
-    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(obj.get())) return wrapper->val;
+    if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(obj.get()))
+      return wrapper->val;
 
     to_rtvalue_conversions++;
     switch (obj->get_type())
@@ -865,28 +867,28 @@ namespace Lisple
     case Form::HOST_SEQ:
       return RTValue::object(obj);
     case Form::KEYWORD:
-      return RTValue::keyword(Value<std::string>::value_of(*obj));
+      return RTValue::keyword(AST::Value<std::string>::value_of(*obj));
     case Form::NIL:
       return Constant::NIL;
     case Form::NUMBER:
     {
-      const auto& n = obj->as<Number>();
+      const auto& n = obj->as<AST::Number>();
       switch (n.num_type)
       {
-      case NumberType::INT:
+      case AST::NumberType::INT:
         return RTValue::number(n.int_value());
-      case NumberType::LONG:
+      case AST::NumberType::LONG:
         return RTValue::number(n.long_value());
-      case NumberType::FLOAT:
+      case AST::NumberType::FLOAT:
         return RTValue::number(n.float_value());
       };
-      throw LispleException("to_rt_value: Unsupported NumberType: " + obj->to_string());
+      throw LispleException("to_rt_value: Unsupported AST::NumberType: " + obj->to_string());
     }
     case Form::STRING:
-      return RTValue::string(Value<std::string>::value_of(*obj));
+      return RTValue::string(AST::Value<std::string>::value_of(*obj));
     case Form::QUOTED_SYMBOL:
     case Form::SYMBOL:
-      return RTValue::symbol(Value<std::string>::value_of(*obj));
+      return RTValue::symbol(AST::Value<std::string>::value_of(*obj));
     default:
       throw LispleException("to_rt_value: Unsupported RTValue type(" +
                             std::to_string((int)obj->get_type()) + "): " + obj->to_string());
@@ -902,7 +904,7 @@ namespace Lisple
     {
       if (bool* bv = std::get_if<bool>(&val.value))
       {
-        return Lisple::Boolean::wrap(*bv);
+        return Lisple::AST::Boolean::wrap(*bv);
       }
       else
       {
@@ -910,7 +912,7 @@ namespace Lisple
       }
     }
     case RTValue::Type::CHAR:
-      return Char::make(std::get<char>(val.value));
+      return AST::Char::make(std::get<char>(val.value));
     case RTValue::Type::FUNCTION:
     {
       return std::get<sptr_sobject>(val.value);
@@ -919,7 +921,7 @@ namespace Lisple
     {
       if (std::string* s = std::get_if<std::string>(&val.value))
       {
-        return Lisple::Keyword::make(*s);
+        return Lisple::AST::Keyword::make(*s);
       }
       else
       {
@@ -935,7 +937,7 @@ namespace Lisple
         elements.push_back(to_AST(*element));
       }
 
-      return Lisple::List::make(std::move(elements));
+      return Lisple::AST::List::make(std::move(elements));
     }
     case RTValue::Type::MAP:
     {
@@ -943,13 +945,13 @@ namespace Lisple
 
       for (auto& element : std::get<sptr_rtval_v>(val.value))
       {
-        elements.push_back(RuntimeValueWrapper::make(element));
+        elements.push_back(AST::RuntimeValueWrapper::make(element));
       }
 
-      return Lisple::Map::make(std::move(elements));
+      return Lisple::AST::Map::make(std::move(elements));
     }
     case RTValue::Type::NIL:
-      return Lisple::NIL;
+      return Lisple::AST::NIL;
     case RTValue::Type::NUMBER:
     {
       if (const RTValue::Number* num = std::get_if<const RTValue::Number>(&val.value))
@@ -957,11 +959,11 @@ namespace Lisple
         switch (num->num_type)
         {
         case RTValue::NumberType::INT:
-          return Lisple::Number::make(num->int_value);
+          return Lisple::AST::Number::make(num->int_value);
         case RTValue::NumberType::LONG:
-          return Lisple::Number::make(num->long_value);
+          return Lisple::AST::Number::make(num->long_value);
         case RTValue::NumberType::FLOAT:
-          return Lisple::Number::make(num->float_value);
+          return Lisple::AST::Number::make(num->float_value);
         }
       }
 
@@ -970,9 +972,9 @@ namespace Lisple
     case RTValue::Type::OBJECT:
       return std::get<sptr_sobject>(val.value);
     case RTValue::Type::STRING:
-      return Lisple::String::make(std::get<std::string>(val.value));
+      return Lisple::AST::String::make(std::get<std::string>(val.value));
     case RTValue::Type::SYMBOL:
-      return Lisple::Symbol::make(std::get<std::string>(val.value));
+      return Lisple::AST::Symbol::make(std::get<std::string>(val.value));
     case RTValue::Type::VECTOR:
     {
       sptr_sobject_v elements;
@@ -982,7 +984,7 @@ namespace Lisple
         elements.push_back(to_AST(*element));
       }
 
-      return Lisple::Vector::make(std::move(elements));
+      return Lisple::AST::Vector::make(std::move(elements));
     }
 
     default:

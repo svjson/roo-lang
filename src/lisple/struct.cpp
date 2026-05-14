@@ -22,9 +22,9 @@ namespace Lisple
   {
   }
 
-  void MapStruct::validate(const std::string& ctx_str, Object& map_obj) const
+  void MapStruct::validate(const std::string& ctx_str, AST::Object& map_obj) const
   {
-    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(&map_obj))
+    if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(&map_obj))
     {
       for (auto key : Lisple::Dict::map_sptr_keys(wrapper->val))
       {
@@ -43,9 +43,9 @@ namespace Lisple
     }
     else
     {
-      Map& map = map_obj.as<Map>();
+      AST::Map& map = map_obj.as<AST::Map>();
 
-      for (Object* key : map.keys())
+      for (AST::Object* key : map.keys())
       {
         if (!valid_keys.count(key->to_string()))
         {

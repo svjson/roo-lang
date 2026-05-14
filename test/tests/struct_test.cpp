@@ -3,15 +3,14 @@
 #include <string>
 
 #include <lisple/form.h>
-#include "runtime_fixture.h"
 #include <lisple/struct.h>
 #include <lisple/type.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-
 
 using MapStruct = LispleTest::RuntimeTestFixture;
 bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& map)
@@ -107,11 +106,11 @@ TEST_F(MapStruct, get_property_from_map)
     {{":value", Lisple::MapEntryReq(&Lisple::Type::STRING, true)}});
 
   Lisple::sptr_sobject map = eval_object(runtime, "{ :value \"A fine string!\"}");
-  Lisple::Keyword key = Lisple::Keyword("value");
+  Lisple::AST::Keyword key = Lisple::AST::Keyword("value");
 
   // When
-  Lisple::String value = *map_struct.get_value<Lisple::String>(*map, key);
+  Lisple::AST::String value = *map_struct.get_value<Lisple::AST::String>(*map, key);
 
   // Then
-  EXPECT_EQ(value, Lisple::String("A fine string!"));
+  EXPECT_EQ(value, Lisple::AST::String("A fine string!"));
 }

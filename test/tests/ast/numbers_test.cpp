@@ -10,9 +10,9 @@ TEST(Number, from_string)
   const std::string NUM1_STR = "123456789";
   const std::string NUM2_STR = "1103515245";
   const std::string NUM3_STR = "2147483648";
-  auto num1 = Lisple::Number::make(NUM1_STR);
-  auto num2 = Lisple::Number::make(NUM2_STR);
-  auto num3 = Lisple::Number::make(NUM3_STR);
+  auto num1 = Lisple::AST::Number::make(NUM1_STR);
+  auto num2 = Lisple::AST::Number::make(NUM2_STR);
+  auto num3 = Lisple::AST::Number::make(NUM3_STR);
 
   EXPECT_EQ(num1->to_string(), NUM1_STR);
   EXPECT_EQ(num2->to_string(), NUM2_STR);
@@ -22,10 +22,10 @@ TEST(Number, from_string)
 TEST(Number, equality)
 {
   // Given
-  Lisple::Number num1(25);
-  Lisple::Number num2(25);
-  Lisple::String str("25");
-  Lisple::Number num3(28);
+  Lisple::AST::Number num1(25);
+  Lisple::AST::Number num2(25);
+  Lisple::AST::String str("25");
+  Lisple::AST::Number num3(28);
 
   EXPECT_EQ(num1, num2);
   EXPECT_EQ(num2, num1);
@@ -35,10 +35,10 @@ TEST(Number, equality)
 
 TEST(Number, int_value)
 {
-  Lisple::Number num1(0);
-  Lisple::Number num2(25);
-  Lisple::Number num3(40);
-  Lisple::Number num4(4000);
+  Lisple::AST::Number num1(0);
+  Lisple::AST::Number num2(25);
+  Lisple::AST::Number num3(40);
+  Lisple::AST::Number num4(4000);
 
   EXPECT_EQ(num1.int_value(), 0);
   EXPECT_EQ(num2.int_value(), 25);
@@ -48,10 +48,10 @@ TEST(Number, int_value)
 
 TEST(Number, num_type_on_construction)
 {
-  ASSERT_TRUE(Lisple::Number(1).is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number(-1).is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number(45.0f).is_num_type(Lisple::NumberType::FLOAT));
-  ASSERT_TRUE(Lisple::Number(1.0f).is_num_type(Lisple::NumberType::FLOAT));
-  ASSERT_TRUE(Lisple::Number::make("1")->is_num_type(Lisple::NumberType::INT));
-  ASSERT_TRUE(Lisple::Number::make("1.0")->is_num_type(Lisple::NumberType::FLOAT));
+  ASSERT_TRUE(Lisple::AST::Number(1).is_num_type(Lisple::AST::NumberType::INT));
+  ASSERT_TRUE(Lisple::AST::Number(-1).is_num_type(Lisple::AST::NumberType::INT));
+  ASSERT_TRUE(Lisple::AST::Number(45.0f).is_num_type(Lisple::AST::NumberType::FLOAT));
+  ASSERT_TRUE(Lisple::AST::Number(1.0f).is_num_type(Lisple::AST::NumberType::FLOAT));
+  ASSERT_TRUE(Lisple::AST::Number::make("1")->is_num_type(Lisple::AST::NumberType::INT));
+  ASSERT_TRUE(Lisple::AST::Number::make("1.0")->is_num_type(Lisple::AST::NumberType::FLOAT));
 }

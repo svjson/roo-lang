@@ -293,7 +293,7 @@ namespace Lisple
     if (Type::HOST_SEQ.is_type_of(*args[1]))
     {
       sptr_sobject obj = args[1]->obj();
-      Seq& host_seq = obj->as<Seq>();
+      AST::Seq& host_seq = obj->as<AST::Seq>();
       sptr_sobject_v& children = host_seq.get_children();
       auto it = std::remove_if(children.begin(),
                                children.end(),

@@ -43,9 +43,9 @@ namespace Lisple
 
   struct LookupNode
   {
-    Symbol identifier;
+    AST::Symbol identifier;
 
-    LookupNode(Symbol id);
+    LookupNode(AST::Symbol id);
   };
 
   struct MapNode
@@ -138,7 +138,7 @@ namespace Lisple
      */
     template <typename T>
     explicit ExecNode(T node)
-      : form(Lisple::NIL)
+      : form(Lisple::AST::NIL)
       , data(std::move(node))
     {
       exec_nodes_constructed++;

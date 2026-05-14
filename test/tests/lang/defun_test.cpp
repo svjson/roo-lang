@@ -1,10 +1,9 @@
 
 #include <lisple/lang/func.h>
-#include "runtime_fixture.h"
 
 #include "../runtime_fixture.h"
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using DefunForm = LispleTest::RuntimeTestFixture;
 TEST_F(DefunForm, define_no_arg_fun)
@@ -19,8 +18,7 @@ TEST_F(DefunForm, define_no_arg_fun)
   auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
   EXPECT_TRUE(user_fun.get_argument_bindings().empty());
   EXPECT_EQ(user_fun.get_body().size(), 1);
-  EXPECT_EQ(*user_fun.get_body().front()->form,
-            *Lisple::Number::make(8));
+  EXPECT_EQ(*user_fun.get_body().front()->form, *Lisple::AST::Number::make(8));
 }
 
 TEST_F(DefunForm, define_no_arg_fun_with_docstring)
@@ -40,8 +38,7 @@ TEST_F(DefunForm, define_no_arg_fun_with_docstring)
   auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
   EXPECT_TRUE(user_fun.get_argument_bindings().empty());
   EXPECT_EQ(user_fun.get_body().size(), 1);
-  EXPECT_EQ(*user_fun.get_body().front()->form,
-            *Lisple::Number::make(8));
+  EXPECT_EQ(*user_fun.get_body().front()->form, *Lisple::AST::Number::make(8));
 }
 
 TEST_F(DefunForm, defun_with_static_return_value)

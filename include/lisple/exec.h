@@ -277,7 +277,7 @@ namespace Lisple
   /*
    * @brief Base class for all executable Lisple objects
    */
-  class Executable : public Lisple::Object
+  class Executable : public Lisple::AST::Object
   {
    protected:
     std::vector<std::unique_ptr<Signature>> signatures;
@@ -288,7 +288,7 @@ namespace Lisple
 
     bool supports_exec_tree() const;
 
-    bool operator==(const Lisple::Object& other) const override;
+    bool operator==(const Lisple::AST::Object& other) const override;
 
     const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
 
@@ -329,9 +329,10 @@ namespace Lisple
                      std::shared_ptr<Function>& function,
                      sptr_rtval_v bounds_args = {});
 
-    static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
-                                                           std::shared_ptr<Object> fun_obj,
-                                                           sptr_rtval_v bound_args = {});
+    static std::shared_ptr<DetachedFunction> make_detached(
+      Context& ctx,
+      std::shared_ptr<AST::Object> fun_obj,
+      sptr_rtval_v bound_args = {});
 
     const sptr_rtval_v get_bound_arguments() const;
 
@@ -407,7 +408,7 @@ namespace Lisple
   std::shared_ptr<UserFunction> create_function(const std::string& name,
                                                 Context& ctx,
                                                 const Namespace* home_ns,
-                                                Object& arg_vector,
+                                                AST::Object& arg_vector,
                                                 sptr_sobject_v& body);
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,

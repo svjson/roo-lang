@@ -25,25 +25,25 @@ namespace Lisple
    * Complex objects are not considered to have a string value, and
    * will return an empty string
    */
-  const std::string str_val(const Object& obj) noexcept;
+  const std::string str_val(const AST::Object& obj) noexcept;
 
-  char char_val(const Object& obj) noexcept;
+  char char_val(const AST::Object& obj) noexcept;
 
   /*!
    * @brief Get the unsigned int value of lisple symbol
    */
-  unsigned int uint_val(const Object& obj);
-  uint8_t uint8_val(const Object& obj);
-  int int_val(const Object& obj);
-  short short_val(const Object& obj);
-  unsigned short ushort_val(const Object& obj);
-  float float_val(const Object& obj);
+  unsigned int uint_val(const AST::Object& obj);
+  uint8_t uint8_val(const AST::Object& obj);
+  int int_val(const AST::Object& obj);
+  short short_val(const AST::Object& obj);
+  unsigned short ushort_val(const AST::Object& obj);
+  float float_val(const AST::Object& obj);
 
   std::pair<std::string, std::string> split_qualifiable(const std::string& str);
 
   template <class T> std::shared_ptr<T> sptr_sobject_cast(sptr_sobject& obj)
   {
-    if (auto* wrapper = dynamic_cast<Lisple::RuntimeValueWrapper*>(obj.get()))
+    if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(obj.get()))
     {
       return std::dynamic_pointer_cast<T>(Lisple::to_AST(*wrapper->val));
     }
@@ -67,15 +67,16 @@ namespace Lisple
   /*!
    * @brief Prepend the string value of the head element of a list
    */
-  std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val);
+  std::shared_ptr<AST::List> prepend_list_head(AST::Object& list_obj,
+                                               const std::string& prepend_val);
 
   template <typename T>
   typename std::enable_if<std::is_arithmetic<T>::value, T>::type unwrap_primitive(
-    const Object& obj);
+    const AST::Object& obj);
 
   template <typename T>
   typename std::enable_if<!std::is_arithmetic<T>::value, T>::type unwrap_primitive(
-    const Object& obj);
+    const AST::Object& obj);
 
   template <typename T>
   sptr_sobject wrap_primitive(

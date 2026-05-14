@@ -13,7 +13,10 @@ namespace Lisple
   extern int to_ast_conversions;
   extern int to_rtvalue_conversions;
 
-  class Object;
+  namespace AST
+  {
+    class Object;
+  }
   class Executable;
   struct RTValue;
   template <class T> class HostObject;
@@ -21,7 +24,7 @@ namespace Lisple
 
   using sptr_rtval = std::shared_ptr<RTValue>;
   using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
-  using sptr_sobject = std::shared_ptr<Object>;
+  using sptr_sobject = std::shared_ptr<AST::Object>;
   using sptr_native_obj = std::shared_ptr<NativeObjectBase>;
 
   struct RTValue
@@ -148,7 +151,7 @@ namespace Lisple
   } // namespace Constant
 
   sptr_rtval to_rt_value(sptr_sobject& obj);
-  sptr_rtval to_rt_value(const Object& obj);
+  sptr_rtval to_rt_value(const AST::Object& obj);
   sptr_sobject to_AST(RTValue& val);
   bool is_truthy(const RTValue& val);
 

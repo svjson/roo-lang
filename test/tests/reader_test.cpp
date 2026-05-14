@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 using namespace Lisple;
+using namespace Lisple::AST;
 
 TEST(Reader, parses_symbol_with_colon_in_body)
 {

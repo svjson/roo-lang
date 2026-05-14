@@ -72,7 +72,7 @@ namespace Lisple
     }
     case RTValue::Type::OBJECT:
     {
-      if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(seq.obj().get()))
+      if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(seq.obj().get()))
       {
         return get_child(*wrapper->val, index);
       }

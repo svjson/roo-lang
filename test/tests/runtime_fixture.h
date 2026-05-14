@@ -8,10 +8,10 @@
 #include <vector>
 
 #include <lisple/context.h>
-#include <lisple/runtime.h>
-#include <lisple/lang.h>
 #include <lisple/dir_root_file_system.h>
 #include <lisple/file_system.h>
+#include <lisple/lang.h>
+#include <lisple/runtime.h>
 
 #include "fake_file_system.h"
 #include <gtest/gtest.h>
@@ -40,8 +40,8 @@ namespace LispleTest
     LispleTest::FakeFileSystem fs;
     Lisple::DirRootFileSystem dir_fs;
     Lisple::Reader parser;
-    Lisple::Runtime runtime{ &fs };
-    Lisple::Context ctx { runtime };
+    Lisple::Runtime runtime{&fs};
+    Lisple::Context ctx{runtime};
     std::unique_ptr<Lisple::Runtime> configured_runtime;
     std::unique_ptr<Lisple::Context> configured_context;
 
@@ -85,21 +85,16 @@ namespace LispleTest
       configured_context = std::make_unique<Lisple::Context>(*configured_runtime);
       return *configured_runtime;
     }
-
   };
 
-  class RuntimeTestFixture
-    : public RuntimeFixture
-    , public ::testing::Test
+  class RuntimeTestFixture : public RuntimeFixture, public ::testing::Test
   {
   };
-}
+} // namespace LispleTest
 
 namespace Lisple
 {
-  void PrintTo(const Lisple::Object& obj, std::ostream* os);
+  void PrintTo(const Lisple::AST::Object& obj, std::ostream* os);
 }
-
-
 
 #endif

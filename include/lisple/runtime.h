@@ -12,12 +12,15 @@
 
 namespace Lisple
 {
-  class Vector;
   class Context;
-  class List;
-  class Map;
-  class Seq;
-  class Symbol;
+  namespace AST
+  {
+    class Vector;
+    class List;
+    class Map;
+    class Seq;
+    class Symbol;
+  } // namespace AST
   class FileSystem;
   class NamespaceLoader;
   class NamespaceSource;
@@ -168,7 +171,7 @@ namespace Lisple
     sptr_rtval lookup(const std::string& identifier);
     sptr_rtval lookup(const RTValue& identifier);
     sptr_rtval lookup(const std::string& identifier,
-                            const Lisple::sptr_rtval& default_value);
+                      const Lisple::sptr_rtval& default_value);
     Namespace& get_ns_of(const std::string& identifier);
 
    private:

@@ -694,7 +694,7 @@ namespace Lisple
     /*!
      * @brief Tests if an accessor is provided for a specific key.
      */
-    bool has_key(const Object& key) const;
+    bool has_key(const AST::Object& key) const;
 
     /*!
      * @brief Looks up the accessor definition for a specific key
@@ -717,8 +717,8 @@ namespace Lisple
   NAccessorTable merge_acc(const NAccessorTable& base, const NAccessorTable& additional);
 
   /*!
- * @brief Defines the type traits of a NativeObject specialization, including
- * its HostTypeRef and AccessorTable.
+   * @brief Defines the type traits of a NativeObject specialization, including
+   * its HostTypeRef and AccessorTable.
    */
   struct NativeObjectTraits
   {

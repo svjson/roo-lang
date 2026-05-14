@@ -3,8 +3,8 @@
 
 #include <sstream>
 
-#include <lisple/exec.h>
 #include <lisple/exception.h>
+#include <lisple/exec.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
 #include <lisple/runtime/value.h>
@@ -94,9 +94,9 @@ namespace Lisple
     return frame_stack;
   }
 
-  std::shared_ptr<Vector> Context::get_scope_identifiers()
+  std::shared_ptr<AST::Vector> Context::get_scope_identifiers()
   {
-    auto vector = std::make_shared<Vector>();
+    auto vector = std::make_shared<AST::Vector>();
     for (auto& frame : frame_stack)
     {
       for (auto& key : frame->scope.get_keys()->get_children())
@@ -156,8 +156,8 @@ namespace Lisple
     }
     catch (std::exception& e)
     {
-      throw InvocationException("Error while calling " + fn_name + ":\n" +
-                                inv->to_string() + "\n" + e.what());
+      throw InvocationException("Error while calling " + fn_name + ":\n" + inv->to_string() +
+                                "\n" + e.what());
     }
   }
 

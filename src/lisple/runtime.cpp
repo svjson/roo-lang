@@ -287,8 +287,7 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Runtime::lookup(const std::string& identifier,
-                                   const sptr_rtval& default_value)
+  sptr_rtval Runtime::lookup(const std::string& identifier, const sptr_rtval& default_value)
   {
     try
     {
@@ -312,7 +311,7 @@ namespace Lisple
 
   sptr_rtval Runtime::lookup(const std::string& identifier_s)
   {
-    Symbol identifier(identifier_s);
+    AST::Symbol identifier(identifier_s);
     if (identifier.is_qualified())
     {
       Namespace* _ns = ns(identifier.get_qualifier());

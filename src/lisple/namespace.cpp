@@ -39,7 +39,7 @@ namespace Lisple
 
   sptr_rtval Namespace::find(const std::string& identifier_s) const
   {
-    Symbol identifier(identifier_s);
+    AST::Symbol identifier(identifier_s);
     if (identifier.is_qualified())
     {
       if (aliased_namespaces.count(identifier.get_qualifier()))
@@ -109,8 +109,7 @@ namespace Lisple
 
   bool Namespace::empty() const
   {
-    return values.empty() && imported_namespaces.empty() &&
-           aliased_namespaces.empty();
+    return values.empty() && imported_namespaces.empty() && aliased_namespaces.empty();
   }
 
   void Namespace::mutate(const std::string& identifier, const sptr_rtval& val)

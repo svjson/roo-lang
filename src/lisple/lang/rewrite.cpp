@@ -32,7 +32,7 @@ namespace Lisple
   SFORM_LOWER_IMPL(ThreadFirstForm)
   {
     sptr_sobject_v elements = ast_node->get_children();
-    if (elements.size() == 1) return lower_literal(Lisple::NIL);
+    if (elements.size() == 1) return lower_literal(Lisple::AST::NIL);
     if (elements.size() == 2) return lower_expr(ctx, elements[1]);
 
     sptr_sobject current = elements[1];
@@ -51,11 +51,11 @@ namespace Lisple
           new_list.push_back(list_elements[j]);
         }
 
-        current = List::make(new_list);
+        current = AST::List::make(new_list);
       }
       else
       {
-        current = List::make({lmnt, current});
+        current = AST::List::make({lmnt, current});
       }
     }
 

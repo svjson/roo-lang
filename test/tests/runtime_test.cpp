@@ -17,7 +17,6 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
-
 using Runtime = LispleTest::RuntimeTestFixture;
 const std::string RUNTIME_TEST_DIR = "test_resources/script/runtime_test";
 
@@ -78,9 +77,9 @@ TEST_F(Runtime, instantiation_with_multiple_namespaces)
 TEST_F(Runtime, eval__symbol__lookup)
 {
   // Given
-  std::shared_ptr<Lisple::Object> symbol = std::make_shared<Lisple::Symbol>("my-symbol");
-  runtime.get_current_namespace().store("my-symbol",
-                                        Lisple::RTValue::string("my-string"));
+  std::shared_ptr<Lisple::AST::Object> symbol =
+    std::make_shared<Lisple::AST::Symbol>("my-symbol");
+  runtime.get_current_namespace().store("my-symbol", Lisple::RTValue::string("my-string"));
 
   // When
   auto result = runtime.eval(symbol);
@@ -92,9 +91,9 @@ TEST_F(Runtime, eval__symbol__lookup)
 TEST_F(Runtime, eval__symbol__no_lookup)
 {
   // Given
-  std::shared_ptr<Lisple::Object> symbol = std::make_shared<Lisple::Symbol>("my-symbol");
-  runtime.get_current_namespace().store("my-symbol",
-                                        Lisple::RTValue::string("my-string"));
+  std::shared_ptr<Lisple::AST::Object> symbol =
+    std::make_shared<Lisple::AST::Symbol>("my-symbol");
+  runtime.get_current_namespace().store("my-symbol", Lisple::RTValue::string("my-string"));
 
   // When
   ctx.push_context(false);

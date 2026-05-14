@@ -39,8 +39,9 @@ namespace Lisple
       }
       else
       {
-        throw Lisple::TypeError("Map " + map.to_string() + " is missing required key :" + k +
-                                " of type " + type->to_string() + ".");
+        throw Lisple::TypeError("AST::Map " + map.to_string() +
+                                " is missing required key :" + k + " of type " +
+                                type->to_string() + ".");
       }
     }
 
@@ -256,7 +257,7 @@ namespace Lisple
       return *str;
     }
 
-    throw TypeError("Value for key :" + key + " is not string-like");
+    throw TypeError("AST::Value for key :" + key + " is not string-like");
   }
 
   const std::string& MapSchema::Inspector::str(const std::string& key,

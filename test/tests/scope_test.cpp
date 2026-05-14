@@ -10,6 +10,7 @@
 #include <gtest/gtest_pred_impl.h>
 
 using namespace Lisple;
+using namespace Lisple::AST;
 
 TEST(Scope, has__no_value)
 {

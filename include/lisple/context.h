@@ -53,7 +53,7 @@ namespace Lisple
     size_t stack_size() const;
 
     std::vector<std::unique_ptr<ContextFrame>>& get_stack_frames();
-    std::shared_ptr<Vector> get_scope_identifiers();
+    std::shared_ptr<AST::Vector> get_scope_identifiers();
 
     sptr_rtval eval(const std::string& str);
     sptr_rtval eval(const sptr_rtval& list);

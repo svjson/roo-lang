@@ -73,7 +73,7 @@ namespace Lisple
           ast_nodes.push_back(n_node->form);
         }
 
-        sptr_sobject vec = Vector::make(ast_nodes);
+        sptr_sobject vec = AST::Vector::make(ast_nodes);
 
         storage.push_back(std::make_unique<ExecNode>(vec, ExecNodeList(nested_output)));
         output.push_back(storage.back().get());
@@ -86,8 +86,8 @@ namespace Lisple
       else if (elem_mode == &Eval::DEFAULT)
       {
         storage.push_back(
-          std::make_unique<ExecNode>(Lisple::NIL,
-                                     LiteralNode(exec(ctx, *arg), Lisple::NIL)));
+          std::make_unique<ExecNode>(Lisple::AST::NIL,
+                                     LiteralNode(exec(ctx, *arg), Lisple::AST::NIL)));
         output.push_back(storage.back().get());
       }
       else

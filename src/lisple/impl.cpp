@@ -13,9 +13,9 @@ namespace Lisple
 {
   const std::string EMPTY_STRING = "";
 
-  const std::string str_val(const Object& obj) noexcept
+  const std::string str_val(const AST::Object& obj) noexcept
   {
-    if (Type::NUMBER.is_type_of(obj) || *NIL == obj)
+    if (Type::NUMBER.is_type_of(obj) || *AST::NIL == obj)
     {
       return obj.to_string();
     }
@@ -23,11 +23,11 @@ namespace Lisple
     if (Type::STRING.is_type_of(obj) || Type::KEYWORD.is_type_of(obj) ||
         Type::SYMBOL_VALUE.is_type_of(obj))
     {
-      if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+      if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
       {
         return std::get<std::string>(wrapper->val->value);
       }
-      return obj.as<Value<std::string>>().value;
+      return obj.as<AST::Value<std::string>>().value;
     }
 
     if (Type::SYMBOL.is_type_of(obj))
@@ -38,20 +38,20 @@ namespace Lisple
     return EMPTY_STRING;
   }
 
-  char char_val(const Object& obj) noexcept
+  char char_val(const AST::Object& obj) noexcept
   {
-    if (Type::NUMBER.is_type_of(obj) || *NIL == obj)
+    if (Type::NUMBER.is_type_of(obj) || *AST::NIL == obj)
     {
       return Lisple::int_val(obj);
     }
 
     if (Type::CHAR.is_type_of(obj))
     {
-      if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+      if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
       {
         return std::get<char>(wrapper->val->value);
       }
-      return obj.as<Value<char>>().value;
+      return obj.as<AST::Value<char>>().value;
     }
 
     return '\0';
@@ -89,44 +89,44 @@ namespace Lisple
     }
   }
 
-  short short_val(const Object& obj)
+  short short_val(const AST::Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
-      return obj.as<Number>().int_value();
+      return obj.as<AST::Number>().int_value();
     }
 
     throw LispleException("Cannot convert " + obj.to_string() + " to short");
   }
 
-  unsigned short ushort_val(const Object& obj)
+  unsigned short ushort_val(const AST::Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
-      if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+      if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
       {
         return std::get<const Lisple::RTValue::Number>(wrapper->val->value).get_int();
       }
 
-      return obj.as<Number>().int_value();
+      return obj.as<AST::Number>().int_value();
     }
 
     throw LispleException("Cannot convert " + obj.to_string() + " to short");
   }
 
-  unsigned int uint_val(const Object& obj)
+  unsigned int uint_val(const AST::Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
-      return obj.as<Number>().int_value();
+      return obj.as<AST::Number>().int_value();
     }
 
     throw LispleException("Cannot convert " + obj.to_string() + " to unsigned int");
   }
 
-  int int_val(const Object& obj)
+  int int_val(const AST::Object& obj)
   {
-    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
       if (wrapper->val->type == RTValue::Type::NUMBER)
       {
@@ -136,25 +136,25 @@ namespace Lisple
 
     if (Type::NUMBER.is_type_of(obj))
     {
-      return obj.as<Number>().int_value();
+      return obj.as<AST::Number>().int_value();
     }
 
     throw LispleException("Cannot convert " + obj.to_string() + " to int");
   }
 
-  uint8_t uint8_val(const Object& obj)
+  uint8_t uint8_val(const AST::Object& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
-      return obj.as<Number>().int_value();
+      return obj.as<AST::Number>().int_value();
     }
 
     throw LispleException("Cannot convert " + obj.to_string() + " to uint8_t");
   }
 
-  float float_val(const Object& obj)
+  float float_val(const AST::Object& obj)
   {
-    if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
+    if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
       if (wrapper->val->type == RTValue::Type::NUMBER)
       {
@@ -164,150 +164,151 @@ namespace Lisple
 
     if (Type::NUMBER.is_type_of(obj))
     {
-      return obj.as<Number>().float_value();
+      return obj.as<AST::Number>().float_value();
     }
 
     throw LispleException("Cannot convert " + obj.to_string() + " to float");
   }
 
-  std::shared_ptr<List> prepend_list_head(Object& list_obj, const std::string& prepend_val)
+  std::shared_ptr<AST::List> prepend_list_head(AST::Object& list_obj,
+                                               const std::string& prepend_val)
   {
-    List& list = list_obj.as<List>();
+    AST::List& list = list_obj.as<AST::List>();
     sptr_sobject prepended;
 
     if (Type::STRING.is_type_of(*list.head()) || Type::NUMBER.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<String>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<AST::String>(prepend_val + str_val(*list.head()));
     }
     else if (Type::SYMBOL.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Symbol>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<AST::Symbol>(prepend_val + str_val(*list.head()));
     }
     else if (Type::QUOTED_SYMBOL.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<QuotedSymbol>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<AST::QuotedSymbol>(prepend_val + str_val(*list.head()));
     }
     else if (Type::KEYWORD.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Keyword>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<AST::Keyword>(prepend_val + str_val(*list.head()));
     }
 
     return subst_sexp_lmnt(list, 0, prepended);
   }
 
-  template <> std::string unwrap_primitive<std::string>(const Object& obj)
+  template <> std::string unwrap_primitive<std::string>(const AST::Object& obj)
   {
-    return const_cast<std::string&>(obj.as<String>().value);
+    return const_cast<std::string&>(obj.as<AST::String>().value);
   }
 
-  template <> int unwrap_primitive<int>(const Object& obj)
+  template <> int unwrap_primitive<int>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> short unwrap_primitive<short>(const Object& obj)
+  template <> short unwrap_primitive<short>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> long unwrap_primitive<long>(const Object& obj)
+  template <> long unwrap_primitive<long>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> unsigned int unwrap_primitive<unsigned int>(const Object& obj)
+  template <> unsigned int unwrap_primitive<unsigned int>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> unsigned short unwrap_primitive<unsigned short>(const Object& obj)
+  template <> unsigned short unwrap_primitive<unsigned short>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> unsigned long unwrap_primitive<unsigned long>(const Object& obj)
+  template <> unsigned long unwrap_primitive<unsigned long>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> float unwrap_primitive<float>(const Object& obj)
+  template <> float unwrap_primitive<float>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> double unwrap_primitive<double>(const Object& obj)
+  template <> double unwrap_primitive<double>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> int8_t unwrap_primitive<int8_t>(const Object& obj)
+  template <> int8_t unwrap_primitive<int8_t>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
-  template <> uint8_t unwrap_primitive<uint8_t>(const Object& obj)
+  template <> uint8_t unwrap_primitive<uint8_t>(const AST::Object& obj)
   {
-    return obj.as<Number>().int_value();
+    return obj.as<AST::Number>().int_value();
   }
 
   template <> sptr_sobject wrap_primitive<int>(int value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<short>(short value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<long>(long value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<unsigned int>(unsigned int value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<float>(float value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<double>(double value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<int8_t>(int8_t value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<uint8_t>(uint8_t value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<unsigned long>(unsigned long value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<unsigned short>(unsigned short value)
   {
-    return Number::make(value);
+    return AST::Number::make(value);
   }
 
   template <> sptr_sobject wrap_primitive<bool>(bool value)
   {
-    return Boolean::wrap(value);
+    return AST::Boolean::wrap(value);
   }
 
   template <> sptr_sobject wrap_primitive<std::string>(const std::string& value)
   {
-    return String::make(value);
+    return AST::String::make(value);
   }
 
 } // namespace Lisple

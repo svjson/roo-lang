@@ -32,7 +32,7 @@ namespace Lisple
       SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
   }
 
-  Keyword DEFAULT = Keyword("default");
+  AST::Keyword DEFAULT = AST::Keyword("default");
   EXECNODE_BODY(CaseForm, execnode_case)
   {
     static sptr_rtval DEFAULT_KEY = RTValue::keyword("default");

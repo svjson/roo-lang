@@ -27,7 +27,7 @@ namespace Lisple
     virtual bool has(const std::string& identifier) const;
     virtual sptr_rtval lookup(const std::string& identifier) const;
     virtual sptr_rtval lookup(const RTValue& identifier) const;
-    std::shared_ptr<Vector> get_keys() const;
+    std::shared_ptr<AST::Vector> get_keys() const;
   };
 } // namespace Lisple
 

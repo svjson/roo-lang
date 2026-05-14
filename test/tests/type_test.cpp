@@ -11,7 +11,6 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
-
 using TypeRef = LispleTest::RuntimeTestFixture;
 using MultiRef = LispleTest::RuntimeTestFixture;
 using AnyRef = LispleTest::RuntimeTestFixture;
@@ -19,7 +18,7 @@ using SeqRef = LispleTest::RuntimeTestFixture;
 TEST_F(TypeRef, is_type_of)
 {
   // Given
-  Lisple::List obj;
+  Lisple::AST::List obj;
 
   // Then
   EXPECT_TRUE(Lisple::Type::LIST.is_type_of(obj));
@@ -40,7 +39,7 @@ TEST_F(TypeRef, rtwrapper_is_type_of)
                                                      Lisple::RTValue::string("Hetty"),
                                                      Lisple::RTValue::keyword("score"),
                                                      Lisple::RTValue::number(5000000)});
-  Lisple::RuntimeValueWrapper obj(map_val);
+  Lisple::AST::RuntimeValueWrapper obj(map_val);
 
   // Then
   EXPECT_TRUE(Lisple::Type::MAP.is_type_of(obj));
@@ -57,11 +56,11 @@ TEST_F(TypeRef, rtwrapper_is_type_of)
 TEST_F(MultiRef, is_type_of)
 {
   // When
-  Lisple::List list;
-  Lisple::Vector vector;
-  Lisple::Map map;
-  Lisple::String string("");
-  Lisple::Boolean boolean(false);
+  Lisple::AST::List list;
+  Lisple::AST::Vector vector;
+  Lisple::AST::Map map;
+  Lisple::AST::String string("");
+  Lisple::AST::Boolean boolean(false);
 
   // Then
   EXPECT_TRUE(Lisple::Type::SEQ.is_type_of(list));
@@ -75,13 +74,13 @@ TEST_F(MultiRef, is_type_of)
 TEST_F(AnyRef, is_type_of)
 {
   // Given
-  Lisple::List list;
-  Lisple::Map map;
-  Lisple::Vector vector;
-  Lisple::String string("string");
-  Lisple::Keyword key("string");
-  Lisple::QuotedSymbol quoted_symbol("symbol");
-  Lisple::Symbol symbol("symbol");
+  Lisple::AST::List list;
+  Lisple::AST::Map map;
+  Lisple::AST::Vector vector;
+  Lisple::AST::String string("string");
+  Lisple::AST::Keyword key("string");
+  Lisple::AST::QuotedSymbol quoted_symbol("symbol");
+  Lisple::AST::Symbol symbol("symbol");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(list));
@@ -98,12 +97,11 @@ TEST_F(SeqRef, Vector_of_String__is_type_of)
   // Given
   auto vector_of_string = runtime.eval("[\"string1\" \"string2\" \"string3\"]");
   auto vector_of_mixed = runtime.eval("[\"string1\" :key1 'sym1]");
-  Lisple::String string("string");
-  Lisple::Keyword key("string");
-  Lisple::QuotedSymbol quoted_symbol("symbol");
-  Lisple::Symbol symbol("symbol");
-  auto list_of_string =
-    runtime.eval(ctx, "'(\"stringA\" \"stringB\" \"stringC\")");
+  Lisple::AST::String string("string");
+  Lisple::AST::Keyword key("string");
+  Lisple::AST::QuotedSymbol quoted_symbol("symbol");
+  Lisple::AST::Symbol symbol("symbol");
+  auto list_of_string = runtime.eval(ctx, "'(\"stringA\" \"stringB\" \"stringC\")");
 
   // Then
   EXPECT_TRUE(Lisple::Type::VECTOR_OF_STRING.is_type_of(*vector_of_string));
