@@ -202,14 +202,14 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
-          sptr_sobject fn = n.static_callee;
+          sptr_executable fn = n.static_callee;
 
           if (!fn)
           {
             sptr_rtval fn_val = exec(ctx, *n.callee);
-            if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
+            if (sptr_executable* executable = std::get_if<sptr_executable>(&fn_val->value))
             {
-              fn = *ssptr;
+              fn = *executable;
             }
             else
             {
@@ -219,7 +219,7 @@ namespace Lisple
           }
 
           Signature* sig = nullptr;
-          Executable* x = dynamic_cast<Executable*>(fn.get());
+          Executable* x = fn.get();
 
           if (x && !x->requires_late_binding(n))
           {
@@ -253,9 +253,7 @@ namespace Lisple
             return x->execute(ctx, val_args);
           }
 
-          throw InvocationException("Late-bound call target does not support RTValue "
-                                    "execution: " +
-                                    fn->to_string());
+          throw InvocationException("Late-bound call target is not executable.");
         }
         else if constexpr (std::is_same_v<T, ExecNodeList>)
         {

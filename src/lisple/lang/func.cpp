@@ -63,11 +63,11 @@ namespace Lisple
       body.push_back(elements[i]);
     }
 
-    sptr_sobject func = create_function(fn_name.value,
-                                        *ctx.ctx,
-                                        ctx.ctx->get_current_namespace(),
-                                        *arg_vec,
-                                        body);
+    std::shared_ptr<UserFunction> func = create_function(fn_name.value,
+                                                         *ctx.ctx,
+                                                         ctx.ctx->get_current_namespace(),
+                                                         *arg_vec,
+                                                         body);
     sptr_rtval fn = RTValue::executable(func);
     ctx.ctx->store_namespace(fn_name.value, fn);
 
@@ -112,14 +112,14 @@ namespace Lisple
       body.push_back(elements[i]);
     }
 
-    sptr_sobject func = create_function("<lambda>",
-                                        *ctx.ctx,
-                                        ctx.ctx->get_current_namespace(),
-                                        *arg_vec,
-                                        body);
+    std::shared_ptr<UserFunction> func = create_function("<lambda>",
+                                                         *ctx.ctx,
+                                                         ctx.ctx->get_current_namespace(),
+                                                         *arg_vec,
+                                                         body);
     sptr_rtval fn = RTValue::executable(func);
 
-    return std::make_unique<ExecNode>(LambdaNode(sptr_sobject_cast<Function>(func)));
+    return std::make_unique<ExecNode>(LambdaNode(func));
   }
 
   EXECNODE_BODY(FnForm, execnode_decl)

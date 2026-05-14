@@ -277,18 +277,21 @@ namespace Lisple
   /*
    * @brief Base class for all executable Lisple objects
    */
-  class Executable : public Lisple::AST::ASTNode
+  class Executable
   {
    protected:
+    Form type;
     std::vector<std::unique_ptr<Signature>> signatures;
 
    public:
     Executable(Form type, std::unique_ptr<Signature> signature);
     Executable(Form type, std::vector<std::unique_ptr<Signature>> signatures);
+    virtual ~Executable() = default;
 
+    Form get_type() const;
     bool supports_exec_tree() const;
 
-    bool operator==(const Lisple::AST::ASTNode& other) const override;
+    bool operator==(const Executable& other) const;
 
     const std::vector<std::unique_ptr<Signature>>& get_signatures() const;
 
@@ -297,6 +300,7 @@ namespace Lisple
     bool requires_late_binding(CallNode& args);
 
     virtual Lisple::sptr_rtval execute(Context& ctx, sptr_rtval_v& args);
+    virtual std::string to_string(int depth = -1) const = 0;
 
     friend class HostTypeRef;
   };
@@ -329,10 +333,9 @@ namespace Lisple
                      std::shared_ptr<Function>& function,
                      sptr_rtval_v bounds_args = {});
 
-    static std::shared_ptr<DetachedFunction> make_detached(
-      Context& ctx,
-      std::shared_ptr<AST::ASTNode> fun_obj,
-      sptr_rtval_v bound_args = {});
+    static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
+                                                           sptr_executable fun_obj,
+                                                           sptr_rtval_v bound_args = {});
 
     const sptr_rtval_v get_bound_arguments() const;
 

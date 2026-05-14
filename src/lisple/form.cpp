@@ -1149,8 +1149,9 @@ namespace Lisple::AST
     case RTValue::Type::SYMBOL:
       return Symbol::make(std::get<std::string>(value->value));
     case RTValue::Type::OBJECT:
-    case RTValue::Type::FUNCTION:
       return std::get<sptr_sobject>(value->value);
+    case RTValue::Type::FUNCTION:
+      return std::make_shared<RuntimeValueWrapper>(value);
     default:
       return std::make_shared<RuntimeValueWrapper>(value);
     }

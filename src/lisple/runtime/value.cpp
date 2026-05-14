@@ -490,7 +490,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval RTValue::executable(const sptr_sobject& fn)
+  sptr_rtval RTValue::executable(const sptr_executable& fn)
   {
     rtvalues_constructed++;
     sptr_rtval val = std::make_shared<RTValue>();
@@ -555,9 +555,11 @@ namespace Lisple
       r += to_string(std::get<sptr_rtval_v>(value));
       r += ")";
       break;
-    case RTValue::Type::FUNCTION:
     case RTValue::Type::OBJECT:
       r += std::get<sptr_sobject>(value)->to_string();
+      break;
+    case RTValue::Type::FUNCTION:
+      r += std::get<sptr_executable>(value)->to_string();
       break;
     case RTValue::Type::NATIVE_OBJECT:
       r += this->nobj()->to_string();
@@ -707,7 +709,7 @@ namespace Lisple
 
   Executable& RTValue::exec() const
   {
-    return *dynamic_cast<Executable*>(std::get<sptr_sobject>(value).get());
+    return *std::get<sptr_executable>(value);
   }
 
   const std::string& RTValue::str() const
@@ -858,10 +860,6 @@ namespace Lisple
     case Form::MAP:
     case Form::LIST:
       return to_rt_value(*obj);
-    case Form::FUNCTION:
-      return RTValue::executable(obj);
-    case Form::MACRO:
-      return RTValue::object(obj);
     case Form::HOST_OBJECT:
       return RTValue::object(obj);
     case Form::HOST_SEQ:
@@ -915,7 +913,7 @@ namespace Lisple
       return AST::Char::make(std::get<char>(val.value));
     case RTValue::Type::FUNCTION:
     {
-      return std::get<sptr_sobject>(val.value);
+      return std::make_shared<AST::RuntimeValueWrapper>(std::make_shared<RTValue>(val));
     }
     case RTValue::Type::KEYWORD:
     {

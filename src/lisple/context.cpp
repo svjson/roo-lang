@@ -146,8 +146,7 @@ namespace Lisple
       throw InvocationException(inv->to_string() + " is not executable.");
     }
 
-    sptr_sobject& fun_obj = std::get<sptr_sobject>(inv->value);
-    Executable& exec = fun_obj->as<Executable>();
+    Executable& exec = inv->exec();
     sptr_rtval_v mutable_args = args;
 
     try

@@ -274,8 +274,7 @@ namespace Lisple
       throw new InvocationException(inv->to_string() + " is not executable.");
     }
 
-    sptr_sobject& fun_obj = std::get<sptr_sobject>(inv->value);
-    Executable& exec = fun_obj->as<Executable>();
+    Executable& exec = inv->exec();
     try
     {
       return exec.execute(ctx, args);

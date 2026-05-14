@@ -381,15 +381,20 @@ namespace Lisple
   }
 
   Executable::Executable(Form type, uptr_sig_v signatures)
-    : AST::ASTNode(type)
+    : type(type)
     , signatures(std::move(signatures))
   {
   }
 
   Executable::Executable(Form type, uptr_sig signature)
-    : AST::ASTNode(type)
+    : type(type)
   {
     signatures.push_back(std::move(signature));
+  }
+
+  Form Executable::get_type() const
+  {
+    return type;
   }
 
   bool Executable::supports_exec_tree() const
@@ -412,7 +417,7 @@ namespace Lisple
     return !call_node.is_literal_arg_list();
   }
 
-  bool Executable::operator==(const AST::ASTNode& other) const
+  bool Executable::operator==(const Executable& other) const
   {
     return this == &other;
   }
@@ -491,10 +496,9 @@ namespace Lisple
   {
   }
 
-  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(
-    Context& ctx,
-    std::shared_ptr<AST::ASTNode> fun_obj,
-    sptr_rtval_v bound_args)
+  std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(Context& ctx,
+                                                                    sptr_executable fun_obj,
+                                                                    sptr_rtval_v bound_args)
   {
     std::shared_ptr<Function> fun = std::dynamic_pointer_cast<Function>(fun_obj);
 

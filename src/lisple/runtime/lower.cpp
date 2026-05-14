@@ -85,7 +85,6 @@ namespace Lisple
       lowered_expressions++;
       return std::make_unique<ExecNode>(obj, VectorNode(std::move(elements)));
     }
-    case Form::FUNCTION:
     case Form::CHAR:
     case Form::NUMBER:
     case Form::STRING:
@@ -191,10 +190,10 @@ namespace Lisple
 
         if (literal_callee)
         {
-          if (auto* sptr_sobject_val =
-                std::get_if<sptr_sobject>(&literal_callee->value->value))
+          if (auto* executable_val =
+                std::get_if<sptr_executable>(&literal_callee->value->value))
           {
-            call_node.static_callee = *sptr_sobject_val;
+            call_node.static_callee = *executable_val;
             lower_time_exec_resolutions++;
           }
         }

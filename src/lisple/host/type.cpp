@@ -69,7 +69,7 @@ namespace Lisple
           "Coercion failed. Review Host AST::ASTNode configuration - Make Function '" +
           *make_fn + "' is not executable: " + function->to_string());
       }
-      auto& make_exec = std::get<sptr_sobject>(function->value)->as<Executable>();
+      auto& make_exec = function->exec();
 
       for (auto& sig : make_exec.signatures)
       {

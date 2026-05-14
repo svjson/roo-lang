@@ -24,6 +24,7 @@ namespace Lisple
 
   using sptr_rtval = std::shared_ptr<RTValue>;
   using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
+  using sptr_executable = std::shared_ptr<Executable>;
   using sptr_sobject = std::shared_ptr<AST::ASTNode>;
   using sptr_native_obj = std::shared_ptr<NativeObjectBase>;
 
@@ -77,7 +78,8 @@ namespace Lisple
       Number operator/(const Number& other) const;
     };
 
-    using Data = std::variant<sptr_sobject,
+    using Data = std::variant<sptr_executable,
+                              sptr_sobject,
                               std::string,
                               const RTValue::Number,
                               sptr_rtval_v,
@@ -112,7 +114,7 @@ namespace Lisple
     static sptr_rtval map(const sptr_rtval_v&);
     static sptr_rtval object(const sptr_sobject&);
     static sptr_rtval native_object(const sptr_native_obj&);
-    static sptr_rtval executable(const sptr_sobject&);
+    static sptr_rtval executable(const sptr_executable&);
 
     static std::string to_string(const sptr_rtval_v&);
     std::string to_string() const;
