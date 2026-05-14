@@ -261,11 +261,11 @@ namespace Lisple
     std::is_arithmetic_v<std::remove_const_t<T>> ||
     std::is_same_v<std::remove_const_t<T>, std::string>;
 
-  template <typename T> std::remove_const_t<T> rtval_to_native(const RTValue& value)
+  template <typename T> std::remove_const_t<T> rtval_to_native(const Value& value)
   {
     if constexpr (is_rt_primitive_v<T>)
     {
-      return rtval_to<std::remove_const_t<T>>(std::make_shared<RTValue>(value));
+      return rtval_to<std::remove_const_t<T>>(std::make_shared<Value>(value));
     }
     else
     {
@@ -273,7 +273,7 @@ namespace Lisple
     }
   }
 
-  template <typename T, class Adapter = T> sptr_rtval native_to_rtval(const T& value)
+  template <typename T, class Adapter = T> sptr_val native_to_rtval(const T& value)
   {
     if constexpr (is_rt_primitive_v<T>)
     {
@@ -450,21 +450,21 @@ namespace Lisple
     std::vector<V>& get_self_object() const { return get_object(); }
     void* self_object_ptr() const override { return &get_self_object(); }
 
-    static sptr_rtval claim(std::unique_ptr<std::vector<V>>&& uptr)
+    static sptr_val claim(std::unique_ptr<std::vector<V>>&& uptr)
     {
-      return RTValue::native_object(
+      return Value::native_object(
         std::make_shared<NativeStdVectorAdapter<V, A>>(std::move(uptr)));
     }
 
-    template <typename... Args> static sptr_rtval make_unique(Args&&... args)
+    template <typename... Args> static sptr_val make_unique(Args&&... args)
     {
-      return RTValue::native_object(std::make_shared<NativeStdVectorAdapter<V, A>>(
+      return Value::native_object(std::make_shared<NativeStdVectorAdapter<V, A>>(
         std::make_unique<std::vector<V>>(std::forward<Args>(args)...)));
     }
 
-    static sptr_rtval make_ref(const std::vector<V>& ref)
+    static sptr_val make_ref(const std::vector<V>& ref)
     {
-      return RTValue::native_object(
+      return Value::native_object(
         std::make_shared<NativeStdVectorAdapter<V, A>>(const_cast<std::vector<V>&>(ref)));
     }
 
@@ -474,9 +474,9 @@ namespace Lisple
       return &traits;
     }
 
-    sptr_rtval get_property(const RTValue& property) const override
+    sptr_val get_property(const Value& property) const override
     {
-      if (property.type != RTValue::Type::NUMBER) return Constant::NIL;
+      if (property.type != Value::Type::NUMBER) return Constant::NIL;
 
       int index = property.num().get_int();
       if (index < 0 || index >= static_cast<int>(get_self_object().size()))
@@ -487,9 +487,9 @@ namespace Lisple
       return native_to_rtval<V, A>(get_self_object().at(index));
     }
 
-    void set_property(const RTValue& property, sptr_rtval& value) override
+    void set_property(const Value& property, sptr_val& value) override
     {
-      if (property.type != RTValue::Type::NUMBER) return;
+      if (property.type != Value::Type::NUMBER) return;
 
       int index = property.num().get_int();
       if (index < 0) return;
@@ -503,15 +503,15 @@ namespace Lisple
       vec[index] = rtval_to_native<V>(*value);
     }
 
-    void set_property(const RTValue& property, const sptr_rtval& value) override
+    void set_property(const Value& property, const sptr_val& value) override
     {
-      sptr_rtval v = value;
+      sptr_val v = value;
       set_property(property, v);
     }
 
-    sptr_rtval_v native_children() const override
+    sptr_val_v native_children() const override
     {
-      sptr_rtval_v elements;
+      sptr_val_v elements;
       elements.reserve(get_self_object().size());
       for (auto& value : get_self_object())
       {
@@ -524,7 +524,7 @@ namespace Lisple
 
     std::string to_string() const override
     {
-      return RTValue::vector(native_children())->to_string();
+      return Value::vector(native_children())->to_string();
     }
   };
 
@@ -548,21 +548,21 @@ namespace Lisple
     std::map<K, V>& get_self_object() const { return get_object(); }
     void* self_object_ptr() const override { return &get_self_object(); }
 
-    static sptr_rtval claim(std::unique_ptr<std::map<K, V>>&& uptr)
+    static sptr_val claim(std::unique_ptr<std::map<K, V>>&& uptr)
     {
-      return RTValue::native_object(
+      return Value::native_object(
         std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(std::move(uptr)));
     }
 
-    template <typename... Args> static sptr_rtval make_unique(Args&&... args)
+    template <typename... Args> static sptr_val make_unique(Args&&... args)
     {
-      return RTValue::native_object(std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(
+      return Value::native_object(std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(
         std::make_unique<std::map<K, V>>(std::forward<Args>(args)...)));
     }
 
-    static sptr_rtval make_ref(const std::map<K, V>& ref)
+    static sptr_val make_ref(const std::map<K, V>& ref)
     {
-      return RTValue::native_object(std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(
+      return Value::native_object(std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(
         const_cast<std::map<K, V>&>(ref)));
     }
 
@@ -577,7 +577,7 @@ namespace Lisple
       return static_cast<const NativeStdMapTraits*>(get_traits());
     }
 
-    bool has_key(const RTValue& property) const
+    bool has_key(const Value& property) const
     {
       const NativeStdMapTraits* traits = get_map_native_traits();
       if (*Constant::NIL == property || !traits->key_type->is_type_of(property))
@@ -588,7 +588,7 @@ namespace Lisple
       return get_self_object().count(rtval_to_native<K>(property));
     }
 
-    sptr_rtval get_property(const RTValue& property) const override
+    sptr_val get_property(const Value& property) const override
     {
       if (!has_key(property))
       {
@@ -599,7 +599,7 @@ namespace Lisple
         get_self_object().at(rtval_to_native<K>(property)));
     }
 
-    void set_property(const RTValue& property, sptr_rtval& value) override
+    void set_property(const Value& property, sptr_val& value) override
     {
       const NativeStdMapTraits* traits = get_map_native_traits();
       if (*value == *Constant::NIL || *Constant::NIL == property ||
@@ -622,15 +622,15 @@ namespace Lisple
       }
     }
 
-    void set_property(const RTValue& property, const sptr_rtval& value) override
+    void set_property(const Value& property, const sptr_val& value) override
     {
-      sptr_rtval v = value;
+      sptr_val v = value;
       set_property(property, v);
     }
 
-    sptr_rtval_v native_children() const override
+    sptr_val_v native_children() const override
     {
-      sptr_rtval_v elements;
+      sptr_val_v elements;
       elements.reserve(get_self_object().size() * 2);
       for (auto& [key, value] : get_self_object())
       {
@@ -644,7 +644,7 @@ namespace Lisple
 
     std::string to_string() const override
     {
-      return RTValue::map(native_children())->to_string();
+      return Value::map(native_children())->to_string();
     }
   };
 

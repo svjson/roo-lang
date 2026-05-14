@@ -126,13 +126,13 @@ namespace
 TEST(NativeObjectAdapter_VehicleModel, type)
 {
   // Given
-  Lisple::sptr_rtval val =
+  Lisple::sptr_val val =
     LispleTest::Native::VehicleModelAdapter::make_unique("Runaway Train", 500);
   LispleTest::Native::VehicleModelAdapter& adapter =
     val->adapter<LispleTest::Native::VehicleModelAdapter>();
 
   // Then
-  EXPECT_EQ(val->type, Lisple::RTValue::Type::NATIVE_OBJECT);
+  EXPECT_EQ(val->type, Lisple::Value::Type::NATIVE_OBJECT);
   EXPECT_EQ(adapter.get_host_type(), &LispleTest::VEHICLE_MODEL_TYPE);
 
   EXPECT_TRUE(Lisple::Type::NATIVE_OBJECT.is_type_of(*val));
@@ -147,87 +147,87 @@ TEST(NativeObjectAdapter_VehicleModel, type)
 TEST(NativeObjectAdapter_PrimitiveField, get_set_uint8_field)
 {
   // Given
-  Lisple::sptr_rtval val = ByteBoxAdapter::make_unique();
+  Lisple::sptr_val val = ByteBoxAdapter::make_unique();
   ByteBoxAdapter& adapter = val->adapter<ByteBoxAdapter>();
 
   // Then
-  EXPECT_EQ(*adapter.get_value(), *Lisple::RTValue::number(0));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("value")),
-            *Lisple::RTValue::number(0));
+  EXPECT_EQ(*adapter.get_value(), *Lisple::Value::number(0));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("value")),
+            *Lisple::Value::number(0));
 
   // When
-  auto value = Lisple::RTValue::number(255);
+  auto value = Lisple::Value::number(255);
   adapter.set_value(nullptr, value);
 
   // Then
   EXPECT_EQ(adapter.get_object().value, 255);
-  EXPECT_EQ(*adapter.get_value(), *Lisple::RTValue::number(255));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("value")),
-            *Lisple::RTValue::number(255));
+  EXPECT_EQ(*adapter.get_value(), *Lisple::Value::number(255));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("value")),
+            *Lisple::Value::number(255));
 }
 
 TEST(NativeObjectAdapter_KeywordGetter, get_keyword_field)
 {
   // Given
-  Lisple::sptr_rtval val = KeywordBoxAdapter::make_unique();
+  Lisple::sptr_val val = KeywordBoxAdapter::make_unique();
   KeywordBoxAdapter& adapter = val->adapter<KeywordBoxAdapter>();
 
   // Then
-  EXPECT_EQ(*adapter.get_kind(), *Lisple::RTValue::keyword("field-kind"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("kind")),
-            *Lisple::RTValue::keyword("field-kind"));
+  EXPECT_EQ(*adapter.get_kind(), *Lisple::Value::keyword("field-kind"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("kind")),
+            *Lisple::Value::keyword("field-kind"));
 }
 
 TEST(NativeObjectAdapter_KeywordGetter, set_keyword_field)
 {
   // Given
-  Lisple::sptr_rtval val = KeywordBoxAdapter::make_unique();
+  Lisple::sptr_val val = KeywordBoxAdapter::make_unique();
   KeywordBoxAdapter& adapter = val->adapter<KeywordBoxAdapter>();
 
   // When
-  auto kind = Lisple::RTValue::keyword("updated-kind");
+  auto kind = Lisple::Value::keyword("updated-kind");
   adapter.set_kind(nullptr, kind);
 
   // Then
   EXPECT_EQ(adapter.get_object().kind, "updated-kind");
-  EXPECT_EQ(*adapter.get_kind(), *Lisple::RTValue::keyword("updated-kind"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("kind")),
-            *Lisple::RTValue::keyword("updated-kind"));
+  EXPECT_EQ(*adapter.get_kind(), *Lisple::Value::keyword("updated-kind"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("kind")),
+            *Lisple::Value::keyword("updated-kind"));
 }
 
 TEST(NativeObjectAdapter_KeywordGetter, get_keyword_method)
 {
   // Given
-  Lisple::sptr_rtval val = KeywordBoxAdapter::make_unique();
+  Lisple::sptr_val val = KeywordBoxAdapter::make_unique();
   KeywordBoxAdapter& adapter = val->adapter<KeywordBoxAdapter>();
 
   // Then
-  EXPECT_EQ(*adapter.get_mode(), *Lisple::RTValue::keyword("method-mode"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("mode")),
-            *Lisple::RTValue::keyword("method-mode"));
+  EXPECT_EQ(*adapter.get_mode(), *Lisple::Value::keyword("method-mode"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("mode")),
+            *Lisple::Value::keyword("method-mode"));
 }
 
 TEST(NativeObjectAdapter_KeywordGetter, get_set_optional_keyword_field)
 {
   // Given
-  Lisple::sptr_rtval val = KeywordBoxAdapter::make_unique();
+  Lisple::sptr_val val = KeywordBoxAdapter::make_unique();
   KeywordBoxAdapter& adapter = val->adapter<KeywordBoxAdapter>();
 
   // Then
   EXPECT_EQ(*adapter.get_optional_kind(), *Lisple::Constant::NIL);
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("optional-kind")),
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("optional-kind")),
             *Lisple::Constant::NIL);
 
   // When
-  auto kind = Lisple::RTValue::keyword("field-kind");
+  auto kind = Lisple::Value::keyword("field-kind");
   adapter.set_optional_kind(nullptr, kind);
 
   // Then
   ASSERT_TRUE(adapter.get_object().optional_kind.has_value());
   EXPECT_EQ(*adapter.get_object().optional_kind, "field-kind");
-  EXPECT_EQ(*adapter.get_optional_kind(), *Lisple::RTValue::keyword("field-kind"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("optional-kind")),
-            *Lisple::RTValue::keyword("field-kind"));
+  EXPECT_EQ(*adapter.get_optional_kind(), *Lisple::Value::keyword("field-kind"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("optional-kind")),
+            *Lisple::Value::keyword("field-kind"));
 
   // When
   auto nil = Lisple::Constant::NIL;
@@ -241,37 +241,37 @@ TEST(NativeObjectAdapter_KeywordGetter, get_set_optional_keyword_field)
 TEST(NativeObjectAdapter_KeywordGetter, get_optional_keyword_method)
 {
   // Given
-  Lisple::sptr_rtval val = KeywordBoxAdapter::make_unique();
+  Lisple::sptr_val val = KeywordBoxAdapter::make_unique();
   KeywordBoxAdapter& adapter = val->adapter<KeywordBoxAdapter>();
 
   // Then
   EXPECT_EQ(*adapter.get_optional_mode(), *Lisple::Constant::NIL);
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("optional-mode")),
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("optional-mode")),
             *Lisple::Constant::NIL);
 
   // When
   adapter.get_object().optional_mode = "method-mode";
 
   // Then
-  EXPECT_EQ(*adapter.get_optional_mode(), *Lisple::RTValue::keyword("method-mode"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("optional-mode")),
-            *Lisple::RTValue::keyword("method-mode"));
+  EXPECT_EQ(*adapter.get_optional_mode(), *Lisple::Value::keyword("method-mode"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("optional-mode")),
+            *Lisple::Value::keyword("method-mode"));
 }
 
 TEST(NativeObjectAdapter_KeywordGetter, set_optional_keyword_method)
 {
   // Given
-  Lisple::sptr_rtval val = KeywordBoxAdapter::make_unique();
+  Lisple::sptr_val val = KeywordBoxAdapter::make_unique();
   KeywordBoxAdapter& adapter = val->adapter<KeywordBoxAdapter>();
 
   // When
-  auto mode = Lisple::RTValue::keyword("method-mode");
+  auto mode = Lisple::Value::keyword("method-mode");
   adapter.set_optional_mode(nullptr, mode);
 
   // Then
   ASSERT_TRUE(adapter.get_object().optional_mode.has_value());
   EXPECT_EQ(*adapter.get_object().optional_mode, "method-mode");
-  EXPECT_EQ(*adapter.get_optional_mode(), *Lisple::RTValue::keyword("method-mode"));
+  EXPECT_EQ(*adapter.get_optional_mode(), *Lisple::Value::keyword("method-mode"));
 
   // When
   auto nil = Lisple::Constant::NIL;
@@ -285,25 +285,25 @@ TEST(NativeObjectAdapter_KeywordGetter, set_optional_keyword_method)
 TEST(NativeObjectAdapter_OptionalField, get_set_optional_field)
 {
   // Given
-  Lisple::sptr_rtval val = LispleTest::Native::OptionalBoxAdapter::make_unique();
+  Lisple::sptr_val val = LispleTest::Native::OptionalBoxAdapter::make_unique();
   LispleTest::Native::OptionalBoxAdapter& adapter =
     val->adapter<LispleTest::Native::OptionalBoxAdapter>();
 
   // Then
   EXPECT_EQ(*adapter.get_count(), *Lisple::Constant::NIL);
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("count")),
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("count")),
             *Lisple::Constant::NIL);
 
   // When
-  auto count = Lisple::RTValue::number(7);
+  auto count = Lisple::Value::number(7);
   adapter.set_count(nullptr, count);
 
   // Then
   ASSERT_TRUE(adapter.get_object().count.has_value());
   EXPECT_EQ(*adapter.get_object().count, 7);
-  EXPECT_EQ(*adapter.get_count(), *Lisple::RTValue::number(7));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("count")),
-            *Lisple::RTValue::number(7));
+  EXPECT_EQ(*adapter.get_count(), *Lisple::Value::number(7));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("count")),
+            *Lisple::Value::number(7));
 
   // When
   auto nil = Lisple::Constant::NIL;
@@ -317,18 +317,18 @@ TEST(NativeObjectAdapter_OptionalField, get_set_optional_field)
 TEST(NativeObjectAdapter_OptionalAdapterField, get_set_optional_adapter_field)
 {
   // Given
-  Lisple::sptr_rtval val = LispleTest::Native::OptionalChildBoxAdapter::make_unique();
+  Lisple::sptr_val val = LispleTest::Native::OptionalChildBoxAdapter::make_unique();
   LispleTest::Native::OptionalChildBoxAdapter& adapter =
     val->adapter<LispleTest::Native::OptionalChildBoxAdapter>();
 
   // Then
   EXPECT_EQ(*adapter.get_child(), *Lisple::Constant::NIL);
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("child")),
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("child")),
             *Lisple::Constant::NIL);
 
   // When
   auto child = LispleTest::Native::OptionalChildAdapter::make_unique();
-  auto child_value = Lisple::RTValue::number(42);
+  auto child_value = Lisple::Value::number(42);
   child->adapter<LispleTest::Native::OptionalChildAdapter>().set_value(nullptr, child_value);
   adapter.set_child(nullptr, child);
 
@@ -353,11 +353,11 @@ TEST(NativeObjectAdapter_OptionalAdapterField, get_set_optional_adapter_field)
 TEST(NativeObjectAdapter_PointerAdapterField, get_set_pointer_adapter_field)
 {
   // Given
-  Lisple::sptr_rtval child = LispleTest::Native::OptionalChildAdapter::make_unique();
-  auto child_value = Lisple::RTValue::number(42);
+  Lisple::sptr_val child = LispleTest::Native::OptionalChildAdapter::make_unique();
+  auto child_value = Lisple::Value::number(42);
   child->adapter<LispleTest::Native::OptionalChildAdapter>().set_value(nullptr, child_value);
 
-  Lisple::sptr_rtval val = LispleTest::Native::OptionalChildPtrBoxAdapter::make_unique();
+  Lisple::sptr_val val = LispleTest::Native::OptionalChildPtrBoxAdapter::make_unique();
   LispleTest::Native::OptionalChildPtrBoxAdapter& adapter =
     val->adapter<LispleTest::Native::OptionalChildPtrBoxAdapter>();
 
@@ -388,15 +388,15 @@ TEST(NativeObjectAdapter_PointerAdapterField, get_set_pointer_adapter_field)
 TEST(NativeObjectAdapter_VectorCopyField, get_value_vector_copy_field)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
 
   // When
-  Lisple::sptr_rtval values = adapter.get_values();
-  values->mut_elements().push_back(Lisple::RTValue::number(99));
+  Lisple::sptr_val values = adapter.get_values();
+  values->mut_elements().push_back(Lisple::Value::number(99));
 
   // Then
-  ASSERT_EQ(values->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(values->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(values->elements().size(), 4);
   EXPECT_EQ(values->elements().at(0)->i64(), 1);
   EXPECT_EQ(values->elements().at(1)->i64(), 2);
@@ -408,24 +408,24 @@ TEST(NativeObjectAdapter_VectorCopyField, get_value_vector_copy_field)
 TEST(NativeObjectAdapter_VectorCopyField, get_set_keyword_vector_copy_field)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
 
   // When
-  Lisple::sptr_rtval values = adapter.get_keyword_values();
-  values->mut_elements().push_back(Lisple::RTValue::keyword("extra"));
+  Lisple::sptr_val values = adapter.get_keyword_values();
+  values->mut_elements().push_back(Lisple::Value::keyword("extra"));
 
   // Then
-  ASSERT_EQ(values->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(values->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(values->elements().size(), 3);
-  EXPECT_EQ(*values->elements().at(0), *Lisple::RTValue::keyword("first"));
-  EXPECT_EQ(*values->elements().at(1), *Lisple::RTValue::keyword("second"));
-  EXPECT_EQ(*values->elements().at(2), *Lisple::RTValue::keyword("extra"));
+  EXPECT_EQ(*values->elements().at(0), *Lisple::Value::keyword("first"));
+  EXPECT_EQ(*values->elements().at(1), *Lisple::Value::keyword("second"));
+  EXPECT_EQ(*values->elements().at(2), *Lisple::Value::keyword("extra"));
   EXPECT_EQ(adapter.get_object().keyword_values.size(), 2);
 
   // When
-  auto updated = Lisple::RTValue::vector(
-    {Lisple::RTValue::keyword("third"), Lisple::RTValue::string("fourth")});
+  auto updated = Lisple::Value::vector(
+    {Lisple::Value::keyword("third"), Lisple::Value::string("fourth")});
   adapter.set_keyword_values(nullptr, updated);
 
   // Then
@@ -433,23 +433,23 @@ TEST(NativeObjectAdapter_VectorCopyField, get_set_keyword_vector_copy_field)
   EXPECT_EQ(adapter.get_object().keyword_values.at(0), "third");
   EXPECT_EQ(adapter.get_object().keyword_values.at(1), "fourth");
   EXPECT_EQ(*adapter.get_keyword_values()->elements().at(0),
-            *Lisple::RTValue::keyword("third"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("keyword-values")),
+            *Lisple::Value::keyword("third"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("keyword-values")),
             *adapter.get_keyword_values());
 }
 
 TEST(NativeObjectAdapter_VectorCopyField, get_adapter_vector_copy_field)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
 
   // When
-  Lisple::sptr_rtval children = adapter.get_children();
+  Lisple::sptr_val children = adapter.get_children();
   children->mut_elements().push_back(Lisple::Constant::NIL);
 
   // Then
-  ASSERT_EQ(children->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(children->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(children->elements().size(), 3);
   EXPECT_EQ(children->elements()
               .at(0)
@@ -470,17 +470,17 @@ TEST(NativeObjectAdapter_VectorCopyField, get_adapter_vector_copy_field)
 TEST(NativeObjectAdapter_VectorCopyField, get_pointer_adapter_vector_copy_field)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
   adapter.get_object().child_ptrs.push_back(&adapter.get_object().children.at(0));
   adapter.get_object().child_ptrs.push_back(nullptr);
 
   // When
-  Lisple::sptr_rtval child_ptrs = adapter.get_child_ptrs();
+  Lisple::sptr_val child_ptrs = adapter.get_child_ptrs();
   child_ptrs->mut_elements().push_back(Lisple::Constant::NIL);
 
   // Then
-  ASSERT_EQ(child_ptrs->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(child_ptrs->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(child_ptrs->elements().size(), 3);
   EXPECT_EQ(child_ptrs->elements()
               .at(0)
@@ -496,15 +496,15 @@ TEST(NativeObjectAdapter_VectorCopyField, get_pointer_adapter_vector_copy_field)
 TEST(NativeObjectAdapter_VectorCopyMethod, get_value_vector_copy_method)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
 
   // When
-  Lisple::sptr_rtval values = adapter.get_method_values();
-  values->mut_elements().push_back(Lisple::RTValue::number(99));
+  Lisple::sptr_val values = adapter.get_method_values();
+  values->mut_elements().push_back(Lisple::Value::number(99));
 
   // Then
-  ASSERT_EQ(values->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(values->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(values->elements().size(), 4);
   EXPECT_EQ(values->elements().at(0)->i64(), 1);
   EXPECT_EQ(values->elements().at(1)->i64(), 2);
@@ -516,15 +516,15 @@ TEST(NativeObjectAdapter_VectorCopyMethod, get_value_vector_copy_method)
 TEST(NativeObjectAdapter_VectorCopyMethod, get_adapter_vector_copy_method)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
 
   // When
-  Lisple::sptr_rtval children = adapter.get_method_children();
+  Lisple::sptr_val children = adapter.get_method_children();
   children->mut_elements().push_back(Lisple::Constant::NIL);
 
   // Then
-  ASSERT_EQ(children->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(children->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(children->elements().size(), 3);
   EXPECT_EQ(children->elements()
               .at(0)
@@ -545,17 +545,17 @@ TEST(NativeObjectAdapter_VectorCopyMethod, get_adapter_vector_copy_method)
 TEST(NativeObjectAdapter_VectorCopyMethod, get_pointer_adapter_vector_copy_method)
 {
   // Given
-  Lisple::sptr_rtval val = VectorBoxAdapter::make_unique();
+  Lisple::sptr_val val = VectorBoxAdapter::make_unique();
   VectorBoxAdapter& adapter = val->adapter<VectorBoxAdapter>();
   adapter.get_object().child_ptrs.push_back(&adapter.get_object().children.at(0));
   adapter.get_object().child_ptrs.push_back(nullptr);
 
   // When
-  Lisple::sptr_rtval child_ptrs = adapter.get_method_child_ptrs();
+  Lisple::sptr_val child_ptrs = adapter.get_method_child_ptrs();
   child_ptrs->mut_elements().push_back(Lisple::Constant::NIL);
 
   // Then
-  ASSERT_EQ(child_ptrs->type, Lisple::RTValue::Type::VECTOR);
+  ASSERT_EQ(child_ptrs->type, Lisple::Value::Type::VECTOR);
   ASSERT_EQ(child_ptrs->elements().size(), 3);
   EXPECT_EQ(child_ptrs->elements()
               .at(0)
@@ -571,28 +571,28 @@ TEST(NativeObjectAdapter_VectorCopyMethod, get_pointer_adapter_vector_copy_metho
 TEST(NativeObjectAdapter_VehicleModel, get_property)
 {
   // Given
-  Lisple::sptr_rtval val =
+  Lisple::sptr_val val =
     LispleTest::Native::VehicleModelAdapter::make_unique("Runaway Train", 500);
   LispleTest::Native::VehicleModelAdapter& adapter =
     val->adapter<LispleTest::Native::VehicleModelAdapter>();
 
   // Then
-  EXPECT_EQ(*adapter.get_model_name(), *Lisple::RTValue::string("Runaway Train"));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("model-name")),
-            *Lisple::RTValue::string("Runaway Train"));
+  EXPECT_EQ(*adapter.get_model_name(), *Lisple::Value::string("Runaway Train"));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("model-name")),
+            *Lisple::Value::string("Runaway Train"));
 
-  EXPECT_EQ(*adapter.get_seats(), *Lisple::RTValue::number(500));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("seats")),
-            *Lisple::RTValue::number(500));
+  EXPECT_EQ(*adapter.get_seats(), *Lisple::Value::number(500));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("seats")),
+            *Lisple::Value::number(500));
 
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("does-not-exist")),
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("does-not-exist")),
             *Lisple::Constant::NIL);
 }
 
 TEST(NativeObjectAdapter_VehicleModel, set_property)
 {
   // Given
-  Lisple::sptr_rtval val =
+  Lisple::sptr_val val =
     LispleTest::Native::VehicleModelAdapter::make_unique("Runaway Train", 500);
   LispleTest::Native::VehicleModelAdapter& adapter =
     val->adapter<LispleTest::Native::VehicleModelAdapter>();
@@ -605,8 +605,8 @@ TEST(NativeObjectAdapter_VehicleModel, set_property)
   vehicle.set_seats(800);
 
   // Then
-  EXPECT_EQ(*adapter.get_seats(), *Lisple::RTValue::number(800));
-  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::RTValue::keyword("seats")),
-            *Lisple::RTValue::number(800));
+  EXPECT_EQ(*adapter.get_seats(), *Lisple::Value::number(800));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("seats")),
+            *Lisple::Value::number(800));
   EXPECT_EQ(vehicle.get_seats(), 800);
 }

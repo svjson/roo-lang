@@ -2,12 +2,11 @@
 #include "lisple/form.h"
 
 #include <lisple/exception.h>
-#include "runtime_fixture.h"
 #include <lisple/runtime/dict.h>
 
+#include "runtime_fixture.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 
 using AssocFunction = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
@@ -41,18 +40,18 @@ TEST_F(AssocFunction, replace_key_in_map)
 TEST_F(AssocFunction, replace_key_in_map__retains_sibling_identities)
 {
   // Given
-  Lisple::sptr_rtval instance = runtime.eval(R"(
+  Lisple::sptr_val instance = runtime.eval(R"(
      (def my-map {:a {:name "Olle"} :b 100})
                                                 )");
   // When
-  Lisple::sptr_rtval assoc_result = runtime.eval("(assoc my-map :b 50)");
+  Lisple::sptr_val assoc_result = runtime.eval("(assoc my-map :b 50)");
 
   // Then
   EXPECT_EQ(*assoc_result, *runtime.eval(R"({:a {:name "Olle"} :b 50})"));
 
-  auto org_nested_obj = Lisple::Dict::get_property(instance, Lisple::RTValue::keyword("a"));
+  auto org_nested_obj = Lisple::Dict::get_property(instance, Lisple::Value::keyword("a"));
   auto mod_nested_obj =
-    Lisple::Dict::get_property(assoc_result, Lisple::RTValue::keyword("a"));
+    Lisple::Dict::get_property(assoc_result, Lisple::Value::keyword("a"));
 
   EXPECT_EQ(*org_nested_obj, *mod_nested_obj);
 }
@@ -67,8 +66,7 @@ TEST_F(AssocFunction, add_and_replace_multiple)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
-  EXPECT_EQ(*runtime.lookup(*Lisple::RTValue::symbol("my-map")),
-            *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup(*Lisple::Value::symbol("my-map")), *runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST_F(AssocFunction, throws_on_incomplete_key_value_chain)

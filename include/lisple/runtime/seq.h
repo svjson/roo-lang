@@ -6,13 +6,13 @@
 
 namespace Lisple
 {
-  sptr_rtval_v get_children(RTValue& v);
-  sptr_rtval get_child(const RTValue& seq, size_t index);
-  void set_child(RTValue& seq, size_t index, const sptr_rtval& value);
-  sptr_rtval pop_child(RTValue& seq);
-  sptr_rtval peek_child(RTValue& seq);
-  size_t count(const RTValue& v);
-  void append(RTValue& seq, const sptr_rtval& element);
+  sptr_val_v get_children(Value& v);
+  sptr_val get_child(const Value& seq, size_t index);
+  void set_child(Value& seq, size_t index, const sptr_val& value);
+  sptr_val pop_child(Value& seq);
+  sptr_val peek_child(Value& seq);
+  size_t count(const Value& v);
+  void append(Value& seq, const sptr_val& element);
 } // namespace Lisple
 
 #endif /* LISPLE__RUNTIME__SEQ_H */

@@ -15,7 +15,7 @@ TEST(SymbolBinding, apply)
   // Given
   Lisple::Scope scope;
   Lisple::SymbolBinding arg("muffin");
-  Lisple::sptr_rtval val = Lisple::RTValue::keyword("blooper");
+  Lisple::sptr_val val = Lisple::Value::keyword("blooper");
 
   // When
   arg.apply(scope, val);
@@ -23,7 +23,7 @@ TEST(SymbolBinding, apply)
   // Then
   ASSERT_EQ(scope.get_keys()->size(), 1);
   ASSERT_TRUE(scope.has("muffin"));
-  ASSERT_EQ(*scope.lookup("muffin"), *Lisple::RTValue::keyword("blooper"));
+  ASSERT_EQ(*scope.lookup("muffin"), *Lisple::Value::keyword("blooper"));
 }
 
 TEST(RestBinding, apply_collects_values_into_vector)
@@ -31,9 +31,9 @@ TEST(RestBinding, apply_collects_values_into_vector)
   // Given
   Lisple::Scope scope;
   Lisple::RestBinding binding("rest");
-  Lisple::sptr_rtval_v values = {Lisple::RTValue::number(1),
-                                 Lisple::RTValue::number(2),
-                                 Lisple::RTValue::number(3)};
+  Lisple::sptr_val_v values = {Lisple::Value::number(1),
+                               Lisple::Value::number(2),
+                               Lisple::Value::number(3)};
 
   // When
   binding.apply(scope, values);
@@ -42,8 +42,8 @@ TEST(RestBinding, apply_collects_values_into_vector)
   auto bound = scope.lookup("rest");
   ASSERT_EQ(
     *bound,
-    *Lisple::RTValue::vector(
-      {Lisple::RTValue::number(1), Lisple::RTValue::number(2), Lisple::RTValue::number(3)}));
+    *Lisple::Value::vector(
+      {Lisple::Value::number(1), Lisple::Value::number(2), Lisple::Value::number(3)}));
 }
 
 TEST(RestBinding, apply_empty_values_binds_empty_vector)
@@ -57,22 +57,22 @@ TEST(RestBinding, apply_empty_values_binds_empty_vector)
 
   // Then
   auto bound = scope.lookup("rest");
-  ASSERT_EQ(*bound, *Lisple::RTValue::vector({}));
+  ASSERT_EQ(*bound, *Lisple::Value::vector({}));
 }
 
 TEST(MapDestructureBinding, invalid_binding_form_throws_exception)
 {
   // Given
-  Lisple::sptr_rtval bind_form =
-    Lisple::RTValue::map({Lisple::RTValue::keyword("keys"),
-                          Lisple::RTValue::map({// This should be vector
-                                                Lisple::RTValue::symbol("var1"),
-                                                Lisple::RTValue::symbol("var2")})});
+  Lisple::sptr_val bind_form =
+    Lisple::Value::map({Lisple::Value::keyword("keys"),
+                        Lisple::Value::map({// This should be vector
+                                            Lisple::Value::symbol("var1"),
+                                            Lisple::Value::symbol("var2")})});
 
   // When / Then
   try
   {
-    Lisple::MapDestructureBinding binding{std::get<Lisple::sptr_rtval_v>(bind_form->value)};
+    Lisple::MapDestructureBinding binding{std::get<Lisple::sptr_val_v>(bind_form->value)};
 
     FAIL() << "Expected TypeError to be thrown for destructuring binding: "
            << bind_form->to_string();
@@ -93,15 +93,15 @@ TEST(MapDestructureBinding, apply__keys_only)
   // Given
   Lisple::Scope scope;
 
-  Lisple::sptr_rtval map = Lisple::RTValue::map({Lisple::RTValue::keyword("source"),
-                                                 Lisple::RTValue::symbol("the-thing"),
-                                                 Lisple::RTValue::keyword("target"),
-                                                 Lisple::RTValue::string("The Thang")});
+  Lisple::sptr_val map = Lisple::Value::map({Lisple::Value::keyword("source"),
+                                             Lisple::Value::symbol("the-thing"),
+                                             Lisple::Value::keyword("target"),
+                                             Lisple::Value::string("The Thang")});
 
   Lisple::MapDestructureBinding arg{
-    {Lisple::RTValue::keyword("keys"),
-     Lisple::RTValue::vector(
-       {Lisple::RTValue::symbol("source"), Lisple::RTValue::symbol("target")})}};
+    {Lisple::Value::keyword("keys"),
+     Lisple::Value::vector(
+       {Lisple::Value::symbol("source"), Lisple::Value::symbol("target")})}};
 
   // When
   arg.apply(scope, map);
@@ -110,9 +110,9 @@ TEST(MapDestructureBinding, apply__keys_only)
   ASSERT_EQ(scope.get_keys()->size(), 2);
   ASSERT_TRUE(scope.has("source"));
   ASSERT_TRUE(scope.has("target"));
-  ASSERT_EQ(*scope.lookup(*Lisple::RTValue::symbol("source")),
-            *Lisple::RTValue::symbol("the-thing"));
-  ASSERT_EQ(*scope.lookup("target"), *Lisple::RTValue::string("The Thang"));
+  ASSERT_EQ(*scope.lookup(*Lisple::Value::symbol("source")),
+            *Lisple::Value::symbol("the-thing"));
+  ASSERT_EQ(*scope.lookup("target"), *Lisple::Value::string("The Thang"));
 }
 
 TEST(MapDestructureBinding, apply__keys_and_alias)
@@ -120,17 +120,17 @@ TEST(MapDestructureBinding, apply__keys_and_alias)
   // Given
   Lisple::Scope scope;
 
-  Lisple::sptr_rtval map = Lisple::RTValue::map({Lisple::RTValue::keyword("source"),
-                                                 Lisple::RTValue::symbol("the-thing"),
-                                                 Lisple::RTValue::keyword("target"),
-                                                 Lisple::RTValue::string("The Thang")});
+  Lisple::sptr_val map = Lisple::Value::map({Lisple::Value::keyword("source"),
+                                             Lisple::Value::symbol("the-thing"),
+                                             Lisple::Value::keyword("target"),
+                                             Lisple::Value::string("The Thang")});
 
   Lisple::MapDestructureBinding arg{
-    {Lisple::RTValue::keyword("keys"),
-     Lisple::RTValue::vector(
-       {Lisple::RTValue::symbol("source"), Lisple::RTValue::symbol("target")}),
-     Lisple::RTValue::keyword("as"),
-     Lisple::RTValue::symbol("context")}};
+    {Lisple::Value::keyword("keys"),
+     Lisple::Value::vector(
+       {Lisple::Value::symbol("source"), Lisple::Value::symbol("target")}),
+     Lisple::Value::keyword("as"),
+     Lisple::Value::symbol("context")}};
 
   // When
   arg.apply(scope, map);
@@ -140,7 +140,7 @@ TEST(MapDestructureBinding, apply__keys_and_alias)
   ASSERT_TRUE(scope.has("source"));
   ASSERT_TRUE(scope.has("target"));
   ASSERT_TRUE(scope.has("context"));
-  ASSERT_EQ(*scope.lookup("source"), *Lisple::RTValue::symbol("the-thing"));
-  ASSERT_EQ(*scope.lookup("target"), *Lisple::RTValue::string("The Thang"));
+  ASSERT_EQ(*scope.lookup("source"), *Lisple::Value::symbol("the-thing"));
+  ASSERT_EQ(*scope.lookup("target"), *Lisple::Value::string("The Thang"));
   ASSERT_EQ(*scope.lookup("context"), *map);
 }

@@ -14,6 +14,6 @@ namespace Lisple
   {
     auto now = std::chrono::system_clock::now();
     long ms = duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-    return Lisple::RTValue::number(ms);
+    return Lisple::Value::number(ms);
   }
 } // namespace Lisple

@@ -1,9 +1,8 @@
 
-#include "runtime_fixture.h"
 #include <lisple/runtime/seq.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using RangeFunction = LispleTest::RuntimeTestFixture;
 TEST_F(RangeFunction, rising_numbers)
@@ -39,7 +38,7 @@ TEST_F(RangeFunction, integer_range_elements_have_integer_type)
   ASSERT_EQ(Lisple::count(*result), 4);
   for (const auto& el : result->elements())
   {
-    const auto& num = std::get<const Lisple::RTValue::Number>(el->value);
-    EXPECT_EQ(num.num_type, Lisple::RTValue::NumberType::INT);
+    const auto& num = std::get<const Lisple::Value::Number>(el->value);
+    EXPECT_EQ(num.num_type, Lisple::Value::NumberType::INT);
   }
 }

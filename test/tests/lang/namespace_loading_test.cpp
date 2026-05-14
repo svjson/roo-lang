@@ -8,12 +8,11 @@
 #include <lisple/file_system.h>
 #include <lisple/file_system_namespace_source.h>
 #include <lisple/namespace_source.h>
-#include "runtime_fixture.h"
 
 #include "host/test_adapters/vehicle_native_adapters.h"
+#include "runtime_fixture.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 
 using FileSystemNamespaceSource = LispleTest::RuntimeTestFixture;
 using NamespaceLoading = LispleTest::RuntimeTestFixture;
@@ -223,7 +222,7 @@ TEST_F(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
 /** FileSystemNamespaceSource - inferred path resolution */
 
 TEST_F(FileSystemNamespaceSource,
-     infer_path_strips_package_root_when_loading_from_flat_project_file)
+       infer_path_strips_package_root_when_loading_from_flat_project_file)
 {
   // Given
   InMemoryFileSystem fs;
@@ -322,7 +321,7 @@ TEST_F(FileSystemNamespaceSource, infer_path_does_not_apply_across_different_roo
 }
 
 TEST_F(FileSystemNamespaceSource,
-     infer_path_resolves_from_package_root_when_entry_filename_is_arbitrary)
+       infer_path_resolves_from_package_root_when_entry_filename_is_arbitrary)
 {
   // Given
   InMemoryFileSystem fs;
@@ -342,7 +341,7 @@ TEST_F(FileSystemNamespaceSource,
 }
 
 TEST_F(FileSystemNamespaceSource,
-     infer_path_resolves_sibling_when_current_filename_is_arbitrary)
+       infer_path_resolves_sibling_when_current_filename_is_arbitrary)
 {
   // Given
   InMemoryFileSystem fs;
@@ -362,7 +361,7 @@ TEST_F(FileSystemNamespaceSource,
 }
 
 TEST_F(FileSystemNamespaceSource,
-     infer_path_resolves_sibling_after_cross_branch_inferred_source_path)
+       infer_path_resolves_sibling_after_cross_branch_inferred_source_path)
 {
   // Given
   InMemoryFileSystem fs;
@@ -542,7 +541,8 @@ TEST_F(NamespaceLoading, resolves_require_alias_relative_to_entry_file)
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST_F(NamespaceLoading, resolves_cross_branch_requires_from_arbitrary_package_root_entry_file)
+TEST_F(NamespaceLoading,
+       resolves_cross_branch_requires_from_arbitrary_package_root_entry_file)
 {
   // Given
   RootedInMemoryFileSystem fs("app");
@@ -591,7 +591,7 @@ TEST_F(NamespaceLoading, resolves_sibling_require_when_current_filename_is_arbit
 }
 
 TEST_F(NamespaceLoading,
-     resolves_cross_branch_requires_when_loading_core_from_common_parent_root)
+       resolves_cross_branch_requires_when_loading_core_from_common_parent_root)
 {
   // Given
   RootedInMemoryFileSystem fs("app");
@@ -619,7 +619,8 @@ TEST_F(NamespaceLoading,
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST_F(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_from_branch_root)
+TEST_F(NamespaceLoading,
+       resolves_sibling_shared_namespace_when_loading_core_from_branch_root)
 {
   // Given
   RootedInMemoryFileSystem fs("app/minesweeper");
@@ -648,7 +649,7 @@ TEST_F(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_fro
 }
 
 TEST_F(NamespaceLoading,
-     resolves_cross_branch_then_sibling_imports_when_loading_core_from_branch_root)
+       resolves_cross_branch_then_sibling_imports_when_loading_core_from_branch_root)
 {
   // Given
   RootedInMemoryFileSystem fs("app/minesweeper");
@@ -693,7 +694,7 @@ TEST_F(NamespaceLoading, load_root_resolves_native_defined_namespace)
   auto result = runtime.eval("app.core/make-vehicle");
 
   // Then
-  ASSERT_EQ(result->type, Lisple::RTValue::Type::FUNCTION);
+  ASSERT_EQ(result->type, Lisple::Value::Type::FUNCTION);
 }
 
 TEST_F(NamespaceLoading, load_root_imports_aliased_native_defined_namespace)

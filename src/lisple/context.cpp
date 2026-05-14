@@ -30,12 +30,12 @@ namespace Lisple
     return evaluation_mode;
   }
 
-  sptr_rtval ContextFrame::lookup(const std::string& identifier) const
+  sptr_val ContextFrame::lookup(const std::string& identifier) const
   {
     return scope.lookup(identifier);
   }
 
-  sptr_rtval ContextFrame::lookup(const RTValue& identifier) const
+  sptr_val ContextFrame::lookup(const Value& identifier) const
   {
     return scope.lookup(identifier);
   }
@@ -117,37 +117,37 @@ namespace Lisple
     return frame_stack.size();
   }
 
-  sptr_rtval Context::eval(const sptr_sobject& form)
+  sptr_val Context::eval(const sptr_sobject& form)
   {
     return runtime.eval(*this, form);
   }
 
-  sptr_rtval Context::eval(const sptr_rtval& value)
+  sptr_val Context::eval(const sptr_val& value)
   {
     return runtime.eval(*this, to_AST(*value));
   }
 
-  sptr_rtval Context::eval(const std::string& str)
+  sptr_val Context::eval(const std::string& str)
   {
     return runtime.eval(*this, str);
   }
 
-  sptr_rtval Context::call(const std::string& fn_name, const sptr_rtval& arg)
+  sptr_val Context::call(const std::string& fn_name, const sptr_val& arg)
   {
-    sptr_rtval_v args{arg};
+    sptr_val_v args{arg};
     return call(fn_name, args);
   }
 
-  sptr_rtval Context::call(const std::string& fn_name, const sptr_rtval_v& args)
+  sptr_val Context::call(const std::string& fn_name, const sptr_val_v& args)
   {
-    sptr_rtval inv = lookup(fn_name);
-    if (inv->type != RTValue::Type::FUNCTION)
+    sptr_val inv = lookup(fn_name);
+    if (inv->type != Value::Type::FUNCTION)
     {
       throw InvocationException(inv->to_string() + " is not executable.");
     }
 
     Executable& exec = inv->exec();
-    sptr_rtval_v mutable_args = args;
+    sptr_val_v mutable_args = args;
 
     try
     {
@@ -191,16 +191,16 @@ namespace Lisple
     runtime.define_namespace_alias(namespace_name, alias);
   }
 
-  void Context::store_namespace(const std::string& symbol, const sptr_rtval& value)
+  void Context::store_namespace(const std::string& symbol, const sptr_val& value)
   {
     runtime.get_current_namespace().store(symbol, value);
   }
 
-  sptr_rtval Context::lookup(const std::string& identifier) const
+  sptr_val Context::lookup(const std::string& identifier) const
   {
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {
-      sptr_rtval res = i->get()->lookup(identifier);
+      sptr_val res = i->get()->lookup(identifier);
       if (res.get())
       {
         return res;
@@ -212,9 +212,9 @@ namespace Lisple
     return val;
   }
 
-  sptr_rtval Context::lookup(const RTValue& identifier) const
+  sptr_val Context::lookup(const Value& identifier) const
   {
-    if (identifier.type != RTValue::Type::SYMBOL)
+    if (identifier.type != Value::Type::SYMBOL)
     {
       throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }

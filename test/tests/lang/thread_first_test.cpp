@@ -1,8 +1,6 @@
 
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using ThreadFirstForm = LispleTest::RuntimeTestFixture;
 TEST_F(ThreadFirstForm, deep_map_traversal)
@@ -14,7 +12,7 @@ TEST_F(ThreadFirstForm, deep_map_traversal)
   auto retval = runtime.eval("(-> deep_map :file :metadata :size :mb)");
 
   // Then
-  ASSERT_EQ(*retval, *Lisple::RTValue::number(1200));
+  ASSERT_EQ(*retval, *Lisple::Value::number(1200));
 }
 
 TEST_F(ThreadFirstForm, functions)

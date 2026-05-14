@@ -972,7 +972,7 @@ namespace Lisple::AST
   }
 
   /** Refactor support - RuntimeValueWrapper */
-  RuntimeValueWrapper::RuntimeValueWrapper(const sptr_rtval& val)
+  RuntimeValueWrapper::RuntimeValueWrapper(const sptr_val& val)
     : ASTNode(Form::NIL)
     , val(val)
     , delegate(NIL)
@@ -981,20 +981,20 @@ namespace Lisple::AST
 
     switch (val->type)
     {
-    case RTValue::Type::LIST:
+    case Lisple::Value::Type::LIST:
       type = Form::LIST;
       break;
-    case RTValue::Type::VECTOR:
+    case Lisple::Value::Type::VECTOR:
       type = Form::VECTOR;
       break;
-    case RTValue::Type::MAP:
+    case Lisple::Value::Type::MAP:
       type = Form::MAP;
       break;
-    case RTValue::Type::NATIVE_OBJECT:
+    case Lisple::Value::Type::NATIVE_OBJECT:
       type = Form::HOST_OBJECT;
       break;
     default:
-      throw LispleException("Invalid RTValue for RuntimeWrapper: " + val->to_string());
+      throw LispleException("Invalid Value for RuntimeWrapper: " + val->to_string());
     }
   }
 
@@ -1030,13 +1030,13 @@ namespace Lisple::AST
     {
     case Form::KEYWORD:
     {
-      sptr_rtval v = to_rt_value(value);
-      Dict::set_property(val, RTValue::keyword(Value<std::string>::value_of(key)), v);
+      sptr_val v = to_rt_value(value);
+      Dict::set_property(val, Lisple::Value::keyword(Value<std::string>::value_of(key)), v);
       break;
     }
     default:
       throw LispleException(
-        "Mutation of underlying rtvalue with non-keyword not implemented.");
+        "Mutation of underlying value with non-keyword not implemented.");
     }
   }
 
@@ -1045,9 +1045,9 @@ namespace Lisple::AST
     RuntimeValueWrapper* val_wrapper = dynamic_cast<RuntimeValueWrapper*>(value.get());
     if (val_wrapper)
     {
-      if (val->type == RTValue::Type::VECTOR)
+      if (val->type == Lisple::Value::Type::VECTOR)
       {
-        sptr_rtval_v& elements = std::get<sptr_rtval_v>(val->value);
+        sptr_val_v& elements = std::get<sptr_val_v>(val->value);
         elements.push_back(val_wrapper->val);
       }
       else
@@ -1059,11 +1059,11 @@ namespace Lisple::AST
     else
     {
       throw LispleException("Do we need to handle this?");
-      // sptr_rtval rtval = to_rt_value(const_cast<sptr_sobject&>(value));
-      // sptr_rtval_v& elements = std::get<sptr_rtval_v>(val->value);
-      // elements.push_back(rtval);
+      // sptr_val value = to_rt_value(const_cast<sptr_sobject&>(value));
+      // sptr_val_v& elements = std::get<sptr_val_v>(val->value);
+      // elements.push_back(value);
 
-      // this->delegate->append(RuntimeValueWrapper::make(rtval));
+      // this->delegate->append(RuntimeValueWrapper::make(value));
     }
   }
 
@@ -1074,29 +1074,30 @@ namespace Lisple::AST
     case Form::KEYWORD:
     {
       sptr_sobject vv = value;
-      sptr_rtval v = to_rt_value(vv);
-      Dict::set_property(val, RTValue::keyword(Value<std::string>::value_of(*key)), v);
+      sptr_val v = to_rt_value(vv);
+      Dict::set_property(val, Lisple::Value::keyword(Value<std::string>::value_of(*key)), v);
       break;
     }
     default:
       throw LispleException(
-        "Mutation of underlying rtvalue with non-keyword not implemented.");
+        "Mutation of underlying value with non-keyword not implemented.");
     }
   }
 
   sptr_sobject RuntimeValueWrapper::get_sptr_property(const ASTNode& key) const
   {
-    if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEYWORD)
+    if (val->type == Lisple::Value::Type::MAP && key.get_type() == Form::KEYWORD)
     {
-      auto entry = Dict::map_entry(std::get<sptr_rtval_v>(val->value),
-                                   *RTValue::keyword(Value<std::string>::value_of(key)));
+      auto entry =
+        Dict::map_entry(std::get<sptr_val_v>(val->value),
+                        *Lisple::Value::keyword(Value<std::string>::value_of(key)));
       if (entry.second)
       {
         return RuntimeValueWrapper::make(entry.second);
       }
     }
 
-    if (val->type == RTValue::Type::OBJECT)
+    if (val->type == Lisple::Value::Type::OBJECT)
     {
     }
 
@@ -1105,10 +1106,10 @@ namespace Lisple::AST
 
   bool RuntimeValueWrapper::has_key(const ASTNode& key) const
   {
-    // if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEYWORD)
+    // if (val->type == Lisple::Value::Type::MAP && key.get_type() == Form::KEYWORD)
     // {
-    //   auto entry = Dict::map_entry(std::get<sptr_rtval_v>(val->value),
-    //                                *RTValue::keyword(Value<std::string>::value_of(key)));
+    //   auto entry = Dict::map_entry(std::get<sptr_val_v>(val->value),
+    //                                *Lisple::Value::keyword(Value<std::string>::value_of(key)));
     //   return entry.first ? true : false;
     // }
     return Lisple::Dict::contains_key(*this->val, Lisple::str_val(key));
@@ -1116,7 +1117,7 @@ namespace Lisple::AST
 
   sptr_sobject_v& RuntimeValueWrapper::get_children()
   {
-    sptr_rtval_v vc = Lisple::get_children(*val);
+    sptr_val_v vc = Lisple::get_children(*val);
     child_memo.clear();
     for (auto& c : vc)
     {
@@ -1131,26 +1132,26 @@ namespace Lisple::AST
     return Lisple::count(*val);
   }
 
-  std::shared_ptr<ASTNode> RuntimeValueWrapper::make(const sptr_rtval& value)
+  std::shared_ptr<ASTNode> RuntimeValueWrapper::make(const sptr_val& value)
   {
     if (*value == *Constant::NIL) return NIL;
     if (*value == *Constant::BOOL_FALSE) return B_FALSE;
     if (*value == *Constant::BOOL_TRUE) return B_TRUE;
     switch (value->type)
     {
-    case RTValue::Type::CHAR:
+    case Lisple::Value::Type::CHAR:
       return Char::make(std::get<char>(value->value));
-    case RTValue::Type::NUMBER:
+    case Lisple::Value::Type::NUMBER:
       return to_AST(*value);
-    case RTValue::Type::STRING:
+    case Lisple::Value::Type::STRING:
       return String::make(std::get<std::string>(value->value));
-    case RTValue::Type::KEYWORD:
+    case Lisple::Value::Type::KEYWORD:
       return Keyword::make(std::get<std::string>(value->value));
-    case RTValue::Type::SYMBOL:
+    case Lisple::Value::Type::SYMBOL:
       return Symbol::make(std::get<std::string>(value->value));
-    case RTValue::Type::OBJECT:
+    case Lisple::Value::Type::OBJECT:
       return std::get<sptr_sobject>(value->value);
-    case RTValue::Type::FUNCTION:
+    case Lisple::Value::Type::FUNCTION:
       return std::make_shared<RuntimeValueWrapper>(value);
     default:
       return std::make_shared<RuntimeValueWrapper>(value);

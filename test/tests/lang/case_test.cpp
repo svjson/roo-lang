@@ -1,9 +1,7 @@
 
 
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using CaseMacro = LispleTest::RuntimeTestFixture;
 TEST_F(CaseMacro, constants)
@@ -14,7 +12,7 @@ TEST_F(CaseMacro, constants)
     reader.eval(R"((case 20 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
 
   // Then
-  ASSERT_EQ(*result, *Lisple::RTValue::string("Zwanzig"));
+  ASSERT_EQ(*result, *Lisple::Value::string("Zwanzig"));
 }
 
 TEST_F(CaseMacro, expressions)
@@ -24,7 +22,7 @@ TEST_F(CaseMacro, expressions)
   auto result =
     reader.eval(R"((case (- 20 10) (- 10 10) "Zilch" (+ 5 5) "Zen" :default "Zillions"))");
   // Then
-  ASSERT_EQ(*result, *Lisple::RTValue::string("Zen"));
+  ASSERT_EQ(*result, *Lisple::Value::string("Zen"));
 }
 
 TEST_F(CaseMacro, no_match_with_default)
@@ -35,7 +33,7 @@ TEST_F(CaseMacro, no_match_with_default)
     reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
 
   // Then
-  ASSERT_EQ(*result, *Lisple::RTValue::string("Zillions"));
+  ASSERT_EQ(*result, *Lisple::Value::string("Zillions"));
 }
 
 TEST_F(CaseMacro, no_match_without_default)

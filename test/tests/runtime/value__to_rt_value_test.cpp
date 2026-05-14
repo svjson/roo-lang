@@ -16,14 +16,14 @@ TEST(to_rt_value, string)
 {
   Lisple::sptr_sobject test_string = Lisple::AST::String::make("test-string");
 
-  EXPECT_EQ(*Lisple::to_rt_value(test_string), *Lisple::RTValue::string("test-string"));
+  EXPECT_EQ(*Lisple::to_rt_value(test_string), *Lisple::Value::string("test-string"));
 }
 
 TEST(to_rt_value, const_string)
 {
   Lisple::sptr_sobject test_string = Lisple::AST::String::make("test-string");
 
-  EXPECT_EQ(*Lisple::to_rt_value(*test_string), *Lisple::RTValue::string("test-string"));
+  EXPECT_EQ(*Lisple::to_rt_value(*test_string), *Lisple::Value::string("test-string"));
 }
 
 TEST(to_rt_value, vector_with_string_child)
@@ -32,10 +32,10 @@ TEST(to_rt_value, vector_with_string_child)
                                          Lisple::AST::String::make("second")};
   Lisple::sptr_sobject ast_vector = Lisple::AST::Vector::make(std::move(ast_elements));
 
-  Lisple::sptr_rtval_v rt_elements = {Lisple::RTValue::string("first"),
-                                      Lisple::RTValue::string("second")};
+  Lisple::sptr_val_v rt_elements = {Lisple::Value::string("first"),
+                                    Lisple::Value::string("second")};
 
-  EXPECT_EQ(*Lisple::to_rt_value(ast_vector), *Lisple::RTValue::vector(rt_elements));
+  EXPECT_EQ(*Lisple::to_rt_value(ast_vector), *Lisple::Value::vector(rt_elements));
 }
 
 TEST(to_rt_value, map_with_string_value)
@@ -44,8 +44,8 @@ TEST(to_rt_value, map_with_string_value)
                                          Lisple::AST::String::make("Swedish Lion")};
   Lisple::sptr_sobject ast_map = Lisple::AST::Map::make(std::move(ast_elements));
 
-  Lisple::sptr_rtval_v rt_elements = {Lisple::RTValue::keyword("name"),
-                                      Lisple::RTValue::string("Swedish Lion")};
+  Lisple::sptr_val_v rt_elements = {Lisple::Value::keyword("name"),
+                                    Lisple::Value::string("Swedish Lion")};
 
-  EXPECT_EQ(*Lisple::to_rt_value(ast_map), *Lisple::RTValue::map(rt_elements));
+  EXPECT_EQ(*Lisple::to_rt_value(ast_map), *Lisple::Value::map(rt_elements));
 }

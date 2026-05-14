@@ -57,7 +57,7 @@ namespace Lisple
     Namespace(Type type, const std::string& name);
     Namespace(Type type,
               const std::string& name,
-              std::map<std::string, sptr_rtval> lang_symbols);
+              std::map<std::string, sptr_val> lang_symbols);
 
     /*!
      * @brief Fully import another namespaces
@@ -72,7 +72,7 @@ namespace Lisple
     /*!
      * @brief Used internally to service Namespace::has and Namespace::lookup
      */
-    sptr_rtval find(const std::string& identifier) const;
+    sptr_val find(const std::string& identifier) const;
 
    public:
     /*!
@@ -99,16 +99,16 @@ namespace Lisple
      * @brief Find a stored identifier in this namespace, its imported
      * namespaces or, if specifically qualified, its aliased namespaces.
      */
-    sptr_rtval lookup(const std::string& identifier) const override;
-    sptr_rtval lookup(const RTValue& identifier) const override;
+    sptr_val lookup(const std::string& identifier) const override;
+    sptr_val lookup(const Value& identifier) const override;
 
     using Scope::mutate;
-    void mutate(const std::string& identifier, const sptr_rtval& val) override;
+    void mutate(const std::string& identifier, const sptr_val& val) override;
 
     /*
      * Creates a language namespace. Intented for internal use only.
      */
-    static Namespace make_lang(std::map<std::string, sptr_rtval> lang_symbols);
+    static Namespace make_lang(std::map<std::string, sptr_val> lang_symbols);
 
     friend class Runtime;
   };

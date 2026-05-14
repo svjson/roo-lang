@@ -98,13 +98,13 @@ namespace Lisple
 
     case Form::QUOTED_SYMBOL:
       lowered_expressions++;
-      return std::make_unique<ExecNode>(RTValue::symbol(obj->as<AST::QuotedSymbol>().value));
+      return std::make_unique<ExecNode>(Value::symbol(obj->as<AST::QuotedSymbol>().value));
 
     case Form::SYMBOL:
     {
       if (ctx.is_allow_lookup() && ctx.ctx)
       {
-        sptr_rtval static_val;
+        sptr_val static_val;
         try
         {
           const AST::Symbol& symbol = obj->as<AST::Symbol>();
@@ -151,7 +151,7 @@ namespace Lisple
 
         if (literal_callee)
         {
-          if (literal_callee->value->type == RTValue::Type::KEYWORD)
+          if (literal_callee->value->type == Value::Type::KEYWORD)
           {
             if (children.size() != 2)
             {
@@ -163,7 +163,7 @@ namespace Lisple
             return std::make_unique<ExecNode>(
               KeyLookupNode(literal_callee->value, lower_expr(ctx, children[1])));
           }
-          else if (literal_callee->value->type == RTValue::Type::FUNCTION)
+          else if (literal_callee->value->type == Value::Type::FUNCTION)
           {
             if (auto* sform = dynamic_cast<SpecialForm*>(&literal_callee->value->exec()))
             {
@@ -229,51 +229,51 @@ namespace Lisple
     case Form::CHAR:
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(RTValue::character(obj->as<AST::Char>().value), obj));
+        LiteralNode(Value::character(obj->as<AST::Char>().value), obj));
     case Form::LIST:
     {
-      sptr_rtval_v elements;
+      sptr_val_v elements;
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
         auto lit_child = lower_literal(l);
         elements.push_back(std::get<LiteralNode>(lit_child->data).value);
       }
-      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::list(elements), obj));
+      return std::make_unique<ExecNode>(obj, LiteralNode(Value::list(elements), obj));
     }
     case Form::VECTOR:
     {
-      sptr_rtval_v elements;
+      sptr_val_v elements;
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
         auto lit_child = lower_literal(l);
         elements.push_back(std::get<LiteralNode>(lit_child->data).value);
       }
-      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::vector(elements), obj));
+      return std::make_unique<ExecNode>(obj, LiteralNode(Value::vector(elements), obj));
     }
     case Form::MAP:
     {
-      sptr_rtval_v elements;
+      sptr_val_v elements;
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
         auto lit_child = lower_literal(l);
         elements.push_back(std::get<LiteralNode>(lit_child->data).value);
       }
-      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::map(elements), obj));
+      return std::make_unique<ExecNode>(obj, LiteralNode(Value::map(elements), obj));
     }
     case Form::NIL:
       return std::make_unique<ExecNode>(Constant::NIL);
     case Form::HOST_OBJECT:
     {
       sptr_sobject ho = obj;
-      return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::object(ho), obj));
+      return std::make_unique<ExecNode>(obj, LiteralNode(Value::object(ho), obj));
     }
     case Form::KEYWORD:
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(RTValue::keyword(obj->as<AST::Keyword>().value), obj));
+        LiteralNode(Value::keyword(obj->as<AST::Keyword>().value), obj));
     case Form::NUMBER:
     {
       auto& num_obj = obj->as<Lisple::AST::Number>();
@@ -282,16 +282,16 @@ namespace Lisple
       case Lisple::AST::NumberType::INT:
         return std::make_unique<ExecNode>(
           obj,
-          LiteralNode(RTValue::number(num_obj.int_value()), obj));
+          LiteralNode(Value::number(num_obj.int_value()), obj));
       case Lisple::AST::NumberType::LONG:
         return std::make_unique<ExecNode>(
           obj,
-          LiteralNode(RTValue::number(num_obj.long_value()), obj));
+          LiteralNode(Value::number(num_obj.long_value()), obj));
 
       case Lisple::AST::NumberType::FLOAT:
         return std::make_unique<ExecNode>(
           obj,
-          LiteralNode(RTValue::number(num_obj.float_value()), obj));
+          LiteralNode(Value::number(num_obj.float_value()), obj));
       }
 
       throw LispleException("Unexpected number type");
@@ -301,16 +301,16 @@ namespace Lisple
     case Form::B_FALSE:
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(RTValue::boolean(obj->as<AST::Boolean>().value), obj));
+        LiteralNode(Value::boolean(obj->as<AST::Boolean>().value), obj));
     case Form::STRING:
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(RTValue::string(AST::Value<std::string>::value_of(*obj)), obj));
+        LiteralNode(Value::string(AST::Value<std::string>::value_of(*obj)), obj));
     case Form::QUOTED_SYMBOL:
     case Form::SYMBOL:
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(RTValue::symbol(AST::Value<std::string>::value_of(*obj)), obj));
+        LiteralNode(Value::symbol(AST::Value<std::string>::value_of(*obj)), obj));
     case Form::DISCARD:
       return std::make_unique<ExecNode>(Lisple::Constant::NIL);
     default:

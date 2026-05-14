@@ -1,8 +1,6 @@
 
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using DissocBangFunction = LispleTest::RuntimeTestFixture;
 TEST_F(DissocBangFunction, removal_of_non_existing_key_returns_nil)
@@ -27,6 +25,6 @@ TEST_F(DissocBangFunction, removal_of_key_returns_value)
   auto result = runtime.eval("(dissoc! my-map :b)");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(2));
+  EXPECT_EQ(*result, *Lisple::Value::number(2));
   EXPECT_EQ(runtime.eval("my-map")->to_string(), "{:a 1 :c 3}");
 }

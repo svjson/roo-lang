@@ -1,9 +1,8 @@
 
-#include "runtime_fixture.h"
 #include <lisple/exec.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using FnForm = LispleTest::RuntimeTestFixture;
 TEST_F(FnForm, define_and_exec_lambda)
@@ -11,9 +10,9 @@ TEST_F(FnForm, define_and_exec_lambda)
   // Given
   Lisple::sptr_sobject_v code = parser.read_sexps("(fn [x y] (+ (+ x 1) (- y 2)))");
 
-  Lisple::sptr_rtval_v exec_args;
-  exec_args.push_back(Lisple::RTValue::number(5));
-  exec_args.push_back(Lisple::RTValue::number(5));
+  Lisple::sptr_val_v exec_args;
+  exec_args.push_back(Lisple::Value::number(5));
+  exec_args.push_back(Lisple::Value::number(5));
 
   // When
   auto fn = runtime.eval(code.front());
@@ -34,7 +33,7 @@ TEST_F(FnForm, with_bound_scope)
   auto result = runtime.eval("(apply four-adder [3])");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(7));
+  EXPECT_EQ(*result, *Lisple::Value::number(7));
 }
 
 TEST_F(FnForm, optional_arg_bound_to_value_when_supplied)

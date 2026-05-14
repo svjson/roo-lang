@@ -12,14 +12,14 @@ namespace Lisple
   int literal_nodes_constructed = 0;
   int lookup_nodes_constructed = 0;
 
-  LiteralNode::LiteralNode(const sptr_rtval& v)
+  LiteralNode::LiteralNode(const sptr_val& v)
     : value(v)
     , ast_node(Lisple::AST::NIL)
   {
     literal_nodes_constructed++;
   }
 
-  LiteralNode::LiteralNode(const sptr_rtval& v, sptr_sobject ast_node)
+  LiteralNode::LiteralNode(const sptr_val& v, sptr_sobject ast_node)
     : value(v)
     , ast_node(ast_node)
   {
@@ -42,7 +42,7 @@ namespace Lisple
   {
   }
 
-  KeyLookupNode::KeyLookupNode(const sptr_rtval& keyword, uptr_exec_node target)
+  KeyLookupNode::KeyLookupNode(const sptr_val& keyword, uptr_exec_node target)
     : keyword(keyword)
     , target(std::move(target))
   {
@@ -61,7 +61,7 @@ namespace Lisple
   }
 
   SpecialFormNode::SpecialFormNode(const SpecialForm* form,
-                                   const sptr_rtval_v& values,
+                                   const sptr_val_v& values,
                                    uptr_exec_node_v exec_nodes)
     : form(form)
     , values(values)
@@ -116,7 +116,7 @@ namespace Lisple
   {
   }
 
-  ExecNode::ExecNode(const sptr_rtval& runtime_value)
+  ExecNode::ExecNode(const sptr_val& runtime_value)
     : form(Lisple::AST::NIL)
     , data(LiteralNode(runtime_value))
   {

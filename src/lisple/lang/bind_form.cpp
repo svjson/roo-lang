@@ -50,7 +50,7 @@ namespace Lisple
 
   EXECNODE_BODY(LetForm, execnode_let)
   {
-    sptr_rtval result;
+    sptr_val result;
 
     for (auto& [b, v] : snode.bind_forms)
     {
@@ -115,14 +115,14 @@ namespace Lisple
   }
   EXECNODE_BODY(IfLetForm, execnode_if_let)
   {
-    sptr_rtval result = Constant::NIL;
+    sptr_val result = Constant::NIL;
 
     bool truthy = true;
     Scope bind_scope;
     ctx.push_context(true, bind_scope);
     for (auto& [b, v] : snode.bind_forms)
     {
-      sptr_rtval val = exec(ctx, *v);
+      sptr_val val = exec(ctx, *v);
       if (!Lisple::is_truthy(*val))
       {
         truthy = false;
@@ -186,14 +186,14 @@ namespace Lisple
   }
   EXECNODE_BODY(WhenLetForm, execnode_when_let)
   {
-    sptr_rtval result = Constant::NIL;
+    sptr_val result = Constant::NIL;
 
     bool truthy = true;
     Scope bind_scope;
     ctx.push_context(true, bind_scope);
     for (auto& [b, v] : snode.bind_forms)
     {
-      sptr_rtval val = exec(ctx, *v);
+      sptr_val val = exec(ctx, *v);
       if (!Lisple::is_truthy(*val))
       {
         truthy = false;

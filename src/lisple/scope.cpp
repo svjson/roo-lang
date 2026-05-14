@@ -8,7 +8,7 @@
 
 namespace Lisple
 {
-  void Scope::store(const std::string& name, const sptr_rtval& value)
+  void Scope::store(const std::string& name, const sptr_val& value)
   {
     if (values.count(name))
     {
@@ -17,7 +17,7 @@ namespace Lisple
     values.emplace(name, value);
   }
 
-  void Scope::mutate(const std::string& name, const sptr_rtval& val)
+  void Scope::mutate(const std::string& name, const sptr_val& val)
   {
     remove(name);
     values.emplace(name, val);
@@ -43,7 +43,7 @@ namespace Lisple
     return values.count(identifier);
   }
 
-  sptr_rtval Scope::lookup(const std::string& symbol) const
+  sptr_val Scope::lookup(const std::string& symbol) const
   {
     auto it = values.find(symbol);
     if (it == values.end())
@@ -53,9 +53,9 @@ namespace Lisple
     return it->second;
   }
 
-  sptr_rtval Scope::lookup(const RTValue& identifier) const
+  sptr_val Scope::lookup(const Value& identifier) const
   {
-    if (identifier.type != RTValue::Type::SYMBOL)
+    if (identifier.type != Value::Type::SYMBOL)
     {
       throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }

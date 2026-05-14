@@ -6,13 +6,13 @@
 
 namespace LispleTest::Native
 {
-  const Lisple::sptr_rtval NAME = Lisple::RTValue::keyword("name");
-  const Lisple::sptr_rtval PRICE = Lisple::RTValue::keyword("price");
-  const Lisple::sptr_rtval SKU = Lisple::RTValue::keyword("sku");
-  const Lisple::sptr_rtval AUTHOR = Lisple::RTValue::keyword("author");
-  const Lisple::sptr_rtval ISBN = Lisple::RTValue::keyword("isbn");
-  const Lisple::sptr_rtval SIZE = Lisple::RTValue::keyword("size");
-  const Lisple::sptr_rtval MATERIAL = Lisple::RTValue::keyword("material");
+  const Lisple::sptr_val NAME = Lisple::Value::keyword("name");
+  const Lisple::sptr_val PRICE = Lisple::Value::keyword("price");
+  const Lisple::sptr_val SKU = Lisple::Value::keyword("sku");
+  const Lisple::sptr_val AUTHOR = Lisple::Value::keyword("author");
+  const Lisple::sptr_val ISBN = Lisple::Value::keyword("isbn");
+  const Lisple::sptr_val SIZE = Lisple::Value::keyword("size");
+  const Lisple::sptr_val MATERIAL = Lisple::Value::keyword("material");
 
   NATIVE_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT, (name), (price), (sku));
   NOBJ_PROP_GET__METHOD(ProductAdapter, name);

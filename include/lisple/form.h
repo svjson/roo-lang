@@ -404,11 +404,11 @@ namespace Lisple
     class RuntimeValueWrapper : public ASTNode
     {
      public:
-      sptr_rtval val;
+      sptr_val val;
       sptr_sobject delegate;
       sptr_sobject_v child_memo;
 
-      RuntimeValueWrapper(const sptr_rtval& val);
+      RuntimeValueWrapper(const sptr_val& val);
 
       bool operator==(const ASTNode& other) const override;
       unsigned int size() const override;
@@ -422,7 +422,7 @@ namespace Lisple
 
       sptr_sobject_v& get_children() override;
 
-      static std::shared_ptr<ASTNode> make(const sptr_rtval& value);
+      static std::shared_ptr<ASTNode> make(const sptr_val& value);
 
       std::string to_string(int depth = -1) const override;
     };

@@ -30,7 +30,7 @@ TEST(Scope, has__after_store)
   Scope scope;
 
   // When
-  scope.store("ident", Lisple::RTValue::number(10));
+  scope.store("ident", Lisple::Value::number(10));
   bool result = scope.has("ident");
 
   // Then

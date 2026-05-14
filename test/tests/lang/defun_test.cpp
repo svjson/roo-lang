@@ -9,12 +9,12 @@ using DefunForm = LispleTest::RuntimeTestFixture;
 TEST_F(DefunForm, define_no_arg_fun)
 {
   // Given
-  Lisple::sptr_rtval result = runtime.eval("(defun my-fn [] 8)");
+  Lisple::sptr_val result = runtime.eval("(defun my-fn [] 8)");
 
   // Then
-  auto fun = runtime.lookup(*Lisple::RTValue::symbol("my-fn"));
+  auto fun = runtime.lookup(*Lisple::Value::symbol("my-fn"));
   ASSERT_TRUE(fun.get());
-  ASSERT_EQ(fun->type, Lisple::RTValue::Type::FUNCTION);
+  ASSERT_EQ(fun->type, Lisple::Value::Type::FUNCTION);
   auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
   EXPECT_TRUE(user_fun.get_argument_bindings().empty());
   EXPECT_EQ(user_fun.get_body().size(), 1);
@@ -24,7 +24,7 @@ TEST_F(DefunForm, define_no_arg_fun)
 TEST_F(DefunForm, define_no_arg_fun_with_docstring)
 {
   // Given
-  Lisple::sptr_rtval result = runtime.eval(R"(
+  Lisple::sptr_val result = runtime.eval(R"(
     (defun my-fn
      "This function does all the magic things you can think of..."
      []
@@ -32,9 +32,9 @@ TEST_F(DefunForm, define_no_arg_fun_with_docstring)
                                             )");
 
   // Then
-  auto fun = runtime.lookup(*Lisple::RTValue::symbol("my-fn"));
+  auto fun = runtime.lookup(*Lisple::Value::symbol("my-fn"));
   ASSERT_TRUE(fun.get());
-  ASSERT_EQ(fun->type, Lisple::RTValue::Type::FUNCTION);
+  ASSERT_EQ(fun->type, Lisple::Value::Type::FUNCTION);
   auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
   EXPECT_TRUE(user_fun.get_argument_bindings().empty());
   EXPECT_EQ(user_fun.get_body().size(), 1);
@@ -48,7 +48,7 @@ TEST_F(DefunForm, defun_with_static_return_value)
 
   // Then
   ASSERT_TRUE(runtime.get_current_namespace().has("gimme-five"));
-  Lisple::sptr_rtval_v args;
+  Lisple::sptr_val_v args;
   auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 5);
 }
@@ -60,7 +60,7 @@ TEST_F(DefunForm, defun_with_single_argument)
 
   // Then
   ASSERT_TRUE(runtime.get_current_namespace().has("add-five"));
-  Lisple::sptr_rtval_v args{Lisple::RTValue::number(6)};
+  Lisple::sptr_val_v args{Lisple::Value::number(6)};
   auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 11);
 }

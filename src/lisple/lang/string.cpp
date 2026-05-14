@@ -51,10 +51,10 @@ namespace Lisple
     {
       switch (arg->type)
       {
-      case RTValue::Type::STRING:
+      case Value::Type::STRING:
         result += std::get<std::string>(arg->value);
         break;
-      case RTValue::Type::CHAR:
+      case Value::Type::CHAR:
         result += std::get<char>(arg->value);
         break;
       default:
@@ -63,7 +63,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::string(result);
+    return Value::string(result);
   }
 
   /** JoinFunction - join */
@@ -72,7 +72,7 @@ namespace Lisple
 
   EXEC_BODY(JoinFunction, exec_join)
   {
-    if (args.size() < 2) return RTValue::string("");
+    if (args.size() < 2) return Value::string("");
 
     const std::string& joiner = args[0]->str();
     std::string result = args[1]->str();
@@ -83,16 +83,15 @@ namespace Lisple
       result += args[i]->str();
     }
 
-    return RTValue::string(result);
+    return Value::string(result);
   }
 
   /** SubstrFunction - substr */
-  FUNC_IMPL(
-    SubstrFunction,
-    MULTI_SIG((FN_ARGS((&Type::STRING), (&Type::NUMBER)),
-               EXEC_DISPATCH(&SubstrFunction::exec_substr)),
-              (FN_ARGS((&Type::STRING), (&Type::NUMBER), (&Type::NUMBER)),
-               EXEC_DISPATCH(&SubstrFunction::exec_substr))))
+  FUNC_IMPL(SubstrFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRING), (&Type::NUMBER)),
+                       EXEC_DISPATCH(&SubstrFunction::exec_substr)),
+                      (FN_ARGS((&Type::STRING), (&Type::NUMBER), (&Type::NUMBER)),
+                       EXEC_DISPATCH(&SubstrFunction::exec_substr))))
 
   EXEC_BODY(SubstrFunction, exec_substr)
   {
@@ -101,21 +100,22 @@ namespace Lisple
 
     if (start < 0 || start >= static_cast<int>(str.size()))
     {
-      return RTValue::string("");
+      return Value::string("");
     }
 
     if (args.size() == 2)
     {
-      return RTValue::string(str.substr(static_cast<size_t>(start)));
+      return Value::string(str.substr(static_cast<size_t>(start)));
     }
 
     int length = args[2]->i32();
     if (length <= 0)
     {
-      return RTValue::string("");
+      return Value::string("");
     }
 
-    return RTValue::string(str.substr(static_cast<size_t>(start), static_cast<size_t>(length)));
+    return Value::string(
+      str.substr(static_cast<size_t>(start), static_cast<size_t>(length)));
   }
 
   /** TrimFunction - trim */
@@ -124,17 +124,18 @@ namespace Lisple
 
   EXEC_BODY(TrimFunction, exec_trim)
   {
-    return RTValue::string(trim_copy(args[0]->str()));
+    return Value::string(trim_copy(args[0]->str()));
   }
 
   /** BlankPFunction - blank? */
   FUNC_IMPL(BlankPFunction,
-            MULTI_SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&BlankPFunction::exec_blank_p)),
+            MULTI_SIG((FN_ARGS((&Type::STRING)),
+                       EXEC_DISPATCH(&BlankPFunction::exec_blank_p)),
                       (FN_ARGS((&Type::NIL)), EXEC_DISPATCH(&BlankPFunction::exec_blank_p))))
 
   EXEC_BODY(BlankPFunction, exec_blank_p)
   {
-    if (args[0]->type == RTValue::Type::NIL)
+    if (args[0]->type == Value::Type::NIL)
     {
       return Constant::BOOL_TRUE;
     }
@@ -149,9 +150,9 @@ namespace Lisple
   EXEC_BODY(UpperCaseFunction, exec_upper_case)
   {
     std::string str =
-      args[0]->type == RTValue::Type::STRING ? args[0]->str() : args[0]->to_string();
+      args[0]->type == Value::Type::STRING ? args[0]->str() : args[0]->to_string();
     std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-    return RTValue::string(str);
+    return Value::string(str);
   }
 
   /** LowerCaseFunction - lower-case */
@@ -161,9 +162,9 @@ namespace Lisple
   EXEC_BODY(LowerCaseFunction, exec_lower_case)
   {
     std::string str =
-      args[0]->type == RTValue::Type::STRING ? args[0]->str() : args[0]->to_string();
+      args[0]->type == Value::Type::STRING ? args[0]->str() : args[0]->to_string();
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    return RTValue::string(str);
+    return Value::string(str);
   }
 
 } // namespace Lisple

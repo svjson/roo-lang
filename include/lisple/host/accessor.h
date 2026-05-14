@@ -23,7 +23,7 @@
  * }
  */
 #define NOBJ_PROP_GET(AD_CLASS, PROP_NAME)           \
-  Lisple::sptr_rtval AD_CLASS::get_##PROP_NAME() const
+  Lisple::sptr_val AD_CLASS::get_##PROP_NAME() const
 
 /* NOBJ_PROP_SET
  *
@@ -39,7 +39,7 @@
  * }
  */
 #define NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                  \
-  void AD_CLASS::set_##PROP_NAME([[maybe_unused]]Lisple::Context* ctx, Lisple::sptr_rtval& value)
+  void AD_CLASS::set_##PROP_NAME([[maybe_unused]]Lisple::Context* ctx, Lisple::sptr_val& value)
 
 
 /* -----------------------------------------------------------------------
@@ -171,14 +171,14 @@
 #define __NOBJ_PROP_GET_KEYWORD__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    return Lisple::RTValue::keyword(get_self_object().OBJ_METHOD());     \
+    return Lisple::Value::keyword(get_self_object().OBJ_METHOD());     \
   }
 
 /* Keyword getter via direct field access */
 #define __NOBJ_PROP_GET_KEYWORD__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)   \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    return Lisple::RTValue::keyword(get_self_object().OBJ_FIELD);        \
+    return Lisple::Value::keyword(get_self_object().OBJ_FIELD);        \
   }
 
 /* Keyword setter via member function */
@@ -201,7 +201,7 @@
   {                                                                          \
     auto maybe_value = get_self_object().OBJ_METHOD();                       \
     return maybe_value                                                       \
-      ? Lisple::RTValue::keyword(*maybe_value)                               \
+      ? Lisple::Value::keyword(*maybe_value)                               \
       : Lisple::Constant::NIL;                                               \
   }
 
@@ -210,7 +210,7 @@
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                       \
   {                                                                        \
     return get_self_object().OBJ_FIELD.has_value()                         \
-      ? Lisple::RTValue::keyword(*get_self_object().OBJ_FIELD)             \
+      ? Lisple::Value::keyword(*get_self_object().OBJ_FIELD)             \
       : Lisple::Constant::NIL;                                             \
   }
 
@@ -245,7 +245,7 @@
 #define __NOBJ_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD)       \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                     \
   {                                                                      \
-    if (value->type == Lisple::RTValue::Type::NIL)                       \
+    if (value->type == Lisple::Value::Type::NIL)                       \
       get_self_object().OBJ_FIELD = std::nullopt;                        \
     else                                                                 \
       get_self_object().OBJ_FIELD =                                      \
@@ -256,7 +256,7 @@
 #define __NOBJ_PROP_SET_OPT_KEYWORD__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                       \
   {                                                                        \
-    if (value->type == Lisple::RTValue::Type::NIL)                         \
+    if (value->type == Lisple::Value::Type::NIL)                         \
       get_self_object().OBJ_FIELD = std::nullopt;                          \
     else                                                                   \
       get_self_object().OBJ_FIELD =                                        \
@@ -267,7 +267,7 @@
 #define __NOBJ_PROP_SET_OPT_KEYWORD__METHOD(AD_CLASS, PROP_NAME, OBJ_METHOD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                         \
   {                                                                          \
-    if (value->type == Lisple::RTValue::Type::NIL)                           \
+    if (value->type == Lisple::Value::Type::NIL)                           \
       get_self_object().OBJ_METHOD(std::nullopt);                            \
     else                                                                     \
       get_self_object().OBJ_METHOD(value->str());                            \
@@ -335,7 +335,7 @@
 #define __NOBJ_PROP_SET_ADAPTER_P__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                   \
   {                                                                                    \
-    get_self_object().OBJ_FIELD = value->type == Lisple::RTValue::Type::NIL             \
+    get_self_object().OBJ_FIELD = value->type == Lisple::Value::Type::NIL             \
       ? nullptr                                                                         \
       : &value->adapter<ADAPTER_TYPE>().get_self_object();                              \
   }
@@ -364,7 +364,7 @@
 #define __NOBJ_PROP_SET_OPT_ADAPTER__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD)  \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                      \
   {                                                                                       \
-    if (value->type == Lisple::RTValue::Type::NIL)                                        \
+    if (value->type == Lisple::Value::Type::NIL)                                        \
       get_self_object().OBJ_FIELD = std::nullopt;                                         \
     else                                                                                  \
       get_self_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_self_object();     \
@@ -374,7 +374,7 @@
 #define __NOBJ_PROP_SET_OPT_ADAPTER__METHOD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_METHOD) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                       \
   {                                                                                        \
-    if (value->type == Lisple::RTValue::Type::NIL)                                         \
+    if (value->type == Lisple::Value::Type::NIL)                                         \
       get_self_object().OBJ_METHOD(std::nullopt);                                          \
     else                                                                                   \
       get_self_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_self_object());      \
@@ -384,13 +384,13 @@
 #define __NOBJ_PROP_GET_VALUE_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                             \
   {                                                                              \
-    Lisple::sptr_rtval_v values;                                                 \
+    Lisple::sptr_val_v values;                                                 \
     values.reserve(get_self_object().OBJ_FIELD.size());                          \
     for (auto& obj : get_self_object().OBJ_FIELD)                                \
     {                                                                            \
       values.push_back(Lisple::rtval_from(obj));                                 \
     }                                                                            \
-    return Lisple::RTValue::vector(values);                                      \
+    return Lisple::Value::vector(values);                                      \
   }
 
 /* Value vector copy getter via member function */
@@ -398,26 +398,26 @@
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                \
   {                                                                                 \
     auto& source = get_self_object().OBJ_METHOD();                                  \
-    Lisple::sptr_rtval_v values;                                                    \
+    Lisple::sptr_val_v values;                                                    \
     values.reserve(source.size());                                                  \
     for (auto& obj : source)                                                        \
     {                                                                               \
       values.push_back(Lisple::rtval_from(obj));                                    \
     }                                                                               \
-    return Lisple::RTValue::vector(values);                                         \
+    return Lisple::Value::vector(values);                                         \
   }
 
 /* Keyword vector copy getter via direct field access */
 #define __NOBJ_PROP_GET_KEYWORD_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, OBJ_FIELD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                               \
   {                                                                                \
-    Lisple::sptr_rtval_v values;                                                   \
+    Lisple::sptr_val_v values;                                                   \
     values.reserve(get_self_object().OBJ_FIELD.size());                            \
     for (auto& obj : get_self_object().OBJ_FIELD)                                  \
     {                                                                              \
-      values.push_back(Lisple::RTValue::keyword(obj));                             \
+      values.push_back(Lisple::Value::keyword(obj));                             \
     }                                                                              \
-    return Lisple::RTValue::vector(values);                                        \
+    return Lisple::Value::vector(values);                                        \
   }
 
 /* Keyword vector copy setter via direct field access */
@@ -426,7 +426,7 @@
   {                                                                                \
     auto& target = get_self_object().OBJ_FIELD;                                    \
     target.clear();                                                                \
-    if (value->type == Lisple::RTValue::Type::NIL) return;                         \
+    if (value->type == Lisple::Value::Type::NIL) return;                         \
     for (auto& obj : value->elements())                                            \
     {                                                                              \
       target.push_back(obj->str());                                                \
@@ -437,13 +437,13 @@
 #define __NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                             \
   {                                                                                              \
-    Lisple::sptr_rtval_v values;                                                                 \
+    Lisple::sptr_val_v values;                                                                 \
     values.reserve(get_self_object().OBJ_FIELD.size());                                          \
     for (auto& obj : get_self_object().OBJ_FIELD)                                                \
     {                                                                                            \
       values.push_back(ADAPTER_TYPE::make_ref(obj));                                             \
     }                                                                                            \
-    return Lisple::RTValue::vector(values);                                                      \
+    return Lisple::Value::vector(values);                                                      \
   }
 
 /* Adapter vector copy getter via member function */
@@ -451,26 +451,26 @@
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                               \
   {                                                                                                \
     auto& source = get_self_object().OBJ_METHOD();                                                 \
-    Lisple::sptr_rtval_v values;                                                                   \
+    Lisple::sptr_val_v values;                                                                   \
     values.reserve(source.size());                                                                 \
     for (auto& obj : source)                                                                       \
     {                                                                                              \
       values.push_back(ADAPTER_TYPE::make_ref(obj));                                               \
     }                                                                                              \
-    return Lisple::RTValue::vector(values);                                                        \
+    return Lisple::Value::vector(values);                                                        \
   }
 
 /* Pointer adapter vector copy getter via direct field access */
 #define __NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__FIELD(AD_CLASS, PROP_NAME, ADAPTER_TYPE, OBJ_FIELD) \
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                               \
   {                                                                                                \
-    Lisple::sptr_rtval_v values;                                                                   \
+    Lisple::sptr_val_v values;                                                                   \
     values.reserve(get_self_object().OBJ_FIELD.size());                                            \
     for (auto& obj : get_self_object().OBJ_FIELD)                                                   \
     {                                                                                              \
       values.push_back(obj ? ADAPTER_TYPE::make_ref(*obj) : Lisple::Constant::NIL);                \
     }                                                                                              \
-    return Lisple::RTValue::vector(values);                                                        \
+    return Lisple::Value::vector(values);                                                        \
   }
 
 /* Pointer adapter vector copy getter via member function */
@@ -478,13 +478,13 @@
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                                 \
   {                                                                                                  \
     auto& source = get_self_object().OBJ_METHOD();                                                   \
-    Lisple::sptr_rtval_v values;                                                                     \
+    Lisple::sptr_val_v values;                                                                     \
     values.reserve(source.size());                                                                   \
     for (auto& obj : source)                                                                          \
     {                                                                                                \
       values.push_back(obj ? ADAPTER_TYPE::make_ref(*obj) : Lisple::Constant::NIL);                  \
     }                                                                                                \
-    return Lisple::RTValue::vector(values);                                                          \
+    return Lisple::Value::vector(values);                                                          \
   }
 
 
@@ -747,7 +747,7 @@
 /* -----------------------------------------------------------------------
  * Vector-copy getter public macros
  *
- * These intentionally return a new RTValue vector every time. They are useful
+ * These intentionally return a new Value vector every time. They are useful
  * for preserving legacy accessor semantics where mutating the returned vector
  * must not mutate the source native collection. They are not live wrappers.
  *
@@ -871,13 +871,13 @@
   NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                             \
   {                                                                                               \
     auto&& source = ACCESS_EXPR;                                                                  \
-    Lisple::sptr_rtval_v values;                                                                  \
+    Lisple::sptr_val_v values;                                                                  \
     values.reserve(source.size());                                                                \
     for (auto& obj : source)                                                                      \
     {                                                                                             \
       values.push_back(__NOBJ_DSL_VECTOR_WRAP__##VALUE_KIND(obj, ##__VA_ARGS__));                 \
     }                                                                                             \
-    return Lisple::RTValue::vector(values);                                                       \
+    return Lisple::Value::vector(values);                                                       \
   }
 
 #define __NOBJ_DSL_VECTOR_WRAP__VALUE(obj)                         \
@@ -925,7 +925,7 @@
 #define __NOBJ_DSL_PROP_SET_FIELD_IMPL__ADAPTER_P(AD_CLASS, PROP_NAME, OBJ_FIELD, ADAPTER_TYPE) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                            \
   {                                                                                              \
-    get_self_object().OBJ_FIELD = value->type == Lisple::RTValue::Type::NIL                      \
+    get_self_object().OBJ_FIELD = value->type == Lisple::Value::Type::NIL                      \
       ? nullptr                                                                                  \
       : &value->adapter<ADAPTER_TYPE>().get_self_object();                                       \
   }
@@ -948,7 +948,7 @@
 #define __NOBJ_DSL_PROP_SET_METHOD_IMPL__ADAPTER_P(AD_CLASS, PROP_NAME, OBJ_METHOD, ADAPTER_TYPE) \
   NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                              \
   {                                                                                                \
-    get_self_object().OBJ_METHOD(value->type == Lisple::RTValue::Type::NIL                         \
+    get_self_object().OBJ_METHOD(value->type == Lisple::Value::Type::NIL                         \
       ? nullptr                                                                                    \
       : &value->adapter<ADAPTER_TYPE>().get_self_object());                                        \
   }

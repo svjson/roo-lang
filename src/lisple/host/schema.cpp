@@ -12,17 +12,17 @@ namespace Lisple
   {
   }
 
-  MapSchema::Inspector MapSchema::bind(Context& ctx, RTValue& map)
+  MapSchema::Inspector MapSchema::bind(Context& ctx, Value& map)
   {
     std::unordered_set<std::string> map_keys = Lisple::Dict::map_string_keys(map);
-    std::unordered_map<std::string, sptr_rtval> transformed;
+    std::unordered_map<std::string, sptr_val> transformed;
 
     for (auto& [k, type] : required)
     {
       if (map_keys.count(k))
       {
-        sptr_rtval val = Lisple::Dict::get_property(map, k);
-        if (!type->is_type_of(*val) && val->type != RTValue::Type::NIL)
+        sptr_val val = Lisple::Dict::get_property(map, k);
+        if (!type->is_type_of(*val) && val->type != Value::Type::NIL)
         {
           auto coercion = type->coerce(ctx, val);
           if (coercion.success)
@@ -49,8 +49,8 @@ namespace Lisple
     {
       if (map_keys.count(k))
       {
-        sptr_rtval val = Lisple::Dict::get_property(map, k);
-        if (!type->is_type_of(*val) && val->type != RTValue::Type::NIL)
+        sptr_val val = Lisple::Dict::get_property(map, k);
+        if (!type->is_type_of(*val) && val->type != Value::Type::NIL)
         {
           auto coercion = type->coerce(ctx, val);
           if (coercion.success)
@@ -71,18 +71,17 @@ namespace Lisple
   }
 
   MapSchema::Inspector::Inspector(const MapSchema& schema,
-                                  RTValue& map,
-                                  std::unordered_map<std::string, sptr_rtval> overrides)
+                                  Value& map,
+                                  std::unordered_map<std::string, sptr_val> overrides)
     : schema(schema)
     , source(map)
     , override_map(overrides)
   {
   }
 
-  sptr_rtval MapSchema::Inspector::_get_value(const std::string& key,
-                                              RTValue::Type type) const
+  sptr_val MapSchema::Inspector::_get_value(const std::string& key, Value::Type type) const
   {
-    sptr_rtval value;
+    sptr_val value;
     if (override_map.count(key))
     {
       value = override_map.at(key);
@@ -92,7 +91,7 @@ namespace Lisple
       value = Dict::get_property(source, key);
     }
 
-    if (value->type == RTValue::Type::NIL)
+    if (value->type == Value::Type::NIL)
     {
       return nullptr;
     }
@@ -105,9 +104,9 @@ namespace Lisple
     return value;
   }
 
-  sptr_rtval MapSchema::Inspector::_get_value(const std::string& key) const
+  sptr_val MapSchema::Inspector::_get_value(const std::string& key) const
   {
-    sptr_rtval value;
+    sptr_val value;
     if (override_map.count(key))
     {
       value = override_map.at(key);
@@ -117,7 +116,7 @@ namespace Lisple
       value = Dict::get_property(source, key);
     }
 
-    if (value->type == RTValue::Type::NIL)
+    if (value->type == Value::Type::NIL)
     {
       return nullptr;
     }
@@ -125,9 +124,9 @@ namespace Lisple
     return value;
   }
 
-  sptr_rtval MapSchema::Inspector::_get_value_or_throw(const std::string& key) const
+  sptr_val MapSchema::Inspector::_get_value_or_throw(const std::string& key) const
   {
-    sptr_rtval value;
+    sptr_val value;
     if (override_map.count(key))
     {
       value = override_map.at(key);
@@ -140,10 +139,10 @@ namespace Lisple
     return value;
   }
 
-  sptr_rtval MapSchema::Inspector::_get_value_or_throw(const std::string& key,
-                                                       RTValue::Type type) const
+  sptr_val MapSchema::Inspector::_get_value_or_throw(const std::string& key,
+                                                     Value::Type type) const
   {
-    sptr_rtval value;
+    sptr_val value;
     if (override_map.count(key))
     {
       value = override_map.at(key);
@@ -167,7 +166,7 @@ namespace Lisple
     return override_map.count(key) || Dict::contains_key(source, key);
   }
 
-  sptr_rtval MapSchema::Inspector::val(const std::string& key) const
+  sptr_val MapSchema::Inspector::val(const std::string& key) const
   {
     if (override_map.count(key)) return override_map.at(key);
     return Dict::get_property(source, key);
@@ -175,12 +174,12 @@ namespace Lisple
 
   bool MapSchema::Inspector::boolean(const std::string& key) const
   {
-    return std::get<bool>(_get_value_or_throw(key, RTValue::Type::BOOL)->value);
+    return std::get<bool>(_get_value_or_throw(key, Value::Type::BOOL)->value);
   }
 
   bool MapSchema::Inspector::boolean(const std::string& key, bool default_value) const
   {
-    sptr_rtval value = _get_value(key, RTValue::Type::BOOL);
+    sptr_val value = _get_value(key, Value::Type::BOOL);
     if (value)
     {
       return std::get<bool>(value->value);
@@ -190,67 +189,67 @@ namespace Lisple
 
   uint8_t MapSchema::Inspector::ui8(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<const RTValue::Number>(value->value).get_int();
+    sptr_val value = _get_value_or_throw(key, Value::Type::NUMBER);
+    return std::get<const Value::Number>(value->value).get_int();
   }
 
   uint8_t MapSchema::Inspector::ui8(const std::string& key, uint8_t default_value) const
   {
-    sptr_rtval value = _get_value(key, RTValue::Type::NUMBER);
+    sptr_val value = _get_value(key, Value::Type::NUMBER);
     if (value)
     {
-      return std::get<const RTValue::Number>(value->value).get_int();
+      return std::get<const Value::Number>(value->value).get_int();
     }
     return default_value;
   }
 
-  const RTValue::Number& MapSchema::Inspector::num(const std::string& key) const
+  const Value::Number& MapSchema::Inspector::num(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<const RTValue::Number>(value->value);
+    sptr_val value = _get_value_or_throw(key, Value::Type::NUMBER);
+    return std::get<const Value::Number>(value->value);
   }
 
   int MapSchema::Inspector::i32(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<const RTValue::Number>(value->value).get_int();
+    sptr_val value = _get_value_or_throw(key, Value::Type::NUMBER);
+    return std::get<const Value::Number>(value->value).get_int();
   }
   int MapSchema::Inspector::i32(const std::string& key, int default_value) const
   {
-    if (sptr_rtval value = _get_value(key, RTValue::Type::NUMBER))
+    if (sptr_val value = _get_value(key, Value::Type::NUMBER))
     {
-      return std::get<const RTValue::Number>(value->value).get_int();
+      return std::get<const Value::Number>(value->value).get_int();
     }
     return default_value;
   }
 
   long MapSchema::Inspector::i64(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<const RTValue::Number>(value->value).get_long();
+    sptr_val value = _get_value_or_throw(key, Value::Type::NUMBER);
+    return std::get<const Value::Number>(value->value).get_long();
   }
   float MapSchema::Inspector::f32(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<const RTValue::Number>(value->value).get_float();
+    sptr_val value = _get_value_or_throw(key, Value::Type::NUMBER);
+    return std::get<const Value::Number>(value->value).get_float();
   }
   float MapSchema::Inspector::f32(const std::string& key, float default_value) const
   {
-    if (sptr_rtval value = _get_value(key, RTValue::Type::NUMBER))
+    if (sptr_val value = _get_value(key, Value::Type::NUMBER))
     {
-      return std::get<const RTValue::Number>(value->value).get_float();
+      return std::get<const Value::Number>(value->value).get_float();
     }
     return default_value;
   }
   double MapSchema::Inspector::f64(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key, RTValue::Type::NUMBER);
-    return std::get<const RTValue::Number>(value->value).get_double();
+    sptr_val value = _get_value_or_throw(key, Value::Type::NUMBER);
+    return std::get<const Value::Number>(value->value).get_double();
   }
 
   const std::string& MapSchema::Inspector::str(const std::string& key) const
   {
-    sptr_rtval value = _get_value_or_throw(key);
+    sptr_val value = _get_value_or_throw(key);
 
     if (std::string* str = std::get_if<std::string>(&value->value))
     {
@@ -263,7 +262,7 @@ namespace Lisple
   const std::string& MapSchema::Inspector::str(const std::string& key,
                                                const std::string& default_value) const
   {
-    sptr_rtval value = _get_value(key);
+    sptr_val value = _get_value(key);
 
     if (std::string* str = std::get_if<std::string>(&value->value))
     {

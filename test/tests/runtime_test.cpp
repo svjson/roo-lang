@@ -79,7 +79,7 @@ TEST_F(Runtime, eval__symbol__lookup)
   // Given
   std::shared_ptr<Lisple::AST::ASTNode> symbol =
     std::make_shared<Lisple::AST::Symbol>("my-symbol");
-  runtime.get_current_namespace().store("my-symbol", Lisple::RTValue::string("my-string"));
+  runtime.get_current_namespace().store("my-symbol", Lisple::Value::string("my-string"));
 
   // When
   auto result = runtime.eval(symbol);
@@ -93,7 +93,7 @@ TEST_F(Runtime, eval__symbol__no_lookup)
   // Given
   std::shared_ptr<Lisple::AST::ASTNode> symbol =
     std::make_shared<Lisple::AST::Symbol>("my-symbol");
-  runtime.get_current_namespace().store("my-symbol", Lisple::RTValue::string("my-string"));
+  runtime.get_current_namespace().store("my-symbol", Lisple::Value::string("my-string"));
 
   // When
   ctx.push_context(false);
@@ -113,31 +113,31 @@ TEST_F(Runtime, eval__quoted_list)
 
   ASSERT_EQ(Lisple::count(*result), 4);
 
-  EXPECT_EQ(*result->elements().at(0), *Lisple::RTValue::symbol("these"));
-  EXPECT_EQ(*result->elements().at(1), *Lisple::RTValue::symbol("are"));
-  EXPECT_EQ(*result->elements().at(2), *Lisple::RTValue::symbol("bare"));
-  EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("symbols"));
+  EXPECT_EQ(*result->elements().at(0), *Lisple::Value::symbol("these"));
+  EXPECT_EQ(*result->elements().at(1), *Lisple::Value::symbol("are"));
+  EXPECT_EQ(*result->elements().at(2), *Lisple::Value::symbol("bare"));
+  EXPECT_EQ(*result->elements().at(3), *Lisple::Value::symbol("symbols"));
 }
 
 TEST_F(Runtime, lookup__string_with_default__returns_value_when_found)
 {
   // Given
-  runtime.get_current_namespace().store("my-value", Lisple::RTValue::string("found"));
+  runtime.get_current_namespace().store("my-value", Lisple::Value::string("found"));
 
   // When
-  auto result = runtime.lookup("my-value", Lisple::RTValue::string("default"));
+  auto result = runtime.lookup("my-value", Lisple::Value::string("default"));
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::string("found"));
+  EXPECT_EQ(*result, *Lisple::Value::string("found"));
 }
 
 TEST_F(Runtime, lookup__string_with_default__returns_default_when_missing)
 {
   // When
-  auto result = runtime.lookup("missing-value", Lisple::RTValue::string("default"));
+  auto result = runtime.lookup("missing-value", Lisple::Value::string("default"));
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::string("default"));
+  EXPECT_EQ(*result, *Lisple::Value::string("default"));
 }
 
 TEST_F(Runtime, lookup__string_with_default__keeps_existing_nil_value)
@@ -146,27 +146,27 @@ TEST_F(Runtime, lookup__string_with_default__keeps_existing_nil_value)
   runtime.get_current_namespace().store("nil-value", Lisple::Constant::NIL);
 
   // When
-  auto result = runtime.lookup("nil-value", Lisple::RTValue::string("default"));
+  auto result = runtime.lookup("nil-value", Lisple::Value::string("default"));
 
   // Then
   EXPECT_EQ(*result, *Lisple::Constant::NIL);
 }
 
-TEST_F(Runtime, lookup__rtvalue_symbol__returns_value)
+TEST_F(Runtime, lookup__value_symbol__returns_value)
 {
   // Given
-  runtime.get_current_namespace().store("my-value", Lisple::RTValue::string("found"));
+  runtime.get_current_namespace().store("my-value", Lisple::Value::string("found"));
 
   // When
-  auto result = runtime.lookup(*Lisple::RTValue::symbol("my-value"));
+  auto result = runtime.lookup(*Lisple::Value::symbol("my-value"));
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::string("found"));
+  EXPECT_EQ(*result, *Lisple::Value::string("found"));
 }
 
-TEST_F(Runtime, lookup__rtvalue_non_symbol__throws)
+TEST_F(Runtime, lookup__value_non_symbol__throws)
 {
-  EXPECT_THROW(runtime.lookup(*Lisple::RTValue::keyword("my-value")), Lisple::TypeError);
+  EXPECT_THROW(runtime.lookup(*Lisple::Value::keyword("my-value")), Lisple::TypeError);
 }
 
 TEST_F(Runtime, eval__dynamic_local_callee_does_not_reuse_first_resolved_function)
@@ -191,7 +191,7 @@ TEST_F(Runtime, eval__dynamic_local_callee_does_not_reuse_first_resolved_functio
 TEST_F(Runtime, no_matching_signature_exception_bubbles_up_to_client)
 {
   // When
-  Lisple::sptr_rtval result = nullptr;
+  Lisple::sptr_val result = nullptr;
   std::string msg;
   try
   {

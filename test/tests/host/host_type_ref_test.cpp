@@ -8,7 +8,7 @@
 TEST(HostTypeRef, is_type__native_object)
 {
   // Given
-  Lisple::sptr_rtval adapter =
+  Lisple::sptr_val adapter =
     LispleTest::Native::VehicleModelAdapter::make_unique("Spruttibangbang", 8);
 
   // Then
@@ -18,7 +18,7 @@ TEST(HostTypeRef, is_type__native_object)
 TEST(HostTypeRef, is_type__sub_type_is_base_type)
 {
   // Given
-  Lisple::sptr_rtval adapter =
+  Lisple::sptr_val adapter =
     LispleTest::Native::ClothingAdapter::make_unique("Cheese Trousers",
                                                      200.0,
                                                      7774443,
@@ -32,7 +32,7 @@ TEST(HostTypeRef, is_type__sub_type_is_base_type)
 TEST(HostTypeRef, is_type__RTWrapped_native_object)
 {
   // Given
-  Lisple::sptr_rtval adapter =
+  Lisple::sptr_val adapter =
     LispleTest::Native::VehicleModelAdapter::make_unique("Spruttibangbang", 8);
 
   Lisple::sptr_sobject wrapped = Lisple::AST::RuntimeValueWrapper::make(adapter);

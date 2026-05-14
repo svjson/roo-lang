@@ -102,7 +102,7 @@ namespace Lisple
      * type or if the type if a base of the concrete type of the
      * object.
      */
-    bool is_type_of(const RTValue& obj) const override;
+    bool is_type_of(const Value& obj) const override;
 
     /*!
      * @brief Tests if an object is an instance of this type.
@@ -116,7 +116,7 @@ namespace Lisple
      * @brief Attempts to coerce a Lisple Runtime Value of a different type to this
      * this type by using the make function provided by the type.
      */
-    CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
+    CoercionResult coerce(Context& ctx, sptr_val& val) const override;
 
     /*!
      * @brief Tests if this type is a host-object type.

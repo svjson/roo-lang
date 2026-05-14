@@ -23,11 +23,10 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
-
 using Executable = LispleTest::RuntimeTestFixture;
 using UserFunction = LispleTest::RuntimeTestFixture;
 using Macro = LispleTest::RuntimeTestFixture;
-using create_function__RTValue_semantics = LispleTest::RuntimeTestFixture;
+using create_function__Value_semantics = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 TEST_F(Executable, invocation_with_incorrect_argument_types_throws_exception)
@@ -54,7 +53,7 @@ TEST_F(UserFunction, invocation_of_empty_function_returns_nil)
 
   auto fn = runtime.lookup("my-fn");
 
-  Lisple::sptr_rtval_v args = {Lisple::RTValue::string("A string!")};
+  Lisple::sptr_val_v args = {Lisple::Value::string("A string!")};
 
   // When
   auto retval = fn->exec().execute(ctx, args);
@@ -69,9 +68,9 @@ TEST_F(Macro, get_signature__sig_with_varargs__vector__form)
   Lisple::DoTimesForm dotimes;
 
   Lisple::uptr_exec_node_v vector__form;
-  vector__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::vector(
-    {Lisple::RTValue::symbol("n"), Lisple::RTValue::number(4)})));
-  vector__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(12)));
+  vector__form.push_back(std::make_unique<Lisple::ExecNode>(
+    Lisple::Value::vector({Lisple::Value::symbol("n"), Lisple::Value::number(4)})));
+  vector__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::Value::number(12)));
 
   // When
   Lisple::Signature* sig = dotimes.get_signature(ctx, vector__form);
@@ -83,13 +82,13 @@ TEST_F(Macro, get_signature__sig_with_varargs__vector__form)
   EXPECT_EQ(sig->to_string(), "[Vector, <any>...]");
 }
 
-TEST_F(create_function__RTValue_semantics, function_should_support_rtvalue_execution)
+TEST_F(create_function__Value_semantics, function_should_support_value_execution)
 {
   // Given
   std::cout << " ---------- TEST BEGINS ---------------" << std::endl;
 
-  Lisple::sptr_rtval_v param_vector{Lisple::RTValue::symbol("n")};
-  auto body_node = std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(10));
+  Lisple::sptr_val_v param_vector{Lisple::Value::symbol("n")};
+  auto body_node = std::make_unique<Lisple::ExecNode>(Lisple::Value::number(10));
   Lisple::ptr_exec_node_v body = {body_node.get()};
 
   // When

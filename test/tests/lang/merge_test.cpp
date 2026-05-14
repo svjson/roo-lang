@@ -1,9 +1,7 @@
 
-#include "runtime_fixture.h"
-
 #include "host/test_adapters/vectorgfx_native_adapters.h"
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using MergeFunction = LispleTest::RuntimeTestFixture;
 TEST_F(MergeFunction, merge_two_maps_with_unique_keys)
@@ -39,5 +37,5 @@ TEST_F(MergeFunction, merge_adapter_with_map)
 
   // Then
   EXPECT_EQ(retval->to_string(), "{:x 15 :y 30 :w 100 :h 150}");
-  EXPECT_EQ(retval->type, Lisple::RTValue::Type::MAP);
+  EXPECT_EQ(retval->type, Lisple::Value::Type::MAP);
 }

@@ -1,5 +1,4 @@
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
 
 using PlusFunction = LispleTest::RuntimeTestFixture;
@@ -10,7 +9,7 @@ TEST_F(PlusFunction, simple_addition)
   auto result = runtime.eval("(+ 10 5)");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(15));
+  EXPECT_EQ(*result, *Lisple::Value::number(15));
 }
 
 TEST_F(PlusFunction, multiple_arg_addition)
@@ -19,5 +18,5 @@ TEST_F(PlusFunction, multiple_arg_addition)
   auto result = runtime.eval("(+ 10 5 2 5)");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(22));
+  EXPECT_EQ(*result, *Lisple::Value::number(22));
 }

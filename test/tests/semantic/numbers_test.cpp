@@ -1,9 +1,8 @@
 
-#include "runtime_fixture.h"
 #include <lisple/runtime/value.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using Semantic_NumberTypes = LispleTest::RuntimeTestFixture;
 /*
@@ -18,9 +17,9 @@ using Semantic_NumberTypes = LispleTest::RuntimeTestFixture;
  */
 
 // Extract the Number struct from a result value.
-static const Lisple::RTValue::Number& num_of(const Lisple::sptr_rtval& v)
+static const Lisple::Value::Number& num_of(const Lisple::sptr_val& v)
 {
-  return std::get<const Lisple::RTValue::Number>(v->value);
+  return std::get<const Lisple::Value::Number>(v->value);
 }
 
 // -----------------------------------------------------------------------
@@ -31,7 +30,7 @@ TEST_F(Semantic_NumberTypes, plus_int_int_produces_int)
 {
   auto result = runtime.eval("(+ 3 4)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::INT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::INT);
   EXPECT_EQ(result->i64(), 7);
 }
 
@@ -48,7 +47,7 @@ TEST_F(Semantic_NumberTypes, plus_int_float_produces_float)
 {
   auto result = runtime.eval("(+ 1 1.5)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::FLOAT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::FLOAT);
   EXPECT_DOUBLE_EQ(result->f64(), 2.5);
 }
 
@@ -56,7 +55,7 @@ TEST_F(Semantic_NumberTypes, plus_float_float_produces_float)
 {
   auto result = runtime.eval("(+ 1.5 2.5)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::FLOAT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::FLOAT);
   EXPECT_DOUBLE_EQ(result->f64(), 4.0);
 }
 
@@ -68,7 +67,7 @@ TEST_F(Semantic_NumberTypes, minus_int_int_produces_int)
 {
   auto result = runtime.eval("(- 10 3)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::INT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::INT);
   EXPECT_EQ(result->i64(), 7);
 }
 
@@ -87,7 +86,7 @@ TEST_F(Semantic_NumberTypes, divide_exact_int_int_produces_int)
 {
   auto result = runtime.eval("(/ 10 2)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::INT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::INT);
   EXPECT_EQ(result->i64(), 5);
 }
 
@@ -96,7 +95,7 @@ TEST_F(Semantic_NumberTypes, divide_inexact_int_int_produces_float)
   auto result = runtime.eval("(/ 10 3)");
 
   // 10/3 is not a whole number, result must be float
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::FLOAT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::FLOAT);
 }
 
 // -----------------------------------------------------------------------
@@ -107,7 +106,7 @@ TEST_F(Semantic_NumberTypes, plus_multiple_ints_stays_int)
 {
   auto result = runtime.eval("(+ 1 2 3 4)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::INT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::INT);
   EXPECT_EQ(result->i64(), 10);
 }
 
@@ -115,6 +114,6 @@ TEST_F(Semantic_NumberTypes, plus_multiple_with_one_float_becomes_float)
 {
   auto result = runtime.eval("(+ 1 2 0.5 4)");
 
-  EXPECT_EQ(num_of(result).num_type, Lisple::RTValue::NumberType::FLOAT);
+  EXPECT_EQ(num_of(result).num_type, Lisple::Value::NumberType::FLOAT);
   EXPECT_DOUBLE_EQ(result->f64(), 7.5);
 }

@@ -33,12 +33,12 @@ namespace Lisple
 
   struct LiteralNode
   {
-    sptr_rtval value;
+    sptr_val value;
     // FIXME: This should not be required here
     sptr_sobject ast_node;
 
-    explicit LiteralNode(const sptr_rtval& v);
-    explicit LiteralNode(const sptr_rtval& v, sptr_sobject ast_node);
+    explicit LiteralNode(const sptr_val& v);
+    explicit LiteralNode(const sptr_val& v, sptr_sobject ast_node);
   };
 
   struct LookupNode
@@ -78,10 +78,10 @@ namespace Lisple
 
   struct KeyLookupNode
   {
-    sptr_rtval keyword;
+    sptr_val keyword;
     uptr_exec_node target;
 
-    KeyLookupNode(const sptr_rtval& keyword, uptr_exec_node target);
+    KeyLookupNode(const sptr_val& keyword, uptr_exec_node target);
   };
 
   struct LambdaNode
@@ -94,13 +94,13 @@ namespace Lisple
   struct SpecialFormNode
   {
     const SpecialForm* form;
-    sptr_rtval_v values;
+    sptr_val_v values;
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms;
     uptr_exec_node_v exec_nodes;
 
     SpecialFormNode(const SpecialFormNode& other);
     SpecialFormNode(const SpecialForm* form,
-                    const sptr_rtval_v& values,
+                    const sptr_val_v& values,
                     uptr_exec_node_v exec_nodes);
     SpecialFormNode(
       const SpecialForm* form,
@@ -147,7 +147,7 @@ namespace Lisple
     /**
      * @brief Construct a literal/value ExecNode containing `runtime_value`
      */
-    explicit ExecNode(const sptr_rtval& runtime_value);
+    explicit ExecNode(const sptr_val& runtime_value);
 
     /**
      * @brief Construct an ExecNode containing the source AST node.

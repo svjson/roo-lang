@@ -26,7 +26,7 @@ namespace Lisple
    * property is defined without a setter. Invariably raises an exception, as it
    * should never be invoked.
    */
-  const n_acc_set_t n_no_setter = [](NativeObjectBase*, Context*, sptr_rtval&)
+  const n_acc_set_t n_no_setter = [](NativeObjectBase*, Context*, sptr_val&)
   {
     throw InvocationException("Property not mutable");
   };
@@ -41,7 +41,7 @@ namespace Lisple
     return get_traits()->accessor_table;
   }
 
-  sptr_rtval NativeObjectBase::get_property(const RTValue& property) const
+  sptr_val NativeObjectBase::get_property(const Value& property) const
   {
     auto* accessors = get_traits()->accessor_table.lookup(property);
     if (nullptr == accessors || nullptr == accessors->getter)
@@ -52,13 +52,13 @@ namespace Lisple
     return accessors->getter(this);
   }
 
-  void NativeObjectBase::set_property(const RTValue& property, const sptr_rtval& value)
+  void NativeObjectBase::set_property(const Value& property, const sptr_val& value)
   {
-    sptr_rtval v = value;
+    sptr_val v = value;
     set_property(property, v);
   }
 
-  void NativeObjectBase::set_property(const RTValue& property, sptr_rtval& value)
+  void NativeObjectBase::set_property(const Value& property, sptr_val& value)
   {
     auto* accessors = get_traits()->accessor_table.lookup(property);
     if (nullptr == accessors || nullptr == accessors->setter)
@@ -71,12 +71,12 @@ namespace Lisple
 
   std::string NativeObjectBase::to_string() const
   {
-    return RTValue::map(native_children())->to_string();
+    return Value::map(native_children())->to_string();
   }
 
-  sptr_rtval_v NativeObjectBase::native_children() const
+  sptr_val_v NativeObjectBase::native_children() const
   {
-    sptr_rtval_v elements;
+    sptr_val_v elements;
     for (auto key : this->accessor_table().keys)
     {
       elements.push_back(key);
@@ -117,7 +117,7 @@ namespace Lisple
   {
     for (auto& [k, a] : entries)
     {
-      keys.push_back(RTValue::keyword(k));
+      keys.push_back(Value::keyword(k));
       accessor_map.emplace(k, a);
     }
   }
@@ -127,7 +127,7 @@ namespace Lisple
     return accessor_map.count(key.to_string());
   }
 
-  const NAccessors* NAccessorTable::lookup(const RTValue& key) const
+  const NAccessors* NAccessorTable::lookup(const Value& key) const
   {
     auto it = accessor_map.find(key.str());
     if (it != accessor_map.end())

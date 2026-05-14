@@ -1,6 +1,5 @@
-#include <gtest/gtest.h>
 #include "runtime_fixture.h"
-
+#include <gtest/gtest.h>
 
 using DecFunction = LispleTest::RuntimeTestFixture;
 TEST_F(DecFunction, decrements_integer)
@@ -9,7 +8,7 @@ TEST_F(DecFunction, decrements_integer)
   auto result = runtime.eval("(dec 2)");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(1));
+  EXPECT_EQ(*result, *Lisple::Value::number(1));
 }
 
 TEST_F(DecFunction, decrements_float)
@@ -18,5 +17,5 @@ TEST_F(DecFunction, decrements_float)
   auto result = runtime.eval("(dec 2.5)");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(1.5));
+  EXPECT_EQ(*result, *Lisple::Value::number(1.5));
 }

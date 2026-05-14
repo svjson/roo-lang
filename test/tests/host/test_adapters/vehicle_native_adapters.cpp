@@ -12,10 +12,10 @@ namespace LispleTest::Native
   // Vehicle example - adapters
   // ===============================================================
 
-  const Lisple::sptr_rtval MODEL_NAME = Lisple::RTValue::keyword("model-name");
-  const Lisple::sptr_rtval LETTERS = Lisple::RTValue::keyword("letters");
-  const Lisple::sptr_rtval NUMBERS = Lisple::RTValue::keyword("numbers");
-  const Lisple::sptr_rtval SEATS = Lisple::RTValue::keyword("seats");
+  const Lisple::sptr_val MODEL_NAME = Lisple::Value::keyword("model-name");
+  const Lisple::sptr_val LETTERS = Lisple::Value::keyword("letters");
+  const Lisple::sptr_val NUMBERS = Lisple::Value::keyword("numbers");
+  const Lisple::sptr_val SEATS = Lisple::Value::keyword("seats");
 
   /* VehicleAdapter */
   NATIVE_ADAPTER_IMPL(VehicleAdapter,
@@ -130,7 +130,7 @@ namespace LispleTest::Native
     {
       count += element->adapter<VehicleModelAdapter>().get_object().get_seats();
     }
-    return Lisple::RTValue::number(count);
+    return Lisple::Value::number(count);
   }
 
   FUNC_IMPL(VectorOfVectorTaker,

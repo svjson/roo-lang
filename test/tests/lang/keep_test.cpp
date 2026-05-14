@@ -1,7 +1,5 @@
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using KeepFunction = LispleTest::RuntimeTestFixture;
 /*
@@ -18,6 +16,6 @@ TEST_F(KeepFunction, transform_even)
 
   // Then
   ASSERT_EQ(*result,
-            *Lisple::RTValue::vector(
-              {Lisple::RTValue::string("Number 2"), Lisple::RTValue::string("Number 4")}));
+            *Lisple::Value::vector(
+              {Lisple::Value::string("Number 2"), Lisple::Value::string("Number 4")}));
 }

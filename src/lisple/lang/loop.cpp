@@ -61,16 +61,16 @@ namespace Lisple
 
   EXECNODE_BODY(DoTimesForm, execnode_dotimes)
   {
-    sptr_rtval_v result;
+    sptr_val_v result;
 
     auto* binding =
       snode.bind_forms.empty() ? nullptr : snode.bind_forms.front().first.get();
 
-    sptr_rtval iterations_val = exec(ctx, *snode.exec_nodes[0]);
+    sptr_val iterations_val = exec(ctx, *snode.exec_nodes[0]);
 
-    if (iterations_val->type == RTValue::Type::NUMBER)
+    if (iterations_val->type == Value::Type::NUMBER)
     {
-      long iterations = std::get<const RTValue::Number>(iterations_val->value).get_long();
+      long iterations = std::get<const Value::Number>(iterations_val->value).get_long();
       if (iterations > 0)
       {
         result.reserve(iterations);
@@ -83,10 +83,10 @@ namespace Lisple
         {
           if (binding)
           {
-            binding->apply(iter_scope, RTValue::number(i));
+            binding->apply(iter_scope, Value::number(i));
           }
 
-          sptr_rtval iter_result;
+          sptr_val iter_result;
 
           for (size_t j = 1; j < n_args; j++)
           {
@@ -101,7 +101,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /* ForForm - for */
@@ -145,17 +145,16 @@ namespace Lisple
   }
   EXECNODE_BODY(ForForm, execnode_for)
   {
-    sptr_rtval_v result;
+    sptr_val_v result;
 
     auto* binding = snode.bind_forms.front().first.get();
 
-    sptr_rtval seq = exec(ctx, *snode.exec_nodes[0]);
+    sptr_val seq = exec(ctx, *snode.exec_nodes[0]);
 
-    if (seq->type != RTValue::Type::NIL &&
-        (Type::STRICT_SEQ_OR_STRING.is_type_of(*seq) ||
-         seq->type == RTValue::Type::NATIVE_OBJECT))
+    if (seq->type != Value::Type::NIL && (Type::STRICT_SEQ_OR_STRING.is_type_of(*seq) ||
+                                          seq->type == Value::Type::NATIVE_OBJECT))
     {
-      sptr_rtval_v elements = Lisple::get_children(*seq);
+      sptr_val_v elements = Lisple::get_children(*seq);
       if (elements.size() > 0)
       {
         result.reserve(elements.size());
@@ -168,7 +167,7 @@ namespace Lisple
         {
           binding->apply(iter_scope, item);
 
-          sptr_rtval iter_result;
+          sptr_val iter_result;
 
           for (size_t j = 1; j < n_args; j++)
           {
@@ -183,7 +182,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /** ForIndexedForm - for-indexed */
@@ -232,16 +231,16 @@ namespace Lisple
   }
   EXECNODE_BODY(ForIndexedForm, execnode_for_indexed)
   {
-    sptr_rtval_v result;
+    sptr_val_v result;
 
     auto* index_binding = snode.bind_forms.front().first.get();
     auto* val_binding = snode.bind_forms.back().first.get();
 
-    sptr_rtval seq = exec(ctx, *snode.exec_nodes[0]);
+    sptr_val seq = exec(ctx, *snode.exec_nodes[0]);
 
-    if (seq->type != RTValue::Type::NIL && (Type::STRICT_SEQ.is_type_of(*seq)))
+    if (seq->type != Value::Type::NIL && (Type::STRICT_SEQ.is_type_of(*seq)))
     {
-      sptr_rtval_v elements = Lisple::get_children(*seq);
+      sptr_val_v elements = Lisple::get_children(*seq);
       if (elements.size() > 0)
       {
         result.reserve(elements.size());
@@ -250,17 +249,17 @@ namespace Lisple
         Scope& iter_scope = ctx.current_scope();
         size_t n_args = snode.exec_nodes.size();
 
-        // FIXME: This should be size_t, but until such a time that RTValue::Number
+        // FIXME: This should be size_t, but until such a time that Value::Number
         // natively supports unsigned numbers, we will have to stick to int or
         // redundantly reinterpret size_t to int for each iteration, which is not
         // very attractive.
         int index = 0;
         for (auto& item : elements)
         {
-          index_binding->apply(iter_scope, RTValue::number(index));
+          index_binding->apply(iter_scope, Value::number(index));
           val_binding->apply(iter_scope, item);
 
-          sptr_rtval iter_result;
+          sptr_val iter_result;
 
           for (size_t j = 1; j < n_args; j++)
           {
@@ -276,7 +275,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /** WhileForm - while */
@@ -301,11 +300,11 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
   EXECNODE_BODY(WhileForm, execnode_while)
   {
-    sptr_rtval result = Constant::NIL;
+    sptr_val result = Constant::NIL;
     while (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
     {
       for (size_t i = 1; i < snode.exec_nodes.size(); i++)

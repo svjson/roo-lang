@@ -1,7 +1,5 @@
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using FindFirstFunction = LispleTest::RuntimeTestFixture;
 /*
@@ -21,7 +19,7 @@ TEST_F(FindFirstFunction, find_first_vector)
   auto five_letter = runtime.eval("(find-first my-vector (fn [lmnt] (= 5 (count lmnt))))");
 
   // Then
-  EXPECT_EQ(*three_letter, *Lisple::RTValue::string("CCC"));
-  EXPECT_EQ(*four_letter, *Lisple::RTValue::string("DDDD"));
+  EXPECT_EQ(*three_letter, *Lisple::Value::string("CCC"));
+  EXPECT_EQ(*four_letter, *Lisple::Value::string("DDDD"));
   EXPECT_EQ(*five_letter, *Lisple::Constant::NIL);
 }

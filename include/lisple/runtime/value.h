@@ -18,17 +18,17 @@ namespace Lisple
     class ASTNode;
   }
   class Executable;
-  struct RTValue;
+  struct Value;
   template <class T> class HostObject;
   struct NativeObjectBase;
 
-  using sptr_rtval = std::shared_ptr<RTValue>;
-  using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
+  using sptr_val = std::shared_ptr<Value>;
+  using sptr_val_v = std::vector<std::shared_ptr<Value>>;
   using sptr_executable = std::shared_ptr<Executable>;
   using sptr_sobject = std::shared_ptr<AST::ASTNode>;
   using sptr_native_obj = std::shared_ptr<NativeObjectBase>;
 
-  struct RTValue
+  struct Value
   {
     enum class Type : uint8_t
     {
@@ -81,42 +81,42 @@ namespace Lisple
     using Data = std::variant<sptr_executable,
                               sptr_sobject,
                               std::string,
-                              const RTValue::Number,
-                              sptr_rtval_v,
+                              const Value::Number,
+                              sptr_val_v,
                               sptr_native_obj,
                               bool,
                               char,
                               std::monostate>;
 
-    RTValue() = default;
-    explicit RTValue(int);
-    RTValue(const RTValue::Number&);
-    explicit RTValue(bool);
-    RTValue(const std::string&, Type type);
-    RTValue(std::monostate);
+    Value() = default;
+    explicit Value(int);
+    Value(const Value::Number&);
+    explicit Value(bool);
+    Value(const std::string&, Type type);
+    Value(std::monostate);
 
-    RTValue::Data value;
-    RTValue::Type type;
+    Value::Data value;
+    Value::Type type;
 
-    bool operator==(const RTValue& other) const;
+    bool operator==(const Value& other) const;
 
-    static sptr_rtval boolean(bool);
-    static sptr_rtval number(int);
-    static sptr_rtval number(long);
-    static sptr_rtval number(double);
-    static sptr_rtval number(const RTValue::Number&);
-    static sptr_rtval string(const std::string&);
-    static sptr_rtval character(char);
-    static sptr_rtval keyword(const std::string&);
-    static sptr_rtval symbol(const std::string&);
-    static sptr_rtval list(const sptr_rtval_v&);
-    static sptr_rtval vector(const sptr_rtval_v&);
-    static sptr_rtval map(const sptr_rtval_v&);
-    static sptr_rtval object(const sptr_sobject&);
-    static sptr_rtval native_object(const sptr_native_obj&);
-    static sptr_rtval executable(const sptr_executable&);
+    static sptr_val boolean(bool);
+    static sptr_val number(int);
+    static sptr_val number(long);
+    static sptr_val number(double);
+    static sptr_val number(const Value::Number&);
+    static sptr_val string(const std::string&);
+    static sptr_val character(char);
+    static sptr_val keyword(const std::string&);
+    static sptr_val symbol(const std::string&);
+    static sptr_val list(const sptr_val_v&);
+    static sptr_val vector(const sptr_val_v&);
+    static sptr_val map(const sptr_val_v&);
+    static sptr_val object(const sptr_sobject&);
+    static sptr_val native_object(const sptr_native_obj&);
+    static sptr_val executable(const sptr_executable&);
 
-    static std::string to_string(const sptr_rtval_v&);
+    static std::string to_string(const sptr_val_v&);
     std::string to_string() const;
 
     uint8_t ui8() const;
@@ -126,13 +126,13 @@ namespace Lisple
     float f32() const;
     double f64() const;
     char ch() const;
-    const RTValue::Number& num() const;
+    const Value::Number& num() const;
     const std::string& str() const;
     sptr_sobject obj() const;
     sptr_native_obj nobj() const;
     Executable& exec() const;
-    const sptr_rtval_v& elements() const;
-    sptr_rtval_v& mut_elements();
+    const sptr_val_v& elements() const;
+    sptr_val_v& mut_elements();
     template <typename T> T& adapter()
     {
       return *dynamic_cast<T*>(std::get<sptr_native_obj>(value).get());
@@ -147,15 +147,15 @@ namespace Lisple
 
   namespace Constant
   {
-    inline const sptr_rtval BOOL_TRUE = std::make_shared<RTValue>(true);
-    inline const sptr_rtval BOOL_FALSE = std::make_shared<RTValue>(false);
-    inline const sptr_rtval NIL = std::make_shared<RTValue>(std::monostate());
+    inline const sptr_val BOOL_TRUE = std::make_shared<Value>(true);
+    inline const sptr_val BOOL_FALSE = std::make_shared<Value>(false);
+    inline const sptr_val NIL = std::make_shared<Value>(std::monostate());
   } // namespace Constant
 
-  sptr_rtval to_rt_value(sptr_sobject& obj);
-  sptr_rtval to_rt_value(const AST::ASTNode& obj);
-  sptr_sobject to_AST(RTValue& val);
-  bool is_truthy(const RTValue& val);
+  sptr_val to_rt_value(sptr_sobject& obj);
+  sptr_val to_rt_value(const AST::ASTNode& obj);
+  sptr_sobject to_AST(Value& val);
+  bool is_truthy(const Value& val);
 
 } // namespace Lisple
 

@@ -44,7 +44,7 @@ namespace Lisple
         {
           std::stringstream ss;
           ss << indent << " - LiteralNode("
-             << std::get<LiteralNode>(node.data).value->to_string() << ", RTValue("
+             << std::get<LiteralNode>(node.data).value->to_string() << ", Value("
              << n.value.get() << "))\n";
           return ss.str();
         }
@@ -146,11 +146,11 @@ namespace Lisple
       node.data);
   }
 
-  sptr_rtval exec(Context& ctx, ExecNode& node)
+  sptr_val exec(Context& ctx, ExecNode& node)
   {
     exec_executions++;
     return std::visit(
-      [&](auto& n) -> sptr_rtval
+      [&](auto& n) -> sptr_val
       {
         using T = std::decay_t<decltype(n)>;
 
@@ -164,7 +164,7 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, MapNode>)
         {
-          sptr_rtval_v elements;
+          sptr_val_v elements;
           elements.reserve(n.elements.size());
 
           for (auto& lmnt : n.elements)
@@ -172,11 +172,11 @@ namespace Lisple
             elements.push_back(exec(ctx, *lmnt));
           }
 
-          return RTValue::map(elements);
+          return Value::map(elements);
         }
         else if constexpr (std::is_same_v<T, VectorNode>)
         {
-          sptr_rtval_v elements;
+          sptr_val_v elements;
           elements.reserve(n.elements.size());
 
           for (auto& lmnt : n.elements)
@@ -184,16 +184,16 @@ namespace Lisple
             elements.push_back(exec(ctx, *lmnt));
           }
 
-          return RTValue::vector(elements);
+          return Value::vector(elements);
         }
         else if constexpr (std::is_same_v<T, KeyLookupNode>)
         {
-          sptr_rtval target = exec(ctx, *n.target);
+          sptr_val target = exec(ctx, *n.target);
           return Lisple::Dict::get_property(target, *n.keyword);
         }
         else if constexpr (std::is_same_v<T, LambdaNode>)
         {
-          return RTValue::executable(
+          return Value::executable(
             std::make_shared<Lisple::DetachedFunction>(ctx.detach(), n.lambda_fn));
         }
         else if constexpr (std::is_same_v<T, SpecialFormNode>)
@@ -206,7 +206,7 @@ namespace Lisple
 
           if (!fn)
           {
-            sptr_rtval fn_val = exec(ctx, *n.callee);
+            sptr_val fn_val = exec(ctx, *n.callee);
             if (sptr_executable* executable = std::get_if<sptr_executable>(&fn_val->value))
             {
               fn = *executable;
@@ -230,7 +230,7 @@ namespace Lisple
           {
             if (sig->supports_rt_value())
             {
-              sptr_rtval_v args;
+              sptr_val_v args;
               for (auto& arg : n.args)
               {
                 args.push_back(exec(ctx, *arg));
@@ -245,7 +245,7 @@ namespace Lisple
           }
           else if (x)
           {
-            sptr_rtval_v val_args;
+            sptr_val_v val_args;
             for (auto& arg : n.args)
             {
               val_args.push_back(exec(ctx, *arg));

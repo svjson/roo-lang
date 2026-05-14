@@ -72,7 +72,7 @@ TEST_F(LowerTest, list__key_lookup__no_ctx__lookup_node)
   // Then
   ASSERT_TRUE(std::holds_alternative<Lisple::KeyLookupNode>(node->data));
   Lisple::KeyLookupNode& key_node = std::get<Lisple::KeyLookupNode>(node->data);
-  EXPECT_EQ(*key_node.keyword, *Lisple::RTValue::keyword("name"));
+  EXPECT_EQ(*key_node.keyword, *Lisple::Value::keyword("name"));
   EXPECT_TRUE(std::holds_alternative<Lisple::LookupNode>(key_node.target->data));
 }
 
@@ -88,7 +88,7 @@ TEST_F(LowerTest, list__key_lookup__ctx__lookup_node)
   // Then
   ASSERT_TRUE(std::holds_alternative<Lisple::KeyLookupNode>(node->data));
   Lisple::KeyLookupNode& key_node = std::get<Lisple::KeyLookupNode>(node->data);
-  EXPECT_EQ(*key_node.keyword, *Lisple::RTValue::keyword("name"));
+  EXPECT_EQ(*key_node.keyword, *Lisple::Value::keyword("name"));
   EXPECT_TRUE(std::holds_alternative<Lisple::LookupNode>(key_node.target->data));
 }
 

@@ -9,34 +9,32 @@
 
 namespace Lisple::Dict
 {
-  bool contains_key(RTValue& source, const std::string& key);
+  bool contains_key(Value& source, const std::string& key);
 
-  void set_property(sptr_rtval& target, const sptr_rtval& property, const sptr_rtval& value);
+  void set_property(sptr_val& target, const sptr_val& property, const sptr_val& value);
 
-  sptr_rtval remove_property(sptr_rtval& target, const sptr_rtval& property);
+  sptr_val remove_property(sptr_val& target, const sptr_val& property);
 
-  const std::vector<sptr_rtval> keys(const RTValue& dict);
-  const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data);
-  const std::vector<const RTValue*> map_keys(const sptr_rtval_v& map_data);
-  const std::vector<const RTValue*> map_keys(const RTValue& map_data);
-  std::vector<sptr_rtval> map_sptr_keys(const sptr_rtval& dict);
-  std::unordered_set<std::string> map_string_keys(RTValue& map);
+  const std::vector<sptr_val> keys(const Value& dict);
+  const std::vector<const Value*> map_keys(const std::vector<Value>& map_data);
+  const std::vector<const Value*> map_keys(const sptr_val_v& map_data);
+  const std::vector<const Value*> map_keys(const Value& map_data);
+  std::vector<sptr_val> map_sptr_keys(const sptr_val& dict);
+  std::unordered_set<std::string> map_string_keys(Value& map);
 
-  sptr_rtval get_property_or_throw(RTValue& source, const std::string& keyword);
-  sptr_rtval get_property(RTValue& object, const std::string& property);
-  sptr_rtval get_property(const sptr_rtval& object, const sptr_rtval& property);
-  sptr_rtval get_property(const sptr_rtval& object, const RTValue& property);
+  sptr_val get_property_or_throw(Value& source, const std::string& keyword);
+  sptr_val get_property(Value& object, const std::string& property);
+  sptr_val get_property(const sptr_val& object, const sptr_val& property);
+  sptr_val get_property(const sptr_val& object, const Value& property);
 
-  sptr_rtval get_property_path(const sptr_rtval& object, const sptr_rtval_v& path);
+  sptr_val get_property_path(const sptr_val& object, const sptr_val_v& path);
 
-  std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
-                                                          const RTValue& key);
-  std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key);
+  std::pair<const sptr_val, const sptr_val> map_entry(const sptr_val_v& map_data,
+                                                      const Value& key);
+  std::pair<sptr_val, sptr_val> map_entry(sptr_val_v& map_data, const Value& key);
 
-  sptr_rtval shallow_copy(const sptr_rtval& source);
-  sptr_rtval assoc_in(const sptr_rtval& source,
-                      const sptr_rtval_v& path,
-                      const sptr_rtval& value);
+  sptr_val shallow_copy(const sptr_val& source);
+  sptr_val assoc_in(const sptr_val& source, const sptr_val_v& path, const sptr_val& value);
 
 } // namespace Lisple::Dict
 

@@ -43,13 +43,13 @@ namespace Lisple
     value_node.push_back(lower_expr(ctx, value));
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, {RTValue::symbol(symbol.value)}, std::move(value_node)));
+      SpecialFormNode(this, {Value::symbol(symbol.value)}, std::move(value_node)));
   }
 
   EXECNODE_BODY(DefForm, execnode_def)
   {
     std::string symbol = snode.values.front()->str();
-    sptr_rtval value = exec(ctx, *snode.exec_nodes.front());
+    sptr_val value = exec(ctx, *snode.exec_nodes.front());
     ctx.store_namespace(symbol, value);
     return value;
   }
@@ -80,11 +80,11 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
   EXECNODE_BODY(DoForm, execnode_do)
   {
-    Lisple::sptr_rtval ret;
+    Lisple::sptr_val ret;
     for (auto& form : snode.exec_nodes)
     {
       ret = exec(ctx, *form);
@@ -136,12 +136,12 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
 
   EXECNODE_BODY(AndForm, execnode_and)
   {
-    Lisple::sptr_rtval val;
+    Lisple::sptr_val val;
     for (auto& form : snode.exec_nodes)
     {
       val = exec(ctx, *form);
@@ -160,7 +160,7 @@ namespace Lisple
 
   EXEC_BODY(KeywordFunction, exec_keyword)
   {
-    return RTValue::keyword(args[0]->str());
+    return Value::keyword(args[0]->str());
   }
 
   /** KeywordPFunction - keyword? */
@@ -169,8 +169,8 @@ namespace Lisple
 
   EXEC_BODY(KeywordPFunction, exec_keyword)
   {
-    return args[0]->type == RTValue::Type::KEYWORD ? Constant::BOOL_TRUE
-                                                   : Constant::BOOL_FALSE;
+    return args[0]->type == Value::Type::KEYWORD ? Constant::BOOL_TRUE
+                                                 : Constant::BOOL_FALSE;
   }
 
   /* NsMacro */
@@ -288,8 +288,8 @@ namespace Lisple
 
   EXEC_BODY(NameFunction, exec_name)
   {
-    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
-    return RTValue::string(args[0]->qual().second);
+    if (args[0]->type == Value::Type::NIL) return Constant::NIL;
+    return Value::string(args[0]->qual().second);
   }
 
   /** OrForm - or */
@@ -309,11 +309,11 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
   EXECNODE_BODY(OrForm, execnode_or)
   {
-    Lisple::sptr_rtval val;
+    Lisple::sptr_val val;
     for (auto& form : snode.exec_nodes)
     {
       val = exec(ctx, *form);
@@ -335,8 +335,8 @@ namespace Lisple
     for (size_t i = 0; i < args.size(); i++)
     {
       if (i > 0) std::cout << " ";
-      std::cout << (args[i]->type == RTValue::Type::STRING ? args[i]->str()
-                                                           : args[i]->to_string());
+      std::cout << (args[i]->type == Value::Type::STRING ? args[i]->str()
+                                                         : args[i]->to_string());
     }
     std::cout << std::endl;
     return Constant::NIL;
@@ -351,7 +351,7 @@ namespace Lisple
 
   EXEC_BODY(ResolveFunction, exec_resolve)
   {
-    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    if (args[0]->type == Value::Type::NIL) return Constant::NIL;
     return ctx.lookup(args[0]->str());
   }
 
@@ -364,19 +364,17 @@ namespace Lisple
 
   EXEC_BODY(RndFunction, exec_rnd)
   {
-    if (args[0]->type != RTValue::Type::NUMBER &&
-        (args.size() == 2 && args[1]->type != RTValue::Type::NUMBER))
+    if (args[0]->type != Value::Type::NUMBER &&
+        (args.size() == 2 && args[1]->type != Value::Type::NUMBER))
     {
       return Constant::NIL;
     }
-    int min =
-      args.size() == 1 ? 0 : std::get<const RTValue::Number>(args[0]->value).get_int();
-    int max =
-      std::get<const RTValue::Number>(args[args.size() == 1 ? 0 : 1]->value).get_int();
+    int min = args.size() == 1 ? 0 : std::get<const Value::Number>(args[0]->value).get_int();
+    int max = std::get<const Value::Number>(args[args.size() == 1 ? 0 : 1]->value).get_int();
 
-    if (min == max) return RTValue::number(min);
+    if (min == max) return Value::number(min);
 
-    return RTValue::number((std::rand() % (max - min)) + min);
+    return Value::number((std::rand() % (max - min)) + min);
   }
 
   /** SetBangForm - set! */
@@ -395,7 +393,7 @@ namespace Lisple
     uptr_exec_node_v value_node;
     value_node.push_back(lower_expr(ctx, elements.back()));
 
-    sptr_rtval_v bind_path = to_rt_value(*elements[1])->elements();
+    sptr_val_v bind_path = to_rt_value(*elements[1])->elements();
 
     return std::make_unique<ExecNode>(
       ast_node,
@@ -403,7 +401,7 @@ namespace Lisple
   }
   EXECNODE_BODY(SetBangForm, execnode_set)
   {
-    sptr_rtval_v member_refs = snode.values;
+    sptr_val_v member_refs = snode.values;
 
     auto value = exec(ctx, *snode.exec_nodes.front());
 
@@ -416,14 +414,14 @@ namespace Lisple
     else if (member_refs.size() == 2)
     {
       auto& prop = member_refs[0];
-      sptr_rtval owner = ctx.lookup(member_refs.back()->to_string());
+      sptr_val owner = ctx.lookup(member_refs.back()->to_string());
 
       Lisple::Dict::set_property(owner, prop, value);
     }
     else
     {
       throw Lisple::InvocationException("Incorrect member reference: " +
-                                        RTValue::vector(member_refs)->to_string());
+                                        Value::vector(member_refs)->to_string());
     }
 
     return value;
@@ -436,9 +434,9 @@ namespace Lisple
 
   EXEC_BODY(QualifierFunction, exec_qualifier)
   {
-    if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
+    if (args[0]->type == Value::Type::NIL) return Constant::NIL;
     const std::string qualifier = args[0]->qual().first;
-    return qualifier.empty() ? Constant::NIL : RTValue::string(qualifier);
+    return qualifier.empty() ? Constant::NIL : Value::string(qualifier);
   }
 
   /** StringPFunction - keyword? */
@@ -447,8 +445,7 @@ namespace Lisple
 
   EXEC_BODY(StringPFunction, exec_stringp)
   {
-    return args[0]->type == RTValue::Type::STRING ? Constant::BOOL_TRUE
-                                                  : Constant::BOOL_FALSE;
+    return args[0]->type == Value::Type::STRING ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
 } // namespace Lisple

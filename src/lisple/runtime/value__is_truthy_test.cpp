@@ -1,6 +1,7 @@
-#include <gtest/gtest.h>
 #include <lisple/form.h>
 #include <lisple/runtime/value.h>
+
+#include <gtest/gtest.h>
 
 TEST(is_truthy, boolean)
 {
@@ -12,7 +13,7 @@ TEST(is_truthy, number)
 {
   for (int i = -1000; i <= 1000; i++)
   {
-    EXPECT_TRUE(Lisple::is_truthy(*Lisple::RTValue::number(i)));
+    EXPECT_TRUE(Lisple::is_truthy(*Lisple::Value::number(i)));
   }
 }
 

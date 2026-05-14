@@ -25,14 +25,14 @@ namespace Lisple
       throw LispleException("No arguments given to +");
     }
 
-    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
+    Value::Number result = std::get<const Value::Number>(args[0]->value);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = result + std::get<const RTValue::Number>(args[i]->value);
+      result = result + std::get<const Value::Number>(args[i]->value);
     }
 
-    return RTValue::number(result);
+    return Value::number(result);
   }
 
   /** MinusFunction - - */
@@ -47,20 +47,19 @@ namespace Lisple
       throw LispleException("No arguments given to -");
     }
 
-    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
+    Value::Number result = std::get<const Value::Number>(args[0]->value);
 
     if (args.size() == 1)
     {
-      result =
-        RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 0} - result;
+      result = Value::Number{.num_type = Value::NumberType::INT, .int_value = 0} - result;
     }
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = result - std::get<const RTValue::Number>(args[i]->value);
+      result = result - std::get<const Value::Number>(args[i]->value);
     }
 
-    return RTValue::number(result);
+    return Value::number(result);
   }
 
   /** DivideFunction - / */
@@ -80,11 +79,11 @@ namespace Lisple
       return args[0];
     }
 
-    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
+    Value::Number result = std::get<const Value::Number>(args[0]->value);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      const RTValue::Number& divisor = std::get<const RTValue::Number>(args[i]->value);
+      const Value::Number& divisor = std::get<const Value::Number>(args[i]->value);
       if (divisor.get_double() == 0)
       {
         throw LispleException("Division by zero");
@@ -92,7 +91,7 @@ namespace Lisple
       result = result / divisor;
     }
 
-    return RTValue::number(result);
+    return Value::number(result);
   }
 
   /** MultiplyFunction - * */
@@ -112,19 +111,19 @@ namespace Lisple
       return args[0];
     }
 
-    RTValue::Number result = std::get<const RTValue::Number>(args[0]->value);
+    Value::Number result = std::get<const Value::Number>(args[0]->value);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      if (args[i]->type != RTValue::Type::NUMBER)
+      if (args[i]->type != Value::Type::NUMBER)
       {
         throw TypeError("Cannot multiply by nil/non-number. Arguments: " +
-                        RTValue::vector(args)->to_string() + ".");
+                        Value::vector(args)->to_string() + ".");
       }
-      result = result * std::get<const RTValue::Number>(args[i]->value);
+      result = result * std::get<const Value::Number>(args[i]->value);
     }
 
-    return RTValue::number(result);
+    return Value::number(result);
   }
 
   /** ModulusFunction - mod */
@@ -134,7 +133,7 @@ namespace Lisple
 
   EXEC_BODY(ModulusFunction, exec_modulus)
   {
-    return RTValue::number(args[0]->i64() % args[1]->i64());
+    return Value::number(args[0]->i64() % args[1]->i64());
   }
 
   /* LessThanFunction */
@@ -152,8 +151,8 @@ namespace Lisple
                       args[1]->to_string());
     }
 
-    return std::get<const RTValue::Number>(args[0]->value).get_float() <
-               std::get<const RTValue::Number>(args[1]->value).get_float()
+    return std::get<const Value::Number>(args[0]->value).get_float() <
+               std::get<const Value::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -183,8 +182,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return std::get<const RTValue::Number>(args[0]->value).get_float() <=
-               std::get<const RTValue::Number>(args[1]->value).get_float()
+    return std::get<const Value::Number>(args[0]->value).get_float() <=
+               std::get<const Value::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -214,8 +213,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return std::get<const RTValue::Number>(args[0]->value).get_float() >
-               std::get<const RTValue::Number>(args[1]->value).get_float()
+    return std::get<const Value::Number>(args[0]->value).get_float() >
+               std::get<const Value::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -245,8 +244,8 @@ namespace Lisple
       throw TypeError("Cannot compare " + args[0]->to_string() + " and " +
                       args[1]->to_string());
     }
-    return std::get<const RTValue::Number>(args[0]->value).get_float() >=
-               std::get<const RTValue::Number>(args[1]->value).get_float()
+    return std::get<const Value::Number>(args[0]->value).get_float() >=
+               std::get<const Value::Number>(args[1]->value).get_float()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }

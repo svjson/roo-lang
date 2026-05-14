@@ -21,8 +21,8 @@ namespace Lisple
 
   EXEC_BODY(FilterFunction, exec_filter)
   {
-    Lisple::sptr_rtval original;
-    Lisple::sptr_rtval fn;
+    Lisple::sptr_val original;
+    Lisple::sptr_val fn;
     if (Type::SEQ.is_type_of(*args[0]))
     {
       original = args[0];
@@ -34,26 +34,26 @@ namespace Lisple
       fn = args[0];
     }
 
-    if (*Constant::NIL == *original) return RTValue::vector({});
+    if (*Constant::NIL == *original) return Value::vector({});
 
-    sptr_rtval_v result;
+    sptr_val_v result;
     result.reserve(count(*original));
 
     auto& filter_fn = fn->exec();
 
-    sptr_rtval_v val_args{Constant::NIL};
-    sptr_rtval_v elements = Lisple::get_children(*original);
+    sptr_val_v val_args{Constant::NIL};
+    sptr_val_v elements = Lisple::get_children(*original);
     for (auto val : elements)
     {
       val_args[0] = val;
-      sptr_rtval pred_result = filter_fn.execute(ctx, val_args);
+      sptr_val pred_result = filter_fn.execute(ctx, val_args);
       if (Lisple::is_truthy(*pred_result))
       {
         result.push_back(val);
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /** FindFirstFunction - find-first */
@@ -67,11 +67,11 @@ namespace Lisple
 
     auto& filter_fn = args.back()->exec();
 
-    sptr_rtval_v val_args{nullptr};
+    sptr_val_v val_args{nullptr};
     for (auto val : args[0]->elements())
     {
       val_args[0] = val;
-      sptr_rtval pred_result = filter_fn.execute(ctx, val_args);
+      sptr_val pred_result = filter_fn.execute(ctx, val_args);
       if (Lisple::is_truthy(*pred_result))
       {
         return val;
@@ -92,16 +92,16 @@ namespace Lisple
 
     auto& filter_fn = args.back()->exec();
 
-    sptr_rtval_v children = Lisple::get_children(*args[0]);
+    sptr_val_v children = Lisple::get_children(*args[0]);
 
-    sptr_rtval_v val_args{nullptr};
+    sptr_val_v val_args{nullptr};
     for (size_t i = 0; i < children.size(); i++)
     {
       val_args[0] = children[i];
       auto item = std::make_unique<ExecNode>(children[i]);
       if (Lisple::is_truthy(*filter_fn.execute(ctx, val_args)))
       {
-        return RTValue::number(static_cast<int>(i));
+        return Value::number(static_cast<int>(i));
       }
     }
 
@@ -115,20 +115,20 @@ namespace Lisple
 
   EXEC_BODY(KeepFunction, exec_keep)
   {
-    const sptr_rtval_v& values = args[0]->elements();
+    const sptr_val_v& values = args[0]->elements();
     Executable& exec = args[1]->exec();
 
-    sptr_rtval_v result;
+    sptr_val_v result;
 
-    sptr_rtval_v arg{nullptr};
+    sptr_val_v arg{nullptr};
     for (auto& v : values)
     {
       arg[0] = v;
-      sptr_rtval r = exec.execute(ctx, arg);
+      sptr_val r = exec.execute(ctx, arg);
       if (*r != *Constant::NIL) result.push_back(r);
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /** MapFunction - map */
@@ -139,9 +139,9 @@ namespace Lisple
   EXEC_BODY(MapFunction, exec_map)
   {
     auto& mapper = args.back();
-    sptr_rtval_v result;
+    sptr_val_v result;
 
-    std::vector<sptr_rtval_v> seqs;
+    std::vector<sptr_val_v> seqs;
 
     for (size_t i = 0; i < args.size() - 1; i++)
     {
@@ -156,10 +156,10 @@ namespace Lisple
     result.reserve((*max_lmnts_it).size());
 
     // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
-    bool is_kw = mapper->type == RTValue::Type::KEYWORD;
+    bool is_kw = mapper->type == Value::Type::KEYWORD;
     Executable* map_fn = is_kw ? nullptr : &mapper->exec();
 
-    sptr_rtval_v map_args;
+    sptr_val_v map_args;
     for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
     {
       map_args.push_back(nullptr);
@@ -192,12 +192,12 @@ namespace Lisple
           }
           else
           {
-            sptr_rtval_v unit;
+            sptr_val_v unit;
             for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
             {
               unit.push_back(Dict::get_property(map_args[seq_i], mapper));
             }
-            result.push_back(RTValue::vector(std::move(unit)));
+            result.push_back(Value::vector(std::move(unit)));
           }
         }
         else
@@ -211,7 +211,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /** ReduceFunction - reduce */
@@ -221,12 +221,12 @@ namespace Lisple
 
   EXEC_BODY(ReduceFunction, exec_reduce)
   {
-    sptr_rtval_v children = Lisple::get_children(*args[0]);
-    sptr_rtval result = args[1];
+    sptr_val_v children = Lisple::get_children(*args[0]);
+    sptr_val result = args[1];
     auto& reducer = args.back()->exec();
 
-    sptr_rtval iter_result;
-    sptr_rtval_v reduce_args{result, nullptr};
+    sptr_val iter_result;
+    sptr_val_v reduce_args{result, nullptr};
     for (auto& lmnt : children)
     {
       reduce_args[1] = lmnt;
@@ -250,7 +250,7 @@ namespace Lisple
 
   EXEC_BODY(RemoveFunction, exec_remove)
   {
-    RTValue* original;
+    Value* original;
     Executable* remove_fn;
 
     if (Type::SEQ.is_type_of(*args[0]))
@@ -264,10 +264,10 @@ namespace Lisple
       remove_fn = &args[0]->exec();
     }
 
-    sptr_rtval_v result;
+    sptr_val_v result;
     result.reserve(Lisple::count(*original));
-    sptr_rtval_v elements = Lisple::get_children(*original);
-    Lisple::sptr_rtval_v val_args{nullptr};
+    sptr_val_v elements = Lisple::get_children(*original);
+    Lisple::sptr_val_v val_args{nullptr};
     for (auto val : elements)
     {
       val_args[0] = val;
@@ -278,7 +278,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /** RemoveBangFunction - remove! */
@@ -300,7 +300,7 @@ namespace Lisple
                                [&](const Lisple::sptr_sobject& element)
                                {
                                  Lisple::sptr_sobject ast_element = element;
-                                 Lisple::sptr_rtval_v val_args{to_rt_value(ast_element)};
+                                 Lisple::sptr_val_v val_args{to_rt_value(ast_element)};
                                  return Lisple::is_truthy(*remove_fn.execute(ctx, val_args));
                                });
       children.erase(it, children.end());
@@ -309,13 +309,13 @@ namespace Lisple
     }
     else
     {
-      sptr_rtval_v& children = std::get<sptr_rtval_v>(args[1]->value);
+      sptr_val_v& children = std::get<sptr_val_v>(args[1]->value);
 
       auto it = std::remove_if(children.begin(),
                                children.end(),
-                               [&](const Lisple::sptr_rtval& element)
+                               [&](const Lisple::sptr_val& element)
                                {
-                                 Lisple::sptr_rtval_v val_args{element};
+                                 Lisple::sptr_val_v val_args{element};
                                  auto pred_result = remove_fn.execute(ctx, val_args);
                                  return Lisple::is_truthy(*pred_result);
                                });
@@ -335,7 +335,7 @@ namespace Lisple
 
   EXEC_BODY(RemoveFirstFunction, exec_remove_first)
   {
-    RTValue* original;
+    Value* original;
     Executable* remove_fn;
 
     if (Type::SEQ.is_type_of(*args[0]))
@@ -349,11 +349,11 @@ namespace Lisple
       remove_fn = &args[0]->exec();
     }
 
-    sptr_rtval_v result;
+    sptr_val_v result;
     result.reserve(Lisple::count(*original));
 
     bool removed = false;
-    sptr_rtval_v val_args{nullptr};
+    sptr_val_v val_args{nullptr};
     for (auto val : original->elements())
     {
       val_args[0] = val;
@@ -368,7 +368,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::vector(std::move(result));
+    return Value::vector(std::move(result));
   }
 
   /* SeqMatchFunction */
@@ -376,12 +376,12 @@ namespace Lisple
             SIG((FN_ARGS((&Lisple::Type::SEQ), (&Lisple::Type::MAP)),
                  EXEC_DISPATCH(&SeqMatchFunction::exec_match))))
 
-  bool match_map_like(sptr_rtval& obj, sptr_rtval& pattern)
+  bool match_map_like(sptr_val& obj, sptr_val& pattern)
   {
     for (auto& key : Dict::map_sptr_keys(pattern))
     {
-      sptr_rtval prop = Dict::get_property(pattern, *key);
-      sptr_rtval value = Dict::get_property(obj, *key);
+      sptr_val prop = Dict::get_property(pattern, *key);
+      sptr_val value = Dict::get_property(obj, *key);
 
       if (*Constant::NIL != *prop && Type::COMPLEX.is_type_of(*prop))
       {
@@ -401,7 +401,7 @@ namespace Lisple
 
   EXEC_BODY(SeqMatchFunction, exec_match)
   {
-    sptr_rtval& pattern = args.back();
+    sptr_val& pattern = args.back();
 
     for (auto& obj : Lisple::get_children(*args[0]))
     {
@@ -421,12 +421,12 @@ namespace Lisple
 
   EXEC_BODY(SomeFunction, exec_some)
   {
-    sptr_rtval_v val_arg = {nullptr};
+    sptr_val_v val_arg = {nullptr};
     auto& fn = args.back()->exec();
     for (auto& element : args[0]->elements())
     {
       val_arg[0] = element;
-      sptr_rtval result = fn.execute(ctx, val_arg);
+      sptr_val result = fn.execute(ctx, val_arg);
       if (Lisple::is_truthy(*result))
       {
         return Constant::BOOL_TRUE;
@@ -444,7 +444,7 @@ namespace Lisple
 
   EXEC_BODY(SortFunction, exec_sort)
   {
-    RTValue* seq_arg;
+    Value* seq_arg;
     Executable* comparator;
 
     if (Type::SEQ.is_type_of(*args[0]))
@@ -458,14 +458,14 @@ namespace Lisple
       comparator = &args[0]->exec();
     }
 
-    Lisple::sptr_rtval_v elements = Lisple::get_children(*seq_arg);
+    Lisple::sptr_val_v elements = Lisple::get_children(*seq_arg);
 
     if (elements.size() > 1)
     {
-      sptr_rtval_v cmp_args{nullptr, nullptr};
+      sptr_val_v cmp_args{nullptr, nullptr};
       std::sort(elements.begin(),
                 elements.end(),
-                [&](const sptr_rtval& a, const sptr_rtval& b)
+                [&](const sptr_val& a, const sptr_val& b)
                 {
                   cmp_args[0] = a;
                   cmp_args[1] = b;
@@ -473,7 +473,7 @@ namespace Lisple
                 });
     }
 
-    return RTValue::vector(std::move(elements));
+    return Value::vector(std::move(elements));
   }
 
 } // namespace Lisple

@@ -11,6 +11,6 @@ TEST(to_AST, boolean)
 
 TEST(to_AST, string)
 {
-  EXPECT_EQ(*Lisple::to_AST(*Lisple::RTValue::string("test-string")),
+  EXPECT_EQ(*Lisple::to_AST(*Lisple::Value::string("test-string")),
             *Lisple::AST::String::make("test-string"));
 }

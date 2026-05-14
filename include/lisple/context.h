@@ -26,8 +26,8 @@ namespace Lisple
     ContextFrame(bool evaluation_mode);
 
     bool evalp() const;
-    sptr_rtval lookup(const std::string& identifier) const;
-    sptr_rtval lookup(const RTValue& identifier) const;
+    sptr_val lookup(const std::string& identifier) const;
+    sptr_val lookup(const Value& identifier) const;
     bool has(const std::string& identifier) const;
 
     std::string to_string() const;
@@ -55,16 +55,16 @@ namespace Lisple
     std::vector<std::unique_ptr<ContextFrame>>& get_stack_frames();
     std::shared_ptr<AST::Vector> get_scope_identifiers();
 
-    sptr_rtval eval(const std::string& str);
-    sptr_rtval eval(const sptr_rtval& list);
-    sptr_rtval eval(const sptr_sobject& list);
+    sptr_val eval(const std::string& str);
+    sptr_val eval(const sptr_val& list);
+    sptr_val eval(const sptr_sobject& list);
 
     /*!
-     * @brief Call a named function with a single RTValue argument.
+     * @brief Call a named function with a single Value argument.
      *
      * @param fn_name The name of the function to look up and execute.
      *
-     * @return The execution result as an RTValue.
+     * @return The execution result as an Value.
      *
      * The lookup of the named function occurs in this context, so local
      * bindings, the current namespace, imported namespaces, and aliased
@@ -73,14 +73,14 @@ namespace Lisple
      * If the identifier is qualified with a known global namespace, the
      * current namespace will be ignored.
      */
-    sptr_rtval call(const std::string& fn_name, const sptr_rtval& arg);
+    sptr_val call(const std::string& fn_name, const sptr_val& arg);
 
     /*!
-     * @brief Call a named function with a list of RTValue arguments.
+     * @brief Call a named function with a list of Value arguments.
      *
      * @param fn_name The name of the function to look up and execute.
      *
-     * @return The execution result as an RTValue.
+     * @return The execution result as an Value.
      *
      * The lookup of the named function occurs in this context, so local
      * bindings, the current namespace, imported namespaces, and aliased
@@ -89,13 +89,13 @@ namespace Lisple
      * If the identifier is qualified with a known global namespace, the
      * current namespace will be ignored.
      */
-    sptr_rtval call(const std::string& fn_name, const sptr_rtval_v& args);
+    sptr_val call(const std::string& fn_name, const sptr_val_v& args);
 
     Scope& current_scope();
     Scope& get_scope_of(const std::string& identifier) const;
 
     void read_file(const std::string& file_name);
-    void store_namespace(const std::string& symbol, const sptr_rtval& value);
+    void store_namespace(const std::string& symbol, const sptr_val& value);
 
     /*!
      * @brief Switch the underlying namespace in which execution and unqualified
@@ -121,8 +121,8 @@ namespace Lisple
 
     Namespace& lang();
 
-    sptr_rtval lookup(const std::string& identifier) const;
-    sptr_rtval lookup(const RTValue& identifier) const;
+    sptr_val lookup(const std::string& identifier) const;
+    sptr_val lookup(const Value& identifier) const;
 
     void push_context(bool evaluation_mode);
     void push_context(bool evaluation_mode, Scope& scope);

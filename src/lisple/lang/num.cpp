@@ -13,7 +13,7 @@ namespace Lisple
 
   EXEC_BODY(EvenPFunction, exec_even)
   {
-    return std::get<const RTValue::Number>(args[0]->value).get_int() % 2 == 0
+    return std::get<const Value::Number>(args[0]->value).get_int() % 2 == 0
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }
@@ -24,8 +24,8 @@ namespace Lisple
 
   EXEC_BODY(IncFunction, exec_inc)
   {
-    return RTValue::number(args[0]->num() +
-                           RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 1});
+    return Value::number(args[0]->num() +
+                         Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
 
   /** DecFunction - dec */
@@ -34,8 +34,8 @@ namespace Lisple
 
   EXEC_BODY(DecFunction, exec_dec)
   {
-    return RTValue::number(args[0]->num() -
-                           RTValue::Number{.num_type = RTValue::NumberType::INT, .int_value = 1});
+    return Value::number(args[0]->num() -
+                         Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
 
   /** IntFunction - int */
@@ -44,19 +44,19 @@ namespace Lisple
 
   EXEC_BODY(IntFunction, exec_to_int)
   {
-    sptr_rtval& obj = args[0];
+    sptr_val& obj = args[0];
 
     if (Type::NUMBER.is_type_of(*obj))
     {
-      return RTValue::number(std::get<const RTValue::Number>(obj->value).get_int());
+      return Value::number(std::get<const Value::Number>(obj->value).get_int());
     }
     else if (Type::CHAR.is_type_of(*obj))
     {
-      return RTValue::number(static_cast<int>(std::get<char>(obj->value)));
+      return Value::number(static_cast<int>(std::get<char>(obj->value)));
     }
     else if (Type::STRING.is_type_of(*obj))
     {
-      return RTValue::number(std::stoi(obj->str()));
+      return Value::number(std::stoi(obj->str()));
     }
 
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");
@@ -69,12 +69,12 @@ namespace Lisple
 
   EXEC_BODY(MaxFunction, exec_max)
   {
-    float result_val = std::get<const RTValue::Number>(args[0]->value).get_float();
+    float result_val = std::get<const Value::Number>(args[0]->value).get_float();
     size_t result_index = 0;
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      float num = std::get<const RTValue::Number>(args[i]->value).get_float();
+      float num = std::get<const Value::Number>(args[i]->value).get_float();
       if (num > result_val)
       {
         result_val = num;
@@ -92,12 +92,12 @@ namespace Lisple
 
   EXEC_BODY(MinFunction, exec_min)
   {
-    float result_val = std::get<const RTValue::Number>(args[0]->value).get_float();
+    float result_val = std::get<const Value::Number>(args[0]->value).get_float();
     size_t result_index = 0;
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      float num = std::get<const RTValue::Number>(args[i]->value).get_float();
+      float num = std::get<const Value::Number>(args[i]->value).get_float();
       if (num < result_val)
       {
         result_val = num;
@@ -114,8 +114,7 @@ namespace Lisple
 
   EXEC_BODY(NumberPFunction, exec_num)
   {
-    return args[0]->type == RTValue::Type::NUMBER ? Constant::BOOL_TRUE
-                                                  : Constant::BOOL_FALSE;
+    return args[0]->type == Value::Type::NUMBER ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /** OddPFunction - odd? */
@@ -124,7 +123,7 @@ namespace Lisple
 
   EXEC_BODY(OddPFunction, exec_odd)
   {
-    return std::get<const RTValue::Number>(args[0]->value).get_int() % 2 != 0
+    return std::get<const Value::Number>(args[0]->value).get_int() % 2 != 0
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
   }

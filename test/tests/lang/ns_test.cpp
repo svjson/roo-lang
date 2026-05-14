@@ -1,9 +1,7 @@
 
 #include "runtime_fixture.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 
 using NsForm = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
@@ -77,7 +75,7 @@ TEST_F(NsForm, import_existing_namespace)
   auto result = reader.eval("what-is-hot?");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::keyword("curry!"));
+  EXPECT_EQ(*result, *Lisple::Value::keyword("curry!"));
 
   // And When
   reader.eval("(ns somewhere-else)");
@@ -124,7 +122,7 @@ TEST_F(NsForm, import_existing_aliased_namespace)
   auto result = reader.eval("o/what-is-hot?");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::keyword("curry!"));
+  EXPECT_EQ(*result, *Lisple::Value::keyword("curry!"));
 
   // And When
   reader.eval("(ns somewhere-else)");

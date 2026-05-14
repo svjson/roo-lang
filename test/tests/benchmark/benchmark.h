@@ -83,7 +83,7 @@ namespace LispleTest
                      const std::string& ns,
                      const std::string& input);
 
-    Lisple::sptr_rtval run();
+    Lisple::sptr_val run();
     void print_result();
     void log_result();
 

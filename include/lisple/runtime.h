@@ -161,17 +161,16 @@ namespace Lisple
     void read_file(const std::string& file_name);
     void read_file(Context& ctx, const std::string& file_name);
 
-    sptr_rtval eval(const std::string& str);
-    sptr_rtval eval(Context& ctx, const std::string& str);
-    sptr_rtval eval(const sptr_sobject& sexp);
-    sptr_rtval eval(Context& ctx, const sptr_sobject& sexp);
+    sptr_val eval(const std::string& str);
+    sptr_val eval(Context& ctx, const std::string& str);
+    sptr_val eval(const sptr_sobject& sexp);
+    sptr_val eval(Context& ctx, const sptr_sobject& sexp);
 
-    sptr_rtval invoke(const std::string& function, sptr_rtval_v& args);
+    sptr_val invoke(const std::string& function, sptr_val_v& args);
 
-    sptr_rtval lookup(const std::string& identifier);
-    sptr_rtval lookup(const RTValue& identifier);
-    sptr_rtval lookup(const std::string& identifier,
-                      const Lisple::sptr_rtval& default_value);
+    sptr_val lookup(const std::string& identifier);
+    sptr_val lookup(const Value& identifier);
+    sptr_val lookup(const std::string& identifier, const Lisple::sptr_val& default_value);
     Namespace& get_ns_of(const std::string& identifier);
 
    private:

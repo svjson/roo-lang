@@ -28,7 +28,7 @@ namespace Lisple
   uptr_exec_node_v extract_sequence(ExecNode* node)
   {
     auto& lit_node = std::get<LiteralNode>(node->data);
-    sptr_rtval_v& lmnt_values = std::get<sptr_rtval_v>(lit_node.value->value);
+    sptr_val_v& lmnt_values = std::get<sptr_val_v>(lit_node.value->value);
 
     uptr_exec_node_v seq;
     for (size_t i = 0; i < lmnt_values.size(); i++)

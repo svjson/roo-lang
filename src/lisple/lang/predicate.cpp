@@ -14,9 +14,9 @@ namespace Lisple
 
   EXEC_BODY(BetweenPredicateFunction, exec_between)
   {
-    float num = std::get<const RTValue::Number>(args[0]->value).get_float();
-    float min = std::get<const RTValue::Number>(args[1]->value).get_float();
-    float max = std::get<const RTValue::Number>(args[2]->value).get_float();
+    float num = std::get<const Value::Number>(args[0]->value).get_float();
+    float min = std::get<const Value::Number>(args[1]->value).get_float();
+    float max = std::get<const Value::Number>(args[2]->value).get_float();
 
     return num > min && num < max ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
@@ -57,7 +57,7 @@ namespace Lisple
 
   EXEC_BODY(NilPFunction, exec_is_nil)
   {
-    return args[0]->type == RTValue::Type::NIL ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+    return args[0]->type == Value::Type::NIL ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
   /** NotFunction - not */

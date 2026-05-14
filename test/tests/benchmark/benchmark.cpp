@@ -53,9 +53,9 @@ namespace LispleTest
               << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
 
-    std::cout << "RTValue constructions: " << Lisple::rtvalues_constructed << std::endl;
-    std::cout << "RTValueWrapper constructions: " << Lisple::rtvalue_wrappers_constructed
-              << std::endl;
+    std::cout << "Value constructions: " << Lisple::rtvalues_constructed << std::endl;
+    std::cout << "RuntimeValueWrapper constructions: "
+              << Lisple::rtvalue_wrappers_constructed << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "ExecNode constructions: " << Lisple::exec_nodes_constructed << std::endl;
     std::cout << "CallNode constructions: " << Lisple::call_nodes_constructed << std::endl;
@@ -66,13 +66,13 @@ namespace LispleTest
 
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "to_AST conversions: " << Lisple::to_ast_conversions << std::endl;
-    std::cout << "to_RTValue conversions: " << Lisple::to_rtvalue_conversions << std::endl;
+    std::cout << "to_Value conversions: " << Lisple::to_rtvalue_conversions << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "UserFunction constructions: " << Lisple::user_functions_created
               << std::endl;
-    std::cout << "UserFunction(RTValue body) constructions: "
+    std::cout << "UserFunction(Value body) constructions: "
               << Lisple::user_functions_rtval_created << std::endl;
-    std::cout << "UserFunction(RTValue body) invocations: "
+    std::cout << "UserFunction(Value body) invocations: "
               << Lisple::user_function_rtval_invocations << std::endl;
     std::cout << "UserFunction(AST Body) constructions: "
               << Lisple::user_functions_ast_created << std::endl;
@@ -267,7 +267,7 @@ namespace LispleTest
   {
   }
 
-  Lisple::sptr_rtval SnippetBenchmark::run()
+  Lisple::sptr_val SnippetBenchmark::run()
   {
     Lisple::execution_started = false;
     if (skip_benchmark_tests) return Lisple::Constant::NIL;

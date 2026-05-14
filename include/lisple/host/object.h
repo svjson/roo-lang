@@ -32,9 +32,9 @@
    * underlying object type and wraps it in an adapter instance         \
    */                                                                   \
   template <typename... Args>                                           \
-  static Lisple::sptr_rtval make_unique(Args&&... args)                 \
+  static Lisple::sptr_val make_unique(Args&&... args)                 \
   {                                                                     \
-    return Lisple::RTValue::native_object(                              \
+    return Lisple::Value::native_object(                              \
       std::make_shared<AD_CLASS>(std::make_unique<H_CLASS>(std::forward<Args>(args)...)) \
     );                                                                  \
   }                                                                     \
@@ -42,9 +42,9 @@
    * @brief Static factory method that wraps an existing shared pointed \
    * underlying object and wraps it in an adapter instance              \
    */                                                                   \
-  static Lisple::sptr_rtval claim(std::unique_ptr<H_CLASS>&& uptr)      \
+  static Lisple::sptr_val claim(std::unique_ptr<H_CLASS>&& uptr)      \
   {                                                                     \
-    return Lisple::RTValue::native_object(                              \
+    return Lisple::Value::native_object(                              \
       std::make_shared<AD_CLASS>(std::move(uptr))                       \
     );                                                                  \
   }                                                                     \
@@ -53,9 +53,9 @@
    * underlying object type and wraps it in an adapter instance         \
    */                                                                   \
   template <typename... Args>                                           \
-  static Lisple::sptr_rtval make_shared(Args&&... args)                 \
+  static Lisple::sptr_val make_shared(Args&&... args)                 \
   {                                                                     \
-    return Lisple::RTValue::native_object(                              \
+    return Lisple::Value::native_object(                              \
       std::make_shared<AD_CLASS>(std::make_shared<H_CLASS>(std::forward<Args>(args)...)) \
     );                                                                  \
   }                                                                     \
@@ -64,9 +64,9 @@
    * underlying object and wraps it in an adapter instance              \
    */                                                                   \
   template <typename... Args>                                           \
-  static Lisple::sptr_rtval wrap(const std::shared_ptr<H_CLASS>& sptr)  \
+  static Lisple::sptr_val wrap(const std::shared_ptr<H_CLASS>& sptr)  \
   {                                                                     \
-    return Lisple::RTValue::native_object(                              \
+    return Lisple::Value::native_object(                              \
       std::make_shared<AD_CLASS>(sptr)                                  \
     );                                                                  \
   }                                                                     \
@@ -74,9 +74,9 @@
    * @brief Static factory method the wraps an instance of the underlying\
    * object in an adapter instance                                      \
    */                                                                   \
-  static Lisple::sptr_rtval make_ref(const H_CLASS& ref)                \
+  static Lisple::sptr_val make_ref(const H_CLASS& ref)                \
   {                                                                     \
-    return Lisple::RTValue::native_object(                              \
+    return Lisple::Value::native_object(                              \
       std::make_shared<AD_CLASS>(const_cast<H_CLASS&>(ref))             \
     );                                                                  \
   }
@@ -121,7 +121,7 @@
 #define NATIVE_ADAPTER_GETTER_DECL(PROP_NAME)             \
   /*! @brief Auto-generated getter */                   \
   mutable Lisple::NCacheSlot vcache_##PROP_NAME; \
-  Lisple::sptr_rtval get_##PROP_NAME() const;
+  Lisple::sptr_val get_##PROP_NAME() const;
 
 /* __NATIVE_ADAPTER_GETTERS
  *
@@ -136,7 +136,7 @@
  */
 #define NATIVE_ADAPTER_SETTER_DECL(PROP_NAME)                      \
   /*! @brief Auto-generated setter */ \
-  void set_##PROP_NAME(Lisple::Context* ctx, Lisple::sptr_rtval& value);
+  void set_##PROP_NAME(Lisple::Context* ctx, Lisple::sptr_val& value);
 
 /* __NATIVE_ADAPTER_GETTERS
  *
@@ -323,7 +323,7 @@
   }
 
 #define __NOBJ_P_GETTER(AD_CLASS, FN) [](const Lisple::NativeObjectBase* adapter) { return dynamic_cast<const AD_CLASS*>(adapter)->FN(); }
-#define __NOBJ_P_SETTER(AD_CLASS, FN) [](Lisple::NativeObjectBase* adapter, Lisple::Context* ctx, Lisple::sptr_rtval& value) { dynamic_cast<AD_CLASS*>(adapter)->FN(ctx, value); }
+#define __NOBJ_P_SETTER(AD_CLASS, FN) [](Lisple::NativeObjectBase* adapter, Lisple::Context* ctx, Lisple::sptr_val& value) { dynamic_cast<AD_CLASS*>(adapter)->FN(ctx, value); }
 
 #define __NOBJ_P_NO_GETTER Lisple::n_no_getter
 #define __NOBJ_P_NO_SETTER Lisple::n_no_setter
@@ -617,12 +617,12 @@ namespace Lisple
   extern const NAccessorTable NO_N_ACCESSORS;
 
   typedef std::unordered_map<std::string, NAccessors> n_acc_map;
-  typedef std::unordered_map<sptr_rtval, NAccessors> key_n_acc_map;
+  typedef std::unordered_map<sptr_val, NAccessors> key_n_acc_map;
 
   /*! @brief Convenience type definition for GETTER function references */
-  using n_acc_get_t = sptr_rtval (*)(const NativeObjectBase*);
+  using n_acc_get_t = sptr_val (*)(const NativeObjectBase*);
   /*! @brief Convenience type definition for SETTER function references */
-  using n_acc_set_t = void (*)(NativeObjectBase*, Context*, Lisple::sptr_rtval&);
+  using n_acc_set_t = void (*)(NativeObjectBase*, Context*, Lisple::sptr_val&);
 
   /*!
    * @brief Stock getter-implementation for non-gettable properties that will
@@ -651,7 +651,7 @@ namespace Lisple
 
   struct NCacheSlot
   {
-    sptr_rtval cached = nullptr;
+    sptr_val cached = nullptr;
   };
 
   /*!
@@ -666,7 +666,7 @@ namespace Lisple
     /*!
      * @brief A set of valid keys for the described HostObject
      */
-    std::vector<sptr_rtval> keys;
+    std::vector<sptr_val> keys;
     /*!
      * @brief Lookup table for accessor implementations by key/name.
      */
@@ -680,14 +680,14 @@ namespace Lisple
 
     /*!
      * @brief Constructs an AccessorTable instance from a map of accessor
-     * specifications keyed by RTValue keyword objects.
+     * specifications keyed by Value keyword objects.
      */
     NAccessorTable(const key_n_acc_map& accessors);
 
     /*!
      * @brief Constructs an AccessorTable from a braced list of
      * (string-key, NAccessors) pairs.  String keys are used directly; the
-     * corresponding keyword RTValues are interned into the keys vector.
+     * corresponding keyword Values are interned into the keys vector.
      */
     NAccessorTable(std::initializer_list<std::pair<std::string, NAccessors>> entries);
 
@@ -699,7 +699,7 @@ namespace Lisple
     /*!
      * @brief Looks up the accessor definition for a specific key
      */
-    const NAccessors* lookup(const RTValue& key) const;
+    const NAccessors* lookup(const Value& key) const;
   };
 
   /*!
@@ -733,14 +733,14 @@ namespace Lisple
   {
     virtual ~NativeObjectBase() = default;
 
-    virtual sptr_rtval get_property(const RTValue& property) const;
-    virtual void set_property(const RTValue& property, sptr_rtval& value);
-    virtual void set_property(const RTValue& property, const sptr_rtval& value);
+    virtual sptr_val get_property(const Value& property) const;
+    virtual void set_property(const Value& property, sptr_val& value);
+    virtual void set_property(const Value& property, const sptr_val& value);
     virtual const NativeObjectTraits* get_traits() const = 0;
     const HostTypeRef* get_host_type() const;
     const NAccessorTable& accessor_table() const;
     virtual std::string to_string() const;
-    virtual sptr_rtval_v native_children() const;
+    virtual sptr_val_v native_children() const;
     virtual size_t size() const;
     /** Returns a void* to the concrete host object as known by the adapter. */
     virtual void* self_object_ptr() const = 0;
@@ -764,7 +764,7 @@ namespace Lisple
     virtual T& get_object() const = 0;
   };
 
-  template <typename T> T& obj(const RTValue& v)
+  template <typename T> T& obj(const Value& v)
   {
     auto* nobj = v.nobj().get();
     if (auto* typed = dynamic_cast<NativeObject<T>*>(nobj)) return typed->get_object();

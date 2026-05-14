@@ -37,7 +37,7 @@ namespace Lisple
 {
   Namespace make_language_namespace()
   {
-    std::map<std::string, sptr_rtval> lang_symbols;
+    std::map<std::string, sptr_val> lang_symbols;
 
     lang_symbols.emplace("+", PlusFunction::make());
     lang_symbols.emplace("-", MinusFunction::make());

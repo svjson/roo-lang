@@ -13,19 +13,19 @@ namespace Lisple
   /** LexicalBinding */
   std::unique_ptr<LexicalBinding> LexicalBinding::create(LiteralNode& pattern)
   {
-    if (pattern.value->type == RTValue::Type::SYMBOL)
+    if (pattern.value->type == Value::Type::SYMBOL)
     {
       return std::make_unique<SymbolBinding>(std::get<std::string>(pattern.value->value));
     }
-    else if (pattern.value->type == RTValue::Type::MAP)
+    else if (pattern.value->type == Value::Type::MAP)
     {
       return std::make_unique<MapDestructureBinding>(
-        std::get<sptr_rtval_v>(pattern.value->value));
+        std::get<sptr_val_v>(pattern.value->value));
     }
-    else if (pattern.value->type == RTValue::Type::VECTOR)
+    else if (pattern.value->type == Value::Type::VECTOR)
     {
       return std::make_unique<VectorDestructureBinding>(
-        std::get<sptr_rtval_v>(pattern.value->value));
+        std::get<sptr_val_v>(pattern.value->value));
     }
     else
     {
@@ -33,20 +33,20 @@ namespace Lisple
     }
   }
 
-  std::unique_ptr<LexicalBinding> LexicalBinding::create(sptr_rtval& pattern)
+  std::unique_ptr<LexicalBinding> LexicalBinding::create(sptr_val& pattern)
   {
-    if (pattern->type == RTValue::Type::SYMBOL)
+    if (pattern->type == Value::Type::SYMBOL)
     {
       return std::make_unique<SymbolBinding>(std::get<std::string>(pattern->value));
     }
-    else if (pattern->type == RTValue::Type::MAP)
+    else if (pattern->type == Value::Type::MAP)
     {
-      return std::make_unique<MapDestructureBinding>(std::get<sptr_rtval_v>(pattern->value));
+      return std::make_unique<MapDestructureBinding>(std::get<sptr_val_v>(pattern->value));
     }
-    else if (pattern->type == RTValue::Type::VECTOR)
+    else if (pattern->type == Value::Type::VECTOR)
     {
       return std::make_unique<VectorDestructureBinding>(
-        std::get<sptr_rtval_v>(pattern->value));
+        std::get<sptr_val_v>(pattern->value));
     }
     else
     {
@@ -65,7 +65,7 @@ namespace Lisple
   {
   }
 
-  void SymbolBinding::apply(Scope& scope, const sptr_rtval& value_expr) const
+  void SymbolBinding::apply(Scope& scope, const sptr_val& value_expr) const
   {
     scope.store(symbol, value_expr);
   }
@@ -76,24 +76,24 @@ namespace Lisple
   }
 
   /** MapDestructureBinding */
-  MapDestructureBinding::MapDestructureBinding(const sptr_rtval_v& map_data)
+  MapDestructureBinding::MapDestructureBinding(const sptr_val_v& map_data)
   {
-    auto [_k, keys] = Dict::map_entry(map_data, *RTValue::keyword("keys"));
-    auto [_vs, as_symbol] = Dict::map_entry(map_data, *RTValue::keyword("as"));
+    auto [_k, keys] = Dict::map_entry(map_data, *Value::keyword("keys"));
+    auto [_vs, as_symbol] = Dict::map_entry(map_data, *Value::keyword("as"));
 
-    if (keys == nullptr || keys->type != RTValue::Type::VECTOR || map_data.size() > 4 ||
+    if (keys == nullptr || keys->type != Value::Type::VECTOR || map_data.size() > 4 ||
         (map_data.size() == 4 && as_symbol == nullptr))
     {
       throw TypeError("Invalid map destructure form: " +
-                      Lisple::RTValue::map(map_data)->to_string());
+                      Lisple::Value::map(map_data)->to_string());
     }
 
-    for (auto& symbol : std::get<sptr_rtval_v>(keys->value))
+    for (auto& symbol : std::get<sptr_val_v>(keys->value))
     {
-      if (symbol->type == RTValue::Type::SYMBOL)
+      if (symbol->type == Value::Type::SYMBOL)
       {
         bindings.push_back(std::make_pair(
-          *RTValue::keyword(std::get<std::string>(symbol->value)),
+          *Value::keyword(std::get<std::string>(symbol->value)),
           std::make_unique<SymbolBinding>(std::get<std::string>(symbol->value))));
       }
       else
@@ -119,11 +119,11 @@ namespace Lisple
   {
     for (auto& [s, v] : other.bindings)
     {
-      bindings.push_back(std::make_pair(*RTValue::keyword(s.str()), v->clone()));
+      bindings.push_back(std::make_pair(*Value::keyword(s.str()), v->clone()));
     }
   }
 
-  void MapDestructureBinding::apply(Scope& scope, const sptr_rtval& value) const
+  void MapDestructureBinding::apply(Scope& scope, const sptr_val& value) const
   {
     for (auto& [key, binding] : bindings)
     {
@@ -151,11 +151,11 @@ namespace Lisple
   }
 
   /** VectorDestructureBinding */
-  VectorDestructureBinding::VectorDestructureBinding(const sptr_rtval_v& vector)
+  VectorDestructureBinding::VectorDestructureBinding(const sptr_val_v& vector)
   {
     for (auto sym : vector)
     {
-      if (sym->type == RTValue::Type::SYMBOL)
+      if (sym->type == Value::Type::SYMBOL)
       {
         this->bindings.push_back(
           std::make_unique<SymbolBinding>(std::get<std::string>(sym->value)));
@@ -175,10 +175,10 @@ namespace Lisple
     }
   }
 
-  void VectorDestructureBinding::apply(Scope& scope, const sptr_rtval& vector_expr) const
+  void VectorDestructureBinding::apply(Scope& scope, const sptr_val& vector_expr) const
   {
-    sptr_rtval_v& vec = std::get<sptr_rtval_v>(vector_expr->value);
-    sptr_sobject form = std::make_shared<AST::RuntimeValueWrapper>(RTValue::vector(vec));
+    sptr_val_v& vec = std::get<sptr_val_v>(vector_expr->value);
+    sptr_sobject form = std::make_shared<AST::RuntimeValueWrapper>(Value::vector(vec));
 
     for (size_t i = 0; i < this->bindings.size(); i++)
     {
@@ -202,9 +202,9 @@ namespace Lisple
   {
   }
 
-  void RestBinding::apply(Scope& scope, const sptr_rtval_v& values) const
+  void RestBinding::apply(Scope& scope, const sptr_val_v& values) const
   {
-    scope.store(symbol, RTValue::vector(values));
+    scope.store(symbol, Value::vector(values));
   }
 
   std::unique_ptr<RestBinding> RestBinding::clone() const

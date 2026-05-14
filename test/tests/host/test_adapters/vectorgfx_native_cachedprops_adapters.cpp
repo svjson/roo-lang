@@ -7,8 +7,8 @@
 
 namespace LispleTest::CachedNative
 {
-  const Lisple::sptr_rtval X = Lisple::RTValue::keyword("x");
-  const Lisple::sptr_rtval Y = Lisple::RTValue::keyword("y");
+  const Lisple::sptr_val X = Lisple::Value::keyword("x");
+  const Lisple::sptr_val Y = Lisple::Value::keyword("y");
 
   NATIVE_ADAPTER_IMPL(PointAdapter, Point, &POINT, (x), (y));
 
@@ -22,15 +22,15 @@ namespace LispleTest::CachedNative
 
   EXEC_BODY(MakePointFunction, exec_make_point)
   {
-    if (args[0]->type != Lisple::RTValue::Type::MAP ||
-        Lisple::Dict::get_property(args[0], X)->type != Lisple::RTValue::Type::NUMBER ||
-        Lisple::Dict::get_property(args[0], Y)->type != Lisple::RTValue::Type::NUMBER)
+    if (args[0]->type != Lisple::Value::Type::MAP ||
+        Lisple::Dict::get_property(args[0], X)->type != Lisple::Value::Type::NUMBER ||
+        Lisple::Dict::get_property(args[0], Y)->type != Lisple::Value::Type::NUMBER)
       throw Lisple::LispleException("Invalid input");
 
     return PointAdapter::make_unique(
-      std::get<const Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], X)->value)
+      std::get<const Lisple::Value::Number>(Lisple::Dict::get_property(args[0], X)->value)
         .get_float(),
-      std::get<const Lisple::RTValue::Number>(Lisple::Dict::get_property(args[0], Y)->value)
+      std::get<const Lisple::Value::Number>(Lisple::Dict::get_property(args[0], Y)->value)
         .get_float());
   }
 
@@ -43,7 +43,7 @@ namespace LispleTest::CachedNative
   {
     const Point& point = args.front()->adapter<PointAdapter>().get_object();
     const Point origin = {0, 0};
-    float amount = std::get<const Lisple::RTValue::Number>(args[1]->value).get_float();
+    float amount = std::get<const Lisple::Value::Number>(args[1]->value).get_float();
 
     if (amount == 0.0) return args[0];
 
@@ -79,7 +79,7 @@ namespace LispleTest::CachedNative
   EXEC_BODY(PointDivideFunction, exec_divide)
   {
     const Point& a = args[0]->adapter<PointAdapter>().get_object();
-    float amount = std::get<const Lisple::RTValue::Number>(args[1]->value).get_float();
+    float amount = std::get<const Lisple::Value::Number>(args[1]->value).get_float();
 
     return PointAdapter::make_unique(a.x / amount, a.y / amount);
   }
@@ -93,7 +93,7 @@ namespace LispleTest::CachedNative
     const Point& a = args[0]->adapter<PointAdapter>().get_object();
     const Point& b = args[1]->adapter<PointAdapter>().get_object();
 
-    return Lisple::RTValue::number(
+    return Lisple::Value::number(
       std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)));
   }
 

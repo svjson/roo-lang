@@ -1,8 +1,6 @@
 
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using EvalFunction = LispleTest::RuntimeTestFixture;
 TEST_F(EvalFunction, eval_string)
@@ -11,7 +9,7 @@ TEST_F(EvalFunction, eval_string)
   auto result = runtime.eval("(+ 10 100)");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(110));
+  EXPECT_EQ(*result, *Lisple::Value::number(110));
 }
 
 TEST_F(EvalFunction, eval_list)
@@ -20,5 +18,5 @@ TEST_F(EvalFunction, eval_list)
   auto result = runtime.eval("(eval '(+ 8 90))");
 
   // Then
-  EXPECT_EQ(*result, *Lisple::RTValue::number(98));
+  EXPECT_EQ(*result, *Lisple::Value::number(98));
 }

@@ -13,39 +13,39 @@
 
 namespace Lisple
 {
-  template <typename T> struct RTValueReader
+  template <typename T> struct ValueReader
   {
-    static T read(const sptr_rtval& value) { return Lisple::obj<T>(*value); }
+    static T read(const sptr_val& value) { return Lisple::obj<T>(*value); }
   };
 
-  template <> struct RTValueReader<sptr_rtval>
+  template <> struct ValueReader<sptr_val>
   {
-    static sptr_rtval read(const sptr_rtval& value) { return value; }
+    static sptr_val read(const sptr_val& value) { return value; }
   };
 
-#define LISPLE_RTVALUE_READER(TYPE)                                      \
+#define LISPLE_VALUE_READER(TYPE)                                        \
   template <>                                                            \
-  struct RTValueReader<TYPE>                                             \
+  struct ValueReader<TYPE>                                               \
   {                                                                      \
-    static TYPE read(const sptr_rtval& value)                            \
+    static TYPE read(const sptr_val& value)                              \
     {                                                                    \
       return Lisple::rtval_to<TYPE>(value);                              \
     }                                                                    \
   }
 
-  LISPLE_RTVALUE_READER(bool);
-  LISPLE_RTVALUE_READER(char);
-  LISPLE_RTVALUE_READER(signed char);
-  LISPLE_RTVALUE_READER(unsigned char);
-  LISPLE_RTVALUE_READER(int);
-  LISPLE_RTVALUE_READER(unsigned int);
-  LISPLE_RTVALUE_READER(unsigned short);
-  LISPLE_RTVALUE_READER(long);
-  LISPLE_RTVALUE_READER(float);
-  LISPLE_RTVALUE_READER(double);
-  LISPLE_RTVALUE_READER(std::string);
+  LISPLE_VALUE_READER(bool);
+  LISPLE_VALUE_READER(char);
+  LISPLE_VALUE_READER(signed char);
+  LISPLE_VALUE_READER(unsigned char);
+  LISPLE_VALUE_READER(int);
+  LISPLE_VALUE_READER(unsigned int);
+  LISPLE_VALUE_READER(unsigned short);
+  LISPLE_VALUE_READER(long);
+  LISPLE_VALUE_READER(float);
+  LISPLE_VALUE_READER(double);
+  LISPLE_VALUE_READER(std::string);
 
-#undef LISPLE_RTVALUE_READER
+#undef LISPLE_VALUE_READER
 
   class MapSchema
   {
@@ -58,27 +58,27 @@ namespace Lisple
     class Inspector
     {
       const MapSchema& schema;
-      RTValue& source;
-      std::unordered_map<std::string, sptr_rtval> override_map;
+      Value& source;
+      std::unordered_map<std::string, sptr_val> override_map;
 
       Inspector(const MapSchema& schema,
-                RTValue& map,
-                std::unordered_map<std::string, sptr_rtval> overrides);
+                Value& map,
+                std::unordered_map<std::string, sptr_val> overrides);
 
-      sptr_rtval _get_value(const std::string& key, RTValue::Type type) const;
-      sptr_rtval _get_value(const std::string& key) const;
-      sptr_rtval _get_value_or_throw(const std::string& key, RTValue::Type type) const;
-      sptr_rtval _get_value_or_throw(const std::string& key) const;
+      sptr_val _get_value(const std::string& key, Value::Type type) const;
+      sptr_val _get_value(const std::string& key) const;
+      sptr_val _get_value_or_throw(const std::string& key, Value::Type type) const;
+      sptr_val _get_value_or_throw(const std::string& key) const;
 
      public:
       bool contains(const std::string& key) const;
 
-      sptr_rtval val(const std::string& key) const;
+      sptr_val val(const std::string& key) const;
       bool boolean(const std::string& key) const;
       bool boolean(const std::string& key, bool default_value) const;
       uint8_t ui8(const std::string& key) const;
       uint8_t ui8(const std::string& key, uint8_t default_value) const;
-      const RTValue::Number& num(const std::string& key) const;
+      const Value::Number& num(const std::string& key) const;
       int i32(const std::string& key) const;
       int i32(const std::string& key, int default_value) const;
       long i64(const std::string& key) const;
@@ -107,9 +107,9 @@ namespace Lisple
           return Lisple::obj<T>(*override_map.at(key));
         }
 
-        sptr_rtval obj_val = Lisple::Dict::get_property(source, key);
-        if (obj_val && (obj_val->type == RTValue::Type::OBJECT ||
-                        obj_val->type == RTValue::Type::NATIVE_OBJECT))
+        sptr_val obj_val = Lisple::Dict::get_property(source, key);
+        if (obj_val && (obj_val->type == Value::Type::OBJECT ||
+                        obj_val->type == Value::Type::NATIVE_OBJECT))
         {
           return Lisple::obj<T>(*Lisple::Dict::get_property(source, key));
         }
@@ -125,9 +125,9 @@ namespace Lisple
           return Lisple::obj<T>(*override_map.at(key));
         }
 
-        sptr_rtval obj_val = Lisple::Dict::get_property(source, key);
-        if (obj_val && (obj_val->type == RTValue::Type::OBJECT ||
-                        obj_val->type == RTValue::Type::NATIVE_OBJECT))
+        sptr_val obj_val = Lisple::Dict::get_property(source, key);
+        if (obj_val && (obj_val->type == Value::Type::OBJECT ||
+                        obj_val->type == Value::Type::NATIVE_OBJECT))
         {
           return Lisple::obj<T>(*Lisple::Dict::get_property(source, key));
         }
@@ -142,9 +142,9 @@ namespace Lisple
           return Lisple::obj<T>(*override_map.at(key));
         }
 
-        sptr_rtval obj_val = Lisple::Dict::get_property(source, key);
-        if (obj_val && (obj_val->type == RTValue::Type::OBJECT ||
-                        obj_val->type == RTValue::Type::NATIVE_OBJECT))
+        sptr_val obj_val = Lisple::Dict::get_property(source, key);
+        if (obj_val && (obj_val->type == Value::Type::OBJECT ||
+                        obj_val->type == Value::Type::NATIVE_OBJECT))
         {
           return Lisple::obj<T>(*Lisple::Dict::get_property(source, key));
         }
@@ -154,10 +154,10 @@ namespace Lisple
 
       template <typename T> std::optional<T> optional(const std::string& key) const
       {
-        sptr_rtval value = _get_value(key);
+        sptr_val value = _get_value(key);
         if (value)
         {
-          return RTValueReader<T>::read(value);
+          return ValueReader<T>::read(value);
         }
         return std::nullopt;
       }
@@ -177,7 +177,7 @@ namespace Lisple
     };
     MapSchema(const KVEntryMap& required_keys, const KVEntryMap& optional_keys = {});
 
-    Inspector bind(Context& ctx, RTValue& map);
+    Inspector bind(Context& ctx, Value& map);
   };
 } // namespace Lisple
 

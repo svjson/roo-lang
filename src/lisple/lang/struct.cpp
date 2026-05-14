@@ -22,11 +22,11 @@ namespace Lisple
                                         args.back()->to_string() + " '");
     }
 
-    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
+    sptr_val_v new_content = Lisple::get_children(*args[0]);
     for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
     {
-      sptr_rtval& assoc_key = args[assoc_arg_i];
-      sptr_rtval& value = args[assoc_arg_i + 1];
+      sptr_val& assoc_key = args[assoc_arg_i];
+      sptr_val& value = args[assoc_arg_i + 1];
 
       bool found = false;
       for (size_t i = 0; i < new_content.size(); i += 2)
@@ -46,14 +46,14 @@ namespace Lisple
       }
     }
 
-    return RTValue::map(std::move(new_content));
+    return Value::map(std::move(new_content));
   }
 
   EXEC_BODY(AssocFunction, exec_assoc_seq)
   {
-    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
+    sptr_val_v new_content = Lisple::get_children(*args[0]);
     int idx = args[1]->i32();
-    sptr_rtval& value = args.back();
+    sptr_val& value = args.back();
 
     if (idx >= static_cast<int>(new_content.size()))
     {
@@ -65,7 +65,7 @@ namespace Lisple
 
     new_content[idx] = value;
 
-    return RTValue::vector(std::move(new_content));
+    return Value::vector(std::move(new_content));
   }
 
   /* AssocBangFunction - assoc! */
@@ -93,7 +93,7 @@ namespace Lisple
 
   EXEC_BODY(AssocBangFunction, exec_assoc_seq_bang)
   {
-    if (auto* elements = std::get_if<sptr_rtval_v>(&args[0]->value))
+    if (auto* elements = std::get_if<sptr_val_v>(&args[0]->value))
     {
       size_t index = args[1]->i32();
       (*elements)[index] = args.back();
@@ -120,18 +120,18 @@ namespace Lisple
                                         args.back()->to_string() + " '");
     }
 
-    sptr_rtval result = args[0];
+    sptr_val result = args[0];
     for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
     {
-      const sptr_rtval& assoc_path_value = args[assoc_arg_i];
-      if (assoc_path_value->type == RTValue::Type::NIL ||
+      const sptr_val& assoc_path_value = args[assoc_arg_i];
+      if (assoc_path_value->type == Value::Type::NIL ||
           !Type::SEQ.is_type_of(*assoc_path_value))
       {
         throw TypeError("Path for assoc-in must be a sequence, got: " +
                         assoc_path_value->to_string());
       }
 
-      const sptr_rtval_v assoc_path = Lisple::get_children(*assoc_path_value);
+      const sptr_val_v assoc_path = Lisple::get_children(*assoc_path_value);
       if (assoc_path.empty())
       {
         throw InvocationException("Path for assoc-in cannot be empty.");
@@ -150,15 +150,15 @@ namespace Lisple
 
   EXEC_BODY(AssocInBangFunction, exec_assoc_in_bang)
   {
-    const sptr_rtval_v& assoc_path = args[1]->elements();
+    const sptr_val_v& assoc_path = args[1]->elements();
     if (assoc_path.empty())
     {
       throw InvocationException("Path for assoc-in! cannot be empty.");
     }
-    sptr_rtval value = args.back();
-    const sptr_rtval& assoc_key = assoc_path.back();
+    sptr_val value = args.back();
+    const sptr_val& assoc_key = assoc_path.back();
 
-    sptr_rtval target = args[0];
+    sptr_val target = args[0];
     for (size_t i = 0; i < assoc_path.size() - 1; i++)
     {
       target = Dict::get_property(target, *assoc_path[i]);
@@ -185,28 +185,27 @@ namespace Lisple
                                         args.back()->to_string() + " '");
     }
 
-    sptr_rtval result = args[0];
+    sptr_val result = args[0];
     for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
     {
-      sptr_rtval current_value = Dict::get_property(result, args[update_arg_i]);
-      const sptr_rtval& updater_spec = args[update_arg_i + 1];
+      sptr_val current_value = Dict::get_property(result, args[update_arg_i]);
+      const sptr_val& updater_spec = args[update_arg_i + 1];
 
       Executable* updater = nullptr;
-      sptr_rtval_v updater_args{current_value};
-      if (updater_spec->type != RTValue::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
+      sptr_val_v updater_args{current_value};
+      if (updater_spec->type != Value::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
       {
         updater = &updater_spec->exec();
       }
-      else if (updater_spec->type != RTValue::Type::NIL &&
-               updater_spec->type != RTValue::Type::MAP &&
-               Type::SEQ.is_type_of(*updater_spec))
+      else if (updater_spec->type != Value::Type::NIL &&
+               updater_spec->type != Value::Type::MAP && Type::SEQ.is_type_of(*updater_spec))
       {
-        sptr_rtval_v spec_parts = Lisple::get_children(*updater_spec);
+        sptr_val_v spec_parts = Lisple::get_children(*updater_spec);
         if (spec_parts.empty())
         {
           throw InvocationException("Updater spec for update cannot be empty.");
         }
-        if (spec_parts[0]->type == RTValue::Type::NIL ||
+        if (spec_parts[0]->type == Value::Type::NIL ||
             !Type::EXEC.is_type_of(*spec_parts[0]))
         {
           throw TypeError("Updater spec for update must begin with an executable, got: " +
@@ -226,8 +225,8 @@ namespace Lisple
                         updater_spec->to_string());
       }
 
-      sptr_rtval updated_value = updater->execute(ctx, updater_args);
-      sptr_rtval new_result = Dict::shallow_copy(result);
+      sptr_val updated_value = updater->execute(ctx, updater_args);
+      sptr_val new_result = Dict::shallow_copy(result);
       Dict::set_property(new_result, args[update_arg_i], updated_value);
       result = new_result;
     }
@@ -251,42 +250,41 @@ namespace Lisple
                                         args.back()->to_string() + " '");
     }
 
-    sptr_rtval result = args[0];
+    sptr_val result = args[0];
     for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
     {
-      const sptr_rtval& assoc_path_value = args[update_arg_i];
-      if (assoc_path_value->type == RTValue::Type::NIL ||
+      const sptr_val& assoc_path_value = args[update_arg_i];
+      if (assoc_path_value->type == Value::Type::NIL ||
           !Type::SEQ.is_type_of(*assoc_path_value))
       {
         throw TypeError("Path for update-in must be a sequence, got: " +
                         assoc_path_value->to_string());
       }
 
-      const sptr_rtval_v assoc_path = Lisple::get_children(*assoc_path_value);
+      const sptr_val_v assoc_path = Lisple::get_children(*assoc_path_value);
       if (assoc_path.empty())
       {
         throw InvocationException("Path for update-in cannot be empty.");
       }
 
-      sptr_rtval current_value = Dict::get_property_path(result, assoc_path);
-      const sptr_rtval& updater_spec = args[update_arg_i + 1];
+      sptr_val current_value = Dict::get_property_path(result, assoc_path);
+      const sptr_val& updater_spec = args[update_arg_i + 1];
 
       Executable* updater = nullptr;
-      sptr_rtval_v updater_args{current_value};
-      if (updater_spec->type != RTValue::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
+      sptr_val_v updater_args{current_value};
+      if (updater_spec->type != Value::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
       {
         updater = &updater_spec->exec();
       }
-      else if (updater_spec->type != RTValue::Type::NIL &&
-               updater_spec->type != RTValue::Type::MAP &&
-               Type::SEQ.is_type_of(*updater_spec))
+      else if (updater_spec->type != Value::Type::NIL &&
+               updater_spec->type != Value::Type::MAP && Type::SEQ.is_type_of(*updater_spec))
       {
-        sptr_rtval_v spec_parts = Lisple::get_children(*updater_spec);
+        sptr_val_v spec_parts = Lisple::get_children(*updater_spec);
         if (spec_parts.empty())
         {
           throw InvocationException("Updater spec for update-in cannot be empty.");
         }
-        if (spec_parts[0]->type == RTValue::Type::NIL ||
+        if (spec_parts[0]->type == Value::Type::NIL ||
             !Type::EXEC.is_type_of(*spec_parts[0]))
         {
           throw TypeError("Updater spec for update-in must begin with an executable, got: " +
@@ -307,7 +305,7 @@ namespace Lisple
           updater_spec->to_string());
       }
 
-      sptr_rtval updated_value = updater->execute(ctx, updater_args);
+      sptr_val updated_value = updater->execute(ctx, updater_args);
       result = Dict::assoc_in(result, assoc_path, updated_value);
     }
 
@@ -346,8 +344,8 @@ namespace Lisple
       return Constant::NIL;
     }
 
-    const sptr_rtval_v& map_elements = args[0]->elements();
-    sptr_rtval_v new_map_elements;
+    const sptr_val_v& map_elements = args[0]->elements();
+    sptr_val_v new_map_elements;
 
     for (size_t i = 0; i < map_elements.size(); i += 2)
     {
@@ -358,7 +356,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::map(new_map_elements);
+    return Value::map(new_map_elements);
   }
 
   /* DissocBangFunction - dissoc! */
@@ -382,7 +380,7 @@ namespace Lisple
 
   EXEC_BODY(KeysFunction, exec_keys)
   {
-    return RTValue::vector(Dict::map_sptr_keys(args[0]));
+    return Value::vector(Dict::map_sptr_keys(args[0]));
   }
 
   /** MergeFunction - merge */
@@ -392,12 +390,12 @@ namespace Lisple
 
   EXEC_BODY(MergeFunction, exec_merge)
   {
-    sptr_rtval_v new_content = Lisple::get_children(*args[0]);
+    sptr_val_v new_content = Lisple::get_children(*args[0]);
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      if (args[i]->type == RTValue::Type::NIL) continue;
-      const sptr_rtval_v& other = Lisple::get_children(*args[i]);
+      if (args[i]->type == Value::Type::NIL) continue;
+      const sptr_val_v& other = Lisple::get_children(*args[i]);
       for (size_t j = 0; j < other.size(); j += 2)
       {
         bool found = false;
@@ -418,7 +416,7 @@ namespace Lisple
       }
     }
 
-    return RTValue::map(std::move(new_content));
+    return Value::map(std::move(new_content));
   }
 
   /* ReduceKeyValueFunction - reduce-kv */
@@ -428,14 +426,14 @@ namespace Lisple
 
   EXEC_BODY(ReduceKeyValueFunction, exec_reduce_kv)
   {
-    sptr_rtval result = args[1];
+    sptr_val result = args[1];
     Executable& reducer = args.back()->exec();
 
     for (auto key : Dict::map_sptr_keys(args[0]))
     {
-      sptr_rtval_v reducer_args{result, key, Dict::get_property(args[0], *key)};
+      sptr_val_v reducer_args{result, key, Dict::get_property(args[0], *key)};
 
-      sptr_rtval new_result = reducer.execute(ctx, reducer_args);
+      sptr_val new_result = reducer.execute(ctx, reducer_args);
       if (new_result.get() != result.get())
       {
         result.swap(new_result);
@@ -452,17 +450,17 @@ namespace Lisple
 
   EXEC_BODY(SelectKeysFunction, exec_select_keys)
   {
-    sptr_rtval_v new_content;
+    sptr_val_v new_content;
     for (auto& key : Lisple::get_children(*args[1]))
     {
-      sptr_rtval value = Dict::get_property(args[0], *key);
-      if (value->type != RTValue::Type::NIL)
+      sptr_val value = Dict::get_property(args[0], *key);
+      if (value->type != Value::Type::NIL)
       {
         new_content.push_back(key);
         new_content.push_back(value);
       }
     }
-    return RTValue::map(std::move(new_content));
+    return Value::map(std::move(new_content));
   }
 
 } // namespace Lisple

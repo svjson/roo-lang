@@ -49,7 +49,7 @@ namespace Lisple
   {
   }
 
-  bool Argument::matches(RTValue& obj) const
+  bool Argument::matches(Value& obj) const
   {
     return type->is_type_of(obj);
   }
@@ -63,7 +63,7 @@ namespace Lisple
     return true;
   }
 
-  CoercionResult Argument::coerce(Context& ctx, sptr_rtval& obj) const
+  CoercionResult Argument::coerce(Context& ctx, sptr_val& obj) const
   {
     return type->coerce(ctx, obj);
   }
@@ -107,9 +107,9 @@ namespace Lisple
     this->eval_pattern = std::make_unique<EvalPattern>(arg_modes);
   }
 
-  Signature::Signature(arg_v args, exec_rtval_fn exec_func)
+  Signature::Signature(arg_v args, exec_val_fn exec_func)
     : arguments(args)
-    , exec_rtval(exec_func)
+    , exec_val(exec_func)
   {
     std::vector<const EvalMode*> arg_modes;
     for (auto& arg : arguments)
@@ -126,7 +126,7 @@ namespace Lisple
   }
 
   Signature::Signature(arg_v args,
-                       exec_rtval_fn exec_func,
+                       exec_val_fn exec_func,
                        size_t optional_count,
                        bool has_rest)
     : Signature(args, exec_func)
@@ -150,9 +150,9 @@ namespace Lisple
     return has_rest;
   }
 
-  sptr_rtval_v Signature::coerce_args(Context& ctx, sptr_rtval_v& args)
+  sptr_val_v Signature::coerce_args(Context& ctx, sptr_val_v& args)
   {
-    sptr_rtval_v coerced;
+    sptr_val_v coerced;
     coerced.reserve(args.size());
 
     if (args.size() == arguments.size())
@@ -190,7 +190,7 @@ namespace Lisple
 
   bool Signature::supports_rt_value() const
   {
-    return this->exec_rtval != nullptr;
+    return this->exec_val != nullptr;
   }
 
   bool Signature::is_lazy_eval() const
@@ -247,7 +247,7 @@ namespace Lisple
     return true;
   }
 
-  bool Signature::matches(const sptr_rtval_v& args) const
+  bool Signature::matches(const sptr_val_v& args) const
   {
     size_t args_size = args.size();
     size_t arguments_size = arguments.size();
@@ -320,7 +320,7 @@ namespace Lisple
                               ". Are varargs correcly applied?");
   }
 
-  sptr_rtval Signature::invoke(Context& ctx, SpecialFormNode& snode)
+  sptr_val Signature::invoke(Context& ctx, SpecialFormNode& snode)
   {
     if (exec_func)
     {
@@ -329,27 +329,27 @@ namespace Lisple
     throw LispleException("Bad execution path - Exec node execution not supported");
   }
 
-  sptr_rtval Signature::invoke(Context& ctx, sptr_rtval_v& args)
+  sptr_val Signature::invoke(Context& ctx, sptr_val_v& args)
   {
     if (this->supports_rt_value())
     {
       if (!this->matches(args))
       {
-        sptr_rtval_v coerced_args = coerce_args(ctx, args);
+        sptr_val_v coerced_args = coerce_args(ctx, args);
         if (coerced_args.size())
         {
-          return exec_rtval(ctx, coerced_args);
+          return exec_val(ctx, coerced_args);
         }
         else
         {
           throw InvocationException(
-            "Could not apply args: " + RTValue::vector(args)->to_string() +
+            "Could not apply args: " + Value::vector(args)->to_string() +
             " to signature expecting: " + this->to_string() + ".");
         }
       }
       else
       {
-        return exec_rtval(ctx, args);
+        return exec_val(ctx, args);
       }
     }
 
@@ -441,7 +441,7 @@ namespace Lisple
     return signatures;
   }
 
-  sptr_rtval Executable::execute(Context& ctx, sptr_rtval_v& args)
+  sptr_val Executable::execute(Context& ctx, sptr_val_v& args)
   {
     for (auto& signature : signatures)
     {
@@ -451,7 +451,7 @@ namespace Lisple
         {
           return signature->invoke(ctx, args);
         }
-        throw InvocationException("Signature does not support RTValue execution: " +
+        throw InvocationException("Signature does not support Value execution: " +
                                   signature->to_string());
       }
     }
@@ -460,7 +460,7 @@ namespace Lisple
     {
       if (!signature->supports_rt_value()) continue;
 
-      sptr_rtval_v coerced_args = signature->coerce_args(ctx, args);
+      sptr_val_v coerced_args = signature->coerce_args(ctx, args);
       if (coerced_args.size())
       {
         return signature->invoke(ctx, coerced_args);
@@ -468,7 +468,7 @@ namespace Lisple
     }
 
     throw InvocationException("No matching signature: " +
-                              Lisple::RTValue::vector(args)->to_string());
+                              Lisple::Value::vector(args)->to_string());
   }
 
   Function::Function(uptr_sig signature)
@@ -488,7 +488,7 @@ namespace Lisple
 
   DetachedFunction::DetachedFunction(std::shared_ptr<Context> ctx,
                                      std::shared_ptr<Function>& fun,
-                                     sptr_rtval_v bound_args)
+                                     sptr_val_v bound_args)
     : Function(make_detached_signature(*fun))
     , ctx(ctx)
     , fun(fun)
@@ -498,7 +498,7 @@ namespace Lisple
 
   std::shared_ptr<DetachedFunction> DetachedFunction::make_detached(Context& ctx,
                                                                     sptr_executable fun_obj,
-                                                                    sptr_rtval_v bound_args)
+                                                                    sptr_val_v bound_args)
   {
     std::shared_ptr<Function> fun = std::dynamic_pointer_cast<Function>(fun_obj);
 
@@ -513,10 +513,10 @@ namespace Lisple
     {
       if (sig->supports_rt_value())
       {
-        exec_rtval_fn disp_target = std::bind(&DetachedFunction::dispatch_detached,
-                                              this,
-                                              std::placeholders::_1,
-                                              std::placeholders::_2);
+        exec_val_fn disp_target = std::bind(&DetachedFunction::dispatch_detached,
+                                            this,
+                                            std::placeholders::_1,
+                                            std::placeholders::_2);
         sigs.push_back(std::make_unique<Signature>(sig->get_arguments(),
                                                    disp_target,
                                                    sig->get_optional_count(),
@@ -530,12 +530,12 @@ namespace Lisple
     return sigs;
   }
 
-  sptr_rtval DetachedFunction::execute(Context& ctx, sptr_rtval_v& args)
+  sptr_val DetachedFunction::execute(Context& ctx, sptr_val_v& args)
   {
     return dispatch_detached(ctx, args);
   }
 
-  sptr_rtval DetachedFunction::dispatch_detached(Context&, sptr_rtval_v& args)
+  sptr_val DetachedFunction::dispatch_detached(Context&, sptr_val_v& args)
   {
     if (bound_args.empty())
     {
@@ -546,7 +546,7 @@ namespace Lisple
       return fun->execute(*this->ctx, bound_args);
     }
 
-    sptr_rtval_v merged_args;
+    sptr_val_v merged_args;
     for (auto& arg : args)
     {
       merged_args.push_back(arg);
@@ -558,7 +558,7 @@ namespace Lisple
     return fun->execute(*this->ctx, merged_args);
   }
 
-  sptr_rtval DetachedFunction::execute_bound(sptr_rtval_v& args)
+  sptr_val DetachedFunction::execute_bound(sptr_val_v& args)
   {
     return fun->execute(*ctx, args);
   }
@@ -596,7 +596,7 @@ namespace Lisple
     return "#'" + home_ns + "/" + name;
   }
 
-  sptr_rtval UserFunction::exec_body(Context& ctx, sptr_rtval_v& args)
+  sptr_val UserFunction::exec_body(Context& ctx, sptr_val_v& args)
   {
     user_function_rtval_invocations++;
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
@@ -609,13 +609,13 @@ namespace Lisple
     for (size_t i = 0; i < this->optional_count; i++)
     {
       const size_t arg_idx = this->required_count + i;
-      const sptr_rtval& val = arg_idx < args.size() ? args[arg_idx] : Constant::NIL;
+      const sptr_val& val = arg_idx < args.size() ? args[arg_idx] : Constant::NIL;
       arg_binding[arg_idx]->apply(fn_scope, val);
     }
     if (this->rest_binding)
     {
       const size_t rest_start = this->required_count + this->optional_count;
-      sptr_rtval_v rest_args;
+      sptr_val_v rest_args;
       if (rest_start < args.size())
       {
         rest_args.assign(args.begin() + rest_start, args.end());
@@ -623,7 +623,7 @@ namespace Lisple
       this->rest_binding->apply(fn_scope, rest_args);
     }
     ctx.push_context(true, fn_scope);
-    sptr_rtval retval = body.empty() ? Constant::NIL : nullptr;
+    sptr_val retval = body.empty() ? Constant::NIL : nullptr;
 
     for (auto& node : body)
     {
@@ -673,7 +673,7 @@ namespace Lisple
   {
   }
 
-  sptr_rtval SpecialForm::exec_node(Context& ctx, SpecialFormNode& node) const
+  sptr_val SpecialForm::exec_node(Context& ctx, SpecialFormNode& node) const
   {
     for (auto& sig : signatures)
     {
@@ -717,7 +717,7 @@ namespace Lisple
       }
 
       auto rt_arg = to_rt_value(*arg);
-      if (rt_arg->type == RTValue::Type::SYMBOL)
+      if (rt_arg->type == Value::Type::SYMBOL)
       {
         const std::string& sym = std::get<std::string>(rt_arg->value);
         if (sym == "&")
@@ -768,7 +768,7 @@ namespace Lisple
   }
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
-                                                sptr_rtval_v& arg_vector,
+                                                sptr_val_v& arg_vector,
                                                 ptr_exec_node_v& body)
   {
     std::vector<Argument> arg_types;
@@ -780,13 +780,13 @@ namespace Lisple
     for (size_t idx = 0; idx < arg_vector.size(); idx++)
     {
       auto& arg = arg_vector[idx];
-      if (arg->type != RTValue::Type::SYMBOL && arg->type != RTValue::Type::MAP)
+      if (arg->type != Value::Type::SYMBOL && arg->type != Value::Type::MAP)
       {
         throw LispleException("Illegal fn argument declaration: " +
-                              RTValue::vector(arg_vector)->to_string());
+                              Value::vector(arg_vector)->to_string());
       }
 
-      if (arg->type == RTValue::Type::SYMBOL)
+      if (arg->type == Value::Type::SYMBOL)
       {
         const std::string& sym = std::get<std::string>(arg->value);
         if (sym == "&")
@@ -794,7 +794,7 @@ namespace Lisple
           if (in_optional)
           {
             throw LispleException("Duplicate & in argument list: " +
-                                  RTValue::vector(arg_vector)->to_string());
+                                  Value::vector(arg_vector)->to_string());
           }
           in_optional = true;
           continue;
@@ -804,7 +804,7 @@ namespace Lisple
           if (idx != arg_vector.size() - 1)
           {
             throw LispleException("Rest parameter must be last in argument list: " +
-                                  RTValue::vector(arg_vector)->to_string());
+                                  Value::vector(arg_vector)->to_string());
           }
           rest_binding = std::make_unique<RestBinding>(sym.substr(1));
           break;

@@ -47,26 +47,26 @@ namespace Lisple
   struct CoercionResult
   {
     bool success;
-    sptr_rtval result;
+    sptr_val result;
   };
 
   /*! @brief Basic type reference and identifier for built-in Lisple types */
   class TypeRef
   {
    protected:
-    const RTValue::Type value_type;
+    const Value::Type value_type;
     const Form form_type;
 
    public:
     const std::string name;
 
-    TypeRef(RTValue::Type value_type, Form form_type, const std::string& name);
+    TypeRef(Value::Type value_type, Form form_type, const std::string& name);
     virtual ~TypeRef() = default;
 
-    virtual bool is_type_of(const RTValue& val) const;
+    virtual bool is_type_of(const Value& val) const;
     virtual bool is_type_of(const AST::ASTNode& obj) const;
 
-    virtual CoercionResult coerce(Context& ctx, sptr_rtval& val) const;
+    virtual CoercionResult coerce(Context& ctx, sptr_val& val) const;
 
     virtual bool is_host_object() const;
 
@@ -83,9 +83,9 @@ namespace Lisple
    public:
     MultiRef(std::vector<const TypeRef*> types, const std::string& name);
 
-    bool is_type_of(const RTValue& val) const override;
+    bool is_type_of(const Value& val) const override;
     bool is_type_of(const AST::ASTNode& obj) const override;
-    CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
+    CoercionResult coerce(Context& ctx, sptr_val& val) const override;
   };
 
   /*! @brief Type reference for when any type is acceptable */
@@ -93,7 +93,7 @@ namespace Lisple
   {
    public:
     AnyRef();
-    bool is_type_of(const RTValue& val) const override;
+    bool is_type_of(const Value& val) const override;
     bool is_type_of(const AST::ASTNode& obj) const override;
   };
 
@@ -109,33 +109,33 @@ namespace Lisple
    public:
     SeqRef(const TypeRef* seq_type, const TypeRef* child_type, const std::string& name);
 
-    bool is_type_of(const RTValue& val) const override;
+    bool is_type_of(const Value& val) const override;
     bool is_type_of(const AST::ASTNode& obj) const override;
-    CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
+    CoercionResult coerce(Context& ctx, sptr_val& val) const override;
   };
 
   namespace Type
   {
-    inline const TypeRef LIST(RTValue::Type::LIST, Form::LIST, "List");
-    inline const TypeRef VECTOR(RTValue::Type::VECTOR, Form::VECTOR, "Vector");
-    inline const TypeRef BOOL(RTValue::Type::BOOL, Form::BOOLEAN, "Boolean");
-    inline const TypeRef CHAR(RTValue::Type::CHAR, Form::CHAR, "Char");
-    inline const TypeRef MAP(RTValue::Type::MAP, Form::MAP, "Map");
-    inline const TypeRef STRING(RTValue::Type::STRING, Form::STRING, "String");
-    inline const TypeRef NUMBER(RTValue::Type::NUMBER, Form::NUMBER, "Number");
-    inline const TypeRef SYMBOL(RTValue::Type::SYMBOL, Form::SYMBOL, "Symbol");
-    inline const TypeRef QUOTED_SYMBOL(RTValue::Type::SYMBOL,
+    inline const TypeRef LIST(Value::Type::LIST, Form::LIST, "List");
+    inline const TypeRef VECTOR(Value::Type::VECTOR, Form::VECTOR, "Vector");
+    inline const TypeRef BOOL(Value::Type::BOOL, Form::BOOLEAN, "Boolean");
+    inline const TypeRef CHAR(Value::Type::CHAR, Form::CHAR, "Char");
+    inline const TypeRef MAP(Value::Type::MAP, Form::MAP, "Map");
+    inline const TypeRef STRING(Value::Type::STRING, Form::STRING, "String");
+    inline const TypeRef NUMBER(Value::Type::NUMBER, Form::NUMBER, "Number");
+    inline const TypeRef SYMBOL(Value::Type::SYMBOL, Form::SYMBOL, "Symbol");
+    inline const TypeRef QUOTED_SYMBOL(Value::Type::SYMBOL,
                                        Form::QUOTED_SYMBOL,
                                        "QuotedSymbol");
-    inline const TypeRef KEYWORD(RTValue::Type::KEYWORD, Form::KEYWORD, "Keyword");
-    inline const TypeRef FUNCTION(RTValue::Type::FUNCTION, Form::FUNCTION, "Function");
-    inline const TypeRef MACRO(RTValue::Type::FUNCTION, Form::MACRO, "Macro");
-    inline const TypeRef HOST_OBJECT(RTValue::Type::OBJECT, Form::HOST_OBJECT, "HostObject");
-    inline const TypeRef NATIVE_OBJECT(RTValue::Type::NATIVE_OBJECT,
+    inline const TypeRef KEYWORD(Value::Type::KEYWORD, Form::KEYWORD, "Keyword");
+    inline const TypeRef FUNCTION(Value::Type::FUNCTION, Form::FUNCTION, "Function");
+    inline const TypeRef MACRO(Value::Type::FUNCTION, Form::MACRO, "Macro");
+    inline const TypeRef HOST_OBJECT(Value::Type::OBJECT, Form::HOST_OBJECT, "HostObject");
+    inline const TypeRef NATIVE_OBJECT(Value::Type::NATIVE_OBJECT,
                                        Form::HOST_OBJECT,
                                        "NativeObject");
-    inline const TypeRef HOST_SEQ(RTValue::Type::OBJECT, Form::HOST_SEQ, "HostSeq");
-    inline const TypeRef NIL(RTValue::Type::NIL, Form::NIL, "nil");
+    inline const TypeRef HOST_SEQ(Value::Type::OBJECT, Form::HOST_SEQ, "HostSeq");
+    inline const TypeRef NIL(Value::Type::NIL, Form::NIL, "nil");
 
     inline const MultiRef QUALIFIABLE({&KEYWORD, &SYMBOL, &QUOTED_SYMBOL}, "Qualifiable");
     inline const MultiRef SYMBOL_VALUE({&SYMBOL, &QUOTED_SYMBOL}, "Symbol");

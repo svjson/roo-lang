@@ -43,11 +43,11 @@
 
 #define EXEC_DECL(DISP_NAME) \
   /*! @brief Native executable implementation */                        \
-  Lisple::sptr_rtval DISP_NAME(Lisple::Context& ctx, Lisple::sptr_rtval_v& args);
+  Lisple::sptr_val DISP_NAME(Lisple::Context& ctx, Lisple::sptr_val_v& args);
 
 #define EXECNODE_DECL(DISP_NAME) \
   /*! @brief Native special form executable implementation */                        \
-  Lisple::sptr_rtval DISP_NAME(Lisple::Context& ctx, Lisple::SpecialFormNode& snode);
+  Lisple::sptr_val DISP_NAME(Lisple::Context& ctx, Lisple::SpecialFormNode& snode);
 
 // clang-format on
 
@@ -62,9 +62,9 @@
 
 #define FUNC_MAKE(EXEC_NAME) \
   template <typename... Args> \
-  static Lisple::sptr_rtval make(Args&&... args) \
+  static Lisple::sptr_val make(Args&&... args) \
   { \
-  return Lisple::RTValue::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
+  return Lisple::Value::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
 }
 
 #define SFORM_LOWER_DECL Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx, const Lisple::sptr_sobject& ast_node);
@@ -135,9 +135,9 @@
   FUNC_NAME::FUNC_NAME()                                                                \
     : Function(SIGNATURE) { }
 
-#define EXEC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_rtval_v& args)
+#define EXEC_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_val FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::sptr_val_v& args)
 
-#define EXECNODE_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_rtval FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::SpecialFormNode& snode)
+#define EXECNODE_BODY(FUNC_NAME, DISP_NAME) Lisple::sptr_val FUNC_NAME::DISP_NAME([[maybe_unused]]Lisple::Context& ctx, [[maybe_unused]]Lisple::SpecialFormNode& snode)
 
 #define SPECIAL_FORM_DECL(FUNC_NAME, ...) __SELECT_MACRO__3(__VA_ARGS__, SFORM_DECL3, SFORM_DECL2, SFORM_DECL1)(FUNC_NAME, Lisple::SpecialForm, __VA_ARGS__)
 
@@ -187,9 +187,9 @@ namespace Lisple
     virtual ~Argument() = default;
 
     bool is_vararg() const;
-    bool matches(RTValue&) const;
+    bool matches(Value&) const;
     bool matches(const uptr_exec_node&) const;
-    CoercionResult coerce(Context& ctx, sptr_rtval& obj) const;
+    CoercionResult coerce(Context& ctx, sptr_val& obj) const;
     /**
      * @brief Query if the argument should be evaluated before being
      * passed to the target executable form, or if it should be passed
@@ -208,8 +208,8 @@ namespace Lisple
     std::string to_string() const;
   };
 
-  typedef std::function<sptr_rtval(Context&, SpecialFormNode&)> exec_node_fn;
-  typedef std::function<sptr_rtval(Context&, sptr_rtval_v&)> exec_rtval_fn;
+  typedef std::function<sptr_val(Context&, SpecialFormNode&)> exec_node_fn;
+  typedef std::function<sptr_val(Context&, sptr_val_v&)> exec_val_fn;
 
   /*!
    * @brief Signature
@@ -219,7 +219,7 @@ namespace Lisple
    protected:
     const std::vector<Argument> arguments;
     exec_node_fn exec_func = nullptr;
-    exec_rtval_fn exec_rtval = nullptr;
+    exec_val_fn exec_val = nullptr;
 
     /*!
      * @brief flag signalling if arguments contains a vararg Argument.
@@ -242,9 +242,9 @@ namespace Lisple
     std::unique_ptr<EvalPattern> eval_pattern;
 
     Signature(std::vector<Argument> arguments, exec_node_fn);
-    Signature(std::vector<Argument> arguments, exec_rtval_fn);
+    Signature(std::vector<Argument> arguments, exec_val_fn);
     Signature(std::vector<Argument> arguments,
-              exec_rtval_fn,
+              exec_val_fn,
               size_t optional_count,
               bool has_rest);
 
@@ -255,7 +255,7 @@ namespace Lisple
     bool supports_exec_tree() const;
     bool supports_rt_value() const;
     bool is_lazy_eval() const;
-    bool matches(const sptr_rtval_v& args) const;
+    bool matches(const sptr_val_v& args) const;
     bool matches(const uptr_exec_node_v& args) const;
     bool is_literal_arg(std::size_t index) const;
     bool is_literal_arg(std::size_t index, std::size_t n) const;
@@ -267,10 +267,10 @@ namespace Lisple
      * @brief Attempt to coerce arguments list to fit the Signature by inspecting
      * the signature types for possible conversions
      */
-    sptr_rtval_v coerce_args(Context& ctx, sptr_rtval_v& args);
+    sptr_val_v coerce_args(Context& ctx, sptr_val_v& args);
 
-    sptr_rtval invoke(Context& ctx, SpecialFormNode& args);
-    sptr_rtval invoke(Context& ctx, sptr_rtval_v& args);
+    sptr_val invoke(Context& ctx, SpecialFormNode& args);
+    sptr_val invoke(Context& ctx, sptr_val_v& args);
     std::string to_string() const;
   };
 
@@ -299,7 +299,7 @@ namespace Lisple
 
     bool requires_late_binding(CallNode& args);
 
-    virtual Lisple::sptr_rtval execute(Context& ctx, sptr_rtval_v& args);
+    virtual Lisple::sptr_val execute(Context& ctx, sptr_val_v& args);
     virtual std::string to_string(int depth = -1) const = 0;
 
     friend class HostTypeRef;
@@ -324,24 +324,24 @@ namespace Lisple
   {
     std::shared_ptr<Context> ctx;
     std::shared_ptr<Function> fun;
-    sptr_rtval_v bound_args;
+    sptr_val_v bound_args;
 
     std::vector<std::unique_ptr<Signature>> make_detached_signature(Function& fn);
 
    public:
     DetachedFunction(std::shared_ptr<Context> ctx,
                      std::shared_ptr<Function>& function,
-                     sptr_rtval_v bounds_args = {});
+                     sptr_val_v bounds_args = {});
 
     static std::shared_ptr<DetachedFunction> make_detached(Context& ctx,
                                                            sptr_executable fun_obj,
-                                                           sptr_rtval_v bound_args = {});
+                                                           sptr_val_v bound_args = {});
 
-    const sptr_rtval_v get_bound_arguments() const;
+    const sptr_val_v get_bound_arguments() const;
 
-    sptr_rtval execute(Context&, sptr_rtval_v& args) override;
-    sptr_rtval execute_bound(sptr_rtval_v& args);
-    sptr_rtval dispatch_detached(Context&, sptr_rtval_v& args);
+    sptr_val execute(Context&, sptr_val_v& args) override;
+    sptr_val execute_bound(sptr_val_v& args);
+    sptr_val dispatch_detached(Context&, sptr_val_v& args);
   };
 
   /*!
@@ -382,7 +382,7 @@ namespace Lisple
 
     std::string to_string(int depth = -1) const override;
 
-    sptr_rtval exec_body(Lisple::Context& ctx, sptr_rtval_v& args);
+    sptr_val exec_body(Lisple::Context& ctx, sptr_val_v& args);
   };
 
   class Macro : public Executable
@@ -405,7 +405,7 @@ namespace Lisple
     virtual Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx,
                                               const Lisple ::sptr_sobject& ast_node) = 0;
 
-    sptr_rtval exec_node(Context& ctx, SpecialFormNode& node) const;
+    sptr_val exec_node(Context& ctx, SpecialFormNode& node) const;
   };
 
   std::shared_ptr<UserFunction> create_function(const std::string& name,
@@ -415,7 +415,7 @@ namespace Lisple
                                                 sptr_sobject_v& body);
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
-                                                sptr_rtval_v& param_form,
+                                                sptr_val_v& param_form,
                                                 ptr_exec_node_v& body);
 
 } // namespace Lisple

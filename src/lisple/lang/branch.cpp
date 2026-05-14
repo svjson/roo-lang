@@ -29,18 +29,18 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
 
   AST::Keyword DEFAULT = AST::Keyword("default");
   EXECNODE_BODY(CaseForm, execnode_case)
   {
-    static sptr_rtval DEFAULT_KEY = RTValue::keyword("default");
-    sptr_rtval value = exec(ctx, *snode.exec_nodes[0]);
+    static sptr_val DEFAULT_KEY = Value::keyword("default");
+    sptr_val value = exec(ctx, *snode.exec_nodes[0]);
 
     for (size_t i = 1; i < snode.exec_nodes.size(); i += 2)
     {
-      sptr_rtval case_selector = exec(ctx, *snode.exec_nodes[i]);
+      sptr_val case_selector = exec(ctx, *snode.exec_nodes[i]);
       if (*value == *case_selector || *DEFAULT_KEY == *case_selector)
       {
         return exec(ctx, *snode.exec_nodes[i + 1]);
@@ -71,11 +71,11 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
   EXECNODE_BODY(CondForm, execnode_cond)
   {
-    Lisple::sptr_rtval cond_result;
+    Lisple::sptr_val cond_result;
     for (size_t i = 0; i < snode.exec_nodes.size(); i += 2)
     {
       cond_result = exec(ctx, *snode.exec_nodes[i]);
@@ -113,7 +113,7 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
   EXECNODE_BODY(IfForm, execnode_if)
   {
@@ -150,11 +150,11 @@ namespace Lisple
     }
 
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, sptr_rtval_v{}, std::move(exec_nodes)));
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
   }
   EXECNODE_BODY(WhenForm, execnode_when)
   {
-    sptr_rtval result = Constant::NIL;
+    sptr_val result = Constant::NIL;
 
     if (Lisple::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
     {

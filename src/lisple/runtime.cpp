@@ -233,11 +233,11 @@ namespace Lisple
     switch_namespace(current_ns);
   }
 
-  sptr_rtval Runtime::eval(Context& ctx, const std::string& str)
+  sptr_val Runtime::eval(Context& ctx, const std::string& str)
   {
     sptr_sobject_v script = sexp_reader.read_sexps(str);
 
-    sptr_rtval result;
+    sptr_val result;
 
     for (auto& sexp : script)
     {
@@ -246,30 +246,30 @@ namespace Lisple
     return result;
   }
 
-  sptr_rtval Runtime::eval(const std::string& str)
+  sptr_val Runtime::eval(const std::string& str)
   {
     Context ctx(*this);
     return this->eval(ctx, str);
   }
 
-  sptr_rtval Runtime::eval(const sptr_sobject& statement)
+  sptr_val Runtime::eval(const sptr_sobject& statement)
   {
     Context ctx(*this);
     return this->eval(ctx, statement);
   }
 
-  sptr_rtval Runtime::eval(Context& ctx, const sptr_sobject& form)
+  sptr_val Runtime::eval(Context& ctx, const sptr_sobject& form)
   {
     LowerContext lctx{&ctx};
     auto exec_node = lower_expr(lctx, form);
     return Lisple::exec(ctx, *exec_node);
   }
 
-  sptr_rtval Runtime::invoke(const std::string& function, sptr_rtval_v& args)
+  sptr_val Runtime::invoke(const std::string& function, sptr_val_v& args)
   {
     Context ctx(*this);
-    sptr_rtval inv = lookup(function);
-    if (inv->type != RTValue::Type::FUNCTION)
+    sptr_val inv = lookup(function);
+    if (inv->type != Value::Type::FUNCTION)
     {
       throw new InvocationException(inv->to_string() + " is not executable.");
     }
@@ -286,7 +286,7 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Runtime::lookup(const std::string& identifier, const sptr_rtval& default_value)
+  sptr_val Runtime::lookup(const std::string& identifier, const sptr_val& default_value)
   {
     try
     {
@@ -298,9 +298,9 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Runtime::lookup(const RTValue& identifier)
+  sptr_val Runtime::lookup(const Value& identifier)
   {
-    if (identifier.type != RTValue::Type::SYMBOL)
+    if (identifier.type != Value::Type::SYMBOL)
     {
       throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }
@@ -308,7 +308,7 @@ namespace Lisple
     return lookup(identifier.str());
   }
 
-  sptr_rtval Runtime::lookup(const std::string& identifier_s)
+  sptr_val Runtime::lookup(const std::string& identifier_s)
   {
     AST::Symbol identifier(identifier_s);
     if (identifier.is_qualified())
@@ -319,19 +319,19 @@ namespace Lisple
         return _ns->lookup(identifier.get_identifier());
       }
 
-      sptr_rtval result = current_namespace->lookup(identifier.to_string());
+      sptr_val result = current_namespace->lookup(identifier.to_string());
       if (result) return result;
 
       throw IdentifierException("Unknown identifier: '" + identifier.to_string() + "'");
     }
 
-    sptr_rtval lang_obj = lang.lookup(identifier.get_identifier());
+    sptr_val lang_obj = lang.lookup(identifier.get_identifier());
     if (lang_obj.get())
     {
       return lang_obj;
     }
 
-    sptr_rtval ns_obj = current_namespace->lookup(identifier.get_identifier());
+    sptr_val ns_obj = current_namespace->lookup(identifier.get_identifier());
     if (ns_obj.get())
     {
       return ns_obj;

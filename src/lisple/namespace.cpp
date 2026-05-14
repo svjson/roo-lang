@@ -20,7 +20,7 @@ namespace Lisple
 
   Namespace::Namespace(Type type,
                        const std::string& name,
-                       std::map<std::string, sptr_rtval> lang_symbols)
+                       std::map<std::string, sptr_val> lang_symbols)
     : type(type)
     , name(name)
   {
@@ -37,7 +37,7 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Namespace::find(const std::string& identifier_s) const
+  sptr_val Namespace::find(const std::string& identifier_s) const
   {
     AST::Symbol identifier(identifier_s);
     if (identifier.is_qualified())
@@ -71,9 +71,9 @@ namespace Lisple
     return val_it != this->values.end();
   }
 
-  sptr_rtval Namespace::lookup(const std::string& identifier) const
+  sptr_val Namespace::lookup(const std::string& identifier) const
   {
-    sptr_rtval value = this->find(identifier);
+    sptr_val value = this->find(identifier);
     if (value)
     {
       return value;
@@ -82,9 +82,9 @@ namespace Lisple
     return nullptr;
   }
 
-  sptr_rtval Namespace::lookup(const RTValue& identifier) const
+  sptr_val Namespace::lookup(const Value& identifier) const
   {
-    if (identifier.type != RTValue::Type::SYMBOL)
+    if (identifier.type != Value::Type::SYMBOL)
     {
       throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }
@@ -92,7 +92,7 @@ namespace Lisple
     return lookup(identifier.str());
   }
 
-  Namespace Namespace::make_lang(std::map<std::string, sptr_rtval> lang_symbols)
+  Namespace Namespace::make_lang(std::map<std::string, sptr_val> lang_symbols)
   {
     return Namespace(Type::LANG, "", lang_symbols);
   }
@@ -112,7 +112,7 @@ namespace Lisple
     return values.empty() && imported_namespaces.empty() && aliased_namespaces.empty();
   }
 
-  void Namespace::mutate(const std::string& identifier, const sptr_rtval& val)
+  void Namespace::mutate(const std::string& identifier, const sptr_val& val)
   {
     if (this->type == Type::LANG)
     {

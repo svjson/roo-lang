@@ -14,27 +14,26 @@
 #include <lisple/lang/loop.h>
 #include <lisple/lang/operator.h>
 #include <lisple/lang/seq_func.h>
-#include "runtime_fixture.h"
 #include <lisple/type.h>
 
 #include "gmock/gmock.h"
 #include "host/test_adapters/vehicle_native_adapters.h"
+#include "runtime_fixture.h"
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
-
 using Signature = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 namespace SignatureTest
 {
-  Lisple::sptr_rtval STRING = Lisple::RTValue::string("str");
-  Lisple::sptr_rtval NUMBER = Lisple::RTValue::number(5);
-  Lisple::sptr_rtval ARRAY = Lisple::RTValue::vector({});
-  Lisple::sptr_rtval FUNCTION = Lisple::MapFunction::make();
+  Lisple::sptr_val STRING = Lisple::Value::string("str");
+  Lisple::sptr_val NUMBER = Lisple::Value::number(5);
+  Lisple::sptr_val ARRAY = Lisple::Value::vector({});
+  Lisple::sptr_val FUNCTION = Lisple::MapFunction::make();
 
   Lisple::uptr_exec_node NODE_STRING = std::make_unique<Lisple::ExecNode>(STRING);
   Lisple::uptr_exec_node NODE_NUMBER = std::make_unique<Lisple::ExecNode>(NUMBER);
@@ -53,8 +52,8 @@ using SignatureTest::NODE_FUNCTION;
 using SignatureTest::NODE_NUMBER;
 using SignatureTest::NODE_STRING;
 
-Lisple::sptr_rtval signature_noop([[maybe_unused]] Lisple::Context& ctx,
-                                  [[maybe_unused]] Lisple::sptr_rtval_v& args)
+Lisple::sptr_val signature_noop([[maybe_unused]] Lisple::Context& ctx,
+                                [[maybe_unused]] Lisple::sptr_val_v& args)
 {
   return Lisple::Constant::NIL;
 }
@@ -69,12 +68,12 @@ Lisple::uptr_exec_node_v node_list(const std::vector<Lisple::uptr_exec_node*>& e
   return nodes;
 }
 
-TEST_F(Signature, matches_rtval_arguments)
+TEST_F(Signature, matches_value_arguments)
 {
   // Given
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    Lisple::exec_rtval_fn{signature_noop});
+    Lisple::exec_val_fn{signature_noop});
 
   // Then
   EXPECT_TRUE(signature.matches({STRING, NUMBER}));
@@ -89,7 +88,7 @@ TEST_F(Signature, matches_node_arguments)
   // Given
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::STRING), Lisple::arg(&Lisple::Type::NUMBER)},
-    Lisple::exec_rtval_fn{signature_noop});
+    Lisple::exec_val_fn{signature_noop});
 
   // Then
   ;
@@ -103,11 +102,10 @@ TEST_F(Signature, matches_node_arguments)
 TEST_F(Signature, no_arg_signature_matches_only_empty_arglist)
 {
   // Given
-  Lisple::Signature signature(Lisple::arg_v{},
-                              Lisple::exec_rtval_fn{signature_noop});
+  Lisple::Signature signature(Lisple::arg_v{}, Lisple::exec_val_fn{signature_noop});
 
   // Then
-  EXPECT_TRUE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_TRUE(signature.matches(Lisple::sptr_val_v{}));
 
   EXPECT_FALSE(signature.matches({STRING, NUMBER}));
   EXPECT_FALSE(signature.matches({STRING, STRING}));
@@ -120,18 +118,16 @@ TEST_F(Signature, matches_varargs)
   // Given
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(Lisple::VARARG, &Lisple::Type::STRING)},
-    Lisple::exec_rtval_fn{signature_noop});
+    Lisple::exec_val_fn{signature_noop});
 
   // Then
-  EXPECT_TRUE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_TRUE(signature.matches(Lisple::sptr_val_v{}));
   EXPECT_TRUE(signature.matches({STRING}));
   EXPECT_TRUE(signature.matches({STRING, STRING}));
   EXPECT_TRUE(signature.matches({STRING, STRING, STRING}));
   EXPECT_TRUE(signature.matches({STRING, STRING, STRING, STRING}));
-  EXPECT_TRUE(
-    signature.matches({STRING, STRING, STRING, STRING, STRING}));
-  EXPECT_TRUE(signature.matches(
-    {STRING, STRING, STRING, STRING, STRING, STRING}));
+  EXPECT_TRUE(signature.matches({STRING, STRING, STRING, STRING, STRING}));
+  EXPECT_TRUE(signature.matches({STRING, STRING, STRING, STRING, STRING, STRING}));
 
   EXPECT_FALSE(signature.matches({NUMBER, STRING}));
   EXPECT_FALSE(signature.matches({NUMBER, STRING, STRING}));
@@ -156,7 +152,7 @@ TEST_F(Signature, matches__leading_varargs)
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, FUNCTION}));
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY, FUNCTION}));
 
-  EXPECT_FALSE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_val_v{}));
   EXPECT_FALSE(signature.matches({STRING}));
   EXPECT_FALSE(signature.matches({FUNCTION, ARRAY}));
 }
@@ -178,7 +174,7 @@ TEST_F(Signature, matches__trailing_varargs)
   EXPECT_TRUE(signature.matches({FUNCTION, ARRAY, ARRAY}));
   EXPECT_TRUE(signature.matches({FUNCTION, ARRAY, ARRAY, ARRAY}));
 
-  EXPECT_FALSE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_val_v{}));
   EXPECT_FALSE(signature.matches({STRING}));
   EXPECT_FALSE(signature.matches({ARRAY}));
   EXPECT_FALSE(signature.matches({ARRAY, FUNCTION}));
@@ -203,7 +199,7 @@ TEST_F(Signature, matches__trailing_varargs_of_same_type)
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY}));
   EXPECT_TRUE(signature.matches({ARRAY, ARRAY, ARRAY, ARRAY}));
 
-  EXPECT_FALSE(signature.matches(Lisple::sptr_rtval_v{}));
+  EXPECT_FALSE(signature.matches(Lisple::sptr_val_v{}));
   EXPECT_FALSE(signature.matches({ARRAY, STRING}));
   EXPECT_FALSE(signature.matches({STRING, ARRAY}));
   EXPECT_FALSE(signature.matches({ARRAY, FUNCTION}));
@@ -216,19 +212,18 @@ TEST_F(Signature, coerce_args__map_to_native_type__native_function)
   // Given
   auto& reader = runtime;
   reader.switch_namespace("vehicle");
-  reader.get_current_namespace().store(
-    "make-vehicle-model",
-    LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store("make-vehicle-model",
+                                       LispleTest::Native::VehicleModelMakeFunction::make());
   reader.get_current_namespace().store("prn-vehicle",
                                        LispleTest::Native::PrnVehicle::make());
   reader.switch_namespace("user");
 
   // When
-  Lisple::sptr_rtval result =
+  Lisple::sptr_val result =
     reader.eval(R"((vehicle/prn-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
 
   // Then
-  EXPECT_EQ(result->type, Lisple::RTValue::Type::NATIVE_OBJECT);
+  EXPECT_EQ(result->type, Lisple::Value::Type::NATIVE_OBJECT);
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
 }
 
@@ -237,12 +232,10 @@ TEST_F(Signature, coerce_args__no_coercion_available)
   // Given
   auto& reader = runtime;
   reader.switch_namespace("vehicle");
-  reader.get_current_namespace().store(
-    "make-vehicle-model",
-    LispleTest::Native::VehicleModelMakeFunction::make());
-  reader.get_current_namespace().store(
-    "double-size-vehicle",
-    LispleTest::Native::DoubleSizeVehicle::make());
+  reader.get_current_namespace().store("make-vehicle-model",
+                                       LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store("double-size-vehicle",
+                                       LispleTest::Native::DoubleSizeVehicle::make());
   reader.switch_namespace("user");
 
   // When/Then
@@ -259,32 +252,30 @@ TEST_F(Signature, coerce_args__coerce_vector_of_vector_of_native_object)
   // Given
   auto& reader = runtime;
   reader.switch_namespace("vehicle");
-  reader.get_current_namespace().store(
-    "make-vehicle-model",
-    LispleTest::Native::VehicleModelMakeFunction::make());
-  reader.get_current_namespace().store(
-    "v-of-v-taker",
-    LispleTest::Native::VectorOfVectorTaker::make());
+  reader.get_current_namespace().store("make-vehicle-model",
+                                       LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store("v-of-v-taker",
+                                       LispleTest::Native::VectorOfVectorTaker::make());
 
   // When
-  Lisple::sptr_rtval result = reader.eval(R"((v-of-v-taker
+  Lisple::sptr_val result = reader.eval(R"((v-of-v-taker
 [[(make-vehicle-model {:model-name "Batmobile" :seats 1}) (make-vehicle-model {:model-name "Dreamy Boom-Boom" :seats 10})]
  [(make-vehicle-model {:model-name "V8 Interceptor" :seats 2}) (make-vehicle-model {:model-name "Clown Car" :seats 1})]]
 ))");
 
   // Then
-  EXPECT_EQ(result->type, Lisple::RTValue::Type::VECTOR);
+  EXPECT_EQ(result->type, Lisple::Value::Type::VECTOR);
   EXPECT_EQ(result->elements().size(), 2);
 
-  Lisple::sptr_rtval child1 = result->elements().at(0);
-  EXPECT_EQ(child1->type, Lisple::RTValue::Type::VECTOR);
+  Lisple::sptr_val child1 = result->elements().at(0);
+  EXPECT_EQ(child1->type, Lisple::Value::Type::VECTOR);
   EXPECT_EQ(child1->elements().size(), 2);
 
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child1->elements().at(0)));
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child1->elements().at(1)));
 
-  Lisple::sptr_rtval child2 = result->elements().at(1);
-  EXPECT_EQ(child2->type, Lisple::RTValue::Type::VECTOR);
+  Lisple::sptr_val child2 = result->elements().at(1);
+  EXPECT_EQ(child2->type, Lisple::Value::Type::VECTOR);
   EXPECT_EQ(child2->elements().size(), 2);
 
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->elements().at(0)));
@@ -296,18 +287,17 @@ TEST_F(Signature, coerce_args__coerce_vector_elements)
   // Given
   auto& reader = runtime;
   reader.switch_namespace("vehicle");
-  reader.get_current_namespace().store(
-    "make-vehicle-model",
-    LispleTest::Native::VehicleModelMakeFunction::make());
+  reader.get_current_namespace().store("make-vehicle-model",
+                                       LispleTest::Native::VehicleModelMakeFunction::make());
   reader.get_current_namespace().store("count-seats",
                                        LispleTest::Native::CountVehicleSeats::make());
   reader.switch_namespace("user");
 
   // When
-  Lisple::sptr_rtval result = reader.eval(
+  Lisple::sptr_val result = reader.eval(
     R"((vehicle/count-seats [{:model-name "Gonzo-mobile" :seats 8} {:model-name "Dreamy Boom-Boom" :seats 6}]))");
 
   // Then
-  EXPECT_EQ(result->type, Lisple::RTValue::Type::NUMBER);
+  EXPECT_EQ(result->type, Lisple::Value::Type::NUMBER);
   EXPECT_EQ(result->i64(), 14);
 }

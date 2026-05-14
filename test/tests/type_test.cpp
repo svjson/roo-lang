@@ -35,10 +35,10 @@ TEST_F(TypeRef, is_type_of)
 TEST_F(TypeRef, rtwrapper_is_type_of)
 {
   // Given
-  Lisple::sptr_rtval map_val = Lisple::RTValue::map({Lisple::RTValue::keyword("name"),
-                                                     Lisple::RTValue::string("Hetty"),
-                                                     Lisple::RTValue::keyword("score"),
-                                                     Lisple::RTValue::number(5000000)});
+  Lisple::sptr_val map_val = Lisple::Value::map({Lisple::Value::keyword("name"),
+                                                 Lisple::Value::string("Hetty"),
+                                                 Lisple::Value::keyword("score"),
+                                                 Lisple::Value::number(5000000)});
   Lisple::AST::RuntimeValueWrapper obj(map_val);
 
   // Then
@@ -131,7 +131,7 @@ TEST_F(SeqRef, Vector_of_Char__is_type_of__nil_is_valid)
 TEST_F(SeqRef, Vector_of_NativeObject__is_type_of)
 {
   // Given
-  Lisple::sptr_rtval model_vector = Lisple::RTValue::vector(
+  Lisple::sptr_val model_vector = Lisple::Value::vector(
     {LispleTest::Native::VehicleModelAdapter::make_unique("Vroom Deluxe", 2),
      LispleTest::Native::VehicleModelAdapter::make_unique("Millenium Falcon", 8),
      LispleTest::Native::VehicleModelAdapter::make_unique("Apollo 13", 4)});
@@ -147,15 +147,15 @@ TEST_F(SeqRef, Vector_of_Map__coerce_to_Vector_of_NativeObject)
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
   use_runtime_with(std::move(namespaces), nullptr);
   auto& ctx = *configured_context;
-  Lisple::sptr_rtval map_vector =
-    Lisple::RTValue::vector({Lisple::RTValue::map({Lisple::RTValue::keyword("model-name"),
-                                                   Lisple::RTValue::string("Vroom Deluxe"),
-                                                   Lisple::RTValue::keyword("seats"),
-                                                   Lisple::RTValue::number(2)}),
-                             Lisple::RTValue::map({Lisple::RTValue::keyword("model-name"),
-                                                   Lisple::RTValue::string("Vroom Deluxe"),
-                                                   Lisple::RTValue::keyword("seats"),
-                                                   Lisple::RTValue::number(2)})});
+  Lisple::sptr_val map_vector =
+    Lisple::Value::vector({Lisple::Value::map({Lisple::Value::keyword("model-name"),
+                                               Lisple::Value::string("Vroom Deluxe"),
+                                               Lisple::Value::keyword("seats"),
+                                               Lisple::Value::number(2)}),
+                           Lisple::Value::map({Lisple::Value::keyword("model-name"),
+                                               Lisple::Value::string("Vroom Deluxe"),
+                                               Lisple::Value::keyword("seats"),
+                                               Lisple::Value::number(2)})});
 
   // When
   auto coercion_result = LispleTest::VECTOR_OF_VEHICLE_MODEL.coerce(ctx, map_vector);

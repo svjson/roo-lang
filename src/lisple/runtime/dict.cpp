@@ -13,16 +13,16 @@
 
 namespace Lisple::Dict
 {
-  sptr_rtval get_property(const sptr_rtval& target, const sptr_rtval& property)
+  sptr_val get_property(const sptr_val& target, const sptr_val& property)
   {
     return get_property(target, *property);
   }
 
-  sptr_rtval get_property(const sptr_rtval& target, const RTValue& property)
+  sptr_val get_property(const sptr_val& target, const Value& property)
   {
     switch (target->type)
     {
-    case RTValue::Type::MAP:
+    case Value::Type::MAP:
     {
       auto children = Lisple::get_children(*target);
       for (size_t i = 0; i < children.size(); i += 2)
@@ -34,23 +34,23 @@ namespace Lisple::Dict
       }
       return Constant::NIL;
     }
-    case RTValue::Type::LIST:
-    case RTValue::Type::VECTOR:
+    case Value::Type::LIST:
+    case Value::Type::VECTOR:
     {
-      if (property.type != RTValue::Type::NUMBER)
+      if (property.type != Value::Type::NUMBER)
       {
         return Constant::NIL;
       }
       return get_child(*target, property.num().get_int());
     }
-    case RTValue::Type::NATIVE_OBJECT:
+    case Value::Type::NATIVE_OBJECT:
     {
       Lisple::sptr_native_obj obj = target->nobj();
       return obj->get_property(property);
     }
-    case RTValue::Type::OBJECT:
+    case Value::Type::OBJECT:
     {
-      auto key = to_AST(const_cast<RTValue&>(property));
+      auto key = to_AST(const_cast<Value&>(property));
       auto val = std::get<sptr_sobject>(target->value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
@@ -59,42 +59,42 @@ namespace Lisple::Dict
     };
   }
 
-  sptr_rtval get_property(RTValue& target, const std::string& keyword)
+  sptr_val get_property(Value& target, const std::string& keyword)
   {
-    if (target.type == RTValue::Type::MAP)
+    if (target.type == Value::Type::MAP)
     {
       auto children = Lisple::get_children(target);
       for (size_t i = 0; i < children.size(); i += 2)
       {
-        if (children[i]->type == RTValue::Type::KEYWORD &&
+        if (children[i]->type == Value::Type::KEYWORD &&
             std::get<std::string>(children[i]->value) == keyword)
         {
           return children[i + 1];
         }
       }
     }
-    else if (target.type == RTValue::Type::OBJECT)
+    else if (target.type == Value::Type::OBJECT)
     {
       auto key = Lisple::AST::Keyword::make(keyword);
       auto val = std::get<sptr_sobject>(target.value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
-    else if (target.type == RTValue::Type::NATIVE_OBJECT)
+    else if (target.type == Value::Type::NATIVE_OBJECT)
     {
-      return target.nobj()->get_property(*RTValue::keyword(keyword));
+      return target.nobj()->get_property(*Value::keyword(keyword));
     }
 
     return Constant::NIL;
   }
 
-  sptr_rtval get_property_or_throw(RTValue& source, const std::string& keyword)
+  sptr_val get_property_or_throw(Value& source, const std::string& keyword)
   {
-    if (source.type == RTValue::Type::MAP)
+    if (source.type == Value::Type::MAP)
     {
-      auto& children = std::get<sptr_rtval_v>(source.value);
+      auto& children = std::get<sptr_val_v>(source.value);
       for (size_t i = 0; i < children.size(); i += 2)
       {
-        if (children[i]->type == RTValue::Type::KEYWORD &&
+        if (children[i]->type == Value::Type::KEYWORD &&
             std::get<std::string>(children[i]->value) == keyword)
         {
           return children[i + 1];
@@ -106,9 +106,9 @@ namespace Lisple::Dict
                               source.to_string());
   }
 
-  sptr_rtval get_property_path(const sptr_rtval& object, const sptr_rtval_v& path)
+  sptr_val get_property_path(const sptr_val& object, const sptr_val_v& path)
   {
-    sptr_rtval result = object;
+    sptr_val result = object;
     for (size_t i = 0; i < path.size(); i++)
     {
       if (*result == *Constant::NIL)
@@ -122,35 +122,35 @@ namespace Lisple::Dict
     return result;
   }
 
-  bool contains_key(RTValue& source, const std::string& keyword)
+  bool contains_key(Value& source, const std::string& keyword)
   {
-    if (source.type == RTValue::Type::MAP)
+    if (source.type == Value::Type::MAP)
     {
-      auto& children = std::get<sptr_rtval_v>(source.value);
+      auto& children = std::get<sptr_val_v>(source.value);
       for (size_t i = 0; i < children.size(); i += 2)
       {
-        if (children[i]->type == RTValue::Type::KEYWORD &&
+        if (children[i]->type == Value::Type::KEYWORD &&
             std::get<std::string>(children[i]->value) == keyword)
         {
           return true;
         }
       }
     }
-    else if (source.type == RTValue::Type::NATIVE_OBJECT)
+    else if (source.type == Value::Type::NATIVE_OBJECT)
     {
-      return *source.nobj()->get_property(*RTValue::keyword(keyword)) != *Constant::NIL;
+      return *source.nobj()->get_property(*Value::keyword(keyword)) != *Constant::NIL;
     }
 
     return false;
   }
 
-  sptr_rtval remove_property(sptr_rtval& target, const sptr_rtval& property)
+  sptr_val remove_property(sptr_val& target, const sptr_val& property)
   {
-    sptr_rtval removed_val = Constant::NIL;
+    sptr_val removed_val = Constant::NIL;
 
     int index = -1;
 
-    sptr_rtval_v& children = std::get<sptr_rtval_v>(target->value);
+    sptr_val_v& children = std::get<sptr_val_v>(target->value);
 
     for (size_t i = 0; i < children.size(); i += 2)
     {
@@ -170,15 +170,15 @@ namespace Lisple::Dict
     return removed_val;
   }
 
-  void set_property(sptr_rtval& target, const sptr_rtval& property, const sptr_rtval& value)
+  void set_property(sptr_val& target, const sptr_val& property, const sptr_val& value)
   {
-    if (target->type == RTValue::Type::MAP)
+    if (target->type == Value::Type::MAP)
     {
-      sptr_rtval_v& elements = std::get<sptr_rtval_v>(target->value);
+      sptr_val_v& elements = std::get<sptr_val_v>(target->value);
 
       auto it = std::find_if(elements.begin(),
                              elements.end(),
-                             [&](const sptr_rtval& l) { return *l == *property; });
+                             [&](const sptr_val& l) { return *l == *property; });
 
       if (it == elements.end())
       {
@@ -195,33 +195,33 @@ namespace Lisple::Dict
         elements[index + 1] = value;
       }
     }
-    else if (target->type == RTValue::Type::VECTOR)
+    else if (target->type == Value::Type::VECTOR)
     {
-      if (property->type != RTValue::Type::NUMBER)
+      if (property->type != Value::Type::NUMBER)
       {
         throw TypeError("Cannot set property " + property->to_string() + " of vector");
       }
       Lisple::set_child(*target, property->num().get_int(), value);
     }
-    else if (target->type == RTValue::Type::OBJECT)
+    else if (target->type == Value::Type::OBJECT)
     {
       sptr_sobject& ho = std::get<sptr_sobject>(target->value);
       ho->set_property(to_AST(*property), to_AST(*value));
     }
-    else if (target->type == RTValue::Type::NATIVE_OBJECT)
+    else if (target->type == Value::Type::NATIVE_OBJECT)
     {
       target->nobj()->set_property(*property, value);
     }
     else
     {
-      std::cout << "RTValue::Type==" << (int)target->type << std::endl;
+      std::cout << "Value::Type==" << (int)target->type << std::endl;
       throw LispleException("Cannot mutate target");
     }
   }
 
-  const std::vector<sptr_rtval> keys(const RTValue& dict)
+  const std::vector<sptr_val> keys(const Value& dict)
   {
-    std::vector<sptr_rtval> keys;
+    std::vector<sptr_val> keys;
     size_t count = Lisple::count(dict);
     keys.reserve(count / 2);
     for (size_t i = 0; i < count; i++)
@@ -231,9 +231,9 @@ namespace Lisple::Dict
     return keys;
   }
 
-  const std::vector<const RTValue*> map_keys(const std::vector<RTValue>& map_data)
+  const std::vector<const Value*> map_keys(const std::vector<Value>& map_data)
   {
-    std::vector<const RTValue*> keys;
+    std::vector<const Value*> keys;
     keys.reserve(map_data.size() / 2);
     for (size_t i = 0; i < map_data.size(); i += 2)
     {
@@ -242,9 +242,9 @@ namespace Lisple::Dict
     return keys;
   }
 
-  const std::vector<const RTValue*> map_keys(const sptr_rtval_v& map_data)
+  const std::vector<const Value*> map_keys(const sptr_val_v& map_data)
   {
-    std::vector<const RTValue*> keys;
+    std::vector<const Value*> keys;
     keys.reserve(map_data.size() / 2);
     for (size_t i = 0; i < map_data.size(); i += 2)
     {
@@ -253,10 +253,10 @@ namespace Lisple::Dict
     return keys;
   }
 
-  std::vector<sptr_rtval> map_sptr_keys(const sptr_rtval& dict)
+  std::vector<sptr_val> map_sptr_keys(const sptr_val& dict)
   {
-    std::vector<sptr_rtval> keys;
-    sptr_rtval_v dc = get_children(*dict);
+    std::vector<sptr_val> keys;
+    sptr_val_v dc = get_children(*dict);
     for (size_t i = 0; i < dc.size(); i += 2)
     {
       keys.push_back(dc[i]);
@@ -264,9 +264,9 @@ namespace Lisple::Dict
     return keys;
   }
 
-  const std::vector<const RTValue*> map_keys(const RTValue& map_data)
+  const std::vector<const Value*> map_keys(const Value& map_data)
   {
-    if (const Lisple::sptr_rtval_v* children = std::get_if<sptr_rtval_v>(&map_data.value))
+    if (const Lisple::sptr_val_v* children = std::get_if<sptr_val_v>(&map_data.value))
     {
       return map_keys(*children);
     }
@@ -274,14 +274,14 @@ namespace Lisple::Dict
     return {};
   }
 
-  std::unordered_set<std::string> map_string_keys(RTValue& value)
+  std::unordered_set<std::string> map_string_keys(Value& value)
   {
-    if (value.type != RTValue::Type::MAP)
+    if (value.type != Value::Type::MAP)
     {
       return {};
     }
 
-    sptr_rtval_v& map_data = std::get<sptr_rtval_v>(value.value);
+    sptr_val_v& map_data = std::get<sptr_val_v>(value.value);
     std::unordered_set<std::string> keys;
     keys.reserve(map_data.size() / 2);
     for (size_t i = 0; i < map_data.size(); i += 2)
@@ -298,8 +298,8 @@ namespace Lisple::Dict
     return keys;
   }
 
-  std::pair<const sptr_rtval, const sptr_rtval> map_entry(const sptr_rtval_v& map_data,
-                                                          const RTValue& key)
+  std::pair<const sptr_val, const sptr_val> map_entry(const sptr_val_v& map_data,
+                                                      const Value& key)
   {
     for (size_t i = 0; i < map_data.size(); i += 2)
     {
@@ -312,7 +312,7 @@ namespace Lisple::Dict
     return {nullptr, nullptr};
   }
 
-  std::pair<sptr_rtval, sptr_rtval> map_entry(sptr_rtval_v& map_data, const RTValue& key)
+  std::pair<sptr_val, sptr_val> map_entry(sptr_val_v& map_data, const Value& key)
   {
     for (size_t i = 0; i < map_data.size(); i += 2)
     {
@@ -325,50 +325,50 @@ namespace Lisple::Dict
     return {nullptr, nullptr};
   }
 
-  sptr_rtval shallow_copy(const sptr_rtval& source)
+  sptr_val shallow_copy(const sptr_val& source)
   {
     if (Type::COMPLEX.is_type_of(*source))
     {
-      sptr_rtval_v children = Lisple::get_children(*source);
-      return RTValue::map(children);
+      sptr_val_v children = Lisple::get_children(*source);
+      return Value::map(children);
     }
     else if (Type::SEQ.is_type_of(*source))
     {
-      sptr_rtval_v children = Lisple::get_children(*source);
-      return RTValue::vector(children);
+      sptr_val_v children = Lisple::get_children(*source);
+      return Value::vector(children);
     }
 
     return source;
   }
 
-  static sptr_rtval assoc_in_copy(const sptr_rtval& current,
-                                  const sptr_rtval_v& path,
-                                  size_t index,
-                                  const sptr_rtval& value)
+  static sptr_val assoc_in_copy(const sptr_val& current,
+                                const sptr_val_v& path,
+                                size_t index,
+                                const sptr_val& value)
   {
     if (index >= path.size())
     {
       throw InvocationException("assoc-in path traversal went out of bounds.");
     }
 
-    sptr_rtval result;
+    sptr_val result;
     switch (current->type)
     {
-    case RTValue::Type::NIL:
-      result = RTValue::map({});
+    case Value::Type::NIL:
+      result = Value::map({});
       break;
-    case RTValue::Type::MAP:
-    case RTValue::Type::OBJECT:
-    case RTValue::Type::NATIVE_OBJECT:
-    case RTValue::Type::VECTOR:
-    case RTValue::Type::LIST:
+    case Value::Type::MAP:
+    case Value::Type::OBJECT:
+    case Value::Type::NATIVE_OBJECT:
+    case Value::Type::VECTOR:
+    case Value::Type::LIST:
       result = Dict::shallow_copy(current);
       break;
     default:
       throw TypeError("assoc-in cannot traverse through " + current->to_string());
     }
 
-    const sptr_rtval& key = path[index];
+    const sptr_val& key = path[index];
 
     if (index == path.size() - 1)
     {
@@ -376,17 +376,15 @@ namespace Lisple::Dict
       return result;
     }
 
-    sptr_rtval child = Dict::get_property(current, *key);
-    sptr_rtval new_child = assoc_in_copy(child, path, index + 1, value);
+    sptr_val child = Dict::get_property(current, *key);
+    sptr_val new_child = assoc_in_copy(child, path, index + 1, value);
 
     Dict::set_property(result, key, new_child);
 
     return result;
   }
 
-  sptr_rtval assoc_in(const sptr_rtval& current,
-                      const sptr_rtval_v& path,
-                      const sptr_rtval& value)
+  sptr_val assoc_in(const sptr_val& current, const sptr_val_v& path, const sptr_val& value)
   {
     return assoc_in_copy(current, path, 0, value);
   }

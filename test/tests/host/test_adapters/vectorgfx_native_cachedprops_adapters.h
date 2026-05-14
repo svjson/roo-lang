@@ -12,7 +12,7 @@
 namespace LispleTest::CachedNative
 {
   // ===============================================================
-  // Vector graphics example - adapters - RTValue-based
+  // Vector graphics example - adapters - Value-based
   // ===============================================================
 
   inline const Lisple::HostTypeRef POINT("point", "pixils.point/make-point");

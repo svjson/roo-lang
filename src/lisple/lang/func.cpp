@@ -16,7 +16,7 @@ namespace Lisple
   EXEC_BODY(ApplyFunction, exec_apply)
   {
     auto& fn = args[0]->exec();
-    sptr_rtval_v& fn_args = std::get<sptr_rtval_v>(args.back()->value);
+    sptr_val_v& fn_args = std::get<sptr_val_v>(args.back()->value);
     return fn.execute(ctx, fn_args);
   }
 
@@ -68,10 +68,10 @@ namespace Lisple
                                                          ctx.ctx->get_current_namespace(),
                                                          *arg_vec,
                                                          body);
-    sptr_rtval fn = RTValue::executable(func);
+    sptr_val fn = Value::executable(func);
     ctx.ctx->store_namespace(fn_name.value, fn);
 
-    return std::make_unique<ExecNode>(RTValue::executable(func));
+    return std::make_unique<ExecNode>(Value::executable(func));
   }
   EXECNODE_BODY(DefunForm, execnode_decl)
   {
@@ -117,7 +117,7 @@ namespace Lisple
                                                          ctx.ctx->get_current_namespace(),
                                                          *arg_vec,
                                                          body);
-    sptr_rtval fn = RTValue::executable(func);
+    sptr_val fn = Value::executable(func);
 
     return std::make_unique<ExecNode>(LambdaNode(func));
   }
