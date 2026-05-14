@@ -51,7 +51,7 @@ namespace Lisple::Dict
     case Value::Type::OBJECT:
     {
       auto key = to_AST(const_cast<Value&>(property));
-      auto val = std::get<sptr_sobject>(target->value)->get_sptr_property(*key);
+      auto val = std::get<sptr_ast_node>(target->value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
     default:
@@ -76,7 +76,7 @@ namespace Lisple::Dict
     else if (target.type == Value::Type::OBJECT)
     {
       auto key = Lisple::AST::Keyword::make(keyword);
-      auto val = std::get<sptr_sobject>(target.value)->get_sptr_property(*key);
+      auto val = std::get<sptr_ast_node>(target.value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
     else if (target.type == Value::Type::NATIVE_OBJECT)
@@ -205,7 +205,7 @@ namespace Lisple::Dict
     }
     else if (target->type == Value::Type::OBJECT)
     {
-      sptr_sobject& ho = std::get<sptr_sobject>(target->value);
+      sptr_ast_node& ho = std::get<sptr_ast_node>(target->value);
       ho->set_property(to_AST(*property), to_AST(*value));
     }
     else if (target->type == Value::Type::NATIVE_OBJECT)

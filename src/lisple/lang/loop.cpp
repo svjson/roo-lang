@@ -23,7 +23,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(DoTimesForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() < 2)
     {
@@ -36,7 +36,7 @@ namespace Lisple
       throw LispleException("dotimes: Invalid bind form - " + ast_node->to_string());
     }
 
-    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
 
     if (bind_forms.size() == 2)
@@ -112,7 +112,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(ForForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() < 2)
     {
@@ -124,7 +124,7 @@ namespace Lisple
       throw LispleException("for: Invalid loop expression - " + ast_node->to_string());
     }
 
-    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
 
     auto sym_node = lower_literal(bind_forms[0]);
@@ -192,7 +192,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(ForIndexedForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() < 2)
     {
@@ -205,7 +205,7 @@ namespace Lisple
                             ast_node->to_string());
     }
 
-    sptr_sobject_v& bind_form = elements[1]->get_children();
+    sptr_ast_node_v& bind_form = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
 
     auto index_node = lower_literal(bind_form[0]);
@@ -285,7 +285,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(WhileForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() < 2)
     {

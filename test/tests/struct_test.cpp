@@ -13,7 +13,7 @@
 #include <gtest/gtest_pred_impl.h>
 
 using MapStruct = LispleTest::RuntimeTestFixture;
-bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& map)
+bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_ast_node& map)
 {
   bool caught = false;
   try
@@ -29,7 +29,7 @@ bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& m
   return caught;
 }
 
-Lisple::sptr_sobject eval_object(Lisple::Runtime& runtime, const std::string& source)
+Lisple::sptr_ast_node eval_object(Lisple::Runtime& runtime, const std::string& source)
 {
   return Lisple::to_AST(*runtime.eval(source));
 }
@@ -41,7 +41,7 @@ TEST_F(MapStruct, validate_map_with_string_values)
     {{":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)},
      {":description", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  Lisple::sptr_sobject map =
+  Lisple::sptr_ast_node map =
     eval_object(runtime, "{ :name \"mystring\" :description \"contains text\"}");
 
   // When
@@ -57,7 +57,7 @@ TEST_F(MapStruct, validate_map_with_unknown_key)
   Lisple::MapStruct map_struct(
     {{":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  Lisple::sptr_sobject map =
+  Lisple::sptr_ast_node map =
     eval_object(runtime, "{ :name \"mystring\" :description \"contains text\"}");
 
   // When
@@ -74,7 +74,7 @@ TEST_F(MapStruct, validate_map_with_wrong_value_type)
     {{":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)},
      {":description", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  Lisple::sptr_sobject map =
+  Lisple::sptr_ast_node map =
     eval_object(runtime, "{:name \"mystring\" :description \"contains text\"}");
 
   // When
@@ -90,7 +90,7 @@ TEST_F(MapStruct, validate_map_with_vector_of_string_value)
   Lisple::MapStruct map_struct(
     {{":values", Lisple::MapEntryReq(&Lisple::Type::VECTOR_OF_STRING, false)}});
 
-  Lisple::sptr_sobject map = eval_object(runtime, "{ :values [\"A\" \"B\" \"C\"]}");
+  Lisple::sptr_ast_node map = eval_object(runtime, "{ :values [\"A\" \"B\" \"C\"]}");
 
   // When
   bool caught = __mapstruct_validate(map_struct, map);
@@ -105,7 +105,7 @@ TEST_F(MapStruct, get_property_from_map)
   Lisple::MapStruct map_struct(
     {{":value", Lisple::MapEntryReq(&Lisple::Type::STRING, true)}});
 
-  Lisple::sptr_sobject map = eval_object(runtime, "{ :value \"A fine string!\"}");
+  Lisple::sptr_ast_node map = eval_object(runtime, "{ :value \"A fine string!\"}");
   Lisple::AST::Keyword key = Lisple::AST::Keyword("value");
 
   // When

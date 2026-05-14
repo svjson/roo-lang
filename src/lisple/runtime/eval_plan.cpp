@@ -66,14 +66,14 @@ namespace Lisple
                          nested_output,
                          indent + "    ");
 
-        sptr_sobject_v ast_nodes;
+        sptr_ast_node_v ast_nodes;
 
         for (auto* n_node : nested_output)
         {
           ast_nodes.push_back(n_node->form);
         }
 
-        sptr_sobject vec = AST::Vector::make(ast_nodes);
+        sptr_ast_node vec = AST::Vector::make(ast_nodes);
 
         storage.push_back(std::make_unique<ExecNode>(vec, ExecNodeList(nested_output)));
         output.push_back(storage.back().get());

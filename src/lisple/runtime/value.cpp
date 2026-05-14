@@ -444,7 +444,7 @@ namespace Lisple
     return val;
   }
 
-  sptr_val Value::object(const sptr_sobject& o)
+  sptr_val Value::object(const sptr_ast_node& o)
   {
     rtvalues_constructed++;
     sptr_val val = std::make_shared<Value>();
@@ -556,7 +556,7 @@ namespace Lisple
       r += ")";
       break;
     case Value::Type::OBJECT:
-      r += std::get<sptr_sobject>(value)->to_string();
+      r += std::get<sptr_ast_node>(value)->to_string();
       break;
     case Value::Type::FUNCTION:
       r += std::get<sptr_executable>(value)->to_string();
@@ -672,9 +672,9 @@ namespace Lisple
     return std::get<char>(value);
   }
 
-  sptr_sobject Value::obj() const
+  sptr_ast_node Value::obj() const
   {
-    const auto* object = std::get_if<sptr_sobject>(&value);
+    const auto* object = std::get_if<sptr_ast_node>(&value);
     if (!object) throw_bad_rt_variant(*this, "obj");
     return *object;
   }
@@ -893,7 +893,7 @@ namespace Lisple
     }
   }
 
-  sptr_sobject to_AST(Value& val)
+  sptr_ast_node to_AST(Value& val)
   {
     to_ast_conversions++;
     switch (val.type)
@@ -928,7 +928,7 @@ namespace Lisple
     }
     case Value::Type::LIST:
     {
-      sptr_sobject_v elements;
+      sptr_ast_node_v elements;
 
       for (auto& element : std::get<sptr_val_v>(val.value))
       {
@@ -939,7 +939,7 @@ namespace Lisple
     }
     case Value::Type::MAP:
     {
-      sptr_sobject_v elements;
+      sptr_ast_node_v elements;
 
       for (auto& element : std::get<sptr_val_v>(val.value))
       {
@@ -968,14 +968,14 @@ namespace Lisple
       throw LispleException("Invalid Value(NUMBER)");
     }
     case Value::Type::OBJECT:
-      return std::get<sptr_sobject>(val.value);
+      return std::get<sptr_ast_node>(val.value);
     case Value::Type::STRING:
       return Lisple::AST::String::make(std::get<std::string>(val.value));
     case Value::Type::SYMBOL:
       return Lisple::AST::Symbol::make(std::get<std::string>(val.value));
     case Value::Type::VECTOR:
     {
-      sptr_sobject_v elements;
+      sptr_ast_node_v elements;
 
       for (auto& element : std::get<sptr_val_v>(val.value))
       {

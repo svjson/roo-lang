@@ -92,7 +92,7 @@ namespace Lisple
     }
   }
 
-  sptr_sobject_v Parser::parse_sexps(std::vector<TokenSymbol> symbols) const
+  sptr_ast_node_v Parser::parse_sexps(std::vector<TokenSymbol> symbols) const
   {
     ParseContext ctx;
 

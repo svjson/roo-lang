@@ -178,7 +178,7 @@ namespace Lisple
   void VectorDestructureBinding::apply(Scope& scope, const sptr_val& vector_expr) const
   {
     sptr_val_v& vec = std::get<sptr_val_v>(vector_expr->value);
-    sptr_sobject form = std::make_shared<AST::RuntimeValueWrapper>(Value::vector(vec));
+    sptr_ast_node form = std::make_shared<AST::RuntimeValueWrapper>(Value::vector(vec));
 
     for (size_t i = 0; i < this->bindings.size(); i++)
     {

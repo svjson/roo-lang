@@ -16,8 +16,8 @@ namespace Lisple
   class ParseContext
   {
    public:
-    sptr_sobject_v forms;
-    sptr_sobject_v stack;
+    sptr_ast_node_v forms;
+    sptr_ast_node_v stack;
     std::vector<Token> closing_tokens;
 
     void begin_list(Token start_type);
@@ -30,7 +30,7 @@ namespace Lisple
   class Parser
   {
    public:
-    sptr_sobject_v parse_sexps(std::vector<TokenSymbol> symbols) const;
+    sptr_ast_node_v parse_sexps(std::vector<TokenSymbol> symbols) const;
   };
 } // namespace Lisple
 

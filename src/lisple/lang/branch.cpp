@@ -16,7 +16,7 @@ namespace Lisple
   {
     uptr_exec_node_v exec_nodes;
 
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() % 2 != 0)
     {
@@ -58,7 +58,7 @@ namespace Lisple
   {
     uptr_exec_node_v exec_nodes;
 
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() % 2 != 1)
     {
@@ -98,7 +98,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(IfForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() < 3 || elements.size() > 4)
     {
@@ -136,7 +136,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(WhenForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() < 2)
     {

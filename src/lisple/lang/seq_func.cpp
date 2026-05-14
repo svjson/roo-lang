@@ -292,14 +292,14 @@ namespace Lisple
 
     if (Type::HOST_SEQ.is_type_of(*args[1]))
     {
-      sptr_sobject obj = args[1]->obj();
+      sptr_ast_node obj = args[1]->obj();
       AST::Seq& host_seq = obj->as<AST::Seq>();
-      sptr_sobject_v& children = host_seq.get_children();
+      sptr_ast_node_v& children = host_seq.get_children();
       auto it = std::remove_if(children.begin(),
                                children.end(),
-                               [&](const Lisple::sptr_sobject& element)
+                               [&](const Lisple::sptr_ast_node& element)
                                {
-                                 Lisple::sptr_sobject ast_element = element;
+                                 Lisple::sptr_ast_node ast_element = element;
                                  Lisple::sptr_val_v val_args{to_rt_value(ast_element)};
                                  return Lisple::is_truthy(*remove_fn.execute(ctx, val_args));
                                });

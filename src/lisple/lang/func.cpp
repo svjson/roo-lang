@@ -34,7 +34,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(DefunForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements.size() < 3)
     {
       throw LispleException("Invalid defun form: " + ast_node->to_string());
@@ -51,11 +51,11 @@ namespace Lisple
     }
 
     Lisple::AST::Symbol& fn_name = elements[1]->as<Lisple::AST::Symbol>();
-    sptr_sobject doc_string =
+    sptr_ast_node doc_string =
       elements[2]->get_type() == Lisple::Form::STRING ? elements[2] : nullptr;
-    sptr_sobject arg_vec = !doc_string ? elements[2] : elements[3];
+    sptr_ast_node arg_vec = !doc_string ? elements[2] : elements[3];
 
-    sptr_sobject_v body;
+    sptr_ast_node_v body;
     body.reserve(elements.size() - (!doc_string ? 3 : 4));
 
     for (size_t i = !doc_string ? 3 : 4; i < elements.size(); i++)
@@ -93,7 +93,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(FnForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements.size() < 2)
     {
       throw LispleException("Invalid fn form: " + ast_node->to_string());
@@ -103,8 +103,8 @@ namespace Lisple
       throw LispleException("Invalid fn form: " + ast_node->to_string());
     }
 
-    sptr_sobject arg_vec = elements[1];
-    sptr_sobject_v body;
+    sptr_ast_node arg_vec = elements[1];
+    sptr_ast_node_v body;
     body.reserve(elements.size() - 2);
 
     for (size_t i = 2; i < elements.size(); i++)

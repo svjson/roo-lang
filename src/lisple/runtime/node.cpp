@@ -19,7 +19,7 @@ namespace Lisple
     literal_nodes_constructed++;
   }
 
-  LiteralNode::LiteralNode(const sptr_val& v, sptr_sobject ast_node)
+  LiteralNode::LiteralNode(const sptr_val& v, sptr_ast_node ast_node)
     : value(v)
     , ast_node(ast_node)
   {

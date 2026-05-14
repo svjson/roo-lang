@@ -16,7 +16,7 @@ namespace Lisple
     Parser parser;
 
    public:
-    sptr_sobject_v read_sexps(const std::string& input) const;
+    sptr_ast_node_v read_sexps(const std::string& input) const;
   };
 } // namespace Lisple
 

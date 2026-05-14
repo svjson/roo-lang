@@ -31,7 +31,7 @@ namespace Lisple
   {
     if (val.type == Value::Type::OBJECT)
     {
-      return this->is_type_of(*std::get<sptr_sobject>(val.value));
+      return this->is_type_of(*std::get<sptr_ast_node>(val.value));
     }
 
     if (val.type == Value::Type::NATIVE_OBJECT)

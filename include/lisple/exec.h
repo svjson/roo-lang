@@ -67,11 +67,11 @@
   return Lisple::Value::executable(std::make_shared<EXEC_NAME>(std::forward<Args>(args)...)); \
 }
 
-#define SFORM_LOWER_DECL Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx, const Lisple::sptr_sobject& ast_node);
+#define SFORM_LOWER_DECL Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx, const Lisple::sptr_ast_node& ast_node);
 
 #define SFORM_LOWER_IMPL(SFORM_NAME) \
   Lisple::uptr_exec_node SFORM_NAME::lower_form([[maybe_unused]] Lisple::LowerContext& ctx, \
-                                                [[maybe_unused]] const Lisple::sptr_sobject& ast_node)
+                                                [[maybe_unused]] const Lisple::sptr_ast_node& ast_node)
 
 #define SFORM_OMIT_LOWER_IMPL(SFORM_NAME) \
   SFORM_LOWER_IMPL(SFORM_NAME) \
@@ -403,7 +403,7 @@ namespace Lisple
     std::string to_string(int depth = -1) const override;
 
     virtual Lisple::uptr_exec_node lower_form(Lisple::LowerContext& ctx,
-                                              const Lisple ::sptr_sobject& ast_node) = 0;
+                                              const Lisple ::sptr_ast_node& ast_node) = 0;
 
     sptr_val exec_node(Context& ctx, SpecialFormNode& node) const;
   };
@@ -412,7 +412,7 @@ namespace Lisple
                                                 Context& ctx,
                                                 const Namespace* home_ns,
                                                 AST::ASTNode& arg_vector,
-                                                sptr_sobject_v& body);
+                                                sptr_ast_node_v& body);
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
                                                 sptr_val_v& param_form,

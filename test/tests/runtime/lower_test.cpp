@@ -19,7 +19,7 @@ TEST_F(LowerTest, number__literal_node)
 {
   // Given
   Lisple::LowerContext lctx;
-  Lisple::sptr_sobject number = Lisple::AST::Number::make(4);
+  Lisple::sptr_ast_node number = Lisple::AST::Number::make(4);
 
   // When
   auto node = Lisple::lower_expr(lctx, number);
@@ -31,7 +31,7 @@ TEST_F(LowerTest, number__literal_node)
 TEST_F(LowerTest, list__call_node__no_ctx__lookup_node_callee)
 {
   Lisple::LowerContext lctx;
-  Lisple::sptr_sobject expr = Lisple::AST::List::make({Lisple::AST::Symbol::make("+"),
+  Lisple::sptr_ast_node expr = Lisple::AST::List::make({Lisple::AST::Symbol::make("+"),
                                                        Lisple::AST::Number::make(1),
                                                        Lisple::AST::Number::make(1)});
 
@@ -47,7 +47,7 @@ TEST_F(LowerTest, list__call_node__no_ctx__lookup_node_callee)
 TEST_F(LowerTest, list__call_node__ctx__literal_node_callee)
 {
   Lisple::LowerContext lctx{&ctx};
-  Lisple::sptr_sobject expr = Lisple::AST::List::make({Lisple::AST::Symbol::make("+"),
+  Lisple::sptr_ast_node expr = Lisple::AST::List::make({Lisple::AST::Symbol::make("+"),
                                                        Lisple::AST::Number::make(1),
                                                        Lisple::AST::Number::make(1)});
 
@@ -63,7 +63,7 @@ TEST_F(LowerTest, list__call_node__ctx__literal_node_callee)
 TEST_F(LowerTest, list__key_lookup__no_ctx__lookup_node)
 {
   Lisple::LowerContext lctx;
-  Lisple::sptr_sobject expr = Lisple::AST::List::make(
+  Lisple::sptr_ast_node expr = Lisple::AST::List::make(
     {Lisple::AST::Keyword::make("name"), Lisple::AST::Symbol::make("my-map")});
 
   // When
@@ -79,7 +79,7 @@ TEST_F(LowerTest, list__key_lookup__no_ctx__lookup_node)
 TEST_F(LowerTest, list__key_lookup__ctx__lookup_node)
 {
   Lisple::LowerContext lctx{&ctx};
-  Lisple::sptr_sobject expr = Lisple::AST::List::make(
+  Lisple::sptr_ast_node expr = Lisple::AST::List::make(
     {Lisple::AST::Keyword::make("name"), Lisple::AST::Symbol::make("my-map")});
 
   // When
@@ -95,7 +95,7 @@ TEST_F(LowerTest, list__key_lookup__ctx__lookup_node)
 TEST_F(LowerTest, list_special_form__ctx__custom_lower)
 {
   Lisple::LowerContext lctx{&ctx};
-  Lisple::sptr_sobject expr = Lisple::AST::List::make(
+  Lisple::sptr_ast_node expr = Lisple::AST::List::make(
     {Lisple::AST::Symbol::make("->"),
      Lisple::AST::Number::make(10),
      Lisple::AST::List::make({Lisple::AST::Symbol::make("+"), Lisple::AST::Number::make(5)}),
@@ -145,7 +145,7 @@ TEST_F(LowerTest, lower_custom_special_form)
   auto& ctx = *configured_context;
   ctx.switch_namespace("my-app.core");
   Lisple::LowerContext lctx{&ctx};
-  Lisple::sptr_sobject_v def_thing_expr =
+  Lisple::sptr_ast_node_v def_thing_expr =
     reader.read_sexps("(defthing my-thing {:value \"a lot\"})");
 
   // When
@@ -166,7 +166,7 @@ TEST_F(LowerTest, lower_namespace_qualified_custom_special_form)
   auto& ctx = *configured_context;
   ctx.switch_namespace("my-app.core");
   Lisple::LowerContext lctx{&ctx};
-  Lisple::sptr_sobject_v def_thing_expr =
+  Lisple::sptr_ast_node_v def_thing_expr =
     reader.read_sexps("(custom/defthing my-thing {:value \"a lot\"})");
 
   // When

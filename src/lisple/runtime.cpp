@@ -235,7 +235,7 @@ namespace Lisple
 
   sptr_val Runtime::eval(Context& ctx, const std::string& str)
   {
-    sptr_sobject_v script = sexp_reader.read_sexps(str);
+    sptr_ast_node_v script = sexp_reader.read_sexps(str);
 
     sptr_val result;
 
@@ -252,13 +252,13 @@ namespace Lisple
     return this->eval(ctx, str);
   }
 
-  sptr_val Runtime::eval(const sptr_sobject& statement)
+  sptr_val Runtime::eval(const sptr_ast_node& statement)
   {
     Context ctx(*this);
     return this->eval(ctx, statement);
   }
 
-  sptr_val Runtime::eval(Context& ctx, const sptr_sobject& form)
+  sptr_val Runtime::eval(Context& ctx, const sptr_ast_node& form)
   {
     LowerContext lctx{&ctx};
     auto exec_node = lower_expr(lctx, form);

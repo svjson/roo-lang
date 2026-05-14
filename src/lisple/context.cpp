@@ -50,7 +50,7 @@ namespace Lisple
     std::stringstream s;
     s << "ContextFrame (" << this << ", eval_mode=" << evaluation_mode << ")" << std::endl;
 
-    sptr_sobject keys = scope.get_keys();
+    sptr_ast_node keys = scope.get_keys();
     for (auto& k : keys->get_children())
     {
       s << " - " << k->to_string() << ": " << scope.lookup(k->to_string())->to_string()
@@ -117,7 +117,7 @@ namespace Lisple
     return frame_stack.size();
   }
 
-  sptr_val Context::eval(const sptr_sobject& form)
+  sptr_val Context::eval(const sptr_ast_node& form)
   {
     return runtime.eval(*this, form);
   }

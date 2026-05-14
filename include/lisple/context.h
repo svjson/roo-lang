@@ -57,7 +57,7 @@ namespace Lisple
 
     sptr_val eval(const std::string& str);
     sptr_val eval(const sptr_val& list);
-    sptr_val eval(const sptr_sobject& list);
+    sptr_val eval(const sptr_ast_node& list);
 
     /*!
      * @brief Call a named function with a single Value argument.

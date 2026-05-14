@@ -65,7 +65,7 @@ namespace Lisple
 
   std::shared_ptr<AST::Vector> Scope::get_keys() const
   {
-    sptr_sobject_v keys;
+    sptr_ast_node_v keys;
     keys.reserve(values.size());
     for (auto& [key, val] : values)
     {

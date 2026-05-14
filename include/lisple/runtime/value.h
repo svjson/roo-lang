@@ -25,7 +25,7 @@ namespace Lisple
   using sptr_val = std::shared_ptr<Value>;
   using sptr_val_v = std::vector<std::shared_ptr<Value>>;
   using sptr_executable = std::shared_ptr<Executable>;
-  using sptr_sobject = std::shared_ptr<AST::ASTNode>;
+  using sptr_ast_node = std::shared_ptr<AST::ASTNode>;
   using sptr_native_obj = std::shared_ptr<NativeObjectBase>;
 
   struct Value
@@ -79,7 +79,7 @@ namespace Lisple
     };
 
     using Data = std::variant<sptr_executable,
-                              sptr_sobject,
+                              sptr_ast_node,
                               std::string,
                               const Value::Number,
                               sptr_val_v,
@@ -112,7 +112,7 @@ namespace Lisple
     static sptr_val list(const sptr_val_v&);
     static sptr_val vector(const sptr_val_v&);
     static sptr_val map(const sptr_val_v&);
-    static sptr_val object(const sptr_sobject&);
+    static sptr_val object(const sptr_ast_node&);
     static sptr_val native_object(const sptr_native_obj&);
     static sptr_val executable(const sptr_executable&);
 
@@ -128,7 +128,7 @@ namespace Lisple
     char ch() const;
     const Value::Number& num() const;
     const std::string& str() const;
-    sptr_sobject obj() const;
+    sptr_ast_node obj() const;
     sptr_native_obj nobj() const;
     Executable& exec() const;
     const sptr_val_v& elements() const;

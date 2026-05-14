@@ -51,7 +51,7 @@ namespace Lisple
       else if (vec->type != Value::Type::MAP && Type::SEQ.is_type_of(*vec))
       {
         if (vec->type == Value::Type::OBJECT &&
-            std::get<sptr_sobject>(vec->value)->get_type() != Form::HOST_SEQ)
+            std::get<sptr_ast_node>(vec->value)->get_type() != Form::HOST_SEQ)
         {
           result.push_back(vec);
         }
@@ -276,14 +276,14 @@ namespace Lisple
     if (Type::HOST_SEQ.is_type_of(seq))
     {
       auto obj = seq.obj();
-      sptr_sobject_v& children = obj->get_children();
+      sptr_ast_node_v& children = obj->get_children();
 
       if (n < 0 || n >= static_cast<int>(children.size()))
       {
         return Lisple::Constant::NIL;
       }
 
-      sptr_sobject to_delete = children[n];
+      sptr_ast_node to_delete = children[n];
 
       children.erase(children.begin() + n);
 
@@ -417,7 +417,7 @@ namespace Lisple
 
     if (Type::HOST_SEQ.is_type_of(*args[1]))
     {
-      sptr_sobject_v vector = args.back()->obj()->get_children();
+      sptr_ast_node_v vector = args.back()->obj()->get_children();
       size_t actual_amount = std::min(amount, vector.size());
 
       result.reserve(actual_amount);

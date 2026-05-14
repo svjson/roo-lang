@@ -41,8 +41,8 @@ namespace Lisple
     class ASTNode;
   }
 
-  typedef std::shared_ptr<AST::ASTNode> sptr_sobject;
-  typedef std::vector<std::shared_ptr<AST::ASTNode>> sptr_sobject_v;
+  typedef std::shared_ptr<AST::ASTNode> sptr_ast_node;
+  typedef std::vector<std::shared_ptr<AST::ASTNode>> sptr_ast_node_v;
 
   struct CoercionResult
   {

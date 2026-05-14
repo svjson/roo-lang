@@ -174,7 +174,7 @@ namespace Lisple
                                                const std::string& prepend_val)
   {
     AST::List& list = list_obj.as<AST::List>();
-    sptr_sobject prepended;
+    sptr_ast_node prepended;
 
     if (Type::STRING.is_type_of(*list.head()) || Type::NUMBER.is_type_of(*list.head()))
     {
@@ -251,62 +251,62 @@ namespace Lisple
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> sptr_sobject wrap_primitive<int>(int value)
+  template <> sptr_ast_node wrap_primitive<int>(int value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<short>(short value)
+  template <> sptr_ast_node wrap_primitive<short>(short value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<long>(long value)
+  template <> sptr_ast_node wrap_primitive<long>(long value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<unsigned int>(unsigned int value)
+  template <> sptr_ast_node wrap_primitive<unsigned int>(unsigned int value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<float>(float value)
+  template <> sptr_ast_node wrap_primitive<float>(float value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<double>(double value)
+  template <> sptr_ast_node wrap_primitive<double>(double value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<int8_t>(int8_t value)
+  template <> sptr_ast_node wrap_primitive<int8_t>(int8_t value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<uint8_t>(uint8_t value)
+  template <> sptr_ast_node wrap_primitive<uint8_t>(uint8_t value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<unsigned long>(unsigned long value)
+  template <> sptr_ast_node wrap_primitive<unsigned long>(unsigned long value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<unsigned short>(unsigned short value)
+  template <> sptr_ast_node wrap_primitive<unsigned short>(unsigned short value)
   {
     return AST::Number::make(value);
   }
 
-  template <> sptr_sobject wrap_primitive<bool>(bool value)
+  template <> sptr_ast_node wrap_primitive<bool>(bool value)
   {
     return AST::Boolean::wrap(value);
   }
 
-  template <> sptr_sobject wrap_primitive<std::string>(const std::string& value)
+  template <> sptr_ast_node wrap_primitive<std::string>(const std::string& value)
   {
     return AST::String::make(value);
   }

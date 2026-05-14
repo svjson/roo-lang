@@ -8,7 +8,7 @@ using FnForm = LispleTest::RuntimeTestFixture;
 TEST_F(FnForm, define_and_exec_lambda)
 {
   // Given
-  Lisple::sptr_sobject_v code = parser.read_sexps("(fn [x y] (+ (+ x 1) (- y 2)))");
+  Lisple::sptr_ast_node_v code = parser.read_sexps("(fn [x y] (+ (+ x 1) (- y 2)))");
 
   Lisple::sptr_val_v exec_args;
   exec_args.push_back(Lisple::Value::number(5));

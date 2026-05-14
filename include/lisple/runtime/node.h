@@ -35,10 +35,10 @@ namespace Lisple
   {
     sptr_val value;
     // FIXME: This should not be required here
-    sptr_sobject ast_node;
+    sptr_ast_node ast_node;
 
     explicit LiteralNode(const sptr_val& v);
-    explicit LiteralNode(const sptr_val& v, sptr_sobject ast_node);
+    explicit LiteralNode(const sptr_val& v, sptr_ast_node ast_node);
   };
 
   struct LookupNode
@@ -127,7 +127,7 @@ namespace Lisple
 
   struct ExecNode
   {
-    sptr_sobject form;
+    sptr_ast_node form;
     ExecNodeData data;
 
     /**
@@ -156,7 +156,7 @@ namespace Lisple
      * literal-data handling, or host interop.
      */
     template <typename T>
-    explicit ExecNode(const sptr_sobject& form, T node)
+    explicit ExecNode(const sptr_ast_node& form, T node)
       : form(form)
       , data(std::move(node))
     {

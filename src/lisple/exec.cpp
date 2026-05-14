@@ -698,7 +698,7 @@ namespace Lisple
                                                 Context& ctx,
                                                 const Namespace* home_ns,
                                                 AST::ASTNode& arg_vector,
-                                                sptr_sobject_v& body)
+                                                sptr_ast_node_v& body)
   {
     std::vector<Argument> arg_types;
     std::vector<std::unique_ptr<LexicalBinding>> arg_bindings;

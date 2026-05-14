@@ -41,7 +41,7 @@ namespace Lisple
 
   std::pair<std::string, std::string> split_qualifiable(const std::string& str);
 
-  template <class T> std::shared_ptr<T> sptr_sobject_cast(sptr_sobject& obj)
+  template <class T> std::shared_ptr<T> sptr_ast_node_cast(sptr_ast_node& obj)
   {
     if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(obj.get()))
     {
@@ -57,9 +57,9 @@ namespace Lisple
    * @brief Create a copy of a sexp form with a substituted child element
    */
   template <class T>
-  std::shared_ptr<T> subst_sexp_lmnt(const T& sexp, unsigned int index, sptr_sobject subst)
+  std::shared_ptr<T> subst_sexp_lmnt(const T& sexp, unsigned int index, sptr_ast_node subst)
   {
-    sptr_sobject_v nchildren = const_cast<T&>(sexp).get_children();
+    sptr_ast_node_v nchildren = const_cast<T&>(sexp).get_children();
     nchildren.at(index) = subst;
     return std::make_shared<T>(nchildren);
   }
@@ -79,11 +79,11 @@ namespace Lisple
     const AST::ASTNode& obj);
 
   template <typename T>
-  sptr_sobject wrap_primitive(
+  sptr_ast_node wrap_primitive(
     typename std::enable_if<std::is_arithmetic<T>::value, T>::type value);
 
   template <typename T>
-  sptr_sobject wrap_primitive(
+  sptr_ast_node wrap_primitive(
     const typename std::enable_if<!std::is_arithmetic<T>::value, T>::type& value);
 
 } // namespace Lisple

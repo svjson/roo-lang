@@ -34,21 +34,21 @@ namespace Lisple
   };
 
   /**
-   * Lower an SObject to an executable node.
+   * Lower an ASTNode to an executable node.
    *
-   * @param obj The SObject to lower.
+   * @param obj The ASTNode to lower.
    *
    * @return A unique pointer to the resulting ExecNode.
    */
-  std::unique_ptr<ExecNode> lower_expr(LowerContext& ctx, const sptr_sobject& obj);
+  std::unique_ptr<ExecNode> lower_expr(LowerContext& ctx, const sptr_ast_node& obj);
   /**
-   * Lower an SObject to a literal/data node.
+   * Lower an ASTNode to a literal/data node.
    *
-   * @param obj The SObject to lower.
+   * @param obj ASTNode to lower.
    *
    * @return A unique pointer to the resulting ExecNode
    */
-  std::unique_ptr<ExecNode> lower_literal(const sptr_sobject& obj);
+  std::unique_ptr<ExecNode> lower_literal(const sptr_ast_node& obj);
 
 } // namespace Lisple
 

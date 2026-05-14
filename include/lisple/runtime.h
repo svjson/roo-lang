@@ -163,8 +163,8 @@ namespace Lisple
 
     sptr_val eval(const std::string& str);
     sptr_val eval(Context& ctx, const std::string& str);
-    sptr_val eval(const sptr_sobject& sexp);
-    sptr_val eval(Context& ctx, const sptr_sobject& sexp);
+    sptr_val eval(const sptr_ast_node& sexp);
+    sptr_val eval(Context& ctx, const sptr_ast_node& sexp);
 
     sptr_val invoke(const std::string& function, sptr_val_v& args);
 

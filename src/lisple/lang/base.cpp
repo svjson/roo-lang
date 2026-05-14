@@ -21,7 +21,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(DefForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements.size() < 3 || elements.size() > 4)
     {
       throw LispleException("Invalid def form: " + ast_node->to_string());
@@ -36,8 +36,8 @@ namespace Lisple
     }
 
     Lisple::AST::Symbol& symbol = elements[1]->as<Lisple::AST::Symbol>();
-    sptr_sobject doc_string = elements.size() == 4 ? elements[2] : nullptr;
-    sptr_sobject value = !doc_string ? elements[2] : elements[3];
+    sptr_ast_node doc_string = elements.size() == 4 ? elements[2] : nullptr;
+    sptr_ast_node value = !doc_string ? elements[2] : elements[3];
 
     uptr_exec_node_v value_node;
     value_node.push_back(lower_expr(ctx, value));
@@ -72,7 +72,7 @@ namespace Lisple
   {
     uptr_exec_node_v exec_nodes;
 
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     for (size_t i = 1; i < elements.size(); i++)
     {
@@ -127,7 +127,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(AndForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     uptr_exec_node_v exec_nodes;
     for (size_t i = 1; i < elements.size(); i++)
@@ -194,11 +194,11 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(NsForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     AST::Symbol& ns_symbol = elements[1]->as<AST::Symbol>();
 
-    Lisple::sptr_sobject_v imports;
+    Lisple::sptr_ast_node_v imports;
     if (elements.size() == 3)
     {
       Lisple::AST::List& list = elements.back()->as<AST::List>();
@@ -301,7 +301,7 @@ namespace Lisple
   {
     uptr_exec_node_v exec_nodes;
 
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
 
     for (size_t i = 1; i < elements.size(); i++)
     {

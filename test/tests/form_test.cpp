@@ -57,7 +57,7 @@ TEST(List, get_property__single_entry)
 {
   // Given
   Lisple::AST::Keyword key1("id");
-  Lisple::sptr_sobject_v list_elements{std::make_shared<Lisple::AST::Keyword>("id"),
+  Lisple::sptr_ast_node_v list_elements{std::make_shared<Lisple::AST::Keyword>("id"),
                                        std::make_shared<Lisple::AST::String>("ferret")};
   Lisple::AST::List list(list_elements);
 
@@ -77,7 +77,7 @@ TEST(Map, cannot_be_constructed_with_duplicate_keys)
     std::make_shared<Lisple::AST::String>("value");
   std::shared_ptr<Lisple::AST::String> value2 =
     std::make_shared<Lisple::AST::String>("othervalue");
-  Lisple::sptr_sobject_v map_elements = {key1, value1, key1, value2};
+  Lisple::sptr_ast_node_v map_elements = {key1, value1, key1, value2};
   Lisple::LispleException* exception = nullptr;
 
   // When
@@ -102,7 +102,7 @@ TEST(Map, cannot_be_constructed_with_duplicate_keys__different_instances_with_sa
     std::make_shared<Lisple::AST::String>("value");
   std::shared_ptr<Lisple::AST::String> value2 =
     std::make_shared<Lisple::AST::String>("othervalue");
-  Lisple::sptr_sobject_v map_elements = {key1, value1, key2, value2};
+  Lisple::sptr_ast_node_v map_elements = {key1, value1, key2, value2};
   Lisple::LispleException* exception = nullptr;
 
   // When
@@ -122,7 +122,7 @@ TEST(Map, get_property___from_map_multiple_entries)
 {
   // Given
   Lisple::AST::Keyword key("somekey");
-  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::AST::Keyword>("akey"),
+  Lisple::sptr_ast_node_v map_elements{std::make_shared<Lisple::AST::Keyword>("akey"),
                                       std::make_shared<Lisple::AST::String>("avalue"),
                                       std::make_shared<Lisple::AST::Keyword>("somekey"),
                                       std::make_shared<Lisple::AST::String>("somevalue")};
@@ -152,7 +152,7 @@ TEST(Map, map_with_numeric_keys)
 
 TEST(Map, has_key)
 {
-  Lisple::sptr_sobject_v map_elements{std::make_shared<Lisple::AST::Keyword>("akey"),
+  Lisple::sptr_ast_node_v map_elements{std::make_shared<Lisple::AST::Keyword>("akey"),
                                       std::make_shared<Lisple::AST::String>("avalue"),
                                       std::make_shared<Lisple::AST::Keyword>("somekey"),
                                       std::make_shared<Lisple::AST::String>("somevalue")};
@@ -169,7 +169,7 @@ TEST(Map, has_key)
 
 TEST(Map, remove_key__existing_front_key)
 {
-  Lisple::sptr_sobject_v map_elements{
+  Lisple::sptr_ast_node_v map_elements{
     std::make_shared<Lisple::AST::Keyword>("a-key"),
     std::make_shared<Lisple::AST::String>("a value"),
     std::make_shared<Lisple::AST::Keyword>("some-key"),
@@ -192,7 +192,7 @@ TEST(Map, remove_key__existing_front_key)
 
 TEST(Map, remove_key__existing_middle_key)
 {
-  Lisple::sptr_sobject_v map_elements{
+  Lisple::sptr_ast_node_v map_elements{
     std::make_shared<Lisple::AST::Keyword>("a-key"),
     std::make_shared<Lisple::AST::String>("a value"),
     std::make_shared<Lisple::AST::Keyword>("some-key"),
@@ -215,7 +215,7 @@ TEST(Map, remove_key__existing_middle_key)
 
 TEST(Map, remove_key__existing_back_key)
 {
-  Lisple::sptr_sobject_v map_elements{
+  Lisple::sptr_ast_node_v map_elements{
     std::make_shared<Lisple::AST::Keyword>("a-key"),
     std::make_shared<Lisple::AST::String>("a value"),
     std::make_shared<Lisple::AST::Keyword>("some-key"),
@@ -238,7 +238,7 @@ TEST(Map, remove_key__existing_back_key)
 
 TEST(Map, remove_key__non_existing_key)
 {
-  Lisple::sptr_sobject_v map_elements{
+  Lisple::sptr_ast_node_v map_elements{
     std::make_shared<Lisple::AST::Keyword>("a-key"),
     std::make_shared<Lisple::AST::String>("a value"),
     std::make_shared<Lisple::AST::Keyword>("some-key"),
@@ -293,25 +293,25 @@ TEST(String, equality)
 TEST(List, equality)
 {
   // Given
-  Lisple::sptr_sobject_v list1_elements{
+  Lisple::sptr_ast_node_v list1_elements{
     std::make_shared<Lisple::AST::Symbol>("trait"),
     std::make_shared<Lisple::AST::QuotedSymbol>("UNOBSERVABLE")};
   Lisple::AST::List list1{list1_elements};
 
-  Lisple::sptr_sobject_v list2_elements{
+  Lisple::sptr_ast_node_v list2_elements{
     std::make_shared<Lisple::AST::Symbol>("trait"),
     std::make_shared<Lisple::AST::QuotedSymbol>("UNOBSERVABLE")};
   Lisple::AST::List list2(list2_elements);
 
-  Lisple::sptr_sobject_v list3_elements{Lisple::AST::Number::make(10),
+  Lisple::sptr_ast_node_v list3_elements{Lisple::AST::Number::make(10),
                                         Lisple::AST::String::make("ten")};
   Lisple::AST::List list3(list3_elements);
 
-  Lisple::sptr_sobject_v list4_elements{Lisple::AST::Number::make(10),
+  Lisple::sptr_ast_node_v list4_elements{Lisple::AST::Number::make(10),
                                         Lisple::AST::String::make("Macaroni")};
   Lisple::AST::List list4(list4_elements);
 
-  Lisple::sptr_sobject_v list5_elements{
+  Lisple::sptr_ast_node_v list5_elements{
     Lisple::AST::Number::make(10),
     Lisple::AST::String::make("Macaroni"),
     Lisple::AST::Symbol::make("trait"),

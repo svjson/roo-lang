@@ -42,7 +42,7 @@ namespace Lisple::AST
     return type;
   }
 
-  void ASTNode::append(const sptr_sobject&)
+  void ASTNode::append(const sptr_ast_node&)
   {
     throw std::runtime_error("S-expression: Cannot append to value type");
   }
@@ -67,29 +67,29 @@ namespace Lisple::AST
     return *this->get_sptr_property(key);
   }
 
-  sptr_sobject ASTNode::get_sptr_property(const ASTNode&) const
+  sptr_ast_node ASTNode::get_sptr_property(const ASTNode&) const
   {
     return NIL;
   }
 
-  void ASTNode::set_property(const ASTNode& key, sptr_sobject&)
+  void ASTNode::set_property(const ASTNode& key, sptr_ast_node&)
   {
     throw InvocationException("Cannot set property '" + key.to_string() + "' of " +
                               this->to_string(2));
   }
 
-  void ASTNode::set_property(const sptr_sobject& key, const sptr_sobject& value)
+  void ASTNode::set_property(const sptr_ast_node& key, const sptr_ast_node& value)
   {
-    sptr_sobject cp = value;
+    sptr_ast_node cp = value;
     return set_property(*key, cp);
   }
 
-  void ASTNode::set_property(Context*, const ASTNode& key, sptr_sobject& value)
+  void ASTNode::set_property(Context*, const ASTNode& key, sptr_ast_node& value)
   {
     this->set_property(key, value);
   }
 
-  sptr_sobject_v& ASTNode::get_children()
+  sptr_ast_node_v& ASTNode::get_children()
   {
     throw InvocationException(this->to_string(2) + " is not a sequence");
   }
@@ -145,7 +145,7 @@ namespace Lisple::AST
   {
   }
 
-  void Discard::append(const sptr_sobject& value)
+  void Discard::append(const sptr_ast_node& value)
   {
     this->value = value;
   }
@@ -235,7 +235,7 @@ namespace Lisple::AST
     return this->value.size();
   }
 
-  sptr_sobject_v& String::get_children()
+  sptr_ast_node_v& String::get_children()
   {
     if (_children.empty())
     {
@@ -632,13 +632,13 @@ namespace Lisple::AST
     }
   }
 
-  Seq::Seq(Form form, const sptr_sobject_v& children)
+  Seq::Seq(Form form, const sptr_ast_node_v& children)
     : ASTNode(form)
     , children(children)
   {
   }
 
-  sptr_sobject Seq::get_sptr_property(const ASTNode& form) const
+  sptr_ast_node Seq::get_sptr_property(const ASTNode& form) const
   {
     for (auto i = this->children.begin(); i < this->children.end(); i += 2)
     {
@@ -655,12 +655,12 @@ namespace Lisple::AST
     return NIL;
   }
 
-  void Seq::set_property(const ASTNode&, sptr_sobject&)
+  void Seq::set_property(const ASTNode&, sptr_ast_node&)
   {
     throw InvocationException("Set on sequences not implemented.");
   }
 
-  void Seq::append(const sptr_sobject& child)
+  void Seq::append(const sptr_ast_node& child)
   {
     this->children.push_back(child);
   }
@@ -670,9 +670,9 @@ namespace Lisple::AST
     return children.empty() ? NIL : children.front();
   }
 
-  sptr_sobject_v Seq::tail()
+  sptr_ast_node_v Seq::tail()
   {
-    sptr_sobject_v tail;
+    sptr_ast_node_v tail;
     if (children.size() < 2) return tail;
 
     tail.reserve(children.size() - 1);
@@ -733,12 +733,12 @@ namespace Lisple::AST
     return true;
   }
 
-  sptr_sobject_v& Seq::get_children()
+  sptr_ast_node_v& Seq::get_children()
   {
     return children;
   }
 
-  void Seq::replace_children(const sptr_sobject_v& vec)
+  void Seq::replace_children(const sptr_ast_node_v& vec)
   {
     this->children = vec;
   }
@@ -757,26 +757,26 @@ namespace Lisple::AST
   {
   }
 
-  List::List(const sptr_sobject_v& children, bool q)
+  List::List(const sptr_ast_node_v& children, bool q)
     : Seq(Form::LIST, children)
     , q(q)
   {
   }
 
-  std::shared_ptr<List> List::from(sptr_sobject head, sptr_sobject_v tail)
+  std::shared_ptr<List> List::from(sptr_ast_node head, sptr_ast_node_v tail)
   {
     tail.insert(tail.begin(), head);
     return std::make_shared<List>(tail);
   }
 
-  std::shared_ptr<List> List::make(const sptr_sobject_v& children)
+  std::shared_ptr<List> List::make(const sptr_ast_node_v& children)
   {
     return std::make_shared<List>(children);
   }
 
-  std::shared_ptr<List> List::insert(unsigned int index, sptr_sobject& element)
+  std::shared_ptr<List> List::insert(unsigned int index, sptr_ast_node& element)
   {
-    sptr_sobject_v new_elements(children.size() + 1);
+    sptr_ast_node_v new_elements(children.size() + 1);
     std::copy(children.begin(), children.begin() + index, new_elements.begin());
     new_elements[index] = element;
     std::copy(children.begin() + index, children.end(), new_elements.begin() + index + 1);
@@ -811,7 +811,7 @@ namespace Lisple::AST
   {
   }
 
-  Vector::Vector(const sptr_sobject_v& children)
+  Vector::Vector(const sptr_ast_node_v& children)
     : Seq(Form::VECTOR, children)
   {
   }
@@ -826,7 +826,7 @@ namespace Lisple::AST
     return "]";
   }
 
-  std::shared_ptr<Vector> Vector::make(const sptr_sobject_v& children)
+  std::shared_ptr<Vector> Vector::make(const sptr_ast_node_v& children)
   {
     return std::make_shared<Vector>(children);
   }
@@ -839,7 +839,7 @@ namespace Lisple::AST
   {
   }
 
-  Map::Map(const sptr_sobject_v& children)
+  Map::Map(const sptr_ast_node_v& children)
     : Seq(Form::MAP, children)
   {
     this->validate_keys();
@@ -877,9 +877,9 @@ namespace Lisple::AST
     return keys;
   }
 
-  sptr_sobject_v Map::key_ptrs() const
+  sptr_ast_node_v Map::key_ptrs() const
   {
-    sptr_sobject_v keys;
+    sptr_ast_node_v keys;
     keys.reserve(size());
     for (size_t i = 0; i < children.size(); i += 2)
     {
@@ -905,7 +905,7 @@ namespace Lisple::AST
     return Seq::size() / 2;
   }
 
-  void Map::set_property(const ASTNode& key, sptr_sobject& value)
+  void Map::set_property(const ASTNode& key, sptr_ast_node& value)
   {
     for (size_t i = 0; i < children.size(); i += 2)
     {
@@ -918,11 +918,11 @@ namespace Lisple::AST
     throw InvocationException("No key " + key.to_string() + " in " + this->to_string());
   }
 
-  void Map::set_property(const sptr_sobject& key, const sptr_sobject& value)
+  void Map::set_property(const sptr_ast_node& key, const sptr_ast_node& value)
   {
     if (this->has_key(*key))
     {
-      sptr_sobject val = value;
+      sptr_ast_node val = value;
       this->set_property(*key, val);
     }
     else
@@ -932,9 +932,9 @@ namespace Lisple::AST
     }
   }
 
-  sptr_sobject Map::remove_key(const ASTNode& key)
+  sptr_ast_node Map::remove_key(const ASTNode& key)
   {
-    sptr_sobject removed_val = NIL;
+    sptr_ast_node removed_val = NIL;
 
     int index = -1;
 
@@ -966,7 +966,7 @@ namespace Lisple::AST
     return "}";
   }
 
-  std::shared_ptr<Map> Map::make(const sptr_sobject_v& children)
+  std::shared_ptr<Map> Map::make(const sptr_ast_node_v& children)
   {
     return std::make_shared<Map>(children);
   }
@@ -1024,7 +1024,7 @@ namespace Lisple::AST
     return Lisple::is_truthy(*val);
   }
 
-  void RuntimeValueWrapper::set_property(const ASTNode& key, sptr_sobject& value)
+  void RuntimeValueWrapper::set_property(const ASTNode& key, sptr_ast_node& value)
   {
     switch (key.get_type())
     {
@@ -1040,7 +1040,7 @@ namespace Lisple::AST
     }
   }
 
-  void RuntimeValueWrapper::append(const sptr_sobject& value)
+  void RuntimeValueWrapper::append(const sptr_ast_node& value)
   {
     RuntimeValueWrapper* val_wrapper = dynamic_cast<RuntimeValueWrapper*>(value.get());
     if (val_wrapper)
@@ -1059,7 +1059,7 @@ namespace Lisple::AST
     else
     {
       throw LispleException("Do we need to handle this?");
-      // sptr_val value = to_rt_value(const_cast<sptr_sobject&>(value));
+      // sptr_val value = to_rt_value(const_cast<sptr_ast_node&>(value));
       // sptr_val_v& elements = std::get<sptr_val_v>(val->value);
       // elements.push_back(value);
 
@@ -1067,13 +1067,13 @@ namespace Lisple::AST
     }
   }
 
-  void RuntimeValueWrapper::set_property(const sptr_sobject& key, const sptr_sobject& value)
+  void RuntimeValueWrapper::set_property(const sptr_ast_node& key, const sptr_ast_node& value)
   {
     switch (key->get_type())
     {
     case Form::KEYWORD:
     {
-      sptr_sobject vv = value;
+      sptr_ast_node vv = value;
       sptr_val v = to_rt_value(vv);
       Dict::set_property(val, Lisple::Value::keyword(Value<std::string>::value_of(*key)), v);
       break;
@@ -1084,7 +1084,7 @@ namespace Lisple::AST
     }
   }
 
-  sptr_sobject RuntimeValueWrapper::get_sptr_property(const ASTNode& key) const
+  sptr_ast_node RuntimeValueWrapper::get_sptr_property(const ASTNode& key) const
   {
     if (val->type == Lisple::Value::Type::MAP && key.get_type() == Form::KEYWORD)
     {
@@ -1115,7 +1115,7 @@ namespace Lisple::AST
     return Lisple::Dict::contains_key(*this->val, Lisple::str_val(key));
   }
 
-  sptr_sobject_v& RuntimeValueWrapper::get_children()
+  sptr_ast_node_v& RuntimeValueWrapper::get_children()
   {
     sptr_val_v vc = Lisple::get_children(*val);
     child_memo.clear();
@@ -1150,7 +1150,7 @@ namespace Lisple::AST
     case Lisple::Value::Type::SYMBOL:
       return Symbol::make(std::get<std::string>(value->value));
     case Lisple::Value::Type::OBJECT:
-      return std::get<sptr_sobject>(value->value);
+      return std::get<sptr_ast_node>(value->value);
     case Lisple::Value::Type::FUNCTION:
       return std::make_shared<RuntimeValueWrapper>(value);
     default:

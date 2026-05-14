@@ -36,7 +36,7 @@ namespace Lisple
       return std::get<sptr_val_v>(v.value);
     case Value::Type::OBJECT:
     {
-      sptr_sobject& val = std::get<sptr_sobject>(v.value);
+      sptr_ast_node& val = std::get<sptr_ast_node>(v.value);
       sptr_val_v elements;
       if (val->get_type() == Form::HOST_OBJECT || val->get_type() == Form::HOST_SEQ)
       {
@@ -170,7 +170,7 @@ namespace Lisple
     case Value::Type::MAP:
       return std::get<sptr_val_v>(v.value).size() / 2;
     case Value::Type::OBJECT:
-      return std::get<sptr_sobject>(v.value)->size();
+      return std::get<sptr_ast_node>(v.value)->size();
     case Value::Type::NATIVE_OBJECT:
       return std::get<sptr_native_obj>(v.value)->size();
     default:

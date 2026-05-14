@@ -49,7 +49,7 @@ namespace Lisple
     }
   }
 
-  std::unique_ptr<ExecNode> lower_expr(LowerContext& ctx, const sptr_sobject& obj)
+  std::unique_ptr<ExecNode> lower_expr(LowerContext& ctx, const sptr_ast_node& obj)
   {
     switch (obj->get_type())
     {
@@ -221,7 +221,7 @@ namespace Lisple
     }
   }
 
-  std::unique_ptr<ExecNode> lower_literal(const sptr_sobject& obj)
+  std::unique_ptr<ExecNode> lower_literal(const sptr_ast_node& obj)
   {
     lowered_literals++;
     switch (obj->get_type())
@@ -267,7 +267,7 @@ namespace Lisple
       return std::make_unique<ExecNode>(Constant::NIL);
     case Form::HOST_OBJECT:
     {
-      sptr_sobject ho = obj;
+      sptr_ast_node ho = obj;
       return std::make_unique<ExecNode>(obj, LiteralNode(Value::object(ho), obj));
     }
     case Form::KEYWORD:

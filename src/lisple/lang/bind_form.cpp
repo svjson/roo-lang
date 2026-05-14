@@ -20,13 +20,13 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(LetForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("let: Invalid bind form: " + elements[1]->to_string());
     }
 
-    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
 
     for (size_t i = 0; i < bind_forms.size(); i += 2)
@@ -81,7 +81,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(IfLetForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("if-let: Invalid bind form: " + elements[1]->to_string());
@@ -92,7 +92,7 @@ namespace Lisple
                             std::to_string(elements.size() - 2));
     }
 
-    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
 
     for (size_t i = 0; i < bind_forms.size(); i += 2)
@@ -152,7 +152,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(WhenLetForm)
   {
-    sptr_sobject_v& elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("when-let: Invalid bind form: " + elements[1]->to_string());
@@ -163,7 +163,7 @@ namespace Lisple
                             std::to_string(elements.size() - 2));
     }
 
-    sptr_sobject_v& bind_forms = elements[1]->get_children();
+    sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
 
     for (size_t i = 0; i < bind_forms.size(); i += 2)

@@ -9,7 +9,7 @@
 
 namespace Lisple
 {
-  sptr_sobject_v Reader::read_sexps(const std::string& input) const
+  sptr_ast_node_v Reader::read_sexps(const std::string& input) const
   {
     auto symbols = lexer.read_symbols(input);
     return parser.parse_sexps(symbols);
