@@ -62,7 +62,7 @@ TEST(List, get_property__single_entry)
   Lisple::AST::List list(list_elements);
 
   // When
-  Lisple::AST::Object& value = list.get_property(key1);
+  Lisple::AST::ASTNode& value = list.get_property(key1);
 
   // Then
   EXPECT_EQ(value.get_type(), Lisple::Form::STRING);
@@ -129,7 +129,7 @@ TEST(Map, get_property___from_map_multiple_entries)
   Lisple::AST::Map map(map_elements);
 
   // When
-  Lisple::AST::Object& value = map.get_property(key);
+  Lisple::AST::ASTNode& value = map.get_property(key);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(value));

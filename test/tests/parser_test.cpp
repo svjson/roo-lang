@@ -34,7 +34,7 @@ TEST(Parser, parse_simple_form)
   // Then
   ASSERT_EQ(sexps.size(), 1);
 
-  Object& form = *sexps.at(0);
+  ASTNode& form = *sexps.at(0);
   ASSERT_EQ(form.size(), 2);
 
   EXPECT_EQ(form.get_children().at(0)->get_type(), Form::SYMBOL);
@@ -60,7 +60,7 @@ TEST(Parser, parse_map_with_char_key)
   // Then
   ASSERT_EQ(sexps.size(), 1);
 
-  Object& form = *sexps.at(0);
+  ASTNode& form = *sexps.at(0);
   ASSERT_EQ(form.size(), 2);
 
   ASSERT_EQ(form.get_type(), Form::MAP);
@@ -104,7 +104,7 @@ TEST(Parser, parse_form_with_multiple_paren_types)
   // Then
   ASSERT_EQ(sexps.size(), 1);
 
-  Object& form = *sexps.at(0);
+  ASTNode& form = *sexps.at(0);
   ASSERT_EQ(form.size(), 2);
 }
 
@@ -123,7 +123,7 @@ TEST(Parser, parse_quoted_list)
   // Then
   ASSERT_EQ(sexps.size(), 1);
 
-  Object& obj = *sexps.at(0);
+  ASTNode& obj = *sexps.at(0);
   ASSERT_TRUE(Type::LIST.is_type_of(obj));
 
   List& list = obj.as<List>();

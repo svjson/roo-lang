@@ -30,14 +30,14 @@ namespace Lisple
     /*!
      * @brief Abstract base class for all form implementations
      */
-    class Object
+    class ASTNode
     {
      protected:
       Form type;
 
      public:
-      Object(Form form);
-      virtual ~Object() = default;
+      ASTNode(Form form);
+      virtual ~ASTNode() = default;
 
       Form get_type() const;
 
@@ -49,10 +49,10 @@ namespace Lisple
       virtual sptr_sobject_v& get_children();
       virtual unsigned int size() const;
 
-      virtual bool operator==(const Object& other) const = 0;
-      bool operator!=(const Object& other) const;
-      virtual Object& get_property(const Object& key) const;
-      virtual sptr_sobject get_sptr_property(const Object& key) const;
+      virtual bool operator==(const ASTNode& other) const = 0;
+      bool operator!=(const ASTNode& other) const;
+      virtual ASTNode& get_property(const ASTNode& key) const;
+      virtual sptr_sobject get_sptr_property(const ASTNode& key) const;
 
       /*!
        * @brief Check truthiness of the object/form.
@@ -60,8 +60,8 @@ namespace Lisple
        * @return true for any non-nil or non-false value, otherwise false
        */
       virtual bool is_truthy() const;
-      virtual bool has_key(const Object& key) const;
-      virtual void set_property(const Object& key, sptr_sobject& value);
+      virtual bool has_key(const ASTNode& key) const;
+      virtual void set_property(const ASTNode& key, sptr_sobject& value);
       virtual void set_property(const sptr_sobject& key, const sptr_sobject& value);
       /**
        * TODO: This exists because of the need to use the Context in some
@@ -82,7 +82,7 @@ namespace Lisple
        * functions and remove the need for a lot of MultiRef constructs and type
        * checks there.
        */
-      virtual void set_property(Context* ctx, const Object& key, sptr_sobject& value);
+      virtual void set_property(Context* ctx, const ASTNode& key, sptr_sobject& value);
 
       virtual std::string to_string(int depth = -1) const = 0;
 
@@ -91,33 +91,33 @@ namespace Lisple
       template <class OT> const OT& as() const { return dynamic_cast<const OT&>(*this); }
     };
 
-    class Nil : public Object
+    class Nil : public ASTNode
     {
      public:
       Nil();
 
-      bool operator==(const Object&) const override;
+      bool operator==(const ASTNode&) const override;
       bool is_truthy() const override;
 
       std::string to_string(int depth = -1) const override;
     };
 
-    inline std::shared_ptr<Object> NIL = std::make_shared<Nil>();
+    inline std::shared_ptr<ASTNode> NIL = std::make_shared<Nil>();
 
-    template <typename T> class Value : public Object
+    template <typename T> class Value : public ASTNode
     {
      public:
       T value;
 
       Value(Form type, T value)
-        : Object(type)
+        : ASTNode(type)
         , value(value)
       {
       }
 
-      static T value_of(const Object& obj);
+      static T value_of(const ASTNode& obj);
 
-      bool operator==(const Object& other) const override
+      bool operator==(const ASTNode& other) const override
       {
         if (this->type != other.get_type())
         {
@@ -152,14 +152,14 @@ namespace Lisple
       const std::string& get_identifier() const;
     };
 
-    class Discard : public Object
+    class Discard : public ASTNode
     {
-      std::shared_ptr<Object> value;
+      std::shared_ptr<ASTNode> value;
 
      public:
       Discard();
 
-      bool operator==(const Object&) const override;
+      bool operator==(const ASTNode&) const override;
 
       void append(const sptr_sobject& value) override;
 
@@ -304,7 +304,7 @@ namespace Lisple
       bool has_value(const std::string& value) const override;
     };
 
-    class Seq : public Object
+    class Seq : public ASTNode
     {
      public:
       mutable sptr_sobject_v children;
@@ -319,7 +319,7 @@ namespace Lisple
       /*!
        * @brief Retrieves the first element of the Sequence
        */
-      virtual std::shared_ptr<Object>& head();
+      virtual std::shared_ptr<ASTNode>& head();
       /*!
        * @brief Retrieves a new collection of all the elements of the Seq execpt
        * the first element. This is akin to car-operation, but as the underlying
@@ -328,8 +328,8 @@ namespace Lisple
        */
       virtual sptr_sobject_v tail();
 
-      sptr_sobject get_sptr_property(const Object& form) const override;
-      void set_property(const Object& key, sptr_sobject& value) override;
+      sptr_sobject get_sptr_property(const ASTNode& form) const override;
+      void set_property(const ASTNode& key, sptr_sobject& value) override;
 
       void append(const sptr_sobject& child) override;
       unsigned int size() const override;
@@ -339,7 +339,7 @@ namespace Lisple
 
       virtual const std::string lpar() const = 0;
       virtual const std::string rpar() const = 0;
-      bool operator==(const Object& other) const override;
+      bool operator==(const ASTNode& other) const override;
     };
 
     class List : public Seq
@@ -383,25 +383,25 @@ namespace Lisple
       Map(size_t reserved_size = 0);
       Map(const sptr_sobject_v& children);
 
-      void set_property(const Object& key, sptr_sobject& value) override;
+      void set_property(const ASTNode& key, sptr_sobject& value) override;
       void set_property(const sptr_sobject& key, const sptr_sobject& value) override;
 
-      sptr_sobject remove_key(const Object& key);
+      sptr_sobject remove_key(const ASTNode& key);
 
       const std::string lpar() const override;
       const std::string rpar() const override;
 
-      const std::vector<Object*> keys() const;
+      const std::vector<ASTNode*> keys() const;
       sptr_sobject_v key_ptrs() const;
 
       unsigned int size() const override;
 
       static std::shared_ptr<Map> make(const sptr_sobject_v& children);
 
-      bool has_key(const Object& key) const override;
+      bool has_key(const ASTNode& key) const override;
     };
 
-    class RuntimeValueWrapper : public Object
+    class RuntimeValueWrapper : public ASTNode
     {
      public:
       sptr_rtval val;
@@ -410,24 +410,24 @@ namespace Lisple
 
       RuntimeValueWrapper(const sptr_rtval& val);
 
-      bool operator==(const Object& other) const override;
+      bool operator==(const ASTNode& other) const override;
       unsigned int size() const override;
 
       void append(const sptr_sobject& value) override;
-      bool has_key(const Object&) const override;
-      void set_property(const Object& key, sptr_sobject& value) override;
+      bool has_key(const ASTNode&) const override;
+      void set_property(const ASTNode& key, sptr_sobject& value) override;
       void set_property(const sptr_sobject& key, const sptr_sobject& value) override;
-      sptr_sobject get_sptr_property(const Object& key) const override;
+      sptr_sobject get_sptr_property(const ASTNode& key) const override;
       bool is_truthy() const override;
 
       sptr_sobject_v& get_children() override;
 
-      static std::shared_ptr<Object> make(const sptr_rtval& value);
+      static std::shared_ptr<ASTNode> make(const sptr_rtval& value);
 
       std::string to_string(int depth = -1) const override;
     };
 
-    template <class OT> OT& Object::as()
+    template <class OT> OT& ASTNode::as()
     {
       if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(this))
       {
@@ -440,7 +440,7 @@ namespace Lisple
                             std::to_string((int)this->type));
     }
 
-    template <typename T> T Value<T>::value_of(const Object& obj)
+    template <typename T> T Value<T>::value_of(const ASTNode& obj)
     {
       if (auto* lw = dynamic_cast<const RuntimeValueWrapper*>(&obj))
       {

@@ -32,84 +32,84 @@ namespace Lisple::AST
 
   std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
 
-  Object::Object(Form form)
+  ASTNode::ASTNode(Form form)
     : type(form)
   {
   }
 
-  Form Object::get_type() const
+  Form ASTNode::get_type() const
   {
     return type;
   }
 
-  void Object::append(const sptr_sobject&)
+  void ASTNode::append(const sptr_sobject&)
   {
     throw std::runtime_error("S-expression: Cannot append to value type");
   }
 
-  unsigned int Object::size() const
+  unsigned int ASTNode::size() const
   {
     return 1;
   }
 
-  bool Object::is_truthy() const
+  bool ASTNode::is_truthy() const
   {
     return true;
   }
 
-  bool Object::has_key(const Object&) const
+  bool ASTNode::has_key(const ASTNode&) const
   {
     return false;
   }
 
-  Object& Object::get_property(const Object& key) const
+  ASTNode& ASTNode::get_property(const ASTNode& key) const
   {
     return *this->get_sptr_property(key);
   }
 
-  sptr_sobject Object::get_sptr_property(const Object&) const
+  sptr_sobject ASTNode::get_sptr_property(const ASTNode&) const
   {
     return NIL;
   }
 
-  void Object::set_property(const Object& key, sptr_sobject&)
+  void ASTNode::set_property(const ASTNode& key, sptr_sobject&)
   {
     throw InvocationException("Cannot set property '" + key.to_string() + "' of " +
                               this->to_string(2));
   }
 
-  void Object::set_property(const sptr_sobject& key, const sptr_sobject& value)
+  void ASTNode::set_property(const sptr_sobject& key, const sptr_sobject& value)
   {
     sptr_sobject cp = value;
     return set_property(*key, cp);
   }
 
-  void Object::set_property(Context*, const Object& key, sptr_sobject& value)
+  void ASTNode::set_property(Context*, const ASTNode& key, sptr_sobject& value)
   {
     this->set_property(key, value);
   }
 
-  sptr_sobject_v& Object::get_children()
+  sptr_sobject_v& ASTNode::get_children()
   {
     throw InvocationException(this->to_string(2) + " is not a sequence");
   }
 
-  bool Object::has_value(const std::string&) const
+  bool ASTNode::has_value(const std::string&) const
   {
     return false;
   }
 
-  bool Object::has_value(const float) const
+  bool ASTNode::has_value(const float) const
   {
     return false;
   }
 
-  bool Object::has_value(const int) const
+  bool ASTNode::has_value(const int) const
   {
     return false;
   }
 
-  bool Object::operator!=(const Object& other) const
+  bool ASTNode::operator!=(const ASTNode& other) const
   {
     return !(other == *this);
   }
@@ -118,7 +118,7 @@ namespace Lisple::AST
    * Nil - no values here
    */
   Nil::Nil()
-    : Object(Form::NIL)
+    : ASTNode(Form::NIL)
   {
   }
 
@@ -132,7 +132,7 @@ namespace Lisple::AST
     return false;
   }
 
-  bool Nil::operator==(const Object& other) const
+  bool Nil::operator==(const ASTNode& other) const
   {
     return type == other.get_type();
   }
@@ -141,7 +141,7 @@ namespace Lisple::AST
    * Discard - Ignored form
    */
   Discard::Discard()
-    : Object(Form::DISCARD)
+    : ASTNode(Form::DISCARD)
   {
   }
 
@@ -155,7 +155,7 @@ namespace Lisple::AST
     return "#_" + value->to_string();
   }
 
-  bool Discard::operator==(const Object& other) const
+  bool Discard::operator==(const ASTNode& other) const
   {
     return type == other.get_type();
   }
@@ -611,7 +611,7 @@ namespace Lisple::AST
    * Seq - Abstract base for lists, vectors and maps
    */
   Seq::Seq(Form form, size_t reserved_size)
-    : Object(form)
+    : ASTNode(form)
   {
     this->children.reserve(reserved_size);
   }
@@ -633,12 +633,12 @@ namespace Lisple::AST
   }
 
   Seq::Seq(Form form, const sptr_sobject_v& children)
-    : Object(form)
+    : ASTNode(form)
     , children(children)
   {
   }
 
-  sptr_sobject Seq::get_sptr_property(const Object& form) const
+  sptr_sobject Seq::get_sptr_property(const ASTNode& form) const
   {
     for (auto i = this->children.begin(); i < this->children.end(); i += 2)
     {
@@ -655,7 +655,7 @@ namespace Lisple::AST
     return NIL;
   }
 
-  void Seq::set_property(const Object&, sptr_sobject&)
+  void Seq::set_property(const ASTNode&, sptr_sobject&)
   {
     throw InvocationException("Set on sequences not implemented.");
   }
@@ -665,7 +665,7 @@ namespace Lisple::AST
     this->children.push_back(child);
   }
 
-  std::shared_ptr<Object>& Seq::head()
+  std::shared_ptr<ASTNode>& Seq::head()
   {
     return children.empty() ? NIL : children.front();
   }
@@ -708,7 +708,7 @@ namespace Lisple::AST
     return this->lpar() + str + this->rpar();
   }
 
-  bool Seq::operator==(const Object& other) const
+  bool Seq::operator==(const ASTNode& other) const
   {
     if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&other))
     {
@@ -719,13 +719,13 @@ namespace Lisple::AST
     {
       return false;
     }
-    if (children.size() != const_cast<Object&>(other).get_children().size())
+    if (children.size() != const_cast<ASTNode&>(other).get_children().size())
     {
       return false;
     }
     for (size_t i = 0; i < children.size(); i++)
     {
-      if (*children[i] != *const_cast<Object&>(other).get_children()[i])
+      if (*children[i] != *const_cast<ASTNode&>(other).get_children()[i])
       {
         return false;
       }
@@ -852,12 +852,12 @@ namespace Lisple::AST
       throw TypeError("Odd number of symbols in Map form: " + this->to_string(2));
     }
 
-    std::vector<Object*> keys = this->keys();
+    std::vector<ASTNode*> keys = this->keys();
     for (auto key : keys)
     {
       int count = std::count_if(keys.begin(),
                                 keys.end(),
-                                [key](const Object* other) { return *key == *other; });
+                                [key](const ASTNode* other) { return *key == *other; });
       if (count != 1)
       {
         throw TypeError("Duplicate key " + key->to_string() +
@@ -866,9 +866,9 @@ namespace Lisple::AST
     }
   }
 
-  const std::vector<Object*> Map::keys() const
+  const std::vector<ASTNode*> Map::keys() const
   {
-    std::vector<Object*> keys;
+    std::vector<ASTNode*> keys;
     keys.reserve(size());
     for (size_t i = 0; i < children.size(); i += 2)
     {
@@ -888,7 +888,7 @@ namespace Lisple::AST
     return keys;
   }
 
-  bool Map::has_key(const Object& key) const
+  bool Map::has_key(const ASTNode& key) const
   {
     for (size_t i = 0; i < children.size(); i += 2)
     {
@@ -905,7 +905,7 @@ namespace Lisple::AST
     return Seq::size() / 2;
   }
 
-  void Map::set_property(const Object& key, sptr_sobject& value)
+  void Map::set_property(const ASTNode& key, sptr_sobject& value)
   {
     for (size_t i = 0; i < children.size(); i += 2)
     {
@@ -932,7 +932,7 @@ namespace Lisple::AST
     }
   }
 
-  sptr_sobject Map::remove_key(const Object& key)
+  sptr_sobject Map::remove_key(const ASTNode& key)
   {
     sptr_sobject removed_val = NIL;
 
@@ -973,7 +973,7 @@ namespace Lisple::AST
 
   /** Refactor support - RuntimeValueWrapper */
   RuntimeValueWrapper::RuntimeValueWrapper(const sptr_rtval& val)
-    : Object(Form::NIL)
+    : ASTNode(Form::NIL)
     , val(val)
     , delegate(NIL)
   {
@@ -998,7 +998,7 @@ namespace Lisple::AST
     }
   }
 
-  bool RuntimeValueWrapper::operator==(const Object& other) const
+  bool RuntimeValueWrapper::operator==(const ASTNode& other) const
   {
     if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&other))
     {
@@ -1011,7 +1011,7 @@ namespace Lisple::AST
   std::string RuntimeValueWrapper::to_string([[maybe_unused]] int depth) const
   {
     // std::ostringstream r;
-    // r << "<RTvalue(" << this->val.get() << "): " << this->val->to_string() << ", Object("
+    // r << "<RTvalue(" << this->val.get() << "): " << this->val->to_string() << ", ASTNode("
     //   << this->delegate.get() << "): " << this->delegate->to_string(depth) << ">";
 
     // return r.str();
@@ -1024,7 +1024,7 @@ namespace Lisple::AST
     return Lisple::is_truthy(*val);
   }
 
-  void RuntimeValueWrapper::set_property(const Object& key, sptr_sobject& value)
+  void RuntimeValueWrapper::set_property(const ASTNode& key, sptr_sobject& value)
   {
     switch (key.get_type())
     {
@@ -1084,7 +1084,7 @@ namespace Lisple::AST
     }
   }
 
-  sptr_sobject RuntimeValueWrapper::get_sptr_property(const Object& key) const
+  sptr_sobject RuntimeValueWrapper::get_sptr_property(const ASTNode& key) const
   {
     if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEYWORD)
     {
@@ -1103,7 +1103,7 @@ namespace Lisple::AST
     return NIL;
   }
 
-  bool RuntimeValueWrapper::has_key(const Object& key) const
+  bool RuntimeValueWrapper::has_key(const ASTNode& key) const
   {
     // if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEYWORD)
     // {
@@ -1131,7 +1131,7 @@ namespace Lisple::AST
     return Lisple::count(*val);
   }
 
-  std::shared_ptr<Object> RuntimeValueWrapper::make(const sptr_rtval& value)
+  std::shared_ptr<ASTNode> RuntimeValueWrapper::make(const sptr_rtval& value)
   {
     if (*value == *Constant::NIL) return NIL;
     if (*value == *Constant::BOOL_FALSE) return B_FALSE;

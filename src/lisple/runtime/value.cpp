@@ -770,7 +770,7 @@ namespace Lisple
     return false;
   }
 
-  sptr_rtval to_rt_value(const AST::Object& obj)
+  sptr_rtval to_rt_value(const AST::ASTNode& obj)
   {
     if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
       return wrapper->val;
@@ -839,12 +839,12 @@ namespace Lisple
     case Form::SYMBOL:
       return RTValue::symbol(AST::Value<std::string>::value_of(obj));
     default:
-      throw LispleException("to_rt_value(AST::Object&): Unsupported value type #" +
+      throw LispleException("to_rt_value(AST::ASTNode&): Unsupported value type #" +
                             std::to_string(static_cast<int>(obj.get_type())));
     }
   }
 
-  sptr_rtval to_rt_value(std::shared_ptr<AST::Object>& obj)
+  sptr_rtval to_rt_value(std::shared_ptr<AST::ASTNode>& obj)
   {
     if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(obj.get()))
       return wrapper->val;

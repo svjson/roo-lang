@@ -3,7 +3,7 @@
 
 namespace Lisple
 {
-  void PrintTo(const Lisple::AST::Object& obj, std::ostream* os)
+  void PrintTo(const Lisple::AST::ASTNode& obj, std::ostream* os)
   {
     *os << obj.to_string();
   }

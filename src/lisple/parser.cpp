@@ -13,7 +13,7 @@ namespace Lisple
 {
   void ParseContext::begin_list(Token start_type)
   {
-    std::shared_ptr<AST::Object> list;
+    std::shared_ptr<AST::ASTNode> list;
     switch (start_type)
     {
     case Token::LPAREN:
@@ -66,7 +66,7 @@ namespace Lisple
     append(std::move(frame));
   }
 
-  void ParseContext::append(std::shared_ptr<AST::Object> obj)
+  void ParseContext::append(std::shared_ptr<AST::ASTNode> obj)
   {
     if (stack.empty())
     {

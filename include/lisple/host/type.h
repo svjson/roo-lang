@@ -110,7 +110,7 @@ namespace Lisple
      * @return true if the object is of this concrete type or if the type if a
      * base of the concrete type of the object.
      */
-    bool is_type_of(const AST::Object& obj) const override;
+    bool is_type_of(const AST::ASTNode& obj) const override;
 
     /*!
      * @brief Attempts to coerce a Lisple Runtime Value of a different type to this

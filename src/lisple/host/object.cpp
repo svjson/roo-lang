@@ -7,7 +7,7 @@ namespace Lisple
 {
   /*!
    * @brief Empty constant AccessorTable that is spliced in by
-   * NATIVE_ADAPTER_IMPL whenever a Native AST::Object Adapter object without accessors
+   * NATIVE_ADAPTER_IMPL whenever a Native AST::ASTNode Adapter object without accessors
    * is constructed.
    */
   const NAccessorTable NO_N_ACCESSORS = NAccessorTable();
@@ -122,7 +122,7 @@ namespace Lisple
     }
   }
 
-  bool NAccessorTable::has_key(const AST::Object& key) const
+  bool NAccessorTable::has_key(const AST::ASTNode& key) const
   {
     return accessor_map.count(key.to_string());
   }

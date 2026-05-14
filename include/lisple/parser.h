@@ -24,7 +24,7 @@ namespace Lisple
     void begin_hash_context();
     void close_context(Token end_token);
 
-    void append(std::shared_ptr<AST::Object> obj);
+    void append(std::shared_ptr<AST::ASTNode> obj);
   };
 
   class Parser

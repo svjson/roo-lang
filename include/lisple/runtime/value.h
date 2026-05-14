@@ -15,7 +15,7 @@ namespace Lisple
 
   namespace AST
   {
-    class Object;
+    class ASTNode;
   }
   class Executable;
   struct RTValue;
@@ -24,7 +24,7 @@ namespace Lisple
 
   using sptr_rtval = std::shared_ptr<RTValue>;
   using sptr_rtval_v = std::vector<std::shared_ptr<RTValue>>;
-  using sptr_sobject = std::shared_ptr<AST::Object>;
+  using sptr_sobject = std::shared_ptr<AST::ASTNode>;
   using sptr_native_obj = std::shared_ptr<NativeObjectBase>;
 
   struct RTValue
@@ -151,7 +151,7 @@ namespace Lisple
   } // namespace Constant
 
   sptr_rtval to_rt_value(sptr_sobject& obj);
-  sptr_rtval to_rt_value(const AST::Object& obj);
+  sptr_rtval to_rt_value(const AST::ASTNode& obj);
   sptr_sobject to_AST(RTValue& val);
   bool is_truthy(const RTValue& val);
 

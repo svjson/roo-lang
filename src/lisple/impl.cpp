@@ -13,7 +13,7 @@ namespace Lisple
 {
   const std::string EMPTY_STRING = "";
 
-  const std::string str_val(const AST::Object& obj) noexcept
+  const std::string str_val(const AST::ASTNode& obj) noexcept
   {
     if (Type::NUMBER.is_type_of(obj) || *AST::NIL == obj)
     {
@@ -38,7 +38,7 @@ namespace Lisple
     return EMPTY_STRING;
   }
 
-  char char_val(const AST::Object& obj) noexcept
+  char char_val(const AST::ASTNode& obj) noexcept
   {
     if (Type::NUMBER.is_type_of(obj) || *AST::NIL == obj)
     {
@@ -89,7 +89,7 @@ namespace Lisple
     }
   }
 
-  short short_val(const AST::Object& obj)
+  short short_val(const AST::ASTNode& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
@@ -99,7 +99,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to short");
   }
 
-  unsigned short ushort_val(const AST::Object& obj)
+  unsigned short ushort_val(const AST::ASTNode& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
@@ -114,7 +114,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to short");
   }
 
-  unsigned int uint_val(const AST::Object& obj)
+  unsigned int uint_val(const AST::ASTNode& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
@@ -124,7 +124,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to unsigned int");
   }
 
-  int int_val(const AST::Object& obj)
+  int int_val(const AST::ASTNode& obj)
   {
     if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
@@ -142,7 +142,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to int");
   }
 
-  uint8_t uint8_val(const AST::Object& obj)
+  uint8_t uint8_val(const AST::ASTNode& obj)
   {
     if (Type::NUMBER.is_type_of(obj))
     {
@@ -152,7 +152,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to uint8_t");
   }
 
-  float float_val(const AST::Object& obj)
+  float float_val(const AST::ASTNode& obj)
   {
     if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
@@ -170,7 +170,7 @@ namespace Lisple
     throw LispleException("Cannot convert " + obj.to_string() + " to float");
   }
 
-  std::shared_ptr<AST::List> prepend_list_head(AST::Object& list_obj,
+  std::shared_ptr<AST::List> prepend_list_head(AST::ASTNode& list_obj,
                                                const std::string& prepend_val)
   {
     AST::List& list = list_obj.as<AST::List>();
@@ -196,57 +196,57 @@ namespace Lisple
     return subst_sexp_lmnt(list, 0, prepended);
   }
 
-  template <> std::string unwrap_primitive<std::string>(const AST::Object& obj)
+  template <> std::string unwrap_primitive<std::string>(const AST::ASTNode& obj)
   {
     return const_cast<std::string&>(obj.as<AST::String>().value);
   }
 
-  template <> int unwrap_primitive<int>(const AST::Object& obj)
+  template <> int unwrap_primitive<int>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> short unwrap_primitive<short>(const AST::Object& obj)
+  template <> short unwrap_primitive<short>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> long unwrap_primitive<long>(const AST::Object& obj)
+  template <> long unwrap_primitive<long>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> unsigned int unwrap_primitive<unsigned int>(const AST::Object& obj)
+  template <> unsigned int unwrap_primitive<unsigned int>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> unsigned short unwrap_primitive<unsigned short>(const AST::Object& obj)
+  template <> unsigned short unwrap_primitive<unsigned short>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> unsigned long unwrap_primitive<unsigned long>(const AST::Object& obj)
+  template <> unsigned long unwrap_primitive<unsigned long>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> float unwrap_primitive<float>(const AST::Object& obj)
+  template <> float unwrap_primitive<float>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> double unwrap_primitive<double>(const AST::Object& obj)
+  template <> double unwrap_primitive<double>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> int8_t unwrap_primitive<int8_t>(const AST::Object& obj)
+  template <> int8_t unwrap_primitive<int8_t>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }
 
-  template <> uint8_t unwrap_primitive<uint8_t>(const AST::Object& obj)
+  template <> uint8_t unwrap_primitive<uint8_t>(const AST::ASTNode& obj)
   {
     return obj.as<AST::Number>().int_value();
   }

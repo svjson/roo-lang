@@ -21,7 +21,7 @@ namespace Lisple
     return val.type == value_type;
   }
 
-  bool TypeRef::is_type_of(const AST::Object& obj) const
+  bool TypeRef::is_type_of(const AST::ASTNode& obj) const
   {
     if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
@@ -57,7 +57,7 @@ namespace Lisple
     return true;
   }
 
-  bool AnyRef::is_type_of(const AST::Object&) const
+  bool AnyRef::is_type_of(const AST::ASTNode&) const
   {
     return true;
   }
@@ -81,7 +81,7 @@ namespace Lisple
     return false;
   }
 
-  bool MultiRef::is_type_of(const AST::Object& obj) const
+  bool MultiRef::is_type_of(const AST::ASTNode& obj) const
   {
     for (const TypeRef* ref : types)
     {
@@ -136,14 +136,14 @@ namespace Lisple
     return false;
   }
 
-  bool SeqRef::is_type_of(const AST::Object& obj) const
+  bool SeqRef::is_type_of(const AST::ASTNode& obj) const
   {
     if (!seq_type->is_type_of(obj))
     {
       return false;
     }
 
-    for (auto& child : const_cast<AST::Object&>(obj).get_children())
+    for (auto& child : const_cast<AST::ASTNode&>(obj).get_children())
     {
       if (!child_type->is_type_of(*child))
       {

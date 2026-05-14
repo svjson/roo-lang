@@ -694,7 +694,7 @@ namespace Lisple
     /*!
      * @brief Tests if an accessor is provided for a specific key.
      */
-    bool has_key(const AST::Object& key) const;
+    bool has_key(const AST::ASTNode& key) const;
 
     /*!
      * @brief Looks up the accessor definition for a specific key

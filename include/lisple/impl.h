@@ -25,19 +25,19 @@ namespace Lisple
    * Complex objects are not considered to have a string value, and
    * will return an empty string
    */
-  const std::string str_val(const AST::Object& obj) noexcept;
+  const std::string str_val(const AST::ASTNode& obj) noexcept;
 
-  char char_val(const AST::Object& obj) noexcept;
+  char char_val(const AST::ASTNode& obj) noexcept;
 
   /*!
    * @brief Get the unsigned int value of lisple symbol
    */
-  unsigned int uint_val(const AST::Object& obj);
-  uint8_t uint8_val(const AST::Object& obj);
-  int int_val(const AST::Object& obj);
-  short short_val(const AST::Object& obj);
-  unsigned short ushort_val(const AST::Object& obj);
-  float float_val(const AST::Object& obj);
+  unsigned int uint_val(const AST::ASTNode& obj);
+  uint8_t uint8_val(const AST::ASTNode& obj);
+  int int_val(const AST::ASTNode& obj);
+  short short_val(const AST::ASTNode& obj);
+  unsigned short ushort_val(const AST::ASTNode& obj);
+  float float_val(const AST::ASTNode& obj);
 
   std::pair<std::string, std::string> split_qualifiable(const std::string& str);
 
@@ -67,16 +67,16 @@ namespace Lisple
   /*!
    * @brief Prepend the string value of the head element of a list
    */
-  std::shared_ptr<AST::List> prepend_list_head(AST::Object& list_obj,
+  std::shared_ptr<AST::List> prepend_list_head(AST::ASTNode& list_obj,
                                                const std::string& prepend_val);
 
   template <typename T>
   typename std::enable_if<std::is_arithmetic<T>::value, T>::type unwrap_primitive(
-    const AST::Object& obj);
+    const AST::ASTNode& obj);
 
   template <typename T>
   typename std::enable_if<!std::is_arithmetic<T>::value, T>::type unwrap_primitive(
-    const AST::Object& obj);
+    const AST::ASTNode& obj);
 
   template <typename T>
   sptr_sobject wrap_primitive(

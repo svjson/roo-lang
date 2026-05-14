@@ -29,11 +29,11 @@ namespace Lisple
    public:
     MapStruct(std::map<const std::string, MapEntryReq> valid_keys);
 
-    void validate(const std::string& ctx_str, Lisple::AST::Object& map) const;
+    void validate(const std::string& ctx_str, Lisple::AST::ASTNode& map) const;
 
     template <class T>
-    std::shared_ptr<T> get_value(Lisple::AST::Object& map_obj,
-                                 const Lisple::AST::Object& key) const
+    std::shared_ptr<T> get_value(Lisple::AST::ASTNode& map_obj,
+                                 const Lisple::AST::ASTNode& key) const
     {
       if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(&map_obj))
       {

@@ -38,11 +38,11 @@ namespace Lisple
   class Runtime;
   namespace AST
   {
-    class Object;
+    class ASTNode;
   }
 
-  typedef std::shared_ptr<AST::Object> sptr_sobject;
-  typedef std::vector<std::shared_ptr<AST::Object>> sptr_sobject_v;
+  typedef std::shared_ptr<AST::ASTNode> sptr_sobject;
+  typedef std::vector<std::shared_ptr<AST::ASTNode>> sptr_sobject_v;
 
   struct CoercionResult
   {
@@ -64,7 +64,7 @@ namespace Lisple
     virtual ~TypeRef() = default;
 
     virtual bool is_type_of(const RTValue& val) const;
-    virtual bool is_type_of(const AST::Object& obj) const;
+    virtual bool is_type_of(const AST::ASTNode& obj) const;
 
     virtual CoercionResult coerce(Context& ctx, sptr_rtval& val) const;
 
@@ -84,7 +84,7 @@ namespace Lisple
     MultiRef(std::vector<const TypeRef*> types, const std::string& name);
 
     bool is_type_of(const RTValue& val) const override;
-    bool is_type_of(const AST::Object& obj) const override;
+    bool is_type_of(const AST::ASTNode& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
   };
 
@@ -94,7 +94,7 @@ namespace Lisple
    public:
     AnyRef();
     bool is_type_of(const RTValue& val) const override;
-    bool is_type_of(const AST::Object& obj) const override;
+    bool is_type_of(const AST::ASTNode& obj) const override;
   };
 
   /*!
@@ -110,7 +110,7 @@ namespace Lisple
     SeqRef(const TypeRef* seq_type, const TypeRef* child_type, const std::string& name);
 
     bool is_type_of(const RTValue& val) const override;
-    bool is_type_of(const AST::Object& obj) const override;
+    bool is_type_of(const AST::ASTNode& obj) const override;
     CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
   };
 

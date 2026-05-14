@@ -77,7 +77,7 @@ TEST_F(Runtime, instantiation_with_multiple_namespaces)
 TEST_F(Runtime, eval__symbol__lookup)
 {
   // Given
-  std::shared_ptr<Lisple::AST::Object> symbol =
+  std::shared_ptr<Lisple::AST::ASTNode> symbol =
     std::make_shared<Lisple::AST::Symbol>("my-symbol");
   runtime.get_current_namespace().store("my-symbol", Lisple::RTValue::string("my-string"));
 
@@ -91,7 +91,7 @@ TEST_F(Runtime, eval__symbol__lookup)
 TEST_F(Runtime, eval__symbol__no_lookup)
 {
   // Given
-  std::shared_ptr<Lisple::AST::Object> symbol =
+  std::shared_ptr<Lisple::AST::ASTNode> symbol =
     std::make_shared<Lisple::AST::Symbol>("my-symbol");
   runtime.get_current_namespace().store("my-symbol", Lisple::RTValue::string("my-string"));
 
