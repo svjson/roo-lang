@@ -2,7 +2,6 @@
 #define LISPLETEST__HOST__VECTORGFX_NATIVE_CACHED_ADAPTERS_H
 
 #include <lisple/exec.h>
-#include <lisple/host.h>
 #include <lisple/host/object.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime/value.h>

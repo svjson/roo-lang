@@ -1,7 +1,6 @@
 
 #include "product_native_adapters.h"
 
-#include <lisple/host.h>
 #include <lisple/host/accessor.h>
 #include <lisple/host/object.h>
 

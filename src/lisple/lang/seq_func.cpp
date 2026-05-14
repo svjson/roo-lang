@@ -3,7 +3,6 @@
 
 #include <algorithm>
 
-#include <lisple/host.h>
 #include <lisple/lang/seq_func.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/exec_node.h>

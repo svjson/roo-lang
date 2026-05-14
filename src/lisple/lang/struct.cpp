@@ -1,7 +1,6 @@
 
 #include "lisple/lang/struct.h"
 
-#include <lisple/host.h>
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>

@@ -17,6 +17,19 @@
 #include <lisple/macro_support.h>
 #include <lisple/type.h>
 
+/*
+ * Deprecated legacy host adapter API.
+ *
+ * This header exposes HostObject<T>, AbstractHostObject, HOST_ADAPTER, and
+ * related macros that wrap C++ objects into the old Object/Form::HOST_OBJECT
+ * shape. New integrations must use the RTValue-native API in
+ * <lisple/host/object.h> instead: NativeObject<T>, NativeObjectBase,
+ * NATIVE_ADAPTER, and related macros.
+ *
+ * Keep this header only for legacy compatibility and transitional tests. Do
+ * not add new production usage.
+ */
+
 // clang-format off
 
 #define __ADAPTER_TRAITS_DECL                                           \

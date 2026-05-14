@@ -23,8 +23,8 @@
 /*
  * NATIVE_ADAPTER_STATIC_FACTORY
  *
- * Macro used internally by Host Adapter declaration macros to add
- * static factory methods to the Host Adapter classes.
+ * Macro used internally by NativeObject adapter declaration macros to add
+ * static factory methods to NativeObject adapter classes.
  */
 #define NATIVE_ADAPTER_STATIC_FACTORY(AD_CLASS, H_CLASS)                \
   /*!                                                                   \
@@ -84,7 +84,7 @@
 
 /* NATIVE_ADAPTER_MAIN_DECL
  *
- * Macro that generates the class definition of a regular HostObject
+ * Macro that generates the class definition of a regular NativeObject
  * specialization, including constructors, static factory methods and
  * facilities for the adapter traits.
  */
@@ -717,8 +717,8 @@ namespace Lisple
   NAccessorTable merge_acc(const NAccessorTable& base, const NAccessorTable& additional);
 
   /*!
-   * @brief Defines the type traits of a HostObject specializing, including
-   * its HostTypeRef and AccessorTable.
+ * @brief Defines the type traits of a NativeObject specialization, including
+ * its HostTypeRef and AccessorTable.
    */
   struct NativeObjectTraits
   {
