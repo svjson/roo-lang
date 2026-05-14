@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(SelectKeysFunction, all_keys_present)
+using SelectKeysFunction = LispleTest::RuntimeTestFixture;
+
+TEST_F(SelectKeysFunction, all_keys_present)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2 :c 3 :d 4})");
 
   // When
@@ -16,10 +17,9 @@ TEST(SelectKeysFunction, all_keys_present)
   ASSERT_EQ(result->to_string(), "{:b 2 :d 4}");
 }
 
-TEST(SelectKeysFunction, no_keys_present)
+TEST_F(SelectKeysFunction, no_keys_present)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2 :c 3 :d 4})");
 
   // When

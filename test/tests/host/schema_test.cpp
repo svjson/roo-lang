@@ -3,7 +3,7 @@
 
 #include <lisple/context.h>
 #include <lisple/host/schema.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "host/test_adapters/vectorgfx_impl.h"
 #include "host/test_adapters/vectorgfx_native_adapters.h"
@@ -11,29 +11,35 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
+
+using MapSchema = LispleTest::RuntimeTestFixture;
+using MapSchema_Inspector = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 struct MapSchemaFixture
 {
   Lisple::Runtime runtime;
-  Lisple::Context ctx = (runtime);
+  Lisple::Context ctx;
   Lisple::MapSchema schema;
 
  public:
   MapSchemaFixture(Lisple::MapSchema schema)
-    : schema(std::move(schema))
+    : runtime()
+    , ctx(runtime)
+    , schema(std::move(schema))
   {
   }
 
   MapSchemaFixture(std::vector<std::unique_ptr<Lisple::Namespace>> ns,
                    Lisple::MapSchema schema)
     : runtime(std::move(ns), nullptr)
+    , ctx(runtime)
     , schema(std::move(schema))
   {
   }
 };
 
-TEST(MapSchema, bind_with_required_key_present_yields_inspector)
+TEST_F(MapSchema, bind_with_required_key_present_yields_inspector)
 {
   // Given
   MapSchemaFixture fixture(Lisple::MapSchema({{"amount", &Lisple::Type::NUMBER}}));
@@ -47,7 +53,7 @@ TEST(MapSchema, bind_with_required_key_present_yields_inspector)
   EXPECT_TRUE(&inspector);
 }
 
-TEST(MapSchema, bind_without_required_key_throws_TypeError)
+TEST_F(MapSchema, bind_without_required_key_throws_TypeError)
 {
   // Given
   MapSchemaFixture fixture(Lisple::MapSchema({{"amount", &Lisple::Type::NUMBER}}));
@@ -59,7 +65,7 @@ TEST(MapSchema, bind_without_required_key_throws_TypeError)
               ThrowsMessage<Lisple::TypeError>(HasSubstr("is missing required key")));
 }
 
-TEST(MapSchema, bind_with_omitted_optional_key_yields_inspector)
+TEST_F(MapSchema, bind_with_omitted_optional_key_yields_inspector)
 {
   // Given
   MapSchemaFixture fixture(Lisple::MapSchema({{"instances", &Lisple::Type::NUMBER}},
@@ -74,7 +80,7 @@ TEST(MapSchema, bind_with_omitted_optional_key_yields_inspector)
   EXPECT_TRUE(&inspector);
 }
 
-TEST(MapSchema_Inspector, bound_inspector__get_numbers)
+TEST_F(MapSchema_Inspector, bound_inspector__get_numbers)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({{"amount", &Lisple::Type::NUMBER}}));
   Lisple::sptr_rtval map_value =
@@ -96,7 +102,7 @@ TEST(MapSchema_Inspector, bound_inspector__get_numbers)
   EXPECT_EQ(f64, 10.0);
 }
 
-TEST(MapSchema_Inspector, bound_inspector__get_optional_number)
+TEST_F(MapSchema_Inspector, bound_inspector__get_optional_number)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
   Lisple::sptr_rtval map_value =
@@ -110,7 +116,7 @@ TEST(MapSchema_Inspector, bound_inspector__get_optional_number)
   EXPECT_THAT(amount, Optional(10));
 }
 
-TEST(MapSchema_Inspector, bound_inspector__get_missing_optional_number)
+TEST_F(MapSchema_Inspector, bound_inspector__get_missing_optional_number)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
   Lisple::sptr_rtval map_value = Lisple::RTValue::map({});
@@ -123,7 +129,7 @@ TEST(MapSchema_Inspector, bound_inspector__get_missing_optional_number)
   EXPECT_EQ(amount, std::nullopt);
 }
 
-TEST(MapSchema_Inspector, bound_inspector__get_optional_number_with_default)
+TEST_F(MapSchema_Inspector, bound_inspector__get_optional_number_with_default)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
   Lisple::sptr_rtval map_value = Lisple::RTValue::map({});
@@ -136,7 +142,7 @@ TEST(MapSchema_Inspector, bound_inspector__get_optional_number_with_default)
   EXPECT_THAT(amount, Optional(10));
 }
 
-TEST(MapSchema_Inspector, bound_inspector__get_optional_string)
+TEST_F(MapSchema_Inspector, bound_inspector__get_optional_string)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({}, {{"name", &Lisple::Type::STRING}}));
   Lisple::sptr_rtval map_value =
@@ -150,7 +156,7 @@ TEST(MapSchema_Inspector, bound_inspector__get_optional_string)
   EXPECT_THAT(name, Optional(std::string("A")));
 }
 
-TEST(MapSchema_Inspector, bound_inspector__get_optional_value)
+TEST_F(MapSchema_Inspector, bound_inspector__get_optional_value)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({}, {{"amount", &Lisple::Type::NUMBER}}));
   Lisple::sptr_rtval map_value =
@@ -166,7 +172,7 @@ TEST(MapSchema_Inspector, bound_inspector__get_optional_value)
   EXPECT_EQ(amount.value()->i32(), 10);
 }
 
-TEST(MapSchema_Inspector, bound_inspected__get_native_object)
+TEST_F(MapSchema_Inspector, bound_inspected__get_native_object)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
   Lisple::sptr_rtval map_value =
@@ -182,7 +188,7 @@ TEST(MapSchema_Inspector, bound_inspected__get_native_object)
   EXPECT_EQ(point.y, 30.0);
 }
 
-TEST(MapSchema_Inspector, bound_inspected__get_optional_native_object)
+TEST_F(MapSchema_Inspector, bound_inspected__get_optional_native_object)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({}, {{"point", &LispleTest::Native::POINT}}));
   Lisple::sptr_rtval map_value =
@@ -199,7 +205,7 @@ TEST(MapSchema_Inspector, bound_inspected__get_optional_native_object)
   EXPECT_EQ(point->y, 30.0);
 }
 
-TEST(MapSchema_Inspector, bound_inspected__get_native_object__with_default)
+TEST_F(MapSchema_Inspector, bound_inspected__get_native_object__with_default)
 {
   MapSchemaFixture fixture(Lisple::MapSchema({{"point", &LispleTest::Native::POINT}}));
 
@@ -218,7 +224,7 @@ TEST(MapSchema_Inspector, bound_inspected__get_native_object__with_default)
   EXPECT_EQ(point.y, 30.0);
 }
 
-TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion)
+TEST_F(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion)
 {
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
@@ -241,7 +247,7 @@ TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion)
   EXPECT_EQ(point.y, 30.0);
 }
 
-TEST(MapSchema_Inspector, bound_inspected__get_optional_native_object_by_coercion)
+TEST_F(MapSchema_Inspector, bound_inspected__get_optional_native_object_by_coercion)
 {
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
@@ -265,7 +271,7 @@ TEST(MapSchema_Inspector, bound_inspected__get_optional_native_object_by_coercio
   EXPECT_EQ(point->y, 30.0);
 }
 
-TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion__with_default)
+TEST_F(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion__with_default)
 {
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
@@ -290,7 +296,7 @@ TEST(MapSchema_Inspector, bound_inspected__get_native_object_by_coercion__with_d
   EXPECT_EQ(point.y, 30.0);
 }
 
-TEST(MapSchema_Inspector,
+TEST_F(MapSchema_Inspector,
      bound_inspected__get_missing_native_object_by_coercion__with_default)
 {
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;

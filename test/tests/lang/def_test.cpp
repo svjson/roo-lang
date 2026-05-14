@@ -1,15 +1,14 @@
 
 #include <lisple/lang/base.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(DefForm, exec_def__string)
+
+using DefForm = LispleTest::RuntimeTestFixture;
+TEST_F(DefForm, exec_def__string)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   runtime.eval("(def var-name \"Var Value\")");
 
   // Then
@@ -18,12 +17,9 @@ TEST(DefForm, exec_def__string)
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }
 
-TEST(DefForm, define_var)
+TEST_F(DefForm, define_var)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   runtime.eval("(def var-name \"Var Value\")");
 
   // Then
@@ -32,12 +28,9 @@ TEST(DefForm, define_var)
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }
 
-TEST(DefForm, define_var_with_gt_and_lt)
+TEST_F(DefForm, define_var_with_gt_and_lt)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   runtime.eval("(def <var-name> \"Value\")");
 
   // Then
@@ -46,12 +39,9 @@ TEST(DefForm, define_var_with_gt_and_lt)
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }
 
-TEST(DefForm, def_returns_defined_value)
+TEST_F(DefForm, def_returns_defined_value)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto defined = runtime.eval("(def my-var {:a 1000 :b 2000})");
 
   // Then

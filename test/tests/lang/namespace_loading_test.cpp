@@ -8,12 +8,15 @@
 #include <lisple/file_system.h>
 #include <lisple/file_system_namespace_source.h>
 #include <lisple/namespace_source.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+
+using FileSystemNamespaceSource = LispleTest::RuntimeTestFixture;
+using NamespaceLoading = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 namespace
@@ -130,7 +133,7 @@ namespace
   };
 } // namespace
 
-TEST(FileSystemNamespaceSource, single_segment_maps_to_filename)
+TEST_F(FileSystemNamespaceSource, single_segment_maps_to_filename)
 {
   // Given
   InMemoryFileSystem fs;
@@ -145,7 +148,7 @@ TEST(FileSystemNamespaceSource, single_segment_maps_to_filename)
   EXPECT_EQ(result->source, "(ns foo)");
 }
 
-TEST(FileSystemNamespaceSource, dotted_namespace_maps_to_directory_path)
+TEST_F(FileSystemNamespaceSource, dotted_namespace_maps_to_directory_path)
 {
   // Given
   InMemoryFileSystem fs;
@@ -159,7 +162,7 @@ TEST(FileSystemNamespaceSource, dotted_namespace_maps_to_directory_path)
   ASSERT_TRUE(result.has_value());
 }
 
-TEST(FileSystemNamespaceSource, dashes_are_preserved_in_path)
+TEST_F(FileSystemNamespaceSource, dashes_are_preserved_in_path)
 {
   // Given
   InMemoryFileSystem fs;
@@ -173,7 +176,7 @@ TEST(FileSystemNamespaceSource, dashes_are_preserved_in_path)
   ASSERT_TRUE(result.has_value());
 }
 
-TEST(FileSystemNamespaceSource, falls_back_to_lspl_extension)
+TEST_F(FileSystemNamespaceSource, falls_back_to_lspl_extension)
 {
   // Given
   InMemoryFileSystem fs;
@@ -188,7 +191,7 @@ TEST(FileSystemNamespaceSource, falls_back_to_lspl_extension)
   EXPECT_EQ(result->source, "(ns foo)");
 }
 
-TEST(FileSystemNamespaceSource, lisple_extension_takes_priority_over_lspl)
+TEST_F(FileSystemNamespaceSource, lisple_extension_takes_priority_over_lspl)
 {
   // Given
   InMemoryFileSystem fs;
@@ -204,7 +207,7 @@ TEST(FileSystemNamespaceSource, lisple_extension_takes_priority_over_lspl)
   EXPECT_EQ(result->source, "lisple-content");
 }
 
-TEST(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
+TEST_F(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
 {
   // Given
   InMemoryFileSystem fs;
@@ -219,7 +222,7 @@ TEST(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
 
 /** FileSystemNamespaceSource - inferred path resolution */
 
-TEST(FileSystemNamespaceSource,
+TEST_F(FileSystemNamespaceSource,
      infer_path_strips_package_root_when_loading_from_flat_project_file)
 {
   // Given
@@ -240,7 +243,7 @@ TEST(FileSystemNamespaceSource,
   EXPECT_EQ(result->resolved_path, "models.lisple");
 }
 
-TEST(FileSystemNamespaceSource, infer_path_strips_package_root_with_one_directory_level)
+TEST_F(FileSystemNamespaceSource, infer_path_strips_package_root_with_one_directory_level)
 {
   // Given
   InMemoryFileSystem fs;
@@ -260,7 +263,7 @@ TEST(FileSystemNamespaceSource, infer_path_strips_package_root_with_one_director
   EXPECT_EQ(result->resolved_path, "models/user.lisple");
 }
 
-TEST(FileSystemNamespaceSource, infer_path_falls_back_to_full_path_when_short_path_missing)
+TEST_F(FileSystemNamespaceSource, infer_path_falls_back_to_full_path_when_short_path_missing)
 {
   // Given
   InMemoryFileSystem fs;
@@ -280,7 +283,7 @@ TEST(FileSystemNamespaceSource, infer_path_falls_back_to_full_path_when_short_pa
   EXPECT_EQ(result->resolved_path, "my/app/models.lisple");
 }
 
-TEST(FileSystemNamespaceSource, infer_path_infers_root_dir_from_file_path)
+TEST_F(FileSystemNamespaceSource, infer_path_infers_root_dir_from_file_path)
 {
   // Given
   InMemoryFileSystem fs;
@@ -299,7 +302,7 @@ TEST(FileSystemNamespaceSource, infer_path_infers_root_dir_from_file_path)
   EXPECT_EQ(result->resolved_path, "lisp/app/models.lisple");
 }
 
-TEST(FileSystemNamespaceSource, infer_path_does_not_apply_across_different_root_packages)
+TEST_F(FileSystemNamespaceSource, infer_path_does_not_apply_across_different_root_packages)
 {
   // Given
   InMemoryFileSystem fs;
@@ -318,7 +321,7 @@ TEST(FileSystemNamespaceSource, infer_path_does_not_apply_across_different_root_
   EXPECT_EQ(result->resolved_path, "other/lib.lisple");
 }
 
-TEST(FileSystemNamespaceSource,
+TEST_F(FileSystemNamespaceSource,
      infer_path_resolves_from_package_root_when_entry_filename_is_arbitrary)
 {
   // Given
@@ -338,7 +341,7 @@ TEST(FileSystemNamespaceSource,
   EXPECT_EQ(result->resolved_path, "minesweeper/core.lisple");
 }
 
-TEST(FileSystemNamespaceSource,
+TEST_F(FileSystemNamespaceSource,
      infer_path_resolves_sibling_when_current_filename_is_arbitrary)
 {
   // Given
@@ -358,7 +361,7 @@ TEST(FileSystemNamespaceSource,
   EXPECT_EQ(result->resolved_path, "container.lisple");
 }
 
-TEST(FileSystemNamespaceSource,
+TEST_F(FileSystemNamespaceSource,
      infer_path_resolves_sibling_after_cross_branch_inferred_source_path)
 {
   // Given
@@ -381,12 +384,12 @@ TEST(FileSystemNamespaceSource,
 
 /** NamespaceLoading - integration */
 
-TEST(NamespaceLoading, loads_required_namespace_on_demand)
+TEST_F(NamespaceLoading, loads_required_namespace_on_demand)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("my/utils.lisple", "(ns my.utils) (defun double [n] (+ n n))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.eval("(ns my.app (:require my.utils))");
@@ -396,12 +399,12 @@ TEST(NamespaceLoading, loads_required_namespace_on_demand)
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, loads_aliased_required_namespace_on_demand)
+TEST_F(NamespaceLoading, loads_aliased_required_namespace_on_demand)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("my/utils.lisple", "(ns my.utils) (defun double [n] (+ n n))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.eval("(ns my.app (:require [my.utils :as utils]))");
@@ -411,13 +414,13 @@ TEST(NamespaceLoading, loads_aliased_required_namespace_on_demand)
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, loads_transitive_requirements)
+TEST_F(NamespaceLoading, loads_transitive_requirements)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("base.lisple", "(ns base) (defun add [a b] (+ a b))");
   fs.add("mid.lisple", "(ns mid (:require base)) (defun double [n] (add n n))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.eval("(ns top (:require mid))");
@@ -427,37 +430,37 @@ TEST(NamespaceLoading, loads_transitive_requirements)
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, throws_on_direct_cyclic_dependency)
+TEST_F(NamespaceLoading, throws_on_direct_cyclic_dependency)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("ns-a.lisple", "(ns ns-a (:require ns-b))");
   fs.add("ns-b.lisple", "(ns ns-b (:require ns-a))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // Then
   EXPECT_THROW(runtime.eval("(ns main (:require ns-a))"), Lisple::CyclicNamespaceException);
 }
 
-TEST(NamespaceLoading, throws_on_indirect_cyclic_dependency)
+TEST_F(NamespaceLoading, throws_on_indirect_cyclic_dependency)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("ns-a.lisple", "(ns ns-a (:require ns-b))");
   fs.add("ns-b.lisple", "(ns ns-b (:require ns-c))");
   fs.add("ns-c.lisple", "(ns ns-c (:require ns-a))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // Then
   EXPECT_THROW(runtime.eval("(ns main (:require ns-a))"), Lisple::CyclicNamespaceException);
 }
 
-TEST(NamespaceLoading, does_not_load_already_loaded_namespace)
+TEST_F(NamespaceLoading, does_not_load_already_loaded_namespace)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("my/utils.lisple", "(ns my.utils) (defun double [n] (+ n n))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
   runtime.eval("(ns my.utils) (defun double [n] (+ n n n))"); // triple, not double
 
   // When - require the same namespace that is already loaded
@@ -468,10 +471,10 @@ TEST(NamespaceLoading, does_not_load_already_loaded_namespace)
   EXPECT_EQ(result->to_string(), "30");
 }
 
-TEST(NamespaceLoading, throws_when_no_filesystem_and_namespace_missing)
+TEST_F(NamespaceLoading, throws_when_no_filesystem_and_namespace_missing)
 {
   // Given
-  Lisple::Runtime runtime; // no filesystem
+  auto& runtime = use_bare_runtime();
 
   // Then
   std::string message;
@@ -486,11 +489,11 @@ TEST(NamespaceLoading, throws_when_no_filesystem_and_namespace_missing)
   EXPECT_THAT(message, HasSubstr("does not exist"));
 }
 
-TEST(NamespaceLoading, throws_when_file_not_found_on_filesystem)
+TEST_F(NamespaceLoading, throws_when_file_not_found_on_filesystem)
 {
   // Given
   InMemoryFileSystem fs; // empty - no files
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // Then
   std::string message;
@@ -505,14 +508,14 @@ TEST(NamespaceLoading, throws_when_file_not_found_on_filesystem)
   EXPECT_THAT(message, HasSubstr("does not exist"));
 }
 
-TEST(NamespaceLoading, resolves_require_relative_to_entry_file)
+TEST_F(NamespaceLoading, resolves_require_relative_to_entry_file)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("lisp/app.lisple",
          "(ns my.app (:require my.app.models)) (defun run [] (make-thing 7))");
   fs.add("lisp/app/models.lisple", "(ns my.app.models) (defun make-thing [n] (* n 6))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("lisp/app.lisple");
@@ -522,14 +525,14 @@ TEST(NamespaceLoading, resolves_require_relative_to_entry_file)
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, resolves_require_alias_relative_to_entry_file)
+TEST_F(NamespaceLoading, resolves_require_alias_relative_to_entry_file)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("lisp/app.lisple",
          "(ns my.app (:require [my.app.models :as m])) (defun run [] (m/make-thing 7))");
   fs.add("lisp/app/models.lisple", "(ns my.app.models) (defun make-thing [n] (* n 6))");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("lisp/app.lisple");
@@ -539,7 +542,7 @@ TEST(NamespaceLoading, resolves_require_alias_relative_to_entry_file)
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, resolves_cross_branch_requires_from_arbitrary_package_root_entry_file)
+TEST_F(NamespaceLoading, resolves_cross_branch_requires_from_arbitrary_package_root_entry_file)
 {
   // Given
   RootedInMemoryFileSystem fs("app");
@@ -559,7 +562,7 @@ TEST(NamespaceLoading, resolves_cross_branch_requires_from_arbitrary_package_roo
          )");
   fs.add("app/minesweeper/menu-definition.lisple",
          "(ns pixils.test.app.minesweeper.menu-definition) (defun menu-value [] 2)");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("run.lisple");
@@ -569,7 +572,7 @@ TEST(NamespaceLoading, resolves_cross_branch_requires_from_arbitrary_package_roo
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, resolves_sibling_require_when_current_filename_is_arbitrary)
+TEST_F(NamespaceLoading, resolves_sibling_require_when_current_filename_is_arbitrary)
 {
   // Given
   InMemoryFileSystem fs;
@@ -577,7 +580,7 @@ TEST(NamespaceLoading, resolves_sibling_require_when_current_filename_is_arbitra
     "game.lisple",
     "(ns some.namespace.core (:require some.namespace.container)) (defun run [] value)");
   fs.add("container.lisple", "(ns some.namespace.container) (def value 42)");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("game.lisple");
@@ -587,7 +590,7 @@ TEST(NamespaceLoading, resolves_sibling_require_when_current_filename_is_arbitra
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading,
+TEST_F(NamespaceLoading,
      resolves_cross_branch_requires_when_loading_core_from_common_parent_root)
 {
   // Given
@@ -606,7 +609,7 @@ TEST(NamespaceLoading,
          )");
   fs.add("app/minesweeper/menu-definition.lisple",
          "(ns pixils.test.app.minesweeper.menu-definition) (defun menu-value [] 2)");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("minesweeper/core.lisple");
@@ -616,7 +619,7 @@ TEST(NamespaceLoading,
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_from_branch_root)
+TEST_F(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_from_branch_root)
 {
   // Given
   RootedInMemoryFileSystem fs("app/minesweeper");
@@ -634,7 +637,7 @@ TEST(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_from_
          )");
   fs.add("app/minesweeper/menu-definition.lisple",
          "(ns pixils.test.app.minesweeper.menu-definition) (defun menu-value [] 2)");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("core.lisple");
@@ -644,7 +647,7 @@ TEST(NamespaceLoading, resolves_sibling_shared_namespace_when_loading_core_from_
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading,
+TEST_F(NamespaceLoading,
      resolves_cross_branch_then_sibling_imports_when_loading_core_from_branch_root)
 {
   // Given
@@ -666,7 +669,7 @@ TEST(NamespaceLoading,
          "(ns pixils.test.app.shared.ui.components.button) (def button-value 40)");
   fs.add("app/shared/ui/components/text-node.lisple",
          "(ns pixils.test.app.shared.ui.components.text-node) (def text-value 2)");
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // When
   runtime.read_file("core.lisple");
@@ -676,14 +679,14 @@ TEST(NamespaceLoading,
   EXPECT_EQ(result->to_string(), "42");
 }
 
-TEST(NamespaceLoading, load_root_resolves_native_defined_namespace)
+TEST_F(NamespaceLoading, load_root_resolves_native_defined_namespace)
 {
   // Given
   InMemoryFileSystem fs;
   fs.add("lisp/core.lisple", "(ns app.core (:require vehicle))");
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), &fs);
+  auto& runtime = use_runtime_with(std::move(namespaces), &fs);
 
   // When
   runtime.read_file("lisp/core.lisple");
@@ -693,7 +696,7 @@ TEST(NamespaceLoading, load_root_resolves_native_defined_namespace)
   ASSERT_EQ(result->type, Lisple::RTValue::Type::FUNCTION);
 }
 
-TEST(NamespaceLoading, load_root_imports_aliased_native_defined_namespace)
+TEST_F(NamespaceLoading, load_root_imports_aliased_native_defined_namespace)
 {
   // Given
   InMemoryFileSystem fs;
@@ -702,7 +705,7 @@ TEST(NamespaceLoading, load_root_imports_aliased_native_defined_namespace)
          "{:model-name \"FF2\" :seats 8}))");
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), &fs);
+  auto& runtime = use_runtime_with(std::move(namespaces), &fs);
 
   // When
   runtime.read_file("lisp/core.lisple");
@@ -712,7 +715,7 @@ TEST(NamespaceLoading, load_root_imports_aliased_native_defined_namespace)
   ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
 }
 
-TEST(NamespaceLoading, load_root_using_both_full_and_aliased_imports)
+TEST_F(NamespaceLoading, load_root_using_both_full_and_aliased_imports)
 {
   // Given
   InMemoryFileSystem fs;
@@ -732,7 +735,7 @@ TEST(NamespaceLoading, load_root_using_both_full_and_aliased_imports)
          "(ns app.construction) (defun construct [cfn arg] (apply cfn [arg]))");
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), &fs);
+  auto& runtime = use_runtime_with(std::move(namespaces), &fs);
 
   // When
   runtime.read_file("lisp/core.lisple");
@@ -742,7 +745,7 @@ TEST(NamespaceLoading, load_root_using_both_full_and_aliased_imports)
   ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
 }
 
-TEST(NamespaceLoading, full_import_of_native_ns_survives_subsequent_file_ns_load)
+TEST_F(NamespaceLoading, full_import_of_native_ns_survives_subsequent_file_ns_load)
 {
   // Given
   InMemoryFileSystem fs;
@@ -755,7 +758,7 @@ TEST(NamespaceLoading, full_import_of_native_ns_survives_subsequent_file_ns_load
          "(ns app.construction) (defun construct [cfn arg] (apply cfn [arg]))");
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), &fs);
+  auto& runtime = use_runtime_with(std::move(namespaces), &fs);
 
   // When
   runtime.read_file("lisp/core.lisple");
@@ -765,7 +768,7 @@ TEST(NamespaceLoading, full_import_of_native_ns_survives_subsequent_file_ns_load
   ASSERT_EQ(result->to_string(), "{:model-name \"FF2\" :seats 8}");
 }
 
-TEST(NamespaceLoading, alias_of_native_ns_survives_subsequent_file_ns_load)
+TEST_F(NamespaceLoading, alias_of_native_ns_survives_subsequent_file_ns_load)
 {
   // Given
   InMemoryFileSystem fs;
@@ -778,7 +781,7 @@ TEST(NamespaceLoading, alias_of_native_ns_survives_subsequent_file_ns_load)
          "(ns app.construction) (defun construct [cfn arg] (apply cfn [arg]))");
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), &fs);
+  auto& runtime = use_runtime_with(std::move(namespaces), &fs);
 
   // When
   runtime.read_file("lisp/core.lisple");

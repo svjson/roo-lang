@@ -1,13 +1,14 @@
 
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(Semantic_NamespaceInclude, symbols_from_included_unaliased_namespace_are_available)
+
+using Semantic_NamespaceInclude = LispleTest::RuntimeTestFixture;
+TEST_F(Semantic_NamespaceInclude, symbols_from_included_unaliased_namespace_are_available)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
 
   (ns my-app.util)
@@ -36,11 +37,10 @@ TEST(Semantic_NamespaceInclude, symbols_from_included_unaliased_namespace_are_av
   EXPECT_EQ(reversed->to_string(), R"("!abmaraC")");
 }
 
-TEST(Semantic_NamespaceInclude,
+TEST_F(Semantic_NamespaceInclude,
      function_from_aliased_namespace_are_available_via_alias_qualifier)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
 
   (ns my-app.util)
@@ -68,11 +68,10 @@ TEST(Semantic_NamespaceInclude,
   EXPECT_EQ(reversed->to_string(), R"("!abmaraC")");
 }
 
-TEST(Semantic_NamespaceInclude,
+TEST_F(Semantic_NamespaceInclude,
      symbol_from_aliased_namespace_are_available_via_alias_qualifier)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
   (ns my-app.domain)
 

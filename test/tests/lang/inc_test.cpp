@@ -1,24 +1,20 @@
 #include <gtest/gtest.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
-TEST(IncFunction, increments_integer)
+
+using IncFunction = LispleTest::RuntimeTestFixture;
+TEST_F(IncFunction, increments_integer)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(inc 2)");
 
   // Then
   EXPECT_EQ(*result, *Lisple::RTValue::number(3));
 }
 
-TEST(IncFunction, increments_float)
+TEST_F(IncFunction, increments_float)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(inc 2.5)");
 
   // Then

@@ -1,11 +1,12 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(AndForm, logical_and)
+using AndForm = LispleTest::RuntimeTestFixture;
+
+TEST_F(AndForm, logical_and)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(and (odd? 1) (odd? 3))"), *Lisple::Constant::BOOL_TRUE);
 
   EXPECT_EQ(*runtime.eval("(and (odd? 2) (odd? 3))"), *Lisple::Constant::BOOL_FALSE);

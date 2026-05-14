@@ -1,11 +1,12 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(UpdateFunction, update_existing_map_key)
+
+using UpdateFunction = LispleTest::RuntimeTestFixture;
+TEST_F(UpdateFunction, update_existing_map_key)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:count 2 :other 99})");
 
   // When
@@ -16,10 +17,9 @@ TEST(UpdateFunction, update_existing_map_key)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:count 2 :other 99}");
 }
 
-TEST(UpdateFunction, update_missing_map_key_with_nil_current_value)
+TEST_F(UpdateFunction, update_missing_map_key_with_nil_current_value)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1})");
 
   // When
@@ -30,10 +30,9 @@ TEST(UpdateFunction, update_missing_map_key_with_nil_current_value)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1}");
 }
 
-TEST(UpdateFunction, passes_extra_args_to_update_function)
+TEST_F(UpdateFunction, passes_extra_args_to_update_function)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:count 2})");
 
   // When
@@ -44,10 +43,9 @@ TEST(UpdateFunction, passes_extra_args_to_update_function)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:count 2}");
 }
 
-TEST(UpdateFunction, update_sequence_by_index)
+TEST_F(UpdateFunction, update_sequence_by_index)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-vec [1 2 3])");
 
   // When
@@ -58,10 +56,9 @@ TEST(UpdateFunction, update_sequence_by_index)
   EXPECT_EQ(runtime.lookup_value("my-vec")->to_string(), "[1 2 3]");
 }
 
-TEST(UpdateFunction, update_multiple_keys_in_one_call)
+TEST_F(UpdateFunction, update_multiple_keys_in_one_call)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When

@@ -1,14 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(JoinFunction, join_strs)
+
+using JoinFunction = LispleTest::RuntimeTestFixture;
+TEST_F(JoinFunction, join_strs)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // Then
   EXPECT_EQ(*runtime.eval(R"((join " " "This" "is" "bat" "country"))"),
             *Lisple::RTValue::string("This is bat country"));
   EXPECT_EQ(*runtime.eval(R"((join "-" "hyphenate" "all" "the" "things"))"),

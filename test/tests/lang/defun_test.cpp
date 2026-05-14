@@ -1,16 +1,15 @@
 
 #include <lisple/lang/func.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "../runtime_fixture.h"
 #include <gtest/gtest.h>
 
-TEST(DefunForm, define_no_arg_fun)
+
+using DefunForm = LispleTest::RuntimeTestFixture;
+TEST_F(DefunForm, define_no_arg_fun)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   Lisple::sptr_rtval result = runtime.eval("(defun my-fn [] 8)");
 
   // Then
@@ -25,12 +24,9 @@ TEST(DefunForm, define_no_arg_fun)
             *Lisple::Number::make(8));
 }
 
-TEST(DefunForm, define_no_arg_fun_with_docstring)
+TEST_F(DefunForm, define_no_arg_fun_with_docstring)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   Lisple::sptr_rtval result = runtime.eval(R"(
     (defun my-fn
      "This function does all the magic things you can think of..."
@@ -50,42 +46,33 @@ TEST(DefunForm, define_no_arg_fun_with_docstring)
             *Lisple::Number::make(8));
 }
 
-TEST(DefunForm, defun_with_static_return_value)
+TEST_F(DefunForm, defun_with_static_return_value)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(defun gimme-five [] 5)");
 
   // Then
   ASSERT_TRUE(runtime.get_current_namespace().has(Lisple::Word("gimme-five")));
   Lisple::sptr_rtval_v args;
-  Lisple::Context ctx(runtime);
   auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 5);
 }
 
-TEST(DefunForm, defun_with_single_argument)
+TEST_F(DefunForm, defun_with_single_argument)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(defun add-five [x] (+ x 5))");
 
   // Then
   ASSERT_TRUE(runtime.get_current_namespace().has(Lisple::Word("add-five")));
   Lisple::sptr_rtval_v args{Lisple::RTValue::number(6)};
-  Lisple::Context ctx(runtime);
   auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 11);
 }
 
-TEST(DefunForm, defun_with_destructuring_argument)
+TEST_F(DefunForm, defun_with_destructuring_argument)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun myfun [{:keys [one two]}] [one two])");
 
   // When
@@ -95,10 +82,9 @@ TEST(DefunForm, defun_with_destructuring_argument)
   ASSERT_EQ(*result, *runtime.eval("[1 2]"));
 }
 
-TEST(DefunForm, defun_with_destructuring_argument_and_alias)
+TEST_F(DefunForm, defun_with_destructuring_argument_and_alias)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun myfun [{:keys [one two] :as seq}] [one two seq])");
 
   // When
@@ -108,10 +94,9 @@ TEST(DefunForm, defun_with_destructuring_argument_and_alias)
   ASSERT_EQ(*result, *runtime.eval("[1 2 {:one 1 :two 2}]"));
 }
 
-TEST(DefunForm, optional_arg_bound_to_value_when_supplied)
+TEST_F(DefunForm, optional_arg_bound_to_value_when_supplied)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun greet [name & title] (str title \" \" name))");
 
   // When
@@ -121,10 +106,9 @@ TEST(DefunForm, optional_arg_bound_to_value_when_supplied)
   ASSERT_EQ(result->str(), "Dr. Smith");
 }
 
-TEST(DefunForm, optional_arg_bound_to_nil_when_omitted)
+TEST_F(DefunForm, optional_arg_bound_to_nil_when_omitted)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun greet [name & title] (if title (str title \" \" name) name))");
 
   // When
@@ -134,10 +118,9 @@ TEST(DefunForm, optional_arg_bound_to_nil_when_omitted)
   ASSERT_EQ(result->str(), "Smith");
 }
 
-TEST(DefunForm, multiple_optional_args_all_supplied)
+TEST_F(DefunForm, multiple_optional_args_all_supplied)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a & b c] [a b c])");
 
   // When
@@ -147,10 +130,9 @@ TEST(DefunForm, multiple_optional_args_all_supplied)
   ASSERT_EQ(*result, *runtime.eval("[1 2 3]"));
 }
 
-TEST(DefunForm, multiple_optional_args_partially_supplied)
+TEST_F(DefunForm, multiple_optional_args_partially_supplied)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a & b c] [a b c])");
 
   // When
@@ -160,10 +142,9 @@ TEST(DefunForm, multiple_optional_args_partially_supplied)
   ASSERT_EQ(*result, *runtime.eval("[1 2 nil]"));
 }
 
-TEST(DefunForm, multiple_optional_args_none_supplied)
+TEST_F(DefunForm, multiple_optional_args_none_supplied)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a & b c] [a b c])");
 
   // When
@@ -173,20 +154,18 @@ TEST(DefunForm, multiple_optional_args_none_supplied)
   ASSERT_EQ(*result, *runtime.eval("[1 nil nil]"));
 }
 
-TEST(DefunForm, too_many_args_with_optional_but_no_rest_throws)
+TEST_F(DefunForm, too_many_args_with_optional_but_no_rest_throws)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a & b] b)");
 
   // When / Then
   EXPECT_THROW(runtime.eval("(f 1 2 3)"), std::exception);
 }
 
-TEST(DefunForm, rest_parameter_collects_all_extra_args)
+TEST_F(DefunForm, rest_parameter_collects_all_extra_args)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a &rest] [a rest])");
 
   // When
@@ -196,10 +175,9 @@ TEST(DefunForm, rest_parameter_collects_all_extra_args)
   ASSERT_EQ(*result, *runtime.eval("[1 [2 3 4]]"));
 }
 
-TEST(DefunForm, rest_parameter_is_empty_vector_when_no_extra_args)
+TEST_F(DefunForm, rest_parameter_is_empty_vector_when_no_extra_args)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a &rest] [a rest])");
 
   // When
@@ -209,10 +187,9 @@ TEST(DefunForm, rest_parameter_is_empty_vector_when_no_extra_args)
   ASSERT_EQ(*result, *runtime.eval("[1 []]"));
 }
 
-TEST(DefunForm, rest_parameter_after_optional_args)
+TEST_F(DefunForm, rest_parameter_after_optional_args)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun f [a & b &rest] [a b rest])");
 
   // When
@@ -222,10 +199,9 @@ TEST(DefunForm, rest_parameter_after_optional_args)
   ASSERT_EQ(*result, *runtime.eval("[1 2 [3 4]]"));
 }
 
-TEST(DefunForm, execution_treats_explicit_nil_argument_with_value_as_nil)
+TEST_F(DefunForm, execution_treats_explicit_nil_argument_with_value_as_nil)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun myfun [input] (if input (str \"Input is\" input) \"nil input\"))");
 
   // When
@@ -235,10 +211,9 @@ TEST(DefunForm, execution_treats_explicit_nil_argument_with_value_as_nil)
   ASSERT_EQ(result->str(), "nil input");
 }
 
-TEST(DefunForm, execution_treats_derived_argument_with_nil_value_as_nil)
+TEST_F(DefunForm, execution_treats_derived_argument_with_nil_value_as_nil)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun myfun [input] (if input (str \"Input is\" input) \"nil input\"))");
 
   // When

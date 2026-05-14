@@ -12,7 +12,12 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
-TEST(TypeRef, is_type_of)
+
+using TypeRef = LispleTest::RuntimeTestFixture;
+using MultiRef = LispleTest::RuntimeTestFixture;
+using AnyRef = LispleTest::RuntimeTestFixture;
+using SeqRef = LispleTest::RuntimeTestFixture;
+TEST_F(TypeRef, is_type_of)
 {
   // Given
   Lisple::List obj;
@@ -29,7 +34,7 @@ TEST(TypeRef, is_type_of)
   EXPECT_FALSE(Lisple::Type::SYMBOL.is_type_of(obj));
 }
 
-TEST(TypeRef, rtwrapper_is_type_of)
+TEST_F(TypeRef, rtwrapper_is_type_of)
 {
   // Given
   Lisple::sptr_rtval map_val = Lisple::RTValue::map({Lisple::RTValue::keyword("name"),
@@ -50,7 +55,7 @@ TEST(TypeRef, rtwrapper_is_type_of)
   EXPECT_FALSE(Lisple::Type::SYMBOL.is_type_of(obj));
 }
 
-TEST(MultiRef, is_type_of)
+TEST_F(MultiRef, is_type_of)
 {
   // When
   Lisple::List list;
@@ -68,7 +73,7 @@ TEST(MultiRef, is_type_of)
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(boolean));
 }
 
-TEST(AnyRef, is_type_of)
+TEST_F(AnyRef, is_type_of)
 {
   // Given
   Lisple::List list;
@@ -89,19 +94,17 @@ TEST(AnyRef, is_type_of)
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(word));
 }
 
-TEST(SeqRef, Array_of_String__is_type_of)
+TEST_F(SeqRef, Array_of_String__is_type_of)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-
-  auto array_of_string = fixture.runtime.eval("[\"string1\" \"string2\" \"string3\"]");
-  auto array_of_mixed = fixture.runtime.eval("[\"string1\" :key1 'sym1]");
+  auto array_of_string = runtime.eval("[\"string1\" \"string2\" \"string3\"]");
+  auto array_of_mixed = runtime.eval("[\"string1\" :key1 'sym1]");
   Lisple::String string("string");
   Lisple::Key key("string");
   Lisple::QSymbol symbol("symbol");
   Lisple::Word word("word");
   auto list_of_string =
-    fixture.runtime.eval(fixture.ctx, "'(\"stringA\" \"stringB\" \"stringC\")");
+    runtime.eval(ctx, "'(\"stringA\" \"stringB\" \"stringC\")");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*array_of_string));
@@ -114,14 +117,12 @@ TEST(SeqRef, Array_of_String__is_type_of)
   EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(word));
 }
 
-TEST(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
+TEST_F(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
-
-  auto array_of_char = fixture.runtime.eval("['A' 'B' 'C' 'D' 'E']");
-  auto array_of_char_with_nils = fixture.runtime.eval("['A' 'B' 'C' nil 'E']");
-  auto array_of_mixed = fixture.runtime.eval("['A' 'B' 3 \"D\" 'E']");
+  auto array_of_char = runtime.eval("['A' 'B' 'C' 'D' 'E']");
+  auto array_of_char_with_nils = runtime.eval("['A' 'B' 'C' nil 'E']");
+  auto array_of_mixed = runtime.eval("['A' 'B' 3 \"D\" 'E']");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_char));
@@ -130,10 +131,9 @@ TEST(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
   EXPECT_FALSE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_mixed));
 }
 
-TEST(SeqRef, Array_of_NativeObject__is_type_of)
+TEST_F(SeqRef, Array_of_NativeObject__is_type_of)
 {
   // Given
-  Lisple::Runtime runtime;
   Lisple::sptr_rtval model_vector = Lisple::RTValue::vector(
     {LispleTest::Native::VehicleModelAdapter::make_unique("Vroom Deluxe", 2),
      LispleTest::Native::VehicleModelAdapter::make_unique("Millenium Falcon", 8),
@@ -143,13 +143,13 @@ TEST(SeqRef, Array_of_NativeObject__is_type_of)
   EXPECT_TRUE(LispleTest::ARRAY_OF_VEHICLE_MODEL.is_type_of(*model_vector));
 }
 
-TEST(SeqRef, Array_of_Map__coerce_to_Array_of_NativeObject)
+TEST_F(SeqRef, Array_of_Map__coerce_to_Array_of_NativeObject)
 {
   // Given
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
-  Lisple::Context ctx(runtime);
+  use_runtime_with(std::move(namespaces), nullptr);
+  auto& ctx = *configured_context;
   Lisple::sptr_rtval map_vector =
     Lisple::RTValue::vector({Lisple::RTValue::map({Lisple::RTValue::keyword("model-name"),
                                                    Lisple::RTValue::string("Vroom Deluxe"),

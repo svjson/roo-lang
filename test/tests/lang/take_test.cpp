@@ -1,18 +1,19 @@
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using TakeFunction = LispleTest::RuntimeTestFixture;
 /*
  * ===================================
  * TakeFunction - (take [...])
  * ===================================
  */
-TEST(TakeFunction, take)
+TEST_F(TakeFunction, take)
 {
   // Given
-  Lisple::Runtime runtime;
   std::vector<int> int_v{0, 1, 2, 3, 4};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));

@@ -8,13 +8,15 @@
 #include <lisple/bind.h>
 #include <lisple/context.h>
 #include <lisple/form.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 
 #include <gtest/gtest.h>
 
-TEST(LowerTest, number__literal_node)
+
+using LowerTest = LispleTest::RuntimeTestFixture;
+TEST_F(LowerTest, number__literal_node)
 {
   // Given
   Lisple::LowerContext lctx;
@@ -27,7 +29,7 @@ TEST(LowerTest, number__literal_node)
   ASSERT_TRUE(std::holds_alternative<Lisple::LiteralNode>(node->data));
 }
 
-TEST(LowerTest, list__call_node__no_ctx__lookup_node_callee)
+TEST_F(LowerTest, list__call_node__no_ctx__lookup_node_callee)
 {
   Lisple::LowerContext lctx;
   Lisple::sptr_sobject expr = Lisple::List::make(
@@ -42,10 +44,8 @@ TEST(LowerTest, list__call_node__no_ctx__lookup_node_callee)
   ASSERT_TRUE(std::holds_alternative<Lisple::LookupNode>(call_node.callee->data));
 }
 
-TEST(LowerTest, list__call_node__ctx__literal_node_callee)
+TEST_F(LowerTest, list__call_node__ctx__literal_node_callee)
 {
-  Lisple::Runtime runtime;
-  Lisple::Context ctx(runtime);
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject expr = Lisple::List::make(
     {Lisple::Word::make("+"), Lisple::Number::make(1), Lisple::Number::make(1)});
@@ -59,7 +59,7 @@ TEST(LowerTest, list__call_node__ctx__literal_node_callee)
   ASSERT_TRUE(std::holds_alternative<Lisple::LiteralNode>(call_node.callee->data));
 }
 
-TEST(LowerTest, list__key_lookup__no_ctx__lookup_node)
+TEST_F(LowerTest, list__key_lookup__no_ctx__lookup_node)
 {
   Lisple::LowerContext lctx;
   Lisple::sptr_sobject expr =
@@ -75,10 +75,8 @@ TEST(LowerTest, list__key_lookup__no_ctx__lookup_node)
   EXPECT_TRUE(std::holds_alternative<Lisple::LookupNode>(key_node.target->data));
 }
 
-TEST(LowerTest, list__key_lookup__ctx__lookup_node)
+TEST_F(LowerTest, list__key_lookup__ctx__lookup_node)
 {
-  Lisple::Runtime runtime;
-  Lisple::Context ctx(runtime);
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject expr =
     Lisple::List::make({Lisple::Key::make("name"), Lisple::Word::make("my-map")});
@@ -93,10 +91,8 @@ TEST(LowerTest, list__key_lookup__ctx__lookup_node)
   EXPECT_TRUE(std::holds_alternative<Lisple::LookupNode>(key_node.target->data));
 }
 
-TEST(LowerTest, list_special_form__ctx__custom_lower)
+TEST_F(LowerTest, list_special_form__ctx__custom_lower)
 {
-  Lisple::Runtime runtime;
-  Lisple::Context ctx(runtime);
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject expr = Lisple::List::make(
     {Lisple::Word::make("->"),
@@ -137,15 +133,15 @@ class CustomNamespace : public Lisple::Namespace
   }
 };
 
-TEST(LowerTest, lower_custom_special_form)
+TEST_F(LowerTest, lower_custom_special_form)
 {
   // Given
   Lisple::Reader reader;
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<CustomNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
   runtime.eval("(ns my-app.core (:require custom))");
-  Lisple::Context ctx(runtime);
+  auto& ctx = *configured_context;
   ctx.switch_namespace("my-app.core");
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject_v def_thing_expr =
@@ -159,14 +155,14 @@ TEST(LowerTest, lower_custom_special_form)
   ASSERT_EQ(*literal_node->value, *Lisple::Constant::NIL);
 }
 
-TEST(LowerTest, lower_namespace_qualified_custom_special_form)
+TEST_F(LowerTest, lower_namespace_qualified_custom_special_form)
 {
   // Given
   Lisple::Reader reader;
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<CustomNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
-  Lisple::Context ctx(runtime);
+  use_runtime_with(std::move(namespaces), nullptr);
+  auto& ctx = *configured_context;
   ctx.switch_namespace("my-app.core");
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject_v def_thing_expr =

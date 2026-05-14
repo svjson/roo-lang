@@ -8,9 +8,11 @@
 
 #include <lisple/namespace.h>
 #include <lisple/form.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
-TEST(Namespace, store_and_lookup)
+
+using Namespace = LispleTest::RuntimeTestFixture;
+TEST_F(Namespace, store_and_lookup)
 {
   // Given
   Lisple::Namespace ns("test");
@@ -27,10 +29,9 @@ TEST(Namespace, store_and_lookup)
 }
 
 
-TEST(Namespace, access_identifier_from_other_ns)
+TEST_F(Namespace, access_identifier_from_other_ns)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.switch_namespace("test-ns.number-one");
   runtime.get_current_namespace().store("my-value", Lisple::RTValue::number(123));
 

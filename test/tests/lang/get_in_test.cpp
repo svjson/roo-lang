@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(GetInFunction, get_single_key_path_from_map)
+
+using GetInFunction = LispleTest::RuntimeTestFixture;
+TEST_F(GetInFunction, get_single_key_path_from_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When
@@ -16,10 +17,9 @@ TEST(GetInFunction, get_single_key_path_from_map)
   ASSERT_EQ(result->i32(), 2);
 }
 
-TEST(GetInFunction, get_non_existing_multi_key_path_from_map)
+TEST_F(GetInFunction, get_non_existing_multi_key_path_from_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When
@@ -29,10 +29,9 @@ TEST(GetInFunction, get_non_existing_multi_key_path_from_map)
   ASSERT_EQ(*result, *Lisple::Constant::NIL);
 }
 
-TEST(GetInFunction, get_non_existing_multi_key_path_through_number_from_map)
+TEST_F(GetInFunction, get_non_existing_multi_key_path_through_number_from_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When
@@ -42,10 +41,9 @@ TEST(GetInFunction, get_non_existing_multi_key_path_through_number_from_map)
   ASSERT_EQ(*result, *Lisple::Constant::NIL);
 }
 
-TEST(GetInFunction, get_existing_multi_key_path_from_map)
+TEST_F(GetInFunction, get_existing_multi_key_path_from_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b {:c {:d 2}}})");
 
   // When
@@ -55,10 +53,9 @@ TEST(GetInFunction, get_existing_multi_key_path_from_map)
   ASSERT_EQ(result->i32(), 2);
 }
 
-TEST(GetInFunction, get_nested_vector_element)
+TEST_F(GetInFunction, get_nested_vector_element)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-vec [[1 2 3] [4 5 6]])");
 
   // When

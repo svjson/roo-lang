@@ -1,15 +1,16 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+
+using NsForm = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
-TEST(NsForm, switches_namespace)
+TEST_F(NsForm, switches_namespace)
 {
   // Given
-  Lisple::Runtime runtime;
   std::string initial_ns = runtime.get_current_namespace().get_name();
 
   // When
@@ -21,12 +22,10 @@ TEST(NsForm, switches_namespace)
   EXPECT_EQ(runtime.get_current_namespace().get_name(), "lets.switch.to.a.new.one");
 }
 
-TEST(NsForm, does_not_allow_incomplete_req_list)
+TEST_F(NsForm, does_not_allow_incomplete_req_list)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = runtime;
   Lisple::LispleException* thrown = nullptr;
   std::string msg;
   try
@@ -44,12 +43,10 @@ TEST(NsForm, does_not_allow_incomplete_req_list)
   EXPECT_THAT(msg, HasSubstr("(ns some.space (:require))"));
 }
 
-TEST(NsForm, import_non_existing_namespace)
+TEST_F(NsForm, import_non_existing_namespace)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = use_bare_runtime();
   Lisple::LispleException* thrown = nullptr;
   std::string msg;
 
@@ -68,10 +65,10 @@ TEST(NsForm, import_non_existing_namespace)
   EXPECT_THAT(msg, HasSubstr("not exist"));
 }
 
-TEST(NsForm, import_existing_namespace)
+TEST_F(NsForm, import_existing_namespace)
 {
   // Given
-  Lisple::Runtime reader;
+  auto& reader = runtime;
   reader.eval("(ns other)");
   reader.eval("(def what-is-hot? :curry!)");
 
@@ -97,12 +94,10 @@ TEST(NsForm, import_existing_namespace)
   EXPECT_THAT(message, HasSubstr("Unknown identifier: 'what-is-hot?'"));
 }
 
-TEST(NsForm, import_non_existing_aliased_namespace)
+TEST_F(NsForm, import_non_existing_aliased_namespace)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = use_bare_runtime();
   std::string message = "";
   try
   {
@@ -117,10 +112,10 @@ TEST(NsForm, import_non_existing_aliased_namespace)
   EXPECT_THAT(message, HasSubstr("does not exist"));
 }
 
-TEST(NsForm, import_existing_aliased_namespace)
+TEST_F(NsForm, import_existing_aliased_namespace)
 {
   // Given
-  Lisple::Runtime reader;
+  auto& reader = runtime;
   reader.eval("(ns other)");
   reader.eval("(def what-is-hot? :curry!)");
 

@@ -1,19 +1,18 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using KeepFunction = LispleTest::RuntimeTestFixture;
 /*
  * ======================================================================
  * KeepFunction - (keep [...] select-transform-fm)
  * ======================================================================
  */
 
-TEST(KeepFunction, transform_even)
+TEST_F(KeepFunction, transform_even)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result =
     runtime.eval("(keep [1 2 3 4] (fn [x] (when (even? x) (str \"Number \" x))))");
 

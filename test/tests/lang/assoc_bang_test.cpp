@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
-TEST(AssocBangFunction, add_key_to_map)
+
+using AssocBangFunction = LispleTest::RuntimeTestFixture;
+TEST_F(AssocBangFunction, add_key_to_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When
@@ -16,10 +17,9 @@ TEST(AssocBangFunction, add_key_to_map)
             runtime.eval("{:a 1 :b 2 :c 3}")->to_string());
 }
 
-TEST(AssocBangFunction, replace_key_in_map)
+TEST_F(AssocBangFunction, replace_key_in_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When
@@ -31,10 +31,9 @@ TEST(AssocBangFunction, replace_key_in_map)
             runtime.eval("{:a 1 :b 10}")->to_string());
 }
 
-TEST(AssocBangFunction, add_and_replace_multiple)
+TEST_F(AssocBangFunction, add_and_replace_multiple)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :b 2})");
 
   // When

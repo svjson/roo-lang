@@ -1,11 +1,14 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/value.h>
 
 #include <gtest/gtest.h>
 
-TEST(Dict_map_entry, get_existing_single_keyword_key)
+
+using Dict_map_entry = LispleTest::RuntimeTestFixture;
+using Dict_keys = LispleTest::RuntimeTestFixture;
+TEST_F(Dict_map_entry, get_existing_single_keyword_key)
 {
   // Given
   const Lisple::sptr_rtval_v map_values{Lisple::RTValue::keyword("amount"),
@@ -20,10 +23,9 @@ TEST(Dict_map_entry, get_existing_single_keyword_key)
   EXPECT_NE(value, nullptr);
 }
 
-TEST(Dict_keys, get_numeric_char_keys)
+TEST_F(Dict_keys, get_numeric_char_keys)
 {
   // Given
-  Lisple::Runtime runtime;
   Lisple::sptr_rtval map = runtime.eval(R"(
   (def num-map (reduce "0123456789"
                 {}

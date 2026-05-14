@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(CondForm, match_condition)
+
+using CondForm = LispleTest::RuntimeTestFixture;
+TEST_F(CondForm, match_condition)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def x 20)");
 
   // When
@@ -17,10 +18,9 @@ TEST(CondForm, match_condition)
   ASSERT_EQ(*result, *Lisple::RTValue::string("Zwanzig"));
 }
 
-TEST(CondForm, no_match_with_else)
+TEST_F(CondForm, no_match_with_else)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def x 100)");
 
   // When
@@ -30,10 +30,9 @@ TEST(CondForm, no_match_with_else)
   ASSERT_EQ(*result, *Lisple::RTValue::string("Zillions"));
 }
 
-TEST(CondForm, no_match_without_else)
+TEST_F(CondForm, no_match_without_else)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def x 100)");
 
   // When

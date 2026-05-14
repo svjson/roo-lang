@@ -2,13 +2,20 @@
 #ifndef __RUNTIME_FIXTURE_H_
 #define __RUNTIME_FIXTURE_H_
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <lisple/context.h>
 #include <lisple/runtime.h>
 #include <lisple/lang.h>
 #include <lisple/host.h>
 #include <lisple/dir_root_file_system.h>
+#include <lisple/file_system.h>
 
 #include "fake_file_system.h"
+#include <gtest/gtest.h>
 
 namespace LispleTest
 {
@@ -36,6 +43,49 @@ namespace LispleTest
     Lisple::Reader parser;
     Lisple::Runtime runtime{ &fs };
     Lisple::Context ctx { runtime };
+    std::unique_ptr<Lisple::Runtime> configured_runtime;
+    std::unique_ptr<Lisple::Context> configured_context;
+
+    Lisple::Runtime& use_bare_runtime()
+    {
+      configured_runtime = std::make_unique<Lisple::Runtime>();
+      configured_context = std::make_unique<Lisple::Context>(*configured_runtime);
+      return *configured_runtime;
+    }
+
+    Lisple::Runtime& use_runtime_with(Lisple::FileSystem& file_system)
+    {
+      configured_runtime = std::make_unique<Lisple::Runtime>(&file_system);
+      configured_context = std::make_unique<Lisple::Context>(*configured_runtime);
+      return *configured_runtime;
+    }
+
+    Lisple::Runtime& use_runtime_with(Lisple::Namespace& ns)
+    {
+      configured_runtime = std::make_unique<Lisple::Runtime>(ns);
+      configured_context = std::make_unique<Lisple::Context>(*configured_runtime);
+      return *configured_runtime;
+    }
+
+    Lisple::Runtime& use_runtime_with(
+      const std::string& current_namespace,
+      std::map<const std::string, Lisple::Namespace> namespaces)
+    {
+      configured_runtime =
+        std::make_unique<Lisple::Runtime>(current_namespace, std::move(namespaces));
+      configured_context = std::make_unique<Lisple::Context>(*configured_runtime);
+      return *configured_runtime;
+    }
+
+    Lisple::Runtime& use_runtime_with(
+      std::vector<std::unique_ptr<Lisple::Namespace>> namespaces,
+      Lisple::FileSystem* file_system = nullptr)
+    {
+      configured_runtime =
+        std::make_unique<Lisple::Runtime>(std::move(namespaces), file_system);
+      configured_context = std::make_unique<Lisple::Context>(*configured_runtime);
+      return *configured_runtime;
+    }
 
     template <class T>
     std::unique_ptr<T>& define_and_get_host_object(const std::string& name, const std::string& lisp)
@@ -53,6 +103,12 @@ namespace LispleTest
         .lookup(Lisple::Word(name))->as<Lisple::HostObject<T>>()
         .get_object();
     }
+  };
+
+  class RuntimeTestFixture
+    : public RuntimeFixture
+    , public ::testing::Test
+  {
   };
 }
 

@@ -1,13 +1,12 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(TrimFunction, trims_leading_and_trailing_whitespace)
+
+using TrimFunction = LispleTest::RuntimeTestFixture;
+TEST_F(TrimFunction, trims_leading_and_trailing_whitespace)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // Then
   EXPECT_EQ(*runtime.eval("(trim \"  hello  \")"), *Lisple::RTValue::string("hello"));
   EXPECT_EQ(*runtime.eval(R"((trim "
 	 hello there 

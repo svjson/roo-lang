@@ -1,11 +1,12 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(RndFunction, max)
+
+using RndFunction = LispleTest::RuntimeTestFixture;
+TEST_F(RndFunction, max)
 {
-  Lisple::Runtime runtime;
   for (int i = 0; i < 1000; i++)
   {
     int rndval = runtime.eval("(rnd 5)")->i32();
@@ -13,9 +14,8 @@ TEST(RndFunction, max)
   }
 }
 
-TEST(RndFunction, min_max)
+TEST_F(RndFunction, min_max)
 {
-  Lisple::Runtime runtime;
   for (int i = 0; i < 1000; i++)
   {
     int rndval = runtime.eval("(rnd 50 55)")->i32();
@@ -23,9 +23,8 @@ TEST(RndFunction, min_max)
   }
 }
 
-TEST(RndFunction, min_max__0_0)
+TEST_F(RndFunction, min_max__0_0)
 {
-  Lisple::Runtime runtime;
   int rndval = runtime.eval("(rnd 0 0)")->i32();
   ASSERT_EQ(rndval, 0);
 }

@@ -1,17 +1,21 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "host/test_adapters/vectorgfx_native_adapters.h"
 #include "host/test_adapters/vehicle_host_adapters.h"
 #include "test_adapters/vehicle_native_adapters.h"
 #include <gtest/gtest.h>
 
-TEST(VehicleAdapter_usage, make_with_explicit_make_functions)
+using VehicleAdapter_usage = LispleTest::RuntimeTestFixture;
+using VehicleModelAdapter_usage = LispleTest::RuntimeTestFixture;
+using NativeObjectAdapter_usage = LispleTest::RuntimeTestFixture;
+
+TEST_F(VehicleAdapter_usage, make_with_explicit_make_functions)
 {
   // Given
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
 
   // When
   runtime.eval(R"(
@@ -37,12 +41,12 @@ TEST(VehicleAdapter_usage, make_with_explicit_make_functions)
             ":numbers \"123\"}}");
 }
 
-TEST(VehicleAdapter_usage, make_with_coercion)
+TEST_F(VehicleAdapter_usage, make_with_coercion)
 {
   // Given
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
 
   // When
   runtime.eval(R"(
@@ -62,12 +66,12 @@ TEST(VehicleAdapter_usage, make_with_coercion)
   ASSERT_TRUE(LispleTest::REGNUM_TYPE.is_type_of(*num));
 }
 
-TEST(VehicleModelAdapter_usage, write_mutable_property_with_assoc_bang)
+TEST_F(VehicleModelAdapter_usage, write_mutable_property_with_assoc_bang)
 {
   // Given
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
 
   runtime.eval(
     "(def model (vehicle/make-vehicle-model {:model-name \"Spruttibangbang\" :seats 2}))");
@@ -80,12 +84,12 @@ TEST(VehicleModelAdapter_usage, write_mutable_property_with_assoc_bang)
             "{:model-name \"Spruttibangbang\" :seats 8}");
 }
 
-TEST(VehicleModelAdapter_usage, produce_modified_copy_with_assoc)
+TEST_F(VehicleModelAdapter_usage, produce_modified_copy_with_assoc)
 {
   // Given
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::VehicleNamespace>());
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
 
   runtime.eval(
     "(def model (vehicle/make-vehicle-model {:model-name \"Spruttibangbang\" :seats 2}))");
@@ -101,11 +105,11 @@ TEST(VehicleModelAdapter_usage, produce_modified_copy_with_assoc)
   EXPECT_EQ(result->to_string(), "{:model-name \"Spruttibangbang\" :seats 8}");
 }
 
-TEST(NativeObjectAdapter_usage, rt_dispatch_coerces_args)
+TEST_F(NativeObjectAdapter_usage, rt_dispatch_coerces_args)
 {
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
-  Lisple::Runtime runtime(std::move(namespaces), nullptr);
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
 
   auto result = runtime.eval(R"(
     (pixils.point/plus

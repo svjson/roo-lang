@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
-TEST(StrFunction, concat_strings)
+
+using StrFunction = LispleTest::RuntimeTestFixture;
+TEST_F(StrFunction, concat_strings)
 {
   // Given
-  Lisple::Runtime runtime;
-
   EXPECT_EQ(runtime.eval(R"((str "a" "b" "c"))")->to_string(), "\"abc\"");
   EXPECT_EQ(runtime.eval(R"((str 'a' 'b' 'c'))")->to_string(), "\"abc\"");
   EXPECT_EQ(runtime.eval(R"((str "a" 1 :rust))")->to_string(), "\"a1:rust\"");

@@ -1,11 +1,12 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(SetBangMacro, set_global_value)
+
+using SetBangMacro = LispleTest::RuntimeTestFixture;
+TEST_F(SetBangMacro, set_global_value)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-global-var 10)");
 
   // When
@@ -16,22 +17,18 @@ TEST(SetBangMacro, set_global_value)
   ASSERT_EQ(global_var->i64(), 50);
 }
 
-TEST(SetBangMacro, set_parent_scope_value)
+TEST_F(SetBangMacro, set_parent_scope_value)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto my_var = runtime.eval("(let [my-var 10] (do (set! [my-var] 20) my-var))");
 
   // Then
   EXPECT_EQ(my_var->i64(), 20);
 }
 
-TEST(SetBangMacro, set_global_map_value)
+TEST_F(SetBangMacro, set_global_map_value)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def global-map {:key1 10 :key2 20})");
 
   // When

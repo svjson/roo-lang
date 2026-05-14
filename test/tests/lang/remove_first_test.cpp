@@ -1,9 +1,11 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/runtime/seq.h>
 
 #include <gtest/gtest.h>
 
+
+using RemoveFirstFunction = LispleTest::RuntimeTestFixture;
 /*
  * ======================================================================
  * RemoveFirstFunction - (remove-first pred seq)
@@ -11,12 +13,9 @@
  * ======================================================================
  */
 
-TEST(RemoveFirstFunction, removes_first_matching_element)
+TEST_F(RemoveFirstFunction, removes_first_matching_element)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(remove-first (fn [x] (= x 2)) [1 2 3 2 4])");
 
   // Then
@@ -27,12 +26,9 @@ TEST(RemoveFirstFunction, removes_first_matching_element)
   EXPECT_EQ(result->elements().at(3)->i64(), 4);
 }
 
-TEST(RemoveFirstFunction, removes_first_even_element)
+TEST_F(RemoveFirstFunction, removes_first_even_element)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(remove-first even? [1 2 3 4 5])");
 
   // Then
@@ -43,12 +39,9 @@ TEST(RemoveFirstFunction, removes_first_even_element)
   EXPECT_EQ(result->elements().at(3)->i64(), 5);
 }
 
-TEST(RemoveFirstFunction, no_match_returns_original)
+TEST_F(RemoveFirstFunction, no_match_returns_original)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(remove-first even? [1 3 5 7])");
 
   // Then
@@ -59,24 +52,18 @@ TEST(RemoveFirstFunction, no_match_returns_original)
   EXPECT_EQ(result->elements().at(3)->i64(), 7);
 }
 
-TEST(RemoveFirstFunction, empty_sequence_returns_empty)
+TEST_F(RemoveFirstFunction, empty_sequence_returns_empty)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(remove-first even? [])");
 
   // Then
   ASSERT_EQ(Lisple::count(*result), 0);
 }
 
-TEST(RemoveFirstFunction, removes_only_first_of_multiple_matches)
+TEST_F(RemoveFirstFunction, removes_only_first_of_multiple_matches)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(remove-first even? [2 4 6 8])");
 
   // Then

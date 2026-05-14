@@ -3,11 +3,14 @@
 
 #include <lisple/form.h>
 #include <lisple/impl.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(str_val, returns_value_of_string_based_forms)
+
+using str_val = LispleTest::RuntimeTestFixture;
+using subst_sexp_lmnt = LispleTest::RuntimeTestFixture;
+TEST_F(str_val, returns_value_of_string_based_forms)
 {
   EXPECT_EQ(Lisple::str_val(Lisple::Key("some-key")), "some-key");
   EXPECT_EQ(Lisple::str_val(Lisple::Word("bird")), "bird");
@@ -15,16 +18,15 @@ TEST(str_val, returns_value_of_string_based_forms)
   EXPECT_EQ(Lisple::str_val(Lisple::String("boing-boing")), "boing-boing");
 }
 
-TEST(str_val, returns_value_of_number_as_string)
+TEST_F(str_val, returns_value_of_number_as_string)
 {
   EXPECT_EQ(Lisple::str_val(Lisple::Number(242)), "242");
   EXPECT_EQ(Lisple::str_val(Lisple::Number(18.65f)), "18.650000");
 }
 
-TEST(subst_sexp_lmnt, substitute_first_element_of_array)
+TEST_F(subst_sexp_lmnt, substitute_first_element_of_array)
 {
   // Given
-  Lisple::Runtime runtime;
   ;
   Lisple::Array array = Lisple::to_AST(*runtime.eval("[1 2 3 4]"))->as<Lisple::Array>();
 

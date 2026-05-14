@@ -3,7 +3,7 @@
 #include <string>
 
 #include <lisple/form.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/struct.h>
 #include <lisple/type.h>
 
@@ -12,6 +12,8 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
+
+using MapStruct = LispleTest::RuntimeTestFixture;
 bool __mapstruct_validate(Lisple::MapStruct& map_struct, Lisple::sptr_sobject& map)
 {
   bool caught = false;
@@ -33,14 +35,13 @@ Lisple::sptr_sobject eval_object(Lisple::Runtime& runtime, const std::string& so
   return Lisple::to_AST(*runtime.eval(source));
 }
 
-TEST(MapStruct, validate_map_with_string_values)
+TEST_F(MapStruct, validate_map_with_string_values)
 {
   // Given
   Lisple::MapStruct map_struct(
     {{":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)},
      {":description", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  Lisple::Runtime runtime;
   Lisple::sptr_sobject map =
     eval_object(runtime, "{ :name \"mystring\" :description \"contains text\"}");
 
@@ -51,13 +52,12 @@ TEST(MapStruct, validate_map_with_string_values)
   ASSERT_FALSE(caught);
 }
 
-TEST(MapStruct, validate_map_with_unknown_key)
+TEST_F(MapStruct, validate_map_with_unknown_key)
 {
   // Given
   Lisple::MapStruct map_struct(
     {{":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  Lisple::Runtime runtime;
   Lisple::sptr_sobject map =
     eval_object(runtime, "{ :name \"mystring\" :description \"contains text\"}");
 
@@ -68,14 +68,13 @@ TEST(MapStruct, validate_map_with_unknown_key)
   ASSERT_TRUE(caught);
 }
 
-TEST(MapStruct, validate_map_with_wrong_value_type)
+TEST_F(MapStruct, validate_map_with_wrong_value_type)
 {
   // Given
   Lisple::MapStruct map_struct(
     {{":name", Lisple::MapEntryReq(&Lisple::Type::STRING, false)},
      {":description", Lisple::MapEntryReq(&Lisple::Type::STRING, false)}});
 
-  Lisple::Runtime runtime;
   Lisple::sptr_sobject map =
     eval_object(runtime, "{:name \"mystring\" :description \"contains text\"}");
 
@@ -86,13 +85,12 @@ TEST(MapStruct, validate_map_with_wrong_value_type)
   ASSERT_FALSE(caught);
 }
 
-TEST(MapStruct, validate_map_with_array_of_string_value)
+TEST_F(MapStruct, validate_map_with_array_of_string_value)
 {
   // Given
   Lisple::MapStruct map_struct(
     {{":values", Lisple::MapEntryReq(&Lisple::Type::ARRAY_OF_STRING, false)}});
 
-  Lisple::Runtime runtime;
   Lisple::sptr_sobject map = eval_object(runtime, "{ :values [\"A\" \"B\" \"C\"]}");
 
   // When
@@ -102,13 +100,12 @@ TEST(MapStruct, validate_map_with_array_of_string_value)
   ASSERT_FALSE(caught);
 }
 
-TEST(MapStruct, get_property_from_map)
+TEST_F(MapStruct, get_property_from_map)
 {
   // Given
   Lisple::MapStruct map_struct(
     {{":value", Lisple::MapEntryReq(&Lisple::Type::STRING, true)}});
 
-  Lisple::Runtime runtime;
   Lisple::sptr_sobject map = eval_object(runtime, "{ :value \"A fine string!\"}");
   Lisple::Key key = Lisple::Key("value");
 

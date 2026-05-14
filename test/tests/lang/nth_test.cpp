@@ -1,14 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(NthFunction, nth_valid_numbers)
+
+using NthFunction = LispleTest::RuntimeTestFixture;
+TEST_F(NthFunction, nth_valid_numbers)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // Then
   EXPECT_EQ(runtime.eval("(nth [0 1 2 3 4] 0)")->i64(), 0);
   EXPECT_EQ(runtime.eval("(nth [0 1 2 3 4] 1)")->i64(), 1);
   EXPECT_EQ(runtime.eval("(nth [0 1 2 3 4] 2)")->i64(), 2);

@@ -1,12 +1,14 @@
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/runtime/seq.h>
 
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
+
+using RemoveBangFunction = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 /*
@@ -15,10 +17,9 @@ using namespace ::testing;
  * ======================================================================
  */
 
-TEST(RemoveBangFunction, remove_even_from_array)
+TEST_F(RemoveBangFunction, remove_even_from_array)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-seq [1 2 3 4])");
 
   // When
@@ -32,10 +33,9 @@ TEST(RemoveBangFunction, remove_even_from_array)
   EXPECT_EQ(my_seq->elements().at(1)->i64(), 3);
 }
 
-TEST(RemoveBangFunction, remove_even_from_vector_int)
+TEST_F(RemoveBangFunction, remove_even_from_vector_int)
 {
   // Given
-  Lisple::Runtime runtime;
   std::vector<int> int_v{1, 2, 3, 4};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));

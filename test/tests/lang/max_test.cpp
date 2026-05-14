@@ -1,11 +1,12 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(MaxFunction, max)
+
+using MaxFunction = LispleTest::RuntimeTestFixture;
+TEST_F(MaxFunction, max)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(max 1 1)"), *Lisple::RTValue::number(1));
   EXPECT_EQ(*runtime.eval("(max 0 1)"), *Lisple::RTValue::number(1));
   EXPECT_EQ(*runtime.eval("(max 1 0)"), *Lisple::RTValue::number(1));

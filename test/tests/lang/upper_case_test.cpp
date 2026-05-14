@@ -1,14 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(UpperCaseFunction, uppercase)
+
+using UpperCaseFunction = LispleTest::RuntimeTestFixture;
+TEST_F(UpperCaseFunction, uppercase)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // Then
   EXPECT_EQ(*runtime.eval("(upper-case \"mIxEd-CaSe!\")"),
             *Lisple::RTValue::string("MIXED-CASE!"));
   EXPECT_EQ(*runtime.eval("(upper-case \"The King is dead.\")"),

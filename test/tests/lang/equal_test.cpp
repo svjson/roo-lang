@@ -1,11 +1,12 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(EqualsFunction, ints)
+
+using EqualsFunction = LispleTest::RuntimeTestFixture;
+TEST_F(EqualsFunction, ints)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(= 1 1)"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(= 50 (+ 25 25))"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(= 999 999)"), *Lisple::Constant::BOOL_TRUE);
@@ -15,9 +16,8 @@ TEST(EqualsFunction, ints)
   EXPECT_EQ(*runtime.eval("(= 999 -999)"), *Lisple::Constant::BOOL_FALSE);
 }
 
-TEST(EqualsFunction, string)
+TEST_F(EqualsFunction, string)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(= \"test\" \"test\")"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(= \"a whole sentence\" \"a whole sentence\")"),
             *Lisple::Constant::BOOL_TRUE);
@@ -29,9 +29,8 @@ TEST(EqualsFunction, string)
   EXPECT_EQ(*runtime.eval("(= \" test\" \" test \")"), *Lisple::Constant::BOOL_FALSE);
 }
 
-TEST(EqualsFunction, mixed_types)
+TEST_F(EqualsFunction, mixed_types)
 {
-  Lisple::Runtime runtime;
   EXPECT_NE(*runtime.eval("(= \"test\" 'test)"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_NE(*runtime.eval("(= :test 'test)"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_NE(*runtime.eval("(= :test \"test\")"), *Lisple::Constant::BOOL_TRUE);

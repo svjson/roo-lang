@@ -1,19 +1,20 @@
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using HeadFunction = LispleTest::RuntimeTestFixture;
 /*
  * ===================================
  * HeadFunction - (head [...])
  * ===================================
  */
 
-TEST(HeadFunction, head_of_seq)
+TEST_F(HeadFunction, head_of_seq)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-array ['a' 'b' 'c'])");
 
   std::vector<int> int_v{50, 100, 90};
@@ -32,11 +33,9 @@ TEST(HeadFunction, head_of_seq)
     << result_wrapped->to_string() << " vs " << Lisple::Number(50).to_string();
 }
 
-TEST(HeadFunction, single_element)
+TEST_F(HeadFunction, single_element)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::vector<int> int_v{9};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));
@@ -50,20 +49,14 @@ TEST(HeadFunction, single_element)
   EXPECT_EQ(*result_wrapped, *Lisple::RTValue::number(9));
 }
 
-TEST(HeadFunction, head_vector)
+TEST_F(HeadFunction, head_vector)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   EXPECT_EQ(runtime.eval("(head [8 9 10])")->to_string(), "8");
 }
 
-TEST(HeadFunction, head_nil)
+TEST_F(HeadFunction, head_nil)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   EXPECT_EQ(runtime.eval("(head nil)")->to_string(), "nil");
 }

@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(ResolveFunction, resolve)
+
+using ResolveFunction = LispleTest::RuntimeTestFixture;
+TEST_F(ResolveFunction, resolve)
 {
   // Given
-  Lisple::Runtime runtime;
   auto rt_lookup_result = runtime.lookup_value(Lisple::Word("concat"));
 
   // When
@@ -17,22 +18,18 @@ TEST(ResolveFunction, resolve)
   ASSERT_EQ(&result->exec(), &rt_lookup_result->exec());
 }
 
-TEST(ResolveFunction, nil_resolves_to_nil)
+TEST_F(ResolveFunction, nil_resolves_to_nil)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(resolve nil)");
 
   // Then
   ASSERT_EQ(*result, *Lisple::Constant::NIL);
 }
 
-TEST(ResolveFunction, resolve_other_namespace)
+TEST_F(ResolveFunction, resolve_other_namespace)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.ns("some.nested.space", true)->store("magic-number", Lisple::RTValue::number(3));
 
   // When

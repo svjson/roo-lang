@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
-TEST(MinusFunction, simple_subtraction)
+using MinusFunction = LispleTest::RuntimeTestFixture;
+
+TEST_F(MinusFunction, simple_subtraction)
 {
-  // Given
-  Lisple::Runtime runtime;
-
   // When
   auto result = runtime.eval("(- 10 5)");
 
@@ -13,11 +12,8 @@ TEST(MinusFunction, simple_subtraction)
   EXPECT_EQ(result->to_string(), "5");
 }
 
-TEST(MinusFunction, on_evaluated_numbers)
+TEST_F(MinusFunction, on_evaluated_numbers)
 {
-  // Given
-  Lisple::Runtime runtime;
-
   // When
   auto result = runtime.eval("(- (+ 10 10) (+ 3 5))");
 
@@ -25,11 +21,8 @@ TEST(MinusFunction, on_evaluated_numbers)
   EXPECT_EQ(result->to_string(), "12");
 }
 
-TEST(MinusFunction, single_positive_flips_sign)
+TEST_F(MinusFunction, single_positive_flips_sign)
 {
-  // Given
-  Lisple::Runtime runtime;
-
   // When
   auto result = runtime.eval("(- 25)");
 
@@ -37,11 +30,8 @@ TEST(MinusFunction, single_positive_flips_sign)
   ASSERT_EQ(result->to_string(), "-25");
 }
 
-TEST(MinusFunction, single_negative_flips_sign)
+TEST_F(MinusFunction, single_negative_flips_sign)
 {
-  // Given
-  Lisple::Runtime runtime;
-
   // When
   auto result = runtime.eval("(- -25)");
 

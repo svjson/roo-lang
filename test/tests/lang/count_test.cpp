@@ -1,9 +1,11 @@
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using CountFunction = LispleTest::RuntimeTestFixture;
 /*
  * ===================================
  * CountFunction - (count [...])
@@ -11,11 +13,9 @@
  * ===================================
  */
 
-TEST(CountFunction, count_seq_length)
+TEST_F(CountFunction, count_seq_length)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::vector<int> int_v{50, 100, 90};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));
@@ -28,12 +28,9 @@ TEST(CountFunction, count_seq_length)
   EXPECT_EQ(*runtime.eval("(count wrapped-vec)"), *Lisple::RTValue::number(3));
 }
 
-TEST(CountFunction, count_str_length)
+TEST_F(CountFunction, count_str_length)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // Then
   EXPECT_EQ(*runtime.eval("(count \"\")"), *Lisple::RTValue::number(0));
   EXPECT_EQ(*runtime.eval("(count \" \")"), *Lisple::RTValue::number(1));
   EXPECT_EQ(*runtime.eval("(count \"..\")"), *Lisple::RTValue::number(2));

@@ -17,47 +17,49 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
+
+using Runtime = LispleTest::RuntimeTestFixture;
 const std::string RUNTIME_TEST_DIR = "test_resources/script/runtime_test";
 
 using namespace ::testing;
 
-TEST(Runtime, instantiation_vanilla)
+TEST_F(Runtime, instantiation_vanilla)
 {
   // When
-  Lisple::Runtime runtime;
+  auto& runtime = use_bare_runtime();
 
   // Then
   EXPECT_EQ(runtime.get_current_namespace().get_name(), "user");
   EXPECT_FALSE(runtime.has_file_system_access());
 }
 
-TEST(Runtime, instantiation_vanilla_with_file_system)
+TEST_F(Runtime, instantiation_vanilla_with_file_system)
 {
   // Given
   Lisple::DirRootFileSystem fs(".");
 
   // When
-  Lisple::Runtime runtime(&fs);
+  auto& runtime = use_runtime_with(fs);
 
   // Then
   EXPECT_EQ(runtime.get_current_namespace().get_name(), "user");
   EXPECT_TRUE(runtime.has_file_system_access());
 }
 
-TEST(Runtime, instantiation_with_namespace)
+TEST_F(Runtime, instantiation_with_namespace)
 {
   // Given
   Lisple::Namespace ns("bonanza");
 
   // When
-  Lisple::Runtime runtime(ns);
+  auto& runtime = use_runtime_with(ns);
 
   // Then
   ASSERT_EQ(runtime.get_current_namespace().get_name(), "bonanza");
   EXPECT_FALSE(runtime.has_file_system_access());
 }
 
-TEST(Runtime, instantiation_with_multiple_namespaces)
+TEST_F(Runtime, instantiation_with_multiple_namespaces)
 {
   // Given
   std::map<const std::string, Lisple::Namespace> namespaces;
@@ -66,51 +68,46 @@ TEST(Runtime, instantiation_with_multiple_namespaces)
   namespaces.emplace("flustard", Lisple::Namespace("flustard"));
 
   // When
-  Lisple::Runtime runtime("custard", namespaces);
+  auto& runtime = use_runtime_with("custard", namespaces);
 
   // Then
   EXPECT_EQ(runtime.get_current_namespace().get_name(), "custard");
   EXPECT_FALSE(runtime.has_file_system_access());
 }
 
-TEST(Runtime, eval__word__lookup)
+TEST_F(Runtime, eval__word__lookup)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
   std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  fixture.runtime.get_current_namespace().store("my-word",
-                                                Lisple::RTValue::string("my-string"));
+  runtime.get_current_namespace().store("my-word",
+                                        Lisple::RTValue::string("my-string"));
 
   // When
-  auto result = fixture.runtime.eval(word);
+  auto result = runtime.eval(word);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*result));
 }
 
-TEST(Runtime, eval__word__no_lookup)
+TEST_F(Runtime, eval__word__no_lookup)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
   std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  fixture.runtime.get_current_namespace().store("my-word",
-                                                Lisple::RTValue::string("my-string"));
+  runtime.get_current_namespace().store("my-word",
+                                        Lisple::RTValue::string("my-string"));
 
   // When
-  fixture.ctx.push_context(false);
-  auto result = fixture.runtime.eval(word);
+  ctx.push_context(false);
+  auto result = runtime.eval(word);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*result));
 }
 
-TEST(Runtime, eval__quoted_list)
+TEST_F(Runtime, eval__quoted_list)
 {
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
   // When
-  auto result = fixture.runtime.eval("'(these are bare words)");
+  auto result = runtime.eval("'(these are bare words)");
 
   // Then
   ASSERT_TRUE(Lisple::Type::LIST.is_type_of(*result));
@@ -123,17 +120,14 @@ TEST(Runtime, eval__quoted_list)
   EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("words"));
 }
 
-TEST(Runtime, no_matching_signature_exception_bubbles_up_to_client)
+TEST_F(Runtime, no_matching_signature_exception_bubbles_up_to_client)
 {
-  // Given
-  LispleTest::RuntimeFixture fixture;
-
   // When
   Lisple::sptr_rtval result = nullptr;
   std::string msg;
   try
   {
-    result = fixture.runtime.eval("(+ \"4\" 2)");
+    result = runtime.eval("(+ \"4\" 2)");
   }
   catch (std::exception& e)
   {

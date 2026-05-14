@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(ThreadFirstForm, deep_map_traversal)
+
+using ThreadFirstForm = LispleTest::RuntimeTestFixture;
+TEST_F(ThreadFirstForm, deep_map_traversal)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def deep_map {:file {:metadata {:size {:mb 1200}}}})");
 
   // When
@@ -16,22 +17,18 @@ TEST(ThreadFirstForm, deep_map_traversal)
   ASSERT_EQ(*retval, *Lisple::RTValue::number(1200));
 }
 
-TEST(ThreadFirstForm, functions)
+TEST_F(ThreadFirstForm, functions)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto retval = runtime.eval("(-> 1 (* 2) (* 16) (/ 4))");
 
   // Then
   ASSERT_EQ(retval->i64(), 8);
 }
 
-TEST(ThreadFirstForm, retrieved_map_is_same_instance)
+TEST_F(ThreadFirstForm, retrieved_map_is_same_instance)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def deep_map {:file {:metadata {:size {:mb 1200}}}})");
 
   // When

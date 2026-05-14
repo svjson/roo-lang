@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(Semantic_GlobalState, assoc_bang_on_nested_map__in_function)
+
+using Semantic_GlobalState = LispleTest::RuntimeTestFixture;
+TEST_F(Semantic_GlobalState, assoc_bang_on_nested_map__in_function)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
      (def state {:selected-categories [:books :movies]
                  :hints {:overlay-type :overlay/context
@@ -26,11 +27,10 @@ TEST(Semantic_GlobalState, assoc_bang_on_nested_map__in_function)
   }
 }
 
-TEST(Semantic_GlobalState,
+TEST_F(Semantic_GlobalState,
      assoc_bang_on_nested_map_after_set_bang_on_global_state__in_function)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
      (def state {:selected-categories [:books :movies]
                  :iteration 0
@@ -52,10 +52,9 @@ TEST(Semantic_GlobalState,
   }
 }
 
-TEST(Semantic_GlobalState, assoc_in_bang_on_nested_map__in_function)
+TEST_F(Semantic_GlobalState, assoc_in_bang_on_nested_map__in_function)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
      (def state {:selected-categories [:books :movies]
                  :hints {:overlay-type :overlay/context
@@ -75,10 +74,9 @@ TEST(Semantic_GlobalState, assoc_in_bang_on_nested_map__in_function)
   }
 }
 
-TEST(Semantic_GlobalState, assoc_in_bang_on_global_map__in_function)
+TEST_F(Semantic_GlobalState, assoc_in_bang_on_global_map__in_function)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
      (def state {:selected-categories [:books :movies]
                  :hints {:overlay-type :overlay/context

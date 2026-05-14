@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
-TEST(Semantic_NamespaceQualifiedAccess,
+
+using Semantic_NamespaceQualifiedAccess = LispleTest::RuntimeTestFixture;
+TEST_F(Semantic_NamespaceQualifiedAccess,
      symbols_from_foreign_namespace_are_available_when_fully_qualified)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
 
   (ns my-app.util)

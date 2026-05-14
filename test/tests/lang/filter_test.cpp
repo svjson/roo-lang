@@ -1,22 +1,21 @@
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/runtime/seq.h>
 
 #include <gtest/gtest.h>
 
+
+using FilterFunction = LispleTest::RuntimeTestFixture;
 /*
  * ======================================================================
  * FilterFunction - (filter [...] predicate)
  * ======================================================================
  */
 
-TEST(FilterFunction, filter_array)
+TEST_F(FilterFunction, filter_array)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto result = runtime.eval("(filter [1 2 3 4 5 6] even?)");
 
   // Then
@@ -29,11 +28,9 @@ TEST(FilterFunction, filter_array)
   EXPECT_EQ(result->elements().at(2)->i64(), 6);
 }
 
-TEST(FilterFunction, filter_vector_int)
+TEST_F(FilterFunction, filter_vector_int)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::vector<int> int_v{1, 2, 3, 4, 5, 6};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));

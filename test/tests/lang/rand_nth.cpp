@@ -1,20 +1,20 @@
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using RandNth = LispleTest::RuntimeTestFixture;
 /*
  * ===================================
  * RandNthFunction - (rand-nth [...])
  * ===================================
  */
 
-TEST(RandNth, all_elements_possible)
+TEST_F(RandNth, all_elements_possible)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::vector freq{0, 0, 0, 0, 0};
 
   // When
@@ -31,11 +31,9 @@ TEST(RandNth, all_elements_possible)
   }
 }
 
-TEST(RandNth, all_elements_possible_wrapped)
+TEST_F(RandNth, all_elements_possible_wrapped)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::vector<int> int_v{0, 1, 2, 3, 4};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));
@@ -56,12 +54,9 @@ TEST(RandNth, all_elements_possible_wrapped)
   }
 }
 
-TEST(RandNth, single_element)
+TEST_F(RandNth, single_element)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // Then
   for (int i = 0; i < 1000; i++)
   {
     int num = runtime.eval("(rand-nth [8])")->i64();

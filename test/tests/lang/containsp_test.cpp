@@ -1,18 +1,19 @@
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using ContainsPredicateFunction = LispleTest::RuntimeTestFixture;
 /*
  * ======================================================================
  * ContainsPredicateFunction - (contains? [...] predicate)
  * ======================================================================
  */
 
-TEST(ContainsPredicateFunction, contains_array)
+TEST_F(ContainsPredicateFunction, contains_array)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-vec [1 3 5 6 7 8])");
 
   // Then
@@ -28,10 +29,9 @@ TEST(ContainsPredicateFunction, contains_array)
   EXPECT_EQ(*runtime.eval("(contains? my-vec 10)"), *Lisple::Constant::BOOL_FALSE);
 }
 
-TEST(ContainsPredicateFunction, contains_vector_int)
+TEST_F(ContainsPredicateFunction, contains_vector_int)
 {
   // Given
-  Lisple::Runtime runtime;
   std::vector<int> int_v{1, 3, 5, 6, 7, 8};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));

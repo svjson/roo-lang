@@ -1,15 +1,15 @@
 
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(CaseMacro, constants)
+
+using CaseMacro = LispleTest::RuntimeTestFixture;
+TEST_F(CaseMacro, constants)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = runtime;
   auto result =
     reader.eval(R"((case 20 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
 
@@ -17,24 +17,20 @@ TEST(CaseMacro, constants)
   ASSERT_EQ(*result, *Lisple::RTValue::string("Zwanzig"));
 }
 
-TEST(CaseMacro, expressions)
+TEST_F(CaseMacro, expressions)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = runtime;
   auto result =
     reader.eval(R"((case (- 20 10) (- 10 10) "Zilch" (+ 5 5) "Zen" :default "Zillions"))");
   // Then
   ASSERT_EQ(*result, *Lisple::RTValue::string("Zen"));
 }
 
-TEST(CaseMacro, no_match_with_default)
+TEST_F(CaseMacro, no_match_with_default)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = runtime;
   auto result =
     reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig" :default "Zillions"))");
 
@@ -42,12 +38,10 @@ TEST(CaseMacro, no_match_with_default)
   ASSERT_EQ(*result, *Lisple::RTValue::string("Zillions"));
 }
 
-TEST(CaseMacro, no_match_without_default)
+TEST_F(CaseMacro, no_match_without_default)
 {
   // Given
-  Lisple::Runtime reader;
-
-  // When
+  auto& reader = runtime;
   auto result = reader.eval(R"((case 100 0 "Zilch" 10 "Zen" 20 "Zwanzig"))");
 
   // Then

@@ -1,17 +1,18 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using FindFirstFunction = LispleTest::RuntimeTestFixture;
 /*
  * ======================================================================
  * FindFirstFunction - (find-first [...] predicate)
  * ======================================================================
  */
 
-TEST(FindFirstFunction, find_first_array)
+TEST_F(FindFirstFunction, find_first_array)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"((def my-array ["AA" "BB" "CCC" "DDDD" "EEE" "FF"]))");
 
   // When

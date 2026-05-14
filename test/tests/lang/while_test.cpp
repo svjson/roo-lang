@@ -1,11 +1,12 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(WhileMacro, loop_with_counter)
+
+using WhileMacro = LispleTest::RuntimeTestFixture;
+TEST_F(WhileMacro, loop_with_counter)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def x 0)");
 
   // When
@@ -17,10 +18,9 @@ TEST(WhileMacro, loop_with_counter)
             *Lisple::RTValue::number(10));
 }
 
-TEST(WhileMacro, multi_form_loop)
+TEST_F(WhileMacro, multi_form_loop)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def x 0)");
 
   // When

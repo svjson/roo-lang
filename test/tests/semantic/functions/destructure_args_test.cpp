@@ -1,12 +1,13 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(Semantic_FunctionArgumentDestructuring, destructure_literal_map)
+
+using Semantic_FunctionArgumentDestructuring = LispleTest::RuntimeTestFixture;
+TEST_F(Semantic_FunctionArgumentDestructuring, destructure_literal_map)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
 
   (defun my-func [{:keys [records mode]}]
@@ -29,10 +30,9 @@ TEST(Semantic_FunctionArgumentDestructuring, destructure_literal_map)
             ":state/NEW}] :old-mode :mode/UPDATE :mode :mode/SELECT}");
 }
 
-TEST(Semantic_FunctionArgumentDestructuring, nil_argument_is_bound_and_shadows_global_symbol)
+TEST_F(Semantic_FunctionArgumentDestructuring, nil_argument_is_bound_and_shadows_global_symbol)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"(
 
   (def global-var {:request-id 16

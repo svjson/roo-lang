@@ -1,11 +1,12 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(NotEqualsFunction, ints)
+
+using NotEqualsFunction = LispleTest::RuntimeTestFixture;
+TEST_F(NotEqualsFunction, ints)
 {
-  Lisple::Runtime runtime;
   EXPECT_TRUE(Lisple::is_truthy(*runtime.eval("(not= 1 2)")));
   EXPECT_TRUE(Lisple::is_truthy(*runtime.eval("(not= 50 (+ 25 250))")));
   EXPECT_TRUE(Lisple::is_truthy(*runtime.eval("(not= 999 -999)")));
@@ -15,9 +16,8 @@ TEST(NotEqualsFunction, ints)
   EXPECT_FALSE(Lisple::is_truthy(*runtime.eval("(not= 999 999)")));
 }
 
-TEST(NotEqualsFunction, chars)
+TEST_F(NotEqualsFunction, chars)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(not= 'a' 'b')"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(not= '-' ':')"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(not= '.' ',')"), *Lisple::Constant::BOOL_TRUE);
@@ -27,9 +27,8 @@ TEST(NotEqualsFunction, chars)
   EXPECT_EQ(*runtime.eval("(not= '.' '.')"), *Lisple::Constant::BOOL_FALSE);
 }
 
-TEST(NotEqualsFunction, string)
+TEST_F(NotEqualsFunction, string)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(not= \"test\" \" test\")"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(not= \"a whole sentence\" \"a_whole_sentence\")"),
             *Lisple::Constant::BOOL_TRUE);

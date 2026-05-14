@@ -24,14 +24,16 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
+
+using Executable = LispleTest::RuntimeTestFixture;
+using UserFunction = LispleTest::RuntimeTestFixture;
+using Macro = LispleTest::RuntimeTestFixture;
+using create_function__RTValue_semantics = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
-TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
+TEST_F(Executable, invocation_with_incorrect_argument_types_throws_exception)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   std::string msg;
   try
   {
@@ -46,16 +48,14 @@ TEST(Executable, invocation_with_incorrect_argument_types_throws_exception)
   EXPECT_THAT(msg, HasSubstr("Could not apply args"));
 }
 
-TEST(UserFunction, invocation_of_empty_function_returns_nil)
+TEST_F(UserFunction, invocation_of_empty_function_returns_nil)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(defun my-fn [arg])");
 
   auto fn = runtime.lookup_value("my-fn");
 
   Lisple::sptr_rtval_v args = {Lisple::RTValue::string("A string!")};
-  Lisple::Context ctx(runtime);
 
   // When
   auto retval = fn->exec().execute(ctx, args);
@@ -64,11 +64,9 @@ TEST(UserFunction, invocation_of_empty_function_returns_nil)
   ASSERT_EQ(*retval, *Lisple::Constant::NIL);
 }
 
-TEST(Macro, get_signature__sig_with_varargs__array__form)
+TEST_F(Macro, get_signature__sig_with_varargs__array__form)
 {
   // Given
-  Lisple::Runtime runtime;
-  Lisple::Context ctx(runtime);
   Lisple::DoTimesForm dotimes;
 
   Lisple::uptr_exec_node_v array__form;
@@ -86,11 +84,9 @@ TEST(Macro, get_signature__sig_with_varargs__array__form)
   EXPECT_EQ(sig->to_string(), "[Vector, <any>...]");
 }
 
-TEST(create_function__RTValue_semantics, function_should_support_rtvalue_execution)
+TEST_F(create_function__RTValue_semantics, function_should_support_rtvalue_execution)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::cout << " ---------- TEST BEGINS ---------------" << std::endl;
 
   Lisple::sptr_rtval_v param_array{Lisple::RTValue::symbol("n")};

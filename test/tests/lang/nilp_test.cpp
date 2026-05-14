@@ -1,10 +1,11 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(NilPredicateFunction, nil)
+
+using NilPredicateFunction = LispleTest::RuntimeTestFixture;
+TEST_F(NilPredicateFunction, nil)
 {
-  Lisple::Runtime runtime;
   EXPECT_EQ(*runtime.eval("(nil? nil)"), *Lisple::Constant::BOOL_TRUE);
 
   EXPECT_EQ(*runtime.eval("(nil? [nil])"), *Lisple::Constant::BOOL_FALSE);

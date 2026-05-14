@@ -15,7 +15,7 @@
 #include <lisple/lang/loop.h>
 #include <lisple/lang/operator.h>
 #include <lisple/lang/seq_func.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/type.h>
 
 #include "gmock/gmock.h"
@@ -27,6 +27,8 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
 
+
+using Signature = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 namespace SignatureTest
@@ -69,7 +71,7 @@ Lisple::uptr_exec_node_v node_list(const std::vector<Lisple::uptr_exec_node*>& e
   return nodes;
 }
 
-TEST(Signature, matches_rtval_arguments)
+TEST_F(Signature, matches_rtval_arguments)
 {
   // Given
   Lisple::Signature signature(
@@ -84,7 +86,7 @@ TEST(Signature, matches_rtval_arguments)
   EXPECT_FALSE(signature.matches({STRING, NUMBER, NUMBER}));
 }
 
-TEST(Signature, matches_node_arguments)
+TEST_F(Signature, matches_node_arguments)
 {
   // Given
   Lisple::Signature signature(
@@ -100,7 +102,7 @@ TEST(Signature, matches_node_arguments)
   EXPECT_FALSE(signature.matches(node_list({&NODE_STRING, &NODE_NUMBER, &NODE_NUMBER})));
 }
 
-TEST(Signature, no_arg_signature_matches_only_empty_arglist)
+TEST_F(Signature, no_arg_signature_matches_only_empty_arglist)
 {
   // Given
   Lisple::Signature signature(Lisple::arg_v{},
@@ -115,7 +117,7 @@ TEST(Signature, no_arg_signature_matches_only_empty_arglist)
   EXPECT_FALSE(signature.matches({STRING, NUMBER, NUMBER}));
 }
 
-TEST(Signature, matches_varargs)
+TEST_F(Signature, matches_varargs)
 {
   // Given
   Lisple::Signature signature(
@@ -139,7 +141,7 @@ TEST(Signature, matches_varargs)
   EXPECT_FALSE(signature.matches({STRING, NUMBER, NUMBER}));
 }
 
-TEST(Signature, matches__leading_varargs)
+TEST_F(Signature, matches__leading_varargs)
 {
   // Given
   Lisple::MapFunction dummy_func;
@@ -161,7 +163,7 @@ TEST(Signature, matches__leading_varargs)
   EXPECT_FALSE(signature.matches({FUNCTION, ARRAY}));
 }
 
-TEST(Signature, matches__trailing_varargs)
+TEST_F(Signature, matches__trailing_varargs)
 {
   // Given
   Lisple::MapFunction dummy_func;
@@ -186,7 +188,7 @@ TEST(Signature, matches__trailing_varargs)
   EXPECT_FALSE(signature.matches({ARRAY, FUNCTION, ARRAY}));
 }
 
-TEST(Signature, matches__trailing_varargs_of_same_type)
+TEST_F(Signature, matches__trailing_varargs_of_same_type)
 {
   // Given
   Lisple::MapFunction dummy_func;
@@ -211,10 +213,10 @@ TEST(Signature, matches__trailing_varargs_of_same_type)
   EXPECT_FALSE(signature.matches({ARRAY, FUNCTION, ARRAY}));
 }
 
-TEST(Signature, coerce_args__map_to_native_type__native_function)
+TEST_F(Signature, coerce_args__map_to_native_type__native_function)
 {
   // Given
-  Lisple::Runtime reader;
+  auto& reader = runtime;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     "make-vehicle-model",
@@ -232,10 +234,10 @@ TEST(Signature, coerce_args__map_to_native_type__native_function)
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
 }
 
-TEST(Signature, coerce_args__no_coercion_available)
+TEST_F(Signature, coerce_args__no_coercion_available)
 {
   // Given
-  Lisple::Runtime reader;
+  auto& reader = runtime;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     "make-vehicle-model",
@@ -247,17 +249,17 @@ TEST(Signature, coerce_args__no_coercion_available)
 
   // When/Then
   EXPECT_THAT(
-    [&reader]()
+    [&]()
     {
       reader.eval(R"((vehicle/double-size-vehicle {:model-name "Gonzo-mobile" :seats 8}))");
     },
     ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching")));
 }
 
-TEST(Signature, coerce_args__coerce_array_of_array_of_native_object)
+TEST_F(Signature, coerce_args__coerce_array_of_array_of_native_object)
 {
   // Given
-  Lisple::Runtime reader;
+  auto& reader = runtime;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     "make-vehicle-model",
@@ -291,10 +293,10 @@ TEST(Signature, coerce_args__coerce_array_of_array_of_native_object)
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->elements().at(1)));
 }
 
-TEST(Signature, coerce_args__coerce_array_elements)
+TEST_F(Signature, coerce_args__coerce_array_elements)
 {
   // Given
-  Lisple::Runtime reader;
+  auto& reader = runtime;
   reader.switch_namespace("vehicle");
   reader.get_current_namespace().store(
     "make-vehicle-model",

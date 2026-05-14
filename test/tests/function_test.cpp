@@ -17,6 +17,8 @@
 
 namespace Lisple { class Context; }
 
+using Function = LispleTest::RuntimeTestFixture;
+
 Lisple::sptr_rtval dummy_exec1(Lisple::Context&, Lisple::sptr_rtval_v&)
 {
   return Lisple::RTValue::string("retval1");
@@ -43,10 +45,9 @@ TEST(FunctionSignature, matches__two_strings)
   EXPECT_TRUE(signature.matches(args));
 }
 
-TEST(Function, execute__delegate)
+TEST_F(Function, execute__delegate)
 {
   // Given
-  LispleTest::RuntimeFixture fixture;
   Lisple::uptr_sig_v signatures;
 
   signatures.push_back(std::make_unique<Lisple::sig>
@@ -65,7 +66,7 @@ TEST(Function, execute__delegate)
   Lisple::sptr_rtval_v args;
   args.push_back(Lisple::RTValue::string("string1"));
 
-  Lisple::sptr_rtval retval = fn.execute(fixture.ctx, args);
+  Lisple::sptr_rtval retval = fn.execute(ctx, args);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*retval));

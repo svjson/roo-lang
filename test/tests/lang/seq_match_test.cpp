@@ -1,18 +1,19 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
+
+using SeqMatchFunction = LispleTest::RuntimeTestFixture;
 /*
  * ======================================================================
  * SeqMatchFunction - (seq-match [{...} {...}] pattern)
  * ======================================================================
  */
 
-TEST(SeqMatchFunction, seq_match_single_field)
+TEST_F(SeqMatchFunction, seq_match_single_field)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"((def my-seq [{:id 1 :name "Air Man"} {:id 2 :name "Bubble Man"}]))");
 
   // Then
@@ -23,10 +24,9 @@ TEST(SeqMatchFunction, seq_match_single_field)
   EXPECT_EQ(runtime.eval("(seq-match my-seq {:id 3})")->to_string(), R"(nil)");
 }
 
-TEST(SeqMatchFunction, seq_match_missing_field)
+TEST_F(SeqMatchFunction, seq_match_missing_field)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval(R"((def my-seq [{:id 1 :name "Air Man"} {:id 2 :name "Bubble Man"}]))");
 
   // Then
@@ -34,10 +34,9 @@ TEST(SeqMatchFunction, seq_match_missing_field)
   EXPECT_EQ(runtime.eval("(seq-match my-seq {:id nil})")->to_string(), "nil");
 }
 
-TEST(SeqMatchFunction, seq_match_nested)
+TEST_F(SeqMatchFunction, seq_match_nested)
 {
   // Given
-  Lisple::Runtime runtime;
   const std::string air_man =
     R"({:id 1 :name "Air Man" :stats {:weapon "Air Shooter" :weakness "Leaf Shield"}})";
   const std::string bubble_man =

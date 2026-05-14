@@ -1,10 +1,12 @@
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "gmock/gmock.h"
 #include "host/test_adapters/vehicle_host_adapters.h"
 #include <gtest/gtest.h>
 
+
+using ConcatFunction = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
 /*
@@ -14,23 +16,18 @@ using namespace ::testing;
  * ======================================================================
  */
 
-TEST(ConcatFunction, numbers)
+TEST_F(ConcatFunction, numbers)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto retval = runtime.eval("(concat [1 2 3] [4 5 6])");
 
   // Then
   EXPECT_EQ(*retval, *runtime.eval("[1 2 3 4 5 6]"));
 }
 
-TEST(ConcatFunction, number_to_vector_int)
+TEST_F(ConcatFunction, number_to_vector_int)
 {
   // Given
-  Lisple::Runtime runtime;
-
   std::vector<int> int_v{1, 2, 3};
   runtime.get_current_namespace().store("wrapped-vec",
                                         std::make_shared<Lisple::VectorInt>(int_v));
@@ -45,11 +42,9 @@ TEST(ConcatFunction, number_to_vector_int)
   EXPECT_THAT(int_v, ElementsAre(1, 2, 3));
 }
 
-TEST(ConcatFunction, host_objects_and_primitives)
+TEST_F(ConcatFunction, host_objects_and_primitives)
 {
   // Given
-  Lisple::Runtime runtime;
-
   runtime.get_current_namespace().store(
     "cessna",
     LispleTest::VehicleModelAdapter::make<LispleTest::VehicleModel>("Cessna", 2));

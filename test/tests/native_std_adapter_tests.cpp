@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <lisple/adapter.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 #include <lisple/runtime/dict.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
@@ -12,7 +12,12 @@
 #include "host/test_adapters/vehicle_host_adapters.h"
 #include <gtest/gtest.h>
 
-TEST(NativeStdVectorAdapter_int, get_set_children_and_count)
+
+using NativeStdVectorAdapter_int = LispleTest::RuntimeTestFixture;
+using NativeStdMapAdapter_int_string = LispleTest::RuntimeTestFixture;
+using NativeStdMapAdapter_int_const_string = LispleTest::RuntimeTestFixture;
+using NativeStdMapAdapter_uint8_short = LispleTest::RuntimeTestFixture;
+TEST_F(NativeStdVectorAdapter_int, get_set_children_and_count)
 {
   std::vector<int> values = {1, 2, 3};
   Lisple::sptr_rtval adapter = Lisple::NativeStdVectorAdapter<int>::make_ref(values);
@@ -28,9 +33,8 @@ TEST(NativeStdVectorAdapter_int, get_set_children_and_count)
   EXPECT_EQ(adapter->nobj()->to_string(), "[1 8 3]");
 }
 
-TEST(NativeStdVectorAdapter_int, for_iterates_native_vector)
+TEST_F(NativeStdVectorAdapter_int, for_iterates_native_vector)
 {
-  Lisple::Runtime runtime;
   std::vector<int> values = {1, 2, 3};
   runtime.get_current_namespace().store(
     "values",
@@ -41,7 +45,7 @@ TEST(NativeStdVectorAdapter_int, for_iterates_native_vector)
   EXPECT_EQ(result->to_string(), "[2 4 6]");
 }
 
-TEST(NativeStdMapAdapter_int_string, get_set_keys_and_count)
+TEST_F(NativeStdMapAdapter_int_string, get_set_keys_and_count)
 {
   std::map<int, std::string> values = {{1, "one"}, {2, "two"}};
   Lisple::sptr_rtval adapter =
@@ -61,11 +65,10 @@ TEST(NativeStdMapAdapter_int_string, get_set_keys_and_count)
   EXPECT_EQ(adapter->nobj()->to_string(), R"({1 "one" 2 "two" 3 "three"})");
 }
 
-TEST(NativeStdMapAdapter_int_string, script_usage)
+TEST_F(NativeStdMapAdapter_int_string, script_usage)
 {
   std::map<int, std::string> values = {{1, "one"}, {2, "two"}, {3, "three"}};
 
-  Lisple::Runtime runtime;
   runtime.get_current_namespace().store(
     "my-map",
     Lisple::NativeStdMapAdapter<int, std::string>::make_ref(values));
@@ -91,11 +94,10 @@ TEST(NativeStdMapAdapter_int_string, script_usage)
   EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::RTValue::string("eight"));
 }
 
-TEST(NativeStdMapAdapter_int_const_string, script_usage)
+TEST_F(NativeStdMapAdapter_int_const_string, script_usage)
 {
   std::map<int, const std::string> values = {{1, "one"}, {2, "two"}, {3, "three"}};
 
-  Lisple::Runtime runtime;
   runtime.get_current_namespace().store(
     "my-map",
     Lisple::NativeStdMapAdapter<int, const std::string>::make_ref(values));
@@ -125,7 +127,7 @@ TEST(NativeStdMapAdapter_int_const_string, script_usage)
   EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Lisple::RTValue::string("eight"));
 }
 
-TEST(NativeStdMapAdapter_uint8_short, get_set_numeric_map)
+TEST_F(NativeStdMapAdapter_uint8_short, get_set_numeric_map)
 {
   std::map<uint8_t, short> values = {{1, 8}, {2, 16}};
   Lisple::sptr_rtval adapter = Lisple::NativeStdMapAdapter<uint8_t, short>::make_ref(values);

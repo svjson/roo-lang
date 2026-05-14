@@ -1,6 +1,6 @@
 
 
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "benchmark.h"
 #include "fixtures/pixils_point.h"
@@ -9,6 +9,9 @@
 #include "host/test_adapters/vectorgfx_native_cachedprops_adapters.h"
 #include <gtest/gtest.h>
 
+
+using DISABLED_GeneratePoints = LispleTest::RuntimeTestFixture;
+using PointDistanceMatrixBenchmark = LispleTest::RuntimeTestFixture;
 const std::string NS__MATRIX = R"(
   (ns test.matrix
     (:require [pixils.lisple.point :as pt]
@@ -20,15 +23,14 @@ const std::string NS__MATRIX = R"(
  *
  * Kept for potential re-generation purposes
  */
-TEST(DISABLED_GeneratePoints, gen_points)
+TEST_F(DISABLED_GeneratePoints, gen_points)
 {
-  Lisple::Runtime runtime;
   runtime.eval(LispleTest::DEFUN_GENERATE_POINTS);
   auto points = runtime.eval("(generate-points 750)");
   std::cout << points->to_string() << std::endl;
 }
 
-TEST(Benchmark_Workload, point_distance_matrix__pure_lisp)
+TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__pure_lisp)
 {
   LispleTest::SnippetBenchmark bm(
     {{"pixils.point", LispleTest::Native::PointNamespace("pixils.point")}},
@@ -44,7 +46,7 @@ TEST(Benchmark_Workload, point_distance_matrix__pure_lisp)
   bm.run();
 }
 
-TEST(Benchmark_Workload, point_distance_matrix__map_points__native_distance_fn)
+TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__map_points__native_distance_fn)
 {
   LispleTest::SnippetBenchmark bm(
     {{"pixils.point", LispleTest::Native::PointNamespace("pixils.point")}},
@@ -60,7 +62,7 @@ TEST(Benchmark_Workload, point_distance_matrix__map_points__native_distance_fn)
   bm.run();
 }
 
-TEST(Benchmark_Workload, point_distance_matrix__native_points__lisple_distance_fn)
+TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_points__lisple_distance_fn)
 {
   LispleTest::SnippetBenchmark bm(
     {{"pixils.point", LispleTest::CachedNative::PointNamespace("pixils.point")}},
@@ -76,7 +78,7 @@ TEST(Benchmark_Workload, point_distance_matrix__native_points__lisple_distance_f
   bm.run();
 }
 
-TEST(Benchmark_Workload, point_distance_matrix__native_propcache_points__lisple_distance_fn)
+TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_propcache_points__lisple_distance_fn)
 {
   LispleTest::SnippetBenchmark bm(
     {{"pixils.point", LispleTest::Native::PointNamespace("pixils.point")}},
@@ -92,7 +94,7 @@ TEST(Benchmark_Workload, point_distance_matrix__native_propcache_points__lisple_
   bm.run();
 }
 
-TEST(Benchmark_Workload, point_distance_matrix__native_points__native_distance_fn)
+TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_points__native_distance_fn)
 {
   LispleTest::SnippetBenchmark bm(
     {{"pixils.point", LispleTest::Native::PointNamespace("pixils.point")}},
@@ -108,7 +110,7 @@ TEST(Benchmark_Workload, point_distance_matrix__native_points__native_distance_f
   bm.run();
 }
 
-TEST(Benchmark_Workload, point_distance_matrix__native_propcache_points__native_distance_fn)
+TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_propcache_points__native_distance_fn)
 {
   LispleTest::SnippetBenchmark bm(
     {{"pixils.point", LispleTest::CachedNative::PointNamespace("pixils.point")}},

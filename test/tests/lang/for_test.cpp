@@ -1,11 +1,12 @@
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include <gtest/gtest.h>
 
-TEST(ForForm, transform_vector_of_int)
+
+using ForForm = LispleTest::RuntimeTestFixture;
+TEST_F(ForForm, transform_vector_of_int)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-vector [1 2 3 4 5 6])");
 
   // When
@@ -15,10 +16,9 @@ TEST(ForForm, transform_vector_of_int)
   ASSERT_EQ(retval->to_string(), "[2 4 6 8 10 12]");
 }
 
-TEST(ForForm, with_map_destructuring)
+TEST_F(ForForm, with_map_destructuring)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-vector [{:a 1 :b 10} {:a 5 :b 4}])");
 
   // When
@@ -28,12 +28,9 @@ TEST(ForForm, with_map_destructuring)
   ASSERT_EQ(retval->to_string(), "[11 9]");
 }
 
-TEST(ForForm, each_char_in_string)
+TEST_F(ForForm, each_char_in_string)
 {
   // Given
-  Lisple::Runtime runtime;
-
-  // When
   auto retval = runtime.eval("(for [ch \"Beer Gnome!\"] ch)");
 
   // Then

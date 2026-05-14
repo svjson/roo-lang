@@ -1,15 +1,16 @@
 #include <lisple/exception.h>
-#include <lisple/runtime.h>
+#include "runtime_fixture.h"
 
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
+
+using UpdateInFunction = LispleTest::RuntimeTestFixture;
 using namespace ::testing;
 
-TEST(UpdateInFunction, update_existing_nested_map_key)
+TEST_F(UpdateInFunction, update_existing_nested_map_key)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:nested {:count 2} :other 99})");
 
   // When
@@ -20,10 +21,9 @@ TEST(UpdateInFunction, update_existing_nested_map_key)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:nested {:count 2} :other 99}");
 }
 
-TEST(UpdateInFunction, update_missing_nested_key_with_nil_current_value)
+TEST_F(UpdateInFunction, update_missing_nested_key_with_nil_current_value)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1})");
 
   // When
@@ -34,10 +34,9 @@ TEST(UpdateInFunction, update_missing_nested_key_with_nil_current_value)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1}");
 }
 
-TEST(UpdateInFunction, passes_extra_args_to_update_function)
+TEST_F(UpdateInFunction, passes_extra_args_to_update_function)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:nested {:count 2}})");
 
   // When
@@ -48,10 +47,9 @@ TEST(UpdateInFunction, passes_extra_args_to_update_function)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:nested {:count 2}}");
 }
 
-TEST(UpdateInFunction, update_nested_sequence_by_index)
+TEST_F(UpdateInFunction, update_nested_sequence_by_index)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:vec [1 2 3]})");
 
   // When
@@ -62,10 +60,9 @@ TEST(UpdateInFunction, update_nested_sequence_by_index)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:vec [1 2 3]}");
 }
 
-TEST(UpdateInFunction, update_root_sequence_by_path)
+TEST_F(UpdateInFunction, update_root_sequence_by_path)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-vec [1 2 3])");
 
   // When
@@ -76,10 +73,9 @@ TEST(UpdateInFunction, update_root_sequence_by_path)
   EXPECT_EQ(runtime.lookup_value("my-vec")->to_string(), "[1 2 3]");
 }
 
-TEST(UpdateInFunction, update_multiple_paths_in_one_call)
+TEST_F(UpdateInFunction, update_multiple_paths_in_one_call)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1 :nested {:count 2}})");
 
   // When
@@ -91,26 +87,24 @@ TEST(UpdateInFunction, update_multiple_paths_in_one_call)
   EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1 :nested {:count 2}}");
 }
 
-TEST(UpdateInFunction, throws_on_non_sequence_path)
+TEST_F(UpdateInFunction, throws_on_non_sequence_path)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1})");
 
   // When/Then
-  EXPECT_THAT([&runtime]() { runtime.eval("(update-in my-map :a (fn [x] x))"); },
+  EXPECT_THAT([this]() { runtime.eval("(update-in my-map :a (fn [x] x))"); },
               ThrowsMessage<Lisple::TypeError>(
                 HasSubstr("Path for update-in must be a sequence")));
 }
 
-TEST(UpdateInFunction, throws_on_empty_path)
+TEST_F(UpdateInFunction, throws_on_empty_path)
 {
   // Given
-  Lisple::Runtime runtime;
   runtime.eval("(def my-map {:a 1})");
 
   // When/Then
-  EXPECT_THAT([&runtime]() { runtime.eval("(update-in my-map [] (fn [x] x))"); },
+  EXPECT_THAT([this]() { runtime.eval("(update-in my-map [] (fn [x] x))"); },
               ThrowsMessage<Lisple::InvocationException>(
                 HasSubstr("Path for update-in cannot be empty.")));
 }
