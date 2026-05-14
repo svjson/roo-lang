@@ -101,7 +101,7 @@ TEST(VehicleModelAdapter_usage, produce_modified_copy_with_assoc)
   EXPECT_EQ(result->to_string(), "{:model-name \"Spruttibangbang\" :seats 8}");
 }
 
-TEST(NativeObjectAdapter_usage, rt_dispatch_coerces_args_before_ast_fallback)
+TEST(NativeObjectAdapter_usage, rt_dispatch_coerces_args)
 {
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
   namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
