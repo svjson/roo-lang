@@ -145,6 +145,28 @@ namespace Lisple
     bool is_string(const std::string&) const;
   };
 
+  inline sptr_val boolean(bool value) { return Value::boolean(value); }
+  inline sptr_val number(int value) { return Value::number(value); }
+  inline sptr_val number(long value) { return Value::number(value); }
+  inline sptr_val number(double value) { return Value::number(value); }
+  inline sptr_val number(const Value::Number& value) { return Value::number(value); }
+  inline sptr_val string(const std::string& value) { return Value::string(value); }
+  inline sptr_val character(char value) { return Value::character(value); }
+  inline sptr_val keyword(const std::string& value) { return Value::keyword(value); }
+  inline sptr_val symbol(const std::string& value) { return Value::symbol(value); }
+  inline sptr_val list(const sptr_val_v& value) { return Value::list(value); }
+  inline sptr_val vector(const sptr_val_v& value) { return Value::vector(value); }
+  inline sptr_val map(const sptr_val_v& value) { return Value::map(value); }
+  inline sptr_val object(const sptr_ast_node& value) { return Value::object(value); }
+  inline sptr_val native_object(const sptr_native_obj& value)
+  {
+    return Value::native_object(value);
+  }
+  inline sptr_val executable(const sptr_executable& value)
+  {
+    return Value::executable(value);
+  }
+
   namespace Constant
   {
     inline const sptr_val BOOL_TRUE = std::make_shared<Value>(true);
@@ -152,9 +174,9 @@ namespace Lisple
     inline const sptr_val NIL = std::make_shared<Value>(std::monostate());
   } // namespace Constant
 
-  sptr_val to_rt_value(sptr_sobject& obj);
+  sptr_val to_rt_value(sptr_ast_node& obj);
   sptr_val to_rt_value(const AST::ASTNode& obj);
-  sptr_sobject to_AST(Value& val);
+  sptr_ast_node to_AST(Value& val);
   bool is_truthy(const Value& val);
 
 } // namespace Lisple
