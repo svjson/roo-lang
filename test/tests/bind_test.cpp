@@ -22,8 +22,8 @@ TEST(SymbolBinding, apply)
 
   // Then
   ASSERT_EQ(scope.get_keys()->size(), 1);
-  ASSERT_TRUE(scope.has(Lisple::Word("muffin")));
-  ASSERT_EQ(*scope.lookup_value("muffin"), *Lisple::RTValue::keyword("blooper"));
+  ASSERT_TRUE(scope.has("muffin"));
+  ASSERT_EQ(*scope.lookup("muffin"), *Lisple::RTValue::keyword("blooper"));
 }
 
 TEST(RestBinding, apply_collects_values_into_vector)
@@ -39,7 +39,7 @@ TEST(RestBinding, apply_collects_values_into_vector)
   binding.apply(scope, values);
 
   // Then
-  auto bound = scope.lookup_value("rest");
+  auto bound = scope.lookup("rest");
   ASSERT_EQ(
     *bound,
     *Lisple::RTValue::vector(
@@ -56,7 +56,7 @@ TEST(RestBinding, apply_empty_values_binds_empty_vector)
   binding.apply(scope, {});
 
   // Then
-  auto bound = scope.lookup_value("rest");
+  auto bound = scope.lookup("rest");
   ASSERT_EQ(*bound, *Lisple::RTValue::vector({}));
 }
 
@@ -108,10 +108,11 @@ TEST(MapDestructureBinding, apply__keys_only)
 
   // Then
   ASSERT_EQ(scope.get_keys()->size(), 2);
-  ASSERT_TRUE(scope.has(Lisple::Word("source")));
-  ASSERT_TRUE(scope.has(Lisple::Word("target")));
-  ASSERT_EQ(*scope.lookup_value("source"), *Lisple::RTValue::symbol("the-thing"));
-  ASSERT_EQ(*scope.lookup_value("target"), *Lisple::RTValue::string("The Thang"));
+  ASSERT_TRUE(scope.has("source"));
+  ASSERT_TRUE(scope.has("target"));
+  ASSERT_EQ(*scope.lookup(*Lisple::RTValue::symbol("source")),
+            *Lisple::RTValue::symbol("the-thing"));
+  ASSERT_EQ(*scope.lookup("target"), *Lisple::RTValue::string("The Thang"));
 }
 
 TEST(MapDestructureBinding, apply__keys_and_alias)
@@ -136,10 +137,10 @@ TEST(MapDestructureBinding, apply__keys_and_alias)
 
   // Then
   ASSERT_EQ(scope.get_keys()->size(), 3);
-  ASSERT_TRUE(scope.has(Lisple::Word("source")));
-  ASSERT_TRUE(scope.has(Lisple::Word("target")));
-  ASSERT_TRUE(scope.has(Lisple::Word("context")));
-  ASSERT_EQ(*scope.lookup_value("source"), *Lisple::RTValue::symbol("the-thing"));
-  ASSERT_EQ(*scope.lookup_value("target"), *Lisple::RTValue::string("The Thang"));
-  ASSERT_EQ(*scope.lookup_value("context"), *map);
+  ASSERT_TRUE(scope.has("source"));
+  ASSERT_TRUE(scope.has("target"));
+  ASSERT_TRUE(scope.has("context"));
+  ASSERT_EQ(*scope.lookup("source"), *Lisple::RTValue::symbol("the-thing"));
+  ASSERT_EQ(*scope.lookup("target"), *Lisple::RTValue::string("The Thang"));
+  ASSERT_EQ(*scope.lookup("context"), *map);
 }

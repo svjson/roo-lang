@@ -16,12 +16,11 @@ TEST_F(Namespace, store_and_lookup)
 {
   // Given
   Lisple::Namespace ns("test");
-  Lisple::Word identifier("myvar");
   Lisple::sptr_rtval obj = Lisple::RTValue::string("my string");
 
   // When
-  ns.store(identifier.value, obj);
-  Lisple::sptr_rtval mystring = ns.lookup_symbol(identifier);
+  ns.store("myvar", obj);
+  Lisple::sptr_rtval mystring = ns.lookup(*Lisple::RTValue::symbol("myvar"));
 
   // Then
   ASSERT_NE(mystring, nullptr);
@@ -37,7 +36,7 @@ TEST_F(Namespace, access_identifier_from_other_ns)
 
   // When
   runtime.switch_namespace("test-ns.number-two");
-  Lisple::sptr_rtval result = runtime.lookup_value(Lisple::Word("test-ns.number-one/my-value"));
+  Lisple::sptr_rtval result = runtime.lookup("test-ns.number-one/my-value");
 
   // Then
   ASSERT_EQ(result->to_string(), "123");

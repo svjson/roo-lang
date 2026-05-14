@@ -268,7 +268,7 @@ namespace Lisple
   sptr_rtval Runtime::invoke(const std::string& function, sptr_rtval_v& args)
   {
     Context ctx(*this);
-    sptr_rtval inv = lookup_value(Word(function));
+    sptr_rtval inv = lookup(function);
     if (inv->type != RTValue::Type::FUNCTION)
     {
       throw new InvocationException(inv->to_string() + " is not executable.");
@@ -287,17 +287,12 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Runtime::lookup_value(const std::string& identifier)
-  {
-    return lookup_value(Lisple::Word(identifier));
-  }
-
-  sptr_rtval Runtime::lookup_value(const std::string& identifier,
+  sptr_rtval Runtime::lookup(const std::string& identifier,
                                    const sptr_rtval& default_value)
   {
     try
     {
-      return lookup_value(Lisple::Word(identifier));
+      return lookup(identifier);
     }
     catch (IdentifierException&)
     {
@@ -305,29 +300,40 @@ namespace Lisple
     }
   }
 
-  sptr_rtval Runtime::lookup_value(const Word& identifier)
+  sptr_rtval Runtime::lookup(const RTValue& identifier)
   {
+    if (identifier.type != RTValue::Type::SYMBOL)
+    {
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
+    }
+
+    return lookup(identifier.str());
+  }
+
+  sptr_rtval Runtime::lookup(const std::string& identifier_s)
+  {
+    Word identifier(identifier_s);
     if (identifier.is_qualified())
     {
       Namespace* _ns = ns(identifier.get_qualifier());
       if (_ns)
       {
-        return _ns->lookup_symbol(identifier.get_identifier());
+        return _ns->lookup(identifier.get_identifier());
       }
 
-      sptr_rtval result = current_namespace->lookup_symbol(identifier);
+      sptr_rtval result = current_namespace->lookup(identifier.to_string());
       if (result) return result;
 
       throw IdentifierException("Unknown identifier: '" + identifier.to_string() + "'");
     }
 
-    sptr_rtval lang_obj = lang.lookup_symbol(identifier.get_identifier());
+    sptr_rtval lang_obj = lang.lookup(identifier.get_identifier());
     if (lang_obj.get())
     {
       return lang_obj;
     }
 
-    sptr_rtval ns_obj = current_namespace->lookup_symbol(identifier.get_identifier());
+    sptr_rtval ns_obj = current_namespace->lookup(identifier.get_identifier());
     if (ns_obj.get())
     {
       return ns_obj;
@@ -336,7 +342,7 @@ namespace Lisple
     throw IdentifierException("Unknown identifier: '" + identifier.value + "'");
   }
 
-  Namespace& Runtime::get_ns_of(const Word& identifier)
+  Namespace& Runtime::get_ns_of(const std::string& identifier)
   {
     if (current_namespace->has(identifier))
     {
@@ -347,7 +353,7 @@ namespace Lisple
       return lang;
     }
 
-    throw IdentifierException("Unknown identifier: " + identifier.value);
+    throw IdentifierException("Unknown identifier: " + identifier);
   }
 
 } // namespace Lisple

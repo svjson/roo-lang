@@ -55,10 +55,8 @@ namespace Lisple
     std::map<const std::string, Namespace*> aliased_namespaces;
 
     Namespace(Type type, const std::string& name);
-    Namespace(Type type, const std::string& name, std::map<std::string, sptr_sobject> lang);
     Namespace(Type type,
               const std::string& name,
-              std::map<std::string, sptr_sobject> lang,
               std::map<std::string, sptr_rtval> lang_symbols);
 
     /*!
@@ -74,12 +72,7 @@ namespace Lisple
     /*!
      * @brief Used internally to service Namespace::has and Namespace::lookup
      */
-    sptr_sobject find(const Word& identifier) const;
-
-    /*!
-     * @brief Used internally to service Namespace::lookup_symbol
-     */
-    sptr_rtval find_symbol(const Word& identifier) const;
+    sptr_rtval find(const std::string& identifier) const;
 
    public:
     /*!
@@ -100,25 +93,22 @@ namespace Lisple
      * @brief Tests if an identifier is stored in this namespace, its imported
      * namespaces or, if specifically qualified, its aliased namespaces.
      */
-    bool has(const Word& identifier) const override;
+    bool has(const std::string& identifier) const override;
 
     /*!
      * @brief Find a stored identifier in this namespace, its imported
      * namespaces or, if specifically qualified, its aliased namespaces.
      */
-    sptr_sobject lookup(const Word& identifier) const override;
-
-    sptr_rtval lookup_symbol(const Word& identifier) const;
+    sptr_rtval lookup(const std::string& identifier) const override;
+    sptr_rtval lookup(const RTValue& identifier) const override;
 
     using Scope::mutate;
-    void mutate(const Word& identifier, const sptr_sobject& obj) override;
-    void mutate(const Word& identifier, const sptr_rtval& val);
+    void mutate(const std::string& identifier, const sptr_rtval& val) override;
 
     /*
      * Creates a language namespace. Intented for internal use only.
      */
-    static Namespace make_lang(std::map<std::string, sptr_sobject> lang,
-                               std::map<std::string, sptr_rtval> lang_symbols);
+    static Namespace make_lang(std::map<std::string, sptr_rtval> lang_symbols);
 
     friend class Runtime;
   };

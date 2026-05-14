@@ -108,9 +108,10 @@ namespace Lisple
         sptr_rtval static_val;
         try
         {
-          static_val = obj->as<Word>().is_qualified()
-                         ? ctx.ctx->lookup_value(obj->as<Word>())
-                         : ctx.ctx->get_current_namespace()->lookup_symbol(obj->as<Word>());
+          const Word& word = obj->as<Word>();
+          static_val = word.is_qualified()
+                         ? ctx.ctx->lookup(word.to_string())
+                         : ctx.ctx->get_current_namespace()->lookup(word.get_identifier());
         }
         catch (const IdentifierException&)
         {
@@ -118,7 +119,7 @@ namespace Lisple
         }
         if (!static_val)
         {
-          static_val = ctx.ctx->lang().lookup_symbol(obj->as<Word>());
+          static_val = ctx.ctx->lang().lookup(obj->as<Word>().get_identifier());
         }
         if (static_val)
         {

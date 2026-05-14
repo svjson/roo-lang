@@ -22,7 +22,7 @@ TEST_F(AssocFunction, add_key_to_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c 3}"));
-  EXPECT_EQ(*runtime.lookup_value(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST_F(AssocFunction, replace_key_in_map)
@@ -35,7 +35,7 @@ TEST_F(AssocFunction, replace_key_in_map)
 
   // Then
   EXPECT_EQ(result->to_string(), "{:a 10 :b 2}");
-  EXPECT_EQ(*runtime.lookup_value(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST_F(AssocFunction, replace_key_in_map__retains_sibling_identities)
@@ -67,7 +67,8 @@ TEST_F(AssocFunction, add_and_replace_multiple)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}"));
-  EXPECT_EQ(*runtime.lookup_value(Lisple::Word("my-map")), *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup(*Lisple::RTValue::symbol("my-map")),
+            *runtime.eval("{:a 1 :b 2}"));
 }
 
 TEST_F(AssocFunction, throws_on_incomplete_key_value_chain)

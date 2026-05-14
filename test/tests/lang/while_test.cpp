@@ -14,7 +14,7 @@ TEST_F(WhileMacro, loop_with_counter)
 
   // Then
   EXPECT_EQ(*retval, *Lisple::RTValue::number(10));
-  EXPECT_EQ(*runtime.get_current_namespace().lookup_value("x"),
+  EXPECT_EQ(*runtime.get_current_namespace().lookup("x"),
             *Lisple::RTValue::number(10));
 }
 
@@ -28,6 +28,6 @@ TEST_F(WhileMacro, multi_form_loop)
 
   // Then
   EXPECT_EQ(*retval, *Lisple::RTValue::number(20));
-  EXPECT_EQ(*runtime.get_current_namespace().lookup_value("x"),
+  EXPECT_EQ(*runtime.get_current_namespace().lookup("x"),
             *Lisple::RTValue::number(10));
 }

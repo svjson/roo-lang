@@ -26,8 +26,9 @@ namespace Lisple
     ContextFrame(bool evaluation_mode);
 
     bool evalp() const;
-    sptr_rtval lookup_value(const Word& word) const;
-    bool has(const Word& word) const;
+    sptr_rtval lookup(const std::string& identifier) const;
+    sptr_rtval lookup(const RTValue& identifier) const;
+    bool has(const std::string& identifier) const;
 
     std::string to_string() const;
   };
@@ -91,7 +92,7 @@ namespace Lisple
     sptr_rtval call(const std::string& fn_name, const sptr_rtval_v& args);
 
     Scope& current_scope();
-    Scope& get_scope_of(const Word& identifier) const;
+    Scope& get_scope_of(const std::string& identifier) const;
 
     void read_file(const std::string& file_name);
     void store_namespace(const std::string& symbol, const sptr_rtval& value);
@@ -120,8 +121,8 @@ namespace Lisple
 
     Namespace& lang();
 
-    sptr_rtval lookup_value(const Word& word) const;
-    sptr_rtval lookup_value(const std::string& identifier) const;
+    sptr_rtval lookup(const std::string& identifier) const;
+    sptr_rtval lookup(const RTValue& identifier) const;
 
     void push_context(bool evaluation_mode);
     void push_context(bool evaluation_mode, Scope& scope);

@@ -61,7 +61,7 @@ namespace Lisple
   {
     if (make_fn)
     {
-      sptr_rtval function = ctx.lookup_value(*make_fn);
+      sptr_rtval function = ctx.lookup(*make_fn);
 
       if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
       {

@@ -19,7 +19,7 @@ TEST_F(AssocInFunction, add_key_to_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c 3}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2}")->to_string());
 }
 
@@ -33,7 +33,7 @@ TEST_F(AssocInFunction, add_key_to_nested_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c {:key1 \"val\" :key2 44}}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2 :c {:key1 \"val\"}}")->to_string());
 }
 
@@ -56,7 +56,7 @@ TEST_F(AssocInFunction, replaces_intermediate_nil_with_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a {:b 44}}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a nil}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:a nil}");
 }
 
 TEST_F(AssocInFunction, replace_key_in_map)
@@ -69,7 +69,7 @@ TEST_F(AssocInFunction, replace_key_in_map)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(),
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2}")->to_string());
 }
 
@@ -83,7 +83,7 @@ TEST_F(AssocInFunction, replace_element_in_vector)
 
   // Then
   EXPECT_EQ(result->to_string(), "{:vec ['a' 'x' 'c']}");
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:vec ['a' 'b' 'c']}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:vec ['a' 'b' 'c']}");
 }
 
 TEST_F(AssocInFunction, creates_map_in_nil_vector_slot)
@@ -96,7 +96,7 @@ TEST_F(AssocInFunction, creates_map_in_nil_vector_slot)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:vec [nil nil {:x 44}]}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:vec []}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:vec []}");
 }
 
 TEST_F(AssocInFunction, add_and_replace_multiple)
@@ -109,7 +109,7 @@ TEST_F(AssocInFunction, add_and_replace_multiple)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 10 :nested {:x 0 :y 3} :c \"some string\"}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1 :b 2 :nested {:x 0}}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:a 1 :b 2 :nested {:x 0}}");
 }
 
 TEST_F(AssocInFunction, throws_on_incomplete_path_value_chain)

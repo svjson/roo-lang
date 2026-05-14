@@ -17,7 +17,7 @@ TEST(Scope, has__no_value)
   Scope scope;
 
   // When
-  bool result = scope.has(Lisple::Word("ident"));
+  bool result = scope.has("ident");
 
   // Then
   ASSERT_FALSE(result);
@@ -30,7 +30,7 @@ TEST(Scope, has__after_store)
 
   // When
   scope.store("ident", Lisple::RTValue::number(10));
-  bool result = scope.has(Lisple::Word("ident"));
+  bool result = scope.has("ident");
 
   // Then
   ASSERT_TRUE(result);

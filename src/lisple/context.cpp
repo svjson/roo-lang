@@ -30,18 +30,19 @@ namespace Lisple
     return evaluation_mode;
   }
 
-  sptr_rtval ContextFrame::lookup_value(const Word& word) const
+  sptr_rtval ContextFrame::lookup(const std::string& identifier) const
   {
-    if (word.is_qualified())
-    {
-      return scope.lookup_value(word.to_string());
-    }
-    return scope.lookup_value(word.get_identifier());
+    return scope.lookup(identifier);
   }
 
-  bool ContextFrame::has(const Word& word) const
+  sptr_rtval ContextFrame::lookup(const RTValue& identifier) const
   {
-    return scope.has(word);
+    return scope.lookup(identifier);
+  }
+
+  bool ContextFrame::has(const std::string& identifier) const
+  {
+    return scope.has(identifier);
   }
 
   std::string ContextFrame::to_string() const
@@ -139,7 +140,7 @@ namespace Lisple
 
   sptr_rtval Context::call(const std::string& fn_name, const sptr_rtval_v& args)
   {
-    sptr_rtval inv = lookup_value(fn_name);
+    sptr_rtval inv = lookup(fn_name);
     if (inv->type != RTValue::Type::FUNCTION)
     {
       throw InvocationException(inv->to_string() + " is not executable.");
@@ -196,25 +197,30 @@ namespace Lisple
     runtime.get_current_namespace().store(symbol, value);
   }
 
-  sptr_rtval Context::lookup_value(const Word& identifier) const
+  sptr_rtval Context::lookup(const std::string& identifier) const
   {
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {
-      sptr_rtval res = i->get()->lookup_value(identifier);
+      sptr_rtval res = i->get()->lookup(identifier);
       if (res.get())
       {
         return res;
       }
     }
 
-    auto val = runtime.lookup_value(identifier);
+    auto val = runtime.lookup(identifier);
 
     return val;
   }
 
-  sptr_rtval Context::lookup_value(const std::string& identifier) const
+  sptr_rtval Context::lookup(const RTValue& identifier) const
   {
-    return lookup_value(Word(identifier));
+    if (identifier.type != RTValue::Type::SYMBOL)
+    {
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
+    }
+
+    return lookup(identifier.str());
   }
 
   Scope& Context::current_scope()
@@ -222,7 +228,7 @@ namespace Lisple
     return frame_stack.back()->scope;
   }
 
-  Scope& Context::get_scope_of(const Word& identifier) const
+  Scope& Context::get_scope_of(const std::string& identifier) const
   {
     for (auto i = frame_stack.rbegin(); i != frame_stack.rend(); ++i)
     {

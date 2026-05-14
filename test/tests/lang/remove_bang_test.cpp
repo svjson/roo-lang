@@ -23,7 +23,7 @@ TEST_F(RemoveBangFunction, remove_even_from_array)
   runtime.eval("(remove! (fn [n] (even? n)) my-seq)");
 
   // Then
-  auto my_seq = runtime.lookup_value("my-seq");
+  auto my_seq = runtime.lookup("my-seq");
 
   EXPECT_EQ(Lisple::count(*my_seq), 2);
   EXPECT_EQ(my_seq->elements().at(0)->i64(), 1);

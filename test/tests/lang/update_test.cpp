@@ -14,7 +14,7 @@ TEST_F(UpdateFunction, update_existing_map_key)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:count 3 :other 99}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:count 2 :other 99}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:count 2 :other 99}");
 }
 
 TEST_F(UpdateFunction, update_missing_map_key_with_nil_current_value)
@@ -27,7 +27,7 @@ TEST_F(UpdateFunction, update_missing_map_key_with_nil_current_value)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 44}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:a 1}");
 }
 
 TEST_F(UpdateFunction, passes_extra_args_to_update_function)
@@ -40,7 +40,7 @@ TEST_F(UpdateFunction, passes_extra_args_to_update_function)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:count 17}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:count 2}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:count 2}");
 }
 
 TEST_F(UpdateFunction, update_sequence_by_index)
@@ -53,7 +53,7 @@ TEST_F(UpdateFunction, update_sequence_by_index)
 
   // Then
   EXPECT_EQ(result->to_string(), "[1 20 3]");
-  EXPECT_EQ(runtime.lookup_value("my-vec")->to_string(), "[1 2 3]");
+  EXPECT_EQ(runtime.lookup("my-vec")->to_string(), "[1 2 3]");
 }
 
 TEST_F(UpdateFunction, update_multiple_keys_in_one_call)
@@ -66,5 +66,5 @@ TEST_F(UpdateFunction, update_multiple_keys_in_one_call)
 
   // Then
   EXPECT_EQ(*result, *runtime.eval("{:a 2 :b 12}"));
-  EXPECT_EQ(runtime.lookup_value("my-map")->to_string(), "{:a 1 :b 2}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:a 1 :b 2}");
 }

@@ -52,7 +52,7 @@ TEST_F(UserFunction, invocation_of_empty_function_returns_nil)
   // Given
   runtime.eval("(defun my-fn [arg])");
 
-  auto fn = runtime.lookup_value("my-fn");
+  auto fn = runtime.lookup("my-fn");
 
   Lisple::sptr_rtval_v args = {Lisple::RTValue::string("A string!")};
 

@@ -37,7 +37,6 @@ namespace Lisple
 {
   Namespace make_language_namespace()
   {
-    std::map<std::string, Lisple::sptr_sobject> lang;
     std::map<std::string, sptr_rtval> lang_symbols;
 
     lang_symbols.emplace("+", PlusFunction::make());
@@ -158,7 +157,7 @@ namespace Lisple
     lang_symbols.emplace("while", WhileForm::make());
     lang_symbols.emplace("zero?", ZeroPFunction::make());
 
-    return Namespace::make_lang(lang, lang_symbols);
+    return Namespace::make_lang(lang_symbols);
   }
 
 } // namespace Lisple

@@ -160,7 +160,7 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, LookupNode>)
         {
-          return ctx.lookup_value(n.identifier);
+          return ctx.lookup(n.identifier.to_string());
         }
         else if constexpr (std::is_same_v<T, MapNode>)
         {

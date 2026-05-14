@@ -20,21 +20,10 @@ namespace Lisple
 
   Namespace::Namespace(Type type,
                        const std::string& name,
-                       std::map<std::string, sptr_sobject> lang)
-    : type(type)
-    , name(name)
-  {
-    this->objects = std::move(lang);
-  }
-
-  Namespace::Namespace(Type type,
-                       const std::string& name,
-                       std::map<std::string, sptr_sobject> lang,
                        std::map<std::string, sptr_rtval> lang_symbols)
     : type(type)
     , name(name)
   {
-    this->objects = std::move(lang);
     this->values = std::move(lang_symbols);
   }
 
@@ -48,93 +37,43 @@ namespace Lisple
     }
   }
 
-  sptr_sobject Namespace::find(const Word& identifier) const
+  sptr_rtval Namespace::find(const std::string& identifier_s) const
   {
+    Word identifier(identifier_s);
     if (identifier.is_qualified())
     {
       if (aliased_namespaces.count(identifier.get_qualifier()))
       {
         Namespace* aliased = aliased_namespaces.at(identifier.get_qualifier());
-        if (aliased->has(identifier.get_identifier()))
-        {
-          return aliased->lookup(identifier.get_identifier());
-        }
-        return nullptr;
+        return aliased->lookup(identifier.get_identifier());
       }
-    }
-    else if (this->objects.count(identifier.get_identifier()))
-    {
-      return this->objects.at(identifier.get_identifier());
+      return nullptr;
     }
 
-    if (Scope::has(identifier))
-    {
-      return Scope::lookup(identifier);
-    }
-
-    for (auto* imported : imported_namespaces)
-    {
-      if (imported->has(identifier))
-      {
-        return imported->lookup(identifier);
-      }
-    }
-
-    return nullptr;
-  }
-
-  sptr_rtval Namespace::find_symbol(const Word& identifier) const
-  {
-    if (identifier.is_qualified())
-    {
-      if (aliased_namespaces.count(identifier.get_qualifier()))
-      {
-        Namespace* aliased = aliased_namespaces.at(identifier.get_qualifier());
-        if (aliased->has(identifier.get_identifier()))
-        {
-          return aliased->lookup_symbol(identifier.get_identifier());
-        }
-        return nullptr;
-      }
-    }
-    else if (this->values.count(identifier.get_identifier()))
+    if (this->values.count(identifier.get_identifier()))
     {
       return this->values.at(identifier.get_identifier());
     }
-    else if (this->objects.count(identifier.get_identifier()))
-    {
-      sptr_sobject match = this->objects.at(identifier.get_identifier());
-      return Lisple::to_rt_value(match);
-    }
-
-    if (Scope::has(identifier))
-    {
-      return Scope::lookup_value(identifier.get_identifier());
-    }
-
     for (auto* imported : imported_namespaces)
     {
-      if (imported->has(identifier))
+      if (imported->has(identifier.get_identifier()))
       {
-        return imported->lookup_symbol(identifier.get_identifier());
+        return imported->lookup(identifier.get_identifier());
       }
     }
 
     return nullptr;
   }
 
-  bool Namespace::has(const Word& identifier) const
+  bool Namespace::has(const std::string& identifier) const
   {
-    auto val_it = this->values.find(identifier.to_string());
-    if (val_it != this->values.end()) return true;
-
-    auto obj_it = this->objects.find(identifier.to_string());
-    return obj_it != this->objects.end();
+    auto val_it = this->values.find(identifier);
+    return val_it != this->values.end();
   }
 
-  sptr_sobject Namespace::lookup(const Word& identifier) const
+  sptr_rtval Namespace::lookup(const std::string& identifier) const
   {
-    sptr_sobject value = this->find(identifier);
+    sptr_rtval value = this->find(identifier);
     if (value)
     {
       return value;
@@ -143,21 +82,19 @@ namespace Lisple
     return nullptr;
   }
 
-  sptr_rtval Namespace::lookup_symbol(const Word& identifier) const
+  sptr_rtval Namespace::lookup(const RTValue& identifier) const
   {
-    sptr_rtval value = this->find_symbol(identifier);
-    if (value)
+    if (identifier.type != RTValue::Type::SYMBOL)
     {
-      return value;
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }
 
-    return nullptr;
+    return lookup(identifier.str());
   }
 
-  Namespace Namespace::make_lang(std::map<std::string, sptr_sobject> lang,
-                                 std::map<std::string, sptr_rtval> lang_symbols)
+  Namespace Namespace::make_lang(std::map<std::string, sptr_rtval> lang_symbols)
   {
-    return Namespace(Type::LANG, "", lang, lang_symbols);
+    return Namespace(Type::LANG, "", lang_symbols);
   }
 
   Namespace::Type Namespace::get_type() const
@@ -172,30 +109,19 @@ namespace Lisple
 
   bool Namespace::empty() const
   {
-    return objects.empty() && values.empty() && imported_namespaces.empty() &&
+    return values.empty() && imported_namespaces.empty() &&
            aliased_namespaces.empty();
   }
 
-  void Namespace::mutate(const Word& identifier, const sptr_sobject& obj)
+  void Namespace::mutate(const std::string& identifier, const sptr_rtval& val)
   {
     if (this->type == Type::LANG)
     {
-      throw NamespaceException("Cannnot override language identifier: '" + identifier.value +
+      throw NamespaceException("Cannnot override language identifier: '" + identifier +
                                "'.");
     }
 
-    Scope::mutate(identifier, obj);
-  }
-
-  void Namespace::mutate(const Word& identifier, const sptr_rtval& val)
-  {
-    if (this->type == Type::LANG)
-    {
-      throw NamespaceException("Cannnot override language identifier: '" + identifier.value +
-                               "'.");
-    }
-
-    Scope::mutate(identifier.value, val);
+    Scope::mutate(identifier, val);
   }
 
   void Namespace::import_full(Namespace& ns)

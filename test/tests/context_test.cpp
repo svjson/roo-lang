@@ -17,15 +17,10 @@
 using Context = LispleTest::RuntimeTestFixture;
 TEST_F(Context, lang_lookup)
 {
-  // Given
-  Lisple::Word def_sym("def");
-  Lisple::Word defun_sym("defun");
-  Lisple::Word include_sym("include");
-
   // When
-  auto def = ctx.lookup_value(def_sym);
-  auto defun = ctx.lookup_value(defun_sym);
-  auto include = ctx.lookup_value(include_sym);
+  auto def = ctx.lookup(*Lisple::RTValue::symbol("def"));
+  auto defun = ctx.lookup("defun");
+  auto include = ctx.lookup(*Lisple::RTValue::symbol("include"));
 
   // Then
   EXPECT_EQ(def->type, Lisple::RTValue::Type::FUNCTION);
@@ -36,24 +31,21 @@ TEST_F(Context, lang_lookup)
 TEST_F(Context, scope_lookup)
 {
   // Given
-  Lisple::Word ns_var_sym = Lisple::Word("my-ns-var");
-  Lisple::Word local_var_sym = Lisple::Word("my-local-var");
-
   Lisple::sptr_rtval ns_string =
     Lisple::RTValue::string("ns genocide forget heaven");
   Lisple::sptr_rtval local_string =
     Lisple::RTValue::string("this is a local shop for local people");
 
   Lisple::Scope sub_scope;
-  sub_scope.store(local_var_sym.value, local_string);
+  sub_scope.store("my-local-var", local_string);
   ctx.push_context(true, sub_scope);
 
-  ctx.store_namespace(ns_var_sym.value, ns_string);
+  ctx.store_namespace("my-ns-var", ns_string);
 
   // When
-  auto global_ctx_ref = ctx.lookup_value(ns_var_sym);
-  auto local_ctx_ref = ctx.lookup_value(local_var_sym);
-  auto non_global_ctx_ref = runtime.get_current_namespace().lookup_symbol(local_var_sym);
+  auto global_ctx_ref = ctx.lookup(*Lisple::RTValue::symbol("my-ns-var"));
+  auto local_ctx_ref = ctx.lookup("my-local-var");
+  auto non_global_ctx_ref = runtime.get_current_namespace().lookup("my-local-var");
 
   // Then
   EXPECT_EQ(*global_ctx_ref, *ns_string);
@@ -64,23 +56,22 @@ TEST_F(Context, scope_lookup)
 TEST_F(Context, scoped_vars_go_away_when_context_is_popped)
 {
   // Given
-  Lisple::Word local_var_sym = Lisple::Word("my-local-var");
   Lisple::sptr_rtval local_string =
     Lisple::RTValue::string("this is a local shop for local people");
 
   Lisple::Scope local_scope;
-  local_scope.store(local_var_sym.value, local_string);
+  local_scope.store("my-local-var", local_string);
 
   ctx.push_context(true, local_scope);
 
   // When
-  auto before_pop = ctx.lookup_value(local_var_sym);
+  auto before_pop = ctx.lookup("my-local-var");
   Lisple::sptr_rtval after_pop;
   ;
   ctx.pop_context();
   try
   {
-    after_pop = ctx.lookup_value(local_var_sym);
+    after_pop = ctx.lookup("my-local-var");
   }
   catch (std::exception& e)
   {
@@ -95,12 +86,9 @@ TEST_F(Context, scoped_vars_go_away_when_context_is_popped)
 TEST_F(Context, detached_context_preserves_scope)
 {
   // Given
-  Lisple::Word identifier1("thing");
-  Lisple::Word identifier2("swamp-thing");
-
   Lisple::Scope scope1;
   Lisple::sptr_rtval string1 = Lisple::RTValue::string("string");
-  scope1.store(identifier1.value, string1);
+  scope1.store("thing", string1);
   ;
   ctx.push_context(true, scope1);
 
@@ -108,18 +96,18 @@ TEST_F(Context, detached_context_preserves_scope)
 
   Lisple::Scope scope2;
   Lisple::sptr_rtval string2 = Lisple::RTValue::string("another one");
-  scope2.store(identifier2.value, string2);
+  scope2.store("swamp-thing", string2);
   ctx.push_context(true, scope2);
 
   // When
   std::shared_ptr<Lisple::Context> detached = ctx.detach();
 
   // Then
-  EXPECT_EQ(*detached->lookup_value(identifier1), *string1);
-  EXPECT_EQ(*detached->lookup_value(identifier2), *string2);
+  EXPECT_EQ(*detached->lookup(*Lisple::RTValue::symbol("thing")), *string1);
+  EXPECT_EQ(*detached->lookup("swamp-thing"), *string2);
 
-  EXPECT_EQ(*ctx.lookup_value(identifier1), *string1);
-  EXPECT_EQ(*ctx.lookup_value(identifier2), *string2);
+  EXPECT_EQ(*ctx.lookup("thing"), *string1);
+  EXPECT_EQ(*ctx.lookup(*Lisple::RTValue::symbol("swamp-thing")), *string2);
 }
 
 TEST_F(Context, call_invokes_named_function_with_single_rtvalue_arg)

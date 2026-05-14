@@ -13,8 +13,7 @@ TEST_F(DefunForm, define_no_arg_fun)
   Lisple::sptr_rtval result = runtime.eval("(defun my-fn [] 8)");
 
   // Then
-  Lisple::Word fn_name("my-fn");
-  auto fun = runtime.lookup_value(fn_name);
+  auto fun = runtime.lookup(*Lisple::RTValue::symbol("my-fn"));
   ASSERT_TRUE(fun.get());
   ASSERT_EQ(fun->type, Lisple::RTValue::Type::FUNCTION);
   auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
@@ -35,8 +34,7 @@ TEST_F(DefunForm, define_no_arg_fun_with_docstring)
                                             )");
 
   // Then
-  Lisple::Word fn_name("my-fn");
-  auto fun = runtime.lookup_value(fn_name);
+  auto fun = runtime.lookup(*Lisple::RTValue::symbol("my-fn"));
   ASSERT_TRUE(fun.get());
   ASSERT_EQ(fun->type, Lisple::RTValue::Type::FUNCTION);
   auto& user_fun = dynamic_cast<Lisple::UserFunction&>(fun->exec());
@@ -52,7 +50,7 @@ TEST_F(DefunForm, defun_with_static_return_value)
   auto result = runtime.eval("(defun gimme-five [] 5)");
 
   // Then
-  ASSERT_TRUE(runtime.get_current_namespace().has(Lisple::Word("gimme-five")));
+  ASSERT_TRUE(runtime.get_current_namespace().has("gimme-five"));
   Lisple::sptr_rtval_v args;
   auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 5);
@@ -64,7 +62,7 @@ TEST_F(DefunForm, defun_with_single_argument)
   auto result = runtime.eval("(defun add-five [x] (+ x 5))");
 
   // Then
-  ASSERT_TRUE(runtime.get_current_namespace().has(Lisple::Word("add-five")));
+  ASSERT_TRUE(runtime.get_current_namespace().has("add-five"));
   Lisple::sptr_rtval_v args{Lisple::RTValue::number(6)};
   auto retval = result->exec().execute(ctx, args);
   ASSERT_EQ(retval->i64(), 11);

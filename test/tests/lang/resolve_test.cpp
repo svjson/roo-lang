@@ -8,7 +8,7 @@ using ResolveFunction = LispleTest::RuntimeTestFixture;
 TEST_F(ResolveFunction, resolve)
 {
   // Given
-  auto rt_lookup_result = runtime.lookup_value(Lisple::Word("concat"));
+  auto rt_lookup_result = runtime.lookup(*Lisple::RTValue::symbol("concat"));
 
   // When
   auto result = runtime.eval("(resolve 'concat)");

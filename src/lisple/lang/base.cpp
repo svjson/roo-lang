@@ -350,7 +350,7 @@ namespace Lisple
   EXEC_BODY(ResolveFunction, exec_resolve)
   {
     if (args[0]->type == RTValue::Type::NIL) return Constant::NIL;
-    return ctx.lookup_value(Word(args[0]->str()));
+    return ctx.lookup(args[0]->str());
   }
 
   /** RndFunction - rnd */
@@ -407,14 +407,14 @@ namespace Lisple
 
     if (member_refs.size() == 1)
     {
-      auto identifier = Lisple::Word::make(member_refs[0]->str());
-      Scope& scope = ctx.get_scope_of(*identifier);
-      scope.mutate(identifier->value, value);
+      const std::string& identifier = member_refs[0]->str();
+      Scope& scope = ctx.get_scope_of(identifier);
+      scope.mutate(identifier, value);
     }
     else if (member_refs.size() == 2)
     {
       auto& prop = member_refs[0];
-      sptr_rtval owner = ctx.lookup_value(member_refs.back()->to_string());
+      sptr_rtval owner = ctx.lookup(member_refs.back()->to_string());
 
       Lisple::Dict::set_property(owner, prop, value);
     }

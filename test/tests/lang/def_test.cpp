@@ -12,7 +12,7 @@ TEST_F(DefForm, exec_def__string)
   runtime.eval("(def var-name \"Var Value\")");
 
   // Then
-  auto obj = runtime.get_current_namespace().lookup_value("var-name");
+  auto obj = runtime.get_current_namespace().lookup("var-name");
   ASSERT_TRUE(obj.get());
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }
@@ -23,7 +23,7 @@ TEST_F(DefForm, define_var)
   runtime.eval("(def var-name \"Var Value\")");
 
   // Then
-  auto obj = runtime.get_current_namespace().lookup_value("var-name");
+  auto obj = runtime.get_current_namespace().lookup("var-name");
   EXPECT_TRUE(obj.get());
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }
@@ -34,7 +34,7 @@ TEST_F(DefForm, define_var_with_gt_and_lt)
   runtime.eval("(def <var-name> \"Value\")");
 
   // Then
-  auto obj = runtime.get_current_namespace().lookup_value("<var-name>");
+  auto obj = runtime.get_current_namespace().lookup("<var-name>");
   EXPECT_TRUE(obj.get());
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*obj));
 }

@@ -78,6 +78,6 @@ TEST_F(RemoveNthFunction, does_not_mutate_original)
   runtime.eval("(remove-nth original 1)");
 
   // Then (original is unchanged)
-  auto original = runtime.lookup_value("original");
+  auto original = runtime.lookup("original");
   ASSERT_EQ(Lisple::count(*original), 4);
 }

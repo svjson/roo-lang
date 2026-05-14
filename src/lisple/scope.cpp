@@ -8,33 +8,13 @@
 
 namespace Lisple
 {
-  void Scope::store(const Word& name, const sptr_sobject& obj)
-  {
-    this->store(name.value, obj);
-  }
-
-  void Scope::store(const std::string& name, const sptr_sobject& obj)
-  {
-    if (objects.count(name) || values.count(name))
-    {
-      throw IdentifierException("Identifier '" + name + "' is already defined.");
-    }
-    objects.emplace(name, obj);
-  }
-
   void Scope::store(const std::string& name, const sptr_rtval& value)
   {
-    if (objects.count(name) || values.count(name))
+    if (values.count(name))
     {
       throw IdentifierException("Identifier '" + name + "' is already defined.");
     }
     values.emplace(name, value);
-  }
-
-  void Scope::mutate(const Word& name, const sptr_sobject& obj)
-  {
-    remove(name);
-    objects.emplace(name.value, obj);
   }
 
   void Scope::mutate(const std::string& name, const sptr_rtval& val)
@@ -43,78 +23,50 @@ namespace Lisple
     values.emplace(name, val);
   }
 
-  void Scope::remove(const Word& name)
+  void Scope::remove(const std::string& name)
   {
-    if (objects.count(name.value))
+    if (values.count(name))
     {
-      objects.erase(name.value);
+      values.erase(name);
       return;
     }
-    else if (values.count(name.value))
-    {
-      values.erase(name.value);
-      return;
-    }
-    throw IdentifierException("Unknown identifier '" + name.value + "'");
+    throw IdentifierException("Unknown identifier '" + name + "'");
   }
 
   void Scope::clear()
   {
-    this->objects.clear();
     this->values.clear();
   }
 
-  bool Scope::has(const Word& identifier) const
+  bool Scope::has(const std::string& identifier) const
   {
-    return objects.count(identifier.value) || values.count(identifier.value);
+    return values.count(identifier);
   }
 
-  sptr_sobject Scope::lookup(const Word& identifier) const
+  sptr_rtval Scope::lookup(const std::string& symbol) const
   {
-    if (objects.count(identifier.value))
+    auto it = values.find(symbol);
+    if (it == values.end())
     {
-      return objects.at(identifier.value);
+      return nullptr;
     }
-    else if (values.count(identifier.value))
-    {
-      return RuntimeValueWrapper::make(values.at(identifier.value));
-    }
-    // Not returning NIL, as we need to know if we hit something whose value
-    // is actually NIL or if the identifier doesn't exist in the scope.
-    // FIXME: Do we?
-    return nullptr;
+    return it->second;
   }
 
-  sptr_rtval Scope::lookup_value(const std::string& symbol) const
+  sptr_rtval Scope::lookup(const RTValue& identifier) const
   {
-    auto it = objects.find(symbol);
-    if (it == objects.end())
+    if (identifier.type != RTValue::Type::SYMBOL)
     {
-      auto v_it = values.find(symbol);
-      if (v_it == values.end())
-      {
-        return nullptr;
-      }
-
-      return v_it->second;
-    }
-    if (auto* wrapper = dynamic_cast<RuntimeValueWrapper*>(it->second.get()))
-    {
-      return wrapper->val;
+      throw TypeError("Cannot lookup non-symbol identifier: " + identifier.to_string());
     }
 
-    sptr_sobject result = it->second;
-    return to_rt_value(result);
+    return lookup(identifier.str());
   }
 
   std::shared_ptr<Array> Scope::get_keys() const
   {
     sptr_sobject_v keys;
-    keys.reserve(objects.size() + values.size());
-    for (auto& [key, val] : objects)
-    {
-      keys.push_back(Word::make(key));
-    }
+    keys.reserve(values.size());
     for (auto& [key, val] : values)
     {
       keys.push_back(Word::make(key));
