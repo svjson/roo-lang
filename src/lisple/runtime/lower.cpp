@@ -193,12 +193,12 @@ namespace Lisple
           if (auto* sptr_sobject_val =
                 std::get_if<sptr_sobject>(&literal_callee->value->value))
           {
-            call_node.cached_fn = *sptr_sobject_val;
+            call_node.static_callee = *sptr_sobject_val;
             lower_time_exec_resolutions++;
           }
         }
 
-        if (call_node.cached_fn == nullptr)
+        if (call_node.static_callee == nullptr)
         {
           lower_time_exec_unresolved++;
         }

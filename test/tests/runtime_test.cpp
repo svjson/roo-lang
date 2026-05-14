@@ -120,6 +120,25 @@ TEST_F(Runtime, eval__quoted_list)
   EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("words"));
 }
 
+TEST_F(Runtime, eval__dynamic_local_callee_does_not_reuse_first_resolved_function)
+{
+  // Given
+  runtime.eval(R"(
+    (defun increment [n] (+ n 1))
+    (defun multiply-by-ten [n] (* n 10))
+    (def handlers {:increment increment :multiply multiply-by-ten})
+    (defun dispatch [handler-key n]
+      (let [handler (get handlers handler-key)]
+        (handler n)))
+  )");
+
+  // When
+  auto result = runtime.eval("[(dispatch :increment 4) (dispatch :multiply 4)]");
+
+  // Then
+  ASSERT_EQ(result->to_string(), "[5 40]");
+}
+
 TEST_F(Runtime, no_matching_signature_exception_bubbles_up_to_client)
 {
   // When

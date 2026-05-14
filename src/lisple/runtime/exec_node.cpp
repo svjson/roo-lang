@@ -202,7 +202,7 @@ namespace Lisple
         }
         else if constexpr (std::is_same_v<T, CallNode>)
         {
-          sptr_sobject fn = n.cached_fn;
+          sptr_sobject fn = n.static_callee;
 
           if (!fn)
           {
@@ -210,7 +210,6 @@ namespace Lisple
             if (sptr_sobject* ssptr = std::get_if<sptr_sobject>(&fn_val->value))
             {
               fn = *ssptr;
-              n.cached_fn = fn;
             }
             else
             {
