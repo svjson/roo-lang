@@ -358,7 +358,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "056_refactor_snapshot_6f58e4d";
+    const std::string CHANGE_ME = "057_no_runtime_fn_lookup_cache_9c20ccb";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
