@@ -120,6 +120,39 @@ TEST_F(Runtime, eval__quoted_list)
   EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("words"));
 }
 
+TEST_F(Runtime, lookup_value__string_with_default__returns_value_when_found)
+{
+  // Given
+  runtime.get_current_namespace().store("my-value", Lisple::RTValue::string("found"));
+
+  // When
+  auto result = runtime.lookup_value("my-value", Lisple::RTValue::string("default"));
+
+  // Then
+  EXPECT_EQ(*result, *Lisple::RTValue::string("found"));
+}
+
+TEST_F(Runtime, lookup_value__string_with_default__returns_default_when_missing)
+{
+  // When
+  auto result = runtime.lookup_value("missing-value", Lisple::RTValue::string("default"));
+
+  // Then
+  EXPECT_EQ(*result, *Lisple::RTValue::string("default"));
+}
+
+TEST_F(Runtime, lookup_value__string_with_default__keeps_existing_nil_value)
+{
+  // Given
+  runtime.get_current_namespace().store("nil-value", Lisple::Constant::NIL);
+
+  // When
+  auto result = runtime.lookup_value("nil-value", Lisple::RTValue::string("default"));
+
+  // Then
+  EXPECT_EQ(*result, *Lisple::Constant::NIL);
+}
+
 TEST_F(Runtime, eval__dynamic_local_callee_does_not_reuse_first_resolved_function)
 {
   // Given

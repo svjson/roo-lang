@@ -295,12 +295,14 @@ namespace Lisple
   sptr_rtval Runtime::lookup_value(const std::string& identifier,
                                    const sptr_rtval& default_value)
   {
-    sptr_rtval value = lookup_value(Lisple::Word(identifier));
-    if (*value == *Constant::NIL)
+    try
+    {
+      return lookup_value(Lisple::Word(identifier));
+    }
+    catch (IdentifierException&)
     {
       return default_value;
     }
-    return value;
   }
 
   sptr_rtval Runtime::lookup_value(const Word& identifier)
