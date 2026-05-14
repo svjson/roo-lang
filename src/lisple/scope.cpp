@@ -63,14 +63,14 @@ namespace Lisple
     return lookup(identifier.str());
   }
 
-  std::shared_ptr<Array> Scope::get_keys() const
+  std::shared_ptr<Vector> Scope::get_keys() const
   {
     sptr_sobject_v keys;
     keys.reserve(values.size());
     for (auto& [key, val] : values)
     {
-      keys.push_back(Word::make(key));
+      keys.push_back(Symbol::make(key));
     }
-    return Array::make(keys);
+    return Vector::make(keys);
   }
 } // namespace Lisple

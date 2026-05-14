@@ -25,7 +25,7 @@ namespace Lisple
       closing_tokens.push_back(Token::RPAREN);
       break;
     case Token::LBRACKET:
-      list = std::make_shared<Array>();
+      list = std::make_shared<Vector>();
       closing_tokens.push_back(Token::RBRACKET);
       break;
     case Token::LCURLY:
@@ -84,7 +84,7 @@ namespace Lisple
     }
   }
 
-  void eof_check(std::vector<Symbol>& symbols, unsigned int offset)
+  void eof_check(std::vector<TokenSymbol>& symbols, unsigned int offset)
   {
     if (offset == symbols.size())
     {
@@ -92,7 +92,7 @@ namespace Lisple
     }
   }
 
-  sptr_sobject_v Parser::parse_sexps(std::vector<Symbol> symbols) const
+  sptr_sobject_v Parser::parse_sexps(std::vector<TokenSymbol> symbols) const
   {
     ParseContext ctx;
 
@@ -100,7 +100,7 @@ namespace Lisple
 
     while (offset < symbols.size())
     {
-      Symbol& sym = symbols.at(offset++);
+      TokenSymbol& sym = symbols.at(offset++);
 
       switch (sym.token)
       {
@@ -123,11 +123,11 @@ namespace Lisple
       case Token::CHAR:
         ctx.append(std::make_unique<Char>(sym.value.at(0)));
         break;
-      case Token::KEY:
-        ctx.append(Key::make(sym.value));
+      case Token::KEYWORD:
+        ctx.append(Keyword::make(sym.value));
         break;
-      case Token::WORD:
-        ctx.append(std::make_unique<Word>(sym.value));
+      case Token::SYMBOL:
+        ctx.append(std::make_unique<Symbol>(sym.value));
         break;
       case Token::NUMBER:
         ctx.append(Number::make(sym.value));
@@ -139,9 +139,9 @@ namespace Lisple
         {
           ctx.begin_list(Token::SQUOT);
         }
-        else if (sym.token == Token::WORD)
+        else if (sym.token == Token::SYMBOL)
         {
-          ctx.append(std::make_unique<QSymbol>(sym.value));
+          ctx.append(std::make_unique<QuotedSymbol>(sym.value));
         }
         else
         {

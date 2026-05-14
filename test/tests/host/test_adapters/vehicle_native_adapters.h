@@ -17,15 +17,15 @@ namespace LispleTest
   inline Lisple::HostTypeRef VEHICLE_MODEL_TYPE__NO_COERCE("vehicle-model");
   inline Lisple::HostTypeRef REGNUM_TYPE("regnum", "vehicle/make-reg-number");
 
-  inline Lisple::SeqRef ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &VEHICLE_TYPE, "[vehicle]");
-  inline Lisple::SeqRef ARRAY_OF_VEHICLE_MODEL(&Lisple::Type::ARRAY,
+  inline Lisple::SeqRef VECTOR_OF_VEHICLE(&Lisple::Type::VECTOR, &VEHICLE_TYPE, "[vehicle]");
+  inline Lisple::SeqRef VECTOR_OF_VEHICLE_MODEL(&Lisple::Type::VECTOR,
                                                &VEHICLE_MODEL_TYPE,
                                                "[vehicle]");
-  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY,
-                                                  &ARRAY_OF_VEHICLE,
+  inline Lisple::SeqRef VECTOR_OF_VECTOR_OF_VEHICLE(&Lisple::Type::VECTOR,
+                                                  &VECTOR_OF_VEHICLE,
                                                   "[[vehicle]]");
-  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE_MODEL(&Lisple::Type::ARRAY,
-                                                        &ARRAY_OF_VEHICLE_MODEL,
+  inline Lisple::SeqRef VECTOR_OF_VECTOR_OF_VEHICLE_MODEL(&Lisple::Type::VECTOR,
+                                                        &VECTOR_OF_VEHICLE_MODEL,
                                                         "[[vehicle]]");
 } // namespace LispleTest
 
@@ -50,7 +50,7 @@ namespace LispleTest::Native
   FUNC(PrnVehicle, prn);
   FUNC(DoubleSizeVehicle, zoom);
   FUNC(CountVehicleSeats, count);
-  FUNC(ArrayOfArrayTaker, accept);
+  FUNC(VectorOfVectorTaker, accept);
 
   // ===============================================================
   // Vehicle namespace - functions

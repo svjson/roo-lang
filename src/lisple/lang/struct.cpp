@@ -145,7 +145,7 @@ namespace Lisple
 
   /* AssocInBangFunction - assoc-in! */
   FUNC_IMPL(AssocInBangFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ARRAY), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::VECTOR), (&Type::ANY)),
                  EXEC_DISPATCH(&AssocInBangFunction::exec_assoc_in_bang))))
 
   EXEC_BODY(AssocInBangFunction, exec_assoc_in_bang)
@@ -326,7 +326,7 @@ namespace Lisple
 
   /** GetInFunction - get-in */
   FUNC_IMPL(GetInFunction,
-            SIG((FN_ARGS((&Type::ANY), (&Type::ARRAY)),
+            SIG((FN_ARGS((&Type::ANY), (&Type::VECTOR)),
                  EXEC_DISPATCH(&GetInFunction::exec_get))))
 
   EXEC_BODY(GetInFunction, exec_get)

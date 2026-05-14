@@ -14,7 +14,7 @@ using RemoveBangFunction = LispleTest::RuntimeTestFixture;
  * ======================================================================
  */
 
-TEST_F(RemoveBangFunction, remove_even_from_array)
+TEST_F(RemoveBangFunction, remove_even_from_vector)
 {
   // Given
   runtime.eval("(def my-seq [1 2 3 4])");

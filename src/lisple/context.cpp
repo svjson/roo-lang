@@ -94,17 +94,17 @@ namespace Lisple
     return frame_stack;
   }
 
-  std::shared_ptr<Array> Context::get_scope_identifiers()
+  std::shared_ptr<Vector> Context::get_scope_identifiers()
   {
-    auto array = std::make_shared<Array>();
+    auto vector = std::make_shared<Vector>();
     for (auto& frame : frame_stack)
     {
       for (auto& key : frame->scope.get_keys()->get_children())
       {
-        array->append(key);
+        vector->append(key);
       }
     }
-    return array;
+    return vector;
   }
 
   bool Context::evalp() const

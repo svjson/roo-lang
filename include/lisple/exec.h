@@ -407,7 +407,7 @@ namespace Lisple
   std::shared_ptr<UserFunction> create_function(const std::string& name,
                                                 Context& ctx,
                                                 const Namespace* home_ns,
-                                                Object& arg_array,
+                                                Object& arg_vector,
                                                 sptr_sobject_v& body);
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,

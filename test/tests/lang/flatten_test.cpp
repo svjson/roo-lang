@@ -10,7 +10,7 @@ using FlattenFunction = LispleTest::RuntimeTestFixture;
  * ===================================
  */
 
-TEST_F(FlattenFunction, array_of_array)
+TEST_F(FlattenFunction, vector_of_vector)
 {
   // Given
   auto retval = runtime.eval("(flatten [[1 2 3] [4 5 6] [7 8 9]])");
@@ -19,7 +19,7 @@ TEST_F(FlattenFunction, array_of_array)
   ASSERT_EQ(*retval, *runtime.eval("[1 2 3 4 5 6 7 8 9]"));
 }
 
-TEST_F(FlattenFunction, nested_arrays)
+TEST_F(FlattenFunction, nested_vectors)
 {
   // Given
   auto retval = runtime.eval("(flatten [1 [2 3] [4 [5 [6]] [7]] 8 9])");

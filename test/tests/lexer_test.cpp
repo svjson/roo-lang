@@ -10,12 +10,12 @@
 
 Lisple::Lexer lexer;
 
-typedef Lisple::Symbol sym;
+typedef Lisple::TokenSymbol sym;
 typedef Lisple::Token tkn;
 
 using namespace ::testing;
 
-TEST(Lexer, parse_single_word)
+TEST(Lexer, parse_single_symbol)
 {
   // Given
   std::string input = "macaroni";
@@ -24,10 +24,10 @@ TEST(Lexer, parse_single_word)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "macaroni")));
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "macaroni")));
 }
 
-TEST(Lexer, parse_single_word_with_gt_and_lt)
+TEST(Lexer, parse_single_symbol_with_gt_and_lt)
 {
   // Given
   std::string input = "m<a>c";
@@ -36,10 +36,10 @@ TEST(Lexer, parse_single_word_with_gt_and_lt)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "m<a>c")));
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "m<a>c")));
 }
 
-TEST(Lexer, parse_single_word_with_colon_in_body)
+TEST(Lexer, parse_single_symbol_with_colon_in_body)
 {
   // Given
   std::string input = "window:focus-within";
@@ -48,7 +48,7 @@ TEST(Lexer, parse_single_word_with_colon_in_body)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "window:focus-within")));
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "window:focus-within")));
 }
 
 TEST(Lexer, parse_single_number_in_hexadecimal_format)
@@ -74,9 +74,9 @@ TEST(Lexer, parse_simple_form)
   // Then
   ASSERT_THAT(symbols,
               ElementsAre(sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "trait"),
+                          sym(tkn::SYMBOL, "trait"),
                           sym(tkn::SQUOT, "'"),
-                          sym(tkn::WORD, "UNOBSERVABLE"),
+                          sym(tkn::SYMBOL, "UNOBSERVABLE"),
                           sym(tkn::RPAREN, ")")));
 }
 
@@ -90,7 +90,7 @@ TEST(Lexer, parse_quoted_symbol_with_colon_in_body)
 
   // Then
   ASSERT_THAT(symbols,
-              ElementsAre(sym(tkn::SQUOT, "'"), sym(tkn::WORD, "window:focus-within")));
+              ElementsAre(sym(tkn::SQUOT, "'"), sym(tkn::SYMBOL, "window:focus-within")));
 }
 
 TEST(Lexer, parse_form_with_string)
@@ -104,7 +104,7 @@ TEST(Lexer, parse_form_with_string)
   // Then
   ASSERT_THAT(symbols,
               ElementsAre(sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "actor-stereotype"),
+                          sym(tkn::SYMBOL, "actor-stereotype"),
                           sym(tkn::STRING, "maggot"),
                           sym(tkn::RPAREN, ")")));
 }
@@ -121,15 +121,15 @@ TEST(Lexer, parse_form_with_map)
   // Then
   ASSERT_THAT(symbols,
               ElementsAre(sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "interaction"),
+                          sym(tkn::SYMBOL, "interaction"),
                           sym(tkn::LCURLY, "{"),
-                          sym(tkn::KEY, "trigger"),
+                          sym(tkn::KEYWORD, "trigger"),
                           sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "action-trigger"),
+                          sym(tkn::SYMBOL, "action-trigger"),
                           sym(tkn::SQUOT, "'"),
-                          sym(tkn::WORD, "SEARCH"),
+                          sym(tkn::SYMBOL, "SEARCH"),
                           sym(tkn::RPAREN, ")"),
-                          sym(tkn::KEY, "reactions"),
+                          sym(tkn::KEYWORD, "reactions"),
                           sym(tkn::STRING, "bogus"),
                           sym(tkn::RCURLY, "}"),
                           sym(tkn::RPAREN, ")")));
@@ -144,7 +144,7 @@ TEST(Lexer, parse_keyword_with_namespace_and_colon_in_identifier)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::KEY, "ui/menu-item:focus")));
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::KEYWORD, "ui/menu-item:focus")));
 }
 
 TEST(Lexer, parse_map_with_char_key)
@@ -165,7 +165,7 @@ TEST(Lexer, parse_map_with_char_key)
                           sym(tkn::RCURLY, "}")));
 }
 
-TEST(Lexer, parse_form_with_lists_array_and_map)
+TEST(Lexer, parse_form_with_lists_vector_and_map)
 {
   // Given
   std::string input = "(actor-stereotype {:name (name \"Test\") :traits [(marker-trait "
@@ -177,24 +177,24 @@ TEST(Lexer, parse_form_with_lists_array_and_map)
   // Then
   ASSERT_THAT(symbols,
               ElementsAre(sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "actor-stereotype"),
+                          sym(tkn::SYMBOL, "actor-stereotype"),
                           sym(tkn::LCURLY, "{"),
-                          sym(tkn::KEY, "name"),
+                          sym(tkn::KEYWORD, "name"),
                           sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "name"),
+                          sym(tkn::SYMBOL, "name"),
                           sym(tkn::STRING, "Test"),
                           sym(tkn::RPAREN, ")"),
-                          sym(tkn::KEY, "traits"),
+                          sym(tkn::KEYWORD, "traits"),
                           sym(tkn::LBRACKET, "["),
                           sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "marker-trait"),
+                          sym(tkn::SYMBOL, "marker-trait"),
                           sym(tkn::SQUOT, "'"),
-                          sym(tkn::WORD, "UNOBSERVABLE"),
+                          sym(tkn::SYMBOL, "UNOBSERVABLE"),
                           sym(tkn::RPAREN, ")"),
                           sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "marker-trait"),
+                          sym(tkn::SYMBOL, "marker-trait"),
                           sym(tkn::SQUOT, "'"),
-                          sym(tkn::WORD, "NPC"),
+                          sym(tkn::SYMBOL, "NPC"),
                           sym(tkn::RPAREN, ")"),
                           sym(tkn::RBRACKET, "]"),
                           sym(tkn::RCURLY, "}"),
@@ -239,7 +239,7 @@ TEST(Lexer, parse_bare_string_with_common_escapes)
     ElementsAre(sym(tkn::STRING, "line 1\nline 2\t\"quoted\"\\tail")));
 }
 
-TEST(Lexer, array_of_numbers)
+TEST(Lexer, vector_of_numbers)
 {
   // Given
   std::string input = "[2 1 0 -1 -2 4.5]";
@@ -259,7 +259,7 @@ TEST(Lexer, array_of_numbers)
                           sym(tkn::RBRACKET, "]")));
 }
 
-TEST(Lexer, array_of_numbers_including_hexadecimal)
+TEST(Lexer, vector_of_numbers_including_hexadecimal)
 {
   // Given
   std::string input = "[2 1 0x0f 2]";
@@ -277,7 +277,7 @@ TEST(Lexer, array_of_numbers_including_hexadecimal)
                           sym(tkn::RBRACKET, "]")));
 }
 
-TEST(Lexer, array_of_numbers_with_hexadecimal_at_endl)
+TEST(Lexer, vector_of_numbers_with_hexadecimal_at_endl)
 {
   // Given
   std::string input = "[2 1 0x0f]";
@@ -294,7 +294,7 @@ TEST(Lexer, array_of_numbers_with_hexadecimal_at_endl)
                           sym(tkn::RBRACKET, "]")));
 }
 
-TEST(Lexer, negative_number_at_end_of_array)
+TEST(Lexer, negative_number_at_end_of_vector)
 {
   // Given
   std::string input = "[2 1 0 -1]";
@@ -350,7 +350,7 @@ TEST(Lexer, comment_on_line_above)
               ElementsAre(sym(tkn::LBRACKET, "["),
                           sym(tkn::CHAR, "a"),
                           sym(tkn::NUMBER, "1"),
-                          sym(tkn::KEY, "key"),
+                          sym(tkn::KEYWORD, "key"),
                           sym(tkn::RBRACKET, "]")));
 }
 
@@ -387,12 +387,12 @@ TEST(Lexer, discard__list)
               ElementsAre(sym(tkn::HASH, "#"),
                           sym(tkn::USCORE, "_"),
                           sym(tkn::LPAREN, "("),
-                          sym(tkn::WORD, "fncall"),
-                          sym(tkn::WORD, "arg"),
+                          sym(tkn::SYMBOL, "fncall"),
+                          sym(tkn::SYMBOL, "arg"),
                           sym(tkn::RPAREN, ")")));
 }
 
-TEST(Lexer, ampersand_alone_is_a_word)
+TEST(Lexer, ampersand_alone_is_a_symbol)
 {
   // Given
   std::string input = "&";
@@ -401,10 +401,10 @@ TEST(Lexer, ampersand_alone_is_a_word)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "&")));
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "&")));
 }
 
-TEST(Lexer, ampersand_prefix_is_a_word)
+TEST(Lexer, ampersand_prefix_is_a_symbol)
 {
   // Given
   std::string input = "&rest-args";
@@ -413,7 +413,7 @@ TEST(Lexer, ampersand_prefix_is_a_word)
   auto symbols = lexer.read_symbols(input);
 
   // Then
-  ASSERT_THAT(symbols, ElementsAre(sym(tkn::WORD, "&rest-args")));
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "&rest-args")));
 }
 
 TEST(Lexer, arg_vector_with_optional_and_rest_markers)
@@ -427,10 +427,10 @@ TEST(Lexer, arg_vector_with_optional_and_rest_markers)
   // Then
   ASSERT_THAT(symbols,
               ElementsAre(sym(tkn::LBRACKET, "["),
-                          sym(tkn::WORD, "a"),
-                          sym(tkn::WORD, "&"),
-                          sym(tkn::WORD, "b"),
-                          sym(tkn::WORD, "&rest"),
+                          sym(tkn::SYMBOL, "a"),
+                          sym(tkn::SYMBOL, "&"),
+                          sym(tkn::SYMBOL, "b"),
+                          sym(tkn::SYMBOL, "&rest"),
                           sym(tkn::RBRACKET, "]")));
 }
 

@@ -73,7 +73,7 @@ namespace Lisple
           ast_nodes.push_back(n_node->form);
         }
 
-        sptr_sobject vec = Array::make(ast_nodes);
+        sptr_sobject vec = Vector::make(ast_nodes);
 
         storage.push_back(std::make_unique<ExecNode>(vec, ExecNodeList(nested_output)));
         output.push_back(storage.back().get());

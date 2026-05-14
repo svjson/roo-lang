@@ -39,7 +39,7 @@ namespace Lisple
 
   sptr_rtval Namespace::find(const std::string& identifier_s) const
   {
-    Word identifier(identifier_s);
+    Symbol identifier(identifier_s);
     if (identifier.is_qualified())
     {
       if (aliased_namespaces.count(identifier.get_qualifier()))

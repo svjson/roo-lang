@@ -30,7 +30,7 @@ namespace Lisple
     return ints;
   }();
 
-  std::unordered_map<std::string, std::shared_ptr<Key>> key_intern_pool;
+  std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
 
   Object::Object(Form form)
     : type(form)
@@ -301,78 +301,78 @@ namespace Lisple
   }
 
   /**
-   * Key form
+   * Keyword form
    */
-  Key::Key(const std::string& value)
-    : QualifiableStringValue(Form::KEY, value)
+  Keyword::Keyword(const std::string& value)
+    : QualifiableStringValue(Form::KEYWORD, value)
   {
   }
 
-  bool Key::has_value(const std::string& value) const
+  bool Keyword::has_value(const std::string& value) const
   {
     return this->value == value;
   }
 
-  std::string Key::to_string(int) const
+  std::string Keyword::to_string(int) const
   {
     return ":" + value;
   }
 
-  bool Key::operator<(const Key& other) const
+  bool Keyword::operator<(const Keyword& other) const
   {
     return this->value < other.value;
   }
 
-  std::shared_ptr<Key> Key::make(const std::string& value)
+  std::shared_ptr<Keyword> Keyword::make(const std::string& value)
   {
     if (key_intern_pool.count(value))
     {
       return key_intern_pool.at(value);
     }
-    auto key = std::make_shared<Key>(value);
+    auto key = std::make_shared<Keyword>(value);
     key_intern_pool.emplace(value, key);
     return key;
   }
 
   /**
-   * QSymbol - a quoted word
+   * QuotedSymbol - a quoted symbol
    */
-  QSymbol::QSymbol(const std::string& value)
-    : QualifiableStringValue(Form::SYMBOL, value)
+  QuotedSymbol::QuotedSymbol(const std::string& value)
+    : QualifiableStringValue(Form::QUOTED_SYMBOL, value)
   {
   }
 
-  bool QSymbol::has_value(const std::string& value) const
+  bool QuotedSymbol::has_value(const std::string& value) const
   {
     return this->value == value;
   }
 
-  std::string QSymbol::to_string(int) const
+  std::string QuotedSymbol::to_string(int) const
   {
     return "'" + value;
   }
 
   /**
-   * Word - an actual word
+   * Symbol - an actual symbol
    */
-  Word::Word(const std::string& value)
-    : QualifiableStringValue(Form::WORD, value)
+  Symbol::Symbol(const std::string& value)
+    : QualifiableStringValue(Form::SYMBOL, value)
   {
   }
 
-  bool Word::has_value(const std::string& value) const
+  bool Symbol::has_value(const std::string& value) const
   {
     return this->value == value;
   }
 
-  std::string Word::to_string(int) const
+  std::string Symbol::to_string(int) const
   {
     return this->value;
   }
 
-  std::shared_ptr<Word> Word::make(const std::string& value)
+  std::shared_ptr<Symbol> Symbol::make(const std::string& value)
   {
-    return std::make_shared<Word>(value);
+    return std::make_shared<Symbol>(value);
   }
 
   /**
@@ -608,7 +608,7 @@ namespace Lisple
   }
 
   /**
-   * Seq - Abstract base for lists, arrays and maps
+   * Seq - Abstract base for lists, vectors and maps
    */
   Seq::Seq(Form form, size_t reserved_size)
     : Object(form)
@@ -622,9 +622,9 @@ namespace Lisple
     {
     case Form::LIST:
       return std::make_shared<List>(reserved_size);
-    case Form::ARRAY:
+    case Form::VECTOR:
     case Form::HOST_SEQ:
-      return std::make_shared<Array>(reserved_size);
+      return std::make_shared<Vector>(reserved_size);
     case Form::MAP:
       return std::make_shared<Map>(reserved_size);
     default:
@@ -804,31 +804,31 @@ namespace Lisple
   }
 
   /**
-   * Array
+   * Vector
    */
-  Array::Array(size_t reserved_size)
-    : Seq(Form::ARRAY, reserved_size)
+  Vector::Vector(size_t reserved_size)
+    : Seq(Form::VECTOR, reserved_size)
   {
   }
 
-  Array::Array(const sptr_sobject_v& children)
-    : Seq(Form::ARRAY, children)
+  Vector::Vector(const sptr_sobject_v& children)
+    : Seq(Form::VECTOR, children)
   {
   }
 
-  const std::string Array::lpar() const
+  const std::string Vector::lpar() const
   {
     return "[";
   }
 
-  const std::string Array::rpar() const
+  const std::string Vector::rpar() const
   {
     return "]";
   }
 
-  std::shared_ptr<Array> Array::make(const sptr_sobject_v& children)
+  std::shared_ptr<Vector> Vector::make(const sptr_sobject_v& children)
   {
-    return std::make_shared<Array>(children);
+    return std::make_shared<Vector>(children);
   }
 
   /**
@@ -985,7 +985,7 @@ namespace Lisple
       type = Form::LIST;
       break;
     case RTValue::Type::VECTOR:
-      type = Form::ARRAY;
+      type = Form::VECTOR;
       break;
     case RTValue::Type::MAP:
       type = Form::MAP;
@@ -1028,7 +1028,7 @@ namespace Lisple
   {
     switch (key.get_type())
     {
-    case Form::KEY:
+    case Form::KEYWORD:
     {
       sptr_rtval v = to_rt_value(value);
       Dict::set_property(val, RTValue::keyword(Value<std::string>::value_of(key)), v);
@@ -1071,7 +1071,7 @@ namespace Lisple
   {
     switch (key->get_type())
     {
-    case Form::KEY:
+    case Form::KEYWORD:
     {
       sptr_sobject vv = value;
       sptr_rtval v = to_rt_value(vv);
@@ -1086,7 +1086,7 @@ namespace Lisple
 
   sptr_sobject RuntimeValueWrapper::get_sptr_property(const Object& key) const
   {
-    if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEY)
+    if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEYWORD)
     {
       auto entry = Dict::map_entry(std::get<sptr_rtval_v>(val->value),
                                    *RTValue::keyword(Value<std::string>::value_of(key)));
@@ -1105,7 +1105,7 @@ namespace Lisple
 
   bool RuntimeValueWrapper::has_key(const Object& key) const
   {
-    // if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEY)
+    // if (val->type == RTValue::Type::MAP && key.get_type() == Form::KEYWORD)
     // {
     //   auto entry = Dict::map_entry(std::get<sptr_rtval_v>(val->value),
     //                                *RTValue::keyword(Value<std::string>::value_of(key)));
@@ -1145,9 +1145,9 @@ namespace Lisple
     case RTValue::Type::STRING:
       return String::make(std::get<std::string>(value->value));
     case RTValue::Type::KEYWORD:
-      return Key::make(std::get<std::string>(value->value));
+      return Keyword::make(std::get<std::string>(value->value));
     case RTValue::Type::SYMBOL:
-      return Word::make(std::get<std::string>(value->value));
+      return Symbol::make(std::get<std::string>(value->value));
     case RTValue::Type::OBJECT:
     case RTValue::Type::FUNCTION:
       return std::get<sptr_sobject>(value->value);

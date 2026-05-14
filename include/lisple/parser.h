@@ -11,7 +11,7 @@
 namespace Lisple
 {
   class Object;
-  class Symbol;
+  class TokenSymbol;
   enum class Token : uint8_t;
 
   class ParseContext
@@ -31,7 +31,7 @@ namespace Lisple
   class Parser
   {
    public:
-    sptr_sobject_v parse_sexps(std::vector<Symbol> symbols) const;
+    sptr_sobject_v parse_sexps(std::vector<TokenSymbol> symbols) const;
   };
 } // namespace Lisple
 

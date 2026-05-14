@@ -10,7 +10,7 @@ using MapFunction = LispleTest::RuntimeTestFixture;
  * ======================================================================
  */
 
-TEST_F(MapFunction, map_single_array_of_numbers)
+TEST_F(MapFunction, map_single_vector_of_numbers)
 {
   // Given
   auto retval = runtime.eval("(map [1 2 3] (fn [num] (* num 2)))");
@@ -19,7 +19,7 @@ TEST_F(MapFunction, map_single_array_of_numbers)
   ASSERT_EQ(retval->to_string(), "[2 4 6]");
 }
 
-TEST_F(MapFunction, map_two_arrays_of_numbers)
+TEST_F(MapFunction, map_two_vectors_of_numbers)
 {
   // Given
   auto retval = runtime.eval("(map [1 2 3] [30 20 10] (fn [n1 n2] (+ n1 n2)))");

@@ -20,7 +20,7 @@ namespace Lisple
       return obj.to_string();
     }
 
-    if (Type::STRING.is_type_of(obj) || Type::KEY.is_type_of(obj) ||
+    if (Type::STRING.is_type_of(obj) || Type::KEYWORD.is_type_of(obj) ||
         Type::SYMBOL_VALUE.is_type_of(obj))
     {
       if (auto* wrapper = dynamic_cast<const RuntimeValueWrapper*>(&obj))
@@ -30,7 +30,7 @@ namespace Lisple
       return obj.as<Value<std::string>>().value;
     }
 
-    if (Type::WORD.is_type_of(obj))
+    if (Type::SYMBOL.is_type_of(obj))
     {
       return obj.to_string();
     }
@@ -179,17 +179,17 @@ namespace Lisple
     {
       prepended = std::make_shared<String>(prepend_val + str_val(*list.head()));
     }
-    else if (Type::WORD.is_type_of(*list.head()))
-    {
-      prepended = std::make_shared<Word>(prepend_val + str_val(*list.head()));
-    }
     else if (Type::SYMBOL.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<QSymbol>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<Symbol>(prepend_val + str_val(*list.head()));
     }
-    else if (Type::KEY.is_type_of(*list.head()))
+    else if (Type::QUOTED_SYMBOL.is_type_of(*list.head()))
     {
-      prepended = std::make_shared<Key>(prepend_val + str_val(*list.head()));
+      prepended = std::make_shared<QuotedSymbol>(prepend_val + str_val(*list.head()));
+    }
+    else if (Type::KEYWORD.is_type_of(*list.head()))
+    {
+      prepended = std::make_shared<Keyword>(prepend_val + str_val(*list.head()));
     }
 
     return subst_sexp_lmnt(list, 0, prepended);

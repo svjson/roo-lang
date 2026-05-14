@@ -10,13 +10,13 @@ using TailFunction = LispleTest::RuntimeTestFixture;
  * ===================================
  */
 
-TEST_F(TailFunction, tail_of_array)
+TEST_F(TailFunction, tail_of_vector)
 {
   // Given
-  runtime.eval("(def my-array ['a' 'b' 'c'])");
+  runtime.eval("(def my-vector ['a' 'b' 'c'])");
 
   // When
-  auto result_ref = runtime.eval("(tail my-array)");
+  auto result_ref = runtime.eval("(tail my-vector)");
   auto result_lit = runtime.eval("(tail ['a' 'b' 'c'])");
 
   // Then

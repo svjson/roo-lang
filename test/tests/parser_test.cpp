@@ -22,12 +22,12 @@ TEST(Parser, parse_simple_form)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols {
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "trait"),
-    Symbol(Token::SQUOT, "'"),
-    Symbol(Token::WORD, "UNOBSERVABLE"),
-    Symbol(Token::RPAREN, ")")
+  std::vector<TokenSymbol> symbols {
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "trait"),
+    TokenSymbol(Token::SQUOT, "'"),
+    TokenSymbol(Token::SYMBOL, "UNOBSERVABLE"),
+    TokenSymbol(Token::RPAREN, ")")
   };
 
   // When
@@ -39,10 +39,10 @@ TEST(Parser, parse_simple_form)
   Object& form = *sexps.at(0);
   ASSERT_EQ(form.size(), 2);
 
-  EXPECT_EQ(form.get_children().at(0)->get_type(), Form::WORD);
-  EXPECT_EQ(*form.get_children().at(0), Word("trait"));
-  EXPECT_EQ(form.get_children().at(1)->get_type(), Form::SYMBOL);
-  EXPECT_EQ(*form.get_children().at(1), QSymbol("UNOBSERVABLE"));
+  EXPECT_EQ(form.get_children().at(0)->get_type(), Form::SYMBOL);
+  EXPECT_EQ(*form.get_children().at(0), Symbol("trait"));
+  EXPECT_EQ(form.get_children().at(1)->get_type(), Form::QUOTED_SYMBOL);
+  EXPECT_EQ(*form.get_children().at(1), QuotedSymbol("UNOBSERVABLE"));
 }
 
 
@@ -50,14 +50,14 @@ TEST(Parser, parse_map_with_char_key)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols
+  std::vector<TokenSymbol> symbols
   {
-    Symbol(Token::LCURLY, "{"),
-    Symbol(Token::CHAR, "A"),
-    Symbol(Token::STRING, "Alpha"),
-    Symbol(Token::CHAR, "B"),
-    Symbol(Token::STRING, "Beta"),
-    Symbol(Token::RCURLY, "}")
+    TokenSymbol(Token::LCURLY, "{"),
+    TokenSymbol(Token::CHAR, "A"),
+    TokenSymbol(Token::STRING, "Alpha"),
+    TokenSymbol(Token::CHAR, "B"),
+    TokenSymbol(Token::STRING, "Beta"),
+    TokenSymbol(Token::RCURLY, "}")
   };
 
   // When
@@ -80,30 +80,30 @@ TEST(Parser, parse_form_with_multiple_paren_types)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols {
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "actor-stereotype"),
-    Symbol(Token::LCURLY, "{"),
-    Symbol(Token::KEY, "name"),
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "name"),
-    Symbol(Token::STRING, "Test"),
-    Symbol(Token::RPAREN, ")"),
-    Symbol(Token::KEY, "traits"),
-    Symbol(Token::LBRACKET, "["),
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "marker-trait"),
-    Symbol(Token::SQUOT, "'"),
-    Symbol(Token::WORD, "UNOBSERVABLE"),
-    Symbol(Token::RPAREN, ")"),
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "marker-trait"),
-    Symbol(Token::SQUOT, "'"),
-    Symbol(Token::WORD, "NPC"),
-    Symbol(Token::RPAREN, ")"),
-    Symbol(Token::RBRACKET, "]"),
-    Symbol(Token::RCURLY, "}"),
-    Symbol(Token::RPAREN, ")")
+  std::vector<TokenSymbol> symbols {
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "actor-stereotype"),
+    TokenSymbol(Token::LCURLY, "{"),
+    TokenSymbol(Token::KEYWORD, "name"),
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "name"),
+    TokenSymbol(Token::STRING, "Test"),
+    TokenSymbol(Token::RPAREN, ")"),
+    TokenSymbol(Token::KEYWORD, "traits"),
+    TokenSymbol(Token::LBRACKET, "["),
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "marker-trait"),
+    TokenSymbol(Token::SQUOT, "'"),
+    TokenSymbol(Token::SYMBOL, "UNOBSERVABLE"),
+    TokenSymbol(Token::RPAREN, ")"),
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "marker-trait"),
+    TokenSymbol(Token::SQUOT, "'"),
+    TokenSymbol(Token::SYMBOL, "NPC"),
+    TokenSymbol(Token::RPAREN, ")"),
+    TokenSymbol(Token::RBRACKET, "]"),
+    TokenSymbol(Token::RCURLY, "}"),
+    TokenSymbol(Token::RPAREN, ")")
   };
 
   // when
@@ -119,12 +119,12 @@ TEST(Parser, parse_form_with_multiple_paren_types)
 TEST(Parser, parse_quoted_list)
 {
   Parser parser;
-  std::vector<Symbol> symbols {
-    Symbol(Token::SQUOT, "'"),
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "to-upper"),
-    Symbol(Token::STRING, "a string"),
-    Symbol(Token::RPAREN, ")")
+  std::vector<TokenSymbol> symbols {
+    TokenSymbol(Token::SQUOT, "'"),
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "to-upper"),
+    TokenSymbol(Token::STRING, "a string"),
+    TokenSymbol(Token::RPAREN, ")")
   };
 
   // When
@@ -138,7 +138,7 @@ TEST(Parser, parse_quoted_list)
 
   List& list = obj.as<List>();
   ASSERT_EQ(list.size(), 2);
-  EXPECT_EQ(*list.get_children().at(0), Word("to-upper"));
+  EXPECT_EQ(*list.get_children().at(0), Symbol("to-upper"));
   EXPECT_EQ(*list.get_children().at(1), String("a string"));
 
   ASSERT_TRUE(list.is_quoted());
@@ -148,13 +148,13 @@ TEST(Parser, parse_positive_int_numbers)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols{
-    Symbol(Token::LBRACKET, "["),
-    Symbol(Token::NUMBER, "0"),
-    Symbol(Token::NUMBER, "1"),
-    Symbol(Token::NUMBER, "28"),
-    Symbol(Token::NUMBER, "5945"),
-    Symbol(Token::RBRACKET, "]"),
+  std::vector<TokenSymbol> symbols{
+    TokenSymbol(Token::LBRACKET, "["),
+    TokenSymbol(Token::NUMBER, "0"),
+    TokenSymbol(Token::NUMBER, "1"),
+    TokenSymbol(Token::NUMBER, "28"),
+    TokenSymbol(Token::NUMBER, "5945"),
+    TokenSymbol(Token::RBRACKET, "]"),
   };
 
   // When
@@ -162,26 +162,26 @@ TEST(Parser, parse_positive_int_numbers)
 
   // Then
   ASSERT_EQ(sexps.size(), 1);
-  Lisple::Array& array = sexps.front()->as<Lisple::Array>();
-  ASSERT_EQ(array.get_children().size(), 4);
+  Lisple::Vector& vector = sexps.front()->as<Lisple::Vector>();
+  ASSERT_EQ(vector.get_children().size(), 4);
 
-  ASSERT_EQ(*array.get_children().at(0), Lisple::Number(0));
-  ASSERT_EQ(*array.get_children().at(1), Lisple::Number(1));
-  ASSERT_EQ(*array.get_children().at(2), Lisple::Number(28));
-  ASSERT_EQ(*array.get_children().at(3), Lisple::Number(5945));
+  ASSERT_EQ(*vector.get_children().at(0), Lisple::Number(0));
+  ASSERT_EQ(*vector.get_children().at(1), Lisple::Number(1));
+  ASSERT_EQ(*vector.get_children().at(2), Lisple::Number(28));
+  ASSERT_EQ(*vector.get_children().at(3), Lisple::Number(5945));
 }
 
 TEST(Parser, parse_negative_int_numbers)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols{
-    Symbol(Token::LBRACKET, "["),
-    Symbol(Token::NUMBER, "-1"),
-    Symbol(Token::NUMBER, "-23"),
-    Symbol(Token::NUMBER, "-853"),
-    Symbol(Token::NUMBER, "-19345"),
-    Symbol(Token::RBRACKET, "]")
+  std::vector<TokenSymbol> symbols{
+    TokenSymbol(Token::LBRACKET, "["),
+    TokenSymbol(Token::NUMBER, "-1"),
+    TokenSymbol(Token::NUMBER, "-23"),
+    TokenSymbol(Token::NUMBER, "-853"),
+    TokenSymbol(Token::NUMBER, "-19345"),
+    TokenSymbol(Token::RBRACKET, "]")
   };
 
   // When
@@ -189,26 +189,26 @@ TEST(Parser, parse_negative_int_numbers)
 
   // Then
   ASSERT_EQ(sexps.size(), 1);
-  Lisple::Array& array = sexps.front()->as<Lisple::Array>();
-  ASSERT_EQ(array.get_children().size(), 4);
+  Lisple::Vector& vector = sexps.front()->as<Lisple::Vector>();
+  ASSERT_EQ(vector.get_children().size(), 4);
 
-  ASSERT_EQ(*array.get_children().at(0), Lisple::Number(-1));
-  ASSERT_EQ(*array.get_children().at(1), Lisple::Number(-23));
-  ASSERT_EQ(*array.get_children().at(2), Lisple::Number(-853));
-  ASSERT_EQ(*array.get_children().at(3), Lisple::Number(-19345));
+  ASSERT_EQ(*vector.get_children().at(0), Lisple::Number(-1));
+  ASSERT_EQ(*vector.get_children().at(1), Lisple::Number(-23));
+  ASSERT_EQ(*vector.get_children().at(2), Lisple::Number(-853));
+  ASSERT_EQ(*vector.get_children().at(3), Lisple::Number(-19345));
 }
 
 TEST(Parser, parse_positive_float_numbers)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols{
-    Symbol(Token::LBRACKET, "["),
-    Symbol(Token::NUMBER, "1.0"),
-    Symbol(Token::NUMBER, "45.0"),
-    Symbol(Token::NUMBER, "1.113"),
-    Symbol(Token::NUMBER, "1000.984"),
-    Symbol(Token::RBRACKET, "]"),
+  std::vector<TokenSymbol> symbols{
+    TokenSymbol(Token::LBRACKET, "["),
+    TokenSymbol(Token::NUMBER, "1.0"),
+    TokenSymbol(Token::NUMBER, "45.0"),
+    TokenSymbol(Token::NUMBER, "1.113"),
+    TokenSymbol(Token::NUMBER, "1000.984"),
+    TokenSymbol(Token::RBRACKET, "]"),
   };
 
   // When
@@ -216,27 +216,27 @@ TEST(Parser, parse_positive_float_numbers)
 
   // Then
   ASSERT_EQ(sexps.size(), 1);
-  Lisple::Array& array = sexps.front()->as<Lisple::Array>();
-  ASSERT_EQ(array.get_children().size(), 4);
+  Lisple::Vector& vector = sexps.front()->as<Lisple::Vector>();
+  ASSERT_EQ(vector.get_children().size(), 4);
 
-  ASSERT_EQ(*array.get_children().at(0), Lisple::Number(1.0f));
-  ASSERT_EQ(*array.get_children().at(1), Lisple::Number(45.0f));
-  ASSERT_EQ(*array.get_children().at(2), Lisple::Number(1.113f));
-  ASSERT_EQ(*array.get_children().at(3), Lisple::Number(1000.984f));
+  ASSERT_EQ(*vector.get_children().at(0), Lisple::Number(1.0f));
+  ASSERT_EQ(*vector.get_children().at(1), Lisple::Number(45.0f));
+  ASSERT_EQ(*vector.get_children().at(2), Lisple::Number(1.113f));
+  ASSERT_EQ(*vector.get_children().at(3), Lisple::Number(1000.984f));
 }
 
 TEST(Parser, discard__list_form)
 {
   // Given
   Parser parser;
-  std::vector<Symbol> symbols {
-    Symbol(Token::HASH, "#"),
-    Symbol(Token::USCORE, "_"),
-    Symbol(Token::LPAREN, "("),
-    Symbol(Token::WORD, "+"),
-    Symbol(Token::NUMBER, "1"),
-    Symbol(Token::NUMBER, "1"),
-    Symbol(Token::RPAREN, ")")
+  std::vector<TokenSymbol> symbols {
+    TokenSymbol(Token::HASH, "#"),
+    TokenSymbol(Token::USCORE, "_"),
+    TokenSymbol(Token::LPAREN, "("),
+    TokenSymbol(Token::SYMBOL, "+"),
+    TokenSymbol(Token::NUMBER, "1"),
+    TokenSymbol(Token::NUMBER, "1"),
+    TokenSymbol(Token::RPAREN, ")")
   };
 
   // When

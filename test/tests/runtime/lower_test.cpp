@@ -33,7 +33,7 @@ TEST_F(LowerTest, list__call_node__no_ctx__lookup_node_callee)
 {
   Lisple::LowerContext lctx;
   Lisple::sptr_sobject expr = Lisple::List::make(
-    {Lisple::Word::make("+"), Lisple::Number::make(1), Lisple::Number::make(1)});
+    {Lisple::Symbol::make("+"), Lisple::Number::make(1), Lisple::Number::make(1)});
 
   // When
   auto node = Lisple::lower_expr(lctx, expr);
@@ -48,7 +48,7 @@ TEST_F(LowerTest, list__call_node__ctx__literal_node_callee)
 {
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject expr = Lisple::List::make(
-    {Lisple::Word::make("+"), Lisple::Number::make(1), Lisple::Number::make(1)});
+    {Lisple::Symbol::make("+"), Lisple::Number::make(1), Lisple::Number::make(1)});
 
   // When
   auto node = Lisple::lower_expr(lctx, expr);
@@ -63,7 +63,7 @@ TEST_F(LowerTest, list__key_lookup__no_ctx__lookup_node)
 {
   Lisple::LowerContext lctx;
   Lisple::sptr_sobject expr =
-    Lisple::List::make({Lisple::Key::make("name"), Lisple::Word::make("my-map")});
+    Lisple::List::make({Lisple::Keyword::make("name"), Lisple::Symbol::make("my-map")});
 
   // When
   auto node = Lisple::lower_expr(lctx, expr);
@@ -79,7 +79,7 @@ TEST_F(LowerTest, list__key_lookup__ctx__lookup_node)
 {
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject expr =
-    Lisple::List::make({Lisple::Key::make("name"), Lisple::Word::make("my-map")});
+    Lisple::List::make({Lisple::Keyword::make("name"), Lisple::Symbol::make("my-map")});
 
   // When
   auto node = Lisple::lower_expr(lctx, expr);
@@ -95,10 +95,10 @@ TEST_F(LowerTest, list_special_form__ctx__custom_lower)
 {
   Lisple::LowerContext lctx{&ctx};
   Lisple::sptr_sobject expr = Lisple::List::make(
-    {Lisple::Word::make("->"),
+    {Lisple::Symbol::make("->"),
      Lisple::Number::make(10),
-     Lisple::List::make({Lisple::Word::make("+"), Lisple::Number::make(5)}),
-     Lisple::Word::make("range")});
+     Lisple::List::make({Lisple::Symbol::make("+"), Lisple::Number::make(5)}),
+     Lisple::Symbol::make("range")});
 
   // When
   auto node = Lisple::lower_expr(lctx, expr);
@@ -110,7 +110,7 @@ TEST_F(LowerTest, list_special_form__ctx__custom_lower)
 SPECIAL_FORM_DECL(DefThing, def_thing)
 
 SPECIAL_FORM_IMPL(DefThing,
-                  SIG((FN_ARGS((&Lisple::Type::WORD), (&Lisple::Type::MAP)),
+                  SIG((FN_ARGS((&Lisple::Type::SYMBOL), (&Lisple::Type::MAP)),
                        EXEC_DISPATCH(&DefThing::execnode_def_thing))));
 
 SFORM_LOWER_IMPL(DefThing)

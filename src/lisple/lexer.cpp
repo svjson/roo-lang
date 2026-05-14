@@ -9,20 +9,20 @@
 namespace Lisple
 {
 
-  Symbol::Symbol(Token token, std::string value)
+  TokenSymbol::TokenSymbol(Token token, std::string value)
     : token(token)
     , value(value)
   {
   }
 
-  bool Symbol::operator==(const Symbol& other) const
+  bool TokenSymbol::operator==(const TokenSymbol& other) const
   {
     return other.token == token && other.value == value;
   }
 
-  std::ostream& operator<<(std::ostream& stream, const Symbol& symbol)
+  std::ostream& operator<<(std::ostream& stream, const TokenSymbol& symbol)
   {
-    return stream << "Symbol(" << symbol.token << ", \"" << symbol.value << "\")";
+    return stream << "TokenSymbol(" << symbol.token << ", \"" << symbol.value << "\")";
   }
 
   std::vector<std::string> token_names = {"NONE",
@@ -33,11 +33,11 @@ namespace Lisple
                                           "LCURLY",
                                           "RCURLY",
                                           "SQUOT",
-                                          "WORD",
+                                          "SYMBOL",
                                           "NUMBER",
                                           "STRING",
                                           "CHAR",
-                                          "KEY",
+                                          "KEYWORD",
                                           "HASH",
                                           "USCORE"};
 
@@ -46,9 +46,9 @@ namespace Lisple
     return stream << token_names.at(static_cast<int>(token));
   }
 
-  std::vector<Symbol> Lexer::read_symbols(const std::string& input) const
+  std::vector<TokenSymbol> Lexer::read_symbols(const std::string& input) const
   {
-    std::vector<Symbol> tokens;
+    std::vector<TokenSymbol> tokens;
 
     bool comment_context = false;
 
@@ -98,15 +98,15 @@ namespace Lisple
           {
             if (std::regex_match(val, regex_hexnum))
             {
-              tokens.push_back(Symbol(Token::NUMBER, hex_to_int_str(val)));
+              tokens.push_back(TokenSymbol(Token::NUMBER, hex_to_int_str(val)));
             }
             else if (std::regex_match(val, regex_num))
             {
-              tokens.push_back(Symbol(Token::NUMBER, val));
+              tokens.push_back(TokenSymbol(Token::NUMBER, val));
             }
             else
             {
-              tokens.push_back(Symbol(ct, val));
+              tokens.push_back(TokenSymbol(ct, val));
             }
             val = "";
             ct = Token::NONE;
@@ -116,7 +116,7 @@ namespace Lisple
       }
       else if (ct == Token::STRING && c == '"')
       {
-        tokens.push_back(Symbol(ct, val));
+        tokens.push_back(TokenSymbol(ct, val));
         val = "";
         ct = Token::NONE;
         continue;
@@ -129,15 +129,15 @@ namespace Lisple
                                "'. Chars must have a size of exactly 1 character.");
         }
         ct = Token::NONE;
-        tokens.push_back(Symbol(Token::CHAR, val));
+        tokens.push_back(TokenSymbol(Token::CHAR, val));
         val = "";
         continue;
       }
       // Check if the currently determined Token is still valid with the new character
-      if ((ct == Token::WORD && std::regex_match(val + cs, regex_alphanum)) ||
+      if ((ct == Token::SYMBOL && std::regex_match(val + cs, regex_alphanum)) ||
           (ct == Token::NUMBER && std::regex_match(val + cs, regex_num)) ||
           (ct == Token::NUMBER && std::regex_match(val + cs, regex_hexnum)) ||
-          (ct == Token::KEY && std::regex_match(val + cs, regex_key_alphanum)) ||
+          (ct == Token::KEYWORD && std::regex_match(val + cs, regex_keyword_alphanum)) ||
           (ct == Token::STRING && c != '"' && c != '\\'))
       {
         val += c;
@@ -174,7 +174,7 @@ namespace Lisple
         }
         continue;
       }
-      else if (ct == Token::WORD && std::regex_match(val + cs, regex_num))
+      else if (ct == Token::SYMBOL && std::regex_match(val + cs, regex_num))
       {
         val += c;
         ct = Token::NUMBER;
@@ -186,7 +186,7 @@ namespace Lisple
         val += c;
         if (val.size() == 2)
         {
-          tokens.push_back(Symbol(Token::SQUOT, "'"));
+          tokens.push_back(TokenSymbol(Token::SQUOT, "'"));
           offset -= 2;
           val = "";
           ct = Token::NONE;
@@ -208,7 +208,7 @@ namespace Lisple
         }
         if (c == ':')
         {
-          ct = Token::KEY;
+          ct = Token::KEYWORD;
           continue;
         }
         else if (std::regex_match(cs, regex_num) || std::regex_match(cs, regex_hexnum))
@@ -219,18 +219,18 @@ namespace Lisple
         }
         else if (c == '_')
         {
-          tokens.push_back(Symbol(Token::USCORE, "_"));
+          tokens.push_back(TokenSymbol(Token::USCORE, "_"));
           continue;
         }
         else if (std::regex_match(cs, regex_alpha))
         {
           val = c;
-          ct = Token::WORD;
+          ct = Token::SYMBOL;
           continue;
         }
         else if (c == '#')
         {
-          tokens.push_back(Symbol(Token::HASH, "#"));
+          tokens.push_back(TokenSymbol(Token::HASH, "#"));
           continue;
         }
       }
@@ -264,19 +264,19 @@ namespace Lisple
         {
           if (std::regex_match(val, regex_hexnum))
           {
-            tokens.push_back(Symbol(Token::NUMBER, hex_to_int_str(val)));
+            tokens.push_back(TokenSymbol(Token::NUMBER, hex_to_int_str(val)));
           }
           else if (std::regex_match(val, regex_num))
           {
-            tokens.push_back(Symbol(Token::NUMBER, val));
+            tokens.push_back(TokenSymbol(Token::NUMBER, val));
           }
           else
           {
-            tokens.push_back(Symbol(ct, val));
+            tokens.push_back(TokenSymbol(ct, val));
           }
           val = "";
         }
-        tokens.push_back(Symbol(t, cs));
+        tokens.push_back(TokenSymbol(t, cs));
         ct = Token::NONE;
         continue;
       }
@@ -290,7 +290,7 @@ namespace Lisple
       {
         val = hex_to_int_str(val);
       }
-      tokens.push_back(Symbol(ct, val));
+      tokens.push_back(TokenSymbol(ct, val));
     }
 
     return tokens;

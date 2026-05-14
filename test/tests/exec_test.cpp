@@ -63,18 +63,18 @@ TEST_F(UserFunction, invocation_of_empty_function_returns_nil)
   ASSERT_EQ(*retval, *Lisple::Constant::NIL);
 }
 
-TEST_F(Macro, get_signature__sig_with_varargs__array__form)
+TEST_F(Macro, get_signature__sig_with_varargs__vector__form)
 {
   // Given
   Lisple::DoTimesForm dotimes;
 
-  Lisple::uptr_exec_node_v array__form;
-  array__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::vector(
+  Lisple::uptr_exec_node_v vector__form;
+  vector__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::vector(
     {Lisple::RTValue::symbol("n"), Lisple::RTValue::number(4)})));
-  array__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(12)));
+  vector__form.push_back(std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(12)));
 
   // When
-  Lisple::Signature* sig = dotimes.get_signature(ctx, array__form);
+  Lisple::Signature* sig = dotimes.get_signature(ctx, vector__form);
 
   // Then
   ASSERT_NE(sig, nullptr);
@@ -88,12 +88,12 @@ TEST_F(create_function__RTValue_semantics, function_should_support_rtvalue_execu
   // Given
   std::cout << " ---------- TEST BEGINS ---------------" << std::endl;
 
-  Lisple::sptr_rtval_v param_array{Lisple::RTValue::symbol("n")};
+  Lisple::sptr_rtval_v param_vector{Lisple::RTValue::symbol("n")};
   auto body_node = std::make_unique<Lisple::ExecNode>(Lisple::RTValue::number(10));
   Lisple::ptr_exec_node_v body = {body_node.get()};
 
   // When
-  auto func = Lisple::create_function(&runtime.get_current_namespace(), param_array, body);
+  auto func = Lisple::create_function(&runtime.get_current_namespace(), param_vector, body);
 
   // Then
   EXPECT_FALSE(func->supports_exec_tree());

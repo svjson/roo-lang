@@ -5,7 +5,7 @@
 
 using namespace Lisple;
 
-TEST(Reader, parses_word_with_colon_in_body)
+TEST(Reader, parses_symbol_with_colon_in_body)
 {
   // Given
   Reader reader;
@@ -15,7 +15,7 @@ TEST(Reader, parses_word_with_colon_in_body)
 
   // Then
   ASSERT_EQ(sexps.size(), 1);
-  EXPECT_EQ(*sexps.at(0), Word("window:focus-within"));
+  EXPECT_EQ(*sexps.at(0), Symbol("window:focus-within"));
 }
 
 TEST(Reader, parses_quoted_symbol_with_colon_in_body)
@@ -28,7 +28,7 @@ TEST(Reader, parses_quoted_symbol_with_colon_in_body)
 
   // Then
   ASSERT_EQ(sexps.size(), 1);
-  EXPECT_EQ(*sexps.at(0), QSymbol("window:focus-within"));
+  EXPECT_EQ(*sexps.at(0), QuotedSymbol("window:focus-within"));
 }
 
 TEST(Reader, parses_keyword_with_namespace_and_colon_in_identifier)
@@ -41,7 +41,7 @@ TEST(Reader, parses_keyword_with_namespace_and_colon_in_identifier)
 
   // Then
   ASSERT_EQ(sexps.size(), 1);
-  EXPECT_EQ(*sexps.at(0), Key("ui/menu-item:focus"));
+  EXPECT_EQ(*sexps.at(0), Keyword("ui/menu-item:focus"));
 }
 
 TEST(Reader, parses_string_with_common_escapes)

@@ -120,7 +120,7 @@ namespace LispleTest::Native
   }
 
   FUNC_IMPL(CountVehicleSeats,
-            SIG((FN_ARGS((&LispleTest::ARRAY_OF_VEHICLE_MODEL)),
+            SIG((FN_ARGS((&LispleTest::VECTOR_OF_VEHICLE_MODEL)),
                  EXEC_DISPATCH(&CountVehicleSeats::exec_count))))
 
   EXEC_BODY(CountVehicleSeats, exec_count)
@@ -133,11 +133,11 @@ namespace LispleTest::Native
     return Lisple::RTValue::number(count);
   }
 
-  FUNC_IMPL(ArrayOfArrayTaker,
-            SIG((FN_ARGS((&LispleTest::ARRAY_OF_ARRAY_OF_VEHICLE_MODEL)),
-                 EXEC_DISPATCH(&ArrayOfArrayTaker::exec_accept))))
+  FUNC_IMPL(VectorOfVectorTaker,
+            SIG((FN_ARGS((&LispleTest::VECTOR_OF_VECTOR_OF_VEHICLE_MODEL)),
+                 EXEC_DISPATCH(&VectorOfVectorTaker::exec_accept))))
 
-  EXEC_BODY(ArrayOfArrayTaker, exec_accept)
+  EXEC_BODY(VectorOfVectorTaker, exec_accept)
   {
     return args.front();
   }
@@ -154,7 +154,7 @@ namespace LispleTest::Native
     values.emplace("prn-vehicle-model", PrnVehicle::make());
     values.emplace("double-size-vehicle", DoubleSizeVehicle::make());
     values.emplace("count-seats", CountVehicleSeats::make());
-    values.emplace("a-of-a-taker", ArrayOfArrayTaker::make());
+    values.emplace("v-of-v-taker", VectorOfVectorTaker::make());
   }
 
 } // namespace LispleTest::Native

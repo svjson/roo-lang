@@ -49,7 +49,7 @@ namespace Lisple
 
       if (valid_keys.at(key.to_string()).required)
       {
-        throw Lisple::LispleException("Key " + key.to_string() +
+        throw Lisple::LispleException("Keyword " + key.to_string() +
                                       " is required, but not present in " + map.to_string());
       }
 

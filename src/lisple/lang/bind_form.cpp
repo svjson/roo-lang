@@ -14,14 +14,14 @@ namespace Lisple
 {
   /** LetForm - let */
   SPECIAL_FORM_IMPL(LetForm,
-                    SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
+                    SIG((FN_ARGS((&Type::VECTOR, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&LetForm::execnode_let))))
 
   SFORM_LOWER_IMPL(LetForm)
   {
     sptr_sobject_v& elements = ast_node->get_children();
-    if (elements[1]->get_type() != Form::ARRAY)
+    if (elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("let: Invalid bind form: " + elements[1]->to_string());
     }
@@ -74,7 +74,7 @@ namespace Lisple
 
   /* IfLetForm - if-let */
   SPECIAL_FORM_IMPL(IfLetForm,
-                    SIG((FN_ARGS((&Type::ARRAY, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
+                    SIG((FN_ARGS((&Type::VECTOR, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (&Type::ANY, NO_EVAL),
                                  (&Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&IfLetForm::execnode_if_let))))
@@ -82,7 +82,7 @@ namespace Lisple
   SFORM_LOWER_IMPL(IfLetForm)
   {
     sptr_sobject_v& elements = ast_node->get_children();
-    if (elements[1]->get_type() != Form::ARRAY)
+    if (elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("if-let: Invalid bind form: " + elements[1]->to_string());
     }
@@ -147,13 +147,13 @@ namespace Lisple
 
   /** WhenLetForm - when-let */
   SPECIAL_FORM_IMPL(WhenLetForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                    SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&WhenLetForm::execnode_when_let))))
 
   SFORM_LOWER_IMPL(WhenLetForm)
   {
     sptr_sobject_v& elements = ast_node->get_children();
-    if (elements[1]->get_type() != Form::ARRAY)
+    if (elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("when-let: Invalid bind form: " + elements[1]->to_string());
     }

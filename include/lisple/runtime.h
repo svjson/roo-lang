@@ -12,12 +12,12 @@
 
 namespace Lisple
 {
-  class Array;
+  class Vector;
   class Context;
   class List;
   class Map;
   class Seq;
-  class Word;
+  class Symbol;
   class FileSystem;
   class NamespaceLoader;
   class NamespaceSource;

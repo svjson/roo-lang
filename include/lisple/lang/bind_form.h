@@ -17,7 +17,7 @@ namespace Lisple
    *
    * | Arg # | Description                                                |
    * |-------|------------------------------------------------------------|
-   * | 0     | Array containing a variable name and variable value pairs  |
+   * | 0     | Vector containing a variable name and variable value pairs  |
    * | 1...  | Body forms to execute with the temporary bindings          |
    */
   SPECIAL_FORM_DECL(LetForm, let)
@@ -36,7 +36,7 @@ namespace Lisple
    *
    * | Arg # | Description                                                |
    * |-------|------------------------------------------------------------|
-   * | 0     | Array containing variable name and variable value pairs    |
+   * | 0     | Vector containing variable name and variable value pairs    |
    * | 1...  | Body forms to execute with the temporary bindings          |
    */
   SPECIAL_FORM_DECL(WhenLetForm, when_let)

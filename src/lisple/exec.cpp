@@ -693,7 +693,7 @@ namespace Lisple
   std::shared_ptr<UserFunction> create_function(const std::string& name,
                                                 Context& ctx,
                                                 const Namespace* home_ns,
-                                                Object& arg_array,
+                                                Object& arg_vector,
                                                 sptr_sobject_v& body)
   {
     std::vector<Argument> arg_types;
@@ -702,14 +702,14 @@ namespace Lisple
     std::unique_ptr<RestBinding> rest_binding;
     bool in_optional = false;
 
-    auto& children = arg_array.get_children();
+    auto& children = arg_vector.get_children();
     for (size_t idx = 0; idx < children.size(); idx++)
     {
       auto& arg = children[idx];
-      if (arg->get_type() != Form::WORD && arg->get_type() != Form::MAP &&
-          arg->get_type() != Form::ARRAY)
+      if (arg->get_type() != Form::SYMBOL && arg->get_type() != Form::MAP &&
+          arg->get_type() != Form::VECTOR)
       {
-        throw LispleException("Illegal fn argument declaration: " + arg_array.to_string());
+        throw LispleException("Illegal fn argument declaration: " + arg_vector.to_string());
       }
 
       auto rt_arg = to_rt_value(*arg);
@@ -720,7 +720,7 @@ namespace Lisple
         {
           if (in_optional)
           {
-            throw LispleException("Duplicate & in argument list: " + arg_array.to_string());
+            throw LispleException("Duplicate & in argument list: " + arg_vector.to_string());
           }
           in_optional = true;
           continue;
@@ -730,7 +730,7 @@ namespace Lisple
           if (idx != children.size() - 1)
           {
             throw LispleException("Rest parameter must be last in argument list: " +
-                                  arg_array.to_string());
+                                  arg_vector.to_string());
           }
           rest_binding = std::make_unique<RestBinding>(sym.substr(1));
           break;
@@ -764,7 +764,7 @@ namespace Lisple
   }
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
-                                                sptr_rtval_v& arg_array,
+                                                sptr_rtval_v& arg_vector,
                                                 ptr_exec_node_v& body)
   {
     std::vector<Argument> arg_types;
@@ -773,13 +773,13 @@ namespace Lisple
     std::unique_ptr<RestBinding> rest_binding;
     bool in_optional = false;
 
-    for (size_t idx = 0; idx < arg_array.size(); idx++)
+    for (size_t idx = 0; idx < arg_vector.size(); idx++)
     {
-      auto& arg = arg_array[idx];
+      auto& arg = arg_vector[idx];
       if (arg->type != RTValue::Type::SYMBOL && arg->type != RTValue::Type::MAP)
       {
         throw LispleException("Illegal fn argument declaration: " +
-                              RTValue::vector(arg_array)->to_string());
+                              RTValue::vector(arg_vector)->to_string());
       }
 
       if (arg->type == RTValue::Type::SYMBOL)
@@ -790,17 +790,17 @@ namespace Lisple
           if (in_optional)
           {
             throw LispleException("Duplicate & in argument list: " +
-                                  RTValue::vector(arg_array)->to_string());
+                                  RTValue::vector(arg_vector)->to_string());
           }
           in_optional = true;
           continue;
         }
         if (sym.size() > 1 && sym[0] == '&')
         {
-          if (idx != arg_array.size() - 1)
+          if (idx != arg_vector.size() - 1)
           {
             throw LispleException("Rest parameter must be last in argument list: " +
-                                  RTValue::vector(arg_array)->to_string());
+                                  RTValue::vector(arg_vector)->to_string());
           }
           rest_binding = std::make_unique<RestBinding>(sym.substr(1));
           break;

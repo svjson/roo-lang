@@ -17,12 +17,12 @@ namespace Lisple
 {
   class Context;
   class Number;
-  class Key;
+  class Keyword;
 
   extern const int INT_CONSTANTS_SIZE;
   extern std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
 
-  extern std::unordered_map<std::string, std::shared_ptr<Key>> key_intern_pool;
+  extern std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
 
   /*!
    * @brief Abstract base class for all form implementations
@@ -126,7 +126,7 @@ namespace Lisple
 
   /*!
    * @brief Abstract intermediate class from string values that may use recognized
-   * qualified, ie namespaced, identifiers, ie Keys and Words
+   * qualified, ie namespaced, identifiers, ie Keywords and Symbols
    */
   class QualifiableStringValue : public Value<std::string>
   {
@@ -136,7 +136,7 @@ namespace Lisple
      */
     std::string ns_qualifier;
     /*!
-     * @brief The actual identifier(word), ie, "an-identifier" from
+     * @brief The actual identifier(symbol), ie, "an-identifier" from
      * "some.namespace/an-identifier"
      */
     std::string identifier;
@@ -204,18 +204,18 @@ namespace Lisple
   inline const std::shared_ptr<Boolean> B_TRUE = std::make_shared<Boolean>(true);
   inline const std::shared_ptr<Boolean> B_FALSE = std::make_shared<Boolean>(false);
 
-  class Key : public QualifiableStringValue
+  class Keyword : public QualifiableStringValue
   {
    public:
-    Key(const std::string& value);
+    Keyword(const std::string& value);
 
     bool has_value(const std::string& value) const override;
 
     std::string to_string(int depth = -1) const override;
 
-    bool operator<(const Key& other) const;
+    bool operator<(const Keyword& other) const;
 
-    static std::shared_ptr<Key> make(const std::string& value);
+    static std::shared_ptr<Keyword> make(const std::string& value);
   };
 
   enum class NumberType : uint8_t
@@ -279,22 +279,22 @@ namespace Lisple
     static std::shared_ptr<Number> make(const std::string& value);
   };
 
-  class Word : public QualifiableStringValue
+  class Symbol : public QualifiableStringValue
   {
    public:
-    Word(const std::string& value);
+    Symbol(const std::string& value);
 
     std::string to_string(int depth = -1) const override;
 
     bool has_value(const std::string& value) const override;
 
-    static std::shared_ptr<Word> make(const std::string& value);
+    static std::shared_ptr<Symbol> make(const std::string& value);
   };
 
-  class QSymbol : public QualifiableStringValue
+  class QuotedSymbol : public QualifiableStringValue
   {
    public:
-    QSymbol(const std::string& value);
+    QuotedSymbol(const std::string& value);
 
     std::string to_string(int depth = -1) const override;
 
@@ -361,13 +361,13 @@ namespace Lisple
 
   };
 
-  class Array : public Seq
+  class Vector : public Seq
   {
    public:
-    Array(size_t reserved_size = 0);
-    Array(const sptr_sobject_v& children);
+    Vector(size_t reserved_size = 0);
+    Vector(const sptr_sobject_v& children);
 
-    static std::shared_ptr<Array> make(const sptr_sobject_v& children);
+    static std::shared_ptr<Vector> make(const sptr_sobject_v& children);
 
     const std::string lpar() const override;
     const std::string rpar() const override;

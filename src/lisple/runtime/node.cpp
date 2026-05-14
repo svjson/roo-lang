@@ -26,7 +26,7 @@ namespace Lisple
     literal_nodes_constructed++;
   }
 
-  LookupNode::LookupNode(Word id)
+  LookupNode::LookupNode(Symbol id)
     : identifier(id)
   {
     lookup_nodes_constructed++;

@@ -24,11 +24,11 @@ namespace Lisple
   SPECIAL_FORM_IMPL(
     DefunForm,
     MULTI_SIG(
-      (FN_ARGS((&Type::WORD, DATA), (&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+      (FN_ARGS((&Type::SYMBOL, DATA), (&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
        EXEC_DISPATCH(&DefunForm::execnode_decl)),
-      (FN_ARGS((&Type::WORD, DATA),
+      (FN_ARGS((&Type::SYMBOL, DATA),
                (&Type::STRING, DATA),
-               (&Type::ARRAY, DATA),
+               (&Type::VECTOR, DATA),
                (VARARG, &Type::ANY, NO_EVAL)),
        EXEC_DISPATCH(&DefunForm::execnode_decl_docstring))))
 
@@ -39,18 +39,18 @@ namespace Lisple
     {
       throw LispleException("Invalid defun form: " + ast_node->to_string());
     }
-    if (elements[1]->get_type() != Lisple::Form::WORD)
+    if (elements[1]->get_type() != Lisple::Form::SYMBOL)
     {
       throw TypeError("Invalid function name: " + elements[0]->to_string());
     }
-    if (elements[2]->get_type() != Lisple::Form::ARRAY &&
+    if (elements[2]->get_type() != Lisple::Form::VECTOR &&
         !(elements.size() >= 4 && (elements[2]->get_type() == Lisple::Form::STRING ||
-                                   elements[3]->get_type() == Lisple::Form::ARRAY)))
+                                   elements[3]->get_type() == Lisple::Form::VECTOR)))
     {
       throw LispleException("Invalid defun form: " + ast_node->to_string());
     }
 
-    Lisple::Word& fn_name = elements[1]->as<Lisple::Word>();
+    Lisple::Symbol& fn_name = elements[1]->as<Lisple::Symbol>();
     sptr_sobject doc_string =
       elements[2]->get_type() == Lisple::Form::STRING ? elements[2] : nullptr;
     sptr_sobject arg_vec = !doc_string ? elements[2] : elements[3];
@@ -88,7 +88,7 @@ namespace Lisple
 
   /** FnForm - fn */
   SPECIAL_FORM_IMPL(FnForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                    SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&FnForm::execnode_decl))))
 
   SFORM_LOWER_IMPL(FnForm)
@@ -98,7 +98,7 @@ namespace Lisple
     {
       throw LispleException("Invalid fn form: " + ast_node->to_string());
     }
-    if (elements[1]->get_type() != Lisple::Form::ARRAY)
+    if (elements[1]->get_type() != Lisple::Form::VECTOR)
     {
       throw LispleException("Invalid fn form: " + ast_node->to_string());
     }

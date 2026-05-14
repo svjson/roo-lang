@@ -10,15 +10,15 @@ using FindFirstFunction = LispleTest::RuntimeTestFixture;
  * ======================================================================
  */
 
-TEST_F(FindFirstFunction, find_first_array)
+TEST_F(FindFirstFunction, find_first_vector)
 {
   // Given
-  runtime.eval(R"((def my-array ["AA" "BB" "CCC" "DDDD" "EEE" "FF"]))");
+  runtime.eval(R"((def my-vector ["AA" "BB" "CCC" "DDDD" "EEE" "FF"]))");
 
   // When
-  auto three_letter = runtime.eval("(find-first my-array (fn [lmnt] (= 3 (count lmnt))))");
-  auto four_letter = runtime.eval("(find-first my-array (fn [lmnt] (= 4 (count lmnt))))");
-  auto five_letter = runtime.eval("(find-first my-array (fn [lmnt] (= 5 (count lmnt))))");
+  auto three_letter = runtime.eval("(find-first my-vector (fn [lmnt] (= 3 (count lmnt))))");
+  auto four_letter = runtime.eval("(find-first my-vector (fn [lmnt] (= 4 (count lmnt))))");
+  auto five_letter = runtime.eval("(find-first my-vector (fn [lmnt] (= 5 (count lmnt))))");
 
   // Then
   EXPECT_EQ(*three_letter, *Lisple::RTValue::string("CCC"));

@@ -14,10 +14,10 @@ using HeadFunction = LispleTest::RuntimeTestFixture;
 TEST_F(HeadFunction, head_of_seq)
 {
   // Given
-  runtime.eval("(def my-array ['a' 'b' 'c'])");
+  runtime.eval("(def my-vector ['a' 'b' 'c'])");
 
   // When
-  auto result_ref = runtime.eval("(head my-array)");
+  auto result_ref = runtime.eval("(head my-vector)");
   auto result_lit = runtime.eval("(head ['a' 'b' 'c'])");
 
   // Then

@@ -17,8 +17,8 @@ namespace Lisple
 
   /*!
    * @brief ConcatFunction - splice two or more forms together
-   * into an array. Any non sequence arguments will be treated
-   * as arrays of that argument
+   * into an vector. Any non sequence arguments will be treated
+   * as vectors of that argument
    *
    * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
    *        (concat 1 2 [3 4]) => [1 2 3 4]
@@ -29,8 +29,8 @@ namespace Lisple
 
   /*!
    * @brief ConcatBangFunction - splice two or more forms together
-   * into an the first argument array. Any subsequent non-sequence arguments
-   * will be treated as arrays of that argument.
+   * into an the first argument vector. Any subsequent non-sequence arguments
+   * will be treated as vectors of that argument.
    *
    * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
    *        (concat! [1] 2 [3 4]) => [1 2 3 4]
@@ -44,7 +44,7 @@ namespace Lisple
    *
    * Usage:
    * @code
-   * (contains? my-array "a value")
+   * (contains? my-vector "a value")
    * @endcode
    *
    * | Arg # | Description                                                      |
@@ -96,7 +96,7 @@ namespace Lisple
 
   FUNC(NthFunction, nth);
 
-  /*! @brief Partition a sequence into an array of equally sized arrays.
+  /*! @brief Partition a sequence into an vector of equally sized vectors.
    *
    * Usage:
    * @code
@@ -189,7 +189,7 @@ namespace Lisple
   FUNC(RemoveNthBangFunction, remove_nth_bang)
 
   /*!
-   * @brief Repeat a value or series of values n times into an array.
+   * @brief Repeat a value or series of values n times into an vector.
    *
    * Usage:
    * @code

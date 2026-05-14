@@ -30,7 +30,7 @@ TEST(to_rt_value, vector_with_string_child)
 {
   Lisple::sptr_sobject_v ast_elements = {Lisple::String::make("first"),
                                          Lisple::String::make("second")};
-  Lisple::sptr_sobject ast_vector = Lisple::Array::make(std::move(ast_elements));
+  Lisple::sptr_sobject ast_vector = Lisple::Vector::make(std::move(ast_elements));
 
   Lisple::sptr_rtval_v rt_elements = {Lisple::RTValue::string("first"),
                                       Lisple::RTValue::string("second")};
@@ -40,7 +40,7 @@ TEST(to_rt_value, vector_with_string_child)
 
 TEST(to_rt_value, map_with_string_value)
 {
-  Lisple::sptr_sobject_v ast_elements = {Lisple::Key::make("name"),
+  Lisple::sptr_sobject_v ast_elements = {Lisple::Keyword::make("name"),
                                          Lisple::String::make("Swedish Lion")};
   Lisple::sptr_sobject ast_map = Lisple::Map::make(std::move(ast_elements));
 

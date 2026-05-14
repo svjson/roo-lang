@@ -14,9 +14,9 @@ namespace Lisple
 {
   /* DefForm */
   SPECIAL_FORM_IMPL(DefForm,
-                    MULTI_SIG((FN_ARGS((&Type::WORD, DATA), (&Type::ANY)),
+                    MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA), (&Type::ANY)),
                                EXEC_DISPATCH(&DefForm::execnode_def)),
-                              (FN_ARGS((&Type::WORD, DATA), (&Type::STRING), (&Type::ANY)),
+                              (FN_ARGS((&Type::SYMBOL, DATA), (&Type::STRING), (&Type::ANY)),
                                EXEC_DISPATCH(&DefForm::execnode_def_docstring))))
 
   SFORM_LOWER_IMPL(DefForm)
@@ -26,7 +26,7 @@ namespace Lisple
     {
       throw LispleException("Invalid def form: " + ast_node->to_string());
     }
-    if (elements[1]->get_type() != Lisple::Form::WORD)
+    if (elements[1]->get_type() != Lisple::Form::SYMBOL)
     {
       throw TypeError("Invalid symbol name: " + elements[0]->to_string());
     }
@@ -35,7 +35,7 @@ namespace Lisple
       throw LispleException("Invalid def form: " + ast_node->to_string());
     }
 
-    Lisple::Word& symbol = elements[1]->as<Lisple::Word>();
+    Lisple::Symbol& symbol = elements[1]->as<Lisple::Symbol>();
     sptr_sobject doc_string = elements.size() == 4 ? elements[2] : nullptr;
     sptr_sobject value = !doc_string ? elements[2] : elements[3];
 
@@ -175,15 +175,15 @@ namespace Lisple
 
   /* NsMacro */
   SPECIAL_FORM_IMPL(NsForm,
-                    MULTI_SIG((FN_ARGS((&Type::WORD, DATA)),
+                    MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA)),
                                EXEC_DISPATCH(&NsForm::execnode_ns)),
-                              (FN_ARGS((&Type::WORD, DATA), (&Type::LIST, DATA)),
+                              (FN_ARGS((&Type::SYMBOL, DATA), (&Type::LIST, DATA)),
                                EXEC_DISPATCH(&NsForm::execnode_ns))))
 
-  Key KEY_REQUIRE("require");
-  Key KEY_AS("as");
+  Keyword KEY_REQUIRE("require");
+  Keyword KEY_AS("as");
 
-  void throw_ns_exception(Word& ns, List& req_list, std::string msg = "")
+  void throw_ns_exception(Symbol& ns, List& req_list, std::string msg = "")
   {
     std::string ns_decl = "(ns " + ns.value;
     ns_decl += " " + req_list.to_string();
@@ -196,7 +196,7 @@ namespace Lisple
   {
     sptr_sobject_v& elements = ast_node->get_children();
 
-    Word& ns_word = elements[1]->as<Word>();
+    Symbol& ns_symbol = elements[1]->as<Symbol>();
 
     Lisple::sptr_sobject_v imports;
     if (elements.size() == 3)
@@ -204,7 +204,7 @@ namespace Lisple
       Lisple::List& list = elements.back()->as<List>();
       if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
       {
-        throw_ns_exception(ns_word, list);
+        throw_ns_exception(ns_symbol, list);
       }
       imports = list.tail();
 
@@ -212,64 +212,64 @@ namespace Lisple
       // FIXME: Maybe implement some kind of Matcher system for forms?
       for (auto& imp : imports)
       {
-        if (Type::WORD.is_type_of(*imp))
+        if (Type::SYMBOL.is_type_of(*imp))
         {
-          if (imp->as<Word>().is_qualified())
+          if (imp->as<Symbol>().is_qualified())
           {
-            throw_ns_exception(ns_word,
+            throw_ns_exception(ns_symbol,
                                list,
                                ". Invalid require-entry: " + imp->to_string());
           }
         }
-        else if (Type::ARRAY.is_type_of(*imp))
+        else if (Type::VECTOR.is_type_of(*imp))
         {
           if (imp->get_children().size() != 3)
           {
-            throw_ns_exception(ns_word,
+            throw_ns_exception(ns_symbol,
                                list,
                                ". Invalid require-entry: " + imp->to_string());
           }
 
           if (*imp->get_children()[1] == KEY_AS)
           {
-            if (!Type::WORD.is_type_of(*imp->get_children().back()) ||
-                imp->get_children().back()->as<Word>().is_qualified())
+            if (!Type::SYMBOL.is_type_of(*imp->get_children().back()) ||
+                imp->get_children().back()->as<Symbol>().is_qualified())
             {
-              throw_ns_exception(ns_word,
+              throw_ns_exception(ns_symbol,
                                  list,
                                  ". Invalid require-entry: " + imp->to_string());
             }
           }
           else
           {
-            throw_ns_exception(ns_word,
+            throw_ns_exception(ns_symbol,
                                list,
                                ". Invalid require-entry: " + imp->to_string());
           }
         }
         else
         {
-          throw_ns_exception(ns_word, list, ". Invalid require-entry: " + imp->to_string());
+          throw_ns_exception(ns_symbol, list, ". Invalid require-entry: " + imp->to_string());
         }
       }
     }
 
-    ctx.ctx->switch_namespace(ns_word.value);
+    ctx.ctx->switch_namespace(ns_symbol.value);
     for (auto& imp : imports)
     {
-      if (Type::WORD.is_type_of(*imp))
+      if (Type::SYMBOL.is_type_of(*imp))
       {
         // Full import
-        Word& imp_word = imp->as<Word>();
-        ctx.ctx->import_namespace(imp_word.value);
+        Symbol& imp_symbol = imp->as<Symbol>();
+        ctx.ctx->import_namespace(imp_symbol.value);
       }
-      else if (Type::ARRAY.is_type_of(*imp))
+      else if (Type::VECTOR.is_type_of(*imp))
       {
         // Aliased import
-        Array& imp_array = imp->as<Array>();
-        Word& imp_word = imp_array.head()->as<Word>();
-        Word& alias_word = imp_array.get_children().back()->as<Word>();
-        ctx.ctx->define_namespace_alias(imp_word.value, alias_word.value);
+        Vector& imp_vector = imp->as<Vector>();
+        Symbol& imp_symbol = imp_vector.head()->as<Symbol>();
+        Symbol& alias_symbol = imp_vector.get_children().back()->as<Symbol>();
+        ctx.ctx->define_namespace_alias(imp_symbol.value, alias_symbol.value);
       }
     }
 
@@ -342,9 +342,9 @@ namespace Lisple
 
   /** ResolveFunction - resolve */
   FUNC_IMPL(ResolveFunction,
-            MULTI_SIG((FN_ARGS((&Lisple::Type::SYMBOL)),
+            MULTI_SIG((FN_ARGS((&Lisple::Type::QUOTED_SYMBOL)),
                        EXEC_DISPATCH(&ResolveFunction::exec_resolve)),
-                      (FN_ARGS((&Lisple::Type::WORD)),
+                      (FN_ARGS((&Lisple::Type::SYMBOL)),
                        EXEC_DISPATCH(&ResolveFunction::exec_resolve))))
 
   EXEC_BODY(ResolveFunction, exec_resolve)
@@ -379,13 +379,13 @@ namespace Lisple
 
   /** SetBangForm - set! */
   SPECIAL_FORM_IMPL(SetBangForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (&Lisple::Type::ANY)),
+                    SIG((FN_ARGS((&Type::VECTOR, DATA), (&Lisple::Type::ANY)),
                          EXEC_DISPATCH(&SetBangForm::execnode_set))))
 
   SFORM_LOWER_IMPL(SetBangForm)
   {
     auto& elements = ast_node->get_children();
-    if (elements.size() != 3 || elements[1]->get_type() != Form::ARRAY)
+    if (elements.size() != 3 || elements[1]->get_type() != Form::VECTOR)
     {
       throw TypeError("Invalid set! form: " + ast_node->to_string());
     }

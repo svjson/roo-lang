@@ -42,7 +42,7 @@ namespace Lisple
    *
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
-   * | 0     | An array of argument declarations. Each declaration can be a     |
+   * | 0     | An vector of argument declarations. Each declaration can be a     |
    * |       | symbol or a destructuring form.                                  |
    * | 1...  | One or more forms that make up the body of the function.         |
    */

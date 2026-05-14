@@ -144,7 +144,7 @@ TEST_F(Signature, matches__leading_varargs)
   // Given
   Lisple::MapFunction dummy_func;
   Lisple::Signature signature(
-    Lisple::arg_v{Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY),
+    Lisple::arg_v{Lisple::arg(Lisple::VARARG, &Lisple::Type::VECTOR),
                   Lisple::arg(&Lisple::Type::FUNCTION)},
     std::bind(&Lisple::MapFunction::exec_map,
               &dummy_func,
@@ -167,7 +167,7 @@ TEST_F(Signature, matches__trailing_varargs)
   Lisple::MapFunction dummy_func;
   Lisple::Signature signature(
     Lisple::arg_v{Lisple::arg(&Lisple::Type::FUNCTION),
-                  Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY)},
+                  Lisple::arg(Lisple::VARARG, &Lisple::Type::VECTOR)},
     std::bind(&Lisple::MapFunction::exec_map,
               &dummy_func,
               std::placeholders::_1,
@@ -191,8 +191,8 @@ TEST_F(Signature, matches__trailing_varargs_of_same_type)
   // Given
   Lisple::MapFunction dummy_func;
   Lisple::Signature signature(
-    Lisple::arg_v{Lisple::arg(&Lisple::Type::ARRAY),
-                  Lisple::arg(Lisple::VARARG, &Lisple::Type::ARRAY)},
+    Lisple::arg_v{Lisple::arg(&Lisple::Type::VECTOR),
+                  Lisple::arg(Lisple::VARARG, &Lisple::Type::VECTOR)},
     std::bind(&Lisple::MapFunction::exec_map,
               &dummy_func,
               std::placeholders::_1,
@@ -254,7 +254,7 @@ TEST_F(Signature, coerce_args__no_coercion_available)
     ThrowsMessage<Lisple::InvocationException>(HasSubstr("No matching")));
 }
 
-TEST_F(Signature, coerce_args__coerce_array_of_array_of_native_object)
+TEST_F(Signature, coerce_args__coerce_vector_of_vector_of_native_object)
 {
   // Given
   auto& reader = runtime;
@@ -263,11 +263,11 @@ TEST_F(Signature, coerce_args__coerce_array_of_array_of_native_object)
     "make-vehicle-model",
     LispleTest::Native::VehicleModelMakeFunction::make());
   reader.get_current_namespace().store(
-    "a-of-a-taker",
-    LispleTest::Native::ArrayOfArrayTaker::make());
+    "v-of-v-taker",
+    LispleTest::Native::VectorOfVectorTaker::make());
 
   // When
-  Lisple::sptr_rtval result = reader.eval(R"((a-of-a-taker
+  Lisple::sptr_rtval result = reader.eval(R"((v-of-v-taker
 [[(make-vehicle-model {:model-name "Batmobile" :seats 1}) (make-vehicle-model {:model-name "Dreamy Boom-Boom" :seats 10})]
  [(make-vehicle-model {:model-name "V8 Interceptor" :seats 2}) (make-vehicle-model {:model-name "Clown Car" :seats 1})]]
 ))");
@@ -291,7 +291,7 @@ TEST_F(Signature, coerce_args__coerce_array_of_array_of_native_object)
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*child2->elements().at(1)));
 }
 
-TEST_F(Signature, coerce_args__coerce_array_elements)
+TEST_F(Signature, coerce_args__coerce_vector_elements)
 {
   // Given
   auto& reader = runtime;

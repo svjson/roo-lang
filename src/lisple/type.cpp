@@ -181,7 +181,7 @@ namespace Lisple
       sptr_rtval coerced_seq;
       switch (seq_type->form_type)
       {
-      case Form::ARRAY:
+      case Form::VECTOR:
         coerced_seq = RTValue::vector(std::move(coerced_elements));
         break;
       case Form::LIST:

@@ -43,9 +43,9 @@ namespace Lisple
 
   struct LookupNode
   {
-    Word identifier;
+    Symbol identifier;
 
-    LookupNode(Word id);
+    LookupNode(Symbol id);
   };
 
   struct MapNode

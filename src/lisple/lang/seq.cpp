@@ -85,7 +85,7 @@ namespace Lisple
     for (size_t i = 1; i < args.size(); i++)
     {
       auto& vec = args[i];
-      if ((Type::ARRAY.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) &&
+      if ((Type::VECTOR.is_type_of(*vec) || Type::LIST.is_type_of(*vec)) &&
           *vec != *Constant::NIL)
       {
         for (auto& element : vec->elements())
@@ -310,17 +310,17 @@ namespace Lisple
   EXEC_BODY(RepeatFunction, exec_repeat)
   {
     int n = args[0]->num().get_int();
-    Lisple::sptr_rtval_v array;
-    array.reserve(n * (args.size() - 1));
+    Lisple::sptr_rtval_v vector;
+    vector.reserve(n * (args.size() - 1));
     for (int ni = 0; ni < n; ni++)
     {
       for (size_t i = 1; i < args.size(); i++)
       {
-        array.push_back(args[i]);
+        vector.push_back(args[i]);
       }
     }
 
-    return RTValue::vector(std::move(array));
+    return RTValue::vector(std::move(vector));
   }
 
   /** TailFunction - tail */

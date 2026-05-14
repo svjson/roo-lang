@@ -26,11 +26,11 @@ TEST_F(TypeRef, is_type_of)
 
   EXPECT_FALSE(Lisple::Type::FUNCTION.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::MAP.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::VECTOR.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::STRING.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::WORD.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::KEY.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::SYMBOL.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::KEYWORD.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::QUOTED_SYMBOL.is_type_of(obj));
 }
 
 TEST_F(TypeRef, rtwrapper_is_type_of)
@@ -47,25 +47,25 @@ TEST_F(TypeRef, rtwrapper_is_type_of)
 
   EXPECT_FALSE(Lisple::Type::FUNCTION.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::STRING.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::VECTOR.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::LIST.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::WORD.is_type_of(obj));
-  EXPECT_FALSE(Lisple::Type::KEY.is_type_of(obj));
   EXPECT_FALSE(Lisple::Type::SYMBOL.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::KEYWORD.is_type_of(obj));
+  EXPECT_FALSE(Lisple::Type::QUOTED_SYMBOL.is_type_of(obj));
 }
 
 TEST_F(MultiRef, is_type_of)
 {
   // When
   Lisple::List list;
-  Lisple::Array array;
+  Lisple::Vector vector;
   Lisple::Map map;
   Lisple::String string("");
   Lisple::Boolean boolean(false);
 
   // Then
   EXPECT_TRUE(Lisple::Type::SEQ.is_type_of(list));
-  EXPECT_TRUE(Lisple::Type::SEQ.is_type_of(array));
+  EXPECT_TRUE(Lisple::Type::SEQ.is_type_of(vector));
   EXPECT_TRUE(Lisple::Type::SEQ.is_type_of(map));
 
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(string));
@@ -77,60 +77,60 @@ TEST_F(AnyRef, is_type_of)
   // Given
   Lisple::List list;
   Lisple::Map map;
-  Lisple::Array array;
+  Lisple::Vector vector;
   Lisple::String string("string");
-  Lisple::Key key("string");
-  Lisple::QSymbol symbol("symbol");
-  Lisple::Word word("word");
+  Lisple::Keyword key("string");
+  Lisple::QuotedSymbol quoted_symbol("symbol");
+  Lisple::Symbol symbol("symbol");
 
   // Then
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(list));
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(map));
-  EXPECT_TRUE(Lisple::Type::ANY.is_type_of(array));
+  EXPECT_TRUE(Lisple::Type::ANY.is_type_of(vector));
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(string));
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(key));
+  EXPECT_TRUE(Lisple::Type::ANY.is_type_of(quoted_symbol));
   EXPECT_TRUE(Lisple::Type::ANY.is_type_of(symbol));
-  EXPECT_TRUE(Lisple::Type::ANY.is_type_of(word));
 }
 
-TEST_F(SeqRef, Array_of_String__is_type_of)
+TEST_F(SeqRef, Vector_of_String__is_type_of)
 {
   // Given
-  auto array_of_string = runtime.eval("[\"string1\" \"string2\" \"string3\"]");
-  auto array_of_mixed = runtime.eval("[\"string1\" :key1 'sym1]");
+  auto vector_of_string = runtime.eval("[\"string1\" \"string2\" \"string3\"]");
+  auto vector_of_mixed = runtime.eval("[\"string1\" :key1 'sym1]");
   Lisple::String string("string");
-  Lisple::Key key("string");
-  Lisple::QSymbol symbol("symbol");
-  Lisple::Word word("word");
+  Lisple::Keyword key("string");
+  Lisple::QuotedSymbol quoted_symbol("symbol");
+  Lisple::Symbol symbol("symbol");
   auto list_of_string =
     runtime.eval(ctx, "'(\"stringA\" \"stringB\" \"stringC\")");
 
   // Then
-  EXPECT_TRUE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*array_of_string));
+  EXPECT_TRUE(Lisple::Type::VECTOR_OF_STRING.is_type_of(*vector_of_string));
 
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*list_of_string));
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(*array_of_mixed));
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(string));
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(key));
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(symbol));
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_STRING.is_type_of(word));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_STRING.is_type_of(*list_of_string));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_STRING.is_type_of(*vector_of_mixed));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_STRING.is_type_of(string));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_STRING.is_type_of(key));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_STRING.is_type_of(quoted_symbol));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_STRING.is_type_of(symbol));
 }
 
-TEST_F(SeqRef, Array_of_Char__is_type_of__nil_is_valid)
+TEST_F(SeqRef, Vector_of_Char__is_type_of__nil_is_valid)
 {
   // Given
-  auto array_of_char = runtime.eval("['A' 'B' 'C' 'D' 'E']");
-  auto array_of_char_with_nils = runtime.eval("['A' 'B' 'C' nil 'E']");
-  auto array_of_mixed = runtime.eval("['A' 'B' 3 \"D\" 'E']");
+  auto vector_of_char = runtime.eval("['A' 'B' 'C' 'D' 'E']");
+  auto vector_of_char_with_nils = runtime.eval("['A' 'B' 'C' nil 'E']");
+  auto vector_of_mixed = runtime.eval("['A' 'B' 3 \"D\" 'E']");
 
   // Then
-  EXPECT_TRUE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_char));
-  EXPECT_TRUE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_char_with_nils));
+  EXPECT_TRUE(Lisple::Type::VECTOR_OF_CHAR.is_type_of(*vector_of_char));
+  EXPECT_TRUE(Lisple::Type::VECTOR_OF_CHAR.is_type_of(*vector_of_char_with_nils));
 
-  EXPECT_FALSE(Lisple::Type::ARRAY_OF_CHAR.is_type_of(*array_of_mixed));
+  EXPECT_FALSE(Lisple::Type::VECTOR_OF_CHAR.is_type_of(*vector_of_mixed));
 }
 
-TEST_F(SeqRef, Array_of_NativeObject__is_type_of)
+TEST_F(SeqRef, Vector_of_NativeObject__is_type_of)
 {
   // Given
   Lisple::sptr_rtval model_vector = Lisple::RTValue::vector(
@@ -139,10 +139,10 @@ TEST_F(SeqRef, Array_of_NativeObject__is_type_of)
      LispleTest::Native::VehicleModelAdapter::make_unique("Apollo 13", 4)});
 
   // Then
-  EXPECT_TRUE(LispleTest::ARRAY_OF_VEHICLE_MODEL.is_type_of(*model_vector));
+  EXPECT_TRUE(LispleTest::VECTOR_OF_VEHICLE_MODEL.is_type_of(*model_vector));
 }
 
-TEST_F(SeqRef, Array_of_Map__coerce_to_Array_of_NativeObject)
+TEST_F(SeqRef, Vector_of_Map__coerce_to_Vector_of_NativeObject)
 {
   // Given
   std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
@@ -160,9 +160,9 @@ TEST_F(SeqRef, Array_of_Map__coerce_to_Array_of_NativeObject)
                                                    Lisple::RTValue::number(2)})});
 
   // When
-  auto coercion_result = LispleTest::ARRAY_OF_VEHICLE_MODEL.coerce(ctx, map_vector);
+  auto coercion_result = LispleTest::VECTOR_OF_VEHICLE_MODEL.coerce(ctx, map_vector);
 
   // Then
   ASSERT_TRUE(coercion_result.success);
-  ASSERT_TRUE(LispleTest::ARRAY_OF_VEHICLE_MODEL.is_type_of(*coercion_result.result));
+  ASSERT_TRUE(LispleTest::VECTOR_OF_VEHICLE_MODEL.is_type_of(*coercion_result.result));
 }

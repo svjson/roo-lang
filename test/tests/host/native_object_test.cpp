@@ -105,7 +105,7 @@ namespace
   ADAPTER_PROP_GET(VectorBoxAdapter, FIELD(values), VECTOR_COPY(VALUE));
   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(VectorBoxAdapter,
                                                keyword_values,
-                                               Lisple::Key);
+                                               Lisple::Keyword);
   ADAPTER_PROP_GET(VectorBoxAdapter,
                    FIELD(children),
                    VECTOR_COPY(ADAPTER(LispleTest::Native::OptionalChildAdapter)));
@@ -138,7 +138,7 @@ TEST(NativeObjectAdapter_VehicleModel, type)
   EXPECT_TRUE(Lisple::Type::NATIVE_OBJECT.is_type_of(*val));
   EXPECT_TRUE(LispleTest::VEHICLE_MODEL_TYPE.is_type_of(*val));
 
-  EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(*val));
+  EXPECT_FALSE(Lisple::Type::VECTOR.is_type_of(*val));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(*val));
   EXPECT_FALSE(Lisple::Type::MAP.is_type_of(*val));
   EXPECT_FALSE(LispleTest::Native::PRODUCT.is_type_of(*val));

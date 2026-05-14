@@ -10,7 +10,7 @@ using ContainsPredicateFunction = LispleTest::RuntimeTestFixture;
  * ======================================================================
  */
 
-TEST_F(ContainsPredicateFunction, contains_array)
+TEST_F(ContainsPredicateFunction, contains_vector)
 {
   // Given
   runtime.eval("(def my-vec [1 3 5 6 7 8])");

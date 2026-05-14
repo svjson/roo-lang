@@ -75,7 +75,7 @@ namespace Lisple::Dict
     }
     else if (target.type == RTValue::Type::OBJECT)
     {
-      auto key = Lisple::Key::make(keyword);
+      auto key = Lisple::Keyword::make(keyword);
       auto val = std::get<sptr_sobject>(target.value)->get_sptr_property(*key);
       return to_rt_value(val);
     }
@@ -102,7 +102,7 @@ namespace Lisple::Dict
       }
     }
 
-    throw InvocationException("Key :" + keyword + " not present in " + source.to_string());
+    throw InvocationException("Keyword :" + keyword + " not present in " + source.to_string());
   }
 
   sptr_rtval get_property_path(const sptr_rtval& object, const sptr_rtval_v& path)

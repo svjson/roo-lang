@@ -75,30 +75,30 @@ TEST_F(Runtime, instantiation_with_multiple_namespaces)
   EXPECT_FALSE(runtime.has_file_system_access());
 }
 
-TEST_F(Runtime, eval__word__lookup)
+TEST_F(Runtime, eval__symbol__lookup)
 {
   // Given
-  std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  runtime.get_current_namespace().store("my-word",
+  std::shared_ptr<Lisple::Object> symbol = std::make_shared<Lisple::Symbol>("my-symbol");
+  runtime.get_current_namespace().store("my-symbol",
                                         Lisple::RTValue::string("my-string"));
 
   // When
-  auto result = runtime.eval(word);
+  auto result = runtime.eval(symbol);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*result));
 }
 
-TEST_F(Runtime, eval__word__no_lookup)
+TEST_F(Runtime, eval__symbol__no_lookup)
 {
   // Given
-  std::shared_ptr<Lisple::Object> word = std::make_shared<Lisple::Word>("my-word");
-  runtime.get_current_namespace().store("my-word",
+  std::shared_ptr<Lisple::Object> symbol = std::make_shared<Lisple::Symbol>("my-symbol");
+  runtime.get_current_namespace().store("my-symbol",
                                         Lisple::RTValue::string("my-string"));
 
   // When
   ctx.push_context(false);
-  auto result = runtime.eval(word);
+  auto result = runtime.eval(symbol);
 
   // Then
   EXPECT_TRUE(Lisple::Type::STRING.is_type_of(*result));
@@ -107,7 +107,7 @@ TEST_F(Runtime, eval__word__no_lookup)
 TEST_F(Runtime, eval__quoted_list)
 {
   // When
-  auto result = runtime.eval("'(these are bare words)");
+  auto result = runtime.eval("'(these are bare symbols)");
 
   // Then
   ASSERT_TRUE(Lisple::Type::LIST.is_type_of(*result));
@@ -117,7 +117,7 @@ TEST_F(Runtime, eval__quoted_list)
   EXPECT_EQ(*result->elements().at(0), *Lisple::RTValue::symbol("these"));
   EXPECT_EQ(*result->elements().at(1), *Lisple::RTValue::symbol("are"));
   EXPECT_EQ(*result->elements().at(2), *Lisple::RTValue::symbol("bare"));
-  EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("words"));
+  EXPECT_EQ(*result->elements().at(3), *Lisple::RTValue::symbol("symbols"));
 }
 
 TEST_F(Runtime, lookup__string_with_default__returns_value_when_found)

@@ -12,13 +12,13 @@ using FilterFunction = LispleTest::RuntimeTestFixture;
  * ======================================================================
  */
 
-TEST_F(FilterFunction, filter_array)
+TEST_F(FilterFunction, filter_vector)
 {
   // Given
   auto result = runtime.eval("(filter [1 2 3 4 5 6] even?)");
 
   // Then
-  ASSERT_TRUE(Lisple::Type::ARRAY.is_type_of(*result));
+  ASSERT_TRUE(Lisple::Type::VECTOR.is_type_of(*result));
 
   ASSERT_EQ(Lisple::count(*result), 3);
 

@@ -776,11 +776,11 @@ namespace Lisple
 
     switch (obj.get_type())
     {
-    case Form::ARRAY:
+    case Form::VECTOR:
     {
       sptr_rtval_v elements;
 
-      for (auto& c : dynamic_cast<const Array*>(&obj)->children)
+      for (auto& c : dynamic_cast<const Vector*>(&obj)->children)
       {
         elements.push_back(to_rt_value(c));
       }
@@ -802,7 +802,7 @@ namespace Lisple
       return RTValue::boolean(Value<bool>::value_of(obj));
     case Form::CHAR:
       return RTValue::character(Value<char>::value_of(obj));
-    case Form::KEY:
+    case Form::KEYWORD:
       return RTValue::keyword(Value<std::string>::value_of(obj));
     case Form::MAP:
     {
@@ -833,9 +833,9 @@ namespace Lisple
     }
     case Form::STRING:
       return RTValue::string(Value<std::string>::value_of(obj));
-    case Form::SYMBOL:
+    case Form::QUOTED_SYMBOL:
       return RTValue::symbol(Value<std::string>::value_of(obj));
-    case Form::WORD:
+    case Form::SYMBOL:
       return RTValue::symbol(Value<std::string>::value_of(obj));
     default:
       throw LispleException("to_rt_value(Object&): Unsupported value type #" +
@@ -850,7 +850,7 @@ namespace Lisple
     to_rtvalue_conversions++;
     switch (obj->get_type())
     {
-    case Form::ARRAY:
+    case Form::VECTOR:
     case Form::BOOLEAN:
     case Form::CHAR:
     case Form::MAP:
@@ -864,7 +864,7 @@ namespace Lisple
       return RTValue::object(obj);
     case Form::HOST_SEQ:
       return RTValue::object(obj);
-    case Form::KEY:
+    case Form::KEYWORD:
       return RTValue::keyword(Value<std::string>::value_of(*obj));
     case Form::NIL:
       return Constant::NIL;
@@ -884,8 +884,8 @@ namespace Lisple
     }
     case Form::STRING:
       return RTValue::string(Value<std::string>::value_of(*obj));
+    case Form::QUOTED_SYMBOL:
     case Form::SYMBOL:
-    case Form::WORD:
       return RTValue::symbol(Value<std::string>::value_of(*obj));
     default:
       throw LispleException("to_rt_value: Unsupported RTValue type(" +
@@ -919,7 +919,7 @@ namespace Lisple
     {
       if (std::string* s = std::get_if<std::string>(&val.value))
       {
-        return Lisple::Key::make(*s);
+        return Lisple::Keyword::make(*s);
       }
       else
       {
@@ -972,7 +972,7 @@ namespace Lisple
     case RTValue::Type::STRING:
       return Lisple::String::make(std::get<std::string>(val.value));
     case RTValue::Type::SYMBOL:
-      return Lisple::Word::make(std::get<std::string>(val.value));
+      return Lisple::Symbol::make(std::get<std::string>(val.value));
     case RTValue::Type::VECTOR:
     {
       sptr_sobject_v elements;
@@ -982,7 +982,7 @@ namespace Lisple
         elements.push_back(to_AST(*element));
       }
 
-      return Lisple::Array::make(std::move(elements));
+      return Lisple::Vector::make(std::move(elements));
     }
 
     default:

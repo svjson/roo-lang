@@ -25,7 +25,7 @@ namespace Lisple
    * | 0     | The object to create a copy of                                   |
    * | 1     | The key whose value to set or substitute                         |
    * | 2     | The value to associate with the key                              |
-   * | 3..n  | Optional repetions of #1 and #2, Key/value arguments, passed as  |
+   * | 3..n  | Optional repetions of #1 and #2, Keyword/value arguments, passed as  |
    * |       | complete pairs                                                   |
    */
   FUNC(AssocFunction, assoc, assoc_seq)

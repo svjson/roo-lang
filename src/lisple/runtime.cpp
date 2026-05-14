@@ -312,7 +312,7 @@ namespace Lisple
 
   sptr_rtval Runtime::lookup(const std::string& identifier_s)
   {
-    Word identifier(identifier_s);
+    Symbol identifier(identifier_s);
     if (identifier.is_qualified())
     {
       Namespace* _ns = ns(identifier.get_qualifier());

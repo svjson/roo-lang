@@ -26,7 +26,7 @@ namespace Lisple
 
   /*!
    * @brief Executes a form for every element in a sequence, binding the element
-   * to the local scope. Returns an array constructed from the return value of
+   * to the local scope. Returns an vector constructed from the return value of
    * each iteration
    *
    * Usage:

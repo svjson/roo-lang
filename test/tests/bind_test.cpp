@@ -65,7 +65,7 @@ TEST(MapDestructureBinding, invalid_binding_form_throws_exception)
   // Given
   Lisple::sptr_rtval bind_form =
     Lisple::RTValue::map({Lisple::RTValue::keyword("keys"),
-                          Lisple::RTValue::map({// This should be array
+                          Lisple::RTValue::map({// This should be vector
                                                 Lisple::RTValue::symbol("var1"),
                                                 Lisple::RTValue::symbol("var2")})});
 

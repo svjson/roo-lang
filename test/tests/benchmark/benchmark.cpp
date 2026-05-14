@@ -293,7 +293,7 @@ namespace LispleTest
     if (parse_result.size() != 1)
     {
       throw Lisple::LispleException("SnippetBenchmark expects a single root form. Got" +
-                                    Lisple::Array::make(parse_result)->to_string());
+                                    Lisple::Vector::make(parse_result)->to_string());
     }
 
     Lisple::execution_started = true;

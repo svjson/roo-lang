@@ -44,7 +44,7 @@ TEST_F(LetForm, define_and_exec_let_with_dynamic_values)
   ASSERT_EQ(ctx.stack_size(), 1);
 }
 
-TEST_F(LetForm, destructure_array)
+TEST_F(LetForm, destructure_vector)
 {
   // Given
   auto result = runtime.eval("(let [[a b] [10 25]] (+ a b))");
@@ -53,7 +53,7 @@ TEST_F(LetForm, destructure_array)
   ASSERT_EQ(result->to_string(), "35");
 }
 
-TEST_F(LetForm, destructure_array_binds_missing_values_to_nil)
+TEST_F(LetForm, destructure_vector_binds_missing_values_to_nil)
 {
   // Given
   auto result = runtime.eval("(let [[a b] [:a]] b)");

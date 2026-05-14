@@ -18,7 +18,7 @@ namespace Lisple
 {
   /** DoTimes - dotimes */
   SPECIAL_FORM_IMPL(DoTimesForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                    SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoTimesForm::execnode_dotimes))))
 
   SFORM_LOWER_IMPL(DoTimesForm)
@@ -30,7 +30,7 @@ namespace Lisple
       throw LispleException("dotimes: No bind form - " + ast_node->to_string());
     }
 
-    if (elements[1]->get_type() != Form::ARRAY || elements[1]->size() < 1 ||
+    if (elements[1]->get_type() != Form::VECTOR || elements[1]->size() < 1 ||
         elements[1]->size() > 2)
     {
       throw LispleException("dotimes: Invalid bind form - " + ast_node->to_string());
@@ -119,7 +119,7 @@ namespace Lisple
       throw LispleException("for: No loop expression - " + ast_node->to_string());
     }
 
-    if (elements[1]->get_type() != Form::ARRAY || elements[1]->size() != 2)
+    if (elements[1]->get_type() != Form::VECTOR || elements[1]->size() != 2)
     {
       throw LispleException("for: Invalid loop expression - " + ast_node->to_string());
     }
@@ -188,7 +188,7 @@ namespace Lisple
 
   /** ForIndexedForm - for-indexed */
   SPECIAL_FORM_IMPL(ForIndexedForm,
-                    SIG((FN_ARGS((&Type::ARRAY, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                    SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&ForIndexedForm::execnode_for_indexed))))
 
   SFORM_LOWER_IMPL(ForIndexedForm)
@@ -200,7 +200,7 @@ namespace Lisple
       throw LispleException("for-indexed: No loop expression - " + ast_node->to_string());
     }
 
-    if (elements[1]->get_type() != Form::ARRAY || elements[1]->size() != 3)
+    if (elements[1]->get_type() != Form::VECTOR || elements[1]->size() != 3)
     {
       throw LispleException("for-indexed: Invalid loop expression - " +
                             ast_node->to_string());

@@ -69,9 +69,9 @@ namespace Lisple
       lowered_expressions++;
       return std::make_unique<ExecNode>(obj, MapNode(std::move(elements)));
     }
-    case Form::ARRAY:
+    case Form::VECTOR:
     {
-      auto& vec = obj->as<Array>();
+      auto& vec = obj->as<Vector>();
       const auto& children = vec.get_children();
 
       std::vector<uptr_exec_node> elements;
@@ -91,27 +91,27 @@ namespace Lisple
     case Form::STRING:
     case Form::BOOLEAN:
     case Form::HOST_OBJECT:
-    case Form::KEY:
+    case Form::KEYWORD:
     case Form::B_TRUE:
     case Form::B_FALSE:
     case Form::NIL:
       return lower_literal(obj);
 
-    case Form::SYMBOL:
+    case Form::QUOTED_SYMBOL:
       lowered_expressions++;
-      return std::make_unique<ExecNode>(RTValue::symbol(obj->as<QSymbol>().value));
+      return std::make_unique<ExecNode>(RTValue::symbol(obj->as<QuotedSymbol>().value));
 
-    case Form::WORD:
+    case Form::SYMBOL:
     {
       if (ctx.is_allow_lookup() && ctx.ctx)
       {
         sptr_rtval static_val;
         try
         {
-          const Word& word = obj->as<Word>();
-          static_val = word.is_qualified()
-                         ? ctx.ctx->lookup(word.to_string())
-                         : ctx.ctx->get_current_namespace()->lookup(word.get_identifier());
+          const Symbol& symbol = obj->as<Symbol>();
+          static_val = symbol.is_qualified()
+                         ? ctx.ctx->lookup(symbol.to_string())
+                         : ctx.ctx->get_current_namespace()->lookup(symbol.get_identifier());
         }
         catch (const IdentifierException&)
         {
@@ -119,7 +119,7 @@ namespace Lisple
         }
         if (!static_val)
         {
-          static_val = ctx.ctx->lang().lookup(obj->as<Word>().get_identifier());
+          static_val = ctx.ctx->lang().lookup(obj->as<Symbol>().get_identifier());
         }
         if (static_val)
         {
@@ -128,7 +128,7 @@ namespace Lisple
         }
       }
       lowered_expressions++;
-      return std::make_unique<ExecNode>(obj, LookupNode(obj->as<Word>()));
+      return std::make_unique<ExecNode>(obj, LookupNode(obj->as<Symbol>()));
     }
 
     case Form::LIST:
@@ -242,7 +242,7 @@ namespace Lisple
       }
       return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::list(elements), obj));
     }
-    case Form::ARRAY:
+    case Form::VECTOR:
     {
       sptr_rtval_v elements;
       elements.reserve(obj->get_children().size());
@@ -271,10 +271,10 @@ namespace Lisple
       sptr_sobject ho = obj;
       return std::make_unique<ExecNode>(obj, LiteralNode(RTValue::object(ho), obj));
     }
-    case Form::KEY:
+    case Form::KEYWORD:
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(RTValue::keyword(obj->as<Key>().value), obj));
+        LiteralNode(RTValue::keyword(obj->as<Keyword>().value), obj));
     case Form::NUMBER:
     {
       auto& num_obj = obj->as<Lisple::Number>();
@@ -307,8 +307,8 @@ namespace Lisple
       return std::make_unique<ExecNode>(
         obj,
         LiteralNode(RTValue::string(Value<std::string>::value_of(*obj)), obj));
+    case Form::QUOTED_SYMBOL:
     case Form::SYMBOL:
-    case Form::WORD:
       return std::make_unique<ExecNode>(
         obj,
         LiteralNode(RTValue::symbol(Value<std::string>::value_of(*obj)), obj));
