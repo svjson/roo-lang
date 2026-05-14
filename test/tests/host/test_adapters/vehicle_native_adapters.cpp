@@ -26,8 +26,8 @@ namespace LispleTest::Native
                       (model),
                       ("reg-number", reg_number))
 
-  NOBJ_PROP_GET_ADAPTER__METHOD(VehicleAdapter, model, VehicleModelAdapter);
-  NOBJ_PROP_GET_SET_ADAPTER__METHOD(VehicleAdapter, reg_number, RegNumberAdapter);
+  ADAPTER_PROP_GET(VehicleAdapter, METHOD(model), ADAPTER(VehicleModelAdapter));
+  ADAPTER_PROP_GET_SET(VehicleAdapter, METHOD(reg_number), ADAPTER(RegNumberAdapter));
 
   /* RegNumberAdapter */
   NATIVE_ADAPTER_IMPL(RegNumberAdapter,
@@ -36,8 +36,8 @@ namespace LispleTest::Native
                       (letters),
                       (numbers));
 
-  NOBJ_PROP_GET__METHOD(RegNumberAdapter, letters);
-  NOBJ_PROP_GET__METHOD(RegNumberAdapter, numbers);
+  ADAPTER_PROP_GET(RegNumberAdapter, METHOD(letters));
+  ADAPTER_PROP_GET(RegNumberAdapter, METHOD(numbers));
 
   /* VehicleModelAdapter */
   NATIVE_ADAPTER_IMPL(VehicleModelAdapter,
@@ -46,9 +46,8 @@ namespace LispleTest::Native
                       ("model-name", model_name),
                       (rw, "seats", seats));
 
-  NOBJ_PROP_GET__METHOD(VehicleModelAdapter, model_name);
-  NOBJ_PROP_GET__METHOD(VehicleModelAdapter, seats);
-  NOBJ_PROP_SET__METHOD(VehicleModelAdapter, seats);
+  ADAPTER_PROP_GET(VehicleModelAdapter, METHOD(model_name));
+  ADAPTER_PROP_GET_SET(VehicleModelAdapter, METHOD(seats));
 
   // ===============================================================
   // Vehicle example - functions

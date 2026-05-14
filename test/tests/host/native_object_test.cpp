@@ -103,16 +103,16 @@ namespace
                       ("method-children", method_children),
                       ("method-child-ptrs", method_child_ptrs));
 
-  NOBJ_PROP_GET_VALUE_VECTOR_COPY__FIELD(VectorBoxAdapter, values);
+  ADAPTER_PROP_GET(VectorBoxAdapter, FIELD(values), VECTOR_COPY(VALUE));
   NOBJ_PROP_GET_SET_KEYWORD_VECTOR_COPY__FIELD(VectorBoxAdapter,
                                                keyword_values,
                                                Lisple::Key);
-  NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__FIELD(VectorBoxAdapter,
-                                           children,
-                                           LispleTest::Native::OptionalChildAdapter);
-  NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__FIELD(VectorBoxAdapter,
-                                             child_ptrs,
-                                             LispleTest::Native::OptionalChildAdapter);
+  ADAPTER_PROP_GET(VectorBoxAdapter,
+                   FIELD(children),
+                   VECTOR_COPY(ADAPTER(LispleTest::Native::OptionalChildAdapter)));
+  ADAPTER_PROP_GET(VectorBoxAdapter,
+                   FIELD(child_ptrs),
+                   VECTOR_COPY(ADAPTER_P(LispleTest::Native::OptionalChildAdapter)));
   NOBJ_PROP_GET_VALUE_VECTOR_COPY__METHOD(VectorBoxAdapter, method_values, values_by_method);
   NOBJ_PROP_GET_ADAPTER_VECTOR_COPY__METHOD(VectorBoxAdapter,
                                             method_children,

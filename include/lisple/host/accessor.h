@@ -796,6 +796,163 @@
   __NOBJ_ADAPTER_ACCESSOR_MACROS_GET(                                                       \
     __NOBJ_PROP_GET_ADAPTER_P_VECTOR_COPY__METHOD, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
+/* -----------------------------------------------------------------------
+ * Composable adapter accessor DSL
+ *
+ * These macros are an additive layer over the NOBJ_PROP_* implementation
+ * style. The generated code is the same direct C++ accessor code as the
+ * specialized macros above; the token DSL only selects which snippet to emit.
+ *
+ * Usage:
+ *   ADAPTER_PROP_GET_SET(OrderAdapter, FIELD(id));
+ *   ADAPTER_PROP_GET_SET(OrderAdapter, FIELD(line), ADAPTER(LineAdapter));
+ *   ADAPTER_PROP_GET(OrderAdapter, METHOD(lines), VECTOR_COPY(ADAPTER(LineAdapter)));
+ * ----------------------------------------------------------------------- */
+
+#define FIELD(PROP_NAME) FIELD, PROP_NAME
+#define METHOD(PROP_NAME) METHOD, PROP_NAME
+#define ADAPTER(ADAPTER_TYPE) ADAPTER, ADAPTER_TYPE
+#define ADAPTER_P(ADAPTER_TYPE) ADAPTER_P, ADAPTER_TYPE
+#define VECTOR_COPY(VALUE_SPEC) VECTOR_COPY, VALUE_SPEC
+
+#define ADAPTER_PROP_GET(AD_CLASS, ...)                                  \
+  __NOBJ_DSL_PROP_GET(AD_CLASS, __VA_ARGS__)
+
+#define ADAPTER_PROP_SET(AD_CLASS, ...)                                  \
+  __NOBJ_DSL_PROP_SET(AD_CLASS, __VA_ARGS__)
+
+#define ADAPTER_PROP_GET_SET(AD_CLASS, ...)                              \
+  ADAPTER_PROP_GET(AD_CLASS, __VA_ARGS__)                                \
+  ADAPTER_PROP_SET(AD_CLASS, __VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_GET(AD_CLASS, ACCESS_KIND, PROP_NAME, ...)       \
+  __SELECT_MACRO__4(0, ##__VA_ARGS__,                                    \
+    __NOBJ_DSL_PROP_GET__TYPED,                                          \
+    __NOBJ_DSL_PROP_GET__TYPED,                                          \
+    __NOBJ_DSL_PROP_GET__TYPED,                                          \
+    __NOBJ_DSL_PROP_GET__DEFAULT)                                        \
+  (AD_CLASS, ACCESS_KIND, PROP_NAME, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_GET__DEFAULT(AD_CLASS, ACCESS_KIND, PROP_NAME)   \
+  __NOBJ_DSL_PROP_GET__##ACCESS_KIND(AD_CLASS, PROP_NAME, VALUE)
+
+#define __NOBJ_DSL_PROP_GET__TYPED(AD_CLASS, ACCESS_KIND, PROP_NAME, VALUE_KIND, ...) \
+  __NOBJ_DSL_PROP_GET__##ACCESS_KIND(AD_CLASS, PROP_NAME, VALUE_KIND, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_GET__FIELD(AD_CLASS, PROP_NAME, VALUE_KIND, ...) \
+  __NOBJ_DSL_PROP_GET_IMPL__##VALUE_KIND(                                \
+    AD_CLASS, PROP_NAME, get_self_object().PROP_NAME, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_GET__METHOD(AD_CLASS, PROP_NAME, VALUE_KIND, ...) \
+  __NOBJ_DSL_PROP_GET_IMPL__##VALUE_KIND(                                 \
+    AD_CLASS, PROP_NAME, get_self_object().get_##PROP_NAME(), ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_GET_IMPL__VALUE(AD_CLASS, PROP_NAME, ACCESS_EXPR) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                      \
+  {                                                                       \
+    return Lisple::rtval_from(ACCESS_EXPR);                               \
+  }
+
+#define __NOBJ_DSL_PROP_GET_IMPL__ADAPTER(AD_CLASS, PROP_NAME, ACCESS_EXPR, ADAPTER_TYPE) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                       \
+  {                                                                                         \
+    auto&& prop_value = ACCESS_EXPR;                                                        \
+    return ADAPTER_TYPE::make_ref(prop_value);                                              \
+  }
+
+#define __NOBJ_DSL_PROP_GET_IMPL__ADAPTER_P(AD_CLASS, PROP_NAME, ACCESS_EXPR, ADAPTER_TYPE) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                        \
+  {                                                                                          \
+    auto&& prop_value = ACCESS_EXPR;                                                         \
+    return prop_value ? ADAPTER_TYPE::make_ref(*prop_value) : Lisple::Constant::NIL;         \
+  }
+
+#define __NOBJ_DSL_PROP_GET_IMPL__VECTOR_COPY(AD_CLASS, PROP_NAME, ACCESS_EXPR, VALUE_KIND, ...) \
+  NOBJ_PROP_GET(AD_CLASS, PROP_NAME)                                                             \
+  {                                                                                               \
+    auto&& source = ACCESS_EXPR;                                                                  \
+    Lisple::sptr_rtval_v values;                                                                  \
+    values.reserve(source.size());                                                                \
+    for (auto& obj : source)                                                                      \
+    {                                                                                             \
+      values.push_back(__NOBJ_DSL_VECTOR_WRAP__##VALUE_KIND(obj, ##__VA_ARGS__));                 \
+    }                                                                                             \
+    return Lisple::RTValue::vector(values);                                                       \
+  }
+
+#define __NOBJ_DSL_VECTOR_WRAP__VALUE(obj)                         \
+  Lisple::rtval_from(obj)
+
+#define __NOBJ_DSL_VECTOR_WRAP__ADAPTER(obj, ADAPTER_TYPE)         \
+  ADAPTER_TYPE::make_ref(obj)
+
+#define __NOBJ_DSL_VECTOR_WRAP__ADAPTER_P(obj, ADAPTER_TYPE)       \
+  (obj ? ADAPTER_TYPE::make_ref(*obj) : Lisple::Constant::NIL)
+
+#define __NOBJ_DSL_PROP_SET(AD_CLASS, ACCESS_KIND, PROP_NAME, ...)       \
+  __SELECT_MACRO__4(0, ##__VA_ARGS__,                                    \
+    __NOBJ_DSL_PROP_SET__TYPED,                                          \
+    __NOBJ_DSL_PROP_SET__TYPED,                                          \
+    __NOBJ_DSL_PROP_SET__TYPED,                                          \
+    __NOBJ_DSL_PROP_SET__DEFAULT)                                        \
+  (AD_CLASS, ACCESS_KIND, PROP_NAME, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_SET__DEFAULT(AD_CLASS, ACCESS_KIND, PROP_NAME)   \
+  __NOBJ_DSL_PROP_SET__##ACCESS_KIND(AD_CLASS, PROP_NAME, VALUE)
+
+#define __NOBJ_DSL_PROP_SET__TYPED(AD_CLASS, ACCESS_KIND, PROP_NAME, VALUE_KIND, ...) \
+  __NOBJ_DSL_PROP_SET__##ACCESS_KIND(AD_CLASS, PROP_NAME, VALUE_KIND, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_SET__FIELD(AD_CLASS, PROP_NAME, VALUE_KIND, ...) \
+  __NOBJ_DSL_PROP_SET_FIELD_IMPL__##VALUE_KIND(AD_CLASS, PROP_NAME, PROP_NAME, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_SET__METHOD(AD_CLASS, PROP_NAME, VALUE_KIND, ...) \
+  __NOBJ_DSL_PROP_SET_METHOD_IMPL__##VALUE_KIND(AD_CLASS, PROP_NAME, set_##PROP_NAME, ##__VA_ARGS__)
+
+#define __NOBJ_DSL_PROP_SET_FIELD_IMPL__VALUE(AD_CLASS, PROP_NAME, OBJ_FIELD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                          \
+  {                                                                           \
+    get_self_object().OBJ_FIELD =                                             \
+      Lisple::rtval_to<std::decay_t<decltype(get_self_object().OBJ_FIELD)>>(value); \
+  }
+
+#define __NOBJ_DSL_PROP_SET_FIELD_IMPL__ADAPTER(AD_CLASS, PROP_NAME, OBJ_FIELD, ADAPTER_TYPE) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
+  {                                                                                            \
+    get_self_object().OBJ_FIELD = value->adapter<ADAPTER_TYPE>().get_self_object();            \
+  }
+
+#define __NOBJ_DSL_PROP_SET_FIELD_IMPL__ADAPTER_P(AD_CLASS, PROP_NAME, OBJ_FIELD, ADAPTER_TYPE) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                            \
+  {                                                                                              \
+    get_self_object().OBJ_FIELD = value->type == Lisple::RTValue::Type::NIL                      \
+      ? nullptr                                                                                  \
+      : &value->adapter<ADAPTER_TYPE>().get_self_object();                                       \
+  }
+
+#define __NOBJ_DSL_PROP_SET_METHOD_IMPL__VALUE(AD_CLASS, PROP_NAME, OBJ_METHOD) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                            \
+  {                                                                             \
+    Lisple::invoke_setter(                                                       \
+      get_self_object(),                                                         \
+      &std::decay_t<decltype(get_self_object())>::OBJ_METHOD,                    \
+      value);                                                                    \
+  }
+
+#define __NOBJ_DSL_PROP_SET_METHOD_IMPL__ADAPTER(AD_CLASS, PROP_NAME, OBJ_METHOD, ADAPTER_TYPE) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                            \
+  {                                                                                              \
+    get_self_object().OBJ_METHOD(value->adapter<ADAPTER_TYPE>().get_self_object());              \
+  }
+
+#define __NOBJ_DSL_PROP_SET_METHOD_IMPL__ADAPTER_P(AD_CLASS, PROP_NAME, OBJ_METHOD, ADAPTER_TYPE) \
+  NOBJ_PROP_SET(AD_CLASS, PROP_NAME)                                                              \
+  {                                                                                                \
+    get_self_object().OBJ_METHOD(value->type == Lisple::RTValue::Type::NIL                         \
+      ? nullptr                                                                                    \
+      : &value->adapter<ADAPTER_TYPE>().get_self_object());                                        \
+  }
+
 // clang-format on
 
 #endif /* LISPLE__HOST__ACCESSOR_H */

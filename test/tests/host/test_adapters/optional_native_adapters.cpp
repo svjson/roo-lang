@@ -14,7 +14,7 @@ namespace LispleTest::Native
                       &OPTIONAL_CHILD,
                       (rw, "value", value));
 
-  NOBJ_PROP_GET_SET__FIELD(OptionalChildAdapter, value);
+  ADAPTER_PROP_GET_SET(OptionalChildAdapter, FIELD(value));
 
   NATIVE_ADAPTER_IMPL(OptionalChildBoxAdapter,
                       OptionalChildBox,
@@ -28,7 +28,7 @@ namespace LispleTest::Native
                       &OPTIONAL_CHILD_PTR_BOX,
                       (rw, "child", child));
 
-  NOBJ_PROP_GET_SET_ADAPTER_P__FIELD(OptionalChildPtrBoxAdapter,
-                                     child,
-                                     OptionalChildAdapter);
+  ADAPTER_PROP_GET_SET(OptionalChildPtrBoxAdapter,
+                       FIELD(child),
+                       ADAPTER_P(OptionalChildAdapter));
 } // namespace LispleTest::Native

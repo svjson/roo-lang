@@ -313,12 +313,12 @@
  * apply for the use case.
  *
  * Usage:
- * ADAPTER_PROP_GET(SomeHostAdapter, some_property)
+ * LEGACY_ADAPTER_PROP_GET(SomeHostAdapter, some_property)
  * {
  *   // actual getter code goes here
  * }
  */
-#define ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)           \
+#define LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)           \
   Lisple::sptr_sobject AD_CLASS::get_##PROP_NAME() const
 
 /* ADAPTER_PROP_SET
@@ -329,12 +329,12 @@
  * apply for the use case.
  *
  * Usage:
- * ADAPTER_PROP_SET(SomeHostAdapter, some_property)
+ * LEGACY_ADAPTER_PROP_SET(SomeHostAdapter, some_property)
  * {
  *   // actual setter code goes here
  * }
  */
-#define ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                  \
+#define LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                  \
   void AD_CLASS::set_##PROP_NAME([[maybe_unused]]Lisple::Context* ctx, Lisple::Object& value)
 
 /* __ADAPTER_PROP_GET__FIELD
@@ -342,13 +342,13 @@
  * For internal use only.
  */
 #define __ADAPTER_PROP_GET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                          \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                          \
   {                                                                              \
     return std::make_shared<LISPLE_FORM>(get_self_object().OBJ_FIELD);           \
   }
 
 #define __ADAPTER_PROP_SET__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                          \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                          \
   {                                                                              \
     get_self_object().OBJ_FIELD = value.as<LISPLE_FORM>().value;                 \
   }
@@ -358,7 +358,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                          \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                          \
   {                                                                              \
     return std::make_shared<LISPLE_FORM>(*get_self_object().OBJ_FIELD);          \
   }
@@ -368,7 +368,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                            \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                            \
   {                                                                                \
     return get_self_object().OBJ_FIELD.has_value()                                 \
       ? std::make_shared<LISPLE_FORM>(*get_self_object().OBJ_FIELD)                \
@@ -376,7 +376,7 @@
   }
 
 #define __ADAPTER_PROP_SET_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD) \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                            \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                            \
   {                                                                                \
     if (*Lisple::NIL == value)                                                     \
       get_self_object().OBJ_FIELD = std::nullopt;                                  \
@@ -389,7 +389,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                                      \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                                      \
   {                                                                                                          \
     Lisple::sptr_sobject_v v;                                                                                \
     for (auto& obj : get_self_object().FIELD_NAME)                                                           \
@@ -404,7 +404,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_SET_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)     \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                    \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                    \
   {                                                                                        \
     get_self_object().FIELD_NAME.clear();                                                  \
     for (auto& obj : value.get_children())                                                 \
@@ -418,7 +418,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                                      \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                                      \
   {                                                                                                          \
     Lisple::sptr_sobject_v v;                                                                                \
     for (auto& obj : get_self_object().FIELD_NAME)                                                           \
@@ -433,7 +433,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_SET_HOST_OBJECT_VECTOR__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME)                       \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                                      \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                                      \
   {                                                                                                          \
     get_self_object().FIELD_NAME.clear();                                                                    \
     for (auto& obj : value.get_children())                                                                   \
@@ -447,7 +447,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_VECTOR_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, FIELD_NAME) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
   {                                                                                      \
     Lisple::sptr_sobject_v v;                                                            \
      for (auto obj : get_self_object().FIELD_NAME)                                       \
@@ -462,13 +462,13 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                     \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                     \
   {                                                                                         \
     return LISPLE_FORM::make_ref(get_self_object().OBJ_FIELD);                              \
   }
 
 #define __ADAPTER_PROP_SET_HOST_OBJECT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)  \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                     \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                     \
   {                                                                                         \
     get_self_object().OBJ_FIELD = value.as<LISPLE_FORM>().get_self_object();                \
   }
@@ -478,7 +478,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)      \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                           \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                           \
   {                                                                                               \
     return get_self_object().OBJ_FIELD                                                            \
       ? LISPLE_FORM::make_ref(*get_self_object().OBJ_FIELD)                                       \
@@ -486,7 +486,7 @@
   }
 
 #define __ADAPTER_PROP_SET_HOST_OBJECT_P__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)      \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                           \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                           \
   {                                                                                               \
     get_self_object().OBJ_FIELD = *Lisple::NIL == value                                           \
       ? nullptr                                                                                   \
@@ -498,7 +498,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                          \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                          \
   {                                                                                              \
     return get_self_object().OBJ_FIELD.has_value()                                               \
       ? LISPLE_FORM::make_ref(*get_self_object().OBJ_FIELD)                                      \
@@ -510,7 +510,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_SET_HOST_OBJECT_OPT__FIELD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_FIELD)   \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
   {                                                                                              \
     if (*Lisple::NIL == value)                                                                   \
       get_self_object().OBJ_FIELD = std::nullopt;                                                \
@@ -523,7 +523,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, OBJ_FIELD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                          \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                          \
   {                                                                                              \
     return get_self_object().OBJ_FIELD.count(MAP_KEY)                                            \
       ? LISPLE_FORM::make_ref(*get_self_object().OBJ_FIELD.at(MAP_KEY))                          \
@@ -535,7 +535,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_SET_HOST_OBJECT_OPT__MAP_FIELD(AD_CLASS, PROP_NAME, MAP_KEY, LISPLE_FORM, OBJ_FIELD) \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                          \
   {                                                                                              \
     if (get_self_object().OBJ_FIELD.count(MAP_KEY))                                              \
     {                                                                                            \
@@ -553,13 +553,13 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, OBJ_METHOD)   \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                            \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                            \
   {                                                                                \
     return std::make_shared<LISPLE_FORM>(get_self_object().OBJ_METHOD());          \
   }
 
 #define __ADAPTER_PROP_SET__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)     \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                          \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                          \
   {                                                                              \
     get_self_object().METHOD(value.as<LISPLE_FORM>().value);                     \
   }
@@ -569,7 +569,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD)    \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                           \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                           \
   {                                                                               \
     return std::make_shared<LISPLE_FORM>(*get_self_object().METHOD());            \
   }
@@ -579,7 +579,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_VECTOR__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
   {                                                                                      \
     Lisple::sptr_sobject_v v;                                                            \
     for (auto& obj : get_self_object().METHOD_NAME())                                    \
@@ -594,7 +594,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_VECTOR_P__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD_NAME) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                    \
   {                                                                                        \
     Lisple::sptr_sobject_v v;                                                              \
     for (auto& obj : get_self_object().METHOD_NAME())                                      \
@@ -609,7 +609,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                  \
   {                                                                                      \
     return LISPLE_FORM::make_ref(get_self_object().METHOD());                            \
   }
@@ -619,7 +619,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_SET_HOST_OBJECT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
-  ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                  \
+  LEGACY_ADAPTER_PROP_SET(AD_CLASS, PROP_NAME)                                                  \
   {                                                                                      \
     return get_self_object().METHOD(value.as<LISPLE_FORM>().get_self_object());          \
   }
@@ -630,7 +630,7 @@
  * For internal use only
  */
 #define __ADAPTER_PROP_GET_HOST_OBJECT_OPT__METHOD(AD_CLASS, PROP_NAME, LISPLE_FORM, METHOD) \
-  ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                      \
+  LEGACY_ADAPTER_PROP_GET(AD_CLASS, PROP_NAME)                                                      \
   {                                                                                          \
     return get_self_object().METHOD().has_value()                                            \
       ? LISPLE_FORM::make_ref(*get_self_object().METHOD())                                   \
