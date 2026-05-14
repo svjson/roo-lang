@@ -7,7 +7,6 @@
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
-#include <lisple/host.h>
 #include <lisple/lang.h>
 #include <lisple/lang/base.h>
 #include <lisple/lang/loop.h>

@@ -4,7 +4,6 @@
 #include <lisple/runtime.h>
 #include <lisple/type.h>
 
-#include "host/test_adapters/vehicle_host_adapters.h"
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest-message.h>

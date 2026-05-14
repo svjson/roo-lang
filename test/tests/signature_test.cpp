@@ -9,7 +9,6 @@
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
-#include <lisple/host.h>
 #include <lisple/lang.h>
 #include <lisple/lang/base.h>
 #include <lisple/lang/loop.h>
@@ -19,7 +18,6 @@
 #include <lisple/type.h>
 
 #include "gmock/gmock.h"
-#include "host/test_adapters/vehicle_host_adapters.h"
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest-message.h>

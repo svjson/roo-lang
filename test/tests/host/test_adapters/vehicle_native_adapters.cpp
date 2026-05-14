@@ -6,8 +6,6 @@
 #include <lisple/host/accessor.h>
 #include <lisple/runtime/dict.h>
 
-#include "vehicle_host_adapters.h"
-
 namespace LispleTest::Native
 {
   // ===============================================================

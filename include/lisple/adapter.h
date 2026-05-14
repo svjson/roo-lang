@@ -6,12 +6,10 @@
 #include <map>
 #include <string>
 #include <type_traits>
+#include <vector>
 
-#include <lisple/form.h>
-#include <lisple/host.h>
 #include <lisple/host/object.h>
 #include <lisple/host/transform.h>
-#include <lisple/impl.h>
 #include <lisple/runtime/seq.h>
 #include <lisple/type.h>
 
@@ -31,7 +29,7 @@
  * DEFINE_VECTOR_TYPE
  * LISPLE__DEFINE_VECTOR_TYPE
  *
- * Generates necessary boiler-plate for using a Lisple::StdVectorAdapter
+ * Generates necessary boiler-plate for using a Lisple::NativeStdVectorAdapter
  * together with an arbitrary type.
  *
  * This consists of a const Lisple::StdVectorTraits containing the type
@@ -67,7 +65,7 @@
  * DEFINE_MAP_TYPE
  * LISPLE__DEFINE_MAP_TYPE
  *
- * Generates necessary boiler-plate for using a Lisple::StdMapAdapter
+ * Generates necessary boiler-plate for using a Lisple::NativeStdMapAdapter
  * together with arbitrary key and value types.
  *
  * This consists of a const Lisple::StdMapTraits containing the type
@@ -105,7 +103,7 @@
  * LISPLE__DEFINE_LISPLE_TYPE
  *
  * Generates necessary boiler-plate for using native types together with
- * StdMapAdapter and StdVectorAdapter.
+ * NativeStdMapAdapter and NativeStdVectorAdapter.
  *
  * This consists of a template specification of get_lisple_type<T> used
  * lookup the type Lisple::TypeRef associated with T.
@@ -135,75 +133,69 @@ namespace Lisple
 
   namespace Type
   {
-    /*! @brief HostTypeRef for wrapping std::vector<int> in StdVectorAdapter */
+    /*! @brief Type reference for std::vector<int> in NativeStdVectorAdapter */
     static const HostTypeRef VECTOR_INT("vector<int>");
 
-    /*! @brief HostTypeRef for wrapping std::vector<short> in StdVectorAdapter */
+    /*! @brief Type reference for std::vector<short> in NativeStdVectorAdapter */
     static const HostTypeRef VECTOR_SHORT("vector<short>");
 
-    /*! @brief HostTypeRef for wrapping std::vector<long> in StdVectorAdapter */
+    /*! @brief Type reference for std::vector<long> in NativeStdVectorAdapter */
     static const HostTypeRef VECTOR_LONG("vector<long>");
 
-    /*! @brief HostTypeRef for wrapping std::vector<double> in StdVectorAdapter */
+    /*! @brief Type reference for std::vector<double> in NativeStdVectorAdapter */
     static const HostTypeRef VECTOR_DOUBLE("vector<double>");
 
-    /*! @brief HostTypeRef for wrapping std::vector<float> in StdVectorAdapter */
+    /*! @brief Type reference for std::vector<float> in NativeStdVectorAdapter */
     static const HostTypeRef VECTOR_FLOAT("vector<float>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::vector<unsigned int> in
-     * StdVectorAdapter
+     * @brief Type reference for std::vector<unsigned int> in NativeStdVectorAdapter
      */
     static const HostTypeRef VECTOR_UINT("vector<unsigned int>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::vector<unsigned short> in
-     * StdVectorAdapter
+     * @brief Type reference for std::vector<unsigned short> in NativeStdVectorAdapter
      */
     static const HostTypeRef VECTOR_USHORT("vector<unsigned short>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::vector<unsigned long> in
-     * StdVectorAdapter
+     * @brief Type reference for std::vector<unsigned long> in NativeStdVectorAdapter
      */
     static const HostTypeRef VECTOR_ULONG("vector<unsigned long>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::vector<int8_t> in
-     * StdVectorAdapter
+     * @brief Type reference for std::vector<int8_t> in NativeStdVectorAdapter
      */
     static const HostTypeRef VECTOR_INT8("vector<int8_t>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::vector<uint8_t> in
-     * StdVectorAdapter
+     * @brief Type reference for std::vector<uint8_t> in NativeStdVectorAdapter
      */
     static const HostTypeRef VECTOR_UINT8("vector<uint8_t>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::vector<std::string> in
-     * StdVectorAdapter
+     * @brief Type reference for std::vector<std::string> in NativeStdVectorAdapter
      */
     static const HostTypeRef VECTOR_STRING("vector<string>");
 
     /*!
-     * @brief HostTypeRef for wrapping std::map<int, std::string> in
-     * StdMapAdapter
+     * @brief Type reference for std::map<int, std::string> in
+     * NativeStdMapAdapter
      */
     static const HostTypeRef MAP_INT_TO_STRING("map<int, string>");
 
+    static const HostTypeRef MAP_INT_TO_CONST_STRING("map<int, const string>");
+
     /*!
-     * @brief HostTypeRef for wrapping std::map<uint8_t, short> in
-     * StdMapAdapter
+     * @brief Type reference for std::map<uint8_t, short> in
+     * NativeStdMapAdapter
      */
     static const HostTypeRef MAP_UINT8_TO_SHORT("map<uint8_t, short>");
   } // namespace Type
 
-  /*!
-   * @brief AdapterTraits-implementation for use with StdVectorAdapter
-   */
-  struct StdVectorTraits : public AdapterTraits
+  struct StdVectorTraits
   {
+    const HostTypeRef* type_ref;
     /*!
      * @brief The Lisple TypeRef corresponding to the type T of the wrapped
      * std::vector<T>
@@ -217,11 +209,9 @@ namespace Lisple
     StdVectorTraits(const HostTypeRef* type_ref, const TypeRef* value_type);
   };
 
-  /*!
-   * @brief AdapterTraits-implementation for use with StdMapAdapter
-   */
-  struct StdMapTraits : public AdapterTraits
+  struct StdMapTraits
   {
+    const HostTypeRef* type_ref;
     /*!
      * @brief The Lisple TypeRef corresponding to the type K of the wrapped
      * std::map<K, V>
@@ -359,7 +349,7 @@ namespace Lisple
 
   /*!
    * @brief Template method that must be specialized for all types that are
-   * to be used with StdVectorAdapter.
+   * to be used with NativeStdVectorAdapter.
    *
    * Lisple provides implementations for common native types, such as
    * integrals, floating point types and std::string.
@@ -424,7 +414,7 @@ namespace Lisple
 
   /*!
    * @brief Template method that must be specialized for all combinations of
-   * K and V types that are to be used with StdMapAdapter.
+   * K and V types that are to be used with NativeStdMapAdapter.
    */
   template <typename K, typename V> constexpr const StdMapTraits* get_map_traits();
 
@@ -433,6 +423,8 @@ namespace Lisple
    * std::map<int, std::string> / Lisple::Type::MAP_INT_TO_STRING
    */
   LISPLE__DEFINE_MAP_TYPE(Lisple::Type::MAP_INT_TO_STRING, int, std::string)
+
+  LISPLE__DEFINE_MAP_TYPE(Lisple::Type::MAP_INT_TO_CONST_STRING, int, const std::string)
 
   /*!
    * @brief StdMapTraits template specialization of get_map_type<T> for
@@ -535,205 +527,6 @@ namespace Lisple
       return RTValue::vector(native_children())->to_string();
     }
   };
-
-  /*!
-   * @brief Holds an std::vector and allows it to be exposed to the Lisple
-   * runtime and to be treated much like a Lisple::Array, although some
-   * differences do apply.
-   *
-   * In order for Lisple functions to access the contents of the underlying
-   * vector, they must still be transformed on the fly behind the scenes.
-   * This means that there is a performance cost to be considered.
-   */
-  template <typename V, class A = V>
-  class StdVectorAdapter : public HostObject<std::vector<V>>
-  {
-    /*!
-     * @brief Lisple Type reference of the vector value type
-     */
-    const TypeRef* value_type;
-
-   public:
-    /*!
-     * @brief Constructor for pre-compiled vector types that will determine
-     * its type references automatically. Requires pre-defined specializations
-     * of @ref get_vector_traits and @ref get_lisple_type.
-     */
-    StdVectorAdapter(std::vector<V>& collection)
-      : HostObject<std::vector<V>>(Form::HOST_SEQ, collection)
-      , value_type(get_lisple_type<V>())
-    {
-    }
-
-    /*!
-     * @brief Specialized type-specific traits describing the vector and its
-     * value type.
-     */
-    inline static const StdVectorTraits* _traits = get_vector_traits<V>();
-
-    /*!
-     * @see Lisple::AbstractHostObject::get_traits
-     */
-    const AdapterTraits* get_traits() const override { return _traits; }
-
-    /*!
-     * @brief Static access to the type traits
-     */
-    static const AdapterTraits* traits() { return _traits; }
-
-    /*!
-     * @see Lisple::Seq::head
-     *
-     * @brief Retrieves the first element of the Sequence after syncing the
-     * vector contents with the cached Lisple view of the underlying std::vector.
-     */
-    sptr_sobject& head() override
-    {
-      this->sync_children();
-      return Seq::head();
-    }
-
-    /*!
-     * @see Lisple::Seq::tail
-     *
-     * @brief Retrieves the first element of the Sequence after syncing the
-     * vector contents with the cached Lisple view of the underlying std::vector.
-     */
-    sptr_sobject_v tail() override
-    {
-      this->sync_children();
-      return Seq::tail();
-    }
-
-    /*!
-     * @see Lisple::Seq::append
-     *
-     * @brief Appends a value to the underlying std::vector<V>. The value must be
-     * compatible with V.
-     */
-    void append(const sptr_sobject& child) override
-    {
-      if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
-      {
-        this->get_object().push_back(unwrap_primitive<V>(*child));
-      }
-      else
-      {
-        this->get_object().push_back(child->as<A>().get_object());
-      }
-    }
-
-    /*!
-     * @see Lisple::Object::get_children
-     *
-     * @brief Returns a reference to the internally cached vector of children, after
-     * syncing it.
-     */
-    sptr_sobject_v& get_children() override
-    {
-      this->sync_children();
-      return this->children;
-      ;
-    }
-
-    /*!
-     * @see Lisple::Seq::replace_children
-     *
-     * @brief Replaces the entire contents of the underlying vector with a new set of
-     * elements. All new children must be compatible with the value type V.
-     */
-    void replace_children(const sptr_sobject_v& children) override
-    {
-      std::vector<V>& vec = this->get_object();
-      vec.clear();
-      vec.reserve(children.size());
-      for (auto& c : children)
-      {
-        if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
-        {
-          vec.push_back(unwrap_primitive<V>(*c));
-        }
-        else
-        {
-          vec.push_back(c->as<A>().get_object());
-        }
-      }
-    }
-
-    /*!
-     * @see Lisple::Seq::size
-     *
-     * @brief Does not require synchronization and does not affect the
-     * internally cached Lisple vector.
-     */
-    unsigned int size() const override { return this->get_object().size(); }
-
-    /*!
-     * @see Lisple::Object::to_string
-     *
-     * Requires synchronization of the internally cached Lisple vector, and is
-     * therefore a potentially costly operation.
-     */
-    std::string to_string(int depth = -1) const override
-    {
-      this->sync_children();
-      return Seq::to_string(depth);
-    }
-
-    /*! @see Lisple::Seq::lpar */
-    const std::string lpar() const override { return "["; }
-
-    /*! @see Lisple::Seq::rpar */
-    const std::string rpar() const override { return "]"; }
-
-   protected:
-    /*!
-     * @brief Syncronizes the internally cached view of the underlying vector as
-     * Lisple Objects with a naive implementation that simply reinitializes the
-     * the vector from top to bottom.
-     */
-    void sync_children() const override
-    {
-      this->children.clear();
-      this->children.reserve(this->get_object().size());
-      for (auto& v : this->get_object())
-      {
-        if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
-        {
-          this->children.push_back(wrap_primitive<V>(v));
-        }
-        else
-        {
-          this->children.push_back(A::make_ref(v));
-        }
-      }
-    }
-  };
-
-  /*! @brief Pre-defined specialization of StdVectorAdapter<int> */
-  template class StdVectorAdapter<int>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<short> */
-  template class StdVectorAdapter<short>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<long> */
-  template class StdVectorAdapter<long>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<unsigned int> */
-  template class StdVectorAdapter<unsigned int>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<unsigned short> */
-  template class StdVectorAdapter<unsigned short>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<unsigned long> */
-  template class StdVectorAdapter<unsigned long>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<float> */
-  template class StdVectorAdapter<float>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<double> */
-  template class StdVectorAdapter<double>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<int8_t> */
-  template class StdVectorAdapter<int8_t>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<uint8_t> */
-  template class StdVectorAdapter<uint8_t>;
-  /*! @brief Pre-defined specialization of StdVectorAdapter<std::string> */
-  template class StdVectorAdapter<std::string>;
-
-  typedef StdVectorAdapter<int> VectorInt;
 
   template <typename K, typename V, class A1 = K, class A2 = V>
   class NativeStdMapAdapter : public NativeObject<std::map<K, V>>
@@ -855,208 +648,6 @@ namespace Lisple
     }
   };
 
-  /*!
-   * @brief Holds an std::map and allows it to be exposed to the Lisple
-   * runtime and to be treated much like a Lisple::Map, although some
-   * differences do apply.
-   *
-   * In order for Lisple functions to access the contents of the underlying
-   * map, they must still be transformed on the fly behind the scenes.
-   * This means that there is a performance cost to be considered.
-   */
-  template <typename K, typename V, class A1 = K, class A2 = V>
-  class StdMapAdapter : public HostObject<std::map<K, V>>
-  {
-   public:
-    StdMapAdapter(std::map<K, V>& map)
-      : HostObject<std::map<K, V>>(map)
-    {
-    }
-
-    /*!
-     * @brief Specialized type-specific traits describing the map and its
-     * key and value types.
-     */
-    inline static const StdMapTraits* _traits = get_map_traits<K, V>();
-
-    /*!
-     * @see Lisple::AbstractHostObject::get_traits
-     */
-    const AdapterTraits* get_traits() const override { return _traits; }
-
-    std::map<K, V> get_self_object() { return this->get_object(); }
-
-    /*!
-     * @brief Add or overwrite a key/value pair of the underlying map.
-     */
-    void set_property(const Object& key, sptr_sobject& value) override
-    {
-      this->set_property(nullptr, key, value);
-    }
-
-    /*!
-     * @brief Add or overwrite a key/value pair of the underlying map.
-     */
-    void set_property(Context*, const Lisple::Object& key, sptr_sobject& value) override
-    {
-      if (*value != *NIL && key != *NIL && _traits->key_type->is_type_of(key) &&
-          _traits->value_type->is_type_of(*value))
-      {
-        if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
-        {
-          if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
-          {
-            this->get_object().insert_or_assign(unwrap_primitive<K>(key),
-                                                unwrap_primitive<V>(*value));
-          }
-          else if constexpr (std::is_arithmetic<V>::value ||
-                             std::is_same<std::remove_const_t<V>, std::string>::value)
-          {
-            this->get_object().emplace(unwrap_primitive<K>(key),
-                                       unwrap_primitive<std::remove_const_t<V>>(*value));
-          }
-          else
-          {
-            if (this->has_key(key))
-            {
-              this->get_object().erase(unwrap_primitive<K>(key));
-            }
-            this->get_object().emplace(
-              unwrap_primitive<K>(key),
-              value->as<HostObject<std::remove_const_t<V>>>().get_object());
-          }
-        }
-        else
-        {
-          if constexpr ((!std::is_const<V>::value && std::is_arithmetic<V>::value) ||
-                        std::is_same<V, std::string>::value)
-          {
-            this->get_object().insert_or_assign(
-              key.as<HostObject<std::remove_const_t<K>>>().get_object(),
-              unwrap_primitive<V>(*value));
-          }
-          else if constexpr (std::is_arithmetic<V>::value ||
-                             std::is_same<std::remove_const_t<V>, std::string>::value)
-          {
-            this->get_object().emplace(
-              key.as<HostObject<std::remove_const_t<K>>>().get_object(),
-              unwrap_primitive<std::remove_const_t<V>>(*value));
-          }
-          else
-          {
-            if (this->has_key(key))
-            {
-              this->get_object().erase(key.as<HostObject<K>>().get_object());
-            }
-            this->get_object().emplace(
-              key.as<HostObject<K>>().get_object(),
-              value->as<HostObject<std::remove_const_t<V>>>().get_object());
-          }
-        }
-      }
-    }
-
-    /*!
-     * @brief Retrieves a value V stored under a key K.
-     *
-     * Returns NIL if the underlying map does not contain a key K.
-     */
-    sptr_sobject get_sptr_property(const Lisple::Object& key) const override
-    {
-      if (this->has_key(key))
-      {
-        if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
-        {
-          if constexpr (std::is_arithmetic<V>::value ||
-                        std::is_same<std::remove_const_t<V>, std::string>::value)
-          {
-            return wrap_primitive<std::remove_const_t<V>>(
-              this->get_object().at(unwrap_primitive<K>(key)));
-          }
-          else
-          {
-            return A1::make_ref(
-              this->get_object().at(unwrap_primitive<std::remove_const_t<K>>(key)));
-          }
-        }
-        else
-        {
-          if constexpr (std::is_arithmetic<V>::value || std::is_same<V, std::string>::value)
-          {
-            return wrap_primitive<std::remove_const_t<V>>(
-              this->get_object().at(key.as<HostObject<K>>().get_object()));
-          }
-          else
-          {
-            return A2::make_ref(this->get_object().at(key.as<HostObject<K>>().get_object()));
-          }
-        }
-      }
-      return Lisple::NIL;
-    }
-
-    /*!
-     * @brief Tests if the underlying map contains a specific key.
-     */
-    bool has_key(const Lisple::Object& key) const override
-    {
-      if (key != *Lisple::NIL && _traits->key_type->is_type_of(key))
-      {
-        if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
-        {
-          return this->get_object().count(unwrap_primitive<K>(key));
-        }
-        else
-        {
-          return this->get_object().count(key.as<HostObject<K>>().get_object());
-        }
-      }
-      return false;
-    }
-
-    /*!
-     * @brief Returns a vector of all keys contained within the underlying map.
-     */
-    const Lisple::sptr_sobject_v keys() const override
-    {
-      Lisple::sptr_sobject_v keys;
-      keys.reserve(this->get_object().size());
-
-      if constexpr (std::is_arithmetic<K>::value || std::is_same<K, std::string>::value)
-      {
-        for (auto& [k, v] : this->get_object())
-          keys.push_back(wrap_primitive<K>(k));
-      }
-      else
-      {
-        for (auto& [k, v] : this->get_object())
-          keys.push_back(A1::make_ref(k));
-      }
-
-      return keys;
-    }
-
-    /*!
-     * @see Lisple::Seq::size
-     *
-     * The returned size reflects the number of key/value pairs and not the
-     * total amount of elements.
-     */
-    unsigned int size() const override { return this->get_object().size(); }
-
-    static std::shared_ptr<StdMapAdapter<K, V, A1, A2>> make_ref(const std::map<K, V>& ref)
-    {
-      return std::make_shared<StdMapAdapter<K, V, A1, A2>>(const_cast<std::map<K, V>&>(ref));
-    }
-  };
-
-  /*! @brief Pre-defined specialization of StdMapAdapter<int, std::string> */
-  template class StdMapAdapter<int, std::string>;
-  /*! @brief Pre-defined specialization of StdMapAdapter<uint8_t, short> */
-  template class StdMapAdapter<uint8_t, short>;
-
-  typedef StdMapAdapter<int, std::string> StdMapIntToString;
-  typedef StdMapAdapter<uint8_t, short> StdMapUint8ToShort;
 } // namespace Lisple
 
 #endif

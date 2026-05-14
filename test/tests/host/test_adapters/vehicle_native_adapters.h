@@ -1,11 +1,33 @@
 #ifndef LISPLETEST__HOST__VEHICLE_NATIVE_ADAPTERS_H
 #define LISPLETEST__HOST__VEHICLE_NATIVE_ADAPTERS_H
 
+#include <lisple/adapter.h>
 #include <lisple/exec.h>
 #include <lisple/host/object.h>
 #include <lisple/runtime/value.h>
 
 #include "vehicle_impl.h"
+
+namespace LispleTest
+{
+  inline Lisple::HostTypeRef VEHICLE_TYPE("vehicle", "vehicle/make-vehicle");
+  inline Lisple::HostTypeRef VEHICLE_MODEL_TYPE("vehicle-model",
+                                                "vehicle/make-vehicle-model");
+  inline Lisple::HostTypeRef VEHICLE_TYPE__NO_COERCE("vehicle");
+  inline Lisple::HostTypeRef VEHICLE_MODEL_TYPE__NO_COERCE("vehicle-model");
+  inline Lisple::HostTypeRef REGNUM_TYPE("regnum", "vehicle/make-reg-number");
+
+  inline Lisple::SeqRef ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY, &VEHICLE_TYPE, "[vehicle]");
+  inline Lisple::SeqRef ARRAY_OF_VEHICLE_MODEL(&Lisple::Type::ARRAY,
+                                               &VEHICLE_MODEL_TYPE,
+                                               "[vehicle]");
+  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE(&Lisple::Type::ARRAY,
+                                                  &ARRAY_OF_VEHICLE,
+                                                  "[[vehicle]]");
+  inline Lisple::SeqRef ARRAY_OF_ARRAY_OF_VEHICLE_MODEL(&Lisple::Type::ARRAY,
+                                                        &ARRAY_OF_VEHICLE_MODEL,
+                                                        "[[vehicle]]");
+} // namespace LispleTest
 
 namespace LispleTest::Native
 {
@@ -41,5 +63,9 @@ namespace LispleTest::Native
   };
 
 } // namespace LispleTest::Native
+
+DEFINE_LISPLE_TYPE(const LispleTest::VehicleModel, LispleTest::VEHICLE_MODEL_TYPE);
+DEFINE_LISPLE_TYPE(LispleTest::VehicleModel, LispleTest::VEHICLE_MODEL_TYPE);
+DEFINE_LISPLE_TYPE(LispleTest::RegNumber, LispleTest::REGNUM_TYPE);
 
 #endif /* LISPLETEST__HOST__VEHICLE_NATIVE_ADAPTERS_H */

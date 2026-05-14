@@ -1,4 +1,3 @@
-#include <lisple/adapter.h>
 #include <lisple/context.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>

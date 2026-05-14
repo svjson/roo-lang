@@ -15,10 +15,9 @@
 #include <lisple/type.h>
 
 #include "host/test_adapters/optional_native_adapters.h"
-#include "host/test_adapters/vehicle_host_adapters.h"
+#include "host/test_adapters/product_native_adapters.h"
 #include "host/test_adapters/vehicle_impl.h"
 #include "host/test_adapters/vehicle_native_adapters.h"
-#include "test_host_objects.h"
 #include <gtest/gtest.h>
 
 namespace
@@ -142,7 +141,7 @@ TEST(NativeObjectAdapter_VehicleModel, type)
   EXPECT_FALSE(Lisple::Type::ARRAY.is_type_of(*val));
   EXPECT_FALSE(Lisple::Type::SEQ.is_type_of(*val));
   EXPECT_FALSE(Lisple::Type::MAP.is_type_of(*val));
-  EXPECT_FALSE(Tests::PRODUCT.is_type_of(*val));
+  EXPECT_FALSE(LispleTest::Native::PRODUCT.is_type_of(*val));
 }
 
 TEST(NativeObjectAdapter_PrimitiveField, get_set_uint8_field)
@@ -598,7 +597,7 @@ TEST(NativeObjectAdapter_VehicleModel, set_property)
   LispleTest::Native::VehicleModelAdapter& adapter =
     val->adapter<LispleTest::Native::VehicleModelAdapter>();
 
-  VehicleModel& vehicle = adapter.get_object();
+  LispleTest::VehicleModel& vehicle = adapter.get_object();
   EXPECT_EQ(vehicle.get_model_name(), "Runaway Train");
   EXPECT_EQ(vehicle.get_seats(), 500);
 

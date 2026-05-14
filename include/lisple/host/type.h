@@ -4,6 +4,7 @@
 #include <optional>
 
 #include <lisple/exception.h>
+#include <lisple/macro_support.h>
 #include <lisple/type.h>
 
 // clang-format off
@@ -58,7 +59,7 @@
 namespace Lisple
 {
   /*!
-   * @brief TypeRef implementation specialized for HostObject adapters
+   * @brief TypeRef implementation specialized for native host-object adapters
    *
    * This includes both base types and derived types. In order for type testing
    * to work properly, it is recommended that derived types specify the @ref
@@ -118,7 +119,7 @@ namespace Lisple
     CoercionResult coerce(Context& ctx, sptr_rtval& val) const override;
 
     /*!
-     * @brief Tests if this type is a HostObject type.
+   * @brief Tests if this type is a host-object type.
      *
      * @return true
      */

@@ -766,11 +766,6 @@ namespace Lisple
 
   template <typename T> T& obj(const RTValue& v)
   {
-    if (v.type == RTValue::Type::OBJECT)
-    {
-      return dynamic_cast<HostObject<T>*>(v.obj().get())->get_object();
-    }
-
     auto* nobj = v.nobj().get();
     if (auto* typed = dynamic_cast<NativeObject<T>*>(nobj)) return typed->get_object();
 

@@ -10,7 +10,6 @@
 #include <lisple/context.h>
 #include <lisple/runtime.h>
 #include <lisple/lang.h>
-#include <lisple/host.h>
 #include <lisple/dir_root_file_system.h>
 #include <lisple/file_system.h>
 
@@ -87,22 +86,6 @@ namespace LispleTest
       return *configured_runtime;
     }
 
-    template <class T>
-    std::unique_ptr<T>& define_and_get_host_object(const std::string& name, const std::string& lisp)
-    {
-      runtime.eval("(def " + name + " " + lisp + ")");
-      return runtime.get_current_namespace()
-        .lookup(Lisple::Word(name))->as<Lisple::HostObject<T>>()
-        .get_object_ptr();
-    }
-
-    template <class T>
-    T& lookup_host_object(const std::string& name)
-    {
-      return runtime.get_current_namespace()
-        .lookup(Lisple::Word(name))->as<Lisple::HostObject<T>>()
-        .get_object();
-    }
   };
 
   class RuntimeTestFixture

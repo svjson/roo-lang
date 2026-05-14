@@ -7,7 +7,7 @@ namespace Lisple
 {
   /*!
    * @brief Empty constant AccessorTable that is spliced in by
-   * HOST_ADAPTER_IMPL whenever a Host Object Adapter object without accessors
+   * NATIVE_ADAPTER_IMPL whenever a Native Object Adapter object without accessors
    * is constructed.
    */
   const NAccessorTable NO_N_ACCESSORS = NAccessorTable();

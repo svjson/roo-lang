@@ -1,12 +1,9 @@
 
 #include "lisple/host/type.h"
 
-#include <iostream>
-
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
-#include <lisple/host.h>
 #include <lisple/host/object.h>
 
 namespace Lisple
@@ -57,11 +54,6 @@ namespace Lisple
       return is_type_of(*wrapper->val);
     }
 
-    if (*NIL != obj && TypeRef::is_type_of(obj))
-    {
-      const HostTypeRef* obj_type = obj.as<AbstractHostObject>().get_host_type();
-      return obj_type == this || (obj_type->parent_type && obj_type->parent_type == this);
-    }
     return false;
   }
 

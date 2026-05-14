@@ -2,7 +2,7 @@
 #include "runtime_fixture.h"
 
 #include "host/test_adapters/vectorgfx_native_adapters.h"
-#include "host/test_adapters/vehicle_host_adapters.h"
+#include "host/test_adapters/vehicle_native_adapters.h"
 #include "test_adapters/vehicle_native_adapters.h"
 #include <gtest/gtest.h>
 

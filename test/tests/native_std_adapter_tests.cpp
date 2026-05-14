@@ -9,7 +9,6 @@
 #include <lisple/runtime/seq.h>
 #include <lisple/runtime/value.h>
 
-#include "host/test_adapters/vehicle_host_adapters.h"
 #include <gtest/gtest.h>
 
 
