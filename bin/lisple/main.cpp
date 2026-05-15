@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
   try
   {
-    Lisple::DirRootFileSystem lisple_fs(".");
+    Lisple::DirRootFileSystem lisple_fs("/");
     Lisple::Runtime runtime(&lisple_fs);
     runtime.read_file(argv[1]);
   }

@@ -1,7 +1,6 @@
 
 #include "lisple/dir_root_file_system.h"
 
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -39,11 +38,6 @@ namespace Lisple
 
   const std::string DirRootFileSystem::read_file_to_string(const std::string& file_name)
   {
-    if (std::filesystem::path(file_name).is_absolute())
-    {
-      return read_file(file_name);
-    }
-
     for (auto& load_path : load_paths)
     {
       const std::string relative_path = load_path + "/" + file_name;
