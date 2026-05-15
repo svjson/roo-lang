@@ -61,6 +61,10 @@ add_library(lisple INTERFACE)
 add_library(lisple_static STATIC $<TARGET_OBJECTS:lisple_objects>)
 add_library(lisple_shared SHARED $<TARGET_OBJECTS:lisple_objects>)
 
+add_library(Lisple::lisple ALIAS lisple)
+add_library(Lisple::lisple_static ALIAS lisple_static)
+add_library(Lisple::lisple_shared ALIAS lisple_shared)
+
 foreach(target lisple_static lisple_shared)
   set_target_properties(${target} PROPERTIES
     OUTPUT_NAME lisple

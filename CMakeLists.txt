@@ -21,6 +21,7 @@ if (MSVC)
 endif()
 
 add_subdirectory(lib/liblisple)
+add_subdirectory(lib/lisple-server)
 
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
