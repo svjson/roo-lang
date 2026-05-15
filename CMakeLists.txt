@@ -20,86 +20,9 @@ if (MSVC)
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /W4")
 endif()
 
-set(lisple_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/adapter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/bind.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/context.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/dir_root_file_system.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/file_system_namespace_source.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace_loader.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exec.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/dict.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/eval_plan.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/exec_node.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/node.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/lower.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/pool.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/seq.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime/value.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/form.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/object.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/schema.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/transform.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/host/type.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/impl.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/base.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/bind_form.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/branch.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/func.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/loop.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/math.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/num.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/operator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/predicate.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/rewrite.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/seq.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/seq_func.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/string.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/struct.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lang/time.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/lexer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/exception.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/namespace.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/parser.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/reader.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/runtime.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/scope.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/struct.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/lisple/type.cpp
-)
+add_subdirectory(lib/liblisple)
 
-add_library(lisple_objects OBJECT ${lisple_SOURCES})
-target_include_directories(lisple_objects
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-set_target_properties(lisple_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-add_library(lisple INTERFACE)
-add_library(lisple_static STATIC $<TARGET_OBJECTS:lisple_objects>)
-add_library(lisple_shared SHARED $<TARGET_OBJECTS:lisple_objects>)
-
-foreach(target lisple_static lisple_shared)
-
-  set_target_properties(${target} PROPERTIES
-    OUTPUT_NAME lisple
-  )
-
-  target_link_libraries(${target})
-
-  target_include_directories(${target}
-    PUBLIC
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include>
-  )
-
-endforeach()
-
-target_link_libraries(lisple INTERFACE lisple_shared)
-
-install(DIRECTORY include/ DESTINATION include)
+install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
 install(TARGETS lisple_static lisple_shared lisple
   EXPORT lispleTargets
