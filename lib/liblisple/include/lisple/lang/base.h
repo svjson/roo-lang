@@ -203,6 +203,18 @@ namespace Lisple
    */
   FUNC(StringPFunction, stringp);
 
+  /*!
+   * @brief Returns a string representation of the runtime type of the argument.
+   *
+   * Usage:
+   * @code
+   * (type-of 123) => "number"
+   * (type-of true) => "boolean"
+   * (type-of nil) => "nil"
+   * @endcode
+   */
+  FUNC(TypeOfFunction, type_of)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__BASE_H */

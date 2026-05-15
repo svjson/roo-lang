@@ -150,6 +150,7 @@ namespace Lisple
     lang_symbols.emplace("take", TakeFunction::make());
     lang_symbols.emplace("true", Constant::BOOL_TRUE);
     lang_symbols.emplace("trim", TrimFunction::make());
+    lang_symbols.emplace("type-of", TypeOfFunction::make());
     lang_symbols.emplace("upper-case", UpperCaseFunction::make());
     lang_symbols.emplace("vector", VectorFunction::make());
     lang_symbols.emplace("when", WhenForm::make());

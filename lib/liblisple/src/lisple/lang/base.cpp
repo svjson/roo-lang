@@ -3,6 +3,8 @@
 #include "lisple/runtime/lower.h"
 #include "lisple/runtime/node.h"
 
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 
 #include <lisple/lang/base.h>
@@ -340,6 +342,15 @@ namespace Lisple
     }
     std::cout << std::endl;
     return Constant::NIL;
+  }
+
+  /** TypeOfFunction - type-of */
+  FUNC_IMPL(TypeOfFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&TypeOfFunction::exec_type_of))))
+
+  EXEC_BODY(TypeOfFunction, exec_type_of)
+  {
+    return Value::string(std::string(type_string(*args[0])));
   }
 
   /** ResolveFunction - resolve */

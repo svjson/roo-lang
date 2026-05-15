@@ -15,7 +15,7 @@ namespace Lisple
   int to_ast_conversions = 0;
   int to_rtvalue_conversions = 0;
 
-  std::string rt_type_name(Value::Type type)
+  std::string val_type_name(Value::Type type)
   {
     switch (type)
     {
@@ -51,9 +51,44 @@ namespace Lisple
     return "<unknown>";
   }
 
+  std::string_view type_string(Value& value)
+  {
+    switch (value.type)
+    {
+    case Value::Type::NIL:
+      return "nil";
+    case Value::Type::NUMBER:
+      return "number";
+    case Value::Type::STRING:
+      return "string";
+    case Value::Type::CHAR:
+      return "char";
+    case Value::Type::BOOL:
+      return "boolean";
+    case Value::Type::SYMBOL:
+      return "symbol";
+    case Value::Type::KEYWORD:
+      return "keyword";
+    case Value::Type::LIST:
+      return "list";
+    case Value::Type::VECTOR:
+      return "vector";
+    case Value::Type::MAP:
+      return "map";
+    case Value::Type::FUNCTION:
+      return "executable";
+    case Value::Type::OBJECT:
+      return "object";
+    case Value::Type::NATIVE_OBJECT:
+      return value.nobj()->get_host_type()->to_string();
+    default:
+      return "invalid";
+    }
+  }
+
   void throw_bad_rt_variant(const Value& value, const std::string& accessor)
   {
-    throw TypeError("Value::" + accessor + " cannot read " + rt_type_name(value.type) +
+    throw TypeError("Value::" + accessor + " cannot read " + val_type_name(value.type) +
                     " with variant index " + std::to_string(value.value.index()) + ": " +
                     value.to_string());
   }
