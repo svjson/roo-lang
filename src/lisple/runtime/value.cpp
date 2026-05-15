@@ -707,6 +707,13 @@ namespace Lisple
     return *elements;
   }
 
+  sptr_executable Value::exec_ptr() const
+  {
+    const auto* executable = std::get_if<sptr_executable>(&value);
+    if (!executable) throw_bad_rt_variant(*this, "exec_ptr");
+    return *executable;
+  }
+
   Executable& Value::exec() const
   {
     return *std::get<sptr_executable>(value);

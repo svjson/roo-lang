@@ -131,6 +131,7 @@ namespace Lisple
     sptr_ast_node obj() const;
     sptr_native_obj nobj() const;
     Executable& exec() const;
+    sptr_executable exec_ptr() const;
     const sptr_val_v& elements() const;
     sptr_val_v& mut_elements();
     template <typename T> T& adapter()
