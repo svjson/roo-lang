@@ -128,22 +128,31 @@ namespace Lisple
   SPECIAL_FORM_DECL(NsForm, ns);
 
   /*!
-   * @brief Tests if any of the arguments are truthy, and returns
-   * the first truthy argument. Otherwise, nil
+   * @brief Tests if any arguments are truthy and returns the first truthy
+   * argument. If all arguments are falsy, returns the last evaluated argument.
    *
    * Arguments are lazily evaluated, and evaluation stops if a truthy value
-   * is encountered.
+   * is encountered. With no arguments, returns nil.
    *
    * Usage:
    * @code
    * (or {:x 1 :y 12} false)
    * => {:x 1 :y 12}
    *
-   * (or nil false)
+   * (or nil nil)
    * => nil
    *
-   * (or nil true)
-   * => true
+   * (or nil false)
+   * => false
+   *
+   * (or false nil)
+   * => nil
+   *
+   * (or false false)
+   * => false
+   *
+   * (or nil 2)
+   * => 2
    * @endcode
    */
   SPECIAL_FORM_DECL(OrForm, or)

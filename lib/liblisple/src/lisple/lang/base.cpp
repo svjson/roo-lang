@@ -315,7 +315,7 @@ namespace Lisple
   }
   EXECNODE_BODY(OrForm, execnode_or)
   {
-    Lisple::sptr_val val;
+    Lisple::sptr_val val = Constant::NIL;
     for (auto& form : snode.exec_nodes)
     {
       val = exec(ctx, *form);
@@ -325,7 +325,7 @@ namespace Lisple
       }
     }
 
-    return Constant::BOOL_FALSE;
+    return val;
   }
 
   /** PrnFunction - prn */
