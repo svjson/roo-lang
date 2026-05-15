@@ -126,6 +126,7 @@ namespace Lisple
   void Runtime::switch_namespace(const std::string& namespace_name)
   {
     if (current_namespace && current_namespace->empty() &&
+        current_namespace->get_origin().type == Namespace::Origin::Type::NATIVE &&
         namespaces.count(current_namespace->get_name()) &&
         current_namespace->name != namespace_name)
     {

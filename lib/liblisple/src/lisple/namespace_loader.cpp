@@ -95,6 +95,10 @@ namespace Lisple
 
     loading_stack.push_back({ns_name, fetch_result->resolved_path});
     const std::string current_ns = runtime.get_current_namespace().get_name();
+    if (auto* ns = runtime.ns(ns_name, true))
+    {
+      ns->set_origin(Namespace::Origin::file(fetch_result->resolved_path));
+    }
     try
     {
       runtime.eval(fetch_result->source);
