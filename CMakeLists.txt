@@ -36,6 +36,9 @@ set_target_properties(lisple_cli PROPERTIES
 target_link_libraries(lisple_cli
   PRIVATE Lisple::lisple_shared
 )
+target_compile_definitions(lisple_cli
+  PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
+)
 
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
