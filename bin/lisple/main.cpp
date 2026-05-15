@@ -1,6 +1,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <lisple/dir_root_file_system.h>
 #include <lisple/runtime.h>
@@ -9,7 +10,7 @@ namespace
 {
   void print_usage()
   {
-    std::cout << "Usage: lisple [--help|--version] <file>\n";
+    std::cout << "Usage: lisple [--help|--version] [--load-path <path>] <file>\n";
   }
 
   void print_help()
@@ -18,7 +19,9 @@ namespace
                  "Usage:\n"
                  "  lisple <file>\n"
                  "  lisple --help\n"
-                 "  lisple --version\n";
+                 "  lisple --version\n"
+                 "  lisple --load-path <path> <file>\n"
+                 "  lisple --load-path <path1> --load-path <path2> <file>\n";
   }
 
   void print_version()
@@ -36,6 +39,7 @@ namespace
 int main(int argc, char** argv)
 {
   std::string file_path;
+  std::vector<std::string> load_paths{"/"};
 
   for (int i = 1; i < argc; ++i)
   {
@@ -53,7 +57,37 @@ int main(int argc, char** argv)
       return 0;
     }
 
-    if (!arg.empty() && arg[0] == '-')
+    if (arg == "--load-path")
+    {
+      if (i + 1 >= argc)
+      {
+        print_error_and_usage("Missing value for --load-path.");
+        return 1;
+      }
+
+      const std::string load_path = argv[++i];
+      if (load_path.empty() || (!load_path.empty() && load_path[0] == '-'))
+      {
+        print_error_and_usage("Invalid value for --load-path: " + load_path);
+        return 1;
+      }
+      load_paths.push_back(load_path);
+      continue;
+    }
+
+    if (arg.rfind("--load-path=", 0) == 0)
+    {
+      const std::string load_path = arg.substr(std::string("--load-path=").size());
+      if (load_path.empty())
+      {
+        print_error_and_usage("Invalid value for --load-path.");
+        return 1;
+      }
+      load_paths.push_back(load_path);
+      continue;
+    }
+
+    if (arg.rfind("-", 0) == 0)
     {
       print_error_and_usage("Unknown option: " + arg);
       return 1;
@@ -76,7 +110,7 @@ int main(int argc, char** argv)
 
   try
   {
-    Lisple::DirRootFileSystem lisple_fs("/");
+    Lisple::DirRootFileSystem lisple_fs(load_paths);
     Lisple::Runtime runtime(&lisple_fs);
     runtime.read_file(file_path);
   }
