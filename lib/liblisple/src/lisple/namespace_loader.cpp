@@ -68,9 +68,13 @@ namespace Lisple
       throw CyclicNamespaceException("Cyclic namespace dependency detected: " + chain);
     }
 
-    if (runtime.ns(ns_name) != nullptr)
+    if (auto* existing_ns = runtime.ns(ns_name, false))
     {
-      return true;
+      if (existing_ns->get_origin().type == Namespace::Origin::Type::FILE ||
+          !existing_ns->empty())
+      {
+        return true;
+      }
     }
 
     NamespaceResolutionContext res_ctx{runtime.get_current_namespace().get_name(),
@@ -99,6 +103,7 @@ namespace Lisple
     {
       ns->set_origin(Namespace::Origin::file(fetch_result->resolved_path));
     }
+
     try
     {
       runtime.eval(fetch_result->source);
@@ -110,12 +115,11 @@ namespace Lisple
       throw;
     }
     loading_stack.pop_back();
-    runtime.switch_namespace(current_ns);
-
     if (auto* loaded_ns = runtime.ns(ns_name))
     {
       loaded_ns->set_origin(Namespace::Origin::file(fetch_result->resolved_path));
     }
+    runtime.switch_namespace(current_ns);
 
     return true;
   }

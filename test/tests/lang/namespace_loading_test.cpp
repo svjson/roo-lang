@@ -398,6 +398,62 @@ TEST_F(NamespaceLoading, loads_required_namespace_on_demand)
   EXPECT_EQ(result->to_string(), "42");
 }
 
+TEST_F(NamespaceLoading, loads_required_empty_namespace_and_marks_it_as_file_via_ns)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app/utils.lisple", "(ns app.utils)");
+  auto& runtime = use_runtime_with(fs);
+
+  std::cout << "NOW LETS LOAD IT" << std::endl;
+
+  // When
+  runtime.eval("(ns app (:require app.utils))");
+
+  // Then
+  auto* required_namespace = runtime.ns("app.utils", false);
+  ASSERT_NE(required_namespace, nullptr);
+  EXPECT_EQ(required_namespace->get_origin().type, Lisple::Namespace::Origin::Type::FILE);
+  EXPECT_TRUE(required_namespace->empty());
+}
+
+TEST_F(NamespaceLoading, loads_required_empty_namespace_and_marks_it_as_file_via_read_file)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app/utils.lisple", "(ns app.utils)");
+  fs.add("app.lisple", "(ns app (:require app.utils))");
+  auto& runtime = use_runtime_with(fs);
+
+  // When
+  runtime.read_file("app.lisple");
+
+  // Then
+  auto* required_namespace = runtime.ns("app.utils", false);
+  ASSERT_NE(required_namespace, nullptr);
+  EXPECT_EQ(required_namespace->get_origin().type, Lisple::Namespace::Origin::Type::FILE);
+  EXPECT_TRUE(required_namespace->empty());
+}
+
+TEST_F(NamespaceLoading, loads_required_empty_namespace_and_marks_it_as_file_via_context)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app/utils.lisple", "(ns app.utils)");
+  fs.add("app.lisple", "(ns app (:require app.utils))");
+  auto& runtime = use_runtime_with(fs);
+  Lisple::Context ctx(runtime);
+
+  // When
+  ctx.read_file("app.lisple");
+
+  // Then
+  auto* required_namespace = runtime.ns("app.utils", false);
+  ASSERT_NE(required_namespace, nullptr);
+  EXPECT_EQ(required_namespace->get_origin().type, Lisple::Namespace::Origin::Type::FILE);
+  EXPECT_TRUE(required_namespace->empty());
+}
+
 TEST_F(NamespaceLoading, loads_aliased_required_namespace_on_demand)
 {
   // Given

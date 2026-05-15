@@ -9,7 +9,8 @@ enable_testing()
 ADD_EXECUTABLE(testlisple ${TEST_SOURCES})
 
 set_target_properties(testlisple PROPERTIES
-  BUILD_RPATH "${CMAKE_BINARY_DIR}"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>"
+  BUILD_RPATH_USE_LINK_PATH OFF
 )
 
 target_link_libraries(testlisple

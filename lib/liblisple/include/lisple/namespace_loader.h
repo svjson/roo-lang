@@ -21,8 +21,6 @@ namespace Lisple
     std::vector<NamespaceSource*> sources;
     std::vector<LoadingEntry> loading_stack;
 
-    bool is_loading(const std::string& ns_name) const;
-
    public:
     explicit NamespaceLoader(NamespaceSource* source);
     explicit NamespaceLoader(std::vector<NamespaceSource*> sources);
@@ -41,6 +39,8 @@ namespace Lisple
 
     void push_file_context(const std::string& resolved_path);
     void pop_file_context();
+
+    bool is_loading(const std::string& ns_name) const;
   };
 } // namespace Lisple
 

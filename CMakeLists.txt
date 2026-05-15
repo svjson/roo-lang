@@ -29,7 +29,8 @@ add_executable(lisple_cli
 
 set_target_properties(lisple_cli PROPERTIES
   OUTPUT_NAME lisple
-  BUILD_RPATH "${CMAKE_BINARY_DIR}"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>"
+  BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
