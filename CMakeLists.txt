@@ -23,9 +23,21 @@ endif()
 add_subdirectory(lib/liblisple)
 add_subdirectory(lib/lisple-server)
 
+add_executable(lisple_cli
+  bin/lisple/main.cpp
+)
+
+set_target_properties(lisple_cli PROPERTIES
+  OUTPUT_NAME lisple
+)
+
+target_link_libraries(lisple_cli
+  PRIVATE Lisple::lisple_shared
+)
+
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
-install(TARGETS lisple_static lisple_shared lisple
+install(TARGETS lisple_static lisple_shared lisple lisple_cli
   EXPORT lispleTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

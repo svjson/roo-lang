@@ -22,18 +22,42 @@ if (NOT TARGET Lisple::lisple_shared)
   find_package(lisple REQUIRED)
 endif()
 
+get_filename_component(LISPLE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+
 set(lisple-server_SOURCES
   src/lib/server.cpp
   src/lib/message.cpp
   src/lib/dispatch.cpp
 )
 
+add_library(lisple-server_objects OBJECT ${lisple-server_SOURCES})
+target_include_directories(lisple-server_objects
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/lisple-server
+)
+
+if (EXISTS "${LISPLE_ROOT_DIR}/lib/liblisple/include")
+  target_include_directories(lisple-server_objects
+    PRIVATE
+      ${LISPLE_ROOT_DIR}/lib/liblisple/include
+  )
+endif()
+
+if (TARGET Lisple::lisple_shared)
+  get_target_property(_lisple_include_dirs Lisple::lisple_shared INTERFACE_INCLUDE_DIRECTORIES)
+  if (_lisple_include_dirs)
+    target_include_directories(lisple-server_objects PRIVATE ${_lisple_include_dirs})
+  endif()
+endif()
+
+set_target_properties(lisple-server_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 # =========================
 # Embeddable Server Library
 # =========================
-add_library(lisple-server INTERFACE)
-add_library(lisple-server_static STATIC ${lisple-server_SOURCES})
-add_library(lisple-server_shared SHARED ${lisple-server_SOURCES})
+add_library(lisple-server_static STATIC $<TARGET_OBJECTS:lisple-server_objects>)
+add_library(lisple-server_shared SHARED $<TARGET_OBJECTS:lisple-server_objects>)
 
 foreach(target lisple-server_static lisple-server_shared)
 
