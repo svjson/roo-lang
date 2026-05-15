@@ -1,5 +1,12 @@
 BUILD_TYPE ?= Release
-PREFIX ?= $(HOME)/.local
+
+LOCAL_PREFIX := $(HOME)/.local
+PATH_HAS_LOCAL_BIN := $(findstring $(LOCAL_PREFIX)/bin,$(PATH))
+ifeq ($(PATH_HAS_LOCAL_BIN),)
+  PREFIX ?= /usr/local
+else
+  PREFIX ?= $(LOCAL_PREFIX)
+endif
 
 .PHONY: configure configure-server-tests build install test test\:all test\:lang test\:benchmark test\:server clean
 

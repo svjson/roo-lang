@@ -29,6 +29,8 @@ add_executable(lisple_cli
 
 set_target_properties(lisple_cli PROPERTIES
   OUTPUT_NAME lisple
+  BUILD_RPATH "${CMAKE_BINARY_DIR}"
+  INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 target_link_libraries(lisple_cli
