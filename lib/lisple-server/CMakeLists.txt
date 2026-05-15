@@ -45,6 +45,7 @@ foreach(target lisple-server_static lisple-server_shared)
   target_include_directories(${target}
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/lisple-server>
       $<INSTALL_INTERFACE:include>
   )
 

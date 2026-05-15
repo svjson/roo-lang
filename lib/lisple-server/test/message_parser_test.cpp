@@ -1,12 +1,13 @@
 
-#include <gtest/gtest.h>
 #include <variant>
 
-#include "message.h"
+#include "lisple-server/message.h"
+#include <gtest/gtest.h>
 
 TEST(MessageParser, parse_eval_sexp)
 {
-  const std::string input = "!MSG\x1E!CMD\x1E@ID=eval-sexp\x1E@NS=user\x1E@BODY={:lisple \"code\" :goes \"here\"}\x1E/CMD\x1E/MSG\x1E";
+  const std::string input = "!MSG\x1E!CMD\x1E@ID=eval-sexp\x1E@NS=user\x1E@BODY={:lisple "
+                            "\"code\" :goes \"here\"}\x1E/CMD\x1E/MSG\x1E";
   Lisple::Server::MessageParser parser;
 
   auto result = parser.parse_message(input);

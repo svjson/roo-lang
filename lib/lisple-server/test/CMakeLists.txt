@@ -13,6 +13,11 @@ add_executable(testserver ${TEST_SOURCES})
 target_link_libraries(testserver
   gtest
   gmock
-  lisple
-  lisple-server-lib
+  Lisple::lisple_shared
+  lisple-server_shared
+)
+
+target_include_directories(testserver
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/lisple-server
 )
