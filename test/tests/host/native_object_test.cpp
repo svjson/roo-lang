@@ -282,6 +282,53 @@ TEST(NativeObjectAdapter_KeywordGetter, set_optional_keyword_method)
   EXPECT_EQ(*adapter.get_optional_mode(), *Lisple::Constant::NIL);
 }
 
+TEST(NativeObjectAdapter_Product, set_price)
+{
+  // Given
+  Lisple::sptr_val val = LispleTest::Native::ProductAdapter::make_unique("A", 10.0f, 1);
+  LispleTest::Native::ProductAdapter& adapter =
+    val->adapter<LispleTest::Native::ProductAdapter>();
+
+  // Then
+  EXPECT_FLOAT_EQ(adapter.get_object().get_price(), 10.0f);
+  EXPECT_EQ(*adapter.get_price(), *Lisple::Value::number(10.0));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("price")),
+            *Lisple::Value::number(10.0));
+
+  // When
+  auto price = Lisple::Value::number(99.5);
+  adapter.set_price(nullptr, price);
+
+  // Then
+  EXPECT_FLOAT_EQ(adapter.get_object().get_price(), 99.5f);
+  EXPECT_EQ(*adapter.get_price(), *Lisple::Value::number(99.5));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("price")),
+            *Lisple::Value::number(99.5));
+}
+
+TEST(NativeObjectAdapter_Product, set_sku)
+{
+  // Given
+  Lisple::sptr_val val = LispleTest::Native::ProductAdapter::make_unique("A", 10.0f, 1);
+  LispleTest::Native::ProductAdapter& adapter =
+    val->adapter<LispleTest::Native::ProductAdapter>();
+
+  // Then
+  EXPECT_EQ(*adapter.get_sku(), *Lisple::Value::number(1));
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("sku")),
+            *Lisple::Value::number(1));
+
+  // When
+  auto sku = Lisple::Value::number(7);
+  adapter.set_sku(nullptr, sku);
+
+  // Then
+  EXPECT_EQ(*adapter.get_sku(), *Lisple::Value::number(7));
+  EXPECT_EQ(adapter.get_object().get_sku(), 7);
+  EXPECT_EQ(*Lisple::Dict::get_property(val, Lisple::Value::keyword("sku")),
+            *Lisple::Value::number(7));
+}
+
 TEST(NativeObjectAdapter_OptionalField, get_set_optional_field)
 {
   // Given
