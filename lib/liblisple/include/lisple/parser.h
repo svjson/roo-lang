@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <lisple/type.h>
+#include <lisple/source.h>
 
 namespace Lisple
 {
@@ -20,9 +21,9 @@ namespace Lisple
     sptr_ast_node_v stack;
     std::vector<Token> closing_tokens;
 
-    void begin_list(Token start_type);
+    void begin_list(Token start_type, const SourceRef& source = {});
     void begin_hash_context();
-    void close_context(Token end_token);
+    void close_context(Token end_token, const SourceSpan& end_span = {});
 
     void append(std::shared_ptr<AST::ASTNode> obj);
   };
@@ -30,7 +31,9 @@ namespace Lisple
   class Parser
   {
    public:
-    sptr_ast_node_v parse_sexps(std::vector<TokenSymbol> symbols) const;
+    sptr_ast_node_v parse_sexps(std::vector<TokenSymbol> symbols,
+                                uint32_t source_file_id = 0,
+                                bool source_diagnostics = false) const;
   };
 } // namespace Lisple
 

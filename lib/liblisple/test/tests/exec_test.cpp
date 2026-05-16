@@ -46,6 +46,70 @@ TEST_F(Executable, invocation_with_incorrect_argument_types_throws_exception)
   EXPECT_THAT(msg, HasSubstr("Could not apply args"));
 }
 
+TEST_F(Executable, source_diagnostics_are_disabled_by_default)
+{
+  // Given
+  std::string msg;
+
+  // When
+  try
+  {
+    runtime.eval(R"((+ "not-a-number" 4))");
+  }
+  catch (std::exception& e)
+  {
+    msg = e.what();
+  }
+
+  // Then
+  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+  EXPECT_THAT(msg, Not(HasSubstr("Error while calling +")));
+  EXPECT_THAT(msg, Not(HasSubstr("<eval>:1:1")));
+}
+
+TEST_F(Executable, source_diagnostics_include_callee_and_location)
+{
+  // Given
+  runtime.set_source_diagnostics(true);
+  std::string msg;
+
+  // When
+  try
+  {
+    runtime.eval(R"((+ "not-a-number" 4))");
+  }
+  catch (std::exception& e)
+  {
+    msg = e.what();
+  }
+
+  // Then
+  EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:1"));
+  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+}
+
+TEST_F(Executable, call_stack_diagnostics_include_nested_call_context)
+{
+  // Given
+  runtime.set_call_stack_diagnostics(true);
+  std::string msg;
+
+  // When
+  try
+  {
+    runtime.eval("(defun broken [] (+ \"bad\" 1))\n(broken)");
+  }
+  catch (std::exception& e)
+  {
+    msg = e.what();
+  }
+
+  // Then
+  EXPECT_THAT(msg, HasSubstr("Error while calling broken at <eval>:2:1"));
+  EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:18"));
+  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+}
+
 TEST_F(UserFunction, invocation_of_empty_function_returns_nil)
 {
   // Given

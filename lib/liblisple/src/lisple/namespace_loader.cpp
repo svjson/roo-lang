@@ -115,7 +115,7 @@ namespace Lisple
 
     try
     {
-      runtime.eval(fetch_result->source);
+      runtime.eval(fetch_result->source, fetch_result->resolved_path);
     }
     catch (const Lisple::ParseException& e)
     {

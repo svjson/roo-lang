@@ -190,6 +190,21 @@ namespace Lisple
     return runtime.lang;
   }
 
+  bool Context::source_diagnostics_enabled() const
+  {
+    return runtime.source_diagnostics_enabled();
+  }
+
+  bool Context::call_stack_diagnostics_enabled() const
+  {
+    return runtime.call_stack_diagnostics_enabled();
+  }
+
+  std::string Context::describe_source(const SourceRef& source) const
+  {
+    return runtime.describe_source(source);
+  }
+
   void Context::import_namespace(const std::string& namespace_name)
   {
     runtime.import_namespace(namespace_name);

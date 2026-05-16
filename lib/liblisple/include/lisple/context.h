@@ -9,6 +9,7 @@
 
 #include <lisple/form.h>
 #include <lisple/scope.h>
+#include <lisple/source.h>
 #include <lisple/type.h>
 
 namespace Lisple
@@ -122,6 +123,9 @@ namespace Lisple
     Namespace* get_current_namespace();
 
     Namespace& lang();
+    bool source_diagnostics_enabled() const;
+    bool call_stack_diagnostics_enabled() const;
+    std::string describe_source(const SourceRef& source) const;
 
     const sptr_val* find(const std::string& identifier) const;
     const sptr_val* find(const Value& identifier) const;

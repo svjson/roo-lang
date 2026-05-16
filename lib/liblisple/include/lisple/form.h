@@ -9,6 +9,7 @@
 
 #include <lisple/exception.h>
 #include <lisple/runtime/value.h>
+#include <lisple/source.h>
 #include <lisple/type.h>
 
 #define __ESCAPE(...) __VA_ARGS__
@@ -34,12 +35,15 @@ namespace Lisple
     {
      protected:
       Form type;
+      SourceRef source;
 
      public:
       ASTNode(Form form);
       virtual ~ASTNode() = default;
 
       Form get_type() const;
+      const SourceRef& get_source() const;
+      void set_source(const SourceRef& source);
 
       virtual bool has_value(const std::string& value) const;
       virtual bool has_value(const int value) const;

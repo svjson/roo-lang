@@ -7,6 +7,7 @@
 
 #include <lisple/form.h>
 #include <lisple/runtime/value.h>
+#include <lisple/source.h>
 #include <lisple/type.h>
 
 namespace Lisple
@@ -68,8 +69,12 @@ namespace Lisple
     std::vector<uptr_exec_node> args;
 
     sptr_executable static_callee = nullptr;
+    std::string callee_name;
 
     CallNode(uptr_exec_node callee, std::vector<uptr_exec_node> args);
+    CallNode(uptr_exec_node callee,
+             std::vector<uptr_exec_node> args,
+             std::string callee_name);
 
     bool is_literal_arg_list();
 
@@ -128,6 +133,7 @@ namespace Lisple
   struct ExecNode
   {
     sptr_ast_node form;
+    SourceRef source;
     ExecNodeData data;
 
     /**
@@ -139,6 +145,7 @@ namespace Lisple
     template <typename T>
     explicit ExecNode(T node)
       : form(Lisple::AST::NIL)
+      , source()
       , data(std::move(node))
     {
       exec_nodes_constructed++;
@@ -158,6 +165,7 @@ namespace Lisple
     template <typename T>
     explicit ExecNode(const sptr_ast_node& form, T node)
       : form(form)
+      , source(form ? form->get_source() : SourceRef{})
       , data(std::move(node))
     {
       exec_nodes_constructed++;

@@ -8,6 +8,7 @@
 
 #include <lisple/namespace.h>
 #include <lisple/reader.h>
+#include <lisple/source.h>
 #include <lisple/type.h>
 
 namespace Lisple
@@ -34,6 +35,8 @@ namespace Lisple
     Namespace lang;
     FileSystem* fs;
     Reader sexp_reader;
+    RuntimeOptions options;
+    SourceMap source_map;
 
     std::map<const std::string, Namespace> namespaces;
 
@@ -162,11 +165,71 @@ namespace Lisple
     void read_file(Context& ctx, const std::string& file_name);
 
     sptr_val eval(const std::string& str);
+    sptr_val eval(const std::string& str, const std::string& source_name);
     sptr_val eval(Context& ctx, const std::string& str);
+    sptr_val eval(Context& ctx, const std::string& str, const std::string& source_name);
     sptr_val eval(const sptr_ast_node& sexp);
     sptr_val eval(Context& ctx, const sptr_ast_node& sexp);
 
     sptr_val invoke(const std::string& function, sptr_val_v& args);
+
+    /*!
+     * @brief Return the mutable runtime options object.
+     *
+     * Runtime options control optional behavior that affects evaluation,
+     * diagnostics, or host integration. The default options keep source
+     * diagnostics disabled.
+     */
+    RuntimeOptions& get_options();
+
+    /*!
+     * @brief Return the immutable runtime options object.
+     */
+    const RuntimeOptions& get_options() const;
+
+    /*!
+     * @brief Enable or disable source-location diagnostics.
+     *
+     * When enabled, code read through this Runtime records compact source
+     * references while lexing, parsing, and lowering. Invocation errors can then
+     * include file, line, and column information for the failing call site.
+     *
+     * This is disabled by default to avoid the extra position-tracking work when
+     * diagnostics are not needed.
+     */
+    void set_source_diagnostics(bool enabled);
+
+    /*!
+     * @brief Enable or disable call-stack diagnostics.
+     *
+     * When enabled, invocation errors are annotated with Lisple call context,
+     * including the callee name and source location when available. This option
+     * also enables source diagnostics, because call-stack diagnostics require
+     * source references to report useful file and line information.
+     *
+     * This is disabled by default. It is intended for CLI tools, REPLs, tests,
+     * and development builds where actionable error messages are more important
+     * than the small amount of additional diagnostic bookkeeping.
+     */
+    void set_call_stack_diagnostics(bool enabled);
+
+    /*!
+     * @brief Return true if source-location diagnostics are active.
+     *
+     * This is true when either source diagnostics or call-stack diagnostics are
+     * enabled.
+     */
+    bool source_diagnostics_enabled() const;
+
+    /*!
+     * @brief Return true if call-stack diagnostics are active.
+     */
+    bool call_stack_diagnostics_enabled() const;
+
+    /*!
+     * @brief Format a source reference as file:line:column.
+     */
+    std::string describe_source(const SourceRef& source) const;
 
     const sptr_val* find(const std::string& identifier);
     const sptr_val* find(const Value& identifier);

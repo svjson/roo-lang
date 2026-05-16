@@ -6,6 +6,7 @@
 
 #include <lisple/lexer.h>
 #include <lisple/parser.h>
+#include <lisple/source.h>
 #include <lisple/type.h>
 
 namespace Lisple
@@ -16,7 +17,9 @@ namespace Lisple
     Parser parser;
 
    public:
-    sptr_ast_node_v read_sexps(const std::string& input) const;
+    sptr_ast_node_v read_sexps(const std::string& input,
+                               uint32_t source_file_id = 0,
+                               bool source_diagnostics = false) const;
   };
 } // namespace Lisple
 

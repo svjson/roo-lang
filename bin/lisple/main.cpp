@@ -112,6 +112,7 @@ int main(int argc, char** argv)
   {
     Lisple::DirRootFileSystem lisple_fs(load_paths);
     Lisple::Runtime runtime(&lisple_fs);
+    runtime.set_call_stack_diagnostics(true);
     runtime.read_file(file_path);
   }
   catch (const std::exception& e)

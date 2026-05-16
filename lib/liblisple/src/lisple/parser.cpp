@@ -11,7 +11,21 @@
 
 namespace Lisple
 {
-  void ParseContext::begin_list(Token start_type)
+  namespace
+  {
+    SourceRef source_ref(uint32_t file_id, const SourceSpan& span, bool enabled)
+    {
+      return enabled ? SourceRef{file_id, span} : SourceRef{};
+    }
+
+    sptr_ast_node with_source(sptr_ast_node node, const SourceRef& source)
+    {
+      node->set_source(source);
+      return node;
+    }
+  } // namespace
+
+  void ParseContext::begin_list(Token start_type, const SourceRef& source)
   {
     std::shared_ptr<AST::ASTNode> list;
     switch (start_type)
@@ -36,6 +50,7 @@ namespace Lisple
       throw ParseException("Invalid list type");
     }
 
+    list->set_source(source);
     stack.push_back(std::move(list));
   }
 
@@ -44,7 +59,7 @@ namespace Lisple
     stack.push_back(std::make_shared<AST::Discard>());
   }
 
-  void ParseContext::close_context(Token end_token)
+  void ParseContext::close_context(Token end_token, const SourceSpan& end_span)
   {
     if (closing_tokens.empty() || end_token != closing_tokens.back())
     {
@@ -61,6 +76,12 @@ namespace Lisple
     }
 
     auto frame = stack.back();
+    if (frame->get_source().valid() && end_span.valid())
+    {
+      SourceRef source = frame->get_source();
+      source.span.end = end_span.end;
+      frame->set_source(source);
+    }
     stack.pop_back();
     closing_tokens.pop_back();
     append(std::move(frame));
@@ -92,7 +113,9 @@ namespace Lisple
     }
   }
 
-  sptr_ast_node_v Parser::parse_sexps(std::vector<TokenSymbol> symbols) const
+  sptr_ast_node_v Parser::parse_sexps(std::vector<TokenSymbol> symbols,
+                                      uint32_t source_file_id,
+                                      bool source_diagnostics) const
   {
     ParseContext ctx;
 
@@ -110,44 +133,71 @@ namespace Lisple
       case Token::LPAREN:
       case Token::LBRACKET:
       case Token::LCURLY:
-        ctx.begin_list(sym.token);
+        ctx.begin_list(sym.token,
+                       source_ref(source_file_id, sym.span, source_diagnostics));
         break;
       case Token::RPAREN:
       case Token::RBRACKET:
       case Token::RCURLY:
-        ctx.close_context(sym.token);
+        ctx.close_context(sym.token, sym.span);
         break;
       case Token::STRING:
-        ctx.append(std::make_unique<AST::String>(sym.value));
+        ctx.append(with_source(std::make_shared<AST::String>(sym.value),
+                               source_ref(source_file_id, sym.span, source_diagnostics)));
         break;
       case Token::CHAR:
-        ctx.append(std::make_unique<AST::Char>(sym.value.at(0)));
+        ctx.append(with_source(std::make_shared<AST::Char>(sym.value.at(0)),
+                               source_ref(source_file_id, sym.span, source_diagnostics)));
         break;
       case Token::KEYWORD:
-        ctx.append(AST::Keyword::make(sym.value));
+        ctx.append(with_source(std::make_shared<AST::Keyword>(sym.value),
+                               source_ref(source_file_id, sym.span, source_diagnostics)));
         break;
       case Token::SYMBOL:
-        ctx.append(std::make_unique<AST::Symbol>(sym.value));
+        ctx.append(with_source(std::make_shared<AST::Symbol>(sym.value),
+                               source_ref(source_file_id, sym.span, source_diagnostics)));
         break;
       case Token::NUMBER:
-        ctx.append(AST::Number::make(sym.value));
+      {
+        auto number = AST::Number::make(sym.value);
+        if (!source_diagnostics)
+        {
+          ctx.append(number);
+        }
+        else
+        {
+          ctx.append(with_source(std::make_shared<AST::Number>(*number),
+                                 source_ref(source_file_id, sym.span, source_diagnostics)));
+        }
         break;
+      }
       case Token::SQUOT:
+      {
+        SourceSpan quote_span = sym.span;
         eof_check(symbols, offset);
         sym = symbols.at(offset++);
         if (sym.token == Token::LPAREN)
         {
-          ctx.begin_list(Token::SQUOT);
+          SourceSpan quoted_list_span = quote_span;
+          quoted_list_span.end = sym.span.end;
+          ctx.begin_list(
+            Token::SQUOT,
+            source_ref(source_file_id, quoted_list_span, source_diagnostics));
         }
         else if (sym.token == Token::SYMBOL)
         {
-          ctx.append(std::make_unique<AST::QuotedSymbol>(sym.value));
+          SourceSpan quoted_symbol_span = quote_span;
+          quoted_symbol_span.end = sym.span.end;
+          ctx.append(with_source(
+            std::make_shared<AST::QuotedSymbol>(sym.value),
+            source_ref(source_file_id, quoted_symbol_span, source_diagnostics)));
         }
         else
         {
           throw ParseException("Unexpected token: " + sym.value);
         }
         break;
+      }
       default:
         break;
       }

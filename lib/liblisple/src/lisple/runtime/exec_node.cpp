@@ -20,6 +20,47 @@ namespace Lisple
   int eval_executions = 0;
   int exec_executions = 0;
 
+  namespace
+  {
+    bool has_call_context(const std::exception& e)
+    {
+      const std::string message = e.what();
+      return message.compare(0, 20, "Error while calling ") == 0;
+    }
+
+    std::string call_error_message(Context& ctx,
+                                   const ExecNode& node,
+                                   const CallNode& call,
+                                   const std::exception& e)
+    {
+      std::string callee_name = call.callee_name.empty() ? "<anonymous>" : call.callee_name;
+      std::string message = "Error while calling " + callee_name;
+      if (node.source.valid())
+      {
+        message += " at " + ctx.describe_source(node.source);
+      }
+      message += ":\n";
+      message += e.what();
+      return message;
+    }
+
+    void rethrow_with_call_context(Context& ctx,
+                                   const ExecNode& node,
+                                   const CallNode& call,
+                                   const std::exception& e)
+    {
+      if (!ctx.source_diagnostics_enabled())
+      {
+        throw;
+      }
+      if (!ctx.call_stack_diagnostics_enabled() && has_call_context(e))
+      {
+        throw;
+      }
+      throw InvocationException(call_error_message(ctx, node, call, e));
+    }
+  } // namespace
+
   std::string to_string(const ptr_exec_node_v& nodes, std::string indent)
   {
     std::string result = "";
@@ -226,31 +267,38 @@ namespace Lisple
             sig = x->get_signature(ctx, n.args);
           }
 
-          if (sig)
+          try
           {
-            if (sig->supports_rt_value())
+            if (sig)
             {
-              sptr_val_v args;
+              if (sig->supports_rt_value())
+              {
+                sptr_val_v args;
+                for (auto& arg : n.args)
+                {
+                  args.push_back(exec(ctx, *arg));
+                }
+                auto retval = sig->invoke(ctx, args);
+
+                return retval;
+              }
+
+              throw InvocationException("Signature does not support lowered execution: " +
+                                        sig->to_string());
+            }
+            else if (x)
+            {
+              sptr_val_v val_args;
               for (auto& arg : n.args)
               {
-                args.push_back(exec(ctx, *arg));
+                val_args.push_back(exec(ctx, *arg));
               }
-              auto retval = sig->invoke(ctx, args);
-
-              return retval;
+              return x->execute(ctx, val_args);
             }
-
-            throw InvocationException("Signature does not support lowered execution: " +
-                                      sig->to_string());
           }
-          else if (x)
+          catch (const std::exception& e)
           {
-            sptr_val_v val_args;
-            for (auto& arg : n.args)
-            {
-              val_args.push_back(exec(ctx, *arg));
-            }
-            return x->execute(ctx, val_args);
+            rethrow_with_call_context(ctx, node, n, e);
           }
 
           throw InvocationException("Late-bound call target is not executable.");

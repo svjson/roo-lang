@@ -446,6 +446,32 @@ TEST_F(NamespaceLoading, read_file_parse_exception_from_required_namespace_inclu
   EXPECT_THAT(message, HasSubstr("Unmatched parens"));
 }
 
+TEST_F(NamespaceLoading, read_file_runtime_exception_from_required_namespace_includes_required_file)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app.lisple", "(ns app (:require app.utils)) (run)");
+  fs.add("app/utils.lisple", "(ns app.utils)\n(defun run []\n  (+ \"bad\" 4))");
+  auto& runtime = use_runtime_with(fs);
+  runtime.set_source_diagnostics(true);
+
+  // When
+  std::string message;
+  try
+  {
+    runtime.read_file("app.lisple");
+  }
+  catch (const std::exception& e)
+  {
+    message = e.what();
+  }
+
+  // Then
+  EXPECT_THAT(message, HasSubstr("Error reading 'app.lisple'"));
+  EXPECT_THAT(message, HasSubstr("Error while calling + at app/utils.lisple:3:3"));
+  EXPECT_THAT(message, HasSubstr("Could not apply args"));
+}
+
 TEST_F(NamespaceLoading, loads_required_empty_namespace_and_marks_it_as_file_via_ns)
 {
   // Given

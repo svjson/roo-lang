@@ -42,6 +42,16 @@ namespace Lisple::AST
     return type;
   }
 
+  const SourceRef& ASTNode::get_source() const
+  {
+    return source;
+  }
+
+  void ASTNode::set_source(const SourceRef& source)
+  {
+    this->source = source;
+  }
+
   void ASTNode::append(const sptr_ast_node&)
   {
     throw std::runtime_error("S-expression: Cannot append to value type");

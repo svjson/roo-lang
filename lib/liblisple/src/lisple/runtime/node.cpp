@@ -60,6 +60,16 @@ namespace Lisple
     call_nodes_constructed++;
   }
 
+  CallNode::CallNode(uptr_exec_node callee,
+                     std::vector<uptr_exec_node> args,
+                     std::string callee_name)
+    : callee(std::move(callee))
+    , args(std::move(args))
+    , callee_name(std::move(callee_name))
+  {
+    call_nodes_constructed++;
+  }
+
   SpecialFormNode::SpecialFormNode(const SpecialForm* form,
                                    const sptr_val_v& values,
                                    uptr_exec_node_v exec_nodes)
@@ -118,6 +128,7 @@ namespace Lisple
 
   ExecNode::ExecNode(const sptr_val& runtime_value)
     : form(Lisple::AST::NIL)
+    , source()
     , data(LiteralNode(runtime_value))
   {
     exec_nodes_constructed++;
@@ -125,7 +136,7 @@ namespace Lisple
 
   uptr_exec_node ExecNode::clone() const
   {
-    return std::make_unique<ExecNode>(
+    auto cloned = std::make_unique<ExecNode>(
       form,
       std::visit(
         [](const auto& n) -> ExecNodeData
@@ -146,7 +157,9 @@ namespace Lisple
             for (const auto& arg : n.args)
               args.push_back(arg->clone());
 
-            return CallNode(n.callee->clone(), std::move(args));
+            CallNode call(n.callee->clone(), std::move(args), n.callee_name);
+            call.static_callee = n.static_callee;
+            return call;
           }
           else if constexpr (std::is_same_v<T, MapNode>)
           {
@@ -183,6 +196,8 @@ namespace Lisple
           throw LispleException("Cannot clone node type");
         },
         data));
+    cloned->source = source;
+    return cloned;
   }
 
 } // namespace Lisple

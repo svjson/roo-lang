@@ -15,6 +15,13 @@ namespace Lisple
   {
   }
 
+  TokenSymbol::TokenSymbol(Token token, std::string value, SourceSpan span)
+    : token(token)
+    , value(value)
+    , span(span)
+  {
+  }
+
   bool TokenSymbol::operator==(const TokenSymbol& other) const
   {
     return other.token == token && other.value == value;
@@ -46,9 +53,48 @@ namespace Lisple
     return stream << token_names.at(static_cast<int>(token));
   }
 
-  std::vector<TokenSymbol> Lexer::read_symbols(const std::string& input) const
+  std::vector<TokenSymbol> Lexer::read_symbols(const std::string& input,
+                                               bool source_diagnostics) const
   {
     std::vector<TokenSymbol> tokens;
+    std::vector<SourcePosition> positions;
+    if (source_diagnostics)
+    {
+      positions.resize(input.size() + 1);
+      uint32_t line_number = 1;
+      uint32_t column_number = 1;
+      for (size_t i = 0; i < input.size(); ++i)
+      {
+        positions[i] = {line_number, column_number};
+        if (input[i] == '\n')
+        {
+          line_number++;
+          column_number = 1;
+        }
+        else
+        {
+          column_number++;
+        }
+      }
+      positions[input.size()] = {line_number, column_number};
+    }
+
+    auto span_for = [&](size_t start, size_t end) -> SourceSpan
+    {
+      if (!source_diagnostics || input.empty())
+      {
+        return {};
+      }
+      if (start >= positions.size())
+      {
+        start = positions.size() - 1;
+      }
+      if (end >= positions.size())
+      {
+        end = positions.size() - 1;
+      }
+      return {positions[start], positions[end]};
+    };
 
     bool comment_context = false;
 
@@ -58,8 +104,27 @@ namespace Lisple
     std::string val = "";
     std::string cs = "";
     Token ct = Token::NONE;
+    size_t token_start = 0;
+    auto emit_value = [&](Token token, const std::string& value, size_t end)
+    {
+      if (std::regex_match(value, regex_hexnum))
+      {
+        tokens.push_back(
+          TokenSymbol(Token::NUMBER, hex_to_int_str(value), span_for(token_start, end)));
+      }
+      else if (std::regex_match(value, regex_num))
+      {
+        tokens.push_back(TokenSymbol(Token::NUMBER, value, span_for(token_start, end)));
+      }
+      else
+      {
+        tokens.push_back(TokenSymbol(token, value, span_for(token_start, end)));
+      }
+    };
+
     while (offset < input.size())
     {
+      const size_t char_offset = offset;
       char c = input.at(offset++);
       cs = c;
       line += cs;
@@ -98,15 +163,15 @@ namespace Lisple
           {
             if (std::regex_match(val, regex_hexnum))
             {
-              tokens.push_back(TokenSymbol(Token::NUMBER, hex_to_int_str(val)));
+              emit_value(Token::NUMBER, val, char_offset - 1);
             }
             else if (std::regex_match(val, regex_num))
             {
-              tokens.push_back(TokenSymbol(Token::NUMBER, val));
+              emit_value(Token::NUMBER, val, char_offset - 1);
             }
             else
             {
-              tokens.push_back(TokenSymbol(ct, val));
+              emit_value(ct, val, char_offset - 1);
             }
             val = "";
             ct = Token::NONE;
@@ -116,7 +181,7 @@ namespace Lisple
       }
       else if (ct == Token::STRING && c == '"')
       {
-        tokens.push_back(TokenSymbol(ct, val));
+        tokens.push_back(TokenSymbol(ct, val, span_for(token_start, char_offset)));
         val = "";
         ct = Token::NONE;
         continue;
@@ -129,7 +194,7 @@ namespace Lisple
                                "'. Chars must have a size of exactly 1 character.");
         }
         ct = Token::NONE;
-        tokens.push_back(TokenSymbol(Token::CHAR, val));
+        tokens.push_back(TokenSymbol(Token::CHAR, val, span_for(token_start, char_offset)));
         val = "";
         continue;
       }
@@ -186,7 +251,7 @@ namespace Lisple
         val += c;
         if (val.size() == 2)
         {
-          tokens.push_back(TokenSymbol(Token::SQUOT, "'"));
+          tokens.push_back(TokenSymbol(Token::SQUOT, "'", span_for(token_start, token_start)));
           offset -= 2;
           val = "";
           ct = Token::NONE;
@@ -199,38 +264,43 @@ namespace Lisple
         if (c == '"')
         {
           ct = Token::STRING;
+          token_start = char_offset;
           continue;
         }
         else if (c == '\'')
         {
           ct = Token::SQUOT;
+          token_start = char_offset;
           continue;
         }
         if (c == ':')
         {
           ct = Token::KEYWORD;
+          token_start = char_offset;
           continue;
         }
         else if (std::regex_match(cs, regex_num) || std::regex_match(cs, regex_hexnum))
         {
           val = c;
           ct = Token::NUMBER;
+          token_start = char_offset;
           continue;
         }
         else if (c == '_')
         {
-          tokens.push_back(TokenSymbol(Token::USCORE, "_"));
+          tokens.push_back(TokenSymbol(Token::USCORE, "_", span_for(char_offset, char_offset)));
           continue;
         }
         else if (std::regex_match(cs, regex_alpha))
         {
           val = c;
           ct = Token::SYMBOL;
+          token_start = char_offset;
           continue;
         }
         else if (c == '#')
         {
-          tokens.push_back(TokenSymbol(Token::HASH, "#"));
+          tokens.push_back(TokenSymbol(Token::HASH, "#", span_for(char_offset, char_offset)));
           continue;
         }
       }
@@ -264,19 +334,19 @@ namespace Lisple
         {
           if (std::regex_match(val, regex_hexnum))
           {
-            tokens.push_back(TokenSymbol(Token::NUMBER, hex_to_int_str(val)));
+            emit_value(Token::NUMBER, val, char_offset - 1);
           }
           else if (std::regex_match(val, regex_num))
           {
-            tokens.push_back(TokenSymbol(Token::NUMBER, val));
+            emit_value(Token::NUMBER, val, char_offset - 1);
           }
           else
           {
-            tokens.push_back(TokenSymbol(ct, val));
+            emit_value(ct, val, char_offset - 1);
           }
           val = "";
         }
-        tokens.push_back(TokenSymbol(t, cs));
+        tokens.push_back(TokenSymbol(t, cs, span_for(char_offset, char_offset)));
         ct = Token::NONE;
         continue;
       }
@@ -286,11 +356,16 @@ namespace Lisple
 
     if (val.size())
     {
+      const size_t end = input.empty() ? 0 : input.size() - 1;
       if (ct == Token::NUMBER && std::regex_match(val, regex_hexnum))
       {
-        val = hex_to_int_str(val);
+        tokens.push_back(
+          TokenSymbol(Token::NUMBER, hex_to_int_str(val), span_for(token_start, end)));
       }
-      tokens.push_back(TokenSymbol(ct, val));
+      else
+      {
+        tokens.push_back(TokenSymbol(ct, val, span_for(token_start, end)));
+      }
     }
 
     return tokens;

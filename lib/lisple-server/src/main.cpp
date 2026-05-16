@@ -13,6 +13,7 @@ int main(int, char**)
   Lisple::Namespace lisple_lang = Lisple::make_language_namespace();
   Lisple::DirRootFileSystem lisple_fs(".");
   Lisple::Runtime runtime(&lisple_fs);
+  runtime.set_call_stack_diagnostics(true);
 
   Lisple::Server::Server server(
     {.application_name = "Lisple Stand-alone REPL Server", .application_version = "0.1",

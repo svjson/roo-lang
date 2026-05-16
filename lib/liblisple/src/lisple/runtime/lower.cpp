@@ -179,6 +179,7 @@ namespace Lisple
               uptr_exec_node sform_lowered = sform->lower_form(ctx, obj);
               if (sform_lowered)
               {
+                sform_lowered->source = obj->get_source();
                 lowered_expressions++;
                 lower_time_exec_resolutions++;
                 return sform_lowered;
@@ -195,7 +196,8 @@ namespace Lisple
           args.push_back(lower_expr(ctx, children[i]));
         }
 
-        CallNode call_node = CallNode(std::move(callee), std::move(args));
+        std::string callee_name = children[0]->to_string();
+        CallNode call_node = CallNode(std::move(callee), std::move(args), callee_name);
 
         if (literal_callee)
         {

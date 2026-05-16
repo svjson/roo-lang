@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <lisple/source.h>
+
 namespace Lisple
 {
   enum class Token : uint8_t
@@ -34,8 +36,10 @@ namespace Lisple
   public:
     Token token;
     std::string value;
+    SourceSpan span;
 
     TokenSymbol(Token token, std::string value);
+    TokenSymbol(Token token, std::string value, SourceSpan span);
 
     bool operator==(const TokenSymbol& other) const;
   };
@@ -54,7 +58,8 @@ namespace Lisple
   public:
     virtual ~Lexer() = default;
 
-    virtual std::vector<TokenSymbol> read_symbols(const std::string& input) const;
+    virtual std::vector<TokenSymbol> read_symbols(const std::string& input,
+                                                  bool source_diagnostics = false) const;
 
   private:
     std::string hex_to_int_str(const std::string& val) const;

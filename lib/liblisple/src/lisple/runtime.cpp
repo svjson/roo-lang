@@ -55,6 +55,41 @@ namespace Lisple
     switch_namespace(DEFAULT_NAMESPACE);
   }
 
+  RuntimeOptions& Runtime::get_options()
+  {
+    return options;
+  }
+
+  const RuntimeOptions& Runtime::get_options() const
+  {
+    return options;
+  }
+
+  void Runtime::set_source_diagnostics(bool enabled)
+  {
+    options.source_diagnostics = enabled;
+  }
+
+  void Runtime::set_call_stack_diagnostics(bool enabled)
+  {
+    options.call_stack_diagnostics = enabled;
+  }
+
+  bool Runtime::source_diagnostics_enabled() const
+  {
+    return options.source_diagnostics || options.call_stack_diagnostics;
+  }
+
+  bool Runtime::call_stack_diagnostics_enabled() const
+  {
+    return options.call_stack_diagnostics;
+  }
+
+  std::string Runtime::describe_source(const SourceRef& source) const
+  {
+    return source_map.describe(source);
+  }
+
   void Runtime::ensure_namespace_loaded(const std::string& ns_name)
   {
     if (namespace_loader)
@@ -232,7 +267,7 @@ namespace Lisple
 
     try
     {
-      eval(ctx, raw_file);
+      eval(ctx, raw_file, file_name);
     }
     catch (const Lisple::ParseException& e)
     {
@@ -258,7 +293,26 @@ namespace Lisple
 
   sptr_val Runtime::eval(Context& ctx, const std::string& str)
   {
-    sptr_ast_node_v script = sexp_reader.read_sexps(str);
+    return eval(ctx, str, "<eval>");
+  }
+
+  sptr_val Runtime::eval(const std::string& str, const std::string& source_name)
+  {
+    Context ctx(*this);
+    return this->eval(ctx, str, source_name);
+  }
+
+  sptr_val Runtime::eval(Context& ctx,
+                         const std::string& str,
+                         const std::string& source_name)
+  {
+    uint32_t source_file_id = 0;
+    if (source_diagnostics_enabled())
+    {
+      source_file_id = source_map.intern_file(source_name);
+    }
+    sptr_ast_node_v script =
+      sexp_reader.read_sexps(str, source_file_id, source_diagnostics_enabled());
 
     sptr_val result;
 
