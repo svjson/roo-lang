@@ -147,6 +147,18 @@ TEST(Lexer, parse_keyword_with_namespace_and_colon_in_identifier)
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::KEYWORD, "ui/menu-item:focus")));
 }
 
+TEST(Lexer, parse_keyword_with_dot_in_identifier)
+{
+  // Given
+  std::string input = ":ui/button.primary";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::KEYWORD, "ui/button.primary")));
+}
+
 TEST(Lexer, parse_map_with_char_key)
 {
   // Given

@@ -45,6 +45,19 @@ TEST(Reader, parses_keyword_with_namespace_and_colon_in_identifier)
   EXPECT_EQ(*sexps.at(0), Keyword("ui/menu-item:focus"));
 }
 
+TEST(Reader, parses_keyword_with_dot_in_identifier)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps(":ui/button.primary");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  EXPECT_EQ(*sexps.at(0), Keyword("ui/button.primary"));
+}
+
 TEST(Reader, parses_string_with_common_escapes)
 {
   // Given

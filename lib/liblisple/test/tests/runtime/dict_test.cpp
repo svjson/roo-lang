@@ -22,6 +22,13 @@ TEST_F(Dict_map_entry, get_existing_single_keyword_key)
   EXPECT_NE(value, nullptr);
 }
 
+TEST_F(Dict_map_entry, dotted_keyword_can_be_used_as_map_key)
+{
+  auto result = runtime.eval("(:ui/button.primary {:ui/button.primary 42})");
+
+  EXPECT_EQ(*result, *Lisple::Value::number(42));
+}
+
 TEST_F(Dict_keys, get_numeric_char_keys)
 {
   // Given
