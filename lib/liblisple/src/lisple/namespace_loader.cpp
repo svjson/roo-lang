@@ -14,6 +14,15 @@
 
 namespace Lisple
 {
+  namespace
+  {
+    bool has_parse_file_context(const Lisple::ParseException& e)
+    {
+      const std::string message = e.what();
+      return message.compare(0, 15, "Error parsing '") == 0;
+    }
+  } // namespace
+
   NamespaceLoader::NamespaceLoader(NamespaceSource* source)
     : sources({source})
   {
@@ -107,6 +116,17 @@ namespace Lisple
     try
     {
       runtime.eval(fetch_result->source);
+    }
+    catch (const Lisple::ParseException& e)
+    {
+      loading_stack.pop_back();
+      runtime.switch_namespace(current_ns);
+      if (has_parse_file_context(e))
+      {
+        throw;
+      }
+      throw Lisple::ParseException("Error parsing '" + fetch_result->resolved_path +
+                                   "': " + e.what());
     }
     catch (...)
     {

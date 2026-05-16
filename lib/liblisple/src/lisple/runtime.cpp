@@ -24,6 +24,15 @@
 
 namespace Lisple
 {
+  namespace
+  {
+    bool has_parse_file_context(const Lisple::ParseException& e)
+    {
+      const std::string message = e.what();
+      return message.compare(0, 15, "Error parsing '") == 0;
+    }
+  } // namespace
+
   const std::string DEFAULT_NAMESPACE = "user";
 
   Runtime::~Runtime() = default;
@@ -203,8 +212,7 @@ namespace Lisple
   {
     if (!fs)
     {
-      throw new LispleException(
-        "This Lisple context does not provide any file system access");
+      throw LispleException("This Lisple context does not provide any file system access");
     }
 
     auto raw_file = fs->read_file_to_string(file_name);
@@ -214,17 +222,31 @@ namespace Lisple
     {
       namespace_loader->push_file_context(file_name);
     }
-    try
-    {
-      eval(ctx, raw_file);
-    }
-    catch (Lisple::LispleException* e)
-    {
+    auto restore_file_context = [&]() {
       if (namespace_loader)
       {
         namespace_loader->pop_file_context();
       }
-      throw Lisple::LispleException("Error reading '" + file_name + "': " + e->what());
+      switch_namespace(current_ns);
+    };
+
+    try
+    {
+      eval(ctx, raw_file);
+    }
+    catch (const Lisple::ParseException& e)
+    {
+      restore_file_context();
+      if (has_parse_file_context(e))
+      {
+        throw;
+      }
+      throw Lisple::ParseException("Error parsing '" + file_name + "': " + e.what());
+    }
+    catch (const Lisple::LispleException& e)
+    {
+      restore_file_context();
+      throw Lisple::LispleException("Error reading '" + file_name + "': " + e.what());
     }
     if (namespace_loader)
     {

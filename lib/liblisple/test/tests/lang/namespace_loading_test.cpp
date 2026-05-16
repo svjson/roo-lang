@@ -398,6 +398,54 @@ TEST_F(NamespaceLoading, loads_required_namespace_on_demand)
   EXPECT_EQ(result->to_string(), "42");
 }
 
+TEST_F(NamespaceLoading, read_file_parse_exception_includes_file_name)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("broken.lisple", ")");
+  auto& runtime = use_runtime_with(fs);
+
+  // When
+  std::string message;
+  try
+  {
+    runtime.read_file("broken.lisple");
+  }
+  catch (const Lisple::ParseException& e)
+  {
+    message = e.what();
+  }
+
+  // Then
+  EXPECT_THAT(message, HasSubstr("Error parsing 'broken.lisple'"));
+  EXPECT_THAT(message, HasSubstr("Unmatched parens"));
+}
+
+TEST_F(NamespaceLoading, read_file_parse_exception_from_required_namespace_includes_required_file)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app.lisple", "(ns app (:require app.utils))");
+  fs.add("app/utils.lisple", ")");
+  auto& runtime = use_runtime_with(fs);
+
+  // When
+  std::string message;
+  try
+  {
+    runtime.read_file("app.lisple");
+  }
+  catch (const Lisple::ParseException& e)
+  {
+    message = e.what();
+  }
+
+  // Then
+  EXPECT_THAT(message, HasSubstr("Error parsing 'app/utils.lisple'"));
+  EXPECT_THAT(message, Not(HasSubstr("Error parsing 'app.lisple'")));
+  EXPECT_THAT(message, HasSubstr("Unmatched parens"));
+}
+
 TEST_F(NamespaceLoading, loads_required_empty_namespace_and_marks_it_as_file_via_ns)
 {
   // Given
