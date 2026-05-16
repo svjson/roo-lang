@@ -1,8 +1,7 @@
 
-#include "runtime_fixture.h"
-
 #include "host/test_adapters/vectorgfx_native_adapters.h"
 #include "host/test_adapters/vehicle_native_adapters.h"
+#include "runtime_fixture.h"
 #include "test_adapters/vehicle_native_adapters.h"
 #include <gtest/gtest.h>
 
@@ -121,4 +120,22 @@ TEST_F(NativeObjectAdapter_usage, rt_dispatch_coerces_args)
   auto& point = result->adapter<LispleTest::Native::PointAdapter>().get_object();
   EXPECT_EQ(point.x, 4);
   EXPECT_EQ(point.y, 6);
+}
+
+TEST_F(NativeObjectAdapter_usage, equality_compares_native_adapter_to_map_shape)
+{
+  std::vector<std::unique_ptr<Lisple::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<LispleTest::Native::PointNamespace>("pixils.point"));
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
+
+  runtime.eval("(def point (pixils.point/make-point {:x 10 :y 15}))");
+
+  EXPECT_EQ(*runtime.eval("(= point {:x 10 :y 15})"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(= {:x 10 :y 15} point)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(= point (pixils.point/make-point {:x 10 :y 15}))"),
+            *Lisple::Constant::BOOL_TRUE);
+
+  EXPECT_EQ(*runtime.eval("(= point {:x 10 :y 16})"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(= point {:x 10})"), *Lisple::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(= point {:x 10 :y 15 :z 0})"), *Lisple::Constant::BOOL_FALSE);
 }
