@@ -164,8 +164,10 @@ like any map:
 (assoc  p :price 12.50) ;; return modified copy
 ```
 
-See `include/lisple/host/object.h`, `include/lisple/host/accessor.h`, and the
-examples under `test/tests/host/` for namespace registration and make-functions.
+See [object.h](lib/liblisple/include/lisple/host/object.h),
+[accessor.h](lib/liblisple/include/lisple/host/accessor.h), and the
+[host test examples](lib/liblisple/test/tests/host/) for namespace registration
+and make-functions.
 
 ## Building
 
@@ -184,7 +186,7 @@ make install                     # Install to ~/.local (override with PREFIX=...
 make configure BUILD_TYPE=Debug
 make build
 cd build && ctest                              # All tests
-cd build/test && ./testlisple --gtest_filter="*map*"  # Filtered
+cd build/lib/liblisple/test && ./testlisple --gtest_filter="*map*"  # Filtered
 ```
 
 ## CMake integration

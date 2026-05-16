@@ -80,3 +80,5 @@ foreach(target lisple_static lisple_shared)
 endforeach()
 
 target_link_libraries(lisple INTERFACE lisple_shared)
+
+add_subdirectory(test)

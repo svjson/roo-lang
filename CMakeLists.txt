@@ -69,5 +69,3 @@ if(DEFINED ENV{USE_IWYU})
   endif()
   set_property(TARGET lisple PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
-
-add_subdirectory("test")

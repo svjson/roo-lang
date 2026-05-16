@@ -8,12 +8,14 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build install test test\:all test\:lang test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build install test test\:all test\:lang test\:proof test\:benchmark test\:server clean
 
-TEST_BINARY := test/testlisple
+TEST_BINARY := lib/liblisple/test/testlisple
+PROOF_TEST_BINARY := pkg/proof/test/testproof
 SERVER_TEST_BINARY := lib/lisple-server/test/testserver
 ifeq ($(OS),Windows_NT)
-  TEST_BINARY := test/testlisple.exe
+  TEST_BINARY := lib/liblisple/test/testlisple.exe
+  PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
   SERVER_TEST_BINARY := lib/lisple-server/test/testserver.exe
 endif
 
