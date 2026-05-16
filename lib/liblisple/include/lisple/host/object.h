@@ -729,6 +729,12 @@ namespace Lisple
     virtual ~NativeObjectTraits() = default;
   };
 
+  enum class NativeObjectStructuralKind
+  {
+    MAP,
+    VECTOR
+  };
+
   struct NativeObjectBase
   {
     virtual ~NativeObjectBase() = default;
@@ -742,6 +748,8 @@ namespace Lisple
     virtual std::string to_string() const;
     virtual sptr_val_v native_children() const;
     virtual size_t size() const;
+    virtual NativeObjectStructuralKind structural_kind() const;
+    virtual bool equals_value(const Value& other) const;
     /** Returns a void* to the concrete host object as known by the adapter. */
     virtual void* self_object_ptr() const = 0;
   };

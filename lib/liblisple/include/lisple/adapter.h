@@ -522,6 +522,43 @@ namespace Lisple
 
     size_t size() const override { return get_self_object().size(); }
 
+    NativeObjectStructuralKind structural_kind() const override
+    {
+      return NativeObjectStructuralKind::VECTOR;
+    }
+
+    bool equals_value(const Value& other) const override
+    {
+      if (other.type == Value::Type::VECTOR)
+      {
+        const sptr_val_v& elements = other.elements();
+        if (elements.size() != get_self_object().size()) return false;
+        for (size_t i = 0; i < elements.size(); i++)
+        {
+          if (!(*get_property(*Value::number((int)i)) == *elements[i])) return false;
+        }
+        return true;
+      }
+
+      if (other.type == Value::Type::NATIVE_OBJECT)
+      {
+        sptr_native_obj other_native = other.nobj();
+        if (other_native->structural_kind() != NativeObjectStructuralKind::VECTOR)
+          return false;
+
+        sptr_val_v elements = native_children();
+        sptr_val_v other_elements = other_native->native_children();
+        if (elements.size() != other_elements.size()) return false;
+        for (size_t i = 0; i < elements.size(); i++)
+        {
+          if (!(*elements[i] == *other_elements[i])) return false;
+        }
+        return true;
+      }
+
+      return false;
+    }
+
     std::string to_string() const override
     {
       return Value::vector(native_children())->to_string();

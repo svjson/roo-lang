@@ -91,6 +91,43 @@ namespace Lisple
     return this->accessor_table().keys.size();
   }
 
+  NativeObjectStructuralKind NativeObjectBase::structural_kind() const
+  {
+    return NativeObjectStructuralKind::MAP;
+  }
+
+  bool NativeObjectBase::equals_value(const Value& other) const
+  {
+    if (other.type == Value::Type::MAP)
+    {
+      const sptr_val_v& other_elements = other.elements();
+      sptr_val_v elements = native_children();
+      if (elements.size() != other_elements.size()) return false;
+      for (size_t i = 0; i < elements.size(); i++)
+      {
+        if (!(*elements[i] == *other_elements[i])) return false;
+      }
+      return true;
+    }
+
+    if (other.type == Value::Type::NATIVE_OBJECT)
+    {
+      sptr_native_obj other_native = other.nobj();
+      if (structural_kind() != other_native->structural_kind()) return false;
+
+      sptr_val_v elements = native_children();
+      sptr_val_v other_elements = other_native->native_children();
+      if (elements.size() != other_elements.size()) return false;
+      for (size_t i = 0; i < elements.size(); i++)
+      {
+        if (!(*elements[i] == *other_elements[i])) return false;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * NAccessors implementation
    */

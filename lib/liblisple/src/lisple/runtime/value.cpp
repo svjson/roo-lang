@@ -619,9 +619,12 @@ namespace Lisple
 
   bool Value::operator==(const Value& other) const
   {
-    if (this->type != other.type && this->type != Type::NATIVE_OBJECT &&
-        this->type != Type::MAP)
+    if (this->type != other.type)
+    {
+      if (this->type == Type::NATIVE_OBJECT) return this->nobj()->equals_value(other);
+      if (other.type == Type::NATIVE_OBJECT) return other.nobj()->equals_value(*this);
       return false;
+    }
 
     switch (this->type)
     {
@@ -639,15 +642,6 @@ namespace Lisple
     case Type::SYMBOL:
       return std::get<std::string>(this->value) == std::get<std::string>(other.value);
     case Type::MAP:
-      if (other.type == Type::NATIVE_OBJECT)
-      {
-        return other == *this;
-      }
-      else if (other.type != Type::MAP)
-      {
-        return false;
-      }
-      [[fallthrough]];
     case Type::LIST:
     case Type::VECTOR:
     {
@@ -661,46 +655,7 @@ namespace Lisple
       return true;
     }
     case Type::NATIVE_OBJECT:
-    {
-      if (other.type == Type::MAP)
-      {
-        auto& map_elements = other.elements();
-        auto& native_object = *this->nobj();
-        const auto& native_keys = native_object.accessor_table().keys;
-        if (map_elements.size() != native_keys.size() * 2) return false;
-
-        for (size_t i = 0; i < native_keys.size(); i++)
-        {
-          const size_t key_index = i * 2;
-          const size_t value_index = key_index + 1;
-          if (!(*map_elements[key_index] == *native_keys[i])) return false;
-          if (!(*map_elements[value_index] == *native_object.get_property(*native_keys[i])))
-            return false;
-        }
-
-        return true;
-      }
-      else if (other.type == Type::NATIVE_OBJECT)
-      {
-        auto& a = *this->nobj();
-        auto& b = *other.nobj();
-        const auto& a_keys = a.accessor_table().keys;
-        const auto& b_keys = b.accessor_table().keys;
-        if (a_keys.size() != b_keys.size()) return false;
-
-        for (size_t i = 0; i < a_keys.size(); i++)
-        {
-          if (!(*a_keys[i] == *b_keys[i])) return false;
-          if (!(*a.get_property(*a_keys[i]) == *b.get_property(*b_keys[i]))) return false;
-        }
-
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }
+      return this->nobj()->equals_value(other);
     default:
       throw LispleException("== not implemented for type: " +
                             std::to_string((int)this->type));
