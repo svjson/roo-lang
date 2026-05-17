@@ -16,6 +16,17 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
 - Powerful C++ interop macros for exposing native host objects to scripts
 - Embeds as a static or shared library with a single `#include`
 
+## Repository Overview
+
+- bin/
+  - **[lisple](bin/lisple/README.md)** - Command-line executable for running Lisple files and packages.
+- lib/
+  - **[liblisple](lib/liblisple/README.md)** - Core embeddable Lisple runtime.
+  - **[lisple-server](lib/lisple-server/README.md)** Small server layer for remote Lisple message parsing and dispatch experiments.
+  - **[lib/lisple-package](lib/lisple-package/README.md)** Package manifest, dependency load paths, and native package loading.
+- pkg/
+  - **[proof](pkg/proof/README.md)** - Lisple test framework package.
+
 ## Language
 
 Functions support required, optional, and rest parameters:
