@@ -20,6 +20,18 @@ namespace Lisple::Dict
 
   sptr_val get_property(const sptr_val& target, const Value& property)
   {
+    auto [found, value] = find_property(target, property);
+    return found ? value : Constant::NIL;
+  }
+
+  std::pair<bool, sptr_val> find_property(const sptr_val& target,
+                                          const sptr_val& property)
+  {
+    return find_property(target, *property);
+  }
+
+  std::pair<bool, sptr_val> find_property(const sptr_val& target, const Value& property)
+  {
     switch (target->type)
     {
     case Value::Type::MAP:
@@ -29,33 +41,44 @@ namespace Lisple::Dict
       {
         if (*children[i] == property)
         {
-          return children[i + 1];
+          return {true, children[i + 1]};
         }
       }
-      return Constant::NIL;
+      return {false, Constant::NIL};
     }
     case Value::Type::LIST:
     case Value::Type::VECTOR:
     {
       if (property.type != Value::Type::NUMBER)
       {
-        return Constant::NIL;
+        return {false, Constant::NIL};
       }
-      return get_child(*target, property.num().get_int());
+      int index = property.num().get_int();
+      if (index < 0) return {false, Constant::NIL};
+
+      const sptr_val_v& values = std::get<sptr_val_v>(target->value);
+      if (index >= static_cast<int>(values.size())) return {false, Constant::NIL};
+
+      return {true, values[index]};
     }
     case Value::Type::NATIVE_OBJECT:
     {
       Lisple::sptr_native_obj obj = target->nobj();
-      return obj->get_property(property);
+      if (!obj->has_property(property)) return {false, Constant::NIL};
+      return {true, obj->get_property(property)};
     }
     case Value::Type::OBJECT:
     {
       auto key = to_AST(const_cast<Value&>(property));
+      if (!std::get<sptr_ast_node>(target->value)->has_key(*key))
+      {
+        return {false, Constant::NIL};
+      }
       auto val = std::get<sptr_ast_node>(target->value)->get_sptr_property(*key);
-      return to_rt_value(val);
+      return {true, to_rt_value(val)};
     }
     default:
-      return Constant::NIL;
+      return {false, Constant::NIL};
     };
   }
 
@@ -108,18 +131,27 @@ namespace Lisple::Dict
 
   sptr_val get_property_path(const sptr_val& object, const sptr_val_v& path)
   {
+    auto [found, value] = find_property_path(object, path);
+    return found ? value : Constant::NIL;
+  }
+
+  std::pair<bool, sptr_val> find_property_path(const sptr_val& object,
+                                               const sptr_val_v& path)
+  {
     sptr_val result = object;
     for (size_t i = 0; i < path.size(); i++)
     {
       if (*result == *Constant::NIL)
       {
-        break;
+        return {false, Constant::NIL};
       }
 
-      result = get_property(result, path[i]);
+      auto [found, value] = find_property(result, path[i]);
+      if (!found) return {false, Constant::NIL};
+      result = value;
     }
 
-    return result;
+    return {true, result};
   }
 
   bool contains_key(Value& source, const std::string& keyword)
@@ -138,7 +170,7 @@ namespace Lisple::Dict
     }
     else if (source.type == Value::Type::NATIVE_OBJECT)
     {
-      return *source.nobj()->get_property(*Value::keyword(keyword)) != *Constant::NIL;
+      return source.nobj()->has_property(*Value::keyword(keyword));
     }
 
     return false;

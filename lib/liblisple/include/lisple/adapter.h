@@ -487,6 +487,14 @@ namespace Lisple
       return native_to_rtval<V, A>(get_self_object().at(index));
     }
 
+    bool has_property(const Value& property) const override
+    {
+      if (property.type != Value::Type::NUMBER) return false;
+
+      int index = property.num().get_int();
+      return index >= 0 && index < static_cast<int>(get_self_object().size());
+    }
+
     void set_property(const Value& property, sptr_val& value) override
     {
       if (property.type != Value::Type::NUMBER) return;
@@ -634,6 +642,11 @@ namespace Lisple
 
       return native_to_rtval<V, ValueAdapter>(
         get_self_object().at(rtval_to_native<K>(property)));
+    }
+
+    bool has_property(const Value& property) const override
+    {
+      return has_key(property);
     }
 
     void set_property(const Value& property, sptr_val& value) override

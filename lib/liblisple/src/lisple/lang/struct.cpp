@@ -314,22 +314,30 @@ namespace Lisple
 
   /** GetFunction - get */
   FUNC_IMPL(GetFunction,
-            SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
-                 EXEC_DISPATCH(&GetFunction::exec_get))))
+            MULTI_SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
+                       EXEC_DISPATCH(&GetFunction::exec_get)),
+                      (FN_ARGS((&Type::ANY), (&Type::ANY), (&Type::ANY)),
+                       EXEC_DISPATCH(&GetFunction::exec_get))))
 
   EXEC_BODY(GetFunction, exec_get)
   {
-    return Dict::get_property(args[0], args[1]);
+    auto [found, value] = Dict::find_property(args[0], args[1]);
+    if (!found && args.size() == 3) return args[2];
+    return found ? value : Constant::NIL;
   }
 
   /** GetInFunction - get-in */
   FUNC_IMPL(GetInFunction,
-            SIG((FN_ARGS((&Type::ANY), (&Type::VECTOR)),
-                 EXEC_DISPATCH(&GetInFunction::exec_get))))
+            MULTI_SIG((FN_ARGS((&Type::ANY), (&Type::VECTOR)),
+                       EXEC_DISPATCH(&GetInFunction::exec_get)),
+                      (FN_ARGS((&Type::ANY), (&Type::VECTOR), (&Type::ANY)),
+                       EXEC_DISPATCH(&GetInFunction::exec_get))))
 
   EXEC_BODY(GetInFunction, exec_get)
   {
-    return Dict::get_property_path(args[0], args[1]->elements());
+    auto [found, value] = Dict::find_property_path(args[0], args[1]->elements());
+    if (!found && args.size() == 3) return args[2];
+    return found ? value : Constant::NIL;
   }
 
   /** DissocFunction - dissoc */

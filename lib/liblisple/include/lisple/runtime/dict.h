@@ -2,6 +2,7 @@
 #ifndef LISPLE__RUNTIME__DICT_H
 #define LISPLE__RUNTIME__DICT_H
 
+#include <utility>
 #include <unordered_set>
 
 #include <lisple/form.h>
@@ -26,8 +27,12 @@ namespace Lisple::Dict
   sptr_val get_property(Value& object, const std::string& property);
   sptr_val get_property(const sptr_val& object, const sptr_val& property);
   sptr_val get_property(const sptr_val& object, const Value& property);
+  std::pair<bool, sptr_val> find_property(const sptr_val& object, const sptr_val& property);
+  std::pair<bool, sptr_val> find_property(const sptr_val& object, const Value& property);
 
   sptr_val get_property_path(const sptr_val& object, const sptr_val_v& path);
+  std::pair<bool, sptr_val> find_property_path(const sptr_val& object,
+                                               const sptr_val_v& path);
 
   std::pair<const sptr_val, const sptr_val> map_entry(const sptr_val_v& map_data,
                                                       const Value& key);

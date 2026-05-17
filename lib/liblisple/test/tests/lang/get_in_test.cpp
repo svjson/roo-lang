@@ -64,3 +64,39 @@ TEST_F(GetInFunction, get_nested_vector_element)
   // Then
   ASSERT_EQ(result->to_string(), "6");
 }
+
+TEST_F(GetInFunction, get_in_returns_default_for_missing_path)
+{
+  // Given
+  runtime.eval("(def my-map {:a 1 :b 2})");
+
+  // When
+  auto result = runtime.eval(R"((get-in my-map [:c :d :e] "default-value"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Value::string("default-value"));
+}
+
+TEST_F(GetInFunction, get_in_does_not_return_default_for_present_nil)
+{
+  // Given
+  runtime.eval("(def my-map {:a {:b nil}})");
+
+  // When
+  auto result = runtime.eval(R"((get-in my-map [:a :b] "default-value"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Constant::NIL);
+}
+
+TEST_F(GetInFunction, get_in_returns_default_when_remaining_path_is_missing_after_nil)
+{
+  // Given
+  runtime.eval("(def my-map {:a nil})");
+
+  // When
+  auto result = runtime.eval(R"((get-in my-map [:a :b] "default-value"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Value::string("default-value"));
+}

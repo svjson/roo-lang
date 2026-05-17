@@ -52,6 +52,12 @@ namespace Lisple
     return accessors->getter(this);
   }
 
+  bool NativeObjectBase::has_property(const Value& property) const
+  {
+    auto* accessors = get_traits()->accessor_table.lookup(property);
+    return nullptr != accessors && nullptr != accessors->getter;
+  }
+
   void NativeObjectBase::set_property(const Value& property, const sptr_val& value)
   {
     sptr_val v = value;

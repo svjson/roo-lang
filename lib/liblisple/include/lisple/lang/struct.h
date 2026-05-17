@@ -138,6 +138,7 @@ namespace Lisple
    * |-------|------------------------------------------------------------------|
    * | 0     | The map or complex object                                        |
    * | 1     | The property value, usually a key.                               |
+   * | 2     | Optional default value to return when the property is missing.    |
    */
   FUNC(GetFunction, get);
 
@@ -155,6 +156,7 @@ namespace Lisple
    * |-------|------------------------------------------------------------------|
    * | 0     | The map or complex object                                        |
    * | 1     | The property path as vector.                                     |
+   * | 2     | Optional default value to return when the path is missing.        |
    */
   FUNC(GetInFunction, get);
 

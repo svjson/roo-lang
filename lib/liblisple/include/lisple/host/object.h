@@ -740,6 +740,7 @@ namespace Lisple
     virtual ~NativeObjectBase() = default;
 
     virtual sptr_val get_property(const Value& property) const;
+    virtual bool has_property(const Value& property) const;
     virtual void set_property(const Value& property, sptr_val& value);
     virtual void set_property(const Value& property, const sptr_val& value);
     virtual const NativeObjectTraits* get_traits() const = 0;

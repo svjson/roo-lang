@@ -46,3 +46,39 @@ TEST_F(GetFunction, get_dynamic_value_from_map_by_qualified_key)
   ASSERT_EQ(result1->i32(), 1);
   ASSERT_EQ(result2->i32(), 2);
 }
+
+TEST_F(GetFunction, get_returns_default_for_missing_key)
+{
+  // Given
+  runtime.eval("(def my-map {:a 1 :b 2})");
+
+  // When
+  auto result = runtime.eval(R"((get my-map :c "default-value"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Value::string("default-value"));
+}
+
+TEST_F(GetFunction, get_does_not_return_default_for_present_nil)
+{
+  // Given
+  runtime.eval("(def my-map {:key nil})");
+
+  // When
+  auto result = runtime.eval(R"((get my-map :key "default-value"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Constant::NIL);
+}
+
+TEST_F(GetFunction, get_does_not_return_default_for_present_vector_nil)
+{
+  // Given
+  runtime.eval("(def my-vec [nil])");
+
+  // When
+  auto result = runtime.eval(R"((get my-vec 0 "default-value"))");
+
+  // Then
+  ASSERT_EQ(*result, *Lisple::Constant::NIL);
+}
