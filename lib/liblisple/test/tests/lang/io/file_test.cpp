@@ -54,3 +54,78 @@ TEST_F(IoNamespace, io_namespace_cannot_be_modified_from_lisple)
 {
   EXPECT_THROW(runtime.eval("(ns lisple.io) (def x 1)"), Lisple::NamespaceException);
 }
+
+TEST_F(IoNamespace, file_system_predicates_observe_files_and_directories)
+{
+  fs.add_file("assets/config.edn", "{}");
+
+  EXPECT_EQ(runtime.eval(R"((lisple.io/exists? "assets/config.edn"))")->to_string(), "true");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/file? "assets/config.edn"))")->to_string(), "true");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/directory? "assets"))")->to_string(), "true");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/exists? "assets/missing.edn"))")->to_string(),
+            "false");
+}
+
+TEST_F(IoNamespace, stat_bang_returns_missing_and_file_records)
+{
+  fs.add_file("assets/config.edn", "12345");
+
+  EXPECT_EQ(runtime.eval(R"((lisple.io/stat! "missing.edn"))")->to_string(),
+            "{:exists? false :type nil :size nil :modified-ms nil}");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/stat! "assets/config.edn"))")->to_string(),
+            "{:exists? true :type :file :size 5 :modified-ms 0}");
+}
+
+TEST_F(IoNamespace, list_directory_bang_lists_entry_records)
+{
+  fs.add_file("assets/config.edn", "{}");
+  fs.add_file("assets/sprites/player.png", "png");
+  fs.add_file("assets/.secret", "hidden");
+
+  EXPECT_EQ(
+    runtime.eval(R"((lisple.io/list-directory! "assets"))")->to_string(),
+    R"([{:name "config.edn" :path "assets/config.edn" :type :file} {:name "sprites" :path "assets/sprites" :type :directory}])");
+}
+
+TEST_F(IoNamespace, list_directory_bang_filters_by_options)
+{
+  fs.add_file("assets/config.edn", "{}");
+  fs.add_file("assets/level.edn", "{}");
+  fs.add_file("assets/logo.png", "png");
+  fs.add_file("assets/sprites/player.png", "png");
+  fs.add_file("assets/.secret.edn", "hidden");
+
+  EXPECT_EQ(
+    runtime
+      .eval(R"((lisple.io/list-directory! "assets" {:directories? false :filter "*.edn"}))")
+      ->to_string(),
+    R"([{:name "config.edn" :path "assets/config.edn" :type :file} {:name "level.edn" :path "assets/level.edn" :type :file}])");
+  EXPECT_EQ(
+    runtime
+      .eval(
+        R"((lisple.io/list-directory! "assets" {:directories? false :hidden? true :filter ["*.png" ".*.edn"]}))")
+      ->to_string(),
+    R"([{:name ".secret.edn" :path "assets/.secret.edn" :type :file} {:name "logo.png" :path "assets/logo.png" :type :file}])");
+}
+
+TEST_F(IoNamespace, directory_helpers_return_runtime_paths)
+{
+  EXPECT_EQ(runtime.eval(R"((lisple.io/current-directory!))")->to_string(), R"("/fake")");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/home-directory!))")->to_string(), R"("/home/fake")");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/absolute-path! "assets/config.edn"))")->to_string(),
+            R"("/fake/assets/config.edn")");
+}
+
+TEST_F(IoNamespace, path_helpers_are_pure_string_operations)
+{
+  EXPECT_EQ(runtime.eval(R"((lisple.io/join-path "assets" "config.edn"))")->to_string(),
+            R"("assets/config.edn")");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/parent-path "assets/config.edn"))")->to_string(),
+            R"("assets")");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/basename "assets/config.edn"))")->to_string(),
+            R"("config.edn")");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/dirname "assets/config.edn"))")->to_string(),
+            R"("assets")");
+  EXPECT_EQ(runtime.eval(R"((lisple.io/extension "assets/config.edn"))")->to_string(),
+            R"(".edn")");
+}

@@ -20,6 +20,14 @@ namespace Lisple
 
     const std::string read(const std::string& file_name) override;
     void write(const std::string& file_name, const std::string& contents) override;
+    std::vector<DirectoryEntry> list_directory(const std::string& path) override;
+    FileSystemStat stat(const std::string& path) override;
+    bool exists(const std::string& path) override;
+    bool is_file(const std::string& path) override;
+    bool is_directory(const std::string& path) override;
+    std::string absolute_path(const std::string& path) override;
+    std::string current_directory() override;
+    std::string home_directory() override;
   };
 } // namespace Lisple
 

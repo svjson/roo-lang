@@ -30,7 +30,9 @@ set(lisple_SOURCES
   src/lisple/lang/branch.cpp
   src/lisple/lang/func.cpp
   src/lisple/lang/io/file.cpp
+  src/lisple/lang/io/fs.cpp
   src/lisple/lang/io/io_namespace.cpp
+  src/lisple/lang/io/path.cpp
   src/lisple/lang/loop.cpp
   src/lisple/lang/math.cpp
   src/lisple/lang/num.cpp

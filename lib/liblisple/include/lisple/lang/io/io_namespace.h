@@ -5,6 +5,12 @@
 
 namespace Lisple
 {
+  /*!
+   * @brief Create the immutable native lisple.io namespace.
+   *
+   * The namespace contains text/EDN file I/O functions, filesystem
+   * observation functions, and pure path manipulation functions.
+   */
   Namespace make_io_namespace();
 } // namespace Lisple
 
