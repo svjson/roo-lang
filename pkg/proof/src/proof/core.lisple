@@ -4,6 +4,16 @@
 (def tests [])
 (def current-failures [])
 
+(def deftest proof.syntax/deftest)
+(def is proof.syntax/is)
+(def should proof.syntax/should)
+(def assert proof.syntax/assert)
+(def expect proof.syntax/expect)
+(def given proof.syntax/given)
+(def when proof.syntax/when)
+(def then proof.syntax/then)
+(def run-test-body proof.syntax/run-test-body)
+
 (defun clear! []
   (set! [tests] [])
   (set! [current-failures] [])

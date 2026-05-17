@@ -13,14 +13,14 @@ TEST(ProofPackage, registers_and_runs_tests_from_load_path)
 
   runtime.eval(R"(
     (ns proof.package-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
-  runtime.eval("(proof/clear!)");
-  runtime.eval("(proof/deftest addition (proof/is (= 4 (+ 2 2))))");
-  runtime.eval("(proof/deftest should-alias (proof/should true))");
-  runtime.eval("(proof/deftest assert-alias (proof/assert true))");
+  runtime.eval("(clear!)");
+  runtime.eval("(deftest addition (is (= 4 (+ 2 2))))");
+  runtime.eval("(deftest should-alias (should true))");
+  runtime.eval("(deftest assert-alias (assert true))");
 
-  auto results = runtime.eval("(proof/run)");
+  auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(),
             "[{:name addition :status :pass} {:name should-alias :status :pass} "
@@ -38,12 +38,12 @@ TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
 
   runtime.eval(R"(
     (ns proof.package-dynamic-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
-  runtime.eval("(proof/clear!)");
-  runtime.eval("(proof/deftest dynamic-addition (proof/is (= 4 (+ 2 2))))");
+  runtime.eval("(clear!)");
+  runtime.eval("(deftest dynamic-addition (is (= 4 (+ 2 2))))");
 
-  auto results = runtime.eval("(proof/run)");
+  auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(), "[{:name dynamic-addition :status :pass}]");
 }
@@ -55,11 +55,11 @@ TEST(ProofPackage, summarizes_result_sets_in_lisple)
 
   runtime.eval(R"(
     (ns proof.package-summary-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
 
   auto summary = runtime.eval(R"(
-    (proof/result-summary
+    (result-summary
       [{:name :passing-test :status :pass}
        {:name :failing-test
         :status :fail
@@ -68,16 +68,16 @@ TEST(ProofPackage, summarizes_result_sets_in_lisple)
   )");
 
   EXPECT_EQ(summary->to_string(), "{:total 2 :passed 1 :failed 1}");
-  EXPECT_EQ(runtime.eval("(proof/pass-count [{:status :pass} {:status :fail}])")
+  EXPECT_EQ(runtime.eval("(pass-count [{:status :pass} {:status :fail}])")
               ->to_string(),
             "1");
-  EXPECT_EQ(runtime.eval("(proof/fail-count [{:status :pass} {:status :fail}])")
+  EXPECT_EQ(runtime.eval("(fail-count [{:status :pass} {:status :fail}])")
               ->to_string(),
             "1");
-  EXPECT_EQ(runtime.eval(R"((proof/summary-text {:total 2 :passed 1 :failed 1}))")
+  EXPECT_EQ(runtime.eval(R"((summary-text {:total 2 :passed 1 :failed 1}))")
               ->to_string(),
             R"("proof: 1 passed, 1 failed, 2 total")");
-  EXPECT_EQ(runtime.eval(R"((proof/summary-divider {:total 2 :passed 1 :failed 1}))")
+  EXPECT_EQ(runtime.eval(R"((summary-divider {:total 2 :passed 1 :failed 1}))")
               ->to_string(),
             R"("----------------------------------")");
 }
@@ -89,12 +89,12 @@ TEST(ProofPackage, returns_failure_results)
 
   runtime.eval(R"(
     (ns proof.package-failure-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
-  runtime.eval("(proof/clear!)");
-  runtime.eval("(proof/deftest bad-math (proof/is (= 5 (+ 2 2))))");
+  runtime.eval("(clear!)");
+  runtime.eval("(deftest bad-math (is (= 5 (+ 2 2))))");
 
-  auto results = runtime.eval("(proof/run)");
+  auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(),
             "[{:name bad-math :status :fail :message \"Expected 5, got 4.\" "
@@ -108,16 +108,16 @@ TEST(ProofPackage, records_failed_assertions_before_later_passing_expressions)
 
   runtime.eval(R"(
     (ns proof.package-hidden-failure-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
-  runtime.eval("(proof/clear!)");
+  runtime.eval("(clear!)");
   runtime.eval(R"(
-    (proof/deftest hidden-failure
-      (proof/is (= 1 2))
-      (proof/expect (= 3 4)))
+    (deftest hidden-failure
+      (is (= 1 2))
+      (expect (= 3 4)))
   )");
 
-  auto results = runtime.eval("(proof/run)");
+  auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(),
             "[{:name hidden-failure :status :fail :message \"Expected 1, got 2.\" "
@@ -131,16 +131,16 @@ TEST(ProofPackage, expect_records_failures_and_continues)
 
   runtime.eval(R"(
     (ns proof.package-expect-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
-  runtime.eval("(proof/clear!)");
+  runtime.eval("(clear!)");
   runtime.eval(R"(
-    (proof/deftest multiple-expectations
-      (proof/expect (= 1 2))
-      (proof/expect (= 3 4)))
+    (deftest multiple-expectations
+      (expect (= 1 2))
+      (expect (= 3 4)))
   )");
 
-  auto results = runtime.eval("(proof/run)");
+  auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(),
             "[{:name multiple-expectations :status :fail "
@@ -156,20 +156,20 @@ TEST(ProofPackage, scenario_forms_execute_ordinary_lisple_code)
 
   runtime.eval(R"(
     (ns proof.package-scenario-test
-      (:require [proof.core :as proof]))
+      (:require proof.core))
   )");
-  runtime.eval("(proof/clear!)");
+  runtime.eval("(clear!)");
   runtime.eval(R"(
-    (proof/deftest scenario
-      (proof/given
+    (deftest scenario
+      (given
         (def value 4))
-      (proof/when
+      (when
         (set! [value] (+ value 1)))
-      (proof/then
-        (proof/should (= value 5))))
+      (then
+        (should (= value 5))))
   )");
 
-  auto results = runtime.eval("(proof/run)");
+  auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
 }
