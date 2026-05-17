@@ -1,0 +1,5 @@
+{:name proof-dynamic-smoke
+ :version "0.1.0"
+ :dependencies {proof "file:../../.."}
+ :load-roots ["src"]
+ :entry-points [smoke.run]}

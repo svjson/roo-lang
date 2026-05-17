@@ -9,5 +9,8 @@ liblisple.a
 liblisple.so
 test/testlisple
 test/cmake*.json
+pkg/*/native/*.dll
+pkg/*/native/*.dylib
+pkg/*/native/*.so
 .cache
 scratch/

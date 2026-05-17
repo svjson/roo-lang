@@ -23,6 +23,7 @@ endif()
 add_subdirectory(lib/liblisple)
 add_subdirectory(lib/lisple-package)
 add_subdirectory(lib/lisple-server)
+add_subdirectory(pkg)
 
 add_executable(lisple_cli
   bin/lisple/main.cpp
@@ -59,6 +60,16 @@ set_tests_properties(
   PROPERTIES
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+)
+add_test(
+  NAME lisple_cli_runs_package_with_dynamic_proof_dependency
+  COMMAND $<TARGET_FILE:lisple_cli> .
+)
+set_tests_properties(
+  lisple_cli_runs_package_with_dynamic_proof_dependency
+  PROPERTIES
+    WORKING_DIRECTORY
+      ${CMAKE_CURRENT_SOURCE_DIR}/pkg/proof/test/assets/dynamic-smoke
 )
 
 install(CODE [[

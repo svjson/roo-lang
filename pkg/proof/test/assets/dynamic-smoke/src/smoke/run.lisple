@@ -1,0 +1,7 @@
+(ns smoke.run
+  (:require [proof.core :as proof]))
+
+(proof/clear!)
+(proof/deftest dynamic-proof
+  (proof/is (= 4 (+ 2 2))))
+(proof/run)

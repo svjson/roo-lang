@@ -1,0 +1,103 @@
+(ns proof.core
+  (:require proof.syntax))
+
+(def tests [])
+(def current-failures [])
+
+(defun clear! []
+  (set! [tests] [])
+  (set! [current-failures] [])
+  tests)
+
+(defun register-test! [name body]
+  (append! tests {:name name :body body})
+  name)
+
+(defun pass-result [name]
+  {:name name :status :pass})
+
+(defun fail-result [name failures]
+  {:name name
+   :status :fail
+   :message (:message (head failures))
+   :failures failures})
+
+(defun record-failure! [message]
+  (let [failure {:message message}]
+    (append! current-failures failure)
+    failure))
+
+(defun run-test [test]
+  (set! [current-failures] [])
+  (run-test-body (:body test))
+  (if (= 0 (count current-failures))
+    (pass-result (:name test))
+    (fail-result (:name test) current-failures)))
+
+(defun passed? [result]
+  (= (:status result) :pass))
+
+(defun failed? [result]
+  (= (:status result) :fail))
+
+(defun passed-results [results]
+  (filter results passed?))
+
+(defun failed-results [results]
+  (filter results failed?))
+
+(defun pass-count [results]
+  (count (passed-results results)))
+
+(defun fail-count [results]
+  (count (failed-results results)))
+
+(defun result-summary [results]
+  {:total (count results)
+   :passed (pass-count results)
+   :failed (fail-count results)})
+
+(defun summary-text [summary]
+  (str "proof: " (:passed summary) " passed, "
+       (:failed summary) " failed, "
+       (:total summary) " total"))
+
+(defun divider [width]
+  (apply join (concat [""] (repeat width "-"))))
+
+(defun summary-divider [summary]
+  (divider (count (summary-text summary))))
+
+(defun report-summary [summary]
+  (let [line (summary-text summary)
+        separator (divider (count line))]
+    (prn separator)
+    (prn line)
+    (prn separator)
+    summary))
+
+(defun report-failure [failure]
+  (prn "    -" (:message failure))
+  failure)
+
+(defun report-failures [failures]
+  (map failures report-failure))
+
+(defun report-result [result]
+  (if (passed? result)
+    (prn "  PASS" (:name result))
+    (do
+      (prn "  FAIL" (:name result))
+      (report-failures (:failures result))))
+  result)
+
+(defun report-results [results]
+  (map results report-result))
+
+(defun report [results]
+  (report-results results)
+  (report-summary (result-summary results))
+  results)
+
+(defun run []
+  (report (map tests run-test)))
