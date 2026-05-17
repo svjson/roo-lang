@@ -601,38 +601,53 @@ namespace Lisple
     user_function_rtval_invocations++;
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
     ctx.switch_namespace(home_ns);
-    Scope fn_scope;
-    for (size_t i = 0; i < this->required_count; i++)
+    bool pushed_context = false;
+
+    try
     {
-      arg_binding[i]->apply(fn_scope, args[i]);
-    }
-    for (size_t i = 0; i < this->optional_count; i++)
-    {
-      const size_t arg_idx = this->required_count + i;
-      const sptr_val& val = arg_idx < args.size() ? args[arg_idx] : Constant::NIL;
-      arg_binding[arg_idx]->apply(fn_scope, val);
-    }
-    if (this->rest_binding)
-    {
-      const size_t rest_start = this->required_count + this->optional_count;
-      sptr_val_v rest_args;
-      if (rest_start < args.size())
+      Scope fn_scope;
+      for (size_t i = 0; i < this->required_count; i++)
       {
-        rest_args.assign(args.begin() + rest_start, args.end());
+        arg_binding[i]->apply(fn_scope, args[i]);
       }
-      this->rest_binding->apply(fn_scope, rest_args);
-    }
-    ctx.push_context(true, fn_scope);
-    sptr_val retval = body.empty() ? Constant::NIL : nullptr;
+      for (size_t i = 0; i < this->optional_count; i++)
+      {
+        const size_t arg_idx = this->required_count + i;
+        const sptr_val& val = arg_idx < args.size() ? args[arg_idx] : Constant::NIL;
+        arg_binding[arg_idx]->apply(fn_scope, val);
+      }
+      if (this->rest_binding)
+      {
+        const size_t rest_start = this->required_count + this->optional_count;
+        sptr_val_v rest_args;
+        if (rest_start < args.size())
+        {
+          rest_args.assign(args.begin() + rest_start, args.end());
+        }
+        this->rest_binding->apply(fn_scope, rest_args);
+      }
+      ctx.push_context(true, fn_scope);
+      pushed_context = true;
+      sptr_val retval = body.empty() ? Constant::NIL : nullptr;
 
-    for (auto& node : body)
+      for (auto& node : body)
+      {
+        retval = exec(ctx, *node);
+      }
+      ctx.pop_context();
+      ctx.switch_namespace(current_namespace);
+
+      return retval;
+    }
+    catch (...)
     {
-      retval = exec(ctx, *node);
+      if (pushed_context)
+      {
+        ctx.pop_context();
+      }
+      ctx.switch_namespace(current_namespace);
+      throw;
     }
-    ctx.pop_context();
-    ctx.switch_namespace(current_namespace);
-
-    return retval;
   }
 
   const uptr_exec_node_v& UserFunction::get_body() const
