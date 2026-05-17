@@ -25,6 +25,7 @@ get_filename_component(LISPLE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOL
 
 set(lisple-package_SOURCES
   src/lib/manifest.cpp
+  src/lib/native_loader.cpp
 )
 
 add_library(lisple-package_objects OBJECT ${lisple-package_SOURCES})
@@ -67,10 +68,12 @@ endforeach()
 
 target_link_libraries(lisple-package_static
   PUBLIC Lisple::lisple_static
+  PRIVATE ${CMAKE_DL_LIBS}
 )
 
 target_link_libraries(lisple-package_shared
   PUBLIC Lisple::lisple_shared
+  PRIVATE ${CMAKE_DL_LIBS}
 )
 
 add_library(Lisple::package_static ALIAS lisple-package_static)

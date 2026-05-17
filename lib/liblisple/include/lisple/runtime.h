@@ -152,6 +152,14 @@ namespace Lisple
     Namespace* ns(const std::string& name, bool create_if_absent = false);
 
     /*!
+     * @brief Register a fully constructed user namespace with this runtime.
+     *
+     * This is intended for host/native integrations that create namespaces after
+     * runtime construction, including dynamically loaded native packages.
+     */
+    void register_namespace(std::unique_ptr<Namespace> ns);
+
+    /*!
      * @brief Returns a reference to the current namespace of the reader context
      */
     Namespace& get_current_namespace();

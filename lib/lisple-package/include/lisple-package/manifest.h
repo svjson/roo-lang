@@ -16,6 +16,15 @@ namespace Lisple::Package
     std::string path;
   };
 
+  struct NativeLibrary
+  {
+    std::string name;
+    std::string version;
+    std::string path;
+    std::string package_root;
+    std::vector<std::string> namespaces;
+  };
+
   struct Manifest
   {
     std::string name;
@@ -24,6 +33,7 @@ namespace Lisple::Package
     std::vector<Dependency> dependencies;
     std::vector<std::string> load_roots;
     std::vector<std::string> native_namespaces;
+    std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> entry_points;
     std::vector<std::string> test_entry_points;
   };
@@ -34,6 +44,7 @@ namespace Lisple::Package
     std::vector<std::string> package_roots;
     std::vector<std::string> load_paths;
     std::vector<std::string> native_namespaces;
+    std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> entry_points;
     std::vector<std::string> test_entry_points;
   };

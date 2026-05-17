@@ -183,6 +183,66 @@ namespace Lisple::Package
                             node->to_string());
     }
 
+    NativeLibrary native_library_from_map(const sptr_ast_node& node,
+                                          const std::string& source_name)
+    {
+      auto fields = map_fields(node, source_name);
+      NativeLibrary library;
+
+      if (fields.count("name"))
+      {
+        library.name = atom_string(fields.at("name"), "native-libraries", source_name);
+      }
+      if (fields.count("version"))
+      {
+        library.version =
+          atom_string(fields.at("version"), "native-libraries", source_name);
+      }
+      if (fields.count("path"))
+      {
+        library.path = atom_string(fields.at("path"), "native-libraries", source_name);
+      }
+      if (fields.count("namespaces"))
+      {
+        library.namespaces =
+          vector_of_atoms(fields.at("namespaces"), "native-libraries", source_name);
+      }
+
+      if (library.name.empty())
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': native library missing :name.");
+      }
+
+      return library;
+    }
+
+    std::vector<NativeLibrary> native_library_list(const Lisple::sptr_ast_node& node,
+                                                   const std::string& source_name)
+    {
+      if (node->get_type() != Form::VECTOR)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': field :native-libraries expected vector, got " +
+                              node->to_string());
+      }
+
+      std::vector<NativeLibrary> libraries;
+      auto& children = node->get_children();
+      libraries.reserve(children.size());
+      for (auto& child : children)
+      {
+        if (child->get_type() != Form::MAP)
+        {
+          throw LispleException("Invalid package manifest '" + source_name +
+                                "': field :native-libraries expected maps, got " +
+                                child->to_string());
+        }
+        libraries.push_back(native_library_from_map(child, source_name));
+      }
+      return libraries;
+    }
+
     std::string join_path(const std::string& root, const std::string& child)
     {
       if (root.empty() || root == ".")
@@ -368,6 +428,20 @@ namespace Lisple::Package
       {
         append_unique(plan.native_namespaces, native_namespace);
       }
+      for (const auto& native_library : manifest.native_libraries)
+      {
+        NativeLibrary resolved = native_library;
+        resolved.package_root = package_root;
+        if (!resolved.path.empty() && !is_absolute_path(resolved.path))
+        {
+          resolved.path = normalize_path(join_path(package_root, resolved.path));
+        }
+        plan.native_libraries.push_back(resolved);
+        for (const auto& native_namespace : resolved.namespaces)
+        {
+          append_unique(plan.native_namespaces, native_namespace);
+        }
+      }
       for (const auto& entry_point : manifest.entry_points)
       {
         append_unique(plan.entry_points, entry_point);
@@ -459,6 +533,11 @@ namespace Lisple::Package
                                                   "native-namespaces",
                                                   source_name);
     }
+    if (fields.count("native-libraries"))
+    {
+      manifest.native_libraries =
+        native_library_list(fields.at("native-libraries"), source_name);
+    }
     if (fields.count("entry-points"))
     {
       manifest.entry_points =
@@ -485,8 +564,22 @@ namespace Lisple::Package
     plan.package_root = package_root;
     plan.package_roots.push_back(package_root);
     plan.native_namespaces = manifest.native_namespaces;
+    plan.native_libraries = manifest.native_libraries;
     plan.entry_points = manifest.entry_points;
     plan.test_entry_points = manifest.test_entry_points;
+
+    for (auto& native_library : plan.native_libraries)
+    {
+      native_library.package_root = package_root;
+      if (!native_library.path.empty() && !is_absolute_path(native_library.path))
+      {
+        native_library.path = normalize_path(join_path(package_root, native_library.path));
+      }
+      for (const auto& native_namespace : native_library.namespaces)
+      {
+        append_unique(plan.native_namespaces, native_namespace);
+      }
+    }
 
     plan.load_paths.reserve(manifest.load_roots.size());
     for (const auto& root : manifest.load_roots)

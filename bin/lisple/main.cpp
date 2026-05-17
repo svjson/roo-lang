@@ -9,6 +9,7 @@
 #include <lisple/io/dir_root_file_system.h>
 #include <lisple/runtime.h>
 #include <lisple-package/manifest.h>
+#include <lisple-package/native_loader.h>
 
 namespace
 {
@@ -196,7 +197,12 @@ int main(int argc, char** argv)
     }
 
     Lisple::DirRootFileSystem lisple_fs(load_paths);
+    Lisple::Package::LoadedNativePackages native_packages;
     Lisple::Runtime runtime(&lisple_fs);
+    if (package_plan)
+    {
+      native_packages = Lisple::Package::load_native_libraries(runtime, *package_plan);
+    }
     runtime.set_call_stack_diagnostics(true);
     if (run_package)
     {

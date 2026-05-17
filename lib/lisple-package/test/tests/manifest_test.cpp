@@ -1,4 +1,5 @@
 #include <lisple-package/manifest.h>
+#include <lisple-package/native_loader.h>
 
 #include <lisple/exception.h>
 #include <lisple/io/file_system.h>
@@ -35,7 +36,8 @@ namespace
      :description "Lisple test framework."
      :dependencies []
      :load-roots ["src"]
-     :native-namespaces [proof.native]
+     :native-libraries [{:name "proof-native"
+                         :namespaces [proof.syntax]}]
      :entry-points [proof.core]
      :test-entry-points []}
   )";
@@ -57,7 +59,11 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.description, "Lisple test framework.");
   EXPECT_TRUE(manifest.dependencies.empty());
   EXPECT_EQ(manifest.load_roots, std::vector<std::string>{"src"});
-  EXPECT_EQ(manifest.native_namespaces, std::vector<std::string>{"proof.native"});
+  EXPECT_TRUE(manifest.native_namespaces.empty());
+  ASSERT_EQ(manifest.native_libraries.size(), 1u);
+  EXPECT_EQ(manifest.native_libraries[0].name, "proof-native");
+  EXPECT_EQ(manifest.native_libraries[0].namespaces,
+            std::vector<std::string>{"proof.syntax"});
   EXPECT_EQ(manifest.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_TRUE(manifest.test_entry_points.empty());
 }
@@ -95,7 +101,10 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.package_roots, std::vector<std::string>{"/repo/pkg/proof"});
   EXPECT_EQ(plan.load_paths, std::vector<std::string>{"/repo/pkg/proof/src"});
-  EXPECT_EQ(plan.native_namespaces, std::vector<std::string>{"proof.native"});
+  EXPECT_EQ(plan.native_namespaces, std::vector<std::string>{"proof.syntax"});
+  ASSERT_EQ(plan.native_libraries.size(), 1u);
+  EXPECT_EQ(plan.native_libraries[0].name, "proof-native");
+  EXPECT_EQ(plan.native_libraries[0].package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_TRUE(plan.test_entry_points.empty());
 }
@@ -297,6 +306,49 @@ TEST(PackageManifest, fixture_package_can_run_code_from_file_dependency)
   runtime.read_file("cafe/register.lisple");
 
   EXPECT_EQ(runtime.eval("(cafe.register/morning-sale-total)")->to_string(), "50");
+}
+
+TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "lisple-package-native-library-test";
+  std::filesystem::remove_all(root);
+
+  write_file(root / "pkg/native-app/package.edn",
+             std::string(R"({:name native-app
+                :dependencies []
+                :load-roots ["src"]
+                :native-libraries [{:name "lisple-package-test-native"
+                                    :version "0.1.0"
+                                    :path ")") +
+               LISPLE_PACKAGE_TEST_NATIVE_LIBRARY +
+               R"("
+                                    :namespaces [package.test.native]}]})");
+  write_file(root / "pkg/native-app/src/native/app.lisple",
+             R"((ns native.app
+                  (:require [package.test.native :as native]))
+
+                (defun run []
+                  (native/answer nil)))");
+
+  Lisple::Package::LoadPlan host_plan;
+  host_plan.load_paths = {"/"};
+  auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
+  auto plan = Lisple::Package::resolve_load_plan(
+    *manifest_fs,
+    (root / "pkg/native-app").string());
+
+  Lisple::Package::LoadedNativePackages native_packages;
+  {
+    auto package_fs = Lisple::Package::make_load_path_file_system(plan);
+    Lisple::Runtime runtime(package_fs.get());
+    native_packages = Lisple::Package::load_native_libraries(runtime, plan);
+    runtime.read_file("native/app.lisple");
+
+    EXPECT_EQ(runtime.eval("(native.app/run)")->to_string(), "42");
+  }
+
+  std::filesystem::remove_all(root);
 }
 
 TEST(PackageManifest, rejects_non_vector_list_fields)

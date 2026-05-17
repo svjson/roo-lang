@@ -239,6 +239,26 @@ namespace Lisple
     return &namespaces.at(namespace_name);
   }
 
+  void Runtime::register_namespace(std::unique_ptr<Namespace> ns)
+  {
+    if (!ns)
+    {
+      throw LispleException("Cannot register null namespace.");
+    }
+    if (ns->get_type() != Namespace::Type::USER)
+    {
+      throw LispleException("Provided namespace '" + ns->get_name() +
+                            "' is of an invalid type.");
+    }
+
+    const std::string name = ns->get_name();
+    auto result = namespaces.emplace(name, std::move(*ns));
+    if (!result.second)
+    {
+      throw LispleException("Namespace '" + name + "' is already registered.");
+    }
+  }
+
   bool Runtime::has_file_system_access() const
   {
     return file_system_access;
