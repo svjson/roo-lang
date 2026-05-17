@@ -1,0 +1,7 @@
+(ns recipe.book)
+
+(def coffee-price 30)
+(def pastry-price 12)
+
+(defun breakfast-total []
+  (+ coffee-price pastry-price))

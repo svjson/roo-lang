@@ -1,0 +1,535 @@
+#include <lisple-package/manifest.h>
+
+#include <algorithm>
+#include <filesystem>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <lisple/exception.h>
+#include <lisple/form.h>
+#include <lisple/io/dir_root_file_system.h>
+#include <lisple/reader.h>
+
+namespace Lisple::Package
+{
+  namespace
+  {
+    std::string field_name(const Lisple::sptr_ast_node& key,
+                           const std::string& source_name)
+    {
+      if (key->get_type() != Form::KEYWORD)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': expected keyword field name, got " +
+                              key->to_string());
+      }
+      return key->as<AST::Keyword>().get_identifier();
+    }
+
+    std::string atom_string(const Lisple::sptr_ast_node& node,
+                            const std::string& field,
+                            const std::string& source_name)
+    {
+      switch (node->get_type())
+      {
+      case Form::STRING:
+        return node->as<AST::String>().value;
+      case Form::SYMBOL:
+        return node->as<AST::Symbol>().value;
+      case Form::KEYWORD:
+        return node->as<AST::Keyword>().value;
+      default:
+        throw LispleException("Invalid package manifest '" + source_name + "': field :" +
+                              field + " expected string, symbol, or keyword, got " +
+                              node->to_string());
+      }
+    }
+
+    std::vector<std::string> vector_of_atoms(const Lisple::sptr_ast_node& node,
+                                             const std::string& field,
+                                             const std::string& source_name)
+    {
+      if (node->get_type() != Form::VECTOR)
+      {
+        throw LispleException("Invalid package manifest '" + source_name + "': field :" +
+                              field + " expected vector, got " + node->to_string());
+      }
+
+      std::vector<std::string> values;
+      auto& children = node->get_children();
+      values.reserve(children.size());
+      for (auto& child : children)
+      {
+        values.push_back(atom_string(child, field, source_name));
+      }
+      return values;
+    }
+
+    std::map<std::string, sptr_ast_node> map_fields(const Lisple::sptr_ast_node& node,
+                                                    const std::string& source_name)
+    {
+      if (node->get_type() != Form::MAP)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': expected map, got " + node->to_string());
+      }
+
+      std::map<std::string, sptr_ast_node> fields;
+      auto& children = node->get_children();
+      if (children.size() % 2 != 0)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': map has an uneven number of forms.");
+      }
+
+      for (size_t i = 0; i < children.size(); i += 2)
+      {
+        fields[field_name(children[i], source_name)] = children[i + 1];
+      }
+
+      return fields;
+    }
+
+    Dependency dependency_from_map_entry(const sptr_ast_node& key,
+                                         const sptr_ast_node& value,
+                                         const std::string& source_name)
+    {
+      Dependency dependency;
+      dependency.name = atom_string(key, "dependencies", source_name);
+
+      switch (value->get_type())
+      {
+      case Form::STRING:
+      case Form::SYMBOL:
+      case Form::KEYWORD:
+      {
+        std::string version_or_location = atom_string(value, "dependencies", source_name);
+        if (version_or_location.rfind("file:", 0) == 0)
+        {
+          dependency.path = version_or_location.substr(std::string("file:").size());
+        }
+        else
+        {
+          dependency.version = version_or_location;
+        }
+        return dependency;
+      }
+
+      case Form::MAP:
+      {
+        auto fields = map_fields(value, source_name);
+        if (fields.count("version"))
+        {
+          dependency.version =
+            atom_string(fields.at("version"), "dependencies", source_name);
+        }
+        if (fields.count("path"))
+        {
+          dependency.path = atom_string(fields.at("path"), "dependencies", source_name);
+        }
+        return dependency;
+      }
+
+      default:
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': dependency '" + dependency.name +
+                              "' expected version atom or option map, got " +
+                              value->to_string());
+      }
+    }
+
+    std::vector<Dependency> dependency_list(const Lisple::sptr_ast_node& node,
+                                            const std::string& source_name)
+    {
+      std::vector<Dependency> dependencies;
+
+      if (node->get_type() == Form::VECTOR)
+      {
+        auto& children = node->get_children();
+        dependencies.reserve(children.size());
+        for (auto& child : children)
+        {
+          dependencies.push_back(
+            Dependency{atom_string(child, "dependencies", source_name), "", ""});
+        }
+        return dependencies;
+      }
+
+      if (node->get_type() == Form::MAP)
+      {
+        auto& children = node->get_children();
+        if (children.size() % 2 != 0)
+        {
+          throw LispleException("Invalid package manifest '" + source_name +
+                                "': dependency map has an uneven number of forms.");
+        }
+
+        dependencies.reserve(children.size() / 2);
+        for (size_t i = 0; i < children.size(); i += 2)
+        {
+          dependencies.push_back(
+            dependency_from_map_entry(children[i], children[i + 1], source_name));
+        }
+        return dependencies;
+      }
+
+      throw LispleException("Invalid package manifest '" + source_name +
+                            "': field :dependencies expected vector or map, got " +
+                            node->to_string());
+    }
+
+    std::string join_path(const std::string& root, const std::string& child)
+    {
+      if (root.empty() || root == ".")
+      {
+        return child;
+      }
+      if (child.empty())
+      {
+        return root;
+      }
+      if (root.back() == '/')
+      {
+        return root + child;
+      }
+      return root + "/" + child;
+    }
+
+    std::string normalize_path(const std::string& path)
+    {
+      return std::filesystem::path(path).lexically_normal().string();
+    }
+
+    bool is_absolute_path(const std::string& path)
+    {
+      return std::filesystem::path(path).is_absolute();
+    }
+
+    std::string parent_path(const std::string& path)
+    {
+      if (path.empty() || path == ".")
+      {
+        return ".";
+      }
+
+      std::string trimmed = path;
+      while (trimmed.size() > 1 && trimmed.back() == '/')
+      {
+        trimmed.pop_back();
+      }
+
+      const size_t slash = trimmed.find_last_of('/');
+      if (slash == std::string::npos)
+      {
+        return ".";
+      }
+      if (slash == 0)
+      {
+        return "/";
+      }
+      return trimmed.substr(0, slash);
+    }
+
+    std::string manifest_path(const std::string& package_root)
+    {
+      return join_path(package_root, "package.edn");
+    }
+
+    std::string package_root_for_dependency(const std::string& search_root,
+                                            const std::string& dependency)
+    {
+      return join_path(search_root, dependency);
+    }
+
+    std::string read_manifest_source(Lisple::FileSystem& fs,
+                                     const std::string& package_root)
+    {
+      return fs.read(manifest_path(package_root));
+    }
+
+    bool has_string(const std::vector<std::string>& values, const std::string& value)
+    {
+      return std::find(values.begin(), values.end(), value) != values.end();
+    }
+
+    void append_unique(std::vector<std::string>& values, const std::string& value)
+    {
+      if (!has_string(values, value))
+      {
+        values.push_back(value);
+      }
+    }
+
+    std::string describe_roots(const std::vector<std::string>& roots)
+    {
+      std::string result;
+      for (size_t i = 0; i < roots.size(); i++)
+      {
+        if (i > 0)
+        {
+          result += ", ";
+        }
+        result += roots[i];
+      }
+      return result;
+    }
+
+    std::string dependency_path_root(const std::string& package_root,
+                                     const Dependency& dependency)
+    {
+      if (is_absolute_path(dependency.path))
+      {
+        return normalize_path(dependency.path);
+      }
+      return normalize_path(join_path(package_root, dependency.path));
+    }
+
+    std::string find_dependency_root(Lisple::FileSystem& fs,
+                                     const Dependency& dependency,
+                                     const std::string& package_root,
+                                     const std::vector<std::string>& search_roots)
+    {
+      if (!dependency.path.empty())
+      {
+        const std::string root = dependency_path_root(package_root, dependency);
+        try
+        {
+          (void)read_manifest_source(fs, root);
+          return root;
+        }
+        catch (const std::exception&)
+        {
+          throw LispleException("Package dependency '" + dependency.name +
+                                "' was not found at path: " + root);
+        }
+      }
+
+      for (const auto& search_root : search_roots)
+      {
+        const std::string candidate =
+          package_root_for_dependency(search_root, dependency.name);
+        try
+        {
+          (void)read_manifest_source(fs, candidate);
+          return candidate;
+        }
+        catch (const std::exception&)
+        {
+        }
+      }
+
+      throw LispleException("Package dependency '" + dependency.name +
+                            "' was not found under search roots: " +
+                            describe_roots(search_roots));
+    }
+
+    void validate_dependency_version(const Dependency& dependency,
+                                     const Manifest& dependency_manifest,
+                                     const std::string& dependency_root)
+    {
+      if (dependency.version.empty())
+      {
+        return;
+      }
+
+      if (dependency_manifest.version != dependency.version)
+      {
+        throw LispleException("Package dependency '" + dependency.name +
+                              "' at '" + dependency_root + "' has version '" +
+                              dependency_manifest.version + "', expected '" +
+                              dependency.version + "'.");
+      }
+    }
+
+    struct ResolveState
+    {
+      Lisple::FileSystem& fs;
+      std::vector<std::string> search_roots;
+      std::set<std::string> visiting;
+      std::set<std::string> visited;
+      LoadPlan plan;
+    };
+
+    void append_package_to_plan(LoadPlan& plan,
+                                const Manifest& manifest,
+                                const std::string& package_root)
+    {
+      append_unique(plan.package_roots, package_root);
+      for (const auto& root : manifest.load_roots)
+      {
+        append_unique(plan.load_paths, join_path(package_root, root));
+      }
+      for (const auto& native_namespace : manifest.native_namespaces)
+      {
+        append_unique(plan.native_namespaces, native_namespace);
+      }
+      for (const auto& entry_point : manifest.entry_points)
+      {
+        append_unique(plan.entry_points, entry_point);
+      }
+      for (const auto& test_entry_point : manifest.test_entry_points)
+      {
+        append_unique(plan.test_entry_points, test_entry_point);
+      }
+    }
+
+    void resolve_package(ResolveState& state, const std::string& package_root)
+    {
+      if (state.visited.count(package_root))
+      {
+        return;
+      }
+      if (state.visiting.count(package_root))
+      {
+        throw LispleException("Cyclic package dependency involving '" + package_root +
+                              "'.");
+      }
+
+      state.visiting.insert(package_root);
+      Manifest manifest = read_manifest(state.fs, manifest_path(package_root));
+
+      for (const auto& dependency : manifest.dependencies)
+      {
+        const std::string dependency_root =
+          find_dependency_root(state.fs, dependency, package_root, state.search_roots);
+        validate_dependency_version(
+          dependency,
+          read_manifest(state.fs, manifest_path(dependency_root)),
+          dependency_root);
+        resolve_package(state, dependency_root);
+      }
+
+      append_package_to_plan(state.plan, manifest, package_root);
+      state.visiting.erase(package_root);
+      state.visited.insert(package_root);
+    }
+  } // namespace
+
+  Manifest parse_manifest(const std::string& source, const std::string& source_name)
+  {
+    Reader reader;
+    sptr_ast_node_v forms = reader.read_sexps(source);
+    if (forms.size() != 1)
+    {
+      throw LispleException("Invalid package manifest '" + source_name +
+                            "': expected one top-level map.");
+    }
+
+    sptr_ast_node manifest_form = forms.front();
+    if (manifest_form->get_type() != Form::MAP)
+    {
+      throw LispleException("Invalid package manifest '" + source_name +
+                            "': expected top-level map.");
+    }
+
+    std::map<std::string, sptr_ast_node> fields = map_fields(manifest_form, source_name);
+
+    Manifest manifest;
+
+    if (fields.count("name"))
+    {
+      manifest.name = atom_string(fields.at("name"), "name", source_name);
+    }
+    if (fields.count("version"))
+    {
+      manifest.version = atom_string(fields.at("version"), "version", source_name);
+    }
+    if (fields.count("description"))
+    {
+      manifest.description =
+        atom_string(fields.at("description"), "description", source_name);
+    }
+    if (fields.count("dependencies"))
+    {
+      manifest.dependencies = dependency_list(fields.at("dependencies"), source_name);
+    }
+    if (fields.count("load-roots"))
+    {
+      manifest.load_roots = vector_of_atoms(fields.at("load-roots"), "load-roots",
+                                            source_name);
+    }
+    if (fields.count("native-namespaces"))
+    {
+      manifest.native_namespaces = vector_of_atoms(fields.at("native-namespaces"),
+                                                  "native-namespaces",
+                                                  source_name);
+    }
+    if (fields.count("entry-points"))
+    {
+      manifest.entry_points =
+        vector_of_atoms(fields.at("entry-points"), "entry-points", source_name);
+    }
+    if (fields.count("test-entry-points"))
+    {
+      manifest.test_entry_points = vector_of_atoms(fields.at("test-entry-points"),
+                                                  "test-entry-points",
+                                                  source_name);
+    }
+
+    return manifest;
+  }
+
+  Manifest read_manifest(Lisple::FileSystem& fs, const std::string& manifest_path)
+  {
+    return parse_manifest(fs.read(manifest_path), manifest_path);
+  }
+
+  LoadPlan build_load_plan(const Manifest& manifest, const std::string& package_root)
+  {
+    LoadPlan plan;
+    plan.package_root = package_root;
+    plan.package_roots.push_back(package_root);
+    plan.native_namespaces = manifest.native_namespaces;
+    plan.entry_points = manifest.entry_points;
+    plan.test_entry_points = manifest.test_entry_points;
+
+    plan.load_paths.reserve(manifest.load_roots.size());
+    for (const auto& root : manifest.load_roots)
+    {
+      plan.load_paths.push_back(join_path(package_root, root));
+    }
+
+    return plan;
+  }
+
+  LoadPlan resolve_load_plan(Lisple::FileSystem& fs,
+                             const std::string& package_root,
+                             const ResolveOptions& options)
+  {
+    ResolveState state{
+      fs,
+      options.package_search_roots,
+      {},
+      {},
+      {},
+    };
+    append_unique(state.search_roots, parent_path(package_root));
+    state.plan.package_root = package_root;
+
+    resolve_package(state, package_root);
+
+    return state.plan;
+  }
+
+  std::vector<std::string> merge_load_paths(
+    const LoadPlan& plan,
+    const std::vector<std::string>& extra_load_paths)
+  {
+    std::vector<std::string> load_paths = extra_load_paths;
+    load_paths.insert(load_paths.end(), plan.load_paths.begin(), plan.load_paths.end());
+    return load_paths;
+  }
+
+  std::unique_ptr<Lisple::FileSystem> make_load_path_file_system(
+    const LoadPlan& plan,
+    const std::vector<std::string>& extra_load_paths)
+  {
+    return std::make_unique<Lisple::DirRootFileSystem>(
+      merge_load_paths(plan, extra_load_paths));
+  }
+} // namespace Lisple::Package

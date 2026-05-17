@@ -47,6 +47,9 @@ test\:lang: build
 	cmake --build build --target testlisple
 	./build/$(TEST_BINARY) --skip-benchmarks
 
+test\:package: build
+	cmake --build build --target testpackage
+	./build/$(PACKAGE_TEST_BINARY)
 test\:benchmark: build
 	cmake --build build --target testlisple
 	./build/$(TEST_BINARY)

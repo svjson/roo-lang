@@ -1,0 +1,6 @@
+{:name cafe-register
+ :version "1.0.0"
+ :description "Cafe register application."
+ :dependencies {recipe-book "file:../recipe-book"}
+ :load-roots ["src"]
+ :entry-points [cafe.register]}

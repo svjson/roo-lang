@@ -21,6 +21,7 @@ if (MSVC)
 endif()
 
 add_subdirectory(lib/liblisple)
+add_subdirectory(lib/lisple-package)
 add_subdirectory(lib/lisple-server)
 
 add_executable(lisple_cli
@@ -29,16 +30,25 @@ add_executable(lisple_cli
 
 set_target_properties(lisple_cli PROPERTIES
   OUTPUT_NAME lisple
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 target_link_libraries(lisple_cli
-  PRIVATE Lisple::lisple_shared
+  PRIVATE
+    Lisple::lisple_shared
+    Lisple::package_shared
 )
 target_compile_definitions(lisple_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
+)
+
+enable_testing()
+add_test(
+  NAME lisple_cli_runs_package_file_with_file_dependency
+  COMMAND $<TARGET_FILE:lisple_cli>
+          ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register/src/cafe/run.lisple
 )
 
 install(CODE [[

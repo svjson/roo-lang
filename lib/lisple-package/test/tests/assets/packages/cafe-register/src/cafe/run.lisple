@@ -1,0 +1,4 @@
+(ns cafe.run
+  (:require cafe.register))
+
+(cafe.register/morning-sale-total)

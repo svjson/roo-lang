@@ -1,0 +1,7 @@
+(ns cafe.register
+  (:require [recipe.book :as recipes]))
+
+(def service-fee 8)
+
+(defun morning-sale-total []
+  (+ (recipes/breakfast-total) service-fee))

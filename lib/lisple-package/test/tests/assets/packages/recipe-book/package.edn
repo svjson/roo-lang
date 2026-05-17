@@ -1,0 +1,5 @@
+{:name recipe-book
+ :version "1.0.0"
+ :description "Shared cafe recipe calculations."
+ :dependencies []
+ :load-roots ["src"]}

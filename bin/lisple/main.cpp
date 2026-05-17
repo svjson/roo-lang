@@ -1,10 +1,13 @@
 #include <exception>
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include <lisple/io/dir_root_file_system.h>
 #include <lisple/runtime.h>
+#include <lisple-package/manifest.h>
 
 namespace
 {
@@ -34,12 +37,53 @@ namespace
     std::cerr << message << "\n";
     print_usage();
   }
+
+  std::optional<std::string> find_package_root(const std::filesystem::path& file_path)
+  {
+    std::error_code ec;
+    auto current = std::filesystem::absolute(file_path, ec).lexically_normal();
+    if (ec)
+    {
+      return std::nullopt;
+    }
+
+    if (std::filesystem::is_regular_file(current, ec))
+    {
+      current = current.parent_path();
+    }
+    if (ec)
+    {
+      ec.clear();
+    }
+
+    while (!current.empty())
+    {
+      const auto manifest_path = current / "package.edn";
+      if (std::filesystem::is_regular_file(manifest_path, ec))
+      {
+        return current.string();
+      }
+      if (ec)
+      {
+        ec.clear();
+      }
+
+      const auto parent = current.parent_path();
+      if (parent == current)
+      {
+        break;
+      }
+      current = parent;
+    }
+
+    return std::nullopt;
+  }
 } // namespace
 
 int main(int argc, char** argv)
 {
   std::string file_path;
-  std::vector<std::string> load_paths{"/"};
+  std::vector<std::string> load_paths{std::filesystem::current_path().string(), "/"};
 
   for (int i = 1; i < argc; ++i)
   {
@@ -110,6 +154,14 @@ int main(int argc, char** argv)
 
   try
   {
+    Lisple::DirRootFileSystem manifest_fs("/");
+    if (const auto package_root = find_package_root(file_path))
+    {
+      const auto package_plan =
+        Lisple::Package::resolve_load_plan(manifest_fs, *package_root);
+      load_paths = Lisple::Package::merge_load_paths(package_plan, load_paths);
+    }
+
     Lisple::DirRootFileSystem lisple_fs(load_paths);
     Lisple::Runtime runtime(&lisple_fs);
     runtime.set_call_stack_diagnostics(true);
