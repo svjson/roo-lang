@@ -41,6 +41,14 @@ target_compile_definitions(lisple_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
 )
 
+install(CODE [[
+  set(lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")
+  if(EXISTS "${lisple_installed_include_dir}")
+    message(STATUS "Removing stale installed Lisple headers: ${lisple_installed_include_dir}")
+    file(REMOVE_RECURSE "${lisple_installed_include_dir}")
+  endif()
+]])
+
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
 install(TARGETS lisple_static lisple_shared lisple lisple_cli
