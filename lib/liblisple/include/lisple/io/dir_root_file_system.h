@@ -1,11 +1,11 @@
 
-#ifndef __DIR_ROOT_FILE_SYSTEM_H_
-#define __DIR_ROOT_FILE_SYSTEM_H_
+#ifndef LISPLE__IO__DIR_ROOT_FILE_SYSTEM_H
+#define LISPLE__IO__DIR_ROOT_FILE_SYSTEM_H
 
 #include <string>
 #include <vector>
 
-#include <lisple/file_system.h>
+#include <lisple/io/file_system.h>
 
 namespace Lisple
 {
@@ -18,7 +18,8 @@ namespace Lisple
     DirRootFileSystem(const std::string& root_path);
     DirRootFileSystem(const std::vector<std::string>& load_paths);
 
-    const std::string read_file_to_string(const std::string& file_name) override;
+    const std::string read(const std::string& file_name) override;
+    void write(const std::string& file_name, const std::string& contents) override;
   };
 } // namespace Lisple
 

@@ -5,6 +5,7 @@
 
 #include <lisple/exception.h>
 #include <lisple/exec.h>
+#include <lisple/io/file_system.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
 #include <lisple/runtime/value.h>
@@ -173,6 +174,11 @@ namespace Lisple
   void Context::read_file(const std::string& file_name)
   {
     runtime.read_file(file_name);
+  }
+
+  FileSystem& Context::file_system() const
+  {
+    return *runtime.fs;
   }
 
   void Context::switch_namespace(const std::string& namespace_name)

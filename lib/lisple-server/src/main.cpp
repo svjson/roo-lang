@@ -1,10 +1,10 @@
 
 #include <iostream>
 
-#include <lisple/runtime.h>
+#include <lisple/io/dir_root_file_system.h>
 #include <lisple/lang.h>
+#include <lisple/runtime.h>
 #include <lisple/type.h>
-#include <lisple/dir_root_file_system.h>
 
 #include <lisple-server/server.h>
 
@@ -15,10 +15,10 @@ int main(int, char**)
   Lisple::Runtime runtime(&lisple_fs);
   runtime.set_call_stack_diagnostics(true);
 
-  Lisple::Server::Server server(
-    {.application_name = "Lisple Stand-alone REPL Server", .application_version = "0.1",
-     .port=8100 },
-    runtime);
+  Lisple::Server::Server server({.application_name = "Lisple Stand-alone REPL Server",
+                                 .application_version = "0.1",
+                                 .port = 8100},
+                                runtime);
   auto status = server.start();
 
   if (status.code == 1)

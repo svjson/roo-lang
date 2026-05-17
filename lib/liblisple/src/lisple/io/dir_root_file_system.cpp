@@ -1,6 +1,7 @@
 
-#include "lisple/dir_root_file_system.h"
+#include "lisple/io/dir_root_file_system.h"
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -11,6 +12,11 @@ namespace Lisple
 {
   namespace
   {
+    std::string resolve_path(const std::string& load_path, const std::string& file_name)
+    {
+      return load_path + "/" + file_name;
+    }
+
     std::string read_file(const std::string& path)
     {
       std::ifstream stream(path);
@@ -36,11 +42,11 @@ namespace Lisple
   {
   }
 
-  const std::string DirRootFileSystem::read_file_to_string(const std::string& file_name)
+  const std::string DirRootFileSystem::read(const std::string& file_name)
   {
     for (auto& load_path : load_paths)
     {
-      const std::string relative_path = load_path + "/" + file_name;
+      const std::string relative_path = resolve_path(load_path, file_name);
       try
       {
         return read_file(relative_path);
@@ -50,6 +56,26 @@ namespace Lisple
       }
     }
     throw LispleException("File not found on load path: '" + file_name + "'");
+  }
+
+  void DirRootFileSystem::write(const std::string& file_name, const std::string& contents)
+  {
+    const std::string root = load_paths.empty() ? "." : load_paths.front();
+    const std::filesystem::path path = resolve_path(root, file_name);
+    const auto parent_path = path.parent_path();
+    if (!parent_path.empty())
+    {
+      std::filesystem::create_directories(parent_path);
+    }
+
+    std::ofstream stream(path);
+    if (stream.fail())
+    {
+      stream.close();
+      throw LispleException("Could not write file: '" + path.string() + "'");
+    }
+    stream << contents;
+    stream.close();
   }
 
 } // namespace Lisple

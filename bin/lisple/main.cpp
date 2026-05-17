@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <lisple/dir_root_file_system.h>
+#include <lisple/io/dir_root_file_system.h>
 #include <lisple/runtime.h>
 
 namespace

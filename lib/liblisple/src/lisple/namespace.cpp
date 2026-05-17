@@ -112,6 +112,12 @@ namespace Lisple
     return Namespace(Type::LANG, "", lang_symbols);
   }
 
+  Namespace Namespace::make_lang(const std::string& name,
+                                 std::map<std::string, sptr_val> lang_symbols)
+  {
+    return Namespace(Type::LANG, name, std::move(lang_symbols));
+  }
+
   Namespace::Type Namespace::get_type() const
   {
     return type;
@@ -127,12 +133,21 @@ namespace Lisple
     return values.empty() && imported_namespaces.empty() && aliased_namespaces.empty();
   }
 
+  void Namespace::store(const std::string& identifier, const sptr_val& val)
+  {
+    if (this->type == Type::LANG)
+    {
+      throw NamespaceException("Cannot override language identifier: '" + identifier + "'.");
+    }
+
+    Scope::store(identifier, val);
+  }
+
   void Namespace::mutate(const std::string& identifier, const sptr_val& val)
   {
     if (this->type == Type::LANG)
     {
-      throw NamespaceException("Cannnot override language identifier: '" + identifier +
-                               "'.");
+      throw NamespaceException("Cannot override language identifier: '" + identifier + "'.");
     }
 
     Scope::mutate(identifier, val);

@@ -104,6 +104,8 @@ namespace Lisple
     const sptr_val& lookup(const std::string& identifier) const override;
     const sptr_val& lookup(const Value& identifier) const override;
 
+    void store(const std::string& symbol, const sptr_val& value);
+
     using Scope::mutate;
     void mutate(const std::string& identifier, const sptr_val& val) override;
 
@@ -111,6 +113,8 @@ namespace Lisple
      * Creates a language namespace. Intented for internal use only.
      */
     static Namespace make_lang(std::map<std::string, sptr_val> lang_symbols);
+    static Namespace make_lang(const std::string& name,
+                               std::map<std::string, sptr_val> lang_symbols);
 
     friend class Runtime;
   };

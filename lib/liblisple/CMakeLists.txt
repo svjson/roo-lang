@@ -4,8 +4,10 @@ set(lisple_SOURCES
   src/lisple/adapter.cpp
   src/lisple/bind.cpp
   src/lisple/context.cpp
-  src/lisple/dir_root_file_system.cpp
-  src/lisple/file_system_namespace_source.cpp
+  src/lisple/io/dir_root_file_system.cpp
+  src/lisple/io/file_system.cpp
+  src/lisple/io/file_system_namespace_source.cpp
+  src/lisple/io/null_file_system.cpp
   src/lisple/namespace_loader.cpp
   src/lisple/exec.cpp
   src/lisple/runtime/dict.cpp
@@ -27,6 +29,8 @@ set(lisple_SOURCES
   src/lisple/lang/bind_form.cpp
   src/lisple/lang/branch.cpp
   src/lisple/lang/func.cpp
+  src/lisple/lang/io/file.cpp
+  src/lisple/lang/io/io_namespace.cpp
   src/lisple/lang/loop.cpp
   src/lisple/lang/math.cpp
   src/lisple/lang/num.cpp

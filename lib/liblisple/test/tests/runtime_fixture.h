@@ -8,8 +8,8 @@
 #include <vector>
 
 #include <lisple/context.h>
-#include <lisple/dir_root_file_system.h>
-#include <lisple/file_system.h>
+#include <lisple/io/dir_root_file_system.h>
+#include <lisple/io/file_system.h>
 #include <lisple/lang.h>
 #include <lisple/runtime.h>
 

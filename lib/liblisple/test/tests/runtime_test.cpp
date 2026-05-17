@@ -3,8 +3,8 @@
 #include <string>
 
 #include <lisple/context.h>
-#include <lisple/dir_root_file_system.h>
 #include <lisple/form.h>
+#include <lisple/io/dir_root_file_system.h>
 #include <lisple/namespace.h>
 #include <lisple/runtime.h>
 #include <lisple/runtime/seq.h>

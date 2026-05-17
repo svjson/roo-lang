@@ -16,6 +16,7 @@ namespace Lisple
 {
   class Runtime;
   class Namespace;
+  class FileSystem;
 
   class ContextFrame
   {
@@ -98,6 +99,7 @@ namespace Lisple
     Scope& get_scope_of(const std::string& identifier) const;
 
     void read_file(const std::string& file_name);
+    FileSystem& file_system() const;
     void store_namespace(const std::string& symbol, const sptr_val& value);
 
     /*!

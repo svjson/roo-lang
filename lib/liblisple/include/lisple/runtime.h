@@ -34,6 +34,7 @@ namespace Lisple
      */
     Namespace lang;
     FileSystem* fs;
+    bool file_system_access = false;
     Reader sexp_reader;
     RuntimeOptions options;
     SourceMap source_map;

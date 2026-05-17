@@ -1,5 +1,5 @@
 
-#include "lisple/file_system_namespace_source.h"
+#include "lisple/io/file_system_namespace_source.h"
 
 #include <algorithm>
 #include <optional>
@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <lisple/exception.h>
-#include <lisple/file_system.h>
+#include <lisple/io/file_system.h>
 #include <lisple/namespace_source.h>
 
 namespace Lisple
@@ -190,7 +190,7 @@ namespace Lisple
         {
           try
           {
-            auto source = fs->read_file_to_string(inferred_path + ext);
+            auto source = fs->read(inferred_path + ext);
             return NamespaceFetchResult{std::move(source), inferred_path + ext};
           }
           catch (const LispleException&)
@@ -205,7 +205,7 @@ namespace Lisple
     {
       try
       {
-        auto source = fs->read_file_to_string(full_path + ext);
+        auto source = fs->read(full_path + ext);
         return NamespaceFetchResult{std::move(source), full_path + ext};
       }
       catch (const LispleException&)

@@ -10,10 +10,12 @@
 #include <lisple/context.h>
 #include <lisple/exception.h>
 #include <lisple/exec.h>
-#include <lisple/file_system.h>
-#include <lisple/file_system_namespace_source.h>
 #include <lisple/form.h>
+#include <lisple/io/file_system.h>
+#include <lisple/io/file_system_namespace_source.h>
+#include <lisple/io/null_file_system.h>
 #include <lisple/lang.h>
+#include <lisple/lang/io/io_namespace.h>
 #include <lisple/namespace.h>
 #include <lisple/namespace_loader.h>
 #include <lisple/reader.h>
@@ -26,6 +28,12 @@ namespace Lisple
 {
   namespace
   {
+    NullFileSystem& null_file_system()
+    {
+      static NullFileSystem fs;
+      return fs;
+    }
+
     bool has_parse_file_context(const Lisple::ParseException& e)
     {
       const std::string message = e.what();
@@ -45,11 +53,15 @@ namespace Lisple
 
   Runtime::Runtime(FileSystem* fs)
     : lang(make_language_namespace())
-    , fs(fs)
+    , fs(fs ? fs : &null_file_system())
+    , file_system_access(fs != nullptr)
   {
-    if (fs)
+    Namespace io = make_io_namespace();
+    namespaces.emplace(io.get_name(), std::move(io));
+
+    if (has_file_system_access())
     {
-      default_ns_source = std::make_unique<FileSystemNamespaceSource>(fs);
+      default_ns_source = std::make_unique<FileSystemNamespaceSource>(this->fs);
       namespace_loader = std::make_unique<NamespaceLoader>(default_ns_source.get());
     }
     switch_namespace(DEFAULT_NAMESPACE);
@@ -229,7 +241,7 @@ namespace Lisple
 
   bool Runtime::has_file_system_access() const
   {
-    return fs != nullptr;
+    return file_system_access;
   }
 
   Namespace& Runtime::get_current_namespace()
@@ -245,19 +257,15 @@ namespace Lisple
 
   void Runtime::read_file(Context& ctx, const std::string& file_name)
   {
-    if (!fs)
-    {
-      throw LispleException("This Lisple context does not provide any file system access");
-    }
-
-    auto raw_file = fs->read_file_to_string(file_name);
+    auto raw_file = fs->read(file_name);
 
     const std::string current_ns = get_current_namespace().get_name();
     if (namespace_loader)
     {
       namespace_loader->push_file_context(file_name);
     }
-    auto restore_file_context = [&]() {
+    auto restore_file_context = [&]()
+    {
       if (namespace_loader)
       {
         namespace_loader->pop_file_context();

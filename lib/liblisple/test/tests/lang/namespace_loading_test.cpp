@@ -5,8 +5,8 @@
 #include <string>
 
 #include <lisple/exception.h>
-#include <lisple/file_system.h>
-#include <lisple/file_system_namespace_source.h>
+#include <lisple/io/file_system.h>
+#include <lisple/io/file_system_namespace_source.h>
 #include <lisple/namespace_source.h>
 
 #include "host/test_adapters/vehicle_native_adapters.h"
@@ -93,7 +93,7 @@ namespace
    public:
     void add(const std::string& name, const std::string& content) { files_[name] = content; }
 
-    const std::string read_file_to_string(const std::string& name) override
+    const std::string read(const std::string& name) override
     {
       auto it = files_.find(normalize_path(name));
       if (it == files_.end())
@@ -117,7 +117,7 @@ namespace
 
     void add(const std::string& name, const std::string& content) { files_[name] = content; }
 
-    const std::string read_file_to_string(const std::string& name) override
+    const std::string read(const std::string& name) override
     {
       const std::string resolved_name =
         normalize_path(root_.empty() ? name : root_ + "/" + name);
@@ -421,7 +421,8 @@ TEST_F(NamespaceLoading, read_file_parse_exception_includes_file_name)
   EXPECT_THAT(message, HasSubstr("Unmatched parens"));
 }
 
-TEST_F(NamespaceLoading, read_file_parse_exception_from_required_namespace_includes_required_file)
+TEST_F(NamespaceLoading,
+       read_file_parse_exception_from_required_namespace_includes_required_file)
 {
   // Given
   InMemoryFileSystem fs;
@@ -446,7 +447,8 @@ TEST_F(NamespaceLoading, read_file_parse_exception_from_required_namespace_inclu
   EXPECT_THAT(message, HasSubstr("Unmatched parens"));
 }
 
-TEST_F(NamespaceLoading, read_file_runtime_exception_from_required_namespace_includes_required_file)
+TEST_F(NamespaceLoading,
+       read_file_runtime_exception_from_required_namespace_includes_required_file)
 {
   // Given
   InMemoryFileSystem fs;
