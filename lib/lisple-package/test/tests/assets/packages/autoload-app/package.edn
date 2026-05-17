@@ -1,0 +1,8 @@
+{:name autoload-app
+ :version "0.1.0"
+ :description "Fixture package using autoload namespaces."
+ :dependencies []
+ :load-roots ["src"]
+ :autoloads [autoload.bootstrap]
+ :entry-points [autoload.run]
+ :test-entry-points []}

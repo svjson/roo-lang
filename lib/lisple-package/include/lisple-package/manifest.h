@@ -41,6 +41,7 @@ namespace Lisple::Package
     std::vector<Lisple::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
+    std::vector<std::string> autoloads;
     std::vector<std::string> entry_points;
     std::vector<std::string> test_entry_points;
   };
@@ -53,6 +54,7 @@ namespace Lisple::Package
     std::vector<Lisple::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
+    std::vector<std::string> autoloads;
     std::vector<std::string> entry_points;
     std::vector<std::string> test_entry_points;
   };
@@ -71,22 +73,36 @@ namespace Lisple::Package
                              const std::string& package_root,
                              const ResolveOptions& options = {});
 
-  // Return runtime load paths with host-provided paths first and resolved package
-  // source roots appended in dependency-first order.
+  /**
+   * Return runtime load paths with host-provided paths first and
+   * resolved package source roots appended in dependency-first order.
+   */
   std::vector<std::string> merge_load_paths(
     const LoadPlan& plan,
     const std::vector<std::string>& extra_load_paths = {});
 
-  // Convenience bridge for embedders that want the standard directory-root
-  // filesystem. Callers must keep the returned filesystem alive for the runtime.
+  /**
+   * Convenience bridge for embedders that want the standard
+   * directory-root filesystem. Callers must keep the returned
+   * filesystem alive for the runtime.
+   */
   std::unique_ptr<Lisple::FileSystem> make_load_path_file_system(
     const LoadPlan& plan,
     const std::vector<std::string>& extra_load_paths = {});
 
-  // Configure a runtime to use package-declared namespace roots. Call this
-  // after constructing the runtime with a filesystem that can read the resolved
-  // package paths.
+  /**
+   * Configure a runtime to use package-declared namespace roots. Call
+   * this after constructing the runtime with a filesystem that can
+   * read the resolved package paths.
+   */
   void configure_runtime_namespace_roots(Lisple::Runtime& runtime, const LoadPlan& plan);
+
+  /**
+   * Load package-declared bootstrap namespaces. Call this after
+   * native package * libraries are loaded, so autoload namespaces may
+   * require native namespaces.
+   */
+  void load_autoloads(Lisple::Runtime& runtime, const LoadPlan& plan);
 } // namespace Lisple::Package
 
 #endif

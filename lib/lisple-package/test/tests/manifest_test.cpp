@@ -39,6 +39,7 @@ namespace
      :namespace-roots {proof "src/proof"}
      :native-libraries [{:name "proof-native"
                          :namespaces [proof.syntax]}]
+     :autoloads [proof.core]
      :entry-points [proof.core]
      :test-entry-points []}
   )";
@@ -68,6 +69,7 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.native_libraries[0].name, "proof-native");
   EXPECT_EQ(manifest.native_libraries[0].namespaces,
             std::vector<std::string>{"proof.syntax"});
+  EXPECT_EQ(manifest.autoloads, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(manifest.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_TRUE(manifest.test_entry_points.empty());
 }
@@ -112,6 +114,7 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   ASSERT_EQ(plan.native_libraries.size(), 1u);
   EXPECT_EQ(plan.native_libraries[0].name, "proof-native");
   EXPECT_EQ(plan.native_libraries[0].package_root, "/repo/pkg/proof");
+  EXPECT_EQ(plan.autoloads, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_TRUE(plan.test_entry_points.empty());
 }
@@ -386,6 +389,49 @@ TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
     runtime.read_file("native/app.lisple");
 
     EXPECT_EQ(runtime.eval("(native.app/run)")->to_string(), "42");
+  }
+
+  std::filesystem::remove_all(root);
+}
+
+TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "lisple-package-autoload-test";
+  std::filesystem::remove_all(root);
+
+  write_file(root / "pkg/native-app/package.edn",
+             std::string(R"({:name native-app
+                :dependencies []
+                :load-roots ["src"]
+                :native-libraries [{:name "lisple-package-test-native"
+                                    :version "0.1.0"
+                                    :path ")") +
+               LISPLE_PACKAGE_TEST_NATIVE_LIBRARY +
+               R"("
+                                    :namespaces [package.test.native]}]
+                :autoloads [native.bootstrap]})");
+  write_file(root / "pkg/native-app/src/native/bootstrap.lisple",
+             R"((ns native.bootstrap
+                  (:require [package.test.native :as native]))
+
+                (def autoloaded-value (native/answer nil)))");
+
+  Lisple::Package::LoadPlan host_plan;
+  host_plan.load_paths = {"/"};
+  auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
+  auto plan = Lisple::Package::resolve_load_plan(
+    *manifest_fs,
+    (root / "pkg/native-app").string());
+
+  Lisple::Package::LoadedNativePackages native_packages;
+  {
+    auto package_fs = Lisple::Package::make_load_path_file_system(plan);
+    Lisple::Runtime runtime(package_fs.get());
+    native_packages = Lisple::Package::load_native_libraries(runtime, plan);
+    Lisple::Package::load_autoloads(runtime, plan);
+
+    EXPECT_EQ(runtime.eval("native.bootstrap/autoloaded-value")->to_string(), "42");
   }
 
   std::filesystem::remove_all(root);

@@ -81,6 +81,16 @@ set_tests_properties(
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/namespace-root-app
 )
+add_test(
+  NAME lisple_cli_runs_package_with_autoloads
+  COMMAND $<TARGET_FILE:lisple_cli> .
+)
+set_tests_properties(
+  lisple_cli_runs_package_with_autoloads
+  PROPERTIES
+    WORKING_DIRECTORY
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/autoload-app
+)
 
 install(CODE [[
   set(lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")

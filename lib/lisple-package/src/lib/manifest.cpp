@@ -503,6 +503,10 @@ namespace Lisple::Package
           append_unique(plan.native_namespaces, native_namespace);
         }
       }
+      for (const auto& autoload : manifest.autoloads)
+      {
+        append_unique(plan.autoloads, autoload);
+      }
       for (const auto& entry_point : manifest.entry_points)
       {
         append_unique(plan.entry_points, entry_point);
@@ -604,6 +608,11 @@ namespace Lisple::Package
       manifest.native_libraries =
         native_library_list(fields.at("native-libraries"), source_name);
     }
+    if (fields.count("autoloads"))
+    {
+      manifest.autoloads =
+        vector_of_atoms(fields.at("autoloads"), "autoloads", source_name);
+    }
     if (fields.count("entry-points"))
     {
       manifest.entry_points =
@@ -632,6 +641,7 @@ namespace Lisple::Package
     plan.native_namespaces = manifest.native_namespaces;
     plan.namespace_roots = manifest.namespace_roots;
     plan.native_libraries = manifest.native_libraries;
+    plan.autoloads = manifest.autoloads;
     plan.entry_points = manifest.entry_points;
     plan.test_entry_points = manifest.test_entry_points;
 
@@ -704,5 +714,14 @@ namespace Lisple::Package
   void configure_runtime_namespace_roots(Lisple::Runtime& runtime, const LoadPlan& plan)
   {
     runtime.set_namespace_roots(plan.namespace_roots);
+  }
+
+  void load_autoloads(Lisple::Runtime& runtime, const LoadPlan& plan)
+  {
+    for (const auto& autoload : plan.autoloads)
+    {
+      runtime.eval("(ns lisple.package.autoload (:require " + autoload + "))",
+                   "<package-autoload>");
+    }
   }
 } // namespace Lisple::Package

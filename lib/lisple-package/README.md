@@ -2,7 +2,8 @@
 
 `lisple-package` is the package loading layer that sits next to `liblisple`.
 It reads `package.edn`, resolves local package dependencies, builds Lisple load
-paths, and loads native libraries declared by a package.
+paths, loads native libraries declared by a package, and loads package bootstrap
+namespaces.
 
 This library is deliberately outside `liblisple`. `liblisple` stays an
 embeddable language runtime; embedders that want package loading can opt into
@@ -21,6 +22,7 @@ A package is a directory containing `package.edn`:
  :description "Example package."
  :dependencies {utility "file:../utility"}
  :load-roots ["src"]
+ :autoloads [example.bootstrap]
  :entry-points [example.app]
  :test-entry-points [example.app-test]}
 ```
@@ -34,6 +36,7 @@ Current fields:
 - `:load-roots` lists package-relative Lisple source roots.
 - `:namespace-roots` maps namespace prefixes to package-relative source roots.
 - `:native-libraries` lists package-relative or absolute native libraries.
+- `:autoloads` lists namespaces loaded after native libraries are available.
 - `:entry-points` lists namespaces loaded when running the package directory.
 - `:test-entry-points` lists test namespaces for tools that choose to use them.
 
@@ -122,6 +125,26 @@ for `:name` in that directory:
 
 For example, `{:name "example-native" :path "native"}` resolves to
 `native/libexample-native.so` on Linux.
+
+## Autoloads
+
+Some packages need pure Lisple namespaces to be loaded eagerly because those
+namespaces define globals, register values, or bridge native namespaces into a
+package-level API. Use `:autoloads` for that:
+
+```lisp
+{:name example
+ :version "0.1.0"
+ :load-roots ["src"]
+ :native-libraries [{:name "example-native"
+                     :path "native"
+                     :namespaces [example.runtime]}]
+ :autoloads [example.bootstrap]}
+```
+
+Autoload namespaces are loaded after native libraries are registered with the
+runtime and before package entry points are loaded. That means an autoload
+namespace may require namespaces provided by a native library.
 
 ## Package Layout
 
@@ -290,9 +313,10 @@ The standard sequence is:
 4. Construct the runtime with a filesystem that uses those load paths.
 5. Configure package namespace roots on the runtime.
 6. Load native libraries into the runtime.
-7. Keep the filesystem and loaded native package handles alive while the runtime
+7. Load package autoload namespaces.
+8. Keep the filesystem and loaded native package handles alive while the runtime
    is alive.
-8. Read a file or load the package entry point namespaces.
+9. Read a file or load the package entry point namespaces.
 
 Minimal example:
 
@@ -307,6 +331,7 @@ Lisple::Runtime runtime(fs.get());
 
 Lisple::Package::configure_runtime_namespace_roots(runtime, plan);
 auto native_packages = Lisple::Package::load_native_libraries(runtime, plan);
+Lisple::Package::load_autoloads(runtime, plan);
 runtime.read_file("example/app.lisple");
 ```
 
@@ -348,8 +373,8 @@ lisple .
 ```
 
 finds `package.edn`, resolves dependencies, merges package load roots into the
-runtime load path, loads declared native libraries, and requires the namespaces
-listed in `:entry-points`.
+runtime load path, loads declared native libraries, loads `:autoloads`, and
+requires the namespaces listed in `:entry-points`.
 
 Running a file inside a package:
 
@@ -358,7 +383,7 @@ lisple test/example/app_test.lisple
 ```
 
 uses the nearest parent `package.edn` to resolve the same package load paths and
-native libraries before reading the file.
+native libraries, then loads `:autoloads` before reading the file.
 
 ## Current Limitations
 

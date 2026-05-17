@@ -1,0 +1,3 @@
+(ns autoload.bootstrap)
+
+(def value 42)
