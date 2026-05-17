@@ -21,8 +21,10 @@ namespace Lisple
   {
     FileSystem* fs;
     std::vector<std::string> extensions;
+    std::vector<NamespaceRoot> namespace_roots;
 
     std::string ns_to_path(const std::string& ns_name) const;
+    std::vector<std::string> namespace_root_paths(const std::string& ns_name) const;
 
     /**
      * @brief Resolve the expected disk path of a namespace in relation to
@@ -43,6 +45,11 @@ namespace Lisple
    public:
     explicit FileSystemNamespaceSource(FileSystem* fs);
     FileSystemNamespaceSource(FileSystem* fs, std::vector<std::string> extensions);
+    FileSystemNamespaceSource(FileSystem* fs,
+                              std::vector<std::string> extensions,
+                              std::vector<NamespaceRoot> namespace_roots);
+
+    void set_namespace_roots(std::vector<NamespaceRoot> namespace_roots);
 
     std::optional<NamespaceFetchResult> fetch(
       const std::string& ns_name,

@@ -32,6 +32,7 @@ Current fields:
 - `:description` is optional descriptive text.
 - `:dependencies` maps dependency names to local package locations or metadata.
 - `:load-roots` lists package-relative Lisple source roots.
+- `:namespace-roots` maps namespace prefixes to package-relative source roots.
 - `:native-libraries` lists package-relative or absolute native libraries.
 - `:entry-points` lists namespaces loaded when running the package directory.
 - `:test-entry-points` lists test namespaces for tools that choose to use them.
@@ -59,6 +60,37 @@ path must have the requested version.
 Dependency paths are resolved relative to the package that declares them. The
 load plan is dependency-first, so dependency `:load-roots` are added before the
 depending package's own `:load-roots`.
+
+## Namespace Roots
+
+By default, Lisple file namespace loading maps dots to directories:
+
+```text
+mylib.stuff.core -> mylib/stuff/core.lisple
+```
+
+That works, but it can force package directory layouts to repeat namespace
+prefixes. A package can declare namespace roots when a namespace prefix should
+start at a specific directory:
+
+```lisp
+{:name mylib
+ :version "0.1.0"
+ :load-roots ["src"]
+ :namespace-roots {mylib.stuff "src/lisple/main-stuff"}}
+```
+
+With that manifest, loading `mylib.stuff.core` first tries:
+
+```text
+src/lisple/main-stuff/core.lisple
+```
+
+before falling back to relative namespace inference and then the default
+full-path lookup.
+
+Namespace roots are prefix mappings. The longest matching prefix wins, so a
+more specific mapping such as `mylib.stuff.ui` takes precedence over `mylib`.
 
 ## Native Libraries
 
@@ -119,6 +151,7 @@ The manifest points Lisple at `src` and points native loading at `native`:
  :description "Example package."
  :dependencies []
  :load-roots ["src"]
+ :namespace-roots {example "src/example"}
  :native-libraries [{:name "example-native"
                      :version "0.1.0"
                      :path "native"
@@ -231,6 +264,8 @@ can use `lisple-package` directly.
 Link the host application against both libraries:
 
 ```cmake
+find_package(lisple-package REQUIRED)
+
 target_link_libraries(my_app
   PRIVATE
     Lisple::lisple_shared
@@ -253,10 +288,11 @@ The standard sequence is:
 2. Resolve a load plan from the root package directory.
 3. Merge the package load paths with any host-provided load paths.
 4. Construct the runtime with a filesystem that uses those load paths.
-5. Load native libraries into the runtime.
-6. Keep the filesystem and loaded native package handles alive while the runtime
+5. Configure package namespace roots on the runtime.
+6. Load native libraries into the runtime.
+7. Keep the filesystem and loaded native package handles alive while the runtime
    is alive.
-7. Read a file or load the package entry point namespaces.
+8. Read a file or load the package entry point namespaces.
 
 Minimal example:
 
@@ -269,6 +305,7 @@ auto fs = Lisple::Package::make_load_path_file_system(
   {"/host/app/lisple"});
 Lisple::Runtime runtime(fs.get());
 
+Lisple::Package::configure_runtime_namespace_roots(runtime, plan);
 auto native_packages = Lisple::Package::load_native_libraries(runtime, plan);
 runtime.read_file("example/app.lisple");
 ```

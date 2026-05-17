@@ -1,0 +1,3 @@
+(ns mylib.stuff.core)
+
+(def value 42)

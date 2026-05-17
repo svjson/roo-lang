@@ -14,6 +14,7 @@
 #include <lisple/form.h>
 #include <lisple/io/dir_root_file_system.h>
 #include <lisple/reader.h>
+#include <lisple/runtime.h>
 
 namespace Lisple::Package
 {
@@ -68,6 +69,36 @@ namespace Lisple::Package
         values.push_back(atom_string(child, field, source_name));
       }
       return values;
+    }
+
+    std::vector<Lisple::NamespaceRoot> namespace_root_list(
+      const Lisple::sptr_ast_node& node,
+      const std::string& source_name)
+    {
+      if (node->get_type() != Form::MAP)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': field :namespace-roots expected map, got " +
+                              node->to_string());
+      }
+
+      std::vector<Lisple::NamespaceRoot> roots;
+      auto& children = node->get_children();
+      if (children.size() % 2 != 0)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': namespace root map has an uneven number of forms.");
+      }
+
+      roots.reserve(children.size() / 2);
+      for (size_t i = 0; i < children.size(); i += 2)
+      {
+        roots.push_back(Lisple::NamespaceRoot{
+          atom_string(children[i], "namespace-roots", source_name),
+          atom_string(children[i + 1], "namespace-roots", source_name),
+        });
+      }
+      return roots;
     }
 
     std::map<std::string, sptr_ast_node> map_fields(const Lisple::sptr_ast_node& node,
@@ -325,6 +356,27 @@ namespace Lisple::Package
       }
     }
 
+    bool has_namespace_root(const std::vector<Lisple::NamespaceRoot>& roots,
+                            const Lisple::NamespaceRoot& root)
+    {
+      return std::find_if(roots.begin(),
+                          roots.end(),
+                          [&](const Lisple::NamespaceRoot& existing)
+                          {
+                            return existing.ns_prefix == root.ns_prefix &&
+                                   existing.path == root.path;
+                          }) != roots.end();
+    }
+
+    void append_unique(std::vector<Lisple::NamespaceRoot>& roots,
+                       const Lisple::NamespaceRoot& root)
+    {
+      if (!has_namespace_root(roots, root))
+      {
+        roots.push_back(root);
+      }
+    }
+
     std::string describe_roots(const std::vector<std::string>& roots)
     {
       std::string result;
@@ -423,6 +475,15 @@ namespace Lisple::Package
       for (const auto& root : manifest.load_roots)
       {
         append_unique(plan.load_paths, join_path(package_root, root));
+      }
+      for (const auto& root : manifest.namespace_roots)
+      {
+        Lisple::NamespaceRoot resolved = root;
+        if (!resolved.path.empty() && !is_absolute_path(resolved.path))
+        {
+          resolved.path = normalize_path(join_path(package_root, resolved.path));
+        }
+        append_unique(plan.namespace_roots, resolved);
       }
       for (const auto& native_namespace : manifest.native_namespaces)
       {
@@ -527,6 +588,11 @@ namespace Lisple::Package
       manifest.load_roots = vector_of_atoms(fields.at("load-roots"), "load-roots",
                                             source_name);
     }
+    if (fields.count("namespace-roots"))
+    {
+      manifest.namespace_roots =
+        namespace_root_list(fields.at("namespace-roots"), source_name);
+    }
     if (fields.count("native-namespaces"))
     {
       manifest.native_namespaces = vector_of_atoms(fields.at("native-namespaces"),
@@ -564,6 +630,7 @@ namespace Lisple::Package
     plan.package_root = package_root;
     plan.package_roots.push_back(package_root);
     plan.native_namespaces = manifest.native_namespaces;
+    plan.namespace_roots = manifest.namespace_roots;
     plan.native_libraries = manifest.native_libraries;
     plan.entry_points = manifest.entry_points;
     plan.test_entry_points = manifest.test_entry_points;
@@ -578,6 +645,14 @@ namespace Lisple::Package
       for (const auto& native_namespace : native_library.namespaces)
       {
         append_unique(plan.native_namespaces, native_namespace);
+      }
+    }
+
+    for (auto& namespace_root : plan.namespace_roots)
+    {
+      if (!namespace_root.path.empty() && !is_absolute_path(namespace_root.path))
+      {
+        namespace_root.path = normalize_path(join_path(package_root, namespace_root.path));
       }
     }
 
@@ -624,5 +699,10 @@ namespace Lisple::Package
   {
     return std::make_unique<Lisple::DirRootFileSystem>(
       merge_load_paths(plan, extra_load_paths));
+  }
+
+  void configure_runtime_namespace_roots(Lisple::Runtime& runtime, const LoadPlan& plan)
+  {
+    runtime.set_namespace_roots(plan.namespace_roots);
   }
 } // namespace Lisple::Package

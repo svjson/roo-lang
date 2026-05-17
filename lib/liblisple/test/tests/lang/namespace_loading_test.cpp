@@ -219,6 +219,47 @@ TEST_F(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
   EXPECT_FALSE(result.has_value());
 }
 
+TEST_F(FileSystemNamespaceSource, namespace_root_resolves_prefix_before_full_path)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("mapped/core.lisple", "mapped-content");
+  fs.add("mylib/stuff/core.lisple", "full-path-content");
+  Lisple::FileSystemNamespaceSource source(
+    &fs,
+    {".lisple", ".lspl"},
+    {Lisple::NamespaceRoot{"mylib.stuff", "mapped"}});
+
+  // When
+  auto result = source.fetch("mylib.stuff.core", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "mapped-content");
+  EXPECT_EQ(result->resolved_path, "mapped/core.lisple");
+}
+
+TEST_F(FileSystemNamespaceSource, namespace_root_uses_longest_matching_prefix)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("general/tool.lisple", "general-content");
+  fs.add("specific/tool.lisple", "specific-content");
+  Lisple::FileSystemNamespaceSource source(
+    &fs,
+    {".lisple", ".lspl"},
+    {Lisple::NamespaceRoot{"mylib", "general"},
+     Lisple::NamespaceRoot{"mylib.stuff", "specific"}});
+
+  // When
+  auto result = source.fetch("mylib.stuff.tool", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "specific-content");
+  EXPECT_EQ(result->resolved_path, "specific/tool.lisple");
+}
+
 /** FileSystemNamespaceSource - inferred path resolution */
 
 TEST_F(FileSystemNamespaceSource,

@@ -36,6 +36,7 @@ namespace
      :description "Lisple test framework."
      :dependencies []
      :load-roots ["src"]
+     :namespace-roots {proof "src/proof"}
      :native-libraries [{:name "proof-native"
                          :namespaces [proof.syntax]}]
      :entry-points [proof.core]
@@ -59,6 +60,9 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.description, "Lisple test framework.");
   EXPECT_TRUE(manifest.dependencies.empty());
   EXPECT_EQ(manifest.load_roots, std::vector<std::string>{"src"});
+  ASSERT_EQ(manifest.namespace_roots.size(), 1u);
+  EXPECT_EQ(manifest.namespace_roots[0].ns_prefix, "proof");
+  EXPECT_EQ(manifest.namespace_roots[0].path, "src/proof");
   EXPECT_TRUE(manifest.native_namespaces.empty());
   ASSERT_EQ(manifest.native_libraries.size(), 1u);
   EXPECT_EQ(manifest.native_libraries[0].name, "proof-native");
@@ -101,6 +105,9 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.package_roots, std::vector<std::string>{"/repo/pkg/proof"});
   EXPECT_EQ(plan.load_paths, std::vector<std::string>{"/repo/pkg/proof/src"});
+  ASSERT_EQ(plan.namespace_roots.size(), 1u);
+  EXPECT_EQ(plan.namespace_roots[0].ns_prefix, "proof");
+  EXPECT_EQ(plan.namespace_roots[0].path, "/repo/pkg/proof/src/proof");
   EXPECT_EQ(plan.native_namespaces, std::vector<std::string>{"proof.syntax"});
   ASSERT_EQ(plan.native_libraries.size(), 1u);
   EXPECT_EQ(plan.native_libraries[0].name, "proof-native");
@@ -306,6 +313,39 @@ TEST(PackageManifest, fixture_package_can_run_code_from_file_dependency)
   runtime.read_file("cafe/register.lisple");
 
   EXPECT_EQ(runtime.eval("(cafe.register/morning-sale-total)")->to_string(), "50");
+}
+
+TEST(PackageManifest, namespace_roots_make_prefixed_namespaces_available_to_runtime)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "lisple-package-namespace-root-test";
+  std::filesystem::remove_all(root);
+
+  write_file(root / "pkg/app/package.edn",
+             R"({:name app
+                 :dependencies []
+                 :load-roots ["src"]
+                 :namespace-roots {mylib.stuff "src/lisple/main-stuff"}})");
+  write_file(root / "pkg/app/src/lisple/main-stuff/core.lisple",
+             R"((ns mylib.stuff.core)
+                (def value 42))");
+
+  Lisple::Package::LoadPlan host_plan;
+  host_plan.load_paths = {"/"};
+  auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
+  auto plan = Lisple::Package::resolve_load_plan(
+    *manifest_fs,
+    (root / "pkg/app").string());
+
+  auto package_fs = Lisple::Package::make_load_path_file_system(plan);
+  Lisple::Runtime runtime(package_fs.get());
+  Lisple::Package::configure_runtime_namespace_roots(runtime, plan);
+
+  runtime.eval("(ns app (:require mylib.stuff.core))");
+
+  EXPECT_EQ(runtime.eval("mylib.stuff.core/value")->to_string(), "42");
+
+  std::filesystem::remove_all(root);
 }
 
 TEST(PackageManifest, loads_native_library_namespaces_into_runtime)

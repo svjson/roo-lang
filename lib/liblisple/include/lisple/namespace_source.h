@@ -7,6 +7,12 @@
 
 namespace Lisple
 {
+  struct NamespaceRoot
+  {
+    std::string ns_prefix;
+    std::string path;
+  };
+
   struct NamespaceFetchResult
   {
     std::string source;

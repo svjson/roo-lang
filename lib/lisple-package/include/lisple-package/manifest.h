@@ -6,6 +6,12 @@
 #include <vector>
 
 #include <lisple/io/file_system.h>
+#include <lisple/namespace_source.h>
+
+namespace Lisple
+{
+  class Runtime;
+}
 
 namespace Lisple::Package
 {
@@ -32,6 +38,7 @@ namespace Lisple::Package
     std::string description;
     std::vector<Dependency> dependencies;
     std::vector<std::string> load_roots;
+    std::vector<Lisple::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> entry_points;
@@ -43,6 +50,7 @@ namespace Lisple::Package
     std::string package_root;
     std::vector<std::string> package_roots;
     std::vector<std::string> load_paths;
+    std::vector<Lisple::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> entry_points;
@@ -74,6 +82,11 @@ namespace Lisple::Package
   std::unique_ptr<Lisple::FileSystem> make_load_path_file_system(
     const LoadPlan& plan,
     const std::vector<std::string>& extra_load_paths = {});
+
+  // Configure a runtime to use package-declared namespace roots. Call this
+  // after constructing the runtime with a filesystem that can read the resolved
+  // package paths.
+  void configure_runtime_namespace_roots(Lisple::Runtime& runtime, const LoadPlan& plan);
 } // namespace Lisple::Package
 
 #endif

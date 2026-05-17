@@ -259,6 +259,25 @@ namespace Lisple
     }
   }
 
+  void Runtime::set_namespace_roots(std::vector<NamespaceRoot> namespace_roots)
+  {
+    if (!has_file_system_access() || !default_ns_source)
+    {
+      if (namespace_roots.empty())
+      {
+        return;
+      }
+      throw LispleException("Cannot configure namespace roots without file system access.");
+    }
+
+    auto* fs_source = dynamic_cast<FileSystemNamespaceSource*>(default_ns_source.get());
+    if (!fs_source)
+    {
+      throw LispleException("Runtime namespace source does not support namespace roots.");
+    }
+    fs_source->set_namespace_roots(std::move(namespace_roots));
+  }
+
   bool Runtime::has_file_system_access() const
   {
     return file_system_access;

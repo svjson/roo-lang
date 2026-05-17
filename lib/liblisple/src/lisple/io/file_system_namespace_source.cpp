@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <lisple/exception.h>
@@ -96,6 +97,32 @@ namespace Lisple
 
       return join(normalized, '/');
     }
+
+    std::string join_path(const std::string& root, const std::string& child)
+    {
+      if (root.empty() || root == ".")
+      {
+        return child;
+      }
+      if (child.empty())
+      {
+        return root;
+      }
+      if (root.back() == '/')
+      {
+        return root + child;
+      }
+      return root + "/" + child;
+    }
+
+    bool namespace_root_matches(const std::string& ns_name,
+                                const std::string& ns_prefix)
+    {
+      return ns_name == ns_prefix ||
+             (ns_name.size() > ns_prefix.size() &&
+              ns_name.compare(0, ns_prefix.size(), ns_prefix) == 0 &&
+              ns_name[ns_prefix.size()] == '.');
+    }
   } // namespace
 
   FileSystemNamespaceSource::FileSystemNamespaceSource(FileSystem* fs)
@@ -105,9 +132,24 @@ namespace Lisple
 
   FileSystemNamespaceSource::FileSystemNamespaceSource(FileSystem* fs,
                                                        std::vector<std::string> extensions)
+    : FileSystemNamespaceSource(fs, std::move(extensions), {})
+  {
+  }
+
+  FileSystemNamespaceSource::FileSystemNamespaceSource(
+    FileSystem* fs,
+    std::vector<std::string> extensions,
+    std::vector<NamespaceRoot> namespace_roots)
     : fs(fs)
     , extensions(std::move(extensions))
+    , namespace_roots(std::move(namespace_roots))
   {
+  }
+
+  void FileSystemNamespaceSource::set_namespace_roots(
+    std::vector<NamespaceRoot> namespace_roots)
+  {
+    this->namespace_roots = std::move(namespace_roots);
   }
 
   std::string FileSystemNamespaceSource::ns_to_path(const std::string& ns_name) const
@@ -115,6 +157,38 @@ namespace Lisple
     std::string path = ns_name;
     std::replace(path.begin(), path.end(), '.', '/');
     return path;
+  }
+
+  std::vector<std::string> FileSystemNamespaceSource::namespace_root_paths(
+    const std::string& ns_name) const
+  {
+    std::vector<const NamespaceRoot*> matches;
+    for (const auto& root : namespace_roots)
+    {
+      if (!root.ns_prefix.empty() && namespace_root_matches(ns_name, root.ns_prefix))
+      {
+        matches.push_back(&root);
+      }
+    }
+
+    std::stable_sort(matches.begin(),
+                     matches.end(),
+                     [](const NamespaceRoot* a, const NamespaceRoot* b)
+                     { return a->ns_prefix.size() > b->ns_prefix.size(); });
+
+    std::vector<std::string> paths;
+    paths.reserve(matches.size());
+    for (const auto* root : matches)
+    {
+      std::string suffix;
+      if (ns_name.size() > root->ns_prefix.size())
+      {
+        suffix = ns_name.substr(root->ns_prefix.size() + 1);
+        std::replace(suffix.begin(), suffix.end(), '.', '/');
+      }
+      paths.push_back(join_path(root->path, suffix));
+    }
+    return paths;
   }
 
   std::string FileSystemNamespaceSource::infer_path(
@@ -179,6 +253,21 @@ namespace Lisple
     const std::string& ns_name,
     const NamespaceResolutionContext& ctx)
   {
+    for (const auto& rooted_path : namespace_root_paths(ns_name))
+    {
+      for (const auto& ext : extensions)
+      {
+        try
+        {
+          auto source = fs->read(rooted_path + ext);
+          return NamespaceFetchResult{std::move(source), rooted_path + ext};
+        }
+        catch (const LispleException&)
+        {
+        }
+      }
+    }
+
     if (ctx.current_source_path)
     {
       const std::string inferred_path =

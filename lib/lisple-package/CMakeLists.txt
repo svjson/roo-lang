@@ -66,6 +66,14 @@ foreach(target lisple-package_static lisple-package_shared)
   )
 endforeach()
 
+set_target_properties(lisple-package_static PROPERTIES
+  EXPORT_NAME package_static
+)
+
+set_target_properties(lisple-package_shared PROPERTIES
+  EXPORT_NAME package_shared
+)
+
 target_link_libraries(lisple-package_static
   PUBLIC Lisple::lisple_static
   PRIVATE ${CMAKE_DL_LIBS}
@@ -92,5 +100,9 @@ install(DIRECTORY include/ DESTINATION include)
 install(EXPORT lisple-packageTargets
   FILE lisple-packageTargets.cmake
   NAMESPACE Lisple::
+  DESTINATION lib/cmake/lisple-package
+)
+
+install(FILES ${LISPLE_ROOT_DIR}/cmake/lisple-packageConfig.cmake
   DESTINATION lib/cmake/lisple-package
 )

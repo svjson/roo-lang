@@ -5,7 +5,9 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
+#include <lisple/namespace_source.h>
 #include <lisple/namespace.h>
 #include <lisple/reader.h>
 #include <lisple/source.h>
@@ -158,6 +160,14 @@ namespace Lisple
      * runtime construction, including dynamically loaded native packages.
      */
     void register_namespace(std::unique_ptr<Namespace> ns);
+
+    /*!
+     * @brief Configure explicit namespace prefix roots for file namespace loading.
+     *
+     * Namespace roots are consulted before relative inference and before the
+     * default dotted namespace-to-path mapping.
+     */
+    void set_namespace_roots(std::vector<NamespaceRoot> namespace_roots);
 
     /*!
      * @brief Returns a reference to the current namespace of the reader context

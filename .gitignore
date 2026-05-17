@@ -3,6 +3,7 @@ build/
 Makefile
 !/Makefile
 **/*.cmake
+!cmake/*.cmake
 **/CMakeCache.txt
 /compile_commands.json
 liblisple.a

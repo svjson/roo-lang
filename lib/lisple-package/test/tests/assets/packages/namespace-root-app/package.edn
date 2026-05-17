@@ -1,0 +1,8 @@
+{:name namespace-root-app
+ :version "0.1.0"
+ :description "Fixture package using namespace roots."
+ :dependencies []
+ :load-roots ["src"]
+ :namespace-roots {mylib.stuff "src/lisple/main-stuff"}
+ :entry-points [mylib.stuff.core]
+ :test-entry-points []}

@@ -201,6 +201,7 @@ int main(int argc, char** argv)
     Lisple::Runtime runtime(&lisple_fs);
     if (package_plan)
     {
+      Lisple::Package::configure_runtime_namespace_roots(runtime, *package_plan);
       native_packages = Lisple::Package::load_native_libraries(runtime, *package_plan);
     }
     runtime.set_call_stack_diagnostics(true);
