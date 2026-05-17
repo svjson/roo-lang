@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <lisple/exception.h>
 #include <lisple/io/dir_root_file_system.h>
 #include <lisple/runtime.h>
 #include <lisple-package/manifest.h>
@@ -77,6 +78,31 @@ namespace
     }
 
     return std::nullopt;
+  }
+
+  bool is_directory_target(const std::string& path)
+  {
+    std::error_code ec;
+    const bool is_directory = std::filesystem::is_directory(path, ec);
+    return !ec && is_directory;
+  }
+
+  void run_package_entry_points(Lisple::Runtime& runtime,
+                                const Lisple::Package::LoadPlan& package_plan,
+                                const std::string& target_path)
+  {
+    if (package_plan.entry_points.empty())
+    {
+      throw Lisple::LispleException(
+        "Directory target '" + target_path +
+        "' resolves to a package with no :entry-points in package.edn.");
+    }
+
+    for (const auto& entry_point : package_plan.entry_points)
+    {
+      runtime.eval("(ns lisple.cli.entry (:require " + entry_point + "))",
+                   "<package-entry>");
+    }
   }
 } // namespace
 
@@ -155,17 +181,31 @@ int main(int argc, char** argv)
   try
   {
     Lisple::DirRootFileSystem manifest_fs("/");
-    if (const auto package_root = find_package_root(file_path))
+    const bool run_package = is_directory_target(file_path);
+    std::optional<Lisple::Package::LoadPlan> package_plan;
+    const auto package_root = find_package_root(file_path);
+    if (package_root)
     {
-      const auto package_plan =
-        Lisple::Package::resolve_load_plan(manifest_fs, *package_root);
-      load_paths = Lisple::Package::merge_load_paths(package_plan, load_paths);
+      package_plan = Lisple::Package::resolve_load_plan(manifest_fs, *package_root);
+      load_paths = Lisple::Package::merge_load_paths(*package_plan, load_paths);
+    }
+    else if (run_package)
+    {
+      throw Lisple::LispleException("Directory target '" + file_path +
+                                    "' is not inside a package.");
     }
 
     Lisple::DirRootFileSystem lisple_fs(load_paths);
     Lisple::Runtime runtime(&lisple_fs);
     runtime.set_call_stack_diagnostics(true);
-    runtime.read_file(file_path);
+    if (run_package)
+    {
+      run_package_entry_points(runtime, *package_plan, file_path);
+    }
+    else
+    {
+      runtime.read_file(file_path);
+    }
   }
   catch (const std::exception& e)
   {

@@ -50,6 +50,16 @@ add_test(
   COMMAND $<TARGET_FILE:lisple_cli>
           ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register/src/cafe/run.lisple
 )
+add_test(
+  NAME lisple_cli_runs_package_directory_entry_point
+  COMMAND $<TARGET_FILE:lisple_cli> .
+)
+set_tests_properties(
+  lisple_cli_runs_package_directory_entry_point
+  PROPERTIES
+    WORKING_DIRECTORY
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+)
 
 install(CODE [[
   set(lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")

@@ -3,4 +3,4 @@
  :description "Cafe register application."
  :dependencies {recipe-book "file:../recipe-book"}
  :load-roots ["src"]
- :entry-points [cafe.register]}
+ :entry-points [cafe.run]}
