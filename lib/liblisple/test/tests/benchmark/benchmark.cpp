@@ -488,7 +488,8 @@ namespace LispleTest
     if (empty)
     {
       out << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
-             "unaccounted_time_ms,total_time_ms,single_lowering_total_time_ms,eval_path,"
+             "unaccounted_time_ms,total_time_ms,single_lowering_total_time_ms,"
+             "total_lower_time_ms,eval_path,"
              "exec_path,rtval_cons,rtvw_cons,"
              "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
              "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,"
@@ -508,9 +509,11 @@ namespace LispleTest
       return setup_count + (lower_count / static_cast<int>(lower_iterations));
     };
 
-    out << timestamp << "," << case_name << "," << parse_time << "," << lower_time << ","
+    out << timestamp << "," << case_name << "," << parse_time << ","
+        << lower_time_per_iter << ","
         << exec_time << "," << unacc_time << "," << total_time << ","
-        << single_lowering_total_time << "," << Lisple::eval_executions << ","
+        << single_lowering_total_time << "," << lower_time << ","
+        << Lisple::eval_executions << ","
         << Lisple::exec_executions << "," << Lisple::rtvalues_constructed << ","
         << Lisple::rtvalue_wrappers_constructed << "," << Lisple::literal_nodes_constructed
         << "," << Lisple::lookup_nodes_constructed << "," << Lisple::to_ast_conversions
