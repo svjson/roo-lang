@@ -72,10 +72,10 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(DoForm)
   {
-    uptr_exec_node_v exec_nodes;
-
     sptr_ast_node_v& elements = ast_node->get_children();
 
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
@@ -132,6 +132,7 @@ namespace Lisple
     sptr_ast_node_v& elements = ast_node->get_children();
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
@@ -301,10 +302,10 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(OrForm)
   {
-    uptr_exec_node_v exec_nodes;
-
     sptr_ast_node_v& elements = ast_node->get_children();
 
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
