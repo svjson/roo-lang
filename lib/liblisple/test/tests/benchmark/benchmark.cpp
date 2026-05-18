@@ -25,26 +25,38 @@ namespace LispleTest
   Counters counter_snapshot;
 
   SetupCounters setup_counters;
+  SetupCounters input_lower_counters;
 
   void clear_setup_counters()
   {
     setup_counters = SetupCounters{};
+    input_lower_counters = SetupCounters{};
+  }
+
+  void snapshot_setup_counters(SetupCounters& counters)
+  {
+    counters.lowered_literals = Lisple::lowered_literals;
+    counters.lowered_expressions = Lisple::lowered_expressions;
+    counters.lower_time_exec_resolutions = Lisple::lower_time_exec_resolutions;
+    counters.lower_time_exec_unresolved = Lisple::lower_time_exec_unresolved;
+    counters.rtvalues_constructed = Lisple::rtvalues_constructed;
+    counters.exec_nodes_constructed = Lisple::exec_nodes_constructed;
+    counters.call_nodes_constructed = Lisple::call_nodes_constructed;
+    counters.literal_nodes_constructed = Lisple::literal_nodes_constructed;
+    counters.lookup_nodes_constructed = Lisple::lookup_nodes_constructed;
+    counters.user_functions_rtval_created = Lisple::user_functions_rtval_created;
+    counters.deprecated_special_form_invocations =
+      Lisple::deprecated_special_form_invocations;
   }
 
   void snapshot_setup_counters()
   {
-    setup_counters.lowered_literals = Lisple::lowered_literals;
-    setup_counters.lowered_expressions = Lisple::lowered_expressions;
-    setup_counters.lower_time_exec_resolutions = Lisple::lower_time_exec_resolutions;
-    setup_counters.lower_time_exec_unresolved = Lisple::lower_time_exec_unresolved;
-    setup_counters.rtvalues_constructed = Lisple::rtvalues_constructed;
-    setup_counters.exec_nodes_constructed = Lisple::exec_nodes_constructed;
-    setup_counters.call_nodes_constructed = Lisple::call_nodes_constructed;
-    setup_counters.literal_nodes_constructed = Lisple::literal_nodes_constructed;
-    setup_counters.lookup_nodes_constructed = Lisple::lookup_nodes_constructed;
-    setup_counters.user_functions_rtval_created = Lisple::user_functions_rtval_created;
-    setup_counters.deprecated_special_form_invocations =
-      Lisple::deprecated_special_form_invocations;
+    snapshot_setup_counters(setup_counters);
+  }
+
+  void snapshot_input_lower_counters()
+  {
+    snapshot_setup_counters(input_lower_counters);
   }
 
   void print_counters(bool include_setup_phase)
@@ -76,6 +88,27 @@ namespace LispleTest
                 << setup_counters.lookup_nodes_constructed << std::endl;
       std::cout << "SETUP PHASE - UserFunction(Value body) constructions: "
                 << setup_counters.user_functions_rtval_created << std::endl;
+      std::cout << "-----------------------------------------------" << std::endl;
+      std::cout << "INPUT LOWER PHASE - Lowered expressions: "
+                << input_lower_counters.lowered_expressions << std::endl;
+      std::cout << "INPUT LOWER PHASE - Lowered literals: "
+                << input_lower_counters.lowered_literals << std::endl;
+      std::cout << "INPUT LOWER PHASE - Callees resolved at lower time: "
+                << input_lower_counters.lower_time_exec_resolutions << std::endl;
+      std::cout << "INPUT LOWER PHASE - Callees unresolved at lower time: "
+                << input_lower_counters.lower_time_exec_unresolved << std::endl;
+      std::cout << "INPUT LOWER PHASE - Value constructions: "
+                << input_lower_counters.rtvalues_constructed << std::endl;
+      std::cout << "INPUT LOWER PHASE - ExecNode constructions: "
+                << input_lower_counters.exec_nodes_constructed << std::endl;
+      std::cout << "INPUT LOWER PHASE - CallNode constructions: "
+                << input_lower_counters.call_nodes_constructed << std::endl;
+      std::cout << "INPUT LOWER PHASE - LiteralNode constructions: "
+                << input_lower_counters.literal_nodes_constructed << std::endl;
+      std::cout << "INPUT LOWER PHASE - LookupNode constructions: "
+                << input_lower_counters.lookup_nodes_constructed << std::endl;
+      std::cout << "INPUT LOWER PHASE - UserFunction(Value body) constructions: "
+                << input_lower_counters.user_functions_rtval_created << std::endl;
     }
 
     std::cout << "-----------------------------------------------" << std::endl;
@@ -332,6 +365,7 @@ namespace LispleTest
     {
       runtime.eval(pe);
     }
+    snapshot_setup_counters();
 
     runtime.switch_namespace(ns);
 
@@ -361,7 +395,7 @@ namespace LispleTest
     lower_end_time = now();
     lower_time = lower_end_time - lower_start_time;
 
-    snapshot_setup_counters();
+    snapshot_input_lower_counters();
 
     lower_cleanup_start_time = now();
     auto node = std::move(lowered_nodes.back());
@@ -432,7 +466,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "058_AST_execution_path_removed_d6a8b17";
+    const std::string CHANGE_ME = "059_pre_lowering_optimization_604162a";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
@@ -453,44 +487,80 @@ namespace LispleTest
 
     if (empty)
     {
-      out
-        << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
-           "unaccounted_time_ms,total_time_ms,single_lowering_total_time_ms,eval_path,"
-           "exec_path,rtval_cons,rtvw_cons,"
-           "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
-           "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,"
-           "setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,"
-           "setup_lower_exec_unres,setup_rtval_cons,setup_execnode_cons,"
-           "setup_call_cons,setup_lit_cons,setup_look_cons,setup_uf_rt_cons,"
-           "lower_iterations,lower_time_per_iter_ms,exec_enabled"
-        << std::endl;
+      out << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
+             "unaccounted_time_ms,total_time_ms,single_lowering_total_time_ms,eval_path,"
+             "exec_path,rtval_cons,rtvw_cons,"
+             "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
+             "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,"
+             "setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,"
+             "setup_lower_exec_unres,setup_rtval_cons,setup_execnode_cons,"
+             "setup_call_cons,setup_lit_cons,setup_look_cons,setup_uf_rt_cons,"
+             "input_lowered_expr,input_lowered_lit,input_lower_exec_res,"
+             "input_lower_exec_unres,input_rtval_cons,input_execnode_cons,"
+             "input_call_cons,input_lit_cons,input_look_cons,input_uf_rt_cons,"
+             "lower_iterations,lower_time_per_iter_ms,exec_enabled"
+          << std::endl;
     }
 
     const double lower_time_per_iter =
       static_cast<double>(lower_time) / static_cast<double>(lower_iterations);
+    const auto with_one_input_lowering = [this](int setup_count, int lower_count) {
+      return setup_count + (lower_count / static_cast<int>(lower_iterations));
+    };
 
     out << timestamp << "," << case_name << "," << parse_time << "," << lower_time << ","
         << exec_time << "," << unacc_time << "," << total_time << ","
-        << single_lowering_total_time << ","
-        << Lisple::eval_executions << "," << Lisple::exec_executions << ","
-        << Lisple::rtvalues_constructed << "," << Lisple::rtvalue_wrappers_constructed << ","
-        << Lisple::literal_nodes_constructed << "," << Lisple::lookup_nodes_constructed
-        << "," << Lisple::to_ast_conversions << "," << Lisple::to_rtvalue_conversions << ","
-        << Lisple::user_functions_created << "," << Lisple::user_functions_rtval_created
-        << "," << Lisple::user_functions_ast_created << ","
+        << single_lowering_total_time << "," << Lisple::eval_executions << ","
+        << Lisple::exec_executions << "," << Lisple::rtvalues_constructed << ","
+        << Lisple::rtvalue_wrappers_constructed << "," << Lisple::literal_nodes_constructed
+        << "," << Lisple::lookup_nodes_constructed << "," << Lisple::to_ast_conversions
+        << "," << Lisple::to_rtvalue_conversions << "," << Lisple::user_functions_created
+        << "," << Lisple::user_functions_rtval_created << ","
+        << Lisple::user_functions_ast_created << ","
         << Lisple::user_function_rtval_invocations << ","
         << Lisple::user_function_ast_invocations << ", " << Lisple::lowered_expressions
         << "," << Lisple::lowered_literals << "," << Lisple::lower_time_exec_resolutions
         << "," << Lisple::lower_time_exec_unresolved << ", "
-        << setup_counters.lowered_expressions << "," << setup_counters.lowered_literals
-        << "," << setup_counters.lower_time_exec_resolutions << ","
-        << setup_counters.lower_time_exec_unresolved << ","
-        << setup_counters.rtvalues_constructed << ","
-        << setup_counters.exec_nodes_constructed << ","
-        << setup_counters.call_nodes_constructed << ","
-        << setup_counters.literal_nodes_constructed << ","
-        << setup_counters.lookup_nodes_constructed << ","
-        << setup_counters.user_functions_rtval_created << "," << lower_iterations << ","
+        << with_one_input_lowering(setup_counters.lowered_expressions,
+                                   input_lower_counters.lowered_expressions)
+        << ","
+        << with_one_input_lowering(setup_counters.lowered_literals,
+                                   input_lower_counters.lowered_literals)
+        << ","
+        << with_one_input_lowering(setup_counters.lower_time_exec_resolutions,
+                                   input_lower_counters.lower_time_exec_resolutions)
+        << ","
+        << with_one_input_lowering(setup_counters.lower_time_exec_unresolved,
+                                   input_lower_counters.lower_time_exec_unresolved)
+        << ","
+        << with_one_input_lowering(setup_counters.rtvalues_constructed,
+                                   input_lower_counters.rtvalues_constructed)
+        << ","
+        << with_one_input_lowering(setup_counters.exec_nodes_constructed,
+                                   input_lower_counters.exec_nodes_constructed)
+        << ","
+        << with_one_input_lowering(setup_counters.call_nodes_constructed,
+                                   input_lower_counters.call_nodes_constructed)
+        << ","
+        << with_one_input_lowering(setup_counters.literal_nodes_constructed,
+                                   input_lower_counters.literal_nodes_constructed)
+        << ","
+        << with_one_input_lowering(setup_counters.lookup_nodes_constructed,
+                                   input_lower_counters.lookup_nodes_constructed)
+        << ","
+        << with_one_input_lowering(setup_counters.user_functions_rtval_created,
+                                   input_lower_counters.user_functions_rtval_created)
+        << ","
+        << input_lower_counters.lowered_expressions << ","
+        << input_lower_counters.lowered_literals << ","
+        << input_lower_counters.lower_time_exec_resolutions << ","
+        << input_lower_counters.lower_time_exec_unresolved << ","
+        << input_lower_counters.rtvalues_constructed << ","
+        << input_lower_counters.exec_nodes_constructed << ","
+        << input_lower_counters.call_nodes_constructed << ","
+        << input_lower_counters.literal_nodes_constructed << ","
+        << input_lower_counters.lookup_nodes_constructed << ","
+        << input_lower_counters.user_functions_rtval_created << "," << lower_iterations << ","
         << lower_time_per_iter << "," << (execute ? 1 : 0)
 
         << std::endl;

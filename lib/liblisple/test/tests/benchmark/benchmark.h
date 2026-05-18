@@ -65,6 +65,7 @@ namespace LispleTest
 
   extern Counters counter_snapshot;
   extern SetupCounters setup_counters;
+  extern SetupCounters input_lower_counters;
 
   void print_counters(bool include_setup_phase = false);
   void snapshot_counters();
