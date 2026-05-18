@@ -271,24 +271,20 @@ namespace Lisple
           {
             if (sig)
             {
-              if (sig->supports_rt_value())
+              sptr_val_v args;
+              args.reserve(n.args.size());
+              for (auto& arg : n.args)
               {
-                sptr_val_v args;
-                for (auto& arg : n.args)
-                {
-                  args.push_back(exec(ctx, *arg));
-                }
-                auto retval = sig->invoke(ctx, args);
-
-                return retval;
+                args.push_back(exec(ctx, *arg));
               }
+              auto retval = sig->invoke(ctx, args);
 
-              throw InvocationException("Signature does not support lowered execution: " +
-                                        sig->to_string());
+              return retval;
             }
             else if (x)
             {
               sptr_val_v val_args;
+              val_args.reserve(n.args.size());
               for (auto& arg : n.args)
               {
                 val_args.push_back(exec(ctx, *arg));
