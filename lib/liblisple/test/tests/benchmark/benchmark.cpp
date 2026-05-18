@@ -466,7 +466,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "059_pre_lowering_optimization_604162a";
+    const std::string CHANGE_ME = "060_exponential_special_form_copy_fix_c56912b";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
@@ -505,16 +505,15 @@ namespace LispleTest
 
     const double lower_time_per_iter =
       static_cast<double>(lower_time) / static_cast<double>(lower_iterations);
-    const auto with_one_input_lowering = [this](int setup_count, int lower_count) {
+    const auto with_one_input_lowering = [this](int setup_count, int lower_count)
+    {
       return setup_count + (lower_count / static_cast<int>(lower_iterations));
     };
 
-    out << timestamp << "," << case_name << "," << parse_time << ","
-        << lower_time_per_iter << ","
-        << exec_time << "," << unacc_time << "," << total_time << ","
-        << single_lowering_total_time << "," << lower_time << ","
-        << Lisple::eval_executions << ","
-        << Lisple::exec_executions << "," << Lisple::rtvalues_constructed << ","
+    out << timestamp << "," << case_name << "," << parse_time << "," << lower_time_per_iter
+        << "," << exec_time << "," << unacc_time << "," << total_time << ","
+        << single_lowering_total_time << "," << lower_time << "," << Lisple::eval_executions
+        << "," << Lisple::exec_executions << "," << Lisple::rtvalues_constructed << ","
         << Lisple::rtvalue_wrappers_constructed << "," << Lisple::literal_nodes_constructed
         << "," << Lisple::lookup_nodes_constructed << "," << Lisple::to_ast_conversions
         << "," << Lisple::to_rtvalue_conversions << "," << Lisple::user_functions_created
@@ -553,8 +552,7 @@ namespace LispleTest
         << ","
         << with_one_input_lowering(setup_counters.user_functions_rtval_created,
                                    input_lower_counters.user_functions_rtval_created)
-        << ","
-        << input_lower_counters.lowered_expressions << ","
+        << "," << input_lower_counters.lowered_expressions << ","
         << input_lower_counters.lowered_literals << ","
         << input_lower_counters.lower_time_exec_resolutions << ","
         << input_lower_counters.lower_time_exec_unresolved << ","
@@ -563,8 +561,8 @@ namespace LispleTest
         << input_lower_counters.call_nodes_constructed << ","
         << input_lower_counters.literal_nodes_constructed << ","
         << input_lower_counters.lookup_nodes_constructed << ","
-        << input_lower_counters.user_functions_rtval_created << "," << lower_iterations << ","
-        << lower_time_per_iter << "," << (execute ? 1 : 0)
+        << input_lower_counters.user_functions_rtval_created << "," << lower_iterations
+        << "," << lower_time_per_iter << "," << (execute ? 1 : 0)
 
         << std::endl;
 
