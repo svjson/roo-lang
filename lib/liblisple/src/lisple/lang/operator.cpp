@@ -1,9 +1,61 @@
 
+#include <cstdint>
+#include <cstring>
+
 #include <lisple/exception.h>
 #include <lisple/lang/operator.h>
 
 namespace Lisple
 {
+  namespace
+  {
+    long integer_arg(const sptr_val& arg, const std::string& function_name)
+    {
+      const Value::Number& num = std::get<const Value::Number>(arg->value);
+      if (num.num_type == Value::NumberType::FLOAT)
+      {
+        throw TypeError(function_name + " expects integer arguments.");
+      }
+      return num.get_long();
+    }
+
+    unsigned int shift_bits(sptr_val_v& args, const std::string& function_name)
+    {
+      if (args.size() == 1)
+      {
+        return 1;
+      }
+
+      long bits = integer_arg(args[1], function_name);
+      if (bits < 0 || bits > 63)
+      {
+        throw LispleException(function_name + " shift count must be between 0 and 63.");
+      }
+      return static_cast<unsigned int>(bits);
+    }
+
+    long from_bits(std::uint64_t bits)
+    {
+      std::int64_t signed_bits = 0;
+      static_assert(sizeof(signed_bits) == sizeof(bits));
+      std::memcpy(&signed_bits, &bits, sizeof(bits));
+      return static_cast<long>(signed_bits);
+    }
+
+    std::int64_t arithmetic_right_shift(std::int64_t value, unsigned int bits)
+    {
+      if (bits == 0)
+      {
+        return value;
+      }
+      if (value >= 0)
+      {
+        return value >> bits;
+      }
+      return ~((~value) >> bits);
+    }
+  } // namespace
+
   /** EqualsPFunction - = */
   FUNC_IMPL(EqualsPFunction,
             SIG((FN_ARGS((&Lisple::Type::ANY), (&Lisple::Type::ANY)),
@@ -124,6 +176,131 @@ namespace Lisple
     }
 
     return Value::number(result);
+  }
+
+  /** ShiftLeftFunction - << */
+  FUNC_IMPL(ShiftLeftFunction,
+            std::make_unique<Signature>(FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                        EXEC_DISPATCH(&ShiftLeftFunction::exec_shift_left),
+                                        1,
+                                        false))
+
+  EXEC_BODY(ShiftLeftFunction, exec_shift_left)
+  {
+    const std::uint64_t value = static_cast<std::uint64_t>(integer_arg(args[0], "<<"));
+    return Value::number(from_bits(value << shift_bits(args, "<<")));
+  }
+
+  /** ShiftRightFunction - >> */
+  FUNC_IMPL(ShiftRightFunction,
+            std::make_unique<Signature>(FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                                        EXEC_DISPATCH(&ShiftRightFunction::exec_shift_right),
+                                        1,
+                                        false))
+
+  EXEC_BODY(ShiftRightFunction, exec_shift_right)
+  {
+    const auto value = static_cast<std::int64_t>(integer_arg(args[0], ">>"));
+    return Value::number(
+      static_cast<long>(arithmetic_right_shift(value, shift_bits(args, ">>"))));
+  }
+
+  /** LogicalShiftLeftFunction - <<< */
+  FUNC_IMPL(LogicalShiftLeftFunction,
+            std::make_unique<Signature>(
+              FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+              EXEC_DISPATCH(&LogicalShiftLeftFunction::exec_logical_shift_left),
+              1,
+              false))
+
+  EXEC_BODY(LogicalShiftLeftFunction, exec_logical_shift_left)
+  {
+    const std::uint64_t value = static_cast<std::uint64_t>(integer_arg(args[0], "<<<"));
+    return Value::number(from_bits(value << shift_bits(args, "<<<")));
+  }
+
+  /** LogicalShiftRightFunction - >>> */
+  FUNC_IMPL(LogicalShiftRightFunction,
+            std::make_unique<Signature>(
+              FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+              EXEC_DISPATCH(&LogicalShiftRightFunction::exec_logical_shift_right),
+              1,
+              false))
+
+  EXEC_BODY(LogicalShiftRightFunction, exec_logical_shift_right)
+  {
+    const std::uint64_t value = static_cast<std::uint64_t>(integer_arg(args[0], ">>>"));
+    return Value::number(from_bits(value >> shift_bits(args, ">>>")));
+  }
+
+  /** BitAndFunction - bit-and */
+  FUNC_IMPL(BitAndFunction,
+            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
+                 EXEC_DISPATCH(&BitAndFunction::exec_bit_and))))
+
+  EXEC_BODY(BitAndFunction, exec_bit_and)
+  {
+    if (args.empty())
+    {
+      throw LispleException("No arguments given to bit-and");
+    }
+
+    std::uint64_t result = static_cast<std::uint64_t>(integer_arg(args[0], "bit-and"));
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result &= static_cast<std::uint64_t>(integer_arg(args[i], "bit-and"));
+    }
+    return Value::number(from_bits(result));
+  }
+
+  /** BitOrFunction - bit-or */
+  FUNC_IMPL(BitOrFunction,
+            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
+                 EXEC_DISPATCH(&BitOrFunction::exec_bit_or))))
+
+  EXEC_BODY(BitOrFunction, exec_bit_or)
+  {
+    if (args.empty())
+    {
+      throw LispleException("No arguments given to bit-or");
+    }
+
+    std::uint64_t result = static_cast<std::uint64_t>(integer_arg(args[0], "bit-or"));
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result |= static_cast<std::uint64_t>(integer_arg(args[i], "bit-or"));
+    }
+    return Value::number(from_bits(result));
+  }
+
+  /** BitXorFunction - bit-xor */
+  FUNC_IMPL(BitXorFunction,
+            SIG((FN_ARGS((VARARG, &Type::NUMBER)),
+                 EXEC_DISPATCH(&BitXorFunction::exec_bit_xor))))
+
+  EXEC_BODY(BitXorFunction, exec_bit_xor)
+  {
+    if (args.empty())
+    {
+      throw LispleException("No arguments given to bit-xor");
+    }
+
+    std::uint64_t result = static_cast<std::uint64_t>(integer_arg(args[0], "bit-xor"));
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result ^= static_cast<std::uint64_t>(integer_arg(args[i], "bit-xor"));
+    }
+    return Value::number(from_bits(result));
+  }
+
+  /** BitNotFunction - bit-not */
+  FUNC_IMPL(BitNotFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&BitNotFunction::exec_bit_not))))
+
+  EXEC_BODY(BitNotFunction, exec_bit_not)
+  {
+    return Value::number(
+      from_bits(~static_cast<std::uint64_t>(integer_arg(args[0], "bit-not"))));
   }
 
   /** ModulusFunction - mod */

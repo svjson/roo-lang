@@ -45,9 +45,13 @@ namespace Lisple
     lang_symbols.emplace("*", MultiplyFunction::make());
     lang_symbols.emplace("=", EqualsPFunction::make());
     lang_symbols.emplace("<", LessThanFunction::make());
+    lang_symbols.emplace("<<", ShiftLeftFunction::make());
     lang_symbols.emplace("<=", LessThanOrEqualsFunction::make());
+    lang_symbols.emplace("<<<", LogicalShiftLeftFunction::make());
     lang_symbols.emplace(">", GreaterThanFunction::make());
     lang_symbols.emplace(">=", GreaterThanOrEqualsFunction::make());
+    lang_symbols.emplace(">>", ShiftRightFunction::make());
+    lang_symbols.emplace(">>>", LogicalShiftRightFunction::make());
     lang_symbols.emplace("->", ThreadFirstForm::make());
     lang_symbols.emplace("abs", AbsFunction::make());
     lang_symbols.emplace("and", AndForm::make());
@@ -60,6 +64,10 @@ namespace Lisple
     lang_symbols.emplace("update", UpdateFunction::make());
     lang_symbols.emplace("update-in", UpdateInFunction::make());
     lang_symbols.emplace("between?", BetweenPredicateFunction::make());
+    lang_symbols.emplace("bit-and", BitAndFunction::make());
+    lang_symbols.emplace("bit-not", BitNotFunction::make());
+    lang_symbols.emplace("bit-or", BitOrFunction::make());
+    lang_symbols.emplace("bit-xor", BitXorFunction::make());
     lang_symbols.emplace("blank?", BlankPFunction::make());
     lang_symbols.emplace("case", CaseForm::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
