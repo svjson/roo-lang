@@ -1,8 +1,8 @@
 
+#include <lisple/exception.h>
+
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using NthFunction = LispleTest::RuntimeTestFixture;
 TEST_F(NthFunction, nth_valid_numbers)
@@ -13,4 +13,31 @@ TEST_F(NthFunction, nth_valid_numbers)
   EXPECT_EQ(runtime.eval("(nth [0 1 2 3 4] 2)")->i64(), 2);
   EXPECT_EQ(runtime.eval("(nth [0 1 2 3 4] 3)")->i64(), 3);
   EXPECT_EQ(runtime.eval("(nth [0 1 2 3 4] 4)")->i64(), 4);
+}
+
+TEST_F(NthFunction, nth_nil_target_returns_nil_when_index_is_number)
+{
+  EXPECT_EQ(*runtime.eval("(nth nil 0)"), *Lisple::Constant::NIL);
+}
+
+TEST_F(NthFunction, nth_nil_index_throws_type_error)
+{
+  EXPECT_THROW(runtime.eval("(nth nil nil)"), Lisple::TypeError);
+  EXPECT_THROW(runtime.eval("(nth [1 2 3] nil)"), Lisple::TypeError);
+}
+
+TEST_F(NthFunction, nth_non_number_index_is_rejected_by_signature)
+{
+  EXPECT_THROW(runtime.eval("(nth [1 2 3] :x)"), Lisple::InvocationException);
+  EXPECT_THROW(runtime.eval("(nth nil :x)"), Lisple::InvocationException);
+}
+
+TEST_F(NthFunction, nth_negative_index_returns_nil)
+{
+  EXPECT_EQ(*runtime.eval("(nth [1 2 3] -1)"), *Lisple::Constant::NIL);
+}
+
+TEST_F(NthFunction, nth_out_of_bounds_index_returns_nil)
+{
+  EXPECT_EQ(*runtime.eval("(nth [1 2 3] 8)"), *Lisple::Constant::NIL);
 }

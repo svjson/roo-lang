@@ -138,7 +138,18 @@ namespace Lisple
 
   EXEC_BODY(NthFunction, exec_nth)
   {
-    int n = std::get<const Value::Number>(args.back()->value).get_int();
+    if (args.back()->type != Value::Type::NUMBER)
+    {
+      throw TypeError("nth index must be a number.");
+    }
+
+    const Value::Number& index = args.back()->num();
+    if (index.num_type == Value::NumberType::FLOAT)
+    {
+      throw TypeError("nth index must be an integer.");
+    }
+
+    int n = index.get_int();
     if (n >= static_cast<int>(Lisple::count(*args.front())) || n < 0)
     {
       return Constant::NIL;
