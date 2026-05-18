@@ -70,6 +70,9 @@ namespace Lisple
     lang_symbols.emplace("bit-xor", BitXorFunction::make());
     lang_symbols.emplace("blank?", BlankPFunction::make());
     lang_symbols.emplace("case", CaseForm::make());
+    lang_symbols.emplace("camel-case", CamelCaseFunction::make());
+    lang_symbols.emplace("capitalize", CapitalizeFunction::make());
+    lang_symbols.emplace("capitalize-first", CapitalizeFirstFunction::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
     lang_symbols.emplace("comment", CommentForm::make());
     lang_symbols.emplace("concat", ConcatFunction::make());
@@ -107,6 +110,7 @@ namespace Lisple
     lang_symbols.emplace("int", IntFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());
+    lang_symbols.emplace("kebab-case", KebabCaseFunction::make());
     lang_symbols.emplace("keys", KeysFunction::make());
     lang_symbols.emplace("keyword", KeywordFunction::make());
     lang_symbols.emplace("keyword?", KeywordPFunction::make());
@@ -130,6 +134,7 @@ namespace Lisple
     lang_symbols.emplace("odd?", OddPFunction::make());
     lang_symbols.emplace("or", OrForm::make());
     lang_symbols.emplace("partition", PartitionFunction::make());
+    lang_symbols.emplace("pascal-case", PascalCaseFunction::make());
     lang_symbols.emplace("prn", PrnFunction::make());
     lang_symbols.emplace("qualifier", QualifierFunction::make());
     lang_symbols.emplace("rand-nth", RandNthFunction::make());

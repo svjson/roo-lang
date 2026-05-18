@@ -86,6 +86,110 @@ namespace Lisple
    */
   FUNC(LowerCaseFunction, lower_case)
 
+  /*!
+   * @brief Capitalizes words in a string while preserving existing separators.
+   *
+   * With one argument, capitalizes every ASCII word. With a numeric second
+   * argument, capitalizes only the first N words. With a vector second argument,
+   * capitalizes the inclusive zero-based word-index range `[start end]`. Words are
+   * alphanumeric runs; selected words have their first character uppercased and
+   * remaining characters lowercased.
+   *
+   * Usage:
+   * @code
+   * (capitalize "string") => "String"
+   * (capitalize "string of words") => "String Of Words"
+   * (capitalize "string of words" 2) => "String Of words"
+   * (capitalize "a brown fox ate a bug today" [2 4])
+   * => "a brown Fox Ate A bug today"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | String to capitalize.                                            |
+   * | 1     | Optional word count, or `[start end]` inclusive word range.      |
+   */
+  FUNC(CapitalizeFunction, capitalize_all, capitalize_count, capitalize_range)
+
+  /*!
+   * @brief Capitalizes only the first word in a string.
+   *
+   * Convenience form equivalent to `(capitalize value 1)`. Preserves existing
+   * separators and only changes the first alphanumeric word.
+   *
+   * Usage:
+   * @code
+   * (capitalize-first "string of words") => "String of words"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | String to capitalize.                                            |
+   */
+  FUNC(CapitalizeFirstFunction, capitalize_first)
+
+  /*!
+   * @brief Converts a string to kebab-case.
+   *
+   * Splits the input into ASCII word segments using whitespace, punctuation,
+   * underscore, hyphen, and common camel/Pascal-case boundaries, lowercases every
+   * segment, and joins the result with `-`.
+   *
+   * Usage:
+   * @code
+   * (kebab-case "Player Ship State") => "player-ship-state"
+   * (kebab-case "playerShipState") => "player-ship-state"
+   * (kebab-case "player_ship_state") => "player-ship-state"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | String to convert.                                               |
+   */
+  FUNC(KebabCaseFunction, kebab_case)
+
+  /*!
+   * @brief Converts a string to PascalCase.
+   *
+   * Splits the input into ASCII word segments using whitespace, punctuation,
+   * underscore, hyphen, and common camel/Pascal-case boundaries, lowercases every
+   * segment, capitalizes the first character of each segment, and joins the result
+   * without separators.
+   *
+   * Usage:
+   * @code
+   * (pascal-case "player ship state") => "PlayerShipState"
+   * (pascal-case "player-ship-state") => "PlayerShipState"
+   * (pascal-case "player_ship_state") => "PlayerShipState"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | String to convert.                                               |
+   */
+  FUNC(PascalCaseFunction, pascal_case)
+
+  /*!
+   * @brief Converts a string to camelCase.
+   *
+   * Splits the input into ASCII word segments using whitespace, punctuation,
+   * underscore, hyphen, and common camel/Pascal-case boundaries, lowercases every
+   * segment, keeps the first segment lowercase, capitalizes the first character of
+   * each following segment, and joins the result without separators.
+   *
+   * Usage:
+   * @code
+   * (camel-case "player ship state") => "playerShipState"
+   * (camel-case "PlayerShipState") => "playerShipState"
+   * (camel-case "player_ship_state") => "playerShipState"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | String to convert.                                               |
+   */
+  FUNC(CamelCaseFunction, camel_case)
+
 } // namespace Lisple
 
 #endif /* LISPLE__LANG__STRING_H */
