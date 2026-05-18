@@ -23,8 +23,9 @@ A package is a directory containing `package.edn`:
  :dependencies {utility "file:../utility"}
  :load-roots ["src"]
  :autoloads [example.bootstrap]
- :entry-points [example.app]
- :test-entry-points [example.app-test]}
+ :config {utility {:mode :fast}}
+ :tools {run example.tools/run}
+ :entry-points [example.app]}
 ```
 
 Current fields:
@@ -37,8 +38,9 @@ Current fields:
 - `:namespace-roots` maps namespace prefixes to package-relative source roots.
 - `:native-libraries` lists package-relative or absolute native libraries.
 - `:autoloads` lists namespaces loaded after native libraries are available.
+- `:config` maps package names to package-specific configuration data.
+- `:tools` maps tool names to qualified functions exposed by this package.
 - `:entry-points` lists namespaces loaded when running the package directory.
-- `:test-entry-points` lists test namespaces for tools that choose to use them.
 
 ## Pure Lisple Dependencies
 
@@ -179,8 +181,7 @@ The manifest points Lisple at `src` and points native loading at `native`:
                      :version "0.1.0"
                      :path "native"
                      :namespaces [example.runtime]}]
- :entry-points [example.app]
- :test-entry-points []}
+ :entry-points [example.app]}
 ```
 
 The native library name and version in `package.edn` must match the values
@@ -358,9 +359,26 @@ for (const auto& entry_point : plan.entry_points)
 }
 ```
 
-For tools that run tests, `plan.test_entry_points` carries the namespaces from
-`:test-entry-points`. The package layer only resolves and carries that metadata;
-the host decides what "run tests" means.
+Package tools are ordinary qualified functions declared by a package:
+
+```lisp
+{:name proof
+ :tools {run proof.runner/run}}
+```
+
+An application can provide package-specific configuration with `:config`:
+
+```lisp
+{:name app
+ :dependencies {proof "file:../proof"}
+ :config {proof {:test-roots ["test" "integration"]}}}
+```
+
+The `lisple` binary uses this to run dependency-provided tools. `lisple proof`
+from inside the application package loads the normal package environment, finds
+the `proof` dependency, then invokes its `run` tool with a context map containing
+the application package root, package name, load paths, tool name, and the
+`proof` config block.
 
 ## Loading From the `lisple` Binary
 
@@ -385,6 +403,16 @@ lisple test/example/app_test.lisple
 uses the nearest parent `package.edn` to resolve the same package load paths and
 native libraries, then loads `:autoloads` before reading the file.
 
+Running a dependency-provided package tool:
+
+```sh
+lisple proof
+```
+
+uses the nearest parent `package.edn`, resolves the package and dependencies,
+loads native libraries and autoloads, then invokes the dependency package's
+declared `run` tool with package context data.
+
 ## Current Limitations
 
 - This is not a package manager. There is no registry, download step, lockfile,
@@ -400,8 +428,7 @@ native libraries, then loads `:autoloads` before reading the file.
   by Lisple source or by a native library.
 - Native library unload behavior is intentionally simple. Keep loaded package
   handles alive while the runtime may call into registered native code.
-- Test entry points are parsed and carried in the load plan, but the `lisple`
-  binary does not yet have a dedicated test runner command.
+- Package tool dispatch currently runs the dependency package's `run` tool only.
 
 ## Existing Examples
 

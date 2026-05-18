@@ -1,6 +1,7 @@
 #ifndef LISPLE_PACKAGE_MANIFEST_H
 #define LISPLE_PACKAGE_MANIFEST_H
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -42,21 +43,32 @@ namespace Lisple::Package
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> autoloads;
+    std::map<std::string, std::string> config;
+    std::map<std::string, std::string> tools;
     std::vector<std::string> entry_points;
-    std::vector<std::string> test_entry_points;
+  };
+
+  struct PackageInfo
+  {
+    std::string name;
+    std::string version;
+    std::string package_root;
+    std::vector<std::string> load_roots;
+    std::map<std::string, std::string> config;
+    std::map<std::string, std::string> tools;
   };
 
   struct LoadPlan
   {
     std::string package_root;
     std::vector<std::string> package_roots;
+    std::vector<PackageInfo> packages;
     std::vector<std::string> load_paths;
     std::vector<Lisple::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> autoloads;
     std::vector<std::string> entry_points;
-    std::vector<std::string> test_entry_points;
   };
 
   struct ResolveOptions

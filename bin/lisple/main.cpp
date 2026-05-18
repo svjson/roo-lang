@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <iostream>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,7 @@ namespace
 {
   void print_usage()
   {
-    std::cout << "Usage: lisple [--help|--version] [--load-path <path>] <file>\n";
+    std::cout << "Usage: lisple [--help|--version] [--load-path <path>] <file|package-tool>\n";
   }
 
   void print_help()
@@ -26,7 +27,8 @@ namespace
                  "  lisple --help\n"
                  "  lisple --version\n"
                  "  lisple --load-path <path> <file>\n"
-                 "  lisple --load-path <path1> --load-path <path2> <file>\n";
+                 "  lisple --load-path <path1> --load-path <path2> <file>\n"
+                 "  lisple <dependency-name>\n";
   }
 
   void print_version()
@@ -88,6 +90,125 @@ namespace
     return !ec && is_directory;
   }
 
+  bool path_exists(const std::string& path)
+  {
+    std::error_code ec;
+    const bool exists = std::filesystem::exists(path, ec);
+    return !ec && exists;
+  }
+
+  bool is_bare_tool_target(const std::string& path)
+  {
+    return !path.empty() && path != "." && path != ".." &&
+           path.find('/') == std::string::npos &&
+           path.find('\\') == std::string::npos;
+  }
+
+  const Lisple::Package::PackageInfo* find_package(
+    const Lisple::Package::LoadPlan& package_plan,
+    const std::string& package_name)
+  {
+    for (const auto& package : package_plan.packages)
+    {
+      if (package.name == package_name)
+      {
+        return &package;
+      }
+    }
+    return nullptr;
+  }
+
+  const Lisple::Package::PackageInfo* root_package(
+    const Lisple::Package::LoadPlan& package_plan)
+  {
+    for (const auto& package : package_plan.packages)
+    {
+      if (package.package_root == package_plan.package_root)
+      {
+        return &package;
+      }
+    }
+    return nullptr;
+  }
+
+  std::string string_literal(const std::string& value)
+  {
+    std::string result = "\"";
+    for (const char c : value)
+    {
+      switch (c)
+      {
+      case '\\':
+        result += "\\\\";
+        break;
+      case '"':
+        result += "\\\"";
+        break;
+      case '\n':
+        result += "\\n";
+        break;
+      case '\r':
+        result += "\\r";
+        break;
+      case '\t':
+        result += "\\t";
+        break;
+      default:
+        result += c;
+        break;
+      }
+    }
+    result += "\"";
+    return result;
+  }
+
+  std::string string_vector_literal(const std::vector<std::string>& values)
+  {
+    std::ostringstream stream;
+    stream << "[";
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+      if (i > 0)
+      {
+        stream << " ";
+      }
+      stream << string_literal(values[i]);
+    }
+    stream << "]";
+    return stream.str();
+  }
+
+  std::string qualifier_of(const std::string& symbol)
+  {
+    const auto separator = symbol.rfind('/');
+    if (separator == std::string::npos || separator == 0)
+    {
+      return "";
+    }
+    return symbol.substr(0, separator);
+  }
+
+  std::string invocation_context(
+    const Lisple::Package::LoadPlan& package_plan,
+    const Lisple::Package::PackageInfo& package,
+    const Lisple::Package::PackageInfo& tool_package,
+    const std::string& tool_name)
+  {
+    const auto config_it = package.config.find(tool_package.name);
+    const std::string config = config_it == package.config.end() ? "{}" : config_it->second;
+
+    std::ostringstream stream;
+    stream << "{:package-root " << string_literal(package.package_root)
+           << " :package-name " << string_literal(package.name)
+           << " :package-version " << string_literal(package.version)
+           << " :package-load-roots " << string_vector_literal(package.load_roots)
+           << " :load-paths " << string_vector_literal(package_plan.load_paths)
+           << " :tool-package " << string_literal(tool_package.name)
+           << " :tool-name " << string_literal(tool_name)
+           << " :config " << config << "}";
+    return stream.str();
+  }
+
   void run_package_entry_points(Lisple::Runtime& runtime,
                                 const Lisple::Package::LoadPlan& package_plan,
                                 const std::string& target_path)
@@ -104,6 +225,49 @@ namespace
       runtime.eval("(ns lisple.cli.entry (:require " + entry_point + "))",
                    "<package-entry>");
     }
+  }
+
+  void run_package_tool(Lisple::Runtime& runtime,
+                        const Lisple::Package::LoadPlan& package_plan,
+                        const std::string& tool_package_name,
+                        const std::string& tool_name)
+  {
+    const auto* package = root_package(package_plan);
+    if (!package)
+    {
+      throw Lisple::LispleException("Package load plan has no root package metadata.");
+    }
+
+    const auto* tool_package = find_package(package_plan, tool_package_name);
+    if (!tool_package)
+    {
+      throw Lisple::LispleException("Package '" + package->name +
+                                    "' has no dependency named '" +
+                                    tool_package_name + "'.");
+    }
+
+    const auto tool_it = tool_package->tools.find(tool_name);
+    if (tool_it == tool_package->tools.end())
+    {
+      throw Lisple::LispleException("Package '" + tool_package_name +
+                                    "' does not declare a '" + tool_name +
+                                    "' tool in package.edn.");
+    }
+
+    const std::string& tool_function = tool_it->second;
+    const std::string tool_namespace = qualifier_of(tool_function);
+    if (tool_namespace.empty())
+    {
+      throw Lisple::LispleException("Package tool '" + tool_package_name + "/" +
+                                    tool_name + "' must be a qualified function.");
+    }
+
+    runtime.eval("(ns lisple.cli.tool (:require " + tool_namespace + "))",
+                 "<package-tool>");
+    runtime.eval("(" + tool_function + " " +
+                   invocation_context(package_plan, *package, *tool_package, tool_name) +
+                   ")",
+                 "<package-tool>");
   }
 } // namespace
 
@@ -183,6 +347,8 @@ int main(int argc, char** argv)
   {
     Lisple::DirRootFileSystem manifest_fs("/");
     const bool run_package = is_directory_target(file_path);
+    const bool run_tool = !run_package && !path_exists(file_path) &&
+                          is_bare_tool_target(file_path);
     std::optional<Lisple::Package::LoadPlan> package_plan;
     const auto package_root = find_package_root(file_path);
     if (package_root)
@@ -206,7 +372,11 @@ int main(int argc, char** argv)
       Lisple::Package::load_autoloads(runtime, *package_plan);
     }
     runtime.set_call_stack_diagnostics(true);
-    if (run_package)
+    if (run_tool && package_plan)
+    {
+      run_package_tool(runtime, *package_plan, file_path, "run");
+    }
+    else if (run_package)
     {
       run_package_entry_points(runtime, *package_plan, file_path);
     }

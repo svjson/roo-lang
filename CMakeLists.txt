@@ -72,6 +72,16 @@ set_tests_properties(
       ${CMAKE_CURRENT_SOURCE_DIR}/pkg/proof/test/assets/dynamic-smoke
 )
 add_test(
+  NAME lisple_cli_runs_package_tool_from_dependency
+  COMMAND $<TARGET_FILE:lisple_cli> proof
+)
+set_tests_properties(
+  lisple_cli_runs_package_tool_from_dependency
+  PROPERTIES
+    WORKING_DIRECTORY
+      ${CMAKE_CURRENT_SOURCE_DIR}/pkg/proof/test/assets/dynamic-smoke
+)
+add_test(
   NAME lisple_cli_runs_package_with_namespace_roots
   COMMAND $<TARGET_FILE:lisple_cli> .
 )

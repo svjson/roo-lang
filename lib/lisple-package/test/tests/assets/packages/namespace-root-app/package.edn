@@ -4,5 +4,4 @@
  :dependencies []
  :load-roots ["src"]
  :namespace-roots {mylib.stuff "src/lisple/main-stuff"}
- :entry-points [mylib.stuff.core]
- :test-entry-points []}
+ :entry-points [mylib.stuff.core]}

@@ -40,8 +40,9 @@ namespace
      :native-libraries [{:name "proof-native"
                          :namespaces [proof.syntax]}]
      :autoloads [proof.core]
-     :entry-points [proof.core]
-     :test-entry-points []}
+     :config {proof {:test-roots ["test"]}}
+     :tools {run proof.runner/run}
+     :entry-points [proof.core]}
   )";
 
   void write_file(const std::filesystem::path& path, const std::string& source)
@@ -70,8 +71,9 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.native_libraries[0].namespaces,
             std::vector<std::string>{"proof.syntax"});
   EXPECT_EQ(manifest.autoloads, std::vector<std::string>{"proof.core"});
+  EXPECT_EQ(manifest.config.at("proof"), "{:test-roots [\"test\"]}");
+  EXPECT_EQ(manifest.tools.at("run"), "proof.runner/run");
   EXPECT_EQ(manifest.entry_points, std::vector<std::string>{"proof.core"});
-  EXPECT_TRUE(manifest.test_entry_points.empty());
 }
 
 TEST(PackageManifest, parses_dependency_map_with_versions_and_paths)
@@ -106,6 +108,13 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
 
   EXPECT_EQ(plan.package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.package_roots, std::vector<std::string>{"/repo/pkg/proof"});
+  ASSERT_EQ(plan.packages.size(), 1u);
+  EXPECT_EQ(plan.packages[0].name, "proof");
+  EXPECT_EQ(plan.packages[0].package_root, "/repo/pkg/proof");
+  EXPECT_EQ(plan.packages[0].load_roots,
+            std::vector<std::string>{"/repo/pkg/proof/src"});
+  EXPECT_EQ(plan.packages[0].config.at("proof"), "{:test-roots [\"test\"]}");
+  EXPECT_EQ(plan.packages[0].tools.at("run"), "proof.runner/run");
   EXPECT_EQ(plan.load_paths, std::vector<std::string>{"/repo/pkg/proof/src"});
   ASSERT_EQ(plan.namespace_roots.size(), 1u);
   EXPECT_EQ(plan.namespace_roots[0].ns_prefix, "proof");
@@ -116,7 +125,6 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.native_libraries[0].package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.autoloads, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"proof.core"});
-  EXPECT_TRUE(plan.test_entry_points.empty());
 }
 
 TEST(PackageManifest, merges_extra_load_paths_before_resolved_package_paths)
@@ -155,6 +163,11 @@ TEST(PackageManifest, resolves_pure_lisple_dependencies_from_search_roots)
   EXPECT_EQ(plan.package_root, "/repo/pkg/app");
   EXPECT_EQ(plan.package_roots,
             (std::vector<std::string>{"/repo/pkg/util", "/repo/pkg/app"}));
+  ASSERT_EQ(plan.packages.size(), 2u);
+  EXPECT_EQ(plan.packages[0].name, "util");
+  EXPECT_EQ(plan.packages[0].package_root, "/repo/pkg/util");
+  EXPECT_EQ(plan.packages[1].name, "app");
+  EXPECT_EQ(plan.packages[1].package_root, "/repo/pkg/app");
   EXPECT_EQ(plan.load_paths,
             (std::vector<std::string>{"/repo/pkg/util/src", "/repo/pkg/app/src"}));
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"app.core"});

@@ -4,5 +4,4 @@
  :dependencies []
  :load-roots ["src"]
  :autoloads [autoload.bootstrap]
- :entry-points [autoload.run]
- :test-entry-points []}
+ :entry-points [autoload.run]}

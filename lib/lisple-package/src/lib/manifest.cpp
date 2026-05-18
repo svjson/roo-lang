@@ -101,6 +101,60 @@ namespace Lisple::Package
       return roots;
     }
 
+    std::map<std::string, std::string> source_map(
+      const Lisple::sptr_ast_node& node,
+      const std::string& field,
+      const std::string& source_name)
+    {
+      if (node->get_type() != Form::MAP)
+      {
+        throw LispleException("Invalid package manifest '" + source_name + "': field :" +
+                              field + " expected map, got " + node->to_string());
+      }
+
+      std::map<std::string, std::string> result;
+      auto& children = node->get_children();
+      if (children.size() % 2 != 0)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': field :" + field +
+                              " map has an uneven number of forms.");
+      }
+
+      for (size_t i = 0; i < children.size(); i += 2)
+      {
+        result[atom_string(children[i], field, source_name)] = children[i + 1]->to_string();
+      }
+      return result;
+    }
+
+    std::map<std::string, std::string> tool_map(
+      const Lisple::sptr_ast_node& node,
+      const std::string& source_name)
+    {
+      if (node->get_type() != Form::MAP)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': field :tools expected map, got " +
+                              node->to_string());
+      }
+
+      std::map<std::string, std::string> result;
+      auto& children = node->get_children();
+      if (children.size() % 2 != 0)
+      {
+        throw LispleException("Invalid package manifest '" + source_name +
+                              "': tools map has an uneven number of forms.");
+      }
+
+      for (size_t i = 0; i < children.size(); i += 2)
+      {
+        result[atom_string(children[i], "tools", source_name)] =
+          atom_string(children[i + 1], "tools", source_name);
+      }
+      return result;
+    }
+
     std::map<std::string, sptr_ast_node> map_fields(const Lisple::sptr_ast_node& node,
                                                     const std::string& source_name)
     {
@@ -472,10 +526,20 @@ namespace Lisple::Package
                                 const std::string& package_root)
     {
       append_unique(plan.package_roots, package_root);
+      PackageInfo package_info;
+      package_info.name = manifest.name;
+      package_info.version = manifest.version;
+      package_info.package_root = package_root;
+      package_info.load_roots.reserve(manifest.load_roots.size());
       for (const auto& root : manifest.load_roots)
       {
-        append_unique(plan.load_paths, join_path(package_root, root));
+        const std::string resolved_root = join_path(package_root, root);
+        append_unique(plan.load_paths, resolved_root);
+        package_info.load_roots.push_back(resolved_root);
       }
+      package_info.config = manifest.config;
+      package_info.tools = manifest.tools;
+      plan.packages.push_back(package_info);
       for (const auto& root : manifest.namespace_roots)
       {
         Lisple::NamespaceRoot resolved = root;
@@ -510,10 +574,6 @@ namespace Lisple::Package
       for (const auto& entry_point : manifest.entry_points)
       {
         append_unique(plan.entry_points, entry_point);
-      }
-      for (const auto& test_entry_point : manifest.test_entry_points)
-      {
-        append_unique(plan.test_entry_points, test_entry_point);
       }
     }
 
@@ -613,16 +673,18 @@ namespace Lisple::Package
       manifest.autoloads =
         vector_of_atoms(fields.at("autoloads"), "autoloads", source_name);
     }
+    if (fields.count("config"))
+    {
+      manifest.config = source_map(fields.at("config"), "config", source_name);
+    }
+    if (fields.count("tools"))
+    {
+      manifest.tools = tool_map(fields.at("tools"), source_name);
+    }
     if (fields.count("entry-points"))
     {
       manifest.entry_points =
         vector_of_atoms(fields.at("entry-points"), "entry-points", source_name);
-    }
-    if (fields.count("test-entry-points"))
-    {
-      manifest.test_entry_points = vector_of_atoms(fields.at("test-entry-points"),
-                                                  "test-entry-points",
-                                                  source_name);
     }
 
     return manifest;
@@ -638,12 +700,17 @@ namespace Lisple::Package
     LoadPlan plan;
     plan.package_root = package_root;
     plan.package_roots.push_back(package_root);
+    PackageInfo package_info;
+    package_info.name = manifest.name;
+    package_info.version = manifest.version;
+    package_info.package_root = package_root;
+    package_info.config = manifest.config;
+    package_info.tools = manifest.tools;
     plan.native_namespaces = manifest.native_namespaces;
     plan.namespace_roots = manifest.namespace_roots;
     plan.native_libraries = manifest.native_libraries;
     plan.autoloads = manifest.autoloads;
     plan.entry_points = manifest.entry_points;
-    plan.test_entry_points = manifest.test_entry_points;
 
     for (auto& native_library : plan.native_libraries)
     {
@@ -667,10 +734,14 @@ namespace Lisple::Package
     }
 
     plan.load_paths.reserve(manifest.load_roots.size());
+    package_info.load_roots.reserve(manifest.load_roots.size());
     for (const auto& root : manifest.load_roots)
     {
-      plan.load_paths.push_back(join_path(package_root, root));
+      const std::string resolved_root = join_path(package_root, root);
+      plan.load_paths.push_back(resolved_root);
+      package_info.load_roots.push_back(resolved_root);
     }
+    plan.packages.push_back(std::move(package_info));
 
     return plan;
   }

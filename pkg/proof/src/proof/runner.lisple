@@ -1,0 +1,47 @@
+(ns proof.runner
+  (:require proof.core
+            [lisple.io :as io]))
+
+(defun configured-test-roots [context]
+  (let [roots (:test-roots (:config context))]
+    (if (nil? roots)
+      ["test"]
+      roots)))
+
+(defun absolute-test-root [context root]
+  (io/join-path (:package-root context) root))
+
+(defun lisple-file-entry? [entry]
+  (= ".lisple" (io/extension (:path entry))))
+
+(defun directory-entry? [entry]
+  (= (:type entry) :directory))
+
+(defun discover-lisple-files [root]
+  (if (io/directory? root)
+    (let [entries (io/list-directory! root)
+          files (map (filter entries lisple-file-entry?) :path)
+          directories (filter entries directory-entry?)]
+      (concat files
+              (flatten
+                (map directories
+                     (fn [entry]
+                       (discover-lisple-files (:path entry)))))))
+    []))
+
+(defun load-test-file [path]
+  (include path)
+  path)
+
+(defun load-test-root [root]
+  (map (discover-lisple-files root) load-test-file))
+
+(defun load-tests [context]
+  (proof.core/clear!)
+  (map (configured-test-roots context)
+       (fn [root]
+         (load-test-root (absolute-test-root context root)))))
+
+(defun run [context]
+  (load-tests context)
+  (proof.core/run))

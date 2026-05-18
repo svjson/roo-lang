@@ -160,18 +160,26 @@ For example:
 
 ## Package Tests
 
-In a package, put test namespaces under a test load root and list the entry
-points in `package.edn`:
+When proof is a dependency, the `lisple` binary can launch proof through package
+tool dispatch:
 
 ```lisp
 {:name my-package
  :version "0.1.0"
  :dependencies {proof "file:../path/to/proof"}
- :load-roots ["src" "test"]
- :test-entry-points [my-package.tests]}
+ :load-roots ["src" "test"]}
 ```
 
-Then the test namespace can require `proof.core` and call `run`:
+Then run:
+
+```sh
+lisple proof
+```
+
+By default, proof discovers and loads `.lisple` files under the package's
+`test/` directory, then runs the registered tests.
+
+Test namespaces should require `proof.core` and define tests:
 
 ```lisp
 (ns my-package.tests
@@ -182,6 +190,16 @@ Then the test namespace can require `proof.core` and call `run`:
 
 (deftest works
   (is (= 42 (my-package.core/answer))))
-
-(run)
 ```
+
+If tests live elsewhere, configure proof in `package.edn`:
+
+```lisp
+{:name my-package
+ :dependencies {proof "file:../path/to/proof"}
+ :load-roots ["src" "test" "integration"]
+ :config {proof {:test-roots ["test" "integration"]}}}
+```
+
+Proof tests can also be run manually from Lisple code by loading test namespaces and
+calling `(run)` yourself.

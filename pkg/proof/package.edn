@@ -7,5 +7,5 @@
                      :version "0.1.0"
                      :path "native"
                      :namespaces [proof.syntax]}]
- :entry-points [proof.core]
- :test-entry-points []}
+ :tools {run proof.runner/run}
+ :entry-points [proof.core]}
