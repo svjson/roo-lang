@@ -4,8 +4,6 @@
 #include "lisple/runtime/value.h"
 #include "lisple/type.h"
 
-#include <iostream>
-
 #include <lisple/bind.h>
 #include <lisple/exception.h>
 #include <lisple/lang/loop.h>
@@ -38,6 +36,7 @@ namespace Lisple
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(bind_forms.size() == 2 ? 1 : 0);
 
     if (bind_forms.size() == 2)
     {
@@ -48,6 +47,7 @@ namespace Lisple
     }
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
 
     for (size_t i = 2; i < elements.size(); i++)
@@ -126,6 +126,7 @@ namespace Lisple
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(1);
 
     auto sym_node = lower_literal(bind_forms[0]);
     bindings.push_back(
@@ -133,6 +134,7 @@ namespace Lisple
                      std::make_unique<ExecNode>(Constant::NIL)));
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
 
     for (size_t i = 2; i < elements.size(); i++)
@@ -207,6 +209,7 @@ namespace Lisple
 
     sptr_ast_node_v& bind_form = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(2);
 
     auto index_node = lower_literal(bind_form[0]);
     bindings.push_back(
@@ -219,6 +222,7 @@ namespace Lisple
                      std::make_unique<ExecNode>(Constant::NIL)));
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_form.back()));
 
     for (size_t i = 2; i < elements.size(); i++)
@@ -294,6 +298,7 @@ namespace Lisple
     }
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
