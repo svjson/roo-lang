@@ -4396,7 +4396,7 @@ TEST(Benchmark_Lowering, handle_collisions_argset_1_data_setup__lower_x1000__no_
 
 TEST(Workload, handle_collisions_inline_argset_1)
 {
-  LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
+  LispleTest::SnippetBenchmark bm("workload_handle_collisions__inline_argset_1",
                                   {LispleTest::PIXILS__POINT__PURE_LISP,
                                    ASTEROIDS__ASTEROID,
                                    ASTEROIDS__DEBRIS,

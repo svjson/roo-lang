@@ -1,0 +1,4 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms
+85410928,workload_handle_collisions__inline_argset_1,0,0,8,38,46
+85485075,workload_handle_collisions__inline_argset_1,1,0,7,38,46
+85668784,workload_handle_collisions__inline_argset_1,1,0,7,39,47
