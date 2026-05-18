@@ -14,8 +14,6 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(CaseForm)
   {
-    uptr_exec_node_v exec_nodes;
-
     sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() % 2 != 0)
@@ -23,6 +21,8 @@ namespace Lisple
       throw LispleException("case: Unmatched case pairs: " + ast_node->to_string());
     }
 
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
@@ -56,8 +56,6 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(CondForm)
   {
-    uptr_exec_node_v exec_nodes;
-
     sptr_ast_node_v& elements = ast_node->get_children();
 
     if (elements.size() % 2 != 1)
@@ -65,6 +63,8 @@ namespace Lisple
       throw LispleException("cond: Unmatched condition pairs: " + ast_node->to_string());
     }
 
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
@@ -107,6 +107,7 @@ namespace Lisple
     }
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
@@ -144,6 +145,7 @@ namespace Lisple
     }
 
     uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
     for (size_t i = 1; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));

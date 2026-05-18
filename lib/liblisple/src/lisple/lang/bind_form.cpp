@@ -28,6 +28,7 @@ namespace Lisple
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(bind_forms.size() / 2);
 
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
@@ -94,6 +95,7 @@ namespace Lisple
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(bind_forms.size() / 2);
 
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
@@ -165,6 +167,7 @@ namespace Lisple
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(bind_forms.size() / 2);
 
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
