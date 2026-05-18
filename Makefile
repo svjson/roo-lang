@@ -1,4 +1,6 @@
 BUILD_TYPE ?= Release
+FILTER ?=
+GTEST_FILTER_ARG := $(if $(FILTER),--gtest_filter=$(FILTER),)
 
 LOCAL_PREFIX := $(HOME)/.local
 PATH_HAS_LOCAL_BIN := $(findstring $(LOCAL_PREFIX)/bin,$(PATH))
@@ -47,23 +49,23 @@ test\:all: test\:lang test\:package test\:proof test\:server
 
 test\:lang: build
 	cmake --build build --target testlisple
-	./build/$(TEST_BINARY) --skip-benchmarks
+	./build/$(TEST_BINARY) --skip-benchmarks $(GTEST_FILTER_ARG)
 
 test\:package: build
 	cmake --build build --target testpackage
-	./build/$(PACKAGE_TEST_BINARY)
+	./build/$(PACKAGE_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 test\:proof: build
 	cmake --build build --target testproof
-	./build/$(PROOF_TEST_BINARY)
+	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 test\:benchmark: build
 	cmake --build build --target testlisple
-	./build/$(TEST_BINARY)
+	./build/$(TEST_BINARY) --benchmark $(GTEST_FILTER_ARG)
 
 test\:server: configure-server-tests
 	cmake --build build --target testserver
-	./build/$(SERVER_TEST_BINARY)
+	./build/$(SERVER_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 clean:
 	rm -rf build
