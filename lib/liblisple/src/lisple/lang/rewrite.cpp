@@ -31,7 +31,7 @@ namespace Lisple
 
   SFORM_LOWER_IMPL(ThreadFirstForm)
   {
-    sptr_ast_node_v elements = ast_node->get_children();
+    sptr_ast_node_v& elements = ast_node->get_children();
     if (elements.size() == 1) return lower_literal(Lisple::AST::NIL);
     if (elements.size() == 2) return lower_expr(ctx, elements[1]);
 
@@ -44,7 +44,9 @@ namespace Lisple
       {
         sptr_ast_node_v& list_elements = lmnt->get_children();
 
-        sptr_ast_node_v new_list{list_elements[0]};
+        sptr_ast_node_v new_list;
+        new_list.reserve(list_elements.size() + 1);
+        new_list.push_back(list_elements[0]);
         new_list.push_back(current);
         for (size_t j = 1; j < list_elements.size(); j++)
         {
