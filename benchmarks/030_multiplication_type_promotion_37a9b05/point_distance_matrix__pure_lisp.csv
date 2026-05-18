@@ -1,4 +1,4 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
 190481710,point_distance_matrix__pure_lisp,0,0,1007,3,1010,0,19689013,3876789,0,1502,0,0,1,0,0,0,562500,0
 190863879,point_distance_matrix__pure_lisp,0,0,1015,3,1018,0,19689013,3876789,0,1502,0,0,1,0,0,0,562500,0
 191405169,point_distance_matrix__pure_lisp,0,0,1019,4,1023,0,19689013,3876789,0,1502,0,0,1,0,0,0,562500,0

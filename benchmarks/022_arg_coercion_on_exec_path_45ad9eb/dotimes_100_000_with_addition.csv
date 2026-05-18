@@ -1,3 +1,3 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms
 2762273487,dotimes_100_000_with_addition,0,0,23,0,23
 2762335185,dotimes_100_000_with_addition,0,0,23,0,23

@@ -112,6 +112,7 @@ namespace LispleTest
     long start_time = 0;
     long end_time = 0;
     long total_time = 0;
+    double single_lowering_total_time = 0;
 
     long parse_start_time = 0;
     long parse_end_time = 0;
@@ -120,6 +121,9 @@ namespace LispleTest
     long lower_start_time = 0;
     long lower_end_time = 0;
     long lower_time = 0;
+    long lower_cleanup_start_time = 0;
+    long lower_cleanup_end_time = 0;
+    long lower_cleanup_time = 0;
 
     long exec_start_time = 0;
     long exec_end_time = 0;

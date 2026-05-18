@@ -1,4 +1,4 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms
 85435236,workload_1000_handle_collisions_AST_host_adapters__inline_argset_1,0,0,7784,39,7823
 85509419,workload_1000_handle_collisions_AST_host_adapters__inline_argset_1,0,0,7852,38,7890
 85693078,workload_1000_handle_collisions_AST_host_adapters__inline_argset_1,0,0,7796,39,7835

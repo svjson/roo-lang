@@ -1,4 +1,4 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
 121272066,workload_1000_handle_collisions_host_adapters__inline_argset_1,1,0,7536,39,7576,0,21073034,7881280,4121000,2337003,235000,810000,812004,9000,9000,0,431000,0
 121354642,workload_1000_handle_collisions_host_adapters__inline_argset_1,1,0,7568,38,7607,0,21073034,7881425,4121000,2337003,235000,810000,812004,9000,9000,0,431000,0
 121403228,workload_1000_handle_collisions_host_adapters__inline_argset_1,1,0,7638,38,7677,0,21073034,7881815,4121000,2337003,235000,810000,812004,9000,9000,0,431000,0

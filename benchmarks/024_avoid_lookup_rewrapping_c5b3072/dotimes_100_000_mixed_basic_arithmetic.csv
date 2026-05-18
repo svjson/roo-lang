@@ -1,4 +1,4 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms
 85407552,dotimes_100_000_mixed_basic_arithmetic,0,0,67,0,67
 85481709,dotimes_100_000_mixed_basic_arithmetic,0,0,66,0,66
 85665441,dotimes_100_000_mixed_basic_arithmetic,0,0,66,0,66

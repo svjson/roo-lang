@@ -1,4 +1,4 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms
 92045790,map_100_000_mixed_basic_arithmetic,0,0,97,0,97
 92229533,map_100_000_mixed_basic_arithmetic,0,0,97,0,97
 92373301,map_100_000_mixed_basic_arithmetic,0,0,98,0,98

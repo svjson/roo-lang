@@ -363,9 +363,12 @@ namespace LispleTest
 
     snapshot_setup_counters();
 
+    lower_cleanup_start_time = now();
     auto node = std::move(lowered_nodes.back());
     lowered_nodes.pop_back();
     lowered_nodes.clear();
+    lower_cleanup_end_time = now();
+    lower_cleanup_time = lower_cleanup_end_time - lower_cleanup_start_time;
 
     apply_counter_snapshot();
 
@@ -389,6 +392,9 @@ namespace LispleTest
 
     end_time = now();
     total_time = end_time - start_time;
+    single_lowering_total_time =
+      static_cast<double>(total_time - lower_time - lower_cleanup_time) +
+      (static_cast<double>(lower_time) / static_cast<double>(lower_iterations));
 
     print_result();
     if (logging_enabled)
@@ -410,6 +416,8 @@ namespace LispleTest
     std::cout << input << std::endl;
     std::cout << "+---------------------------------------------------" << std::endl;
     std::cout << "| * Total time: " << total_time << " ms" << std::endl;
+    std::cout << "| * Single-lowering total time: " << single_lowering_total_time << " ms"
+              << std::endl;
     std::cout << "| * Parse time: " << parse_time << " ms" << std::endl;
     std::cout << "| * Lower time: " << lower_time << " ms" << std::endl;
     std::cout << "| * Lower iterations: " << lower_iterations << std::endl;
@@ -447,7 +455,8 @@ namespace LispleTest
     {
       out
         << "timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,"
-           "unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,"
+           "unaccounted_time_ms,total_time_ms,single_lowering_total_time_ms,eval_path,"
+           "exec_path,rtval_cons,rtvw_cons,"
            "lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_"
            "ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,"
            "setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,"
@@ -462,6 +471,7 @@ namespace LispleTest
 
     out << timestamp << "," << case_name << "," << parse_time << "," << lower_time << ","
         << exec_time << "," << unacc_time << "," << total_time << ","
+        << single_lowering_total_time << ","
         << Lisple::eval_executions << "," << Lisple::exec_executions << ","
         << Lisple::rtvalues_constructed << "," << Lisple::rtvalue_wrappers_constructed << ","
         << Lisple::literal_nodes_constructed << "," << Lisple::lookup_nodes_constructed

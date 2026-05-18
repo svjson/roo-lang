@@ -1,4 +1,4 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
 189618549,filtered_aggregation__100_iterations_100000_entities__with_zerop,0,0,38190,1,38191,5666400,319999832,66901710,5333100,7667104,4333000,15999700,23332707,0,0,0,200,0
 189868037,filtered_aggregation__100_iterations_100000_entities__with_zerop,0,0,37951,0,37951,5666400,319999832,66901710,5333100,7667104,4333000,15999700,23332707,0,0,0,200,0
 190476008,filtered_aggregation__100_iterations_100000_entities__with_zerop,0,0,37999,0,37999,5666400,319999832,66901710,5333100,7667104,4333000,15999700,23332707,0,0,0,200,0
