@@ -30,6 +30,22 @@ TEST_F(DISABLED_GeneratePoints, gen_points)
   std::cout << points->to_string() << std::endl;
 }
 
+TEST(Benchmark_Lowering, point_vec_500_setup__lower_x1000__no_exec)
+{
+  LispleTest::SnippetBenchmark bm("point_vec_500_setup__lower_x1000__no_exec",
+                                  LispleTest::DEF_POINT_VEC_500);
+
+  bm.with_lower_iterations(1000).without_execution().run();
+}
+
+TEST(Benchmark_Lowering, point_vec_750_setup__lower_x1000__no_exec)
+{
+  LispleTest::SnippetBenchmark bm("point_vec_750_setup__lower_x1000__no_exec",
+                                  LispleTest::DEF_POINT_VEC_750);
+
+  bm.with_lower_iterations(1000).without_execution().run();
+}
+
 TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__pure_lisp)
 {
   LispleTest::SnippetBenchmark bm(
@@ -43,7 +59,7 @@ TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__pure_lisp)
     (pt/distance i j)))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__map_points__native_distance_fn)
@@ -59,7 +75,7 @@ TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__map_points__native_d
     (npt/distance i j)))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_points__lisple_distance_fn)
@@ -75,7 +91,7 @@ TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_points__lispl
     (pt/distance i j)))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_propcache_points__lisple_distance_fn)
@@ -91,7 +107,7 @@ TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_propcache_poi
     (pt/distance i j)))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_points__native_distance_fn)
@@ -107,7 +123,7 @@ TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_points__nativ
     (npt/distance i j)))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_propcache_points__native_distance_fn)
@@ -123,5 +139,5 @@ TEST_F(PointDistanceMatrixBenchmark, point_distance_matrix__native_propcache_poi
     (npt/distance i j)))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }

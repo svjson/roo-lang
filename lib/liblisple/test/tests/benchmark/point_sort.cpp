@@ -35,7 +35,7 @@ TEST(Benchmark_Workload, point_sort__map_points)
     "test.point-sort",
     "(dotimes [ITERATIONS] (sort-points point-vec {:x 0 :y 0}))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_sort__native_points)
@@ -50,7 +50,7 @@ TEST(Benchmark_Workload, point_sort__native_points)
     "test.point-sort",
     "(dotimes [ITERATIONS] (sort-points npoint-vec (npt/make-point {:x 0 :y 0})))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_sort__native_propcache_points)
@@ -65,5 +65,5 @@ TEST(Benchmark_Workload, point_sort__native_propcache_points)
     "test.point-sort",
     "(dotimes [ITERATIONS] (sort-points npoint-vec (npt/make-point {:x 0 :y 0})))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }

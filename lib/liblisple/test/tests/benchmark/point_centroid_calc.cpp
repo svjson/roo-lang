@@ -45,7 +45,7 @@ TEST(Benchmark_Workload, point_centroid__pure_lisp)
 (calculate-centroid point-vec)
      )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_centroid__map_points__native_distance_fn)
@@ -61,7 +61,7 @@ TEST(Benchmark_Workload, point_centroid__map_points__native_distance_fn)
 (calculate-centroid point-vec)
      )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_centroid__native_propcache_points__lisp_distance_fn)
@@ -78,7 +78,7 @@ TEST(Benchmark_Workload, point_centroid__native_propcache_points__lisp_distance_
 (calculate-centroid npoint-vec)
      )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_centroid__native_points__lisp_distance_fn)
@@ -95,7 +95,7 @@ TEST(Benchmark_Workload, point_centroid__native_points__lisp_distance_fn)
 (calculate-centroid npoint-vec)
      )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_centroid__native_points__native_distance_fn)
@@ -112,7 +112,7 @@ TEST(Benchmark_Workload, point_centroid__native_points__native_distance_fn)
 (calculate-centroid npoint-vec)
      )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, point_centroid__native_propcache_points__native_distance_fn)
@@ -129,5 +129,5 @@ TEST(Benchmark_Workload, point_centroid__native_propcache_points__native_distanc
 (calculate-centroid npoint-vec)
      )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }

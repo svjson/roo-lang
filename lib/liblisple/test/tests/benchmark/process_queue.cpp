@@ -52,7 +52,7 @@ TEST(Benchmark_Workload, process_task_queue__2000_tasks__50_iterations)
                                   "benchmark.queue",
                                   "(benchmark-queue 2000 50)");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, process_task_queue__10000_tasks__20_iterations)

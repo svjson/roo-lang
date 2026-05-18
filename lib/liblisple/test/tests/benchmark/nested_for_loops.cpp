@@ -15,7 +15,7 @@ TEST(Benchmark_NestedFor, three_dimensional_loop_with_map_construction_100_x_100
             {:x x :y y :z z}))))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_NestedFor, three_dimensional_loop_with_map_construction_100_x_10000_x_10)
@@ -31,7 +31,7 @@ TEST(Benchmark_NestedFor, three_dimensional_loop_with_map_construction_100_x_100
             {:x x :y y :z z}))))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_NestedFor,
@@ -52,5 +52,5 @@ TEST(Benchmark_NestedFor,
                     :x2 x2 :y2 y2 :z2 z2})))))))
                                    )");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }

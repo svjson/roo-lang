@@ -67,7 +67,7 @@ TEST(Benchmark_Workload, process_events__1000_events__50_iterations__20_threshol
                                   "benchmark.process",
                                   "(benchmark-process 1000 50 20)");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, process_events__5000_events__80_iterations__20_threshold)

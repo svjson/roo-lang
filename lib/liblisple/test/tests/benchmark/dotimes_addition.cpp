@@ -8,7 +8,7 @@ TEST(Benchmark_DoTimes, benchmark_dotimes_100_000_with_addition)
   LispleTest::SnippetBenchmark bm("dotimes_100_000_with_addition",
                                   "(dotimes [n 100000] (+ n 1))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_DoTimes, benchmark_dotimes_1_000_000_with_addition)
@@ -24,7 +24,7 @@ TEST(Benchmark_DoTimes, benchmark_dotimes_100_000_with_map_construction)
   LispleTest::SnippetBenchmark bm("dotimes_100_000_with_map_construction",
                                   "(dotimes [n 100000] {:value n :str-value (str n)})");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_DoTimes, benchmark_dotimes_1_000_000_with_map_construction)

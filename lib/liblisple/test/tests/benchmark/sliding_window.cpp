@@ -48,7 +48,7 @@ TEST(Benchmark_Workload, sliding_window__1000_values__20_window_size__20_iterati
                                   "benchmark.sliding-window",
                                   "(benchmark-sliding-window 1000 50 20)");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, sliding_window__10000_values__10_window_size__20_iterations)

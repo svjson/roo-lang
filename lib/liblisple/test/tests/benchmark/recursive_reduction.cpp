@@ -72,7 +72,7 @@ TEST(Benchmark_Workload, nested_stats__500_events__20_group_size__50_iterations)
                                   "benchmark.nested-stats",
                                   "(benchmark-nested-stats 500 20 50)");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, nested_stats__1000_events__30_group_size__30_iterations)
@@ -99,7 +99,7 @@ TEST(Benchmark_Workload, nested_stats_var_groups__500_events__20_group_size__50_
                                   "benchmark.nested-stats",
                                   "(benchmark-nested-stats-var 500 20 50)");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, nested_stats_var_groups__1000_events__30_group_size__30_iterations)

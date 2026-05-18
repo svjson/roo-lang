@@ -59,7 +59,7 @@ TEST(Benchmark_Workload, immutable_update_world__5000_entities__100_iterations)
                                   "benchmark.immutable-update-world",
                                   "(benchmark-update-world 5000 100)");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, immutable_update_world__10000_entities__100_iterations)

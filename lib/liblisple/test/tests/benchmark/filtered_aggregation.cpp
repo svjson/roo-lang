@@ -45,7 +45,7 @@ TEST(Workload, filtered_aggregation_10000_entities)
     "process",
     "(process-entities (make-entities 10000))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, benchmark_filtered_aggregation_100_iterations_10000_entities)
@@ -56,7 +56,7 @@ TEST(Benchmark_Workload, benchmark_filtered_aggregation_100_iterations_10000_ent
     "process",
     "(dotimes [n 100] (process-entities (make-entities 10000)))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, benchmark_filtered_aggregation_100_iterations_100000_entities)
@@ -79,7 +79,7 @@ TEST(Benchmark_Workload,
     "process",
     "(dotimes [n 100] (process-entities (make-entities 10000)))");
 
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload,

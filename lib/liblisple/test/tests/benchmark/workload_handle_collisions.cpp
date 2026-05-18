@@ -4384,6 +4384,16 @@ const std::string DEF_PARTICLES_2 = "(def particles " + PARTICLES_ARG_2 + ")\n";
 const std::string DEF_ARG_SET_1 = DEF_PLAYER_1 + DEF_ASTEROIDS_1 + DEF_PARTICLES_1;
 const std::string DEF_ARG_SET_2 = DEF_PLAYER_2 + DEF_ASTEROIDS_2 + DEF_PARTICLES_2;
 
+TEST(Benchmark_Lowering, handle_collisions_argset_1_data_setup__lower_x1000__no_exec)
+{
+  LispleTest::SnippetBenchmark bm(
+    "handle_collisions_argset_1_data_setup__lower_x1000__no_exec",
+    "(do " + DEF_TAU + DEF_ASTEROID_TYPES + DEF_PARTICLE_COLORS + DEF_AREA + DEF_ARG_SET_1 +
+      ")");
+
+  bm.with_lower_iterations(1000).without_execution().run();
+}
+
 TEST(Workload, handle_collisions_inline_argset_1)
 {
   LispleTest::SnippetBenchmark bm("workload_1000_handle_collisions__inline_argset_1",
@@ -4395,7 +4405,7 @@ TEST(Workload, handle_collisions_inline_argset_1)
                                   "(let [state {:player player :asteroids "
                                   "asteroids :particles particles}]" +
                                     HANDLE_COLLISIONS_BODY + ")");
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Workload, handle_collisions_host_adapters_inline_argset_1)
@@ -4410,7 +4420,7 @@ TEST(Workload, handle_collisions_host_adapters_inline_argset_1)
     "(let [state {:player player :asteroids "
     "asteroids :particles particles}]" +
       HANDLE_COLLISIONS_BODY + ")");
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Workload, handle_collisions_pure_lisple_inline_1000_argset_1)
@@ -4425,7 +4435,7 @@ TEST(Workload, handle_collisions_pure_lisple_inline_1000_argset_1)
     "(let [state {:player player :asteroids "
     "asteroids :particles particles}]" +
       HANDLE_COLLISIONS_BODY + ")");
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, benchmark_handle_collisions_inline_1000_argset_1)
@@ -4457,7 +4467,7 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_funcall_1000_argset_1)
                                     :asteroids asteroids
                                     :particles particles} area))
                                      )");
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, benchmark_handle_collisions_host_adapters_funcall_1000_argset_1)
@@ -4477,7 +4487,7 @@ TEST(Benchmark_Workload, benchmark_handle_collisions_host_adapters_funcall_1000_
                                     :asteroids asteroids
                                     :particles particles} area))
                                      )");
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload,
@@ -4497,7 +4507,7 @@ TEST(Benchmark_Workload,
                                     :asteroids asteroids
                                     :particles particles} area))
                                      )");
-  bm.run();
+  bm.with_lower_iterations(1000).run();
 }
 
 TEST(Benchmark_Workload, benchmark_handle_collisions_inline_1000_argset_2)
