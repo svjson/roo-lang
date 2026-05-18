@@ -104,6 +104,8 @@ namespace Lisple
     uptr_exec_node_v exec_nodes;
 
     SpecialFormNode(const SpecialFormNode& other);
+    SpecialFormNode(SpecialFormNode&& other) noexcept = default;
+    SpecialFormNode& operator=(SpecialFormNode&& other) noexcept = default;
     SpecialFormNode(const SpecialForm* form,
                     const sptr_val_v& values,
                     uptr_exec_node_v exec_nodes);
