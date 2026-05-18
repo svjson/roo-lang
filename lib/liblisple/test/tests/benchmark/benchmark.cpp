@@ -466,7 +466,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "060_exponential_special_form_copy_fix_c56912b";
+    const std::string CHANGE_ME = "061_special_form_reserve_hygiene_e8f100e";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
