@@ -466,8 +466,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME =
-      "063_bypass_type_check_on_already_matched_signatures_cbb4b2c";
+    const std::string CHANGE_ME = "064_sequence_access_baseline_82fba77";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
