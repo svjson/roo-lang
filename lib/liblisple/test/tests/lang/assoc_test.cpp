@@ -37,6 +37,19 @@ TEST_F(AssocFunction, replace_key_in_map)
   EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:a 1 :b 2}"));
 }
 
+TEST_F(AssocFunction, replace_key_when_same_value_occurs_before_key)
+{
+  // Given
+  runtime.eval("(def my-map {:id :type :type :type/plain})");
+
+  // When
+  auto result = runtime.eval("(assoc my-map :type :type/updated)");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:id :type :type :type/updated}"));
+  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:id :type :type :type/plain}"));
+}
+
 TEST_F(AssocFunction, replace_key_in_map__retains_sibling_identities)
 {
   // Given

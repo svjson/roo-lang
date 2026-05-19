@@ -45,3 +45,16 @@ TEST_F(AssocInBangFunction, replace_key_in_map)
   EXPECT_EQ(runtime.lookup("my-map")->to_string(),
             runtime.eval("{:a 1 :b 10}")->to_string());
 }
+
+TEST_F(AssocInBangFunction, replace_key_when_same_value_occurs_before_key)
+{
+  // Given
+  runtime.eval("(def my-map {:id :type :type :type/plain})");
+
+  // When
+  auto result = runtime.eval("(assoc-in! my-map [:type] :type/updated)");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval("{:id :type :type :type/updated}"));
+  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:id :type :type :type/updated}"));
+}

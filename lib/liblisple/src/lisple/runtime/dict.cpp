@@ -24,8 +24,7 @@ namespace Lisple::Dict
     return found ? value : Constant::NIL;
   }
 
-  std::pair<bool, sptr_val> find_property(const sptr_val& target,
-                                          const sptr_val& property)
+  std::pair<bool, sptr_val> find_property(const sptr_val& target, const sptr_val& property)
   {
     return find_property(target, *property);
   }
@@ -208,22 +207,23 @@ namespace Lisple::Dict
     {
       sptr_val_v& elements = std::get<sptr_val_v>(target->value);
 
-      auto it = std::find_if(elements.begin(),
-                             elements.end(),
-                             [&](const sptr_val& l) { return *l == *property; });
+      size_t index = elements.size();
+      for (size_t i = 0; i < elements.size(); i += 2)
+      {
+        if (*elements[i] == *property)
+        {
+          index = i;
+          break;
+        }
+      }
 
-      if (it == elements.end())
+      if (index == elements.size())
       {
         elements.push_back(property);
         elements.push_back(value);
       }
       else
       {
-        size_t index = std::distance(elements.begin(), it);
-        if (index % 2 != 0)
-        {
-          throw LispleException("Invalid map structure");
-        }
         elements[index + 1] = value;
       }
     }
