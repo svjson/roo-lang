@@ -1,13 +1,13 @@
 
 #include "lisple/lang/num.h"
 
-#include <cctype>
-#include <stdexcept>
-#include <string>
-
 #include "lisple/exception.h"
 #include "lisple/exec.h"
 #include "lisple/runtime/value.h"
+
+#include <cctype>
+#include <stdexcept>
+#include <string>
 
 namespace Lisple
 {
@@ -108,17 +108,27 @@ namespace Lisple
 
   EXEC_BODY(MaxFunction, exec_max)
   {
-    float result_val = std::get<const Value::Number>(args[0]->value).get_float();
-    size_t result_index = 0;
+    float result_val = 0;
+    size_t result_index = args.size();
 
-    for (size_t i = 1; i < args.size(); i++)
+    for (size_t i = 0; i < args.size(); i++)
     {
+      if (args[i]->type == Value::Type::NIL)
+      {
+        continue;
+      }
+
       float num = std::get<const Value::Number>(args[i]->value).get_float();
-      if (num > result_val)
+      if (result_index == args.size() || num > result_val)
       {
         result_val = num;
         result_index = i;
       }
+    }
+
+    if (result_index == args.size())
+    {
+      return Constant::NIL;
     }
 
     return args[result_index];
@@ -131,17 +141,27 @@ namespace Lisple
 
   EXEC_BODY(MinFunction, exec_min)
   {
-    float result_val = std::get<const Value::Number>(args[0]->value).get_float();
-    size_t result_index = 0;
+    float result_val = 0;
+    size_t result_index = args.size();
 
-    for (size_t i = 1; i < args.size(); i++)
+    for (size_t i = 0; i < args.size(); i++)
     {
+      if (args[i]->type == Value::Type::NIL)
+      {
+        continue;
+      }
+
       float num = std::get<const Value::Number>(args[i]->value).get_float();
-      if (num < result_val)
+      if (result_index == args.size() || num < result_val)
       {
         result_val = num;
         result_index = i;
       }
+    }
+
+    if (result_index == args.size())
+    {
+      return Constant::NIL;
     }
 
     return args[result_index];
