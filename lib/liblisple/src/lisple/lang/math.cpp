@@ -11,6 +11,11 @@ namespace Lisple
 
   EXEC_BODY(AbsFunction, exec_abs)
   {
+    if (args[0]->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
     return Value::number(
       std::abs(std::get<const Value::Number>(args[0]->value).get_float()));
   }
@@ -21,6 +26,11 @@ namespace Lisple
 
   EXEC_BODY(CeilFunction, exec_ceil)
   {
+    if (args[0]->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
     const Value::Number& num = std::get<const Value::Number>(args[0]->value);
     return Value::number(static_cast<int>(std::ceil(num.get_float())));
   }

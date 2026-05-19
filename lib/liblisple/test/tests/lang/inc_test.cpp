@@ -19,3 +19,8 @@ TEST_F(IncFunction, increments_float)
   // Then
   EXPECT_EQ(*result, *Lisple::Value::number(3.5));
 }
+
+TEST_F(IncFunction, nil_returns_nil)
+{
+  EXPECT_EQ(*runtime.eval("(inc nil)"), *Lisple::Constant::NIL);
+}

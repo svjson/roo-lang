@@ -12,6 +12,9 @@ namespace Lisple
    * @code
    * (dec 2)
    * => 1
+   *
+   * (dec nil)
+   * => nil
    * @endcode
    *
    * | Arg # | Description                                                      |
@@ -42,6 +45,9 @@ namespace Lisple
    * @code
    * (inc 2)
    * => 3
+   *
+   * (inc nil)
+   * => nil
    * @endcode
    *
    * | Arg # | Description                                                      |

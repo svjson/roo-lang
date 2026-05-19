@@ -10,3 +10,8 @@ TEST_F(CeilFunction, ceil)
   EXPECT_EQ(*runtime.eval("(ceil 5)"), *Lisple::Value::number(5));
   EXPECT_EQ(*runtime.eval("(ceil 19.1)"), *Lisple::Value::number(20));
 }
+
+TEST_F(CeilFunction, nil_returns_nil)
+{
+  EXPECT_EQ(*runtime.eval("(ceil nil)"), *Lisple::Constant::NIL);
+}

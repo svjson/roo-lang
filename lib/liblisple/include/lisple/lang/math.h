@@ -23,6 +23,9 @@ namespace Lisple
    *
    * (abs 5.5)
    * => 5.5
+   *
+   * (abs nil)
+   * => nil
    * @endcode
    */
   FUNC(AbsFunction, abs)
@@ -37,6 +40,9 @@ namespace Lisple
    *
    * (ceil 10.0)
    * => 10
+   *
+   * (ceil nil)
+   * => nil
    * @endcode
    *
    * | Arg # | Description                                                      |

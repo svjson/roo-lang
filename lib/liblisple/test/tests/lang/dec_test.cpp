@@ -19,3 +19,8 @@ TEST_F(DecFunction, decrements_float)
   // Then
   EXPECT_EQ(*result, *Lisple::Value::number(1.5));
 }
+
+TEST_F(DecFunction, nil_returns_nil)
+{
+  EXPECT_EQ(*runtime.eval("(dec nil)"), *Lisple::Constant::NIL);
+}

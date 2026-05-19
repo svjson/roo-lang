@@ -58,6 +58,11 @@ namespace Lisple
 
   EXEC_BODY(IncFunction, exec_inc)
   {
+    if (args[0]->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
     return Value::number(args[0]->num() +
                          Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
@@ -68,6 +73,11 @@ namespace Lisple
 
   EXEC_BODY(DecFunction, exec_dec)
   {
+    if (args[0]->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
     return Value::number(args[0]->num() -
                          Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
