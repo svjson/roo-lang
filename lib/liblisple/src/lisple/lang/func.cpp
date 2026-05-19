@@ -5,18 +5,19 @@
 #include <lisple/exec.h>
 #include <lisple/impl.h>
 #include <lisple/lang/func.h>
+#include <lisple/runtime/seq.h>
 
 namespace Lisple
 {
   /** ApplyFunction - apply */
   FUNC_IMPL(ApplyFunction,
-            SIG((FN_ARGS((&Lisple::Type::EXEC), (&Lisple::Type::SEQ)),
+            SIG((FN_ARGS((&Lisple::Type::EXEC), (&Lisple::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&ApplyFunction::exec_apply))))
 
   EXEC_BODY(ApplyFunction, exec_apply)
   {
     auto& fn = args[0]->exec();
-    sptr_val_v& fn_args = std::get<sptr_val_v>(args.back()->value);
+    sptr_val_v fn_args = Lisple::get_children(*args.back());
     return fn.execute(ctx, fn_args);
   }
 

@@ -1,7 +1,10 @@
 
-#include <gtest/gtest.h>
-#include "runtime_fixture.h"
+#include <vector>
 
+#include <lisple/adapter.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using MapFunction = LispleTest::RuntimeTestFixture;
 /*
@@ -44,4 +47,24 @@ TEST_F(MapFunction, map_using_keyword)
 
   // Then
   ASSERT_EQ(result->to_string(), "[10 9 \"How rare! A string!\"]");
+}
+
+TEST_F(MapFunction, maps_string_as_char_sequence)
+{
+  EXPECT_EQ(runtime.eval(R"((map "ab" str))")->to_string(), R"(["a" "b"])");
+}
+
+TEST_F(MapFunction, maps_map_as_interleaved_sequence)
+{
+  EXPECT_EQ(runtime.eval("(map {:a 1 :b 2} str)")->to_string(), R"([":a" "1" ":b" "2"])");
+}
+
+TEST_F(MapFunction, maps_native_vector_adapter_as_sequence)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("(map values (fn [n] (* n 2)))")->to_string(), "[2 4 6]");
 }

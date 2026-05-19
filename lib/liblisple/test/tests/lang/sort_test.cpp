@@ -1,8 +1,10 @@
 
+#include <vector>
+
+#include <lisple/adapter.h>
+
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using SortFunction = LispleTest::RuntimeTestFixture;
 TEST_F(SortFunction, sort_int_vector_with_function_symbol)
@@ -50,4 +52,26 @@ TEST_F(SortFunction, sort_map_vector_by_string_value_with_custom_function)
 )")
       ->to_string(),
     R"([{:name "Zorro" :age 32} {:name "Sam" :age 29} {:name "Kenny" :age 74} {:name "Bev" :age 16}])");
+}
+
+TEST_F(SortFunction, sorts_string_as_char_sequence)
+{
+  EXPECT_EQ(runtime.eval(R"((sort "cba" (fn [a b] (< (str a) (str b)))))")->to_string(),
+            "['a' 'b' 'c']");
+}
+
+TEST_F(SortFunction, sorts_map_as_interleaved_sequence)
+{
+  EXPECT_EQ(runtime.eval("(sort {:b 2 :a 1} (fn [a b] (< (str a) (str b))))")->to_string(),
+            "[1 2 :a :b]");
+}
+
+TEST_F(SortFunction, sorts_native_vector_adapter_as_sequence)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("(sort values >)")->to_string(), "[3 2 1]");
 }

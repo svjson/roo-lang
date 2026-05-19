@@ -1,8 +1,10 @@
 
+#include <vector>
+
+#include <lisple/adapter.h>
+
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using SomeFunction = LispleTest::RuntimeTestFixture;
 /*
@@ -66,4 +68,25 @@ TEST_F(SomeFunction, works_with_custom_predicate)
   // Then
   EXPECT_EQ(*found, *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*not_found, *Lisple::Constant::BOOL_FALSE);
+}
+
+TEST_F(SomeFunction, searches_string_as_char_sequence)
+{
+  EXPECT_EQ(*runtime.eval(R"((some? "abc" (fn [c] (= c 'b'))))"),
+            *Lisple::Constant::BOOL_TRUE);
+}
+
+TEST_F(SomeFunction, searches_map_as_interleaved_sequence)
+{
+  EXPECT_EQ(*runtime.eval("(some? {:a 1 :b 2} keyword?)"), *Lisple::Constant::BOOL_TRUE);
+}
+
+TEST_F(SomeFunction, searches_native_vector_adapter_as_sequence)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  EXPECT_EQ(*runtime.eval("(some? values even?)"), *Lisple::Constant::BOOL_TRUE);
 }

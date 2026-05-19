@@ -142,7 +142,15 @@ namespace Lisple
   {
     switch (seq.type)
     {
+    case Value::Type::STRING:
+    {
+      const std::string& str = seq.str();
+      if (str.empty()) return Constant::NIL;
+      return Value::character(str.back());
+    }
     case Value::Type::VECTOR:
+    case Value::Type::LIST:
+    case Value::Type::MAP:
     {
       auto& vec = std::get<sptr_val_v>(seq.value);
       if (vec.empty()) return Constant::NIL;
@@ -151,6 +159,12 @@ namespace Lisple
     case Value::Type::OBJECT:
     {
       return to_rt_value(seq.obj()->get_children().back());
+    }
+    case Value::Type::NATIVE_OBJECT:
+    {
+      sptr_val_v values = seq.nobj()->native_children();
+      if (values.empty()) return Constant::NIL;
+      return values.back();
     }
     default:
       throw LispleException("peek_child is not implemented for type: " +

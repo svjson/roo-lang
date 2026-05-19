@@ -1,11 +1,45 @@
 
 #include "lisple/lang/num.h"
 
+#include <cctype>
+#include <stdexcept>
+#include <string>
+
+#include "lisple/exception.h"
 #include "lisple/exec.h"
 #include "lisple/runtime/value.h"
 
 namespace Lisple
 {
+  namespace
+  {
+    sptr_val parse_int_string(const std::string& value)
+    {
+      try
+      {
+        size_t parsed = 0;
+        const int result = std::stoi(value, &parsed);
+        while (parsed < value.size() &&
+               std::isspace(static_cast<unsigned char>(value[parsed])))
+        {
+          parsed++;
+        }
+        if (parsed != value.size())
+        {
+          return Constant::NIL;
+        }
+        return Value::number(result);
+      }
+      catch (const std::invalid_argument&)
+      {
+        return Constant::NIL;
+      }
+      catch (const std::out_of_range&)
+      {
+        return Constant::NIL;
+      }
+    }
+  } // namespace
 
   /** EvenPFunction - even? */
   FUNC_IMPL(EvenPFunction,
@@ -46,6 +80,11 @@ namespace Lisple
   {
     sptr_val& obj = args[0];
 
+    if (!obj || obj->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
     if (Type::NUMBER.is_type_of(*obj))
     {
       return Value::number(std::get<const Value::Number>(obj->value).get_int());
@@ -56,7 +95,7 @@ namespace Lisple
     }
     else if (Type::STRING.is_type_of(*obj))
     {
-      return Value::number(std::stoi(obj->str()));
+      return parse_int_string(obj->str());
     }
 
     throw LispleException("Cannot convert " + obj->to_string() + " to integer.");

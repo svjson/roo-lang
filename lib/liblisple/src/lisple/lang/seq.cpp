@@ -12,7 +12,7 @@ namespace Lisple
 {
   /* AppendBangFunction - append_bang */
   FUNC_IMPL(AppendBangFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
+            SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&AppendBangFunction::exec_append_bang))))
 
   EXEC_BODY(AppendBangFunction, exec_append_bang)
@@ -75,12 +75,17 @@ namespace Lisple
 
   /* ConcatBangFunction - concat */
   FUNC_IMPL(ConcatBangFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&VARARG, &Type::ANY)),
+            SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&ConcatBangFunction::exec_concat_bang))))
 
   EXEC_BODY(ConcatBangFunction, exec_concat_bang)
   {
-    sptr_val_v& result = std::get<sptr_val_v>(args[0]->value);
+    auto* result = std::get_if<sptr_val_v>(&args[0]->value);
+    if (result == nullptr)
+    {
+      throw TypeError("concat! not implemented for value type: " +
+                      std::to_string((int)args[0]->type));
+    }
 
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -90,12 +95,12 @@ namespace Lisple
       {
         for (auto& element : vec->elements())
         {
-          result.push_back(element);
+          result->push_back(element);
         }
       }
       else
       {
-        result.push_back(vec);
+        result->push_back(vec);
       }
     }
 
@@ -106,7 +111,7 @@ namespace Lisple
    * ContainsPFunction - contains?
    */
   FUNC_IMPL(ContainsPFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY)),
                  EXEC_DISPATCH(&ContainsPFunction::exec_contains))))
 
   EXEC_BODY(ContainsPFunction, exec_contains)
@@ -150,17 +155,23 @@ namespace Lisple
     }
 
     int n = index.get_int();
-    if (n >= static_cast<int>(Lisple::count(*args.front())) || n < 0)
+    if (n < 0)
     {
       return Constant::NIL;
     }
 
-    return Lisple::get_child(*args.front(), n);
+    sptr_val_v children = Lisple::get_children(*args.front());
+    if (n >= static_cast<int>(children.size()))
+    {
+      return Constant::NIL;
+    }
+
+    return children[n];
   }
 
   /** PartitionFunction - partition */
   FUNC_IMPL(PartitionFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&PartitionFunction::exec_partition))))
 
   EXEC_BODY(PartitionFunction, exec_partition)
@@ -189,7 +200,7 @@ namespace Lisple
 
   /** HeadFunction */
   FUNC_IMPL(HeadFunction,
-            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&HeadFunction::exec_head))))
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&HeadFunction::exec_head))))
 
   EXEC_BODY(HeadFunction, exec_head)
   {
@@ -199,7 +210,7 @@ namespace Lisple
 
   /** LastFunction */
   FUNC_IMPL(LastFunction,
-            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&LastFunction::exec_last))))
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&LastFunction::exec_last))))
 
   EXEC_BODY(LastFunction, exec_last)
   {
@@ -209,7 +220,7 @@ namespace Lisple
 
   /** RandNth - rand-nth */
   FUNC_IMPL(RandNthFunction,
-            SIG((FN_ARGS((&Lisple::Type::SEQ)),
+            SIG((FN_ARGS((&Lisple::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&RandNthFunction::exec_rand_nth))))
 
   EXEC_BODY(RandNthFunction, exec_rand_nth)
@@ -246,7 +257,7 @@ namespace Lisple
 
   /** RemoveNthFunction - remove-nth! */
   FUNC_IMPL(RemoveNthFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::NUMBER)),
                  EXEC_DISPATCH(&RemoveNthFunction::exec_remove_nth))))
 
   EXEC_BODY(RemoveNthFunction, exec_remove_nth)
@@ -254,12 +265,12 @@ namespace Lisple
     if (*args[0] == *Constant::NIL) return Constant::NIL;
 
     int n = std::get<const Value::Number>(args.back()->value).get_int();
-    if (n >= static_cast<int>(Lisple::count(*args[0])) || n < 0)
+    sptr_val_v elements = Lisple::get_children(*args[0]);
+    if (n >= static_cast<int>(elements.size()) || n < 0)
     {
       return args[0];
     }
 
-    sptr_val_v elements = Lisple::get_children(*args[0]);
     sptr_val_v new_seq;
     new_seq.reserve(elements.size());
 
@@ -276,7 +287,7 @@ namespace Lisple
 
   /** RemoveNthBangFunction - remove-nth! */
   FUNC_IMPL(RemoveNthBangFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::NUMBER)),
+            SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER)),
                  EXEC_DISPATCH(&RemoveNthBangFunction::exec_remove_nth_bang))))
 
   EXEC_BODY(RemoveNthBangFunction, exec_remove_nth_bang)
@@ -284,7 +295,7 @@ namespace Lisple
     auto& seq = *args[0];
     int n = std::get<const Value::Number>(args[1]->value).get_int();
 
-    if (Type::HOST_SEQ.is_type_of(seq))
+    if (seq.type == Value::Type::OBJECT && Type::HOST_SEQ.is_type_of(seq))
     {
       auto obj = seq.obj();
       sptr_ast_node_v& children = obj->get_children();
@@ -301,6 +312,10 @@ namespace Lisple
       obj->as<AST::Seq>().replace_children(children);
 
       return to_rt_value(to_delete);
+    }
+    if (seq.type == Value::Type::NATIVE_OBJECT)
+    {
+      throw TypeError("remove-nth! not implemented for native host sequences.");
     }
 
     sptr_val_v& children = std::get<sptr_val_v>(seq.value);
@@ -336,30 +351,18 @@ namespace Lisple
 
   /** TailFunction - tail */
   FUNC_IMPL(TailFunction,
-            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&TailFunction::exec_tail))))
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&TailFunction::exec_tail))))
 
   EXEC_BODY(TailFunction, exec_tail)
   {
     sptr_val_v tail;
-    size_t count = Lisple::count(*args[0]);
-    if (count > 1)
+    sptr_val_v children = Lisple::get_children(*args[0]);
+    if (children.size() > 1)
     {
-      tail.reserve(count - 1);
-      if (Type::HOST_SEQ.is_type_of(*args[0]))
+      tail.reserve(children.size() - 1);
+      for (size_t i = 1; i < children.size(); i++)
       {
-        auto obj_children = args[0]->obj()->get_children();
-        for (size_t i = 1; i < obj_children.size(); i++)
-        {
-          tail.push_back(to_rt_value(*obj_children[i]));
-        }
-      }
-      else
-      {
-        auto& children = args[0]->elements();
-        for (size_t i = 1; i < children.size(); i++)
-        {
-          tail.push_back(children[i]);
-        }
+        tail.push_back(children[i]);
       }
     }
 
@@ -368,7 +371,8 @@ namespace Lisple
 
   /* FlattenFunction - flatten */
   FUNC_IMPL(FlattenFunction,
-            SIG((FN_ARGS((&Type::SEQ)), EXEC_DISPATCH(&FlattenFunction::exec_flatten))))
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING)),
+                 EXEC_DISPATCH(&FlattenFunction::exec_flatten))))
 
   EXEC_BODY(FlattenFunction, exec_flatten)
   {
@@ -377,26 +381,7 @@ namespace Lisple
     sptr_val_v children = Lisple::get_children(*args[0]);
     for (auto& obj : children)
     {
-      if (Type::HOST_SEQ.is_type_of(*obj))
-      {
-        for (auto& cobj : obj->obj()->get_children())
-        {
-          if (Type::STRICT_SEQ.is_type_of(*cobj))
-          {
-            auto flat_args = sptr_val_v{to_rt_value(*cobj)};
-            auto flattened = exec_flatten(ctx, flat_args);
-            for (auto fl_obj : flattened->elements())
-            {
-              result.push_back(fl_obj);
-            }
-          }
-          else
-          {
-            result.push_back(to_rt_value(*cobj));
-          }
-        }
-      }
-      else if (Type::STRICT_SEQ.is_type_of(*obj))
+      if (Type::STRICT_SEQ.is_type_of(*obj))
       {
         auto flat_args = sptr_val_v{obj};
         auto flattened = exec_flatten(ctx, flat_args);
@@ -418,7 +403,7 @@ namespace Lisple
    * TakeFunction - take
    */
   FUNC_IMPL(TakeFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ)),
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&TakeFunction::exec_take))))
 
   EXEC_BODY(TakeFunction, exec_take)
@@ -426,26 +411,12 @@ namespace Lisple
     size_t amount = std::get<const Value::Number>(args[0]->value).get_int();
     sptr_val_v result;
 
-    if (Type::HOST_SEQ.is_type_of(*args[1]))
+    sptr_val_v elements = Lisple::get_children(*args[1]);
+    size_t actual_amount = std::min(amount, elements.size());
+    result.reserve(actual_amount);
+    for (size_t i = 0; i < actual_amount; i++)
     {
-      sptr_ast_node_v vector = args.back()->obj()->get_children();
-      size_t actual_amount = std::min(amount, vector.size());
-
-      result.reserve(actual_amount);
-      for (size_t i = 0; i < actual_amount; i++)
-      {
-        result.push_back(to_rt_value(*vector[i]));
-      }
-    }
-    else
-    {
-      sptr_val_v elements = args.back()->elements();
-      size_t actual_amount = std::min(amount, elements.size());
-      result.reserve(actual_amount);
-      for (size_t i = 0; i < actual_amount; i++)
-      {
-        result.push_back(elements[i]);
-      }
+      result.push_back(elements[i]);
     }
 
     return Value::vector(std::move(result));

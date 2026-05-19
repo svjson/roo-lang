@@ -1,9 +1,11 @@
 
-#include "runtime_fixture.h"
+#include <vector>
+
+#include <lisple/adapter.h>
 #include <lisple/runtime/seq.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using RemoveFirstFunction = LispleTest::RuntimeTestFixture;
 /*
@@ -71,4 +73,25 @@ TEST_F(RemoveFirstFunction, removes_only_first_of_multiple_matches)
   EXPECT_EQ(result->elements().at(0)->i64(), 4);
   EXPECT_EQ(result->elements().at(1)->i64(), 6);
   EXPECT_EQ(result->elements().at(2)->i64(), 8);
+}
+
+TEST_F(RemoveFirstFunction, removes_from_string_as_char_sequence)
+{
+  EXPECT_EQ(runtime.eval(R"((remove-first "abcb" (fn [c] (= c 'b'))))")->to_string(),
+            "['a' 'c' 'b']");
+}
+
+TEST_F(RemoveFirstFunction, removes_from_map_as_interleaved_sequence)
+{
+  EXPECT_EQ(runtime.eval("(remove-first {:a 1 :b 2} keyword?)")->to_string(), "[1 :b 2]");
+}
+
+TEST_F(RemoveFirstFunction, removes_from_native_vector_adapter_as_sequence)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("(remove-first values even?)")->to_string(), "[1 3]");
 }

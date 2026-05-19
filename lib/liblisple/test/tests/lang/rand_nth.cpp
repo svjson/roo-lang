@@ -1,8 +1,10 @@
 
+#include <vector>
+
+#include <lisple/adapter.h>
+
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using RandNth = LispleTest::RuntimeTestFixture;
 /*
@@ -38,4 +40,19 @@ TEST_F(RandNth, single_element)
     int num = runtime.eval("(rand-nth [8])")->i64();
     EXPECT_EQ(num, 8);
   }
+}
+
+TEST_F(RandNth, string_single_element)
+{
+  EXPECT_EQ(runtime.eval(R"((rand-nth "a"))")->to_string(), "'a'");
+}
+
+TEST_F(RandNth, native_vector_adapter_single_element)
+{
+  std::vector<int> single = {2};
+  runtime.get_current_namespace().store(
+    "single",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(single));
+
+  EXPECT_EQ(runtime.eval("(rand-nth single)")->to_string(), "2");
 }

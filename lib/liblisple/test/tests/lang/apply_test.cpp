@@ -1,8 +1,10 @@
 
+#include <vector>
+
+#include <lisple/adapter.h>
+
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using ApplyFunction = LispleTest::RuntimeTestFixture;
 TEST_F(ApplyFunction, apply_concat)
@@ -22,4 +24,24 @@ TEST_F(ApplyFunction, apply_dynamic)
 
   // Then
   ASSERT_EQ(result->to_string(), "17");
+}
+
+TEST_F(ApplyFunction, applies_string_as_char_sequence)
+{
+  EXPECT_EQ(runtime.eval(R"((apply str "ab"))")->to_string(), R"("ab")");
+}
+
+TEST_F(ApplyFunction, applies_map_as_interleaved_sequence)
+{
+  EXPECT_EQ(runtime.eval("(apply vector {:a 1})")->to_string(), "[:a 1]");
+}
+
+TEST_F(ApplyFunction, applies_native_vector_adapter_as_sequence)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("(apply + values)")->to_string(), "6");
 }

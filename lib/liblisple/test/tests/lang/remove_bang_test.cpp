@@ -1,10 +1,10 @@
 
-#include "runtime_fixture.h"
+#include <lisple/exception.h>
 #include <lisple/runtime/seq.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-
 
 using RemoveBangFunction = LispleTest::RuntimeTestFixture;
 
@@ -28,4 +28,9 @@ TEST_F(RemoveBangFunction, remove_even_from_vector)
   EXPECT_EQ(Lisple::count(*my_seq), 2);
   EXPECT_EQ(my_seq->elements().at(0)->i64(), 1);
   EXPECT_EQ(my_seq->elements().at(1)->i64(), 3);
+}
+
+TEST_F(RemoveBangFunction, rejects_map_target)
+{
+  EXPECT_THROW(runtime.eval("(remove! keyword? {:a 1})"), Lisple::InvocationException);
 }

@@ -14,16 +14,16 @@ namespace Lisple
 {
   /* FilterFunction */
   FUNC_IMPL(FilterFunction,
-            MULTI_SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&FilterFunction::exec_filter)),
-                      (FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&FilterFunction::exec_filter))))
 
   EXEC_BODY(FilterFunction, exec_filter)
   {
     Lisple::sptr_val original;
     Lisple::sptr_val fn;
-    if (Type::SEQ.is_type_of(*args[0]))
+    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
     {
       original = args[0];
       fn = args[1];
@@ -58,7 +58,7 @@ namespace Lisple
 
   /** FindFirstFunction - find-first */
   FUNC_IMPL(FindFirstFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&FindFirstFunction::exec_find_first))))
 
   EXEC_BODY(FindFirstFunction, exec_find_first)
@@ -68,7 +68,8 @@ namespace Lisple
     auto& filter_fn = args.back()->exec();
 
     sptr_val_v val_args{nullptr};
-    for (auto val : args[0]->elements())
+    sptr_val_v children = Lisple::get_children(*original);
+    for (auto val : children)
     {
       val_args[0] = val;
       sptr_val pred_result = filter_fn.execute(ctx, val_args);
@@ -83,7 +84,7 @@ namespace Lisple
 
   /** FindIndexFunction - find-index */
   FUNC_IMPL(FindIndexFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::FUNCTION)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&FindIndexFunction::exec_find_index))))
 
   EXEC_BODY(FindIndexFunction, exec_find_index)
@@ -110,12 +111,12 @@ namespace Lisple
 
   /* KeepFunction - keep */
   FUNC_IMPL(KeepFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                  EXEC_DISPATCH(&KeepFunction::exec_keep))))
 
   EXEC_BODY(KeepFunction, exec_keep)
   {
-    const sptr_val_v& values = args[0]->elements();
+    sptr_val_v values = Lisple::get_children(*args[0]);
     Executable& exec = args[1]->exec();
 
     sptr_val_v result;
@@ -133,7 +134,7 @@ namespace Lisple
 
   /** MapFunction - map */
   FUNC_IMPL(MapFunction,
-            SIG((FN_ARGS((&VARARG, &Type::SEQ), (&Type::EXEC)),
+            SIG((FN_ARGS((&VARARG, &Type::SEQ_OR_STRING), (&Type::EXEC)),
                  EXEC_DISPATCH(&MapFunction::exec_map))))
 
   EXEC_BODY(MapFunction, exec_map)
@@ -243,9 +244,9 @@ namespace Lisple
 
   /** RemoveFunction - remove */
   FUNC_IMPL(RemoveFunction,
-            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&RemoveFunction::exec_remove)),
-                      (FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                      (FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&RemoveFunction::exec_remove))))
 
   EXEC_BODY(RemoveFunction, exec_remove)
@@ -253,7 +254,7 @@ namespace Lisple
     Value* original;
     Executable* remove_fn;
 
-    if (Type::SEQ.is_type_of(*args[0]))
+    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
     {
       original = args[0].get();
       remove_fn = &args[1]->exec();
@@ -283,14 +284,14 @@ namespace Lisple
 
   /** RemoveBangFunction - remove! */
   FUNC_IMPL(RemoveBangFunction,
-            SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+            SIG((FN_ARGS((&Type::EXEC), (&Type::STRICT_SEQ)),
                  EXEC_DISPATCH(&RemoveBangFunction::exec_remove_bang))))
 
   EXEC_BODY(RemoveBangFunction, exec_remove_bang)
   {
     auto& remove_fn = args[0]->exec();
 
-    if (Type::HOST_SEQ.is_type_of(*args[1]))
+    if (args[1]->type == Value::Type::OBJECT && Type::HOST_SEQ.is_type_of(*args[1]))
     {
       sptr_ast_node obj = args[1]->obj();
       AST::Seq& host_seq = obj->as<AST::Seq>();
@@ -306,6 +307,10 @@ namespace Lisple
       children.erase(it, children.end());
 
       host_seq.replace_children(children);
+    }
+    else if (args[1]->type == Value::Type::NATIVE_OBJECT)
+    {
+      throw TypeError("remove! not implemented for native host sequences.");
     }
     else
     {
@@ -328,9 +333,9 @@ namespace Lisple
 
   /* RemoveFirstFunction - remove-first */
   FUNC_IMPL(RemoveFirstFunction,
-            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first)),
-                      (FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+                      (FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first))))
 
   EXEC_BODY(RemoveFirstFunction, exec_remove_first)
@@ -338,7 +343,7 @@ namespace Lisple
     Value* original;
     Executable* remove_fn;
 
-    if (Type::SEQ.is_type_of(*args[0]))
+    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
     {
       original = args[0].get();
       remove_fn = &args[1]->exec();
@@ -354,7 +359,7 @@ namespace Lisple
 
     bool removed = false;
     sptr_val_v val_args{nullptr};
-    for (auto val : original->elements())
+    for (auto val : Lisple::get_children(*original))
     {
       val_args[0] = val;
       auto test_result = remove_fn->execute(ctx, val_args);
@@ -416,14 +421,15 @@ namespace Lisple
 
   /** SomeFunction - some? */
   FUNC_IMPL(SomeFunction,
-            SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                  EXEC_DISPATCH(&SomeFunction::exec_some))))
 
   EXEC_BODY(SomeFunction, exec_some)
   {
     sptr_val_v val_arg = {nullptr};
     auto& fn = args.back()->exec();
-    for (auto& element : args[0]->elements())
+    sptr_val_v elements = Lisple::get_children(*args[0]);
+    for (auto& element : elements)
     {
       val_arg[0] = element;
       sptr_val result = fn.execute(ctx, val_arg);
@@ -437,9 +443,9 @@ namespace Lisple
 
   /* SortFunction - sort */
   FUNC_IMPL(SortFunction,
-            MULTI_SIG((FN_ARGS((&Type::SEQ), (&Type::EXEC)),
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&SortFunction::exec_sort)),
-                      (FN_ARGS((&Type::EXEC), (&Type::SEQ)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&SortFunction::exec_sort))))
 
   EXEC_BODY(SortFunction, exec_sort)
@@ -447,7 +453,7 @@ namespace Lisple
     Value* seq_arg;
     Executable* comparator;
 
-    if (Type::SEQ.is_type_of(*args[0]))
+    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
     {
       seq_arg = args[0].get();
       comparator = &args[1]->exec();

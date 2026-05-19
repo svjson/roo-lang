@@ -1,4 +1,7 @@
 
+#include <vector>
+
+#include <lisple/adapter.h>
 #include <lisple/exception.h>
 
 #include "runtime_fixture.h"
@@ -40,4 +43,27 @@ TEST_F(NthFunction, nth_negative_index_returns_nil)
 TEST_F(NthFunction, nth_out_of_bounds_index_returns_nil)
 {
   EXPECT_EQ(*runtime.eval("(nth [1 2 3] 8)"), *Lisple::Constant::NIL);
+}
+
+TEST_F(NthFunction, nth_string_as_char_sequence)
+{
+  EXPECT_EQ(runtime.eval(R"((nth "abc" 1))")->to_string(), "'b'");
+}
+
+TEST_F(NthFunction, nth_map_as_interleaved_sequence)
+{
+  EXPECT_EQ(runtime.eval("(nth {:a 1 :b 2} 0)")->to_string(), ":a");
+  EXPECT_EQ(runtime.eval("(nth {:a 1 :b 2} 1)")->to_string(), "1");
+  EXPECT_EQ(runtime.eval("(nth {:a 1 :b 2} 2)")->to_string(), ":b");
+  EXPECT_EQ(runtime.eval("(nth {:a 1 :b 2} 3)")->to_string(), "2");
+}
+
+TEST_F(NthFunction, nth_native_vector_adapter_as_sequence)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::NativeStdVectorAdapter<int>::make_ref(values));
+
+  EXPECT_EQ(runtime.eval("(nth values 1)")->to_string(), "2");
 }

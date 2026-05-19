@@ -1,9 +1,9 @@
 
-#include "runtime_fixture.h"
+#include <lisple/exception.h>
 #include <lisple/runtime/seq.h>
 
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using RemoveNthFunction = LispleTest::RuntimeTestFixture;
 /*
@@ -80,4 +80,9 @@ TEST_F(RemoveNthFunction, does_not_mutate_original)
   // Then (original is unchanged)
   auto original = runtime.lookup("original");
   ASSERT_EQ(Lisple::count(*original), 4);
+}
+
+TEST_F(RemoveNthFunction, remove_nth_bang_rejects_map_target)
+{
+  EXPECT_THROW(runtime.eval("(remove-nth! {:a 1} 0)"), Lisple::InvocationException);
 }

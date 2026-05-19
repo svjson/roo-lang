@@ -3,6 +3,7 @@
 
 #include <lisple/context.h>
 #include <lisple/form.h>
+#include <lisple/host/object.h>
 #include <lisple/runtime/seq.h>
 
 namespace Lisple
@@ -18,6 +19,18 @@ namespace Lisple
   bool TypeRef::is_type_of(const Value& val) const
   {
     if (val == *Constant::NIL) return true;
+    if (form_type == Form::HOST_SEQ)
+    {
+      if (val.type == Value::Type::NATIVE_OBJECT)
+      {
+        return val.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR;
+      }
+      if (val.type == Value::Type::OBJECT)
+      {
+        return val.obj()->get_type() == Form::HOST_SEQ;
+      }
+      return false;
+    }
     return val.type == value_type;
   }
 

@@ -1,9 +1,9 @@
 
-#include "runtime_fixture.h"
+#include <lisple/exception.h>
 
 #include "host/test_adapters/vehicle_native_adapters.h"
+#include "runtime_fixture.h"
 #include <gtest/gtest.h>
-
 
 using ConcatFunction = LispleTest::RuntimeTestFixture;
 
@@ -35,4 +35,9 @@ TEST_F(ConcatFunction, host_objects_and_primitives)
 
   EXPECT_EQ(retval->to_string(),
             R"([{:model-name "Cessna" :seats 2} {:a 2} "rawk n rawl"])");
+}
+
+TEST_F(ConcatFunction, concat_bang_rejects_map_target)
+{
+  EXPECT_THROW(runtime.eval("(concat! {:a 1} 2)"), Lisple::InvocationException);
 }
