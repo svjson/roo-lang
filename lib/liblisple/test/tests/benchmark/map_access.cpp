@@ -225,6 +225,11 @@ namespace
     std::initializer_list<MapAccessBinding> bindings,
     const std::string& input)
   {
+    if (LispleTest::skip_benchmark_tests)
+    {
+      return LispleTest::SnippetBenchmark(case_name, "nil");
+    }
+
     return LispleTest::SnippetBenchmark(case_name,
                                         map_access_namespaces(bindings),
                                         {},

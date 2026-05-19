@@ -466,7 +466,7 @@ namespace LispleTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "065_avoid_copy_on_seq_access_8da9a29";
+    const std::string CHANGE_ME = "066_map_access_benchmarks_c257a88";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
