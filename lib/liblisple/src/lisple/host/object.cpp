@@ -92,6 +92,13 @@ namespace Lisple
     return elements;
   }
 
+  sptr_val NativeObjectBase::native_child(size_t index) const
+  {
+    sptr_val_v elements = native_children();
+    if (index >= elements.size()) return Constant::NIL;
+    return elements[index];
+  }
+
   size_t NativeObjectBase::size() const
   {
     return this->accessor_table().keys.size();

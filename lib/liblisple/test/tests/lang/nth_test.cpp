@@ -8,6 +8,24 @@
 #include <gtest/gtest.h>
 
 using NthFunction = LispleTest::RuntimeTestFixture;
+
+namespace
+{
+  class NoBulkNativeVectorAdapter : public Lisple::NativeStdVectorAdapter<int>
+  {
+   public:
+    explicit NoBulkNativeVectorAdapter(std::vector<int>& values)
+      : Lisple::NativeStdVectorAdapter<int>(values)
+    {
+    }
+
+    Lisple::sptr_val_v native_children() const override
+    {
+      throw Lisple::LispleException("native_children should not be used for indexed access");
+    }
+  };
+} // namespace
+
 TEST_F(NthFunction, nth_valid_numbers)
 {
   // Given
@@ -66,4 +84,15 @@ TEST_F(NthFunction, nth_native_vector_adapter_as_sequence)
     Lisple::NativeStdVectorAdapter<int>::make_ref(values));
 
   EXPECT_EQ(runtime.eval("(nth values 1)")->to_string(), "2");
+}
+
+TEST_F(NthFunction, nth_native_vector_adapter_uses_direct_index_access)
+{
+  std::vector<int> values = {1, 2, 3};
+  runtime.get_current_namespace().store(
+    "values",
+    Lisple::Value::native_object(std::make_shared<NoBulkNativeVectorAdapter>(values)));
+
+  EXPECT_EQ(runtime.eval("(nth values 1)")->to_string(), "2");
+  EXPECT_EQ(*runtime.eval("(nth values 8)"), *Lisple::Constant::NIL);
 }

@@ -10,6 +10,28 @@
 
 namespace Lisple
 {
+  namespace
+  {
+    template <typename Fn> void for_each_child(Value& seq, Fn&& fn)
+    {
+      if (Lisple::has_indexed_children(seq))
+      {
+        const size_t n_children = Lisple::child_count(seq);
+        for (size_t i = 0; i < n_children; i++)
+        {
+          fn(Lisple::get_child(seq, i));
+        }
+        return;
+      }
+
+      sptr_val_v children = Lisple::get_children(seq);
+      for (auto& child : children)
+      {
+        fn(child);
+      }
+    }
+  } // namespace
+
   /* AppendBangFunction - append_bang */
   FUNC_IMPL(AppendBangFunction,
             SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
@@ -57,11 +79,7 @@ namespace Lisple
         }
         else
         {
-          sptr_val_v elements = Lisple::get_children(*vec);
-          for (auto& element : elements)
-          {
-            result.push_back(element);
-          }
+          for_each_child(*vec, [&](const sptr_val& element) { result.push_back(element); });
         }
       }
       else
@@ -118,6 +136,16 @@ namespace Lisple
   {
     if (*Constant::NIL == *args[0]) return Constant::BOOL_FALSE;
 
+    if (Lisple::has_indexed_children(*args[0]))
+    {
+      const size_t n_children = Lisple::child_count(*args[0]);
+      for (size_t i = 0; i < n_children; i++)
+      {
+        if (*Lisple::get_child(*args[0], i) == *args.back()) return Constant::BOOL_TRUE;
+      }
+      return Constant::BOOL_FALSE;
+    }
+
     sptr_val_v vector = Lisple::get_children(*args[0]);
     return std::find_if(vector.begin(),
                         vector.end(),
@@ -160,13 +188,7 @@ namespace Lisple
       return Constant::NIL;
     }
 
-    sptr_val_v children = Lisple::get_children(*args.front());
-    if (n >= static_cast<int>(children.size()))
-    {
-      return Constant::NIL;
-    }
-
-    return children[n];
+    return Lisple::get_child(*args.front(), static_cast<size_t>(n));
   }
 
   /** PartitionFunction - partition */
@@ -177,19 +199,19 @@ namespace Lisple
   EXEC_BODY(PartitionFunction, exec_partition)
   {
     size_t part_size = static_cast<size_t>(args[0]->i32());
-    sptr_val_v children = Lisple::get_children(*args[1]);
     sptr_val_v result;
 
     sptr_val_v part;
-    for (auto& child : children)
-    {
-      part.push_back(child);
-      if (part.size() == part_size)
-      {
-        result.push_back(Value::vector(std::move(part)));
-        part = sptr_val_v{};
-      }
-    }
+    for_each_child(*args[1],
+                   [&](const sptr_val& child)
+                   {
+                     part.push_back(child);
+                     if (part.size() == part_size)
+                     {
+                       result.push_back(Value::vector(std::move(part)));
+                       part = sptr_val_v{};
+                     }
+                   });
     if (!part.empty())
     {
       result.push_back(Value::vector(std::move(part)));
@@ -225,6 +247,16 @@ namespace Lisple
 
   EXEC_BODY(RandNthFunction, exec_rand_nth)
   {
+    if (Lisple::has_indexed_children(*args[0]))
+    {
+      const size_t n_children = Lisple::child_count(*args[0]);
+      if (n_children == 0)
+      {
+        return Constant::NIL;
+      }
+      return Lisple::get_child(*args[0], std::rand() % n_children);
+    }
+
     sptr_val_v elements = Lisple::get_children(*args[0]);
     if (elements.empty())
     {
@@ -356,6 +388,20 @@ namespace Lisple
   EXEC_BODY(TailFunction, exec_tail)
   {
     sptr_val_v tail;
+    if (Lisple::has_indexed_children(*args[0]))
+    {
+      const size_t n_children = Lisple::child_count(*args[0]);
+      if (n_children > 1)
+      {
+        tail.reserve(n_children - 1);
+        for (size_t i = 1; i < n_children; i++)
+        {
+          tail.push_back(Lisple::get_child(*args[0], i));
+        }
+      }
+      return Value::vector(std::move(tail));
+    }
+
     sptr_val_v children = Lisple::get_children(*args[0]);
     if (children.size() > 1)
     {
@@ -411,12 +457,24 @@ namespace Lisple
     size_t amount = std::get<const Value::Number>(args[0]->value).get_int();
     sptr_val_v result;
 
-    sptr_val_v elements = Lisple::get_children(*args[1]);
-    size_t actual_amount = std::min(amount, elements.size());
+    if (!Lisple::has_indexed_children(*args[1]))
+    {
+      sptr_val_v elements = Lisple::get_children(*args[1]);
+      size_t actual_amount = std::min(amount, elements.size());
+      result.reserve(actual_amount);
+      for (size_t i = 0; i < actual_amount; i++)
+      {
+        result.push_back(elements[i]);
+      }
+
+      return Value::vector(std::move(result));
+    }
+
+    size_t actual_amount = std::min(amount, Lisple::child_count(*args[1]));
     result.reserve(actual_amount);
     for (size_t i = 0; i < actual_amount; i++)
     {
-      result.push_back(elements[i]);
+      result.push_back(Lisple::get_child(*args[1], i));
     }
 
     return Value::vector(std::move(result));

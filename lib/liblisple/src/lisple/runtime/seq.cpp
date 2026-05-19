@@ -60,6 +60,7 @@ namespace Lisple
     {
     case Value::Type::NIL:
       return Constant::NIL;
+    case Value::Type::LIST:
     case Value::Type::VECTOR:
     case Value::Type::MAP:
     {
@@ -77,10 +78,17 @@ namespace Lisple
         return get_child(*wrapper->val, index);
       }
 
-      return to_rt_value(seq.obj()->get_children().at(index));
+      sptr_ast_node_v& children = seq.obj()->get_children();
+      if (index >= children.size()) return Constant::NIL;
+      return to_rt_value(children[index]);
     }
     case Value::Type::NATIVE_OBJECT:
     {
+      if (seq.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR)
+      {
+        return seq.nobj()->native_child(index);
+      }
+
       sptr_val_v values = seq.nobj()->native_children();
       if (index < values.size())
       {
@@ -97,6 +105,68 @@ namespace Lisple
     default:
       throw LispleException("get_child is not implemented for type: " +
                             std::to_string((int)seq.type));
+    }
+  }
+
+  size_t child_count(const Value& v)
+  {
+    switch (v.type)
+    {
+    case Value::Type::NIL:
+      return 0;
+    case Value::Type::STRING:
+      return v.str().size();
+    case Value::Type::VECTOR:
+    case Value::Type::LIST:
+    case Value::Type::MAP:
+      return std::get<sptr_val_v>(v.value).size();
+    case Value::Type::OBJECT:
+    {
+      if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(v.obj().get()))
+      {
+        return child_count(*wrapper->val);
+      }
+
+      return v.obj()->get_children().size();
+    }
+    case Value::Type::NATIVE_OBJECT:
+    {
+      if (v.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR)
+      {
+        return v.nobj()->size();
+      }
+
+      return v.nobj()->native_children().size();
+    }
+    default:
+      throw LispleException("child_count is not implemented for type: " +
+                            std::to_string((int)v.type));
+    }
+  }
+
+  bool has_indexed_children(const Value& v)
+  {
+    switch (v.type)
+    {
+    case Value::Type::NIL:
+    case Value::Type::STRING:
+    case Value::Type::VECTOR:
+    case Value::Type::LIST:
+    case Value::Type::MAP:
+      return true;
+    case Value::Type::OBJECT:
+    {
+      if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(v.obj().get()))
+      {
+        return has_indexed_children(*wrapper->val);
+      }
+
+      return true;
+    }
+    case Value::Type::NATIVE_OBJECT:
+      return v.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR;
+    default:
+      return false;
     }
   }
 
@@ -162,6 +232,13 @@ namespace Lisple
     }
     case Value::Type::NATIVE_OBJECT:
     {
+      if (seq.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR)
+      {
+        size_t size = seq.nobj()->size();
+        if (size == 0) return Constant::NIL;
+        return seq.nobj()->native_child(size - 1);
+      }
+
       sptr_val_v values = seq.nobj()->native_children();
       if (values.empty()) return Constant::NIL;
       return values.back();

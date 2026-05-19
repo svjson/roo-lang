@@ -528,6 +528,13 @@ namespace Lisple
       return elements;
     }
 
+    sptr_val native_child(size_t index) const override
+    {
+      auto& values = get_self_object();
+      if (index >= values.size()) return Constant::NIL;
+      return native_to_rtval<V, A>(values[index]);
+    }
+
     size_t size() const override { return get_self_object().size(); }
 
     NativeObjectStructuralKind structural_kind() const override

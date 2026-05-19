@@ -748,6 +748,7 @@ namespace Lisple
     const NAccessorTable& accessor_table() const;
     virtual std::string to_string() const;
     virtual sptr_val_v native_children() const;
+    virtual sptr_val native_child(size_t index) const;
     virtual size_t size() const;
     virtual NativeObjectStructuralKind structural_kind() const;
     virtual bool equals_value(const Value& other) const;
