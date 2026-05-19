@@ -38,3 +38,11 @@ TEST_F(EqualsFunction, mixed_types)
   EXPECT_NE(*runtime.eval("(= [1 2] {1 2})"), *Lisple::Constant::BOOL_TRUE);
   EXPECT_EQ(*runtime.eval("(= [1 2] [1 2])"), *Lisple::Constant::BOOL_TRUE);
 }
+
+TEST_F(EqualsFunction, function_values_compare_by_identity)
+{
+  runtime.eval("(def same-fn (fn [] nil))");
+
+  EXPECT_EQ(*runtime.eval("(= same-fn same-fn)"), *Lisple::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(= (fn [] nil) (fn [] nil))"), *Lisple::Constant::BOOL_FALSE);
+}

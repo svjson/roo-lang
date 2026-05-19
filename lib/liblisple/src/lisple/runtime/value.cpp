@@ -654,6 +654,9 @@ namespace Lisple
       }
       return true;
     }
+    case Type::FUNCTION:
+      return *std::get<sptr_executable>(this->value) ==
+             *std::get<sptr_executable>(other.value);
     case Type::NATIVE_OBJECT:
       return this->nobj()->equals_value(other);
     default:
