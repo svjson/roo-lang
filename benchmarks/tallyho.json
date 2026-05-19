@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "project": {
+    "name": "Lisple",
+    "description": "Lisple benchmark history"
+  },
+  "data": {
+    "snapshotPattern": "^(?<index>\\d+)[_-](?<description>.+?)(?:_(?<hash>[a-f0-9]{6,40}))?$",
+    "layouts": [
+      {
+        "glob": "{snapshot}/*.csv"
+      }
+    ],
+    "columns": {
+      "timestamp": ["timestamp", "ts", "time"],
+      "benchmark": ["benchmark", "bench", "name", "test", "case"],
+      "category": ["category", "suite", "group"],
+      "ignore": ["goalpost", "run"]
+    }
+  },
+  "server": {
+    "port": 3478
+  },
+  "metrics": {
+    "primary": ["exec_time_ms", "mean_time_ms", "total_time_ms", "mean_ms", "avg_ms"],
+    "groups": [
+      {"id": "time", "label": "Time", "order": 10},
+      {"id": "execution", "label": "Execution", "order": 20},
+      {"id": "setup", "label": "Setup", "order": 30},
+      {"id": "allocation", "label": "Allocation", "order": 40},
+      {"id": "style", "label": "Style", "order": 50},
+      {"id": "other", "label": "Other", "order": 100}
+    ],
+    "columns": {
+      "parse_time_ms": { "label": "Parse time", "group": "time", "kind": "time", "unit": "ms" },
+      "lower_time_ms": { "label": "Lower time", "group": "time", "kind": "time", "unit": "ms" },
+      "exec_time_ms": { "label": "Exec time", "group": "time", "kind": "time", "unit": "ms" },
+      "unaccounted_time_ms": { "label": "Unaccounted time", "group": "time", "kind": "time", "unit": "ms" },
+      "total_time_ms": { "label": "Total time", "group": "time", "kind": "time", "unit": "ms" },
+      "rtval_cons": { "label": "RTVal cons", "group": "allocation", "kind": "count" },
+      "rtvw_cons": { "label": "RTVal wrapper cons", "group": "allocation", "kind": "count" }
+    }
+  }
+}
