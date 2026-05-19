@@ -271,6 +271,7 @@ namespace Lisple
 
     sptr_val invoke(Context& ctx, SpecialFormNode& args);
     sptr_val invoke(Context& ctx, sptr_val_v& args);
+    sptr_val invoke_matched(Context& ctx, sptr_val_v& args);
     std::string to_string() const;
   };
 
@@ -382,6 +383,7 @@ namespace Lisple
 
     std::string to_string(int depth = -1) const override;
 
+    sptr_val execute(Lisple::Context& ctx, sptr_val_v& args) override;
     sptr_val exec_body(Lisple::Context& ctx, sptr_val_v& args);
   };
 

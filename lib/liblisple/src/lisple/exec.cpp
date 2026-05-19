@@ -331,34 +331,28 @@ namespace Lisple
 
   sptr_val Signature::invoke(Context& ctx, sptr_val_v& args)
   {
-    if (this->supports_rt_value())
+    if (!this->matches(args))
     {
-      if (!this->matches(args))
+      sptr_val_v coerced_args = coerce_args(ctx, args);
+      if (coerced_args.size())
       {
-        sptr_val_v coerced_args = coerce_args(ctx, args);
-        if (coerced_args.size())
-        {
-          return exec_val(ctx, coerced_args);
-        }
-        else
-        {
-          throw InvocationException(
-            "Could not apply args: " + Value::vector(args)->to_string() +
-            " to signature expecting: " + this->to_string() + ".");
-        }
+        return exec_val(ctx, coerced_args);
       }
       else
       {
-        return exec_val(ctx, args);
+        throw InvocationException(
+          "Could not apply args: " + Value::vector(args)->to_string() +
+          " to signature expecting: " + this->to_string() + ".");
       }
     }
+    else
 
-    if (exec_func != nullptr)
-    {
-      throw new LispleException("Invalid execution path");
-    }
+      return exec_val(ctx, args);
+  }
 
-    throw LispleException("Bad execution path");
+  sptr_val Signature::invoke_matched(Context& ctx, sptr_val_v& args)
+  {
+    return exec_val(ctx, args);
   }
 
   std::string Signature::to_string() const
@@ -447,23 +441,16 @@ namespace Lisple
     {
       if (signature->matches(args))
       {
-        if (signature->supports_rt_value() || signature->supports_exec_tree())
-        {
-          return signature->invoke(ctx, args);
-        }
-        throw InvocationException("Signature does not support Value execution: " +
-                                  signature->to_string());
+        return signature->invoke_matched(ctx, args);
       }
     }
 
     for (auto& signature : signatures)
     {
-      if (!signature->supports_rt_value()) continue;
-
       sptr_val_v coerced_args = signature->coerce_args(ctx, args);
       if (coerced_args.size())
       {
-        return signature->invoke(ctx, coerced_args);
+        return signature->invoke_matched(ctx, coerced_args);
       }
     }
 
@@ -511,21 +498,14 @@ namespace Lisple
     std::vector<std::unique_ptr<Signature>> sigs;
     for (auto& sig : target.get_signatures())
     {
-      if (sig->supports_rt_value())
-      {
-        exec_val_fn disp_target = std::bind(&DetachedFunction::dispatch_detached,
-                                            this,
-                                            std::placeholders::_1,
-                                            std::placeholders::_2);
-        sigs.push_back(std::make_unique<Signature>(sig->get_arguments(),
-                                                   disp_target,
-                                                   sig->get_optional_count(),
-                                                   sig->has_rest_parameter()));
-      }
-      else if (sig->supports_exec_tree())
-      {
-        throw LispleException("exec_node dispatch not supported!");
-      }
+      exec_val_fn disp_target = std::bind(&DetachedFunction::dispatch_detached,
+                                          this,
+                                          std::placeholders::_1,
+                                          std::placeholders::_2);
+      sigs.push_back(std::make_unique<Signature>(sig->get_arguments(),
+                                                 disp_target,
+                                                 sig->get_optional_count(),
+                                                 sig->has_rest_parameter()));
     }
     return sigs;
   }
@@ -594,6 +574,19 @@ namespace Lisple
   std::string UserFunction::to_string([[maybe_unused]] int depth) const
   {
     return "#'" + home_ns + "/" + name;
+  }
+
+  sptr_val UserFunction::execute(Context& ctx, sptr_val_v& args)
+  {
+    const size_t min_count = required_count;
+    const size_t max_count = arg_binding.size();
+    if (args.size() < min_count || (!rest_binding && args.size() > max_count))
+    {
+      throw InvocationException("No matching signature: " +
+                                Lisple::Value::vector(args)->to_string());
+    }
+
+    return exec_body(ctx, args);
   }
 
   sptr_val UserFunction::exec_body(Context& ctx, sptr_val_v& args)
