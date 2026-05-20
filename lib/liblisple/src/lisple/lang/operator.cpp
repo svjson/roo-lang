@@ -9,17 +9,26 @@ namespace Lisple
 {
   namespace
   {
-    long integer_arg(const sptr_val& arg, const std::string& function_name)
+    const Value::Number& number_arg(const sptr_val& arg, const char* function_name)
     {
-      const Value::Number& num = std::get<const Value::Number>(arg->value);
+      if (!arg || arg->type != Value::Type::NUMBER)
+      {
+        throw TypeError(std::string(function_name) + " expects number arguments.");
+      }
+      return arg->num();
+    }
+
+    long integer_arg(const sptr_val& arg, const char* function_name)
+    {
+      const Value::Number& num = number_arg(arg, function_name);
       if (num.num_type == Value::NumberType::FLOAT)
       {
-        throw TypeError(function_name + " expects integer arguments.");
+        throw TypeError(std::string(function_name) + " expects integer arguments.");
       }
       return num.get_long();
     }
 
-    unsigned int shift_bits(sptr_val_v& args, const std::string& function_name)
+    unsigned int shift_bits(sptr_val_v& args, const char* function_name)
     {
       if (args.size() == 1)
       {
@@ -29,7 +38,8 @@ namespace Lisple
       long bits = integer_arg(args[1], function_name);
       if (bits < 0 || bits > 63)
       {
-        throw LispleException(function_name + " shift count must be between 0 and 63.");
+        throw LispleException(std::string(function_name) +
+                              " shift count must be between 0 and 63.");
       }
       return static_cast<unsigned int>(bits);
     }
@@ -77,11 +87,11 @@ namespace Lisple
       throw LispleException("No arguments given to +");
     }
 
-    Value::Number result = std::get<const Value::Number>(args[0]->value);
+    Value::Number result = number_arg(args[0], "+");
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = result + std::get<const Value::Number>(args[i]->value);
+      result = result + number_arg(args[i], "+");
     }
 
     return Value::number(result);
@@ -99,7 +109,7 @@ namespace Lisple
       throw LispleException("No arguments given to -");
     }
 
-    Value::Number result = std::get<const Value::Number>(args[0]->value);
+    Value::Number result = number_arg(args[0], "-");
 
     if (args.size() == 1)
     {
@@ -108,7 +118,7 @@ namespace Lisple
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      result = result - std::get<const Value::Number>(args[i]->value);
+      result = result - number_arg(args[i], "-");
     }
 
     return Value::number(result);
@@ -128,14 +138,15 @@ namespace Lisple
 
     if (args.size() == 1)
     {
+      number_arg(args[0], "/");
       return args[0];
     }
 
-    Value::Number result = std::get<const Value::Number>(args[0]->value);
+    Value::Number result = number_arg(args[0], "/");
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      const Value::Number& divisor = std::get<const Value::Number>(args[i]->value);
+      const Value::Number& divisor = number_arg(args[i], "/");
       if (divisor.get_double() == 0)
       {
         throw LispleException("Division by zero");
@@ -160,19 +171,15 @@ namespace Lisple
 
     if (args.size() == 1)
     {
+      number_arg(args[0], "*");
       return args[0];
     }
 
-    Value::Number result = std::get<const Value::Number>(args[0]->value);
+    Value::Number result = number_arg(args[0], "*");
 
     for (size_t i = 1; i < args.size(); i++)
     {
-      if (args[i]->type != Value::Type::NUMBER)
-      {
-        throw TypeError("Cannot multiply by nil/non-number. Arguments: " +
-                        Value::vector(args)->to_string() + ".");
-      }
-      result = result * std::get<const Value::Number>(args[i]->value);
+      result = result * number_arg(args[i], "*");
     }
 
     return Value::number(result);
