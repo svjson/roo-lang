@@ -1,0 +1,272 @@
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
+#include <lisple/exception.h>
+
+#include <lisplec/generator.h>
+
+namespace Lisplec
+{
+  namespace
+  {
+    void write_file(const std::filesystem::path& path, const std::string& contents)
+    {
+      std::filesystem::create_directories(path.parent_path());
+      std::ofstream file(path, std::ios::binary);
+      if (!file)
+      {
+        throw Lisple::LispleException("Could not write file: " + path.string());
+      }
+      file << contents;
+    }
+
+    std::string cpp_string_literal(const std::string& value)
+    {
+      std::ostringstream out;
+      out << '"';
+      for (const unsigned char c : value)
+      {
+        switch (c)
+        {
+        case '\\':
+          out << "\\\\";
+          break;
+        case '"':
+          out << "\\\"";
+          break;
+        case '\n':
+          out << "\\n";
+          break;
+        case '\r':
+          out << "\\r";
+          break;
+        case '\t':
+          out << "\\t";
+          break;
+        default:
+          if (c < 0x20 || c > 0x7e)
+          {
+            out << '\\' << static_cast<char>('0' + ((c >> 6) & 0x7))
+                << static_cast<char>('0' + ((c >> 3) & 0x7))
+                << static_cast<char>('0' + (c & 0x7));
+          }
+          else
+          {
+            out << c;
+          }
+          break;
+        }
+      }
+      out << '"';
+      return out.str();
+    }
+
+    std::filesystem::path repo_source_root()
+    {
+      return std::filesystem::path(LISPLE_SOURCE_ROOT).lexically_normal();
+    }
+
+    std::filesystem::path repo_build_root()
+    {
+      return std::filesystem::path(LISPLE_BUILD_ROOT).lexically_normal();
+    }
+
+    std::filesystem::path shared_library_path(const std::string& directory,
+                                              const std::string& name)
+    {
+#if defined(_WIN32)
+      return repo_build_root() / directory / (name + ".dll");
+#elif defined(__APPLE__)
+      return repo_build_root() / directory / ("lib" + name + ".dylib");
+#else
+      return repo_build_root() / directory / ("lib" + name + ".so");
+#endif
+    }
+
+    std::string cmake_path(const std::filesystem::path& path)
+    {
+      return path.lexically_normal().generic_string();
+    }
+
+    std::string generated_main_cpp(const GeneratedProject& project)
+    {
+      std::ostringstream out;
+      out
+        << "#include <algorithm>\n"
+           "#include <exception>\n"
+           "#include <filesystem>\n"
+           "#include <iostream>\n"
+           "#include <map>\n"
+           "#include <optional>\n"
+           "#include <string>\n"
+           "#include <utility>\n"
+           "#include <vector>\n\n"
+           "#include <lisple/exception.h>\n"
+           "#include <lisple/io/dir_root_file_system.h>\n"
+           "#include <lisple/io/file_system.h>\n"
+           "#include <lisple/io/file_system_namespace_source.h>\n"
+           "#include <lisple/runtime.h>\n\n"
+           "namespace\n"
+           "{\n"
+           "  std::string normalize_path(const std::string& path)\n"
+           "  {\n"
+           "    return std::filesystem::path(path).lexically_normal().generic_string();\n"
+           "  }\n\n"
+           "  class EmbeddedFileSystem : public Lisple::FileSystem\n"
+           "  {\n"
+           "    std::map<std::string, std::string> files_;\n\n"
+           "   public:\n"
+           "    explicit EmbeddedFileSystem(std::map<std::string, std::string> files)\n"
+           "      : files_(std::move(files))\n"
+           "    {\n"
+           "    }\n\n"
+           "    const std::string read(const std::string& file_name) override\n"
+           "    {\n"
+           "      const auto key = normalize_path(file_name);\n"
+           "      auto it = files_.find(key);\n"
+           "      if (it == files_.end())\n"
+           "      {\n"
+           "        throw Lisple::LispleException(\"Embedded namespace source not found: \" "
+           "+ file_name);\n"
+           "      }\n"
+           "      return it->second;\n"
+           "    }\n"
+           "  };\n\n"
+           "  std::map<std::string, std::string> embedded_files()\n"
+           "  {\n"
+           "    return {\n";
+
+      for (const auto& file : project.files)
+      {
+        out << "      {" << cpp_string_literal(file.key) << ", "
+            << cpp_string_literal(file.source) << "},\n";
+      }
+
+      out << "    };\n"
+             "  }\n\n"
+             "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots()\n"
+             "  {\n"
+             "    return {\n";
+
+      for (const auto& root : project.plan.namespace_roots)
+      {
+        out << "      Lisple::NamespaceRoot{" << cpp_string_literal(root.ns_prefix) << ", "
+            << cpp_string_literal(root.path) << "},\n";
+      }
+
+      out
+        << "    };\n"
+           "  }\n\n"
+           "  void load_namespaces(Lisple::Runtime& runtime,\n"
+           "                       const std::vector<std::string>& namespaces,\n"
+           "                       const std::string& loader_ns,\n"
+           "                       const std::string& source_name)\n"
+           "  {\n"
+           "    for (const auto& ns : namespaces)\n"
+           "    {\n"
+           "      runtime.eval(\"(ns \" + loader_ns + \" (:require \" + ns + \"))\", "
+           "source_name);\n"
+           "    }\n"
+           "  }\n"
+           "} // namespace\n\n"
+           "int main(int, char**)\n"
+           "{\n"
+           "  try\n"
+           "  {\n"
+           "    Lisple::DirRootFileSystem app_fs({std::filesystem::current_path().string(), "
+           "\"/\"});\n"
+           "    EmbeddedFileSystem namespace_fs(embedded_files());\n"
+           "    auto namespace_source = "
+           "std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);\n"
+           "    Lisple::Runtime runtime(&app_fs, std::move(namespace_source));\n"
+           "    runtime.set_call_stack_diagnostics(true);\n"
+           "    runtime.set_namespace_roots(embedded_namespace_roots());\n";
+
+      out << "    load_namespaces(runtime, {";
+      for (size_t i = 0; i < project.plan.autoloads.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.autoloads[i]);
+      }
+      out << "}, \"lisple.compiled.autoload\", \"<package-autoload>\");\n";
+
+      out << "    const std::vector<std::string> entry_points{";
+      for (size_t i = 0; i < project.plan.entry_points.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.entry_points[i]);
+      }
+      out
+        << "};\n"
+           "    if (entry_points.empty())\n"
+           "    {\n"
+           "      throw Lisple::LispleException(\"Compiled package has no :entry-points in "
+           "package.edn.\");\n"
+           "    }\n"
+           "    load_namespaces(runtime, entry_points, \"lisple.compiled.entry\", "
+           "\"<package-entry>\");\n"
+           "  }\n"
+           "  catch (const std::exception& e)\n"
+           "  {\n"
+           "    std::cerr << e.what() << std::endl;\n"
+           "    return 1;\n"
+           "  }\n"
+           "  return 0;\n"
+           "}\n";
+
+      return out.str();
+    }
+
+    std::string generated_cmake(const GeneratedProject& project)
+    {
+      const auto lisple_lib = shared_library_path("lib/liblisple", "lisple");
+      std::ostringstream out;
+      out << "cmake_minimum_required(VERSION 3.20)\n\n"
+             "project("
+          << project.executable_name
+          << " VERSION 0.1 LANGUAGES CXX)\n\n"
+             "set(CMAKE_CXX_STANDARD 20)\n"
+             "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+             "set(CMAKE_CXX_EXTENSIONS OFF)\n\n"
+             "add_executable("
+          << project.executable_name
+          << "\n"
+             "  src/main.cpp\n"
+             ")\n\n"
+             "add_library(lisple_shared_imported SHARED IMPORTED)\n"
+             "set_target_properties(lisple_shared_imported PROPERTIES\n"
+             "    IMPORTED_LOCATION "
+          << cpp_string_literal(cmake_path(lisple_lib))
+          << "\n"
+             "    INTERFACE_INCLUDE_DIRECTORIES "
+          << cpp_string_literal(cmake_path(repo_source_root() / "lib/liblisple/include"))
+          << "\n"
+             "  )\n"
+             "  target_link_libraries("
+          << project.executable_name
+          << " PRIVATE lisple_shared_imported)\n"
+             "\n"
+             "set_target_properties("
+          << project.executable_name
+          << " PROPERTIES\n"
+             "  BUILD_RPATH "
+          << cpp_string_literal(cmake_path(lisple_lib.parent_path()))
+          << "\n"
+             ")\n";
+      return out.str();
+    }
+  } // namespace
+
+  void generate_project(const Options& options, const GeneratedProject& project)
+  {
+    write_file(options.build_dir / "CMakeLists.txt", generated_cmake(project));
+    write_file(options.build_dir / "src/main.cpp", generated_main_cpp(project));
+  }
+} // namespace Lisplec

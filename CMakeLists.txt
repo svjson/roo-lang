@@ -29,8 +29,45 @@ add_executable(lisple_cli
   bin/lisple/main.cpp
 )
 
+set(lisplec_SOURCES
+  bin/lisplec/src/builder.cpp
+  bin/lisplec/src/generator.cpp
+  bin/lisplec/src/options.cpp
+  bin/lisplec/src/project.cpp
+)
+
+add_library(lisplec_objects OBJECT ${lisplec_SOURCES})
+
+target_include_directories(lisplec_objects
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/bin/lisplec/include
+)
+target_link_libraries(lisplec_objects
+  PUBLIC
+    Lisple::lisple_shared
+    Lisple::package_shared
+)
+target_compile_definitions(lisplec_objects
+  PUBLIC
+    LISPLE_VERSION="${PROJECT_VERSION}"
+    LISPLE_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+    LISPLE_BUILD_ROOT="${CMAKE_CURRENT_BINARY_DIR}"
+)
+
+add_executable(lisplec_cli
+  bin/lisplec/main.cpp
+  $<TARGET_OBJECTS:lisplec_objects>
+)
+
 set_target_properties(lisple_cli PROPERTIES
   OUTPUT_NAME lisple
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH_USE_LINK_PATH OFF
+  INSTALL_RPATH "\$ORIGIN/../lib"
+)
+
+set_target_properties(lisplec_cli PROPERTIES
+  OUTPUT_NAME lisplec
   BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
@@ -43,6 +80,11 @@ target_link_libraries(lisple_cli
 )
 target_compile_definitions(lisple_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
+)
+
+target_link_libraries(lisplec_cli
+  PRIVATE
+    lisplec_objects
 )
 
 enable_testing()
@@ -102,6 +144,40 @@ set_tests_properties(
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/autoload-app
 )
 
+add_test(
+  NAME lisplec_cli_generates_cafe_register
+  COMMAND $<TARGET_FILE:lisplec_cli>
+          generate
+          ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+          --build-dir
+          ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-generate
+          --name
+          cafe_register_compiled
+)
+add_test(
+  NAME lisplec_cli_builds_cafe_register
+  COMMAND $<TARGET_FILE:lisplec_cli>
+          build
+          ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+          --build-dir
+          ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-cafe
+          --name
+          cafe_register_compiled
+)
+add_test(
+  NAME lisplec_cli_runs_compiled_cafe_register
+  COMMAND
+    ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}
+)
+set_tests_properties(
+  lisplec_cli_runs_compiled_cafe_register
+  PROPERTIES
+    DEPENDS lisplec_cli_builds_cafe_register
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+add_subdirectory(bin/lisplec/test)
+
 install(CODE [[
   set(lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")
   if(EXISTS "${lisple_installed_include_dir}")
@@ -112,7 +188,7 @@ install(CODE [[
 
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
-install(TARGETS lisple_static lisple_shared lisple lisple_cli
+install(TARGETS lisple_static lisple_shared lisple lisple_cli lisplec_cli
   EXPORT lispleTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -129,7 +205,7 @@ install(FILES cmake/lispleConfig.cmake
   DESTINATION lib/cmake/lisple
 )
 
-# Enable Include What You Use analyzer with USE_IWYU=true
+#Enable Include What You Use analyzer with USE_IWYU = true
 if(DEFINED ENV{USE_IWYU})
   find_program(iwyu_path NAMES include-what-you-use iwyu)
   message("-- Configuring include-what-you-use for lisple...")
