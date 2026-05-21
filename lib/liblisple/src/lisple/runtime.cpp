@@ -52,6 +52,18 @@ namespace Lisple
   }
 
   Runtime::Runtime(FileSystem* fs)
+    : Runtime(fs,
+              fs ? std::make_unique<FileSystemNamespaceSource>(fs)
+                 : std::unique_ptr<NamespaceSource>())
+  {
+  }
+
+  Runtime::Runtime(std::unique_ptr<NamespaceSource> namespace_source)
+    : Runtime(nullptr, std::move(namespace_source))
+  {
+  }
+
+  Runtime::Runtime(FileSystem* fs, std::unique_ptr<NamespaceSource> namespace_source)
     : lang(make_language_namespace())
     , fs(fs ? fs : &null_file_system())
     , file_system_access(fs != nullptr)
@@ -59,11 +71,7 @@ namespace Lisple
     Namespace io = make_io_namespace();
     namespaces.emplace(io.get_name(), std::move(io));
 
-    if (has_file_system_access())
-    {
-      default_ns_source = std::make_unique<FileSystemNamespaceSource>(this->fs);
-      namespace_loader = std::make_unique<NamespaceLoader>(default_ns_source.get());
-    }
+    set_namespace_source(std::move(namespace_source));
     switch_namespace(DEFAULT_NAMESPACE);
   }
 
@@ -261,26 +269,44 @@ namespace Lisple
 
   void Runtime::set_namespace_roots(std::vector<NamespaceRoot> namespace_roots)
   {
-    if (!has_file_system_access() || !default_ns_source)
+    if (!default_ns_source)
     {
       if (namespace_roots.empty())
       {
         return;
       }
-      throw LispleException("Cannot configure namespace roots without file system access.");
+      throw LispleException("Cannot configure namespace roots without a namespace source.");
     }
 
-    auto* fs_source = dynamic_cast<FileSystemNamespaceSource*>(default_ns_source.get());
-    if (!fs_source)
+    auto* configurable = dynamic_cast<NamespaceRootConfigurable*>(default_ns_source.get());
+    if (!configurable)
     {
       throw LispleException("Runtime namespace source does not support namespace roots.");
     }
-    fs_source->set_namespace_roots(std::move(namespace_roots));
+    configurable->set_namespace_roots(std::move(namespace_roots));
+  }
+
+  void Runtime::set_namespace_source(std::unique_ptr<NamespaceSource> namespace_source)
+  {
+    default_ns_source = std::move(namespace_source);
+    if (default_ns_source)
+    {
+      namespace_loader = std::make_unique<NamespaceLoader>(default_ns_source.get());
+    }
+    else
+    {
+      namespace_loader.reset();
+    }
   }
 
   bool Runtime::has_file_system_access() const
   {
     return file_system_access;
+  }
+
+  bool Runtime::has_namespace_loading() const
+  {
+    return namespace_loader != nullptr;
   }
 
   Namespace& Runtime::get_current_namespace()

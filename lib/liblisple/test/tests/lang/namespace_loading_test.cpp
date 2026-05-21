@@ -225,10 +225,9 @@ TEST_F(FileSystemNamespaceSource, namespace_root_resolves_prefix_before_full_pat
   InMemoryFileSystem fs;
   fs.add("mapped/core.lisple", "mapped-content");
   fs.add("mylib/stuff/core.lisple", "full-path-content");
-  Lisple::FileSystemNamespaceSource source(
-    &fs,
-    {".lisple", ".lspl"},
-    {Lisple::NamespaceRoot{"mylib.stuff", "mapped"}});
+  Lisple::FileSystemNamespaceSource source(&fs,
+                                           {".lisple", ".lspl"},
+                                           {Lisple::NamespaceRoot{"mylib.stuff", "mapped"}});
 
   // When
   auto result = source.fetch("mylib.stuff.core", {});
@@ -659,6 +658,87 @@ TEST_F(NamespaceLoading, throws_when_no_filesystem_and_namespace_missing)
     message = e.what();
   }
   EXPECT_THAT(message, HasSubstr("does not exist"));
+}
+
+TEST_F(NamespaceLoading, loads_namespaces_without_application_file_system_access)
+{
+  // Given
+  InMemoryFileSystem namespace_fs;
+  namespace_fs.add("my/utils.lisple", "(ns my.utils) (defun double [n] (+ n n))");
+  auto namespace_source = std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);
+  Lisple::Runtime runtime(nullptr, std::move(namespace_source));
+
+  // When
+  runtime.eval("(ns my.app (:require my.utils))");
+
+  // Then
+  EXPECT_FALSE(runtime.has_file_system_access());
+  EXPECT_TRUE(runtime.has_namespace_loading());
+  auto result = runtime.eval("(double 21)");
+  EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST_F(NamespaceLoading, application_file_io_remains_disabled_when_namespace_source_exists)
+{
+  // Given
+  InMemoryFileSystem namespace_fs;
+  namespace_fs.add("my/app.lisple",
+                   "(ns my.app) (defun read-data [] (lisple.io/slurp! \"data.txt\"))");
+  auto namespace_source = std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);
+  Lisple::Runtime runtime(nullptr, std::move(namespace_source));
+  runtime.eval("(ns test (:require my.app))");
+
+  // Then
+  std::string message;
+  try
+  {
+    runtime.eval("(my.app/read-data)");
+  }
+  catch (const Lisple::LispleException& e)
+  {
+    message = e.what();
+  }
+  EXPECT_THAT(message, HasSubstr("does not provide any file system access"));
+}
+
+TEST_F(NamespaceLoading, uses_distinct_file_systems_for_namespace_loading_and_application_io)
+{
+  // Given
+  InMemoryFileSystem app_fs;
+  app_fs.add("data.txt", "runtime-data");
+
+  InMemoryFileSystem namespace_fs;
+  namespace_fs.add("my/app.lisple",
+                   "(ns my.app) (defun read-data [] (lisple.io/slurp! \"data.txt\"))");
+
+  auto namespace_source = std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);
+  Lisple::Runtime runtime(&app_fs, std::move(namespace_source));
+
+  // When
+  runtime.eval("(ns test (:require my.app))");
+  auto result = runtime.eval("(my.app/read-data)");
+
+  // Then
+  EXPECT_TRUE(runtime.has_file_system_access());
+  EXPECT_TRUE(runtime.has_namespace_loading());
+  EXPECT_EQ(result->to_string(), "\"runtime-data\"");
+}
+
+TEST_F(NamespaceLoading, configures_namespace_roots_without_application_file_system_access)
+{
+  // Given
+  InMemoryFileSystem namespace_fs;
+  namespace_fs.add("src/app/core.lisple", "(ns app.core) (def value 42)");
+  auto namespace_source = std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);
+  Lisple::Runtime runtime(nullptr, std::move(namespace_source));
+  runtime.set_namespace_roots({Lisple::NamespaceRoot{"app", "src/app"}});
+
+  // When
+  runtime.eval("(ns test (:require app.core))");
+
+  // Then
+  auto result = runtime.eval("app.core/value");
+  EXPECT_EQ(result->to_string(), "42");
 }
 
 TEST_F(NamespaceLoading, throws_when_file_not_found_on_filesystem)

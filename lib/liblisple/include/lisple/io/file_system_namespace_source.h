@@ -17,7 +17,7 @@ namespace Lisple
    * Dots in namespace names map to path separators; dashes are preserved as-is.
    * Extensions are tried in priority order (default: .lisple, .lspl).
    */
-  class FileSystemNamespaceSource : public NamespaceSource
+  class FileSystemNamespaceSource : public NamespaceSource, public NamespaceRootConfigurable
   {
     FileSystem* fs;
     std::vector<std::string> extensions;
@@ -49,7 +49,7 @@ namespace Lisple
                               std::vector<std::string> extensions,
                               std::vector<NamespaceRoot> namespace_roots);
 
-    void set_namespace_roots(std::vector<NamespaceRoot> namespace_roots);
+    void set_namespace_roots(std::vector<NamespaceRoot> namespace_roots) override;
 
     std::optional<NamespaceFetchResult> fetch(
       const std::string& ns_name,

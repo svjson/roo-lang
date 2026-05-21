@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include <lisple/namespace_source.h>
 #include <lisple/namespace.h>
+#include <lisple/namespace_source.h>
 #include <lisple/reader.h>
 #include <lisple/source.h>
 #include <lisple/type.h>
@@ -66,6 +66,23 @@ namespace Lisple
      * FileSystem object and avoid leaving any dangling pointers to it.
      */
     Runtime(FileSystem* fs);
+
+    /*!
+     * @brief Creates a vanilla Lisple runtime with independently configured
+     * application file system access and namespace loading.
+     *
+     * The FileSystem is used by application-visible file IO and read_file.
+     * The NamespaceSource is used only for on-demand namespace loading. Passing
+     * nullptr as the FileSystem disables application file system access while
+     * still allowing namespace loading through the provided source.
+     */
+    Runtime(FileSystem* fs, std::unique_ptr<NamespaceSource> namespace_source);
+
+    /*!
+     * @brief Creates a vanilla Lisple runtime with no application file system
+     * access, but with on-demand namespace loading through the provided source.
+     */
+    explicit Runtime(std::unique_ptr<NamespaceSource> namespace_source);
 
     /*!
      * @brief Creates a Lisple runtime with a host-provided namespace in
@@ -170,6 +187,14 @@ namespace Lisple
     void set_namespace_roots(std::vector<NamespaceRoot> namespace_roots);
 
     /*!
+     * @brief Replace the runtime namespace source.
+     *
+     * Namespace sources are used only for namespace resolution/imports. They do
+     * not grant application-visible file IO access.
+     */
+    void set_namespace_source(std::unique_ptr<NamespaceSource> namespace_source);
+
+    /*!
      * @brief Returns a reference to the current namespace of the reader context
      */
     Namespace& get_current_namespace();
@@ -179,6 +204,11 @@ namespace Lisple
      * abstraction, and thus can read files from disk or virtual a file system.
      */
     bool has_file_system_access() const;
+
+    /*!
+     * @brief Returns true when this runtime can resolve namespaces on demand.
+     */
+    bool has_namespace_loading() const;
 
     void read_file(const std::string& file_name);
     void read_file(Context& ctx, const std::string& file_name);

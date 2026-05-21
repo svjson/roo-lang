@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace Lisple
 {
@@ -27,10 +28,18 @@ namespace Lisple
 
   class NamespaceSource
   {
-  public:
+   public:
     virtual ~NamespaceSource() = default;
-    virtual std::optional<NamespaceFetchResult> fetch(const std::string& ns_name,
-                                                      const NamespaceResolutionContext& ctx) = 0;
+    virtual std::optional<NamespaceFetchResult> fetch(
+      const std::string& ns_name,
+      const NamespaceResolutionContext& ctx) = 0;
+  };
+
+  class NamespaceRootConfigurable
+  {
+   public:
+    virtual ~NamespaceRootConfigurable() = default;
+    virtual void set_namespace_roots(std::vector<NamespaceRoot> namespace_roots) = 0;
   };
 } // namespace Lisple
 
