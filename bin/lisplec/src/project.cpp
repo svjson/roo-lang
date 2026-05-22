@@ -105,28 +105,6 @@ namespace Lisplec
       return files;
     }
 
-    void reject_native_libraries(const Lisple::Package::LoadPlan& plan)
-    {
-      if (plan.native_libraries.empty())
-      {
-        return;
-      }
-
-      std::string names;
-      for (size_t i = 0; i < plan.native_libraries.size(); ++i)
-      {
-        if (i > 0)
-        {
-          names += ", ";
-        }
-        names += plan.native_libraries[i].name;
-      }
-      throw Lisple::LispleException(
-        "lisplec currently supports pure Lisple packages only. Native libraries "
-        "need static/dynamic bundling support first: " +
-        names);
-    }
-
     std::string default_executable_name(const Lisple::Package::LoadPlan& plan)
     {
       const auto root_package = std::find_if(
@@ -143,8 +121,6 @@ namespace Lisplec
     const auto package_dir =
       std::filesystem::absolute(options.package_dir).lexically_normal();
     auto plan = Lisple::Package::resolve_load_plan(manifest_fs, package_dir.string());
-
-    reject_native_libraries(plan);
 
     std::string executable_name = options.executable_name.empty()
                                     ? default_executable_name(plan)

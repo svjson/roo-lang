@@ -84,6 +84,62 @@ namespace Lisplec
 #endif
     }
 
+    std::string platform_library_file_name(const std::string& name)
+    {
+#if defined(_WIN32)
+      return name + ".dll";
+#elif defined(__APPLE__)
+      return "lib" + name + ".dylib";
+#else
+      return "lib" + name + ".so";
+#endif
+    }
+
+    std::filesystem::path native_library_path(
+      const Lisple::Package::NativeLibrary& library)
+    {
+      if (!library.path.empty())
+      {
+        std::error_code ec;
+        if (std::filesystem::is_directory(library.path, ec))
+        {
+          return std::filesystem::path(library.path) /
+                 platform_library_file_name(library.name);
+        }
+        return library.path;
+      }
+
+      const auto file_name = platform_library_file_name(library.name);
+      if (library.package_root.empty() || library.package_root == ".")
+      {
+        return file_name;
+      }
+      return std::filesystem::path(library.package_root) / file_name;
+    }
+
+    std::string sanitize_target_name(std::string value)
+    {
+      if (value.empty())
+      {
+        return "native_library";
+      }
+
+      for (char& c : value)
+      {
+        const bool allowed = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                             (c >= '0' && c <= '9') || c == '_';
+        if (!allowed)
+        {
+          c = '_';
+        }
+      }
+      if (value.front() >= '0' && value.front() <= '9')
+      {
+        value.insert(value.begin(), '_');
+      }
+      return value;
+    }
+
     std::string cmake_path(const std::filesystem::path& path)
     {
       return path.lexically_normal().generic_string();
@@ -157,13 +213,15 @@ namespace Lisplec
              "#include <map>\n"
              "#include <string>\n"
              "#include <vector>\n\n"
-             "#include <lisple/namespace_source.h>\n\n"
+             "#include <lisple/namespace_source.h>\n"
+             "#include <lisple-package/manifest.h>\n\n"
              "namespace LisplecGenerated\n"
              "{\n"
              "  std::map<std::string, std::string> embedded_files();\n"
              "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots();\n"
              "  std::vector<std::string> embedded_autoloads();\n"
              "  std::vector<std::string> embedded_entry_points();\n"
+             "  std::vector<Lisple::Package::NativeLibrary> embedded_native_libraries();\n"
              "  std::string embedded_main_function();\n"
              "} // namespace LisplecGenerated\n\n"
              "#endif\n";
@@ -174,6 +232,7 @@ namespace Lisplec
     {
       std::ostringstream out;
       out << "#include \"embedded_sources.h\"\n\n"
+             "#include <utility>\n\n"
              "namespace LisplecGenerated\n"
              "{\n"
              "  std::map<std::string, std::string> embedded_files()\n"
@@ -229,6 +288,41 @@ namespace Lisplec
       out << "};\n"
              "  }\n"
              "\n"
+             "  std::vector<Lisple::Package::NativeLibrary> embedded_native_libraries()\n"
+             "  {\n"
+             "    std::vector<Lisple::Package::NativeLibrary> libraries;\n";
+      for (const auto& library : project.plan.native_libraries)
+      {
+        out << "    {\n"
+               "      Lisple::Package::NativeLibrary library;\n"
+               "      library.name = "
+            << cpp_string_literal(library.name)
+            << ";\n"
+               "      library.version = "
+            << cpp_string_literal(library.version)
+            << ";\n"
+               "      library.path = "
+            << cpp_string_literal(library.path)
+            << ";\n"
+               "      library.package_root = "
+            << cpp_string_literal(library.package_root)
+            << ";\n"
+               "      library.namespaces = {";
+        for (size_t i = 0; i < library.namespaces.size(); ++i)
+        {
+          if (i > 0)
+          {
+            out << ", ";
+          }
+          out << cpp_string_literal(library.namespaces[i]);
+        }
+        out << "};\n"
+               "      libraries.push_back(std::move(library));\n"
+               "    }\n";
+      }
+      out << "    return libraries;\n"
+             "  }\n"
+             "\n"
              "  std::string embedded_main_function()\n"
              "  {\n"
              "    return "
@@ -255,6 +349,7 @@ namespace Lisplec
            "#include <lisple/io/file_system_namespace_source.h>\n"
            "#include <lisple/runtime.h>\n"
            "#include <lisple-package/application.h>\n\n"
+           "#include <lisple-package/native_loader.h>\n\n"
            "#include \"embedded_file_system.h\"\n"
            "#include \"embedded_sources.h\"\n\n"
            "namespace\n"
@@ -285,6 +380,10 @@ namespace Lisplec
            "    runtime.set_call_stack_diagnostics(true);\n"
            "    "
            "runtime.set_namespace_roots(LisplecGenerated::embedded_namespace_roots());\n\n"
+           "    Lisple::Package::LoadPlan native_plan;\n"
+           "    native_plan.native_libraries = LisplecGenerated::embedded_native_libraries();\n"
+           "    Lisple::Package::LoadedNativePackages native_packages =\n"
+           "      Lisple::Package::load_native_libraries(runtime, native_plan);\n\n"
            "    load_namespaces(runtime,\n"
            "                    LisplecGenerated::embedded_autoloads(),\n"
            "                    \"lisple.compiled.autoload\",\n"
@@ -349,16 +448,49 @@ namespace Lisplec
           << cpp_string_literal(cmake_path(repo_source_root() / "lib/lisple-package/include"))
           << "\n"
              "  )\n"
-             "  target_link_libraries("
+             "\n";
+      for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
+      {
+        const auto& library = project.plan.native_libraries[i];
+        const auto target_name = "native_library_" + std::to_string(i) + "_" +
+                                 sanitize_target_name(library.name);
+        const auto path = native_library_path(library);
+        out << "add_library("
+            << target_name
+            << " SHARED IMPORTED)\n"
+               "set_target_properties("
+            << target_name
+            << " PROPERTIES\n"
+               "    IMPORTED_LOCATION "
+            << cpp_string_literal(cmake_path(path))
+            << "\n"
+               "  )\n\n";
+      }
+      out << "  target_link_libraries("
           << project.executable_name
-          << " PRIVATE lisple_shared_imported lisple_package_shared_imported)\n"
+          << " PRIVATE lisple_shared_imported lisple_package_shared_imported";
+      for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
+      {
+        const auto& library = project.plan.native_libraries[i];
+        out << " native_library_" << i << "_" << sanitize_target_name(library.name);
+      }
+      out << ")\n"
              "\n"
              "set_target_properties("
           << project.executable_name
           << " PROPERTIES\n"
              "  BUILD_RPATH "
-          << cpp_string_literal(cmake_path(lisple_lib.parent_path()) + ";" +
-                                cmake_path(package_lib.parent_path()))
+          << cpp_string_literal(
+               [&]()
+               {
+                 std::string rpath = cmake_path(lisple_lib.parent_path()) + ";" +
+                                     cmake_path(package_lib.parent_path());
+                 for (const auto& library : project.plan.native_libraries)
+                 {
+                   rpath += ";" + cmake_path(native_library_path(library).parent_path());
+                 }
+                 return rpath;
+               }())
           << "\n"
              ")\n";
       return out.str();

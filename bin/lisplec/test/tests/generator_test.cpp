@@ -75,6 +75,16 @@ namespace
     return options;
   }
 
+  Lisplec::Options dynamic_smoke_options_for(const std::filesystem::path& build_dir)
+  {
+    Lisplec::Options options;
+    options.command = "build";
+    options.package_dir = repo_root() / "pkg/proof/test/assets/dynamic-smoke";
+    options.build_dir = build_dir;
+    options.executable_name = "dynamic_smoke_compiled";
+    return options;
+  }
+
   std::string shell_arg(const std::string& value)
   {
     std::string result = "\"";
@@ -170,6 +180,7 @@ TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_s
   EXPECT_THAT(embedded_file_system_cpp, HasSubstr("EmbeddedFileSystem::read"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.lisple"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.lisple"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_native_libraries"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_main_function"));
 }
 
@@ -274,4 +285,22 @@ TEST(LisplecGenerator, generated_executable_pads_main_arity_with_nil_values)
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "1:alpha:nil:nil:nil");
+}
+
+TEST(LisplecGenerator, generated_executable_loads_native_package_dependencies)
+{
+  // Given
+  const auto build_dir = build_root() / "lisplec-gtest-native-build";
+  const auto run_dir = build_root() / "lisplec-gtest-native-run";
+  auto options = dynamic_smoke_options_for(build_dir);
+  auto project = Lisplec::prepare_project(options);
+  std::filesystem::create_directories(run_dir);
+
+  // When
+  Lisplec::generate_project(options, project);
+  Lisplec::build_project(options, project);
+  run_generated_executable(project, build_dir, run_dir);
+
+  // Then
+  SUCCEED();
 }
