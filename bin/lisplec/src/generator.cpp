@@ -89,53 +89,95 @@ namespace Lisplec
       return path.lexically_normal().generic_string();
     }
 
-    std::string generated_main_cpp(const GeneratedProject& project)
+    std::string generated_embedded_file_system_h()
+    {
+      std::ostringstream out;
+      out << "#ifndef LISPLEC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n"
+             "#define LISPLEC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n\n"
+             "#include <map>\n"
+             "#include <string>\n\n"
+             "#include <lisple/io/file_system.h>\n\n"
+             "namespace LisplecGenerated\n"
+             "{\n"
+             "  class EmbeddedFileSystem : public Lisple::FileSystem\n"
+             "  {\n"
+             "    std::map<std::string, std::string> files_;\n\n"
+             "   public:\n"
+             "    explicit EmbeddedFileSystem(std::map<std::string, std::string> files);\n\n"
+             "    const std::string read(const std::string& file_name) override;\n"
+             "  };\n"
+             "} // namespace LisplecGenerated\n\n"
+             "#endif\n";
+      return out.str();
+    }
+
+    std::string generated_embedded_file_system_cpp()
     {
       std::ostringstream out;
       out
-        << "#include <algorithm>\n"
-           "#include <exception>\n"
+        << "#include \"embedded_file_system.h\"\n\n"
            "#include <filesystem>\n"
-           "#include <iostream>\n"
-           "#include <map>\n"
-           "#include <optional>\n"
-           "#include <string>\n"
            "#include <utility>\n"
-           "#include <vector>\n\n"
-           "#include <lisple/exception.h>\n"
-           "#include <lisple/io/dir_root_file_system.h>\n"
-           "#include <lisple/io/file_system.h>\n"
-           "#include <lisple/io/file_system_namespace_source.h>\n"
-           "#include <lisple/runtime.h>\n\n"
+           "\n"
+           "#include <lisple/exception.h>\n\n"
            "namespace\n"
            "{\n"
            "  std::string normalize_path(const std::string& path)\n"
            "  {\n"
            "    return std::filesystem::path(path).lexically_normal().generic_string();\n"
            "  }\n\n"
-           "  class EmbeddedFileSystem : public Lisple::FileSystem\n"
+           "} // namespace\n\n"
+           "namespace LisplecGenerated\n"
+           "{\n"
+           "  EmbeddedFileSystem::EmbeddedFileSystem(std::map<std::string, std::string> "
+           "files)\n"
+           "    : files_(std::move(files))\n"
            "  {\n"
-           "    std::map<std::string, std::string> files_;\n\n"
-           "   public:\n"
-           "    explicit EmbeddedFileSystem(std::map<std::string, std::string> files)\n"
-           "      : files_(std::move(files))\n"
+           "  }\n\n"
+           "  const std::string EmbeddedFileSystem::read(const std::string& file_name)\n"
+           "  {\n"
+           "    const auto key = normalize_path(file_name);\n"
+           "    auto it = files_.find(key);\n"
+           "    if (it == files_.end())\n"
            "    {\n"
-           "    }\n\n"
-           "    const std::string read(const std::string& file_name) override\n"
-           "    {\n"
-           "      const auto key = normalize_path(file_name);\n"
-           "      auto it = files_.find(key);\n"
-           "      if (it == files_.end())\n"
-           "      {\n"
-           "        throw Lisple::LispleException(\"Embedded namespace source not found: \" "
-           "+ file_name);\n"
-           "      }\n"
-           "      return it->second;\n"
+           "      throw Lisple::LispleException(\"Embedded namespace source not found: \" + "
+           "file_name);\n"
            "    }\n"
-           "  };\n\n"
-           "  std::map<std::string, std::string> embedded_files()\n"
-           "  {\n"
-           "    return {\n";
+           "    return it->second;\n"
+           "  }\n"
+           "} // namespace LisplecGenerated\n";
+      return out.str();
+    }
+
+    std::string generated_embedded_sources_h()
+    {
+      std::ostringstream out;
+      out << "#ifndef LISPLEC_GENERATED_EMBEDDED_SOURCES_H\n"
+             "#define LISPLEC_GENERATED_EMBEDDED_SOURCES_H\n\n"
+             "#include <map>\n"
+             "#include <string>\n"
+             "#include <vector>\n\n"
+             "#include <lisple/namespace_source.h>\n\n"
+             "namespace LisplecGenerated\n"
+             "{\n"
+             "  std::map<std::string, std::string> embedded_files();\n"
+             "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots();\n"
+             "  std::vector<std::string> embedded_autoloads();\n"
+             "  std::vector<std::string> embedded_entry_points();\n"
+             "} // namespace LisplecGenerated\n\n"
+             "#endif\n";
+      return out.str();
+    }
+
+    std::string generated_embedded_sources_cpp(const GeneratedProject& project)
+    {
+      std::ostringstream out;
+      out << "#include \"embedded_sources.h\"\n\n"
+             "namespace LisplecGenerated\n"
+             "{\n"
+             "  std::map<std::string, std::string> embedded_files()\n"
+             "  {\n"
+             "    return {\n";
 
       for (const auto& file : project.files)
       {
@@ -155,9 +197,59 @@ namespace Lisplec
             << cpp_string_literal(root.path) << "},\n";
       }
 
+      out << "    };\n"
+             "  }\n\n";
+
+      out << "  std::vector<std::string> embedded_autoloads()\n"
+             "  {\n"
+             "    return {";
+      for (size_t i = 0; i < project.plan.autoloads.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.autoloads[i]);
+      }
+      out << "};\n"
+             "  }\n\n";
+
+      out << "  std::vector<std::string> embedded_entry_points()\n"
+             "  {\n"
+             "    return {";
+      for (size_t i = 0; i < project.plan.entry_points.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.entry_points[i]);
+      }
+      out << "};\n"
+             "  }\n"
+             "} // namespace LisplecGenerated\n";
+
+      return out.str();
+    }
+
+    std::string generated_main_cpp()
+    {
+      std::ostringstream out;
       out
-        << "    };\n"
-           "  }\n\n"
+        << "#include <exception>\n"
+           "#include <filesystem>\n"
+           "#include <iostream>\n"
+           "#include <memory>\n"
+           "#include <string>\n"
+           "#include <vector>\n\n"
+           "#include <lisple/exception.h>\n"
+           "#include <lisple/io/dir_root_file_system.h>\n"
+           "#include <lisple/io/file_system_namespace_source.h>\n"
+           "#include <lisple/runtime.h>\n\n"
+           "#include \"embedded_file_system.h\"\n"
+           "#include \"embedded_sources.h\"\n\n"
+           "namespace\n"
+           "{\n"
            "  void load_namespaces(Lisple::Runtime& runtime,\n"
            "                       const std::vector<std::string>& namespaces,\n"
            "                       const std::string& loader_ns,\n"
@@ -176,35 +268,19 @@ namespace Lisplec
            "  {\n"
            "    Lisple::DirRootFileSystem app_fs({std::filesystem::current_path().string(), "
            "\"/\"});\n"
-           "    EmbeddedFileSystem namespace_fs(embedded_files());\n"
+           "    LisplecGenerated::EmbeddedFileSystem namespace_fs(\n"
+           "      LisplecGenerated::embedded_files());\n"
            "    auto namespace_source = "
            "std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);\n"
            "    Lisple::Runtime runtime(&app_fs, std::move(namespace_source));\n"
            "    runtime.set_call_stack_diagnostics(true);\n"
-           "    runtime.set_namespace_roots(embedded_namespace_roots());\n";
-
-      out << "    load_namespaces(runtime, {";
-      for (size_t i = 0; i < project.plan.autoloads.size(); ++i)
-      {
-        if (i > 0)
-        {
-          out << ", ";
-        }
-        out << cpp_string_literal(project.plan.autoloads[i]);
-      }
-      out << "}, \"lisple.compiled.autoload\", \"<package-autoload>\");\n";
-
-      out << "    const std::vector<std::string> entry_points{";
-      for (size_t i = 0; i < project.plan.entry_points.size(); ++i)
-      {
-        if (i > 0)
-        {
-          out << ", ";
-        }
-        out << cpp_string_literal(project.plan.entry_points[i]);
-      }
-      out
-        << "};\n"
+           "    "
+           "runtime.set_namespace_roots(LisplecGenerated::embedded_namespace_roots());\n\n"
+           "    load_namespaces(runtime,\n"
+           "                    LisplecGenerated::embedded_autoloads(),\n"
+           "                    \"lisple.compiled.autoload\",\n"
+           "                    \"<package-autoload>\");\n\n"
+           "    const auto entry_points = LisplecGenerated::embedded_entry_points();\n"
            "    if (entry_points.empty())\n"
            "    {\n"
            "      throw Lisple::LispleException(\"Compiled package has no :entry-points in "
@@ -239,6 +315,8 @@ namespace Lisplec
           << project.executable_name
           << "\n"
              "  src/main.cpp\n"
+             "  src/embedded_file_system.cpp\n"
+             "  src/embedded_sources.cpp\n"
              ")\n\n"
              "add_library(lisple_shared_imported SHARED IMPORTED)\n"
              "set_target_properties(lisple_shared_imported PROPERTIES\n"
@@ -267,6 +345,13 @@ namespace Lisplec
   void generate_project(const Options& options, const GeneratedProject& project)
   {
     write_file(options.build_dir / "CMakeLists.txt", generated_cmake(project));
-    write_file(options.build_dir / "src/main.cpp", generated_main_cpp(project));
+    write_file(options.build_dir / "src/main.cpp", generated_main_cpp());
+    write_file(options.build_dir / "src/embedded_file_system.h",
+               generated_embedded_file_system_h());
+    write_file(options.build_dir / "src/embedded_file_system.cpp",
+               generated_embedded_file_system_cpp());
+    write_file(options.build_dir / "src/embedded_sources.h", generated_embedded_sources_h());
+    write_file(options.build_dir / "src/embedded_sources.cpp",
+               generated_embedded_sources_cpp(project));
   }
 } // namespace Lisplec

@@ -55,9 +55,13 @@ TEST(LisplecGenerator, writes_generated_project_files)
   // Then
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "CMakeLists.txt"));
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/main.cpp"));
+  EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_file_system.h"));
+  EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_file_system.cpp"));
+  EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_sources.h"));
+  EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_sources.cpp"));
 }
 
-TEST(LisplecGenerator, generated_main_embeds_sources_and_uses_namespace_source)
+TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sources)
 {
   // Given
   const auto build_dir = build_root() / "lisplec-gtest-generated";
@@ -69,8 +73,13 @@ TEST(LisplecGenerator, generated_main_embeds_sources_and_uses_namespace_source)
 
   // Then
   const std::string main_cpp = read_file(build_dir / "src/main.cpp");
-  EXPECT_THAT(main_cpp, HasSubstr("EmbeddedFileSystem namespace_fs"));
+  const std::string embedded_sources_cpp = read_file(build_dir / "src/embedded_sources.cpp");
+  const std::string embedded_file_system_cpp =
+    read_file(build_dir / "src/embedded_file_system.cpp");
+
+  EXPECT_THAT(main_cpp, HasSubstr("LisplecGenerated::EmbeddedFileSystem namespace_fs"));
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
-  EXPECT_THAT(main_cpp, HasSubstr("cafe/run.lisple"));
-  EXPECT_THAT(main_cpp, HasSubstr("recipe/book.lisple"));
+  EXPECT_THAT(embedded_file_system_cpp, HasSubstr("EmbeddedFileSystem::read"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.lisple"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.lisple"));
 }
