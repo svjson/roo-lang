@@ -1,0 +1,4 @@
+(ns main.app)
+
+(defun main []
+  (lisple.io/spit! "main-ran.txt" "ok"))
