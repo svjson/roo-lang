@@ -42,7 +42,8 @@ namespace
      :autoloads [proof.core]
      :config {proof {:test-roots ["test"]}}
      :tools {run proof.runner/run}
-     :entry-points [proof.core]}
+     :entry-points [proof.core]
+     :main proof.runner/main}
   )";
 
   void write_file(const std::filesystem::path& path, const std::string& source)
@@ -74,6 +75,7 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.config.at("proof"), "{:test-roots [\"test\"]}");
   EXPECT_EQ(manifest.tools.at("run"), "proof.runner/run");
   EXPECT_EQ(manifest.entry_points, std::vector<std::string>{"proof.core"});
+  EXPECT_EQ(manifest.main, "proof.runner/main");
 }
 
 TEST(PackageManifest, parses_dependency_map_with_versions_and_paths)
@@ -125,6 +127,7 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.native_libraries[0].package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.autoloads, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"proof.core"});
+  EXPECT_EQ(plan.main, "proof.runner/main");
 }
 
 TEST(PackageManifest, merges_extra_load_paths_before_resolved_package_paths)
@@ -171,6 +174,28 @@ TEST(PackageManifest, resolves_pure_lisple_dependencies_from_search_roots)
   EXPECT_EQ(plan.load_paths,
             (std::vector<std::string>{"/repo/pkg/util/src", "/repo/pkg/app/src"}));
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"app.core"});
+}
+
+TEST(PackageManifest, resolved_load_plan_uses_root_package_main)
+{
+  // Given
+  MemoryFileSystem fs;
+  fs.add("/repo/pkg/app/package.edn",
+         R"({:name app
+             :dependencies {util "file:../util"}
+             :load-roots ["src"]
+             :main app.core/main})");
+  fs.add("/repo/pkg/util/package.edn",
+         R"({:name util
+             :dependencies []
+             :load-roots ["src"]
+             :main util.core/main})");
+
+  // When
+  auto plan = Lisple::Package::resolve_load_plan(fs, "/repo/pkg/app");
+
+  // Then
+  EXPECT_EQ(plan.main, "app.core/main");
 }
 
 TEST(PackageManifest, resolves_dependency_paths_from_manifest)

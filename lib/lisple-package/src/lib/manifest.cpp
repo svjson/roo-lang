@@ -575,6 +575,10 @@ namespace Lisple::Package
       {
         append_unique(plan.entry_points, entry_point);
       }
+      if (package_root == plan.package_root && !manifest.main.empty())
+      {
+        plan.main = manifest.main;
+      }
     }
 
     void resolve_package(ResolveState& state, const std::string& package_root)
@@ -686,6 +690,10 @@ namespace Lisple::Package
       manifest.entry_points =
         vector_of_atoms(fields.at("entry-points"), "entry-points", source_name);
     }
+    if (fields.count("main"))
+    {
+      manifest.main = atom_string(fields.at("main"), "main", source_name);
+    }
 
     return manifest;
   }
@@ -711,6 +719,7 @@ namespace Lisple::Package
     plan.native_libraries = manifest.native_libraries;
     plan.autoloads = manifest.autoloads;
     plan.entry_points = manifest.entry_points;
+    plan.main = manifest.main;
 
     for (auto& native_library : plan.native_libraries)
     {
