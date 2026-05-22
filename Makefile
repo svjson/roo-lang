@@ -10,7 +10,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build install test test\:all test\:lang test\:package test\:proof test\:lisplec test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build install test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/liblisple/test/testlisple
 PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage
@@ -46,8 +46,9 @@ install: build
 	cmake --build build --target install
 
 test: test\:lang test\:package test\:proof test\:lisplec
+test: test\:cli
 
-test\:all: test\:lang test\:package test\:proof test\:lisplec test\:server
+test\:all: test\:lang test\:package test\:proof test\:lisplec test\:cli test\:server
 
 test\:lang: build
 	cmake --build build --target testlisple
@@ -64,6 +65,11 @@ test\:proof: build
 test\:lisplec: build
 	cmake --build build --target testlisplec
 	./build/$(LISPLEC_TEST_BINARY) $(GTEST_FILTER_ARG)
+
+test\:cli: build
+	cmake -E make_directory build/lisple-cli-main-run
+	./build/lisple $(CURDIR)/bin/lisple/test/assets/main-app $(CURDIR)/build/lisple-cli-main-run/main-ran.txt alpha beta
+	test "$$(cat build/lisple-cli-main-run/main-ran.txt)" = "3:alpha:beta:nil:nil:nil"
 
 test\:benchmark: build
 	cmake --build build --target testlisple
