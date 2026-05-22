@@ -1,0 +1,10 @@
+(ns main.app)
+
+(defun main [args x y z]
+  (lisple.io/spit! (nth args 0)
+                   (str (count args) ":"
+                        (nth args 1) ":"
+                        (nth args 2) ":"
+                        (if x "x" "nil") ":"
+                        (if y "y" "nil") ":"
+                        (if z "z" "nil"))))

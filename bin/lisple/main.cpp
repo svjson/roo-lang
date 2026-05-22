@@ -9,6 +9,7 @@
 #include <lisple/exception.h>
 #include <lisple/io/dir_root_file_system.h>
 #include <lisple/runtime.h>
+#include <lisple-package/application.h>
 #include <lisple-package/manifest.h>
 #include <lisple-package/native_loader.h>
 
@@ -227,6 +228,13 @@ namespace
     }
   }
 
+  void run_package_main(Lisple::Runtime& runtime,
+                        const Lisple::Package::LoadPlan& package_plan,
+                        const std::vector<std::string>& args)
+  {
+    Lisple::Package::Application::invoke_main(runtime, package_plan.main, args);
+  }
+
   void run_package_tool(Lisple::Runtime& runtime,
                         const Lisple::Package::LoadPlan& package_plan,
                         const std::string& tool_package_name,
@@ -274,6 +282,7 @@ namespace
 int main(int argc, char** argv)
 {
   std::string file_path;
+  std::vector<std::string> app_args;
   std::vector<std::string> load_paths{std::filesystem::current_path().string(), "/"};
 
   for (int i = 1; i < argc; ++i)
@@ -322,15 +331,15 @@ int main(int argc, char** argv)
       continue;
     }
 
+    if (!file_path.empty())
+    {
+      app_args.push_back(arg);
+      continue;
+    }
+
     if (arg.rfind("-", 0) == 0)
     {
       print_error_and_usage("Unknown option: " + arg);
-      return 1;
-    }
-
-    if (!file_path.empty())
-    {
-      print_error_and_usage("Expected only one file argument.");
       return 1;
     }
 
@@ -375,6 +384,10 @@ int main(int argc, char** argv)
     if (run_tool && package_plan)
     {
       run_package_tool(runtime, *package_plan, file_path, "run");
+    }
+    else if (run_package && package_plan && !package_plan->main.empty())
+    {
+      run_package_main(runtime, *package_plan, app_args);
     }
     else if (run_package)
     {
