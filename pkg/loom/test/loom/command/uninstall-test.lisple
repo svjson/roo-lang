@@ -7,7 +7,7 @@
             [loom.common.repository :as repository]
             [loom.test-support :as support]))
 
-(deftest uninstall_removes_installed_package_version
+(deftest uninstall-removes-installed-package-version
   (let [repo-root (support/fresh-repo! "loom-proof-uninstall")]
     (given
       (install/install! (support/loom-package-dir) repo-root true)
@@ -21,7 +21,7 @@
       (is (= uninstall-target-dir uninstalled-dir))
       (is (= false (io/exists? uninstall-target-dir))))))
 
-(deftest uninstall_command_accepts_package_at_version
+(deftest uninstall-command-accepts-package-at-version
   (let [repo-root (support/fresh-repo! "loom-proof-uninstall-package-id")]
     (given
       (install/install! (support/loom-package-dir) repo-root true)
@@ -36,7 +36,7 @@
       (is (= uninstall-package-id-target-dir uninstall-package-id-result))
       (is (= false (io/exists? uninstall-package-id-target-dir))))))
 
-(deftest uninstall_returns_nil_for_missing_package
+(deftest uninstall-returns-nil-for-missing-package
   (let [repo-root (support/fresh-repo! "loom-proof-uninstall-missing")]
     (given
       (def missing-package-id (repository/package-id "missing" "0.1.0")))

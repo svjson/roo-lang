@@ -2,7 +2,7 @@
   (:require proof.core
             [loom.common.package-spec :as package-spec]))
 
-(deftest parses_package_at_version_specs
+(deftest parses-package-at-version-specs
   (given
     (def parser-package-id "loom@0.1.0"))
 
@@ -13,7 +13,7 @@
     (is (= "loom" (:name parser-at-version-spec)))
     (is (= "0.1.0" (:version parser-at-version-spec)))))
 
-(deftest parses_legacy_name_and_version_specs
+(deftest parses-legacy-name-and-version-specs
   (given
     (def parser-package-name "loom"))
 
@@ -24,7 +24,7 @@
     (is (= "loom" (:name parser-legacy-spec)))
     (is (= "0.1.0" (:version parser-legacy-spec)))))
 
-(deftest rejects_missing_and_incomplete_specs
+(deftest rejects-missing-and-incomplete-specs
   (given
     (def missing-package-spec nil))
 

@@ -2,6 +2,7 @@
   (:require [lisple.io :as io]
             [loom.command.uninstall :as uninstall]
             [loom.common.files :as files]
+            [loom.common.manifest :as manifest]
             [loom.common.repository :as repository]))
 
 (defun copy-load-roots! [package-dir target-dir roots]
@@ -27,17 +28,21 @@
            (copy-native-library! package-dir target-dir library)))))
 
 (defun install! [package-dir repo-root force?]
-  (let [manifest-path (io/join-path package-dir "package.edn")
-        manifest (io/slurp-edn! manifest-path)
-        name (str (:name manifest))
-        version (str (:version manifest))
-        package-id (repository/package-id name version)
-        target-dir (repository/package-target-dir repo-root name version)]
-    (if (io/exists? target-dir)
-      (uninstall/uninstall! repo-root name version)
-      nil)
-    (io/copy-file! manifest-path (io/join-path target-dir "package.edn"))
-    (copy-load-roots! package-dir target-dir (:load-roots manifest))
-    (copy-native-libraries! package-dir target-dir (:native-libraries manifest))
-    (prn (str "Installed " package-id " to " target-dir))
-    target-dir))
+  (let [package-manifest (manifest/read! package-dir)]
+    (if (nil? package-manifest)
+      nil
+      (let [manifest-path (manifest/manifest-path package-dir)
+            name (manifest/package-name package-manifest)
+            version (manifest/package-version package-manifest)
+            package-id (manifest/package-id package-manifest)
+            target-dir (repository/package-target-dir repo-root name version)]
+        (if (io/exists? target-dir)
+          (uninstall/uninstall! repo-root name version)
+          nil)
+        (io/copy-file! manifest-path (io/join-path target-dir "package.edn"))
+        (copy-load-roots! package-dir target-dir (manifest/load-roots package-manifest))
+        (copy-native-libraries! package-dir
+                                target-dir
+                                (manifest/native-libraries package-manifest))
+        (prn (str "Installed " package-id " to " target-dir))
+        target-dir))))

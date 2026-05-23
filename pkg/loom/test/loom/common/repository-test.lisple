@@ -13,7 +13,7 @@
   (then
     (is (= "loom@0.1.0" id))))
 
-(deftest package-paths-use-local-repository_layout
+(deftest package-paths-use-local-repository-layout
   (given
     (def repo-root "/tmp/lisple-pkg"))
 

@@ -4,7 +4,7 @@
             [loom.common.files :as files]
             [loom.test-support :as support]))
 
-(deftest copies_existing_file_paths
+(deftest copies-existing-file-paths
   (let [root (support/fresh-repo! "loom-proof-files")]
     (given
       (def source (io/join-path root "source/config.edn"))

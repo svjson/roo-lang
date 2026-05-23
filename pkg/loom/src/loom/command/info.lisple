@@ -1,27 +1,27 @@
 (ns loom.command.info
   (:require [lisple.io :as io]
+            [loom.common.manifest :as manifest]
             [loom.common.repository :as repository]))
-
-(defun field-text [value]
-  (if (nil? value)
-    "none"
-    (if (= 0 (count value))
-      "none"
-      (str value))))
 
 (defun info! [repo-root name version]
   (let [target-dir (repository/package-target-dir repo-root name version)
         manifest-path (repository/package-manifest-path repo-root name version)]
     (if (io/exists? manifest-path)
-      (let [manifest (io/slurp-edn! manifest-path)
+      (let [package-manifest (manifest/validate! (io/slurp-edn! manifest-path)
+                                                 manifest-path)
             package-id (repository/package-id name version)]
-        (prn package-id)
-        (prn (str "path: " target-dir))
-        (prn (str "description: " (field-text (:description manifest))))
-        (prn (str "load-roots: " (field-text (:load-roots manifest))))
-        (prn (str "dependencies: " (field-text (:dependencies manifest))))
-        (prn (str "native-libraries: " (field-text (:native-libraries manifest))))
-        manifest)
+        (if (nil? package-manifest)
+          nil
+          (do
+            (prn package-id)
+            (prn (str "path: " target-dir))
+            (prn (str "description: " (manifest/field-text (:description package-manifest))))
+            (prn (str "load-roots: " (manifest/field-text (:load-roots package-manifest))))
+            (prn (str "dependencies: "
+                      (manifest/field-text (:dependencies package-manifest))))
+            (prn (str "native-libraries: "
+                      (manifest/field-text (:native-libraries package-manifest))))
+            package-manifest)))
       (do
         (prn (str "loom: package is not installed: "
                   (repository/package-id name version)))

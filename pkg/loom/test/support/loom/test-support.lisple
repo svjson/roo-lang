@@ -15,6 +15,14 @@
       nil)
     path))
 
+(defun fresh-package! [name manifest-source]
+  (let [path (build-path name)]
+    (if (io/exists? path)
+      (io/remove-tree! path)
+      nil)
+    (io/spit! (io/join-path path "package.edn") manifest-source)
+    path))
+
 (defun loom-package-dir []
   (io/join-path (io/current-directory!) ".."))
 

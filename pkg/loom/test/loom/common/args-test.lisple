@@ -2,7 +2,7 @@
   (:require proof.core
             [loom.common.args :as args]))
 
-(deftest finds_arguments_by_index
+(deftest finds-arguments-by-index
   (given
     (def index-argv ["install" "pkg/loom"]))
 
@@ -14,7 +14,7 @@
     (is (= "install" index-command))
     (is (nil? missing-index-arg))))
 
-(deftest finds_options_and_flags_from_offset
+(deftest finds-options-and-flags-from-offset
   (given
     (def options-argv ["install" "pkg/loom" "--repo" "build/repo" "--force"]))
 

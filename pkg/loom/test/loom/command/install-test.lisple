@@ -5,7 +5,7 @@
             [loom.common.repository :as repository]
             [loom.test-support :as support]))
 
-(deftest installs_package_manifest_and_source_roots
+(deftest installs-package-manifest-and-source-roots
   (let [repo-root (support/fresh-repo! "loom-proof-install")]
     (given
       (def install-loom-package-dir (support/loom-package-dir)))
@@ -23,7 +23,7 @@
       (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
                                               "src/loom/command/install.lisple"))))))
 
-(deftest installs_native_libraries_when_declared
+(deftest installs-native-libraries-when-declared
   (let [repo-root (support/fresh-repo! "loom-proof-install-native")]
     (given
       (def install-proof-package-dir (support/proof-package-dir)))
@@ -38,7 +38,7 @@
       (is (io/exists? (support/installed-path repo-root "proof" "0.1.0"
                                               "native/libproof-native.so"))))))
 
-(deftest reinstall_removes_previous_package_contents
+(deftest reinstall-removes-previous-package-contents
   (let [repo-root (support/fresh-repo! "loom-proof-reinstall")]
     (given
       (def reinstall-stale-file
@@ -51,3 +51,50 @@
 
     (then
       (is (= false (io/exists? reinstall-stale-file))))))
+
+(deftest install-rejects-missing-manifest
+  (let [repo-root (support/fresh-repo! "loom-proof-install-missing-manifest")]
+    (given
+      (def missing-manifest-package-dir
+        (support/build-path "loom-proof-package-missing-manifest"))
+      (if (io/exists? missing-manifest-package-dir)
+        (io/remove-tree! missing-manifest-package-dir)
+        nil))
+
+    (when
+      (def missing-manifest-result
+        (install/install! missing-manifest-package-dir repo-root true)))
+
+    (then
+      (is (nil? missing-manifest-result))
+      (is (= false (io/exists? repo-root))))))
+
+(deftest install-rejects-manifest-without-required-fields
+  (let [repo-root (support/fresh-repo! "loom-proof-install-invalid-manifest")]
+    (given
+      (def invalid-manifest-package-dir
+        (support/fresh-package! "loom-proof-package-invalid-manifest"
+                                "{:description \"Bad package.\"}")))
+
+    (when
+      (def invalid-manifest-result
+        (install/install! invalid-manifest-package-dir repo-root true)))
+
+    (then
+      (is (nil? invalid-manifest-result))
+      (is (= false (io/exists? repo-root))))))
+
+(deftest install-rejects-manifest-with-invalid-load-roots
+  (let [repo-root (support/fresh-repo! "loom-proof-install-invalid-load-roots")]
+    (given
+      (def invalid-load-roots-package-dir
+        (support/fresh-package! "loom-proof-package-invalid-load-roots"
+                                "{:name invalid :version \"0.1.0\" :load-roots \"src\"}")))
+
+    (when
+      (def invalid-load-roots-result
+        (install/install! invalid-load-roots-package-dir repo-root true)))
+
+    (then
+      (is (nil? invalid-load-roots-result))
+      (is (= false (io/exists? repo-root))))))

@@ -3,7 +3,7 @@
             [loom.core :as core]
             [loom.test-support :as support]))
 
-(deftest dispatches_list_command
+(deftest dispatches-list-command
   (let [repo-root (support/fresh-repo! "loom-proof-core-list")]
     (given
       (def list-argv ["list" "--repo" repo-root]))

@@ -1,0 +1,87 @@
+(ns loom.common.manifest
+  (:require [lisple.io :as io]
+            [loom.common.repository :as repository]))
+
+(defun manifest-path [package-dir]
+  (io/join-path package-dir "package.edn"))
+
+(defun atom? [value]
+  (let [kind (type-of value)]
+    (if (= kind "string")
+      true
+      (if (= kind "symbol")
+        true
+        (= kind "keyword")))))
+
+(defun package-name [manifest]
+  (str (:name manifest)))
+
+(defun package-version [manifest]
+  (str (:version manifest)))
+
+(defun package-id [manifest]
+  (repository/package-id (package-name manifest) (package-version manifest)))
+
+(defun load-roots [manifest]
+  (:load-roots manifest))
+
+(defun native-libraries [manifest]
+  (:native-libraries manifest))
+
+(defun field-text [value]
+  (if (nil? value)
+    "none"
+    (if (= 0 (count value))
+      "none"
+      (str value))))
+
+(defun add-required-atom-error! [errors manifest field label]
+  (let [value (get manifest field)]
+    (if (nil? value)
+      (append! errors (str "missing required field " label))
+      (if (atom? value)
+        nil
+        (append! errors (str label " must be a string, symbol, or keyword"))))))
+
+(defun add-load-roots-error! [errors manifest]
+  (let [roots (:load-roots manifest)]
+    (if (nil? roots)
+      (append! errors "missing required field :load-roots")
+      (if (= "vector" (type-of roots))
+        (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
+          (if (= 0 (count invalid-roots))
+            nil
+            (append! errors ":load-roots must contain only strings, symbols, or keywords")))
+        (append! errors ":load-roots must be a vector")))))
+
+(defun validation-errors [manifest]
+  (let [errors []]
+    (if (= "map" (type-of manifest))
+      (do
+        (add-required-atom-error! errors manifest :name ":name")
+        (add-required-atom-error! errors manifest :version ":version")
+        (add-load-roots-error! errors manifest))
+      (append! errors "package.edn must contain a map"))
+    errors))
+
+(defun report-errors! [manifest-path errors]
+  (prn (str "loom: invalid package manifest: " manifest-path))
+  (map errors
+       (fn [error]
+         (prn (str "loom: " error)))))
+
+(defun validate! [manifest manifest-path]
+  (let [errors (validation-errors manifest)]
+    (if (= 0 (count errors))
+      manifest
+      (do
+        (report-errors! manifest-path errors)
+        nil))))
+
+(defun read! [package-dir]
+  (let [path (manifest-path package-dir)]
+    (if (io/exists? path)
+      (validate! (io/slurp-edn! path) path)
+      (do
+        (prn (str "loom: missing package manifest: " path))
+        nil))))
