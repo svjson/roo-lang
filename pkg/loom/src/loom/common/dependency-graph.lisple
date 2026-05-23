@@ -1,0 +1,177 @@
+(ns loom.common.dependency-graph
+  (:require [lisple.io :as io]
+            [loom.common.manifest :as manifest]
+            [loom.common.repository :as repository]))
+
+(defun keyword-name? [text]
+  (if (= 0 (count text))
+    false
+    (= ":" (str (nth text 0)))))
+
+(defun normalize-name [name]
+  (let [text (str name)]
+    (if (keyword-name? text)
+      (substr text 1)
+      text)))
+
+(defun starts-with? [text prefix]
+  (if (< (count text) (count prefix))
+    false
+    (= prefix (substr text 0 (count prefix)))))
+
+(defun file-path [text]
+  (if (starts-with? text "file:")
+    (substr text (count "file:"))
+    nil))
+
+(defun dependency-spec-from-atom [name value]
+  (let [text (str value)
+        path (file-path text)]
+    (if (nil? path)
+      {:name name
+       :version text
+       :path nil
+       :id (repository/package-id name text)}
+      {:name name
+       :version nil
+       :path path
+       :id name})))
+
+(defun dependency-spec-from-map [name value]
+  (let [version (:version value)
+        path (:path value)
+        normalized-version (if (nil? version) nil (str version))
+        normalized-path (if (nil? path) nil (str path))]
+    {:name name
+     :version normalized-version
+     :path normalized-path
+     :id (if (nil? normalized-version)
+           name
+           (repository/package-id name normalized-version))}))
+
+(defun dependency-spec [dependency-name dependency-value]
+  (let [name (normalize-name dependency-name)]
+    (if (= "map" (type-of dependency-value))
+      (dependency-spec-from-map name dependency-value)
+      (dependency-spec-from-atom name dependency-value))))
+
+(defun dependency-specs [package-manifest]
+  (let [dependencies (:dependencies package-manifest)]
+    (if (nil? dependencies)
+      []
+      (if (= "map" (type-of dependencies))
+        (sort
+          (reduce-kv dependencies
+                     []
+                     (fn [result dependency-name dependency-version]
+                       (concat result
+                               [(dependency-spec dependency-name dependency-version)])))
+          (fn [a b] (< (:id a) (:id b))))
+        (if (= "vector" (type-of dependencies))
+          (sort
+            (map dependencies
+                 (fn [dependency-name]
+                   {:name (normalize-name dependency-name)
+                    :version nil
+                    :path nil
+                    :id (normalize-name dependency-name)}))
+            (fn [a b] (< (:id a) (:id b))))
+          [])))))
+
+(defun package-id [name version]
+  (if (nil? version)
+    name
+    (repository/package-id name version)))
+
+(defun package-node [name version path missing? cycle? dependencies]
+  {:name name
+   :version version
+   :id (package-id name version)
+   :path path
+   :missing? missing?
+   :cycle? cycle?
+   :dependencies dependencies})
+
+(defun absolute-path? [path]
+  (if (= 0 (count path))
+    false
+    (= "/" (str (nth path 0)))))
+
+(defun dependency-path-root [package-root spec]
+  (let [path (:path spec)]
+    (if (absolute-path? path)
+      path
+      (io/join-path package-root path))))
+
+(defun dependency-repository-root [repo-root spec]
+  (let [version (:version spec)]
+    (if (nil? version)
+      (io/join-path repo-root (:name spec))
+      (repository/package-target-dir repo-root (:name spec) version))))
+
+(defun spec-root [package-root repo-root spec]
+  (if (nil? (:path spec))
+    (dependency-repository-root repo-root spec)
+    (dependency-path-root package-root spec)))
+
+(defun dependency-nodes! [package-root repo-root specs ancestors]
+  (map specs
+       (fn [spec]
+         (dependency-node! package-root repo-root spec ancestors))))
+
+(defun dependency-node! [package-root repo-root spec ancestors]
+  (let [declared-name (:name spec)
+        declared-version (:version spec)
+        id (:id spec)
+        target-dir (spec-root package-root repo-root spec)
+        manifest-path (io/join-path target-dir "package.edn")]
+    (if (contains? ancestors id)
+      (package-node declared-name declared-version target-dir false true [])
+      (if (io/exists? manifest-path)
+        (let [package-manifest (manifest/validate! (io/slurp-edn! manifest-path)
+                                                   manifest-path)]
+          (if (nil? package-manifest)
+            (package-node declared-name declared-version target-dir true false [])
+            (let [resolved-name (manifest/package-name package-manifest)
+                  resolved-version (manifest/package-version package-manifest)
+                  resolved-id (repository/package-id resolved-name resolved-version)]
+              (if (contains? ancestors resolved-id)
+                (package-node resolved-name resolved-version target-dir false true [])
+                (package-node resolved-name
+                              resolved-version
+                              target-dir
+                              false
+                              false
+                              (dependency-nodes! target-dir
+                                                 repo-root
+                                                 (dependency-specs package-manifest)
+                                                 (concat ancestors [resolved-id])))))))
+        (package-node declared-name declared-version target-dir true false [])))))
+
+(defun root-node! [package-dir repo-root]
+  (let [package-manifest (manifest/read! package-dir)]
+    (if (nil? package-manifest)
+      nil
+      (let [name (manifest/package-name package-manifest)
+            version (manifest/package-version package-manifest)
+            id (manifest/package-id package-manifest)]
+        (package-node name
+                      version
+                      package-dir
+                      false
+                      false
+                      (dependency-nodes! package-dir
+                                         repo-root
+                                         (dependency-specs package-manifest)
+                                         [id]))))))
+
+(defun collect-missing-package-ids [node]
+  (concat
+    (if (:missing? node)
+      [(:id node)]
+      [])
+    (flatten
+      (map (:dependencies node) collect-missing-package-ids))))
+
+(defun complete? [node]
+  (= 0 (count (collect-missing-package-ids node))))

@@ -1,0 +1,74 @@
+(ns loom.common.dependency-graph-test
+  (:require proof.core
+            [loom.command.install :as install]
+            [loom.common.dependency-graph :as graph]
+            [loom.test-support :as support]))
+
+(deftest resolves-transitive-local-dependencies
+  (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph")]
+    (given
+      (def graph-leaf-dir
+        (support/fresh-package! "loom-proof-graph-leaf"
+                                "{:name leaf :version \"1.0.0\" :dependencies [] :load-roots [\"src\"]}"))
+      (def graph-middle-dir
+        (support/fresh-package! "loom-proof-graph-middle"
+                                "{:name middle :version \"1.0.0\" :dependencies {leaf \"1.0.0\"} :load-roots [\"src\"]}"))
+      (def graph-app-dir
+        (support/fresh-package! "loom-proof-graph-app"
+                                "{:name app :version \"0.1.0\" :dependencies {middle \"1.0.0\"} :load-roots [\"src\"]}"))
+      (install/install! graph-leaf-dir repo-root true)
+      (install/install! graph-middle-dir repo-root true))
+
+    (when
+      (def resolved-graph (graph/root-node! graph-app-dir repo-root))
+      (def middle-node (nth (:dependencies resolved-graph) 0))
+      (def leaf-node (nth (:dependencies middle-node) 0)))
+
+    (then
+      (is (= "app@0.1.0" (:id resolved-graph)))
+      (is (= "middle@1.0.0" (:id middle-node)))
+      (is (= "leaf@1.0.0" (:id leaf-node)))
+      (is (graph/complete? resolved-graph)))))
+
+(deftest reports-missing-local-dependencies
+  (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph-missing")]
+    (given
+      (def missing-app-dir
+        (support/fresh-package! "loom-proof-graph-missing-app"
+                                "{:name app :version \"0.1.0\" :dependencies {missing \"9.9.9\"} :load-roots [\"src\"]}")))
+
+    (when
+      (def missing-graph (graph/root-node! missing-app-dir repo-root))
+      (def missing-node (nth (:dependencies missing-graph) 0)))
+
+    (then
+      (is (= "missing@9.9.9" (:id missing-node)))
+      (is (:missing? missing-node))
+      (is (= ["missing@9.9.9"] (graph/collect-missing-package-ids missing-graph)))
+      (is (= false (graph/complete? missing-graph))))))
+
+(deftest resolves-file-path-dependencies-relative-to-declaring-package
+  (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph-file")]
+    (given
+      (def file-leaf-dir
+        (support/fresh-package! "loom-proof-graph-file/leaf"
+                                "{:name leaf :version \"1.0.0\" :dependencies [] :load-roots [\"src\"]}"))
+      (def file-middle-dir
+        (support/fresh-package! "loom-proof-graph-file/middle"
+                                "{:name middle :version \"1.0.0\" :dependencies {leaf {:path \"../leaf\"}} :load-roots [\"src\"]}"))
+      (def file-app-dir
+        (support/fresh-package! "loom-proof-graph-file/app"
+                                "{:name app :version \"0.1.0\" :dependencies {middle \"file:../middle\"} :load-roots [\"src\"]}")))
+
+    (when
+      (def file-graph (graph/root-node! file-app-dir repo-root))
+      (def file-middle-node (nth (:dependencies file-graph) 0))
+      (def file-leaf-node (nth (:dependencies file-middle-node) 0)))
+
+    (then
+      (is (= "app@0.1.0" (:id file-graph)))
+      (is (= "middle@1.0.0" (:id file-middle-node)))
+      (is (= "leaf@1.0.0" (:id file-leaf-node)))
+      (is (= false (:missing? file-middle-node)))
+      (is (= false (:missing? file-leaf-node)))
+      (is (graph/complete? file-graph)))))

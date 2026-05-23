@@ -1,5 +1,6 @@
 (ns loom.core
-  (:require [loom.command.info :as info]
+  (:require [loom.command.deps :as deps]
+            [loom.command.info :as info]
             [loom.command.install :as install]
             [loom.command.list :as list]
             [loom.command.uninstall :as uninstall]
@@ -11,7 +12,8 @@
   (prn "Usage: loom install <package-dir> [--repo <dir>]")
   (prn "       loom uninstall <package@version> [--repo <dir>]")
   (prn "       loom list [--repo <dir>]")
-  (prn "       loom info <package@version> [--repo <dir>]"))
+  (prn "       loom info <package@version> [--repo <dir>]")
+  (prn "       loom deps <package-dir> [--repo <dir>] [--flat] [--show-repeated]"))
 
 (defun install-command [argv]
   (let [package-dir (args/arg-at argv 1)]
@@ -44,6 +46,16 @@
                   (:name spec)
                   (:version spec)))))
 
+(defun deps-command [argv]
+  (let [package-dir (args/arg-at argv 1)]
+    (if (nil? package-dir)
+      (usage)
+      (deps/deps! package-dir
+                  (args/option-from argv 1 "--repo"
+                                    (repository/default-repository-root))
+                  (args/flag-from? argv 1 "--show-repeated")
+                  (args/flag-from? argv 1 "--flat")))))
+
 (defun main [args]
   (let [command (args/arg-at args 0)]
     (if (= command "install")
@@ -54,4 +66,6 @@
           (list-command args)
           (if (= command "info")
             (info-command args)
-            (usage)))))))
+            (if (= command "deps")
+              (deps-command args)
+              (usage))))))))

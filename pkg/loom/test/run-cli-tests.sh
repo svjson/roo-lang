@@ -17,16 +17,22 @@ cmake -E rm -rf "$LOOM_REPO"
 
 test -f "$LOOM_REPO/loom/0.1.0/package.edn"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/core.lisple"
+test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/deps.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/install.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/uninstall.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/list.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/info.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/args.lisple"
+test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/dependency-graph.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/files.lisple"
+test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/manifest.lisple"
+test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/package-spec.lisple"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/repository.lisple"
 
 test "$("$LISPLE" "$LOOM_PACKAGE" list --repo "$LOOM_REPO")" = "loom@0.1.0"
 "$LISPLE" "$LOOM_PACKAGE" info loom@0.1.0 --repo "$LOOM_REPO"
+DEPS_OUTPUT=$("$LISPLE" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat)
+test "$DEPS_OUTPUT" = ""
 
 cmake -E touch "$LOOM_REPO/loom/0.1.0/stale-file"
 "$LISPLE" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO"
