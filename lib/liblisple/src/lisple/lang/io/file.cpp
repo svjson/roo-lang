@@ -5,6 +5,7 @@
 #include <lisple/context.h>
 #include <lisple/exception.h>
 #include <lisple/io/file_system.h>
+#include <lisple/form.h>
 #include <lisple/reader.h>
 #include <lisple/runtime/value.h>
 #include <lisple/type.h>
@@ -13,6 +14,59 @@ namespace Lisple
 {
   namespace
   {
+    sptr_val edn_to_rt_value(const AST::ASTNode& obj)
+    {
+      switch (obj.get_type())
+      {
+      case Form::VECTOR:
+      {
+        sptr_val_v elements;
+        for (const auto& child : obj.as<AST::Vector>().children)
+        {
+          elements.push_back(edn_to_rt_value(*child));
+        }
+        return Value::vector(std::move(elements));
+      }
+      case Form::LIST:
+      {
+        sptr_val_v elements;
+        for (const auto& child : obj.as<AST::List>().children)
+        {
+          elements.push_back(edn_to_rt_value(*child));
+        }
+        return Value::list(std::move(elements));
+      }
+      case Form::MAP:
+      {
+        sptr_val_v elements;
+        for (const auto& child : obj.as<AST::Map>().children)
+        {
+          elements.push_back(edn_to_rt_value(*child));
+        }
+        return Value::map(std::move(elements));
+      }
+      case Form::SYMBOL:
+      {
+        const auto& value = obj.as<AST::Symbol>().value;
+        if (value == "true")
+        {
+          return Constant::BOOL_TRUE;
+        }
+        if (value == "false")
+        {
+          return Constant::BOOL_FALSE;
+        }
+        if (value == "nil")
+        {
+          return Constant::NIL;
+        }
+        return Value::symbol(value);
+      }
+      default:
+        return to_rt_value(obj);
+      }
+    }
+
     sptr_val read_edn_string(const std::string& source, const std::string& source_name)
     {
       Reader reader;
@@ -34,7 +88,7 @@ namespace Lisple
         throw LispleException("Expected one EDN form in '" + source_name + "', found " +
                               std::to_string(forms.size()));
       }
-      return to_rt_value(*forms.front());
+      return edn_to_rt_value(*forms.front());
     }
   } // namespace
 
