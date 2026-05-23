@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -382,9 +383,29 @@ namespace Lisple::Package
       return join_path(search_root, dependency);
     }
 
+    std::string package_version_root_for_dependency(const std::string& search_root,
+                                                    const Dependency& dependency)
+    {
+      return join_path(package_root_for_dependency(search_root, dependency.name),
+                       dependency.version);
+    }
+
     std::string read_manifest_source(Lisple::FileSystem& fs, const std::string& package_root)
     {
       return fs.read(manifest_path(package_root));
+    }
+
+    bool can_read_manifest(Lisple::FileSystem& fs, const std::string& package_root)
+    {
+      try
+      {
+        (void)read_manifest_source(fs, package_root);
+        return true;
+      }
+      catch (const std::exception&)
+      {
+        return false;
+      }
     }
 
     bool has_string(const std::vector<std::string>& values, const std::string& value)
@@ -435,6 +456,16 @@ namespace Lisple::Package
       return result;
     }
 
+    std::vector<std::string> candidate_versioned_roots(const std::string& search_root,
+                                                       const Dependency& dependency)
+    {
+      if (!dependency.version.empty())
+      {
+        return {package_version_root_for_dependency(search_root, dependency)};
+      }
+      return {};
+    }
+
     std::string dependency_path_root(const std::string& package_root,
                                      const Dependency& dependency)
     {
@@ -467,15 +498,19 @@ namespace Lisple::Package
 
       for (const auto& search_root : search_roots)
       {
+        for (const auto& candidate : candidate_versioned_roots(search_root, dependency))
+        {
+          if (can_read_manifest(fs, candidate))
+          {
+            return candidate;
+          }
+        }
+
         const std::string candidate =
           package_root_for_dependency(search_root, dependency.name);
-        try
+        if (can_read_manifest(fs, candidate))
         {
-          (void)read_manifest_source(fs, candidate);
           return candidate;
-        }
-        catch (const std::exception&)
-        {
         }
       }
 
@@ -697,6 +732,22 @@ namespace Lisple::Package
     return parse_manifest(fs.read(manifest_path), manifest_path);
   }
 
+  std::string default_local_repository_root()
+  {
+    const char* home = std::getenv("HOME");
+    if (home && *home)
+    {
+      return normalize_path(join_path(home, ".local/share/lisple/pkg"));
+    }
+
+    return normalize_path("~/.local/share/lisple/pkg");
+  }
+
+  std::vector<std::string> default_package_search_roots()
+  {
+    return {default_local_repository_root()};
+  }
+
   LoadPlan build_load_plan(const Manifest& manifest, const std::string& package_root)
   {
     LoadPlan plan;
@@ -762,6 +813,10 @@ namespace Lisple::Package
       {},
     };
     append_unique(state.search_roots, parent_path(package_root));
+    for (const auto& search_root : default_package_search_roots())
+    {
+      append_unique(state.search_roots, search_root);
+    }
     state.plan.package_root = package_root;
 
     resolve_package(state, package_root);

@@ -80,6 +80,9 @@ namespace Lisple::Package
     std::vector<std::string> package_search_roots;
   };
 
+  std::string default_local_repository_root();
+  std::vector<std::string> default_package_search_roots();
+
   Manifest parse_manifest(const std::string& source,
                           const std::string& source_name = "package.edn");
   Manifest read_manifest(Lisple::FileSystem& fs,

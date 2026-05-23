@@ -49,7 +49,8 @@ Current fields:
 
 ## Pure Lisple Dependencies
 
-Dependencies are currently local paths.
+Dependencies can be resolved from local paths or from the local Lisple package
+repository.
 
 The shortest form uses a `file:` string:
 
@@ -57,7 +58,7 @@ The shortest form uses a `file:` string:
 {:dependencies {utility "file:../utility"}}
 ```
 
-The expanded form can include a version:
+The expanded local path form can include a version:
 
 ```lisp
 {:dependencies {utility {:version "0.1.0"
@@ -70,6 +71,31 @@ path must have the requested version.
 Dependency paths are resolved relative to the package that declares them. The
 load plan is dependency-first, so dependency `:load-roots` are added before the
 depending package's own `:load-roots`.
+
+Version-only dependencies are resolved from package search roots:
+
+```lisp
+{:dependencies {utility "0.1.0"}}
+```
+
+The local repository search root defaults to:
+
+```text
+~/.local/share/lisple/pkg
+```
+
+The expected repository layout is:
+
+```text
+~/.local/share/lisple/pkg/
+  utility/
+    0.1.0/
+      package.edn
+      src/
+```
+
+For compatibility with source-tree development, the resolver also keeps looking
+for sibling package roots such as `../utility/package.edn`.
 
 ## Namespace Roots
 
@@ -431,7 +457,7 @@ declared `run` tool with package context data.
 
 - This is not a package manager. There is no registry, download step, lockfile,
   install cache, publishing workflow, or semver resolver.
-- Dependencies are local paths only.
+- Dependencies can be local paths or versioned packages in the local repository.
 - The `package.edn` shape is still expected to change.
 - Native ABI versioning is minimal and currently C++-oriented.
 - Native libraries must be built separately and placed where `:path` points.

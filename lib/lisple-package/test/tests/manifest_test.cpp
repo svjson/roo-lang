@@ -174,6 +174,59 @@ TEST(PackageManifest, resolves_pure_lisple_dependencies_from_search_roots)
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"app.core"});
 }
 
+TEST(PackageManifest, resolves_versioned_dependencies_from_repository_layout)
+{
+  // Given
+  MemoryFileSystem fs;
+  fs.add("/repo/app/package.edn",
+         R"({:name app
+             :dependencies {util "0.1.0"}
+             :load-roots ["src"]})");
+  fs.add("/repo/packages/util/0.1.0/package.edn",
+         R"({:name util
+             :version "0.1.0"
+             :dependencies []
+             :load-roots ["src"]})");
+
+  // When
+  auto plan =
+    Lisple::Package::resolve_load_plan(fs,
+                                       "/repo/app",
+                                       Lisple::Package::ResolveOptions{{"/repo/packages"}});
+
+  // Then
+  EXPECT_EQ(plan.package_roots,
+            (std::vector<std::string>{"/repo/packages/util/0.1.0", "/repo/app"}));
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{"/repo/packages/util/0.1.0/src", "/repo/app/src"}));
+}
+
+TEST(PackageManifest, resolves_versioned_dependencies_from_default_local_repository)
+{
+  // Given
+  MemoryFileSystem fs;
+  const std::string repository_root = Lisple::Package::default_local_repository_root();
+  fs.add("/repo/app/package.edn",
+         R"({:name app
+             :dependencies {util "0.1.0"}
+             :load-roots ["src"]})");
+  fs.add(repository_root + "/util/0.1.0/package.edn",
+         R"({:name util
+             :version "0.1.0"
+             :dependencies []
+             :load-roots ["src"]})");
+
+  // When
+  auto plan = Lisple::Package::resolve_load_plan(fs, "/repo/app");
+
+  // Then
+  EXPECT_EQ(plan.package_roots,
+            (std::vector<std::string>{repository_root + "/util/0.1.0", "/repo/app"}));
+  EXPECT_EQ(
+    plan.load_paths,
+    (std::vector<std::string>{repository_root + "/util/0.1.0/src", "/repo/app/src"}));
+}
+
 TEST(PackageManifest, resolved_load_plan_uses_root_package_main)
 {
   // Given
