@@ -1,1 +1,19 @@
-(ns loom.common.files-test)
+(ns loom.common.files-test
+  (:require proof.core
+            [lisple.io :as io]
+            [loom.common.files :as files]
+            [loom.test-support :as support]))
+
+(deftest copies_existing_file_paths
+  (let [root (support/fresh-repo! "loom-proof-files")]
+    (given
+      (def source (io/join-path root "source/config.edn"))
+      (def target (io/join-path root "target/config.edn"))
+      (io/spit! source "{:ok true}"))
+
+    (when
+      (files/copy-path-if-present! source target))
+
+    (then
+      (is (io/exists? target))
+      (is (= "{:ok true}" (io/slurp! target))))))

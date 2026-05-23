@@ -1,1 +1,29 @@
-(ns loom.command.info-test)
+(ns loom.command.info-test
+  (:require proof.core
+            [loom.command.info :as info]
+            [loom.command.install :as install]
+            [loom.test-support :as support]))
+
+(deftest returns_manifest_for_installed_package
+  (let [repo-root (support/fresh-repo! "loom-proof-info")]
+    (given
+      (install/install! (support/loom-package-dir) repo-root true))
+
+    (when
+      (def installed-manifest (info/info! repo-root "loom" "0.1.0")))
+
+    (then
+      (is (= "loom" (str (:name installed-manifest))))
+      (is (= "0.1.0" (:version installed-manifest)))
+      (is (= "Lisple package manager." (:description installed-manifest))))))
+
+(deftest returns_nil_for_missing_package
+  (let [repo-root (support/fresh-repo! "loom-proof-info-missing")]
+    (given
+      (def package-name "missing"))
+
+    (when
+      (def missing-manifest (info/info! repo-root package-name "0.1.0")))
+
+    (then
+      (is (nil? missing-manifest)))))

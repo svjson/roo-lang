@@ -1,0 +1,6 @@
+{:name loom-tests
+ :version "0.1.0"
+ :dependencies {loom "file:.."
+                proof "file:../../proof"}
+ :load-roots ["." "support"]
+ :config {proof {:test-roots ["loom"]}}}

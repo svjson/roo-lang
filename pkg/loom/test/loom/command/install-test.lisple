@@ -1,1 +1,53 @@
-(ns loom.command.install-test)
+(ns loom.command.install-test
+  (:require proof.core
+            [lisple.io :as io]
+            [loom.command.install :as install]
+            [loom.common.repository :as repository]
+            [loom.test-support :as support]))
+
+(deftest installs_package_manifest_and_source_roots
+  (let [repo-root (support/fresh-repo! "loom-proof-install")]
+    (given
+      (def install-loom-package-dir (support/loom-package-dir)))
+
+    (when
+      (def install-loom-target-dir
+        (install/install! install-loom-package-dir repo-root true)))
+
+    (then
+      (is (= (repository/package-target-dir repo-root "loom" "0.1.0")
+             install-loom-target-dir))
+      (is (io/exists? (support/installed-path repo-root "loom" "0.1.0" "package.edn")))
+      (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
+                                              "src/loom/core.lisple")))
+      (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
+                                              "src/loom/command/install.lisple"))))))
+
+(deftest installs_native_libraries_when_declared
+  (let [repo-root (support/fresh-repo! "loom-proof-install-native")]
+    (given
+      (def install-proof-package-dir (support/proof-package-dir)))
+
+    (when
+      (def install-proof-target-dir
+        (install/install! install-proof-package-dir repo-root true)))
+
+    (then
+      (is (= (repository/package-target-dir repo-root "proof" "0.1.0")
+             install-proof-target-dir))
+      (is (io/exists? (support/installed-path repo-root "proof" "0.1.0"
+                                              "native/libproof-native.so"))))))
+
+(deftest reinstall_removes_previous_package_contents
+  (let [repo-root (support/fresh-repo! "loom-proof-reinstall")]
+    (given
+      (def reinstall-stale-file
+        (support/installed-path repo-root "loom" "0.1.0" "stale-file"))
+      (install/install! (support/loom-package-dir) repo-root true)
+      (io/spit! reinstall-stale-file "stale"))
+
+    (when
+      (install/install! (support/loom-package-dir) repo-root false))
+
+    (then
+      (is (= false (io/exists? reinstall-stale-file))))))

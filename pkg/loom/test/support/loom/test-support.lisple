@@ -1,0 +1,26 @@
+(ns loom.test-support
+  (:require [lisple.io :as io]
+            [loom.common.repository :as repository]))
+
+(defun project-root []
+  (io/join-path (io/current-directory!) "../../.."))
+
+(defun build-path [name]
+  (io/join-path (project-root) (io/join-path "build" name)))
+
+(defun fresh-repo! [name]
+  (let [path (build-path name)]
+    (if (io/exists? path)
+      (io/remove-tree! path)
+      nil)
+    path))
+
+(defun loom-package-dir []
+  (io/join-path (io/current-directory!) ".."))
+
+(defun proof-package-dir []
+  (io/join-path (io/current-directory!) "../../proof"))
+
+(defun installed-path [repo-root package-name version relative-path]
+  (io/join-path (repository/package-target-dir repo-root package-name version)
+                relative-path))

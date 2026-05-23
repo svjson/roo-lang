@@ -1,1 +1,26 @@
-(ns loom.common.repository-test)
+(ns loom.common.repository-test
+  (:require proof.core
+            [loom.common.repository :as repository]))
+
+(deftest package-id-uses-at-version
+  (given
+    (def package-name "loom")
+    (def version "0.1.0"))
+
+  (when
+    (def id (repository/package-id package-name version)))
+
+  (then
+    (is (= "loom@0.1.0" id))))
+
+(deftest package-paths-use-local-repository_layout
+  (given
+    (def repo-root "/tmp/lisple-pkg"))
+
+  (when
+    (def target-dir (repository/package-target-dir repo-root "loom" "0.1.0"))
+    (def manifest-path (repository/package-manifest-path repo-root "loom" "0.1.0")))
+
+  (then
+    (is (= "/tmp/lisple-pkg/loom/0.1.0" target-dir))
+    (is (= "/tmp/lisple-pkg/loom/0.1.0/package.edn" manifest-path))))

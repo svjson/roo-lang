@@ -7,6 +7,11 @@ LOOM_PACKAGE="$ROOT_DIR/pkg/loom"
 LOOM_REPO="$ROOT_DIR/build/loom-test-repo"
 PROOF_REPO="$ROOT_DIR/build/loom-proof-test-repo"
 
+(
+  cd "$ROOT_DIR/pkg/loom/test"
+  "$LISPLE" proof
+)
+
 cmake -E rm -rf "$LOOM_REPO"
 "$LISPLE" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO" --force
 
