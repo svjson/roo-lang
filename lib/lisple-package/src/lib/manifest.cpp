@@ -1,11 +1,9 @@
-#include <lisple-package/manifest.h>
-
 #include <algorithm>
 #include <filesystem>
 #include <map>
 #include <memory>
-#include <sstream>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,18 +14,18 @@
 #include <lisple/reader.h>
 #include <lisple/runtime.h>
 
+#include <lisple-package/manifest.h>
+
 namespace Lisple::Package
 {
   namespace
   {
-    std::string field_name(const Lisple::sptr_ast_node& key,
-                           const std::string& source_name)
+    std::string field_name(const Lisple::sptr_ast_node& key, const std::string& source_name)
     {
       if (key->get_type() != Form::KEYWORD)
       {
         throw LispleException("Invalid package manifest '" + source_name +
-                              "': expected keyword field name, got " +
-                              key->to_string());
+                              "': expected keyword field name, got " + key->to_string());
       }
       return key->as<AST::Keyword>().get_identifier();
     }
@@ -45,9 +43,9 @@ namespace Lisple::Package
       case Form::KEYWORD:
         return node->as<AST::Keyword>().value;
       default:
-        throw LispleException("Invalid package manifest '" + source_name + "': field :" +
-                              field + " expected string, symbol, or keyword, got " +
-                              node->to_string());
+        throw LispleException(
+          "Invalid package manifest '" + source_name + "': field :" + field +
+          " expected string, symbol, or keyword, got " + node->to_string());
       }
     }
 
@@ -71,9 +69,8 @@ namespace Lisple::Package
       return values;
     }
 
-    std::vector<Lisple::NamespaceRoot> namespace_root_list(
-      const Lisple::sptr_ast_node& node,
-      const std::string& source_name)
+    std::vector<Lisple::NamespaceRoot> namespace_root_list(const Lisple::sptr_ast_node& node,
+                                                           const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
@@ -101,10 +98,9 @@ namespace Lisple::Package
       return roots;
     }
 
-    std::map<std::string, std::string> source_map(
-      const Lisple::sptr_ast_node& node,
-      const std::string& field,
-      const std::string& source_name)
+    std::map<std::string, std::string> source_map(const Lisple::sptr_ast_node& node,
+                                                  const std::string& field,
+                                                  const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
@@ -117,8 +113,7 @@ namespace Lisple::Package
       if (children.size() % 2 != 0)
       {
         throw LispleException("Invalid package manifest '" + source_name +
-                              "': field :" + field +
-                              " map has an uneven number of forms.");
+                              "': field :" + field + " map has an uneven number of forms.");
       }
 
       for (size_t i = 0; i < children.size(); i += 2)
@@ -128,15 +123,13 @@ namespace Lisple::Package
       return result;
     }
 
-    std::map<std::string, std::string> tool_map(
-      const Lisple::sptr_ast_node& node,
-      const std::string& source_name)
+    std::map<std::string, std::string> tool_map(const Lisple::sptr_ast_node& node,
+                                                const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
         throw LispleException("Invalid package manifest '" + source_name +
-                              "': field :tools expected map, got " +
-                              node->to_string());
+                              "': field :tools expected map, got " + node->to_string());
       }
 
       std::map<std::string, std::string> result;
@@ -221,10 +214,9 @@ namespace Lisple::Package
       }
 
       default:
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': dependency '" + dependency.name +
-                              "' expected version atom or option map, got " +
-                              value->to_string());
+        throw LispleException(
+          "Invalid package manifest '" + source_name + "': dependency '" + dependency.name +
+          "' expected version atom or option map, got " + value->to_string());
       }
     }
 
@@ -280,8 +272,7 @@ namespace Lisple::Package
       }
       if (fields.count("version"))
       {
-        library.version =
-          atom_string(fields.at("version"), "native-libraries", source_name);
+        library.version = atom_string(fields.at("version"), "native-libraries", source_name);
       }
       if (fields.count("path"))
       {
@@ -391,8 +382,7 @@ namespace Lisple::Package
       return join_path(search_root, dependency);
     }
 
-    std::string read_manifest_source(Lisple::FileSystem& fs,
-                                     const std::string& package_root)
+    std::string read_manifest_source(Lisple::FileSystem& fs, const std::string& package_root)
     {
       return fs.read(manifest_path(package_root));
     }
@@ -489,9 +479,9 @@ namespace Lisple::Package
         }
       }
 
-      throw LispleException("Package dependency '" + dependency.name +
-                            "' was not found under search roots: " +
-                            describe_roots(search_roots));
+      throw LispleException(
+        "Package dependency '" + dependency.name +
+        "' was not found under search roots: " + describe_roots(search_roots));
     }
 
     void validate_dependency_version(const Dependency& dependency,
@@ -505,8 +495,8 @@ namespace Lisple::Package
 
       if (dependency_manifest.version != dependency.version)
       {
-        throw LispleException("Package dependency '" + dependency.name +
-                              "' at '" + dependency_root + "' has version '" +
+        throw LispleException("Package dependency '" + dependency.name + "' at '" +
+                              dependency_root + "' has version '" +
                               dependency_manifest.version + "', expected '" +
                               dependency.version + "'.");
       }
@@ -579,6 +569,10 @@ namespace Lisple::Package
       {
         plan.main = manifest.main;
       }
+      if (package_root == plan.package_root && !manifest.run.empty())
+      {
+        plan.run = manifest.run;
+      }
     }
 
     void resolve_package(ResolveState& state, const std::string& package_root)
@@ -589,8 +583,7 @@ namespace Lisple::Package
       }
       if (state.visiting.count(package_root))
       {
-        throw LispleException("Cyclic package dependency involving '" + package_root +
-                              "'.");
+        throw LispleException("Cyclic package dependency involving '" + package_root + "'.");
       }
 
       state.visiting.insert(package_root);
@@ -600,10 +593,9 @@ namespace Lisple::Package
       {
         const std::string dependency_root =
           find_dependency_root(state.fs, dependency, package_root, state.search_roots);
-        validate_dependency_version(
-          dependency,
-          read_manifest(state.fs, manifest_path(dependency_root)),
-          dependency_root);
+        validate_dependency_version(dependency,
+                                    read_manifest(state.fs, manifest_path(dependency_root)),
+                                    dependency_root);
         resolve_package(state, dependency_root);
       }
 
@@ -653,8 +645,8 @@ namespace Lisple::Package
     }
     if (fields.count("load-roots"))
     {
-      manifest.load_roots = vector_of_atoms(fields.at("load-roots"), "load-roots",
-                                            source_name);
+      manifest.load_roots =
+        vector_of_atoms(fields.at("load-roots"), "load-roots", source_name);
     }
     if (fields.count("namespace-roots"))
     {
@@ -663,9 +655,8 @@ namespace Lisple::Package
     }
     if (fields.count("native-namespaces"))
     {
-      manifest.native_namespaces = vector_of_atoms(fields.at("native-namespaces"),
-                                                  "native-namespaces",
-                                                  source_name);
+      manifest.native_namespaces =
+        vector_of_atoms(fields.at("native-namespaces"), "native-namespaces", source_name);
     }
     if (fields.count("native-libraries"))
     {
@@ -674,8 +665,7 @@ namespace Lisple::Package
     }
     if (fields.count("autoloads"))
     {
-      manifest.autoloads =
-        vector_of_atoms(fields.at("autoloads"), "autoloads", source_name);
+      manifest.autoloads = vector_of_atoms(fields.at("autoloads"), "autoloads", source_name);
     }
     if (fields.count("config"))
     {
@@ -693,6 +683,10 @@ namespace Lisple::Package
     if (fields.count("main"))
     {
       manifest.main = atom_string(fields.at("main"), "main", source_name);
+    }
+    if (fields.count("run"))
+    {
+      manifest.run = atom_string(fields.at("run"), "run", source_name);
     }
 
     return manifest;
@@ -720,6 +714,7 @@ namespace Lisple::Package
     plan.autoloads = manifest.autoloads;
     plan.entry_points = manifest.entry_points;
     plan.main = manifest.main;
+    plan.run = manifest.run;
 
     for (auto& native_library : plan.native_libraries)
     {
@@ -774,9 +769,8 @@ namespace Lisple::Package
     return state.plan;
   }
 
-  std::vector<std::string> merge_load_paths(
-    const LoadPlan& plan,
-    const std::vector<std::string>& extra_load_paths)
+  std::vector<std::string> merge_load_paths(const LoadPlan& plan,
+                                            const std::vector<std::string>& extra_load_paths)
   {
     std::vector<std::string> load_paths = extra_load_paths;
     load_paths.insert(load_paths.end(), plan.load_paths.begin(), plan.load_paths.end());

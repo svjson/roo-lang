@@ -2,6 +2,7 @@
 #define LISPLE_PACKAGE_APPLICATION_H
 
 #include <cstddef>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,8 @@
 #include <lisple/exec.h>
 #include <lisple/runtime.h>
 #include <lisple/runtime/value.h>
+
+#include <lisple-package/manifest.h>
 
 namespace Lisple::Package::Application
 {
@@ -133,6 +136,138 @@ namespace Lisple::Package::Application
                               char** argv)
   {
     return invoke_main(runtime, main_function, cli_args_value(argc, argv));
+  }
+
+  inline const PackageInfo* find_package(const LoadPlan& plan,
+                                         const std::string& package_name)
+  {
+    for (const auto& package : plan.packages)
+    {
+      if (package.name == package_name)
+      {
+        return &package;
+      }
+    }
+    return nullptr;
+  }
+
+  inline const PackageInfo* root_package(const LoadPlan& plan)
+  {
+    for (const auto& package : plan.packages)
+    {
+      if (package.package_root == plan.package_root)
+      {
+        return &package;
+      }
+    }
+    return nullptr;
+  }
+
+  inline std::string source_string_literal(const std::string& value)
+  {
+    std::string result = "\"";
+    for (const char c : value)
+    {
+      switch (c)
+      {
+      case '\\':
+        result += "\\\\";
+        break;
+      case '"':
+        result += "\\\"";
+        break;
+      case '\n':
+        result += "\\n";
+        break;
+      case '\r':
+        result += "\\r";
+        break;
+      case '\t':
+        result += "\\t";
+        break;
+      default:
+        result += c;
+        break;
+      }
+    }
+    result += "\"";
+    return result;
+  }
+
+  inline std::string source_string_vector_literal(const std::vector<std::string>& values)
+  {
+    std::ostringstream stream;
+    stream << "[";
+    for (std::size_t i = 0; i < values.size(); ++i)
+    {
+      if (i > 0)
+      {
+        stream << " ";
+      }
+      stream << source_string_literal(values[i]);
+    }
+    stream << "]";
+    return stream.str();
+  }
+
+  inline std::string tool_invocation_context(const LoadPlan& plan,
+                                             const PackageInfo& package,
+                                             const PackageInfo& tool_package,
+                                             const std::string& tool_name)
+  {
+    const auto config_it = package.config.find(tool_package.name);
+    const std::string config = config_it == package.config.end() ? "{}" : config_it->second;
+
+    std::ostringstream stream;
+    stream << "{:package-root " << source_string_literal(package.package_root)
+           << " :package-name " << source_string_literal(package.name)
+           << " :package-version " << source_string_literal(package.version)
+           << " :package-load-roots " << source_string_vector_literal(package.load_roots)
+           << " :load-paths " << source_string_vector_literal(plan.load_paths)
+           << " :tool-package " << source_string_literal(tool_package.name) << " :tool-name "
+           << source_string_literal(tool_name) << " :config " << config << "}";
+    return stream.str();
+  }
+
+  inline sptr_val invoke_tool(Runtime& runtime,
+                              const LoadPlan& plan,
+                              const std::string& tool_package_name,
+                              const std::string& tool_name = "run")
+  {
+    const auto* package = root_package(plan);
+    if (!package)
+    {
+      throw LispleException("Package load plan has no root package metadata.");
+    }
+
+    const auto* tool_package = find_package(plan, tool_package_name);
+    if (!tool_package)
+    {
+      throw LispleException("Package '" + package->name + "' has no dependency named '" +
+                            tool_package_name + "'.");
+    }
+
+    const auto tool_it = tool_package->tools.find(tool_name);
+    if (tool_it == tool_package->tools.end())
+    {
+      throw LispleException("Package '" + tool_package_name + "' does not declare a '" +
+                            tool_name + "' tool in package.edn.");
+    }
+
+    const std::string& tool_function = tool_it->second;
+    const std::string tool_namespace = qualifier_of(tool_function);
+    if (tool_namespace.empty())
+    {
+      throw LispleException("Package tool '" + tool_package_name + "/" + tool_name +
+                            "' must be a qualified function.");
+    }
+
+    runtime.eval("(ns lisple.package.tool (:require " + tool_namespace + "))",
+                 "<package-tool>");
+    return runtime.eval("(" + tool_function + " " +
+                          tool_invocation_context(plan, *package, *tool_package, tool_name) +
+                          ")",
+                        "<package-tool>");
   }
 } // namespace Lisple::Package::Application
 

@@ -20,12 +20,14 @@ A package is a directory containing `package.edn`:
 {:name example-app
  :version "0.1.0"
  :description "Example package."
- :dependencies {utility "file:../utility"}
+ :dependencies {utility "file:../utility"
+                example-runner "file:../example-runner"}
  :load-roots ["src"]
  :autoloads [example.bootstrap]
- :config {utility {:mode :fast}}
+ :config {example-runner {:mode :fast}}
  :tools {run example.tools/run}
- :entry-points [example.app]}
+ :entry-points [example.app]
+ :run example-runner}
 ```
 
 Current fields:
@@ -41,6 +43,9 @@ Current fields:
 - `:config` maps package names to package-specific configuration data.
 - `:tools` maps tool names to qualified functions exposed by this package.
 - `:entry-points` lists namespaces loaded when running the package directory.
+- `:main` names a qualified function to invoke as the package application entry.
+- `:run` names a dependency package whose `run` tool should be used as the
+  package application runner.
 
 ## Pure Lisple Dependencies
 
@@ -372,6 +377,15 @@ An application can provide package-specific configuration with `:config`:
 {:name app
  :dependencies {proof "file:../proof"}
  :config {proof {:test-roots ["test" "integration"]}}}
+```
+
+An application can also declare that a dependency package's `run` tool is its
+own application runner:
+
+```lisp
+{:name app
+ :dependencies {proof "file:../proof"}
+ :run proof}
 ```
 
 The `lisple` binary uses this to run dependency-provided tools. `lisple proof`

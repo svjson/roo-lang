@@ -47,6 +47,7 @@ namespace Lisple::Package
     std::map<std::string, std::string> tools;
     std::vector<std::string> entry_points;
     std::string main;
+    std::string run;
   };
 
   struct PackageInfo
@@ -71,6 +72,7 @@ namespace Lisple::Package
     std::vector<std::string> autoloads;
     std::vector<std::string> entry_points;
     std::string main;
+    std::string run;
   };
 
   struct ResolveOptions

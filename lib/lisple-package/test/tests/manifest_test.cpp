@@ -1,16 +1,15 @@
-#include <lisple-package/manifest.h>
-#include <lisple-package/native_loader.h>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <string>
 
 #include <lisple/exception.h>
 #include <lisple/io/file_system.h>
 #include <lisple/runtime.h>
 
 #include <gtest/gtest.h>
-
-#include <filesystem>
-#include <fstream>
-#include <map>
-#include <string>
+#include <lisple-package/manifest.h>
+#include <lisple-package/native_loader.h>
 
 namespace
 {
@@ -24,10 +23,7 @@ namespace
       return files.at(file_name);
     }
 
-    void add(const std::string& path, const std::string& source)
-    {
-      files[path] = source;
-    }
+    void add(const std::string& path, const std::string& source) { files[path] = source; }
   };
 
   const char* proof_manifest = R"(
@@ -43,7 +39,8 @@ namespace
      :config {proof {:test-roots ["test"]}}
      :tools {run proof.runner/run}
      :entry-points [proof.core]
-     :main proof.runner/main}
+     :main proof.runner/main
+     :run proof}
   )";
 
   void write_file(const std::filesystem::path& path, const std::string& source)
@@ -76,6 +73,7 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.tools.at("run"), "proof.runner/run");
   EXPECT_EQ(manifest.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(manifest.main, "proof.runner/main");
+  EXPECT_EQ(manifest.run, "proof");
 }
 
 TEST(PackageManifest, parses_dependency_map_with_versions_and_paths)
@@ -113,8 +111,7 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   ASSERT_EQ(plan.packages.size(), 1u);
   EXPECT_EQ(plan.packages[0].name, "proof");
   EXPECT_EQ(plan.packages[0].package_root, "/repo/pkg/proof");
-  EXPECT_EQ(plan.packages[0].load_roots,
-            std::vector<std::string>{"/repo/pkg/proof/src"});
+  EXPECT_EQ(plan.packages[0].load_roots, std::vector<std::string>{"/repo/pkg/proof/src"});
   EXPECT_EQ(plan.packages[0].config.at("proof"), "{:test-roots [\"test\"]}");
   EXPECT_EQ(plan.packages[0].tools.at("run"), "proof.runner/run");
   EXPECT_EQ(plan.load_paths, std::vector<std::string>{"/repo/pkg/proof/src"});
@@ -128,6 +125,7 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.autoloads, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(plan.main, "proof.runner/main");
+  EXPECT_EQ(plan.run, "proof");
 }
 
 TEST(PackageManifest, merges_extra_load_paths_before_resolved_package_paths)
@@ -158,10 +156,10 @@ TEST(PackageManifest, resolves_pure_lisple_dependencies_from_search_roots)
              :dependencies []
              :load-roots ["src"]})");
 
-  auto plan = Lisple::Package::resolve_load_plan(
-    fs,
-    "/repo/pkg/app",
-    Lisple::Package::ResolveOptions{{"/repo/pkg"}});
+  auto plan =
+    Lisple::Package::resolve_load_plan(fs,
+                                       "/repo/pkg/app",
+                                       Lisple::Package::ResolveOptions{{"/repo/pkg"}});
 
   EXPECT_EQ(plan.package_root, "/repo/pkg/app");
   EXPECT_EQ(plan.package_roots,
@@ -198,6 +196,29 @@ TEST(PackageManifest, resolved_load_plan_uses_root_package_main)
   EXPECT_EQ(plan.main, "app.core/main");
 }
 
+TEST(PackageManifest, resolved_load_plan_uses_root_package_run_tool)
+{
+  // Given
+  MemoryFileSystem fs;
+  fs.add("/repo/pkg/app/package.edn",
+         R"({:name app
+             :dependencies {runner "file:../runner"}
+             :load-roots ["src"]
+             :run runner})");
+  fs.add("/repo/pkg/runner/package.edn",
+         R"({:name runner
+             :dependencies []
+             :load-roots ["src"]
+             :tools {run runner.tool/run}
+             :run other})");
+
+  // When
+  auto plan = Lisple::Package::resolve_load_plan(fs, "/repo/pkg/app");
+
+  // Then
+  EXPECT_EQ(plan.run, "runner");
+}
+
 TEST(PackageManifest, resolves_dependency_paths_from_manifest)
 {
   MemoryFileSystem fs;
@@ -219,10 +240,9 @@ TEST(PackageManifest, resolves_dependency_paths_from_manifest)
 
   auto plan = Lisple::Package::resolve_load_plan(fs, "/repo/app");
 
-  EXPECT_EQ(plan.package_roots,
-            (std::vector<std::string>{"/repo/vendor/util",
-                                      "/repo/vendor/data",
-                                      "/repo/app"}));
+  EXPECT_EQ(
+    plan.package_roots,
+    (std::vector<std::string>{"/repo/vendor/util", "/repo/vendor/data", "/repo/app"}));
   EXPECT_EQ(plan.load_paths,
             (std::vector<std::string>{"/repo/vendor/util/src",
                                       "/repo/vendor/data/src",
@@ -243,27 +263,21 @@ TEST(PackageManifest, rejects_path_dependency_with_mismatched_version)
              :dependencies []
              :load-roots ["src"]})");
 
-  EXPECT_THROW(Lisple::Package::resolve_load_plan(fs, "/repo/app"),
-               Lisple::LispleException);
+  EXPECT_THROW(Lisple::Package::resolve_load_plan(fs, "/repo/app"), Lisple::LispleException);
 }
 
 TEST(PackageManifest, resolves_transitive_dependencies_before_dependents)
 {
   MemoryFileSystem fs;
-  fs.add("pkg/app/package.edn",
-         R"({:name app :dependencies [ui] :load-roots ["src"]})");
-  fs.add("pkg/ui/package.edn",
-         R"({:name ui :dependencies [core] :load-roots ["src"]})");
-  fs.add("pkg/core/package.edn",
-         R"({:name core :dependencies [] :load-roots ["src"]})");
+  fs.add("pkg/app/package.edn", R"({:name app :dependencies [ui] :load-roots ["src"]})");
+  fs.add("pkg/ui/package.edn", R"({:name ui :dependencies [core] :load-roots ["src"]})");
+  fs.add("pkg/core/package.edn", R"({:name core :dependencies [] :load-roots ["src"]})");
 
-  auto plan = Lisple::Package::resolve_load_plan(
-    fs,
-    "pkg/app",
-    Lisple::Package::ResolveOptions{{"pkg"}});
+  auto plan = Lisple::Package::resolve_load_plan(fs,
+                                                 "pkg/app",
+                                                 Lisple::Package::ResolveOptions{{"pkg"}});
 
-  EXPECT_EQ(plan.package_roots,
-            (std::vector<std::string>{"pkg/core", "pkg/ui", "pkg/app"}));
+  EXPECT_EQ(plan.package_roots, (std::vector<std::string>{"pkg/core", "pkg/ui", "pkg/app"}));
   EXPECT_EQ(plan.load_paths,
             (std::vector<std::string>{"pkg/core/src", "pkg/ui/src", "pkg/app/src"}));
 }
@@ -274,25 +288,21 @@ TEST(PackageManifest, reports_missing_dependencies)
   fs.add("pkg/app/package.edn",
          R"({:name app :dependencies [missing] :load-roots ["src"]})");
 
-  EXPECT_THROW(Lisple::Package::resolve_load_plan(
-                 fs,
-                 "pkg/app",
-                 Lisple::Package::ResolveOptions{{"pkg"}}),
+  EXPECT_THROW(Lisple::Package::resolve_load_plan(fs,
+                                                  "pkg/app",
+                                                  Lisple::Package::ResolveOptions{{"pkg"}}),
                Lisple::LispleException);
 }
 
 TEST(PackageManifest, detects_dependency_cycles)
 {
   MemoryFileSystem fs;
-  fs.add("pkg/app/package.edn",
-         R"({:name app :dependencies [util] :load-roots ["src"]})");
-  fs.add("pkg/util/package.edn",
-         R"({:name util :dependencies [app] :load-roots ["src"]})");
+  fs.add("pkg/app/package.edn", R"({:name app :dependencies [util] :load-roots ["src"]})");
+  fs.add("pkg/util/package.edn", R"({:name util :dependencies [app] :load-roots ["src"]})");
 
-  EXPECT_THROW(Lisple::Package::resolve_load_plan(
-                 fs,
-                 "pkg/app",
-                 Lisple::Package::ResolveOptions{{"pkg"}}),
+  EXPECT_THROW(Lisple::Package::resolve_load_plan(fs,
+                                                  "pkg/app",
+                                                  Lisple::Package::ResolveOptions{{"pkg"}}),
                Lisple::LispleException);
 }
 
@@ -334,16 +344,14 @@ TEST(PackageManifest, resolved_pure_lisple_dependencies_are_available_to_runtime
 
 TEST(PackageManifest, fixture_package_can_run_code_from_file_dependency)
 {
-  const auto packages_root = std::filesystem::path(LISPLE_PACKAGE_TEST_DIR) /
-                             "tests/assets/packages";
+  const auto packages_root =
+    std::filesystem::path(LISPLE_PACKAGE_TEST_DIR) / "tests/assets/packages";
   const auto cafe_register_root = packages_root / "cafe-register";
 
   Lisple::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
-  auto plan = Lisple::Package::resolve_load_plan(
-    *manifest_fs,
-    cafe_register_root.string());
+  auto plan = Lisple::Package::resolve_load_plan(*manifest_fs, cafe_register_root.string());
 
   EXPECT_EQ(plan.package_roots,
             (std::vector<std::string>{(packages_root / "recipe-book").string(),
@@ -374,9 +382,7 @@ TEST(PackageManifest, namespace_roots_make_prefixed_namespaces_available_to_runt
   Lisple::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
-  auto plan = Lisple::Package::resolve_load_plan(
-    *manifest_fs,
-    (root / "pkg/app").string());
+  auto plan = Lisple::Package::resolve_load_plan(*manifest_fs, (root / "pkg/app").string());
 
   auto package_fs = Lisple::Package::make_load_path_file_system(plan);
   Lisple::Runtime runtime(package_fs.get());
@@ -415,9 +421,8 @@ TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
   Lisple::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
-  auto plan = Lisple::Package::resolve_load_plan(
-    *manifest_fs,
-    (root / "pkg/native-app").string());
+  auto plan =
+    Lisple::Package::resolve_load_plan(*manifest_fs, (root / "pkg/native-app").string());
 
   Lisple::Package::LoadedNativePackages native_packages;
   {
@@ -434,8 +439,7 @@ TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
 
 TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)
 {
-  const auto root =
-    std::filesystem::temp_directory_path() / "lisple-package-autoload-test";
+  const auto root = std::filesystem::temp_directory_path() / "lisple-package-autoload-test";
   std::filesystem::remove_all(root);
 
   write_file(root / "pkg/native-app/package.edn",
@@ -458,9 +462,8 @@ TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)
   Lisple::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
-  auto plan = Lisple::Package::resolve_load_plan(
-    *manifest_fs,
-    (root / "pkg/native-app").string());
+  auto plan =
+    Lisple::Package::resolve_load_plan(*manifest_fs, (root / "pkg/native-app").string());
 
   Lisple::Package::LoadedNativePackages native_packages;
   {
@@ -477,7 +480,7 @@ TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)
 
 TEST(PackageManifest, rejects_non_vector_list_fields)
 {
-  EXPECT_THROW(Lisple::Package::parse_manifest("{:name proof :load-roots \"src\"}",
-                                               "bad/package.edn"),
-               Lisple::LispleException);
+  EXPECT_THROW(
+    Lisple::Package::parse_manifest("{:name proof :load-roots \"src\"}", "bad/package.edn"),
+    Lisple::LispleException);
 }
