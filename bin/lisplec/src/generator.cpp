@@ -95,8 +95,7 @@ namespace Lisplec
 #endif
     }
 
-    std::filesystem::path native_library_path(
-      const Lisple::Package::NativeLibrary& library)
+    std::filesystem::path native_library_path(const Lisple::Package::NativeLibrary& library)
     {
       if (!library.path.empty())
       {
@@ -223,6 +222,7 @@ namespace Lisplec
              "  std::vector<std::string> embedded_entry_points();\n"
              "  std::vector<Lisple::Package::NativeLibrary> embedded_native_libraries();\n"
              "  std::string embedded_main_function();\n"
+             "  Lisple::Package::LoadPlan embedded_load_plan();\n"
              "} // namespace LisplecGenerated\n\n"
              "#endif\n";
       return out.str();
@@ -329,6 +329,100 @@ namespace Lisplec
           << cpp_string_literal(project.plan.main)
           << ";\n"
              "  }\n"
+             "\n"
+             "  Lisple::Package::LoadPlan embedded_load_plan()\n"
+             "  {\n"
+             "    Lisple::Package::LoadPlan plan;\n"
+             "    plan.package_root = "
+          << cpp_string_literal(project.plan.package_root)
+          << ";\n"
+             "    plan.package_roots = {";
+      for (size_t i = 0; i < project.plan.package_roots.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.package_roots[i]);
+      }
+      out << "};\n"
+             "    plan.load_paths = {";
+      for (size_t i = 0; i < project.plan.load_paths.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.load_paths[i]);
+      }
+      out << "};\n"
+             "    plan.namespace_roots = embedded_namespace_roots();\n"
+             "    plan.native_namespaces = {";
+      for (size_t i = 0; i < project.plan.native_namespaces.size(); ++i)
+      {
+        if (i > 0)
+        {
+          out << ", ";
+        }
+        out << cpp_string_literal(project.plan.native_namespaces[i]);
+      }
+      out << "};\n"
+             "    plan.native_libraries = embedded_native_libraries();\n"
+             "    plan.autoloads = embedded_autoloads();\n"
+             "    plan.entry_points = embedded_entry_points();\n"
+             "    plan.main = embedded_main_function();\n"
+             "    plan.run = "
+          << cpp_string_literal(project.plan.run) << ";\n";
+      for (const auto& package : project.plan.packages)
+      {
+        out << "    {\n"
+               "      Lisple::Package::PackageInfo package;\n"
+               "      package.name = "
+            << cpp_string_literal(package.name)
+            << ";\n"
+               "      package.version = "
+            << cpp_string_literal(package.version)
+            << ";\n"
+               "      package.package_root = "
+            << cpp_string_literal(package.package_root)
+            << ";\n"
+               "      package.load_roots = {";
+        for (size_t i = 0; i < package.load_roots.size(); ++i)
+        {
+          if (i > 0)
+          {
+            out << ", ";
+          }
+          out << cpp_string_literal(package.load_roots[i]);
+        }
+        out << "};\n"
+               "      package.config = {";
+        size_t pair_index = 0;
+        for (const auto& [key, value] : package.config)
+        {
+          if (pair_index++ > 0)
+          {
+            out << ", ";
+          }
+          out << "{" << cpp_string_literal(key) << ", " << cpp_string_literal(value) << "}";
+        }
+        out << "};\n"
+               "      package.tools = {";
+        pair_index = 0;
+        for (const auto& [key, value] : package.tools)
+        {
+          if (pair_index++ > 0)
+          {
+            out << ", ";
+          }
+          out << "{" << cpp_string_literal(key) << ", " << cpp_string_literal(value) << "}";
+        }
+        out << "};\n"
+               "      plan.packages.push_back(std::move(package));\n"
+               "    }\n";
+      }
+      out << "    return plan;\n"
+             "  }\n"
              "} // namespace LisplecGenerated\n";
 
       return out.str();
@@ -378,27 +472,34 @@ namespace Lisplec
            "std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);\n"
            "    Lisple::Runtime runtime(&app_fs, std::move(namespace_source));\n"
            "    runtime.set_call_stack_diagnostics(true);\n"
-           "    "
-           "runtime.set_namespace_roots(LisplecGenerated::embedded_namespace_roots());\n\n"
-           "    Lisple::Package::LoadPlan native_plan;\n"
-           "    native_plan.native_libraries = LisplecGenerated::embedded_native_libraries();\n"
+           "    Lisple::Package::LoadPlan package_plan =\n"
+           "      LisplecGenerated::embedded_load_plan();\n"
+           "    runtime.set_namespace_roots(package_plan.namespace_roots);\n\n"
            "    Lisple::Package::LoadedNativePackages native_packages =\n"
-           "      Lisple::Package::load_native_libraries(runtime, native_plan);\n\n"
+           "      Lisple::Package::load_native_libraries(runtime, package_plan);\n\n"
            "    load_namespaces(runtime,\n"
-           "                    LisplecGenerated::embedded_autoloads(),\n"
+           "                    package_plan.autoloads,\n"
            "                    \"lisple.compiled.autoload\",\n"
            "                    \"<package-autoload>\");\n\n"
-           "    const auto main_function = LisplecGenerated::embedded_main_function();\n"
-           "    const auto entry_points = LisplecGenerated::embedded_entry_points();\n"
-           "    if (entry_points.empty() && main_function.empty())\n"
+           "    if (package_plan.entry_points.empty() && package_plan.main.empty() &&\n"
+           "        package_plan.run.empty())\n"
            "    {\n"
-           "      throw Lisple::LispleException(\"Compiled package has no :main or "
+           "      throw Lisple::LispleException(\"Compiled package has no :run, :main, or "
            ":entry-points in package.edn.\");\n"
            "    }\n"
-           "    load_namespaces(runtime, entry_points, \"lisple.compiled.entry\", "
-           "\"<package-entry>\");\n"
-           "    Lisple::Package::Application::invoke_main(runtime, main_function, argc, "
+           "    if (!package_plan.run.empty())\n"
+           "    {\n"
+           "      Lisple::Package::Application::invoke_tool(runtime, package_plan,\n"
+           "                                                package_plan.run);\n"
+           "    }\n"
+           "    else\n"
+           "    {\n"
+           "      load_namespaces(runtime, package_plan.entry_points, "
+           "\"lisple.compiled.entry\", \"<package-entry>\");\n"
+           "      Lisple::Package::Application::invoke_main(runtime, package_plan.main, "
+           "argc, "
            "argv);\n"
+           "    }\n"
            "  }\n"
            "  catch (const std::exception& e)\n"
            "  {\n"
@@ -445,18 +546,18 @@ namespace Lisplec
           << cpp_string_literal(cmake_path(package_lib))
           << "\n"
              "    INTERFACE_INCLUDE_DIRECTORIES "
-          << cpp_string_literal(cmake_path(repo_source_root() / "lib/lisple-package/include"))
+          << cpp_string_literal(
+               cmake_path(repo_source_root() / "lib/lisple-package/include"))
           << "\n"
              "  )\n"
              "\n";
       for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
       {
         const auto& library = project.plan.native_libraries[i];
-        const auto target_name = "native_library_" + std::to_string(i) + "_" +
-                                 sanitize_target_name(library.name);
+        const auto target_name =
+          "native_library_" + std::to_string(i) + "_" + sanitize_target_name(library.name);
         const auto path = native_library_path(library);
-        out << "add_library("
-            << target_name
+        out << "add_library(" << target_name
             << " SHARED IMPORTED)\n"
                "set_target_properties("
             << target_name
@@ -466,8 +567,7 @@ namespace Lisplec
             << "\n"
                "  )\n\n";
       }
-      out << "  target_link_libraries("
-          << project.executable_name
+      out << "  target_link_libraries(" << project.executable_name
           << " PRIVATE lisple_shared_imported lisple_package_shared_imported";
       for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
       {

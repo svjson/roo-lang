@@ -122,6 +122,35 @@ namespace
     write_file(package_dir / "src/main/app.lisple", main_source);
   }
 
+  void create_run_tool_app_fixture(const std::filesystem::path& root)
+  {
+    std::filesystem::remove_all(root);
+    write_file(root / "runner/package.edn",
+               R"({:name runner
+ :version "0.1.0"
+ :load-roots ["src"]
+ :tools {run runner.tool/run}})");
+    write_file(root / "runner/src/runner/tool.lisple",
+               R"((ns runner.tool
+  (:require [lisple.io :as io]))
+
+(defun run [context]
+  (io/spit! "run-tool.txt"
+            (str (:package-name context) ":"
+                 (:tool-package context) ":"
+                 (:tool-name context) ":"
+                 (:message (:config context)))))
+)");
+    write_file(root / "app/package.edn",
+               R"({:name run-app
+ :version "0.1.0"
+ :dependencies {runner {:path "../runner"}}
+ :load-roots ["src"]
+ :config {runner {:message "ok"}}
+ :run runner})");
+    write_file(root / "app/src/run/app.lisple", "(ns run.app)\n");
+  }
+
   void run_generated_executable(const Lisplec::GeneratedProject& project,
                                 const std::filesystem::path& build_dir,
                                 const std::filesystem::path& run_dir,
@@ -182,6 +211,7 @@ TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_s
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.lisple"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_native_libraries"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_main_function"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_load_plan"));
 }
 
 TEST(LisplecGenerator, generated_executable_invokes_main_function)
@@ -285,6 +315,28 @@ TEST(LisplecGenerator, generated_executable_pads_main_arity_with_nil_values)
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "1:alpha:nil:nil:nil");
+}
+
+TEST(LisplecGenerator, generated_executable_invokes_run_tool)
+{
+  // Given
+  const auto fixture_root = build_root() / "lisplec-gtest-run-tool-fixture";
+  const auto package_dir = fixture_root / "app";
+  const auto build_dir = build_root() / "lisplec-gtest-run-tool-build";
+  const auto run_dir = build_root() / "lisplec-gtest-run-tool-run";
+  create_run_tool_app_fixture(fixture_root);
+  auto options = main_app_options_for(build_dir, package_dir);
+  auto project = Lisplec::prepare_project(options);
+  std::filesystem::create_directories(run_dir);
+  std::filesystem::remove(run_dir / "run-tool.txt");
+
+  // When
+  Lisplec::generate_project(options, project);
+  Lisplec::build_project(options, project);
+  run_generated_executable(project, build_dir, run_dir);
+
+  // Then
+  EXPECT_EQ(read_file(run_dir / "run-tool.txt"), "run-app:runner:run:ok");
 }
 
 TEST(LisplecGenerator, generated_executable_loads_native_package_dependencies)
