@@ -1,0 +1,14 @@
+(ns loom.command.uninstall
+  (:require [lisple.io :as io]
+            [loom.common.repository :as repository]))
+
+(defun uninstall! [repo-root name version]
+  (let [target-dir (repository/package-target-dir repo-root name version)]
+    (if (io/exists? target-dir)
+      (do
+        (io/remove-tree! target-dir)
+        (prn (str "Uninstalled " name " " version " from " target-dir))
+        target-dir)
+      (do
+        (prn (str "loom: package is not installed: " name " " version))
+        nil))))

@@ -80,8 +80,17 @@ test\:cli: build
 	cmake -E rm -rf build/loom-test-repo
 	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/loom --repo $(CURDIR)/build/loom-test-repo --force
 	test -f build/loom-test-repo/loom/0.1.0/package.edn
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/cli.lisple
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/install.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/core.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/command/install.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/command/uninstall.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/common/args.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/common/files.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/common/repository.lisple
+	cmake -E touch build/loom-test-repo/loom/0.1.0/stale-file
+	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/loom --repo $(CURDIR)/build/loom-test-repo
+	test ! -e build/loom-test-repo/loom/0.1.0/stale-file
+	./build/lisple $(CURDIR)/pkg/loom uninstall loom 0.1.0 --repo $(CURDIR)/build/loom-test-repo
+	test ! -e build/loom-test-repo/loom/0.1.0/package.edn
 	cmake -E rm -rf build/loom-proof-test-repo
 	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/proof --repo $(CURDIR)/build/loom-proof-test-repo --force
 	test -f build/loom-proof-test-repo/proof/0.1.0/package.edn

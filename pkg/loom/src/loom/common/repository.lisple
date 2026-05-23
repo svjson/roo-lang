@@ -1,0 +1,9 @@
+(ns loom.common.repository
+  (:require [lisple.io :as io]))
+
+(defun default-repository-root []
+  (io/join-path (io/join-path (io/join-path (io/home-directory!) ".local") "share")
+                (io/join-path "lisple" "pkg")))
+
+(defun package-target-dir [repo-root name version]
+  (io/join-path (io/join-path repo-root name) version))

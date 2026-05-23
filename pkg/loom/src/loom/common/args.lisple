@@ -1,0 +1,20 @@
+(ns loom.common.args)
+
+(defun arg-at [args index]
+  (if (< index (count args))
+    (nth args index)
+    nil))
+
+(defun flag-from? [args index flag]
+  (if (< index (count args))
+    (if (= (nth args index) flag)
+      true
+      (flag-from? args (+ index 1) flag))
+    false))
+
+(defun option-from [args index option default]
+  (if (< index (count args))
+    (if (= (nth args index) option)
+      (arg-at args (+ index 1))
+      (option-from args (+ index 1) option default))
+    default))

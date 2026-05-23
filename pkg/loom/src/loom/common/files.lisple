@@ -1,0 +1,16 @@
+(ns loom.common.files
+  (:require [lisple.io :as io]))
+
+(defun copy-tree! [source target]
+  (if (io/file? source)
+    (io/copy-file! source target)
+    (if (io/directory? source)
+      (map (io/list-directory! source {:hidden? true})
+           (fn [entry]
+             (copy-tree! (:path entry) (io/join-path target (:name entry)))))
+      nil)))
+
+(defun copy-path-if-present! [source target]
+  (if (io/exists? source)
+    (copy-tree! source target)
+    nil))

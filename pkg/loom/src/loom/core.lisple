@@ -1,0 +1,38 @@
+(ns loom.core
+  (:require [loom.command.install :as install]
+            [loom.command.uninstall :as uninstall]
+            [loom.common.args :as args]
+            [loom.common.repository :as repository]))
+
+(defun usage []
+  (prn "Usage: loom install <package-dir> [--repo <dir>]")
+  (prn "       loom uninstall <name> <version> [--repo <dir>]"))
+
+(defun install-command [argv]
+  (let [package-dir (args/arg-at argv 1)]
+    (if (nil? package-dir)
+      (usage)
+      (install/install! package-dir
+                        (args/option-from argv 2 "--repo"
+                                          (repository/default-repository-root))
+                        (args/flag-from? argv 2 "--force")))))
+
+(defun uninstall-command [argv]
+  (let [name (args/arg-at argv 1)
+        version (args/arg-at argv 2)]
+    (if (nil? name)
+      (usage)
+      (if (nil? version)
+        (usage)
+        (uninstall/uninstall! (args/option-from argv 3 "--repo"
+                                                (repository/default-repository-root))
+                              name
+                              version)))))
+
+(defun main [args]
+  (let [command (args/arg-at args 0)]
+    (if (= command "install")
+      (install-command args)
+      (if (= command "uninstall")
+        (uninstall-command args)
+        (usage)))))
