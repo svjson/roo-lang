@@ -71,3 +71,60 @@ TEST(Reader, parses_string_with_common_escapes)
   ASSERT_EQ(sexps.at(0)->get_type(), Form::STRING);
   EXPECT_EQ(sexps.at(0)->as<String>().value, "line 1\nline 2\t\"quoted\"\\tail");
 }
+
+TEST(Reader, parses_semicolon_char)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps("';'");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::CHAR);
+  EXPECT_EQ(sexps.at(0)->as<Char>().value, ';');
+}
+
+TEST(Reader, parses_semicolon_string)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps(R"(";")");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::STRING);
+  EXPECT_EQ(sexps.at(0)->as<String>().value, ";");
+}
+
+TEST(Reader, parses_string_starting_with_semicolon)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps(R"("; message")");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::STRING);
+  EXPECT_EQ(sexps.at(0)->as<String>().value, "; message");
+}
+
+TEST(Reader, parses_string_containing_semicolon_in_sentence)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps(R"("This sentence has two clauses; both should parse.")");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::STRING);
+  EXPECT_EQ(sexps.at(0)->as<String>().value,
+            "This sentence has two clauses; both should parse.");
+}

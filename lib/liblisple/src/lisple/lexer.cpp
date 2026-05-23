@@ -129,7 +129,7 @@ namespace Lisple
       cs = c;
       line += cs;
 
-      if (ct != Token::STRING && c == ';')
+      if (ct != Token::STRING && ct != Token::SQUOT && c == ';')
       {
         comment_context = true;
         continue;

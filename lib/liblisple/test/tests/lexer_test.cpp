@@ -177,6 +177,18 @@ TEST(Lexer, parse_map_with_char_key)
                           sym(tkn::RCURLY, "}")));
 }
 
+TEST(Lexer, parse_semicolon_char)
+{
+  // Given
+  std::string input = "';'";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::CHAR, ";")));
+}
+
 TEST(Lexer, parse_form_with_lists_vector_and_map)
 {
   // Given
@@ -249,6 +261,44 @@ TEST(Lexer, parse_bare_string_with_common_escapes)
   ASSERT_THAT(
     symbols,
     ElementsAre(sym(tkn::STRING, "line 1\nline 2\t\"quoted\"\\tail")));
+}
+
+TEST(Lexer, parse_bare_string_with_semicolon)
+{
+  // Given
+  std::string input = R"(";")";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::STRING, ";")));
+}
+
+TEST(Lexer, parse_bare_string_starting_with_semicolon)
+{
+  // Given
+  std::string input = R"("; message")";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::STRING, "; message")));
+}
+
+TEST(Lexer, parse_bare_string_containing_semicolon_in_sentence)
+{
+  // Given
+  std::string input = R"("This sentence has two clauses; both should parse.")";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(
+    symbols,
+    ElementsAre(sym(tkn::STRING, "This sentence has two clauses; both should parse.")));
 }
 
 TEST(Lexer, vector_of_numbers)
