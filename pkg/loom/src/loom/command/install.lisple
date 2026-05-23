@@ -31,6 +31,7 @@
         manifest (io/slurp-edn! manifest-path)
         name (str (:name manifest))
         version (str (:version manifest))
+        package-id (repository/package-id name version)
         target-dir (repository/package-target-dir repo-root name version)]
     (if (io/exists? target-dir)
       (uninstall/uninstall! repo-root name version)
@@ -38,5 +39,5 @@
     (io/copy-file! manifest-path (io/join-path target-dir "package.edn"))
     (copy-load-roots! package-dir target-dir (:load-roots manifest))
     (copy-native-libraries! package-dir target-dir (:native-libraries manifest))
-    (prn (str "Installed " name " " version " to " target-dir))
+    (prn (str "Installed " package-id " to " target-dir))
     target-dir))

@@ -10,7 +10,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build install install-loom test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build install install-loom test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:lisple-cli test\:loom-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/liblisple/test/testlisple
 PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage
@@ -73,29 +73,13 @@ test\:lisplec: build
 	cmake --build build --target testlisplec
 	./build/$(LISPLEC_TEST_BINARY) $(GTEST_FILTER_ARG)
 
-test\:cli: build
-	cmake -E make_directory build/lisple-cli-main-run
-	./build/lisple $(CURDIR)/bin/lisple/test/assets/main-app $(CURDIR)/build/lisple-cli-main-run/main-ran.txt alpha beta
-	test "$$(cat build/lisple-cli-main-run/main-ran.txt)" = "3:alpha:beta:nil:nil:nil"
-	cmake -E rm -rf build/loom-test-repo
-	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/loom --repo $(CURDIR)/build/loom-test-repo --force
-	test -f build/loom-test-repo/loom/0.1.0/package.edn
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/core.lisple
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/command/install.lisple
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/command/uninstall.lisple
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/common/args.lisple
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/common/files.lisple
-	test -f build/loom-test-repo/loom/0.1.0/src/loom/common/repository.lisple
-	cmake -E touch build/loom-test-repo/loom/0.1.0/stale-file
-	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/loom --repo $(CURDIR)/build/loom-test-repo
-	test ! -e build/loom-test-repo/loom/0.1.0/stale-file
-	./build/lisple $(CURDIR)/pkg/loom uninstall loom 0.1.0 --repo $(CURDIR)/build/loom-test-repo
-	test ! -e build/loom-test-repo/loom/0.1.0/package.edn
-	cmake -E rm -rf build/loom-proof-test-repo
-	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/proof --repo $(CURDIR)/build/loom-proof-test-repo --force
-	test -f build/loom-proof-test-repo/proof/0.1.0/package.edn
-	test -f build/loom-proof-test-repo/proof/0.1.0/src/proof/core.lisple
-	test -f build/loom-proof-test-repo/proof/0.1.0/native/libproof-native.so
+test\:cli: test\:lisple-cli test\:loom-cli
+
+test\:lisple-cli: build
+	sh $(CURDIR)/bin/lisple/test/run-cli-tests.sh $(CURDIR)
+
+test\:loom-cli: build
+	sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
 
 test\:benchmark: build
 	cmake --build build --target testlisple

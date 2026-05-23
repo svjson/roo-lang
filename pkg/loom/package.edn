@@ -4,4 +4,8 @@
  :dependencies []
  :load-roots ["src"]
  :main loom.core/main
- :entry-points [loom.core loom.command.install loom.command.uninstall]}
+ :entry-points [loom.core
+                loom.command.install
+                loom.command.uninstall
+                loom.command.list
+                loom.command.info]}

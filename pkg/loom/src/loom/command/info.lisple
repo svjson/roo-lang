@@ -1,0 +1,28 @@
+(ns loom.command.info
+  (:require [lisple.io :as io]
+            [loom.common.repository :as repository]))
+
+(defun field-text [value]
+  (if (nil? value)
+    "none"
+    (if (= 0 (count value))
+      "none"
+      (str value))))
+
+(defun info! [repo-root name version]
+  (let [target-dir (repository/package-target-dir repo-root name version)
+        manifest-path (repository/package-manifest-path repo-root name version)]
+    (if (io/exists? manifest-path)
+      (let [manifest (io/slurp-edn! manifest-path)
+            package-id (repository/package-id name version)]
+        (prn package-id)
+        (prn (str "path: " target-dir))
+        (prn (str "description: " (field-text (:description manifest))))
+        (prn (str "load-roots: " (field-text (:load-roots manifest))))
+        (prn (str "dependencies: " (field-text (:dependencies manifest))))
+        (prn (str "native-libraries: " (field-text (:native-libraries manifest))))
+        manifest)
+      (do
+        (prn (str "loom: package is not installed: "
+                  (repository/package-id name version)))
+        nil))))

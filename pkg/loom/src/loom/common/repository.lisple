@@ -7,3 +7,9 @@
 
 (defun package-target-dir [repo-root name version]
   (io/join-path (io/join-path repo-root name) version))
+
+(defun package-id [name version]
+  (str name "@" version))
+
+(defun package-manifest-path [repo-root name version]
+  (io/join-path (package-target-dir repo-root name version) "package.edn"))
