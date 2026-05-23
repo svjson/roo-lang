@@ -9,6 +9,7 @@
 
 #include <lisple/namespace.h>
 #include <lisple/namespace_source.h>
+#include <lisple/random.h>
 #include <lisple/reader.h>
 #include <lisple/source.h>
 #include <lisple/type.h>
@@ -30,6 +31,7 @@ namespace Lisple
 
   class Runtime
   {
+   private:
     /*!
      * @brief The Lisple language namespace, containing all language built-in
      * functions and identifiers
@@ -40,6 +42,7 @@ namespace Lisple
     Reader sexp_reader;
     RuntimeOptions options;
     SourceMap source_map;
+    RandomState random_state;
 
     std::map<const std::string, Namespace> namespaces;
 
@@ -198,6 +201,27 @@ namespace Lisple
      * @brief Returns a reference to the current namespace of the reader context
      */
     Namespace& get_current_namespace();
+
+    /*!
+     * @brief Reseed the runtime-local random generator.
+     *
+     * Use this when deterministic random behavior is needed for tests,
+     * simulations, or reproducible application runs.
+     */
+    void seed_random(int seed);
+
+    /*!
+     * @brief Return a random integer in the half-open range [min, max).
+     */
+    int random_int(int min, int max);
+
+    /*!
+     * @brief Snapshot and restore the runtime-local random generator state.
+     *
+     * These are primarily used by scoped random-seed forms.
+     */
+    RandomState get_random_state() const;
+    void set_random_state(const RandomState& state);
 
     /*!
      * @brief Tests if this Runtime instance may access any file system

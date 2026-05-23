@@ -254,7 +254,7 @@ namespace Lisple
       {
         return Constant::NIL;
       }
-      return Lisple::get_child(*args[0], std::rand() % n_children);
+      return Lisple::get_child(*args[0], ctx.random_int(0, static_cast<int>(n_children)));
     }
 
     sptr_val_v elements = Lisple::get_children(*args[0]);
@@ -262,7 +262,7 @@ namespace Lisple
     {
       return Constant::NIL;
     }
-    return elements[std::rand() % (elements.size())];
+    return elements[ctx.random_int(0, static_cast<int>(elements.size()))];
   }
 
   /** RangeFunction - range */

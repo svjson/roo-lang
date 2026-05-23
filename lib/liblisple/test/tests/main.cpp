@@ -1,5 +1,4 @@
-#include <chrono>
-#include <cstdlib>
+#include <string>
 
 #include <lisple/runtime/exec_node.h>
 
@@ -21,9 +20,6 @@ int main(int argc, char** argv)
     }
   }
 
-  std::srand(std::chrono::duration_cast<std::chrono::milliseconds>(
-               std::chrono::system_clock::now().time_since_epoch())
-               .count());
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
 

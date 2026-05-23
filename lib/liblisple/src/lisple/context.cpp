@@ -196,6 +196,26 @@ namespace Lisple
     return runtime.lang;
   }
 
+  void Context::seed_random(int seed)
+  {
+    runtime.seed_random(seed);
+  }
+
+  int Context::random_int(int min, int max)
+  {
+    return runtime.random_int(min, max);
+  }
+
+  RandomState Context::get_random_state() const
+  {
+    return runtime.get_random_state();
+  }
+
+  void Context::set_random_state(const RandomState& state)
+  {
+    runtime.set_random_state(state);
+  }
+
   bool Context::source_diagnostics_enabled() const
   {
     return runtime.source_diagnostics_enabled();

@@ -1,12 +1,11 @@
 
 #include "runtime_fixture.h"
-
 #include <gtest/gtest.h>
-
 
 using RndFunction = LispleTest::RuntimeTestFixture;
 TEST_F(RndFunction, max)
 {
+  runtime.eval("(random-seed! 1234)");
   for (int i = 0; i < 1000; i++)
   {
     int rndval = runtime.eval("(rnd 5)")->i32();
@@ -16,6 +15,7 @@ TEST_F(RndFunction, max)
 
 TEST_F(RndFunction, min_max)
 {
+  runtime.eval("(random-seed! 1234)");
   for (int i = 0; i < 1000; i++)
   {
     int rndval = runtime.eval("(rnd 50 55)")->i32();

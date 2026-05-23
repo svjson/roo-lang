@@ -177,7 +177,28 @@ namespace Lisple
    */
   FUNC(ResolveFunction, resolve)
 
+  /*!
+   * @brief Reseed the runtime-local random generator.
+   *
+   * Usage:
+   * @code
+   * (random-seed! 1234)
+   * @endcode
+   */
+  FUNC(RandomSeedBangFunction, random_seed_bang)
+
   FUNC(RndFunction, rnd)
+
+  /*!
+   * @brief Evaluate body forms with a temporary deterministic random seed.
+   *
+   * Usage:
+   * @code
+   * (with-random-seed 1234
+   *   (rnd 10))
+   * @endcode
+   */
+  SPECIAL_FORM_DECL(WithRandomSeedForm, with_random_seed)
 
   /*!
    * @brief Set a new value for a symbol in the lexical scope, namespace or

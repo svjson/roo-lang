@@ -367,6 +367,18 @@ namespace Lisple
     return ctx.lookup(args[0]->str());
   }
 
+  /** RandomSeedBangFunction - random-seed! */
+  FUNC_IMPL(RandomSeedBangFunction,
+            SIG((FN_ARGS((&Lisple::Type::NUMBER)),
+                 EXEC_DISPATCH(&RandomSeedBangFunction::exec_random_seed_bang))))
+
+  EXEC_BODY(RandomSeedBangFunction, exec_random_seed_bang)
+  {
+    const int seed = std::get<const Value::Number>(args[0]->value).get_int();
+    ctx.seed_random(seed);
+    return Value::number(seed);
+  }
+
   /** RndFunction - rnd */
   FUNC_IMPL(RndFunction,
             MULTI_SIG((FN_ARGS((&Lisple::Type::NUMBER)),
@@ -386,7 +398,61 @@ namespace Lisple
 
     if (min == max) return Value::number(min);
 
-    return Value::number((std::rand() % (max - min)) + min);
+    return Value::number(ctx.random_int(min, max));
+  }
+
+  /** WithRandomSeedForm - with-random-seed */
+  SPECIAL_FORM_IMPL(WithRandomSeedForm,
+                    SIG((FN_ARGS((&Lisple::Type::NUMBER),
+                                 (&VARARG, &Lisple::Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&WithRandomSeedForm::execnode_with_random_seed))))
+
+  SFORM_LOWER_IMPL(WithRandomSeedForm)
+  {
+    sptr_ast_node_v& elements = ast_node->get_children();
+    if (elements.size() < 2)
+    {
+      throw LispleException("Invalid with-random-seed form: " + ast_node->to_string());
+    }
+
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
+  }
+
+  EXECNODE_BODY(WithRandomSeedForm, execnode_with_random_seed)
+  {
+    sptr_val seed_value = exec(ctx, *snode.exec_nodes.front());
+    if (seed_value->type != Value::Type::NUMBER)
+    {
+      throw TypeError("with-random-seed: seed must be a number.");
+    }
+    const int seed = std::get<const Value::Number>(seed_value->value).get_int();
+    RandomState previous_state = ctx.get_random_state();
+    ctx.seed_random(seed);
+
+    sptr_val result = Constant::NIL;
+    try
+    {
+      for (size_t i = 1; i < snode.exec_nodes.size(); i++)
+      {
+        result = exec(ctx, *snode.exec_nodes[i]);
+      }
+    }
+    catch (...)
+    {
+      ctx.set_random_state(previous_state);
+      throw;
+    }
+
+    ctx.set_random_state(previous_state);
+    return result;
   }
 
   /** SetBangForm - set! */

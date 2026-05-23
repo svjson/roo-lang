@@ -138,6 +138,7 @@ namespace Lisple
     lang_symbols.emplace("prn", PrnFunction::make());
     lang_symbols.emplace("qualifier", QualifierFunction::make());
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
+    lang_symbols.emplace("random-seed!", RandomSeedBangFunction::make());
     lang_symbols.emplace("range", RangeFunction::make());
     lang_symbols.emplace("reduce", ReduceFunction::make());
     lang_symbols.emplace("reduce-kv", ReduceKeyValueFunction::make());
@@ -169,6 +170,7 @@ namespace Lisple
     lang_symbols.emplace("when", WhenForm::make());
     lang_symbols.emplace("when-let", WhenLetForm::make());
     lang_symbols.emplace("while", WhileForm::make());
+    lang_symbols.emplace("with-random-seed", WithRandomSeedForm::make());
     lang_symbols.emplace("zero?", ZeroPFunction::make());
 
     return Namespace::make_lang(lang_symbols);

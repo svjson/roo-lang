@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <lisple/form.h>
+#include <lisple/random.h>
 #include <lisple/scope.h>
 #include <lisple/source.h>
 #include <lisple/type.h>
@@ -125,6 +126,10 @@ namespace Lisple
     Namespace* get_current_namespace();
 
     Namespace& lang();
+    void seed_random(int seed);
+    int random_int(int min, int max);
+    RandomState get_random_state() const;
+    void set_random_state(const RandomState& state);
     bool source_diagnostics_enabled() const;
     bool call_stack_diagnostics_enabled() const;
     std::string describe_source(const SourceRef& source) const;

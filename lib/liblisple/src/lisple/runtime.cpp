@@ -1,8 +1,11 @@
 
 #include "lisple/runtime.h"
 
+#include <chrono>
+#include <cstdint>
 #include <exception>
 #include <memory>
+#include <random>
 #include <stddef.h>
 #include <utility>
 #include <vector>
@@ -39,6 +42,14 @@ namespace Lisple
       const std::string message = e.what();
       return message.compare(0, 15, "Error parsing '") == 0;
     }
+
+    RandomState make_random_state()
+    {
+      std::random_device rd;
+      const auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+      std::seed_seq seed{rd(), rd(), rd(), rd(), static_cast<unsigned int>(now)};
+      return RandomState(seed);
+    }
   } // namespace
 
   const std::string DEFAULT_NAMESPACE = "user";
@@ -67,6 +78,7 @@ namespace Lisple
     : lang(make_language_namespace())
     , fs(fs ? fs : &null_file_system())
     , file_system_access(fs != nullptr)
+    , random_state(make_random_state())
   {
     Namespace io = make_io_namespace();
     namespaces.emplace(io.get_name(), std::move(io));
@@ -312,6 +324,47 @@ namespace Lisple
   Namespace& Runtime::get_current_namespace()
   {
     return *current_namespace;
+  }
+
+  void Runtime::seed_random(int seed)
+  {
+    random_state.seed(static_cast<RandomState::result_type>(seed));
+  }
+
+  int Runtime::random_int(int min, int max)
+  {
+    if (max < min)
+    {
+      throw LispleException("rnd: max must be greater than or equal to min.");
+    }
+    if (min == max)
+    {
+      return min;
+    }
+
+    const uint64_t range =
+      static_cast<uint64_t>(static_cast<int64_t>(max) - static_cast<int64_t>(min));
+    const uint64_t engine_range =
+      static_cast<uint64_t>(RandomState::max()) - RandomState::min() + 1;
+    const uint64_t limit = engine_range - (engine_range % range);
+
+    uint64_t value = 0;
+    do
+    {
+      value = static_cast<uint64_t>(random_state()) - RandomState::min();
+    } while (value >= limit);
+
+    return static_cast<int>(static_cast<int64_t>(min) + static_cast<int64_t>(value % range));
+  }
+
+  RandomState Runtime::get_random_state() const
+  {
+    return random_state;
+  }
+
+  void Runtime::set_random_state(const RandomState& state)
+  {
+    random_state = state;
   }
 
   void Runtime::read_file(const std::string& file_name)

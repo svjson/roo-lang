@@ -16,6 +16,7 @@ using RandNth = LispleTest::RuntimeTestFixture;
 TEST_F(RandNth, all_elements_possible)
 {
   // Given
+  runtime.eval("(random-seed! 1234)");
   std::vector freq{0, 0, 0, 0, 0};
 
   // When
