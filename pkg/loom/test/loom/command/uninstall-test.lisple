@@ -1,6 +1,7 @@
 (ns loom.command.uninstall-test
   (:require proof.core
             [lisple.io :as io]
+            [loom.core :as core]
             [loom.command.install :as install]
             [loom.command.uninstall :as uninstall]
             [loom.common.repository :as repository]
@@ -19,6 +20,21 @@
     (then
       (is (= uninstall-target-dir uninstalled-dir))
       (is (= false (io/exists? uninstall-target-dir))))))
+
+(deftest uninstall_command_accepts_package_at_version
+  (let [repo-root (support/fresh-repo! "loom-proof-uninstall-package-id")]
+    (given
+      (install/install! (support/loom-package-dir) repo-root true)
+      (def uninstall-package-id-target-dir
+        (repository/package-target-dir repo-root "loom" "0.1.0")))
+
+    (when
+      (def uninstall-package-id-result
+        (core/uninstall-command ["uninstall" "loom@0.1.0" "--repo" repo-root])))
+
+    (then
+      (is (= uninstall-package-id-target-dir uninstall-package-id-result))
+      (is (= false (io/exists? uninstall-package-id-target-dir))))))
 
 (deftest uninstall_returns_nil_for_missing_package
   (let [repo-root (support/fresh-repo! "loom-proof-uninstall-missing")]

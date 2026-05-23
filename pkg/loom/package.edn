@@ -8,4 +8,5 @@
                 loom.command.install
                 loom.command.uninstall
                 loom.command.list
-                loom.command.info]}
+                loom.command.info
+                loom.common.package-spec]}

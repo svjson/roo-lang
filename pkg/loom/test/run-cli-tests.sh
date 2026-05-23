@@ -32,7 +32,7 @@ cmake -E touch "$LOOM_REPO/loom/0.1.0/stale-file"
 "$LISPLE" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO"
 test ! -e "$LOOM_REPO/loom/0.1.0/stale-file"
 
-"$LISPLE" "$LOOM_PACKAGE" uninstall loom 0.1.0 --repo "$LOOM_REPO"
+"$LISPLE" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_REPO"
 test ! -e "$LOOM_REPO/loom/0.1.0/package.edn"
 
 cmake -E rm -rf "$PROOF_REPO"

@@ -4,11 +4,12 @@
             [loom.command.list :as list]
             [loom.command.uninstall :as uninstall]
             [loom.common.args :as args]
+            [loom.common.package-spec :as package-spec]
             [loom.common.repository :as repository]))
 
 (defun usage []
   (prn "Usage: loom install <package-dir> [--repo <dir>]")
-  (prn "       loom uninstall <name> <version> [--repo <dir>]")
+  (prn "       loom uninstall <package@version> [--repo <dir>]")
   (prn "       loom list [--repo <dir>]")
   (prn "       loom info <package@version> [--repo <dir>]"))
 
@@ -22,40 +23,20 @@
                         (args/flag-from? argv 2 "--force")))))
 
 (defun uninstall-command [argv]
-  (let [name (args/arg-at argv 1)
-        version (args/arg-at argv 2)]
-    (if (nil? name)
+  (let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
+    (if (nil? spec)
       (usage)
-      (if (nil? version)
-        (usage)
-        (uninstall/uninstall! (args/option-from argv 3 "--repo"
-                                                (repository/default-repository-root))
-                              name
-                              version)))))
+      (uninstall/uninstall! (args/option-from argv 1 "--repo"
+                                              (repository/default-repository-root))
+                            (:name spec)
+                            (:version spec)))))
 
 (defun list-command [argv]
   (list/list! (args/option-from argv 1 "--repo"
                                 (repository/default-repository-root))))
 
-(defun package-spec [package-id version]
-  (if (nil? package-id)
-    nil
-    (let [separator (find-index package-id (fn [c] (= (str c) "@")))]
-      (if (nil? separator)
-        (if (nil? version)
-          nil
-          (if (= version "--repo")
-            nil
-            {:name package-id :version version}))
-        (if (= "" (substr package-id 0 separator))
-          nil
-          (if (= "" (substr package-id (+ separator 1)))
-            nil
-            {:name (substr package-id 0 separator)
-             :version (substr package-id (+ separator 1))}))))))
-
 (defun info-command [argv]
-  (let [spec (package-spec (args/arg-at argv 1) (args/arg-at argv 2))]
+  (let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
     (if (nil? spec)
       (usage)
       (info/info! (args/option-from argv 1 "--repo"

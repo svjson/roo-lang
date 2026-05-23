@@ -1,0 +1,43 @@
+(ns loom.common.package-spec-test
+  (:require proof.core
+            [loom.common.package-spec :as package-spec]))
+
+(deftest parses_package_at_version_specs
+  (given
+    (def parser-package-id "loom@0.1.0"))
+
+  (when
+    (def parser-at-version-spec (package-spec/parse parser-package-id nil)))
+
+  (then
+    (is (= "loom" (:name parser-at-version-spec)))
+    (is (= "0.1.0" (:version parser-at-version-spec)))))
+
+(deftest parses_legacy_name_and_version_specs
+  (given
+    (def parser-package-name "loom"))
+
+  (when
+    (def parser-legacy-spec (package-spec/parse parser-package-name "0.1.0")))
+
+  (then
+    (is (= "loom" (:name parser-legacy-spec)))
+    (is (= "0.1.0" (:version parser-legacy-spec)))))
+
+(deftest rejects_missing_and_incomplete_specs
+  (given
+    (def missing-package-spec nil))
+
+  (when
+    (def nil-spec (package-spec/parse missing-package-spec nil))
+    (def missing-version-spec (package-spec/parse "loom" nil))
+    (def option-version-spec (package-spec/parse "loom" "--repo"))
+    (def empty-name-spec (package-spec/parse "@0.1.0" nil))
+    (def empty-version-spec (package-spec/parse "loom@" nil)))
+
+  (then
+    (is (nil? nil-spec))
+    (is (nil? missing-version-spec))
+    (is (nil? option-version-spec))
+    (is (nil? empty-name-spec))
+    (is (nil? empty-version-spec))))

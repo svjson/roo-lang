@@ -1,25 +1,15 @@
 (ns loom.core-test
   (:require proof.core
-            [loom.core :as core]))
+            [loom.core :as core]
+            [loom.test-support :as support]))
 
-(deftest parses_package_at_version_specs
-  (given
-    (def package-id "loom@0.1.0"))
+(deftest dispatches_list_command
+  (let [repo-root (support/fresh-repo! "loom-proof-core-list")]
+    (given
+      (def list-argv ["list" "--repo" repo-root]))
 
-  (when
-    (def at-version-spec (core/package-spec package-id nil)))
+    (when
+      (def list-result (core/main list-argv)))
 
-  (then
-    (is (= "loom" (:name at-version-spec)))
-    (is (= "0.1.0" (:version at-version-spec)))))
-
-(deftest parses_legacy_name_and_version_specs
-  (given
-    (def package-name "loom"))
-
-  (when
-    (def legacy-spec (core/package-spec package-name "0.1.0")))
-
-  (then
-    (is (= "loom" (:name legacy-spec)))
-    (is (= "0.1.0" (:version legacy-spec)))))
+    (then
+      (is (= [] list-result)))))
