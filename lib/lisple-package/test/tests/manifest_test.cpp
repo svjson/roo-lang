@@ -227,6 +227,78 @@ TEST(PackageManifest, resolves_versioned_dependencies_from_default_local_reposit
     (std::vector<std::string>{repository_root + "/util/0.1.0/src", "/repo/app/src"}));
 }
 
+TEST(PackageManifest, deduplicates_same_package_resolved_from_repository_and_path)
+{
+  // Given
+  MemoryFileSystem fs;
+  fs.add("/repo/app/package.edn",
+         R"({:name app
+             :dependencies {proof "0.1.0"
+                            helper "file:../helper"}
+             :load-roots ["src"]})");
+  fs.add("/repo/helper/package.edn",
+         R"({:name helper
+             :dependencies {proof {:path "../proof-path"}}
+             :load-roots ["src"]})");
+  fs.add("/repo/proof-path/package.edn",
+         R"({:name proof
+             :version "0.1.0"
+             :dependencies []
+             :load-roots ["src"]})");
+  fs.add("/repo/packages/proof/0.1.0/package.edn",
+         R"({:name proof
+             :version "0.1.0"
+             :dependencies []
+             :load-roots ["src"]})");
+
+  // When
+  auto plan =
+    Lisple::Package::resolve_load_plan(fs,
+                                       "/repo/app",
+                                       Lisple::Package::ResolveOptions{{"/repo/packages"}});
+
+  // Then
+  EXPECT_EQ(
+    plan.package_roots,
+    (std::vector<std::string>{"/repo/packages/proof/0.1.0", "/repo/helper", "/repo/app"}));
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{"/repo/packages/proof/0.1.0/src",
+                                      "/repo/helper/src",
+                                      "/repo/app/src"}));
+}
+
+TEST(PackageManifest, rejects_same_package_name_with_different_versions)
+{
+  // Given
+  MemoryFileSystem fs;
+  fs.add("/repo/app/package.edn",
+         R"({:name app
+             :dependencies {proof "0.1.0"
+                            helper "file:../helper"}
+             :load-roots ["src"]})");
+  fs.add("/repo/helper/package.edn",
+         R"({:name helper
+             :dependencies {proof {:path "../proof-path"}}
+             :load-roots ["src"]})");
+  fs.add("/repo/proof-path/package.edn",
+         R"({:name proof
+             :version "0.2.0"
+             :dependencies []
+             :load-roots ["src"]})");
+  fs.add("/repo/packages/proof/0.1.0/package.edn",
+         R"({:name proof
+             :version "0.1.0"
+             :dependencies []
+             :load-roots ["src"]})");
+
+  // Then
+  EXPECT_THROW(
+    Lisple::Package::resolve_load_plan(fs,
+                                       "/repo/app",
+                                       Lisple::Package::ResolveOptions{{"/repo/packages"}}),
+    Lisple::LispleException);
+}
+
 TEST(PackageManifest, resolved_load_plan_uses_root_package_main)
 {
   // Given

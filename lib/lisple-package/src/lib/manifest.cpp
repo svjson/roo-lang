@@ -543,8 +543,47 @@ namespace Lisple::Package
       std::vector<std::string> search_roots;
       std::set<std::string> visiting;
       std::set<std::string> visited;
+      std::map<std::string, std::pair<std::string, std::string>> resolved_by_name;
       LoadPlan plan;
     };
+
+    bool already_resolved_package(ResolveState& state,
+                                  const Manifest& manifest,
+                                  const std::string& package_root)
+    {
+      if (manifest.name.empty())
+      {
+        return false;
+      }
+
+      auto existing = state.resolved_by_name.find(manifest.name);
+      if (existing == state.resolved_by_name.end())
+      {
+        return false;
+      }
+
+      const std::string& existing_version = existing->second.first;
+      const std::string& existing_root = existing->second.second;
+      if (existing_version != manifest.version)
+      {
+        throw LispleException("Package dependency conflict for '" + manifest.name +
+                              "': already resolved version '" + existing_version + "' at '" +
+                              existing_root + "', but '" + package_root + "' has version '" +
+                              manifest.version + "'.");
+      }
+
+      return existing_root != package_root;
+    }
+
+    void mark_resolved_package(ResolveState& state,
+                               const Manifest& manifest,
+                               const std::string& package_root)
+    {
+      if (!manifest.name.empty())
+      {
+        state.resolved_by_name[manifest.name] = {manifest.version, package_root};
+      }
+    }
 
     void append_package_to_plan(LoadPlan& plan,
                                 const Manifest& manifest,
@@ -623,6 +662,12 @@ namespace Lisple::Package
 
       state.visiting.insert(package_root);
       Manifest manifest = read_manifest(state.fs, manifest_path(package_root));
+      if (already_resolved_package(state, manifest, package_root))
+      {
+        state.visiting.erase(package_root);
+        state.visited.insert(package_root);
+        return;
+      }
 
       for (const auto& dependency : manifest.dependencies)
       {
@@ -635,6 +680,7 @@ namespace Lisple::Package
       }
 
       append_package_to_plan(state.plan, manifest, package_root);
+      mark_resolved_package(state, manifest, package_root);
       state.visiting.erase(package_root);
       state.visited.insert(package_root);
     }
@@ -808,6 +854,7 @@ namespace Lisple::Package
     ResolveState state{
       fs,
       options.package_search_roots,
+      {},
       {},
       {},
       {},
