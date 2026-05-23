@@ -206,6 +206,9 @@ TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_s
 
   EXPECT_THAT(main_cpp, HasSubstr("LisplecGenerated::EmbeddedFileSystem namespace_fs"));
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
+  EXPECT_THAT(main_cpp,
+              HasSubstr("LoadedNativePackages native_packages;\n"
+                        "    Lisple::Runtime runtime"));
   EXPECT_THAT(embedded_file_system_cpp, HasSubstr("EmbeddedFileSystem::read"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.lisple"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.lisple"));
