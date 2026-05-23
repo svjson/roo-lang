@@ -10,19 +10,21 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build install test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build install install-loom test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/liblisple/test/testlisple
 PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage
 PROOF_TEST_BINARY := pkg/proof/test/testproof
 LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec
 SERVER_TEST_BINARY := lib/lisple-server/test/testserver
+LOOM_BINARY := loom
 ifeq ($(OS),Windows_NT)
   TEST_BINARY := lib/liblisple/test/testlisple.exe
   PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage.exe
   PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
   LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec.exe
   SERVER_TEST_BINARY := lib/lisple-server/test/testserver.exe
+  LOOM_BINARY := loom.exe
 endif
 
 configure:
@@ -44,6 +46,11 @@ build: configure
 
 install: build
 	cmake --build build --target install
+
+install-loom: build
+	./build/lisplec build $(CURDIR)/pkg/loom --build-dir $(CURDIR)/build/loom-install --name loom
+	cmake -E make_directory $(PREFIX)/bin
+	cmake -E copy_if_different $(CURDIR)/build/loom-install/build/$(LOOM_BINARY) $(PREFIX)/bin/$(LOOM_BINARY)
 
 test: test\:lang test\:package test\:proof test\:lisplec
 test: test\:cli
