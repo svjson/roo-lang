@@ -70,6 +70,16 @@ test\:cli: build
 	cmake -E make_directory build/lisple-cli-main-run
 	./build/lisple $(CURDIR)/bin/lisple/test/assets/main-app $(CURDIR)/build/lisple-cli-main-run/main-ran.txt alpha beta
 	test "$$(cat build/lisple-cli-main-run/main-ran.txt)" = "3:alpha:beta:nil:nil:nil"
+	cmake -E rm -rf build/loom-test-repo
+	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/loom --repo $(CURDIR)/build/loom-test-repo --force
+	test -f build/loom-test-repo/loom/0.1.0/package.edn
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/cli.lisple
+	test -f build/loom-test-repo/loom/0.1.0/src/loom/install.lisple
+	cmake -E rm -rf build/loom-proof-test-repo
+	./build/lisple $(CURDIR)/pkg/loom install $(CURDIR)/pkg/proof --repo $(CURDIR)/build/loom-proof-test-repo --force
+	test -f build/loom-proof-test-repo/proof/0.1.0/package.edn
+	test -f build/loom-proof-test-repo/proof/0.1.0/src/proof/core.lisple
+	test -f build/loom-proof-test-repo/proof/0.1.0/native/libproof-native.so
 
 test\:benchmark: build
 	cmake --build build --target testlisple

@@ -1,0 +1,20 @@
+(ns loom.cli
+  (:require [loom.install :as install]))
+
+(defun usage []
+  (prn "Usage: loom install <package-dir> [--repo <dir>] [--force]"))
+
+(defun install-command [args]
+  (let [package-dir (install/arg-at args 1)]
+    (if (nil? package-dir)
+      (usage)
+      (install/install! package-dir
+                        (install/option-from args 2 "--repo"
+                                             (install/default-repository-root))
+                        (install/flag-from? args 2 "--force")))))
+
+(defun main [args]
+  (let [command (install/arg-at args 0)]
+    (if (= command "install")
+      (install-command args)
+      (usage))))
