@@ -21,6 +21,41 @@ TEST_F(IoNamespace, spit_bang_writes_file_contents)
   EXPECT_EQ(fs.get_file("notes.txt"), "plain text");
 }
 
+TEST_F(IoNamespace, copy_file_bang_copies_file_contents)
+{
+  // Given
+  fs.add_file("src/native/libexample.so", "binary-ish contents");
+
+  // When
+  EXPECT_EQ(
+    runtime
+      .eval(
+        R"((lisple.io/copy-file! "src/native/libexample.so" "repo/native/libexample.so"))")
+      ->to_string(),
+    "nil");
+
+  // Then
+  ASSERT_TRUE(fs.has_file("repo/native/libexample.so"));
+  EXPECT_EQ(fs.get_file("repo/native/libexample.so"), "binary-ish contents");
+}
+
+TEST_F(IoNamespace, remove_tree_bang_removes_files_under_path)
+{
+  // Given
+  fs.add_file("repo/pkg/proof/package.edn", "{}");
+  fs.add_file("repo/pkg/proof/src/proof/core.lisple", "(ns proof.core)");
+  fs.add_file("repo/pkg/other/package.edn", "{}");
+
+  // When
+  EXPECT_EQ(runtime.eval(R"((lisple.io/remove-tree! "repo/pkg/proof"))")->to_string(),
+            "nil");
+
+  // Then
+  EXPECT_FALSE(fs.has_file("repo/pkg/proof/package.edn"));
+  EXPECT_FALSE(fs.has_file("repo/pkg/proof/src/proof/core.lisple"));
+  EXPECT_TRUE(fs.has_file("repo/pkg/other/package.edn"));
+}
+
 TEST_F(IoNamespace, slurp_edn_bang_reads_single_data_form)
 {
   fs.add_file("data.edn", "{:name \"Lisple\" :numbers [1 2 3] :ok true}");

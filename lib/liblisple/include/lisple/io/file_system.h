@@ -1,4 +1,3 @@
-
 #ifndef LISPLE__IO__FILE_SYSTEM_H
 #define LISPLE__IO__FILE_SYSTEM_H
 
@@ -38,6 +37,8 @@ namespace Lisple
 
     virtual const std::string read(const std::string& file_name) = 0;
     virtual void write(const std::string& file_name, const std::string& contents);
+    virtual void copy_file(const std::string& source, const std::string& destination);
+    virtual void remove_tree(const std::string& path);
     virtual std::vector<DirectoryEntry> list_directory(const std::string& path);
     virtual FileSystemStat stat(const std::string& path);
     virtual bool exists(const std::string& path);

@@ -36,6 +36,37 @@ namespace Lisple
   FUNC(SpitBangFunction, spit)
 
   /*!
+   * @brief Copy one file, creating parent directories for the destination.
+   *
+   * Usage:
+   * @code
+   * (lisple.io/copy-file! "src/logo.png" "dist/logo.png")
+   * => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The source file path.                                            |
+   * | 1     | The destination file path.                                       |
+   */
+  FUNC(CopyFileBangFunction, copy_file)
+
+  /*!
+   * @brief Remove a file or directory tree if it exists.
+   *
+   * Usage:
+   * @code
+   * (lisple.io/remove-tree! "dist")
+   * => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The file or directory tree path to remove.                       |
+   */
+  FUNC(RemoveTreeBangFunction, remove_tree)
+
+  /*!
    * @brief Read one EDN form from a text file.
    *
    * Usage:

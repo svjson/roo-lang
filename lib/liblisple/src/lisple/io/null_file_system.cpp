@@ -30,6 +30,16 @@ namespace Lisple
     throw no_file_system_access("write", file_name);
   }
 
+  void NullFileSystem::copy_file(const std::string& source, const std::string&)
+  {
+    throw no_file_system_access("copy-file", source);
+  }
+
+  void NullFileSystem::remove_tree(const std::string& path)
+  {
+    throw no_file_system_access("remove-tree", path);
+  }
+
   std::vector<DirectoryEntry> NullFileSystem::list_directory(const std::string& path)
   {
     throw no_file_system_access("list-directory", path);

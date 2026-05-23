@@ -1,4 +1,3 @@
-
 #include "lisple/io/dir_root_file_system.h"
 
 #include <algorithm>
@@ -49,6 +48,40 @@ namespace Lisple
     std::string resolve_path(const std::string& load_path, const std::string& file_name)
     {
       return (std::filesystem::path(load_path) / file_name).lexically_normal().string();
+    }
+
+    std::filesystem::path readable_path(const std::vector<std::string>& load_paths,
+                                        const std::string& path)
+    {
+      const std::filesystem::path requested(path);
+      if (requested.is_absolute())
+      {
+        return requested.lexically_normal();
+      }
+
+      for (const std::string& load_path : load_paths)
+      {
+        const std::filesystem::path candidate = resolve_path(load_path, path);
+        std::error_code ec;
+        if (std::filesystem::is_regular_file(candidate, ec))
+        {
+          return candidate;
+        }
+      }
+      return std::filesystem::path(
+        resolve_path(load_paths.empty() ? "." : load_paths.front(), path));
+    }
+
+    std::filesystem::path writable_path(const std::vector<std::string>& load_paths,
+                                        const std::string& path)
+    {
+      const std::filesystem::path requested(path);
+      if (requested.is_absolute())
+      {
+        return requested.lexically_normal();
+      }
+      const std::string root = load_paths.empty() ? "." : load_paths.front();
+      return std::filesystem::path(resolve_path(root, path));
     }
 
     std::string read_file(const std::string& path)
@@ -124,8 +157,7 @@ namespace Lisple
 
   void DirRootFileSystem::write(const std::string& file_name, const std::string& contents)
   {
-    const std::string root = load_paths.empty() ? "." : load_paths.front();
-    const std::filesystem::path path = resolve_path(root, file_name);
+    const std::filesystem::path path = writable_path(load_paths, file_name);
     const auto parent_path = path.parent_path();
     if (!parent_path.empty())
     {
@@ -140,6 +172,41 @@ namespace Lisple
     }
     stream << contents;
     stream.close();
+  }
+
+  void DirRootFileSystem::copy_file(const std::string& source,
+                                    const std::string& destination)
+  {
+    const std::filesystem::path source_path = readable_path(load_paths, source);
+    const std::filesystem::path destination_path = writable_path(load_paths, destination);
+    const auto parent_path = destination_path.parent_path();
+    if (!parent_path.empty())
+    {
+      std::filesystem::create_directories(parent_path);
+    }
+
+    std::error_code ec;
+    std::filesystem::copy_file(source_path,
+                               destination_path,
+                               std::filesystem::copy_options::overwrite_existing,
+                               ec);
+    if (ec)
+    {
+      throw LispleException("Could not copy file: '" + source_path.string() + "' -> '" +
+                            destination_path.string() + "': " + ec.message());
+    }
+  }
+
+  void DirRootFileSystem::remove_tree(const std::string& path)
+  {
+    const std::filesystem::path target = writable_path(load_paths, path);
+    std::error_code ec;
+    std::filesystem::remove_all(target, ec);
+    if (ec)
+    {
+      throw LispleException("Could not remove path: '" + target.string() +
+                            "': " + ec.message());
+    }
   }
 
   FileSystemStat DirRootFileSystem::stat(const std::string& path)

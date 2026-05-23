@@ -15,6 +15,8 @@ namespace Lisple
     std::map<std::string, sptr_val> symbols;
     symbols.emplace("slurp!", SlurpBangFunction::make());
     symbols.emplace("spit!", SpitBangFunction::make());
+    symbols.emplace("copy-file!", CopyFileBangFunction::make());
+    symbols.emplace("remove-tree!", RemoveTreeBangFunction::make());
     symbols.emplace("slurp-edn!", SlurpEdnBangFunction::make());
     symbols.emplace("spit-edn!", SpitEdnBangFunction::make());
     symbols.emplace("list-directory!", ListDirectoryBangFunction::make());

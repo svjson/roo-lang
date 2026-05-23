@@ -9,6 +9,17 @@ namespace Lisple
     throw LispleException("File system does not support writing: '" + file_name + "'");
   }
 
+  void FileSystem::copy_file(const std::string& source, const std::string& destination)
+  {
+    throw LispleException("File system does not support copying files: '" + source +
+                          "' -> '" + destination + "'");
+  }
+
+  void FileSystem::remove_tree(const std::string& path)
+  {
+    throw LispleException("File system does not support removing paths: '" + path + "'");
+  }
+
   std::vector<DirectoryEntry> FileSystem::list_directory(const std::string& path)
   {
     throw LispleException("File system does not support listing directories: '" + path +

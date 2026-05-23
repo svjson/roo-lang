@@ -44,6 +44,27 @@ namespace LispleTest
     fs_contents[normalize(file_name)] = contents;
   }
 
+  void FakeFileSystem::copy_file(const std::string& source, const std::string& destination)
+  {
+    fs_contents[normalize(destination)] = fs_contents.at(normalize(source));
+  }
+
+  void FakeFileSystem::remove_tree(const std::string& path)
+  {
+    const std::string normalized_path = normalize(path);
+    for (auto it = fs_contents.begin(); it != fs_contents.end();)
+    {
+      if (it->first == normalized_path || it->first.rfind(normalized_path + "/", 0) == 0)
+      {
+        it = fs_contents.erase(it);
+      }
+      else
+      {
+        ++it;
+      }
+    }
+  }
+
   std::vector<Lisple::DirectoryEntry> FakeFileSystem::list_directory(const std::string& path)
   {
     const std::string normalized_path = normalize(path);

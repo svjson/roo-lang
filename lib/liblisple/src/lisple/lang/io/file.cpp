@@ -58,6 +58,28 @@ namespace Lisple
     return Constant::NIL;
   }
 
+  /** CopyFileBangFunction - lisple.io/copy-file! */
+  FUNC_IMPL(CopyFileBangFunction,
+            SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
+                 EXEC_DISPATCH(&CopyFileBangFunction::exec_copy_file))))
+
+  EXEC_BODY(CopyFileBangFunction, exec_copy_file)
+  {
+    ctx.file_system().copy_file(args[0]->str(), args[1]->str());
+    return Constant::NIL;
+  }
+
+  /** RemoveTreeBangFunction - lisple.io/remove-tree! */
+  FUNC_IMPL(RemoveTreeBangFunction,
+            SIG((FN_ARGS((&Type::STRING)),
+                 EXEC_DISPATCH(&RemoveTreeBangFunction::exec_remove_tree))))
+
+  EXEC_BODY(RemoveTreeBangFunction, exec_remove_tree)
+  {
+    ctx.file_system().remove_tree(args[0]->str());
+    return Constant::NIL;
+  }
+
   /** SlurpEdnBangFunction - lisple.io/slurp-edn! */
   FUNC_IMPL(SlurpEdnBangFunction,
             SIG((FN_ARGS((&Type::STRING)),
