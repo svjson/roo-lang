@@ -1,0 +1,21 @@
+(ns loom.command.link
+  (:require [lisple.io :as io]
+            [loom.command.uninstall :as uninstall]
+            [loom.common.manifest :as manifest]
+            [loom.common.repository :as repository]))
+
+(defun link! [package-dir repo-root]
+  (let [package-manifest (manifest/read! package-dir)]
+    (if (nil? package-manifest)
+      nil
+      (let [name (manifest/package-name package-manifest)
+            version (manifest/package-version package-manifest)
+            package-id (manifest/package-id package-manifest)
+            target-dir (repository/package-target-dir repo-root name version)
+            source-dir (io/absolute-path! package-dir)]
+        (if (io/exists? target-dir)
+          (uninstall/uninstall! repo-root name version)
+          nil)
+        (io/symlink! source-dir target-dir)
+        (prn (str "Linked " package-id " to " source-dir))
+        target-dir))))

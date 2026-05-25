@@ -2,6 +2,7 @@
   (:require [loom.command.deps :as deps]
             [loom.command.info :as info]
             [loom.command.install :as install]
+            [loom.command.link :as link]
             [loom.command.list :as list]
             [loom.command.uninstall :as uninstall]
             [loom.common.args :as args]
@@ -10,6 +11,7 @@
 
 (defun usage []
   (prn "Usage: loom install <package-dir> [--repo <dir>]")
+  (prn "       loom link <package-dir> [--repo <dir>]")
   (prn "       loom uninstall <package@version> [--repo <dir>]")
   (prn "       loom list [--repo <dir>]")
   (prn "       loom info <package@version> [--repo <dir>]")
@@ -19,10 +21,21 @@
   (let [package-dir (args/arg-at argv 1)]
     (if (nil? package-dir)
       (usage)
-      (install/install! package-dir
-                        (args/option-from argv 2 "--repo"
-                                          (repository/default-repository-root))
-                        (args/flag-from? argv 2 "--force")))))
+      (let [repo-root (args/option-from argv 2 "--repo"
+                                        (repository/default-repository-root))]
+        (if (args/flag-from? argv 2 "--link")
+          (link/link! package-dir repo-root)
+          (install/install! package-dir
+                            repo-root
+                            (args/flag-from? argv 2 "--force")))))))
+
+(defun link-command [argv]
+  (let [package-dir (args/arg-at argv 1)]
+    (if (nil? package-dir)
+      (usage)
+      (link/link! package-dir
+                  (args/option-from argv 2 "--repo"
+                                    (repository/default-repository-root))))))
 
 (defun uninstall-command [argv]
   (let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
@@ -60,12 +73,14 @@
   (let [command (args/arg-at args 0)]
     (if (= command "install")
       (install-command args)
-      (if (= command "uninstall")
-        (uninstall-command args)
-        (if (= command "list")
-          (list-command args)
-          (if (= command "info")
-            (info-command args)
-            (if (= command "deps")
-              (deps-command args)
-              (usage))))))))
+      (if (= command "link")
+        (link-command args)
+        (if (= command "uninstall")
+          (uninstall-command args)
+          (if (= command "list")
+            (list-command args)
+            (if (= command "info")
+              (info-command args)
+              (if (= command "deps")
+                (deps-command args)
+                (usage)))))))))

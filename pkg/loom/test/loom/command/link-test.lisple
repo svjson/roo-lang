@@ -1,0 +1,78 @@
+(ns loom.command.link-test
+  (:require proof.core
+            [lisple.io :as io]
+            [loom.command.install :as install]
+            [loom.command.link :as link]
+            [loom.command.uninstall :as uninstall]
+            [loom.common.repository :as repository]
+            [loom.test-support :as support]))
+
+(deftest links-package-version-to-source-directory
+  (let [repo-root (support/fresh-repo! "loom-proof-link")]
+    (given
+      (def link-package-dir
+        (support/fresh-package! "loom-proof-link-package"
+                                "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}"))
+      (def link-target-dir (repository/package-target-dir repo-root "linked" "0.1.0")))
+
+    (when
+      (def linked-target-dir (link/link! link-package-dir repo-root)))
+
+    (then
+      (is (= link-target-dir linked-target-dir))
+      (is (io/symlink? link-target-dir))
+      (is (= (io/absolute-path! link-package-dir)
+             (io/read-link! link-target-dir)))
+      (is (io/exists? (io/join-path link-target-dir "package.edn"))))))
+
+(deftest uninstall-removes-link-without-removing-source-package
+  (let [repo-root (support/fresh-repo! "loom-proof-link-uninstall")]
+    (given
+      (def unlink-package-dir
+        (support/fresh-package! "loom-proof-link-uninstall-package"
+                                "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}"))
+      (def unlink-target-dir (repository/package-target-dir repo-root "linked" "0.1.0"))
+      (link/link! unlink-package-dir repo-root))
+
+    (when
+      (uninstall/uninstall! repo-root "linked" "0.1.0"))
+
+    (then
+      (is (= false (io/exists? unlink-target-dir)))
+      (is (io/exists? (io/join-path unlink-package-dir "package.edn"))))))
+
+(deftest install-replaces-linked-package-with-copied-package
+  (let [repo-root (support/fresh-repo! "loom-proof-link-install-replace")]
+    (given
+      (def replace-link-package-dir
+        (support/fresh-package! "loom-proof-link-install-replace-package"
+                                "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}"))
+      (def replace-link-target-dir
+        (repository/package-target-dir repo-root "linked" "0.1.0"))
+      (link/link! replace-link-package-dir repo-root))
+
+    (when
+      (install/install! replace-link-package-dir repo-root false))
+
+    (then
+      (is (= false (io/symlink? replace-link-target-dir)))
+      (is (io/exists? (io/join-path replace-link-target-dir "package.edn")))
+      (is (io/exists? (io/join-path replace-link-package-dir "package.edn"))))))
+
+(deftest link-replaces-copied-package-with-linked-package
+  (let [repo-root (support/fresh-repo! "loom-proof-link-replace-install")]
+    (given
+      (def replace-copy-package-dir
+        (support/fresh-package! "loom-proof-link-replace-install-package"
+                                "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}"))
+      (def replace-copy-target-dir
+        (repository/package-target-dir repo-root "linked" "0.1.0"))
+      (install/install! replace-copy-package-dir repo-root true))
+
+    (when
+      (link/link! replace-copy-package-dir repo-root))
+
+    (then
+      (is (io/symlink? replace-copy-target-dir))
+      (is (= (io/absolute-path! replace-copy-package-dir)
+             (io/read-link! replace-copy-target-dir))))))
