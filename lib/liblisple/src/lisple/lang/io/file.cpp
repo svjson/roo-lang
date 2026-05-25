@@ -4,8 +4,8 @@
 
 #include <lisple/context.h>
 #include <lisple/exception.h>
-#include <lisple/io/file_system.h>
 #include <lisple/form.h>
+#include <lisple/io/file_system.h>
 #include <lisple/reader.h>
 #include <lisple/runtime/value.h>
 #include <lisple/type.h>
@@ -132,6 +132,38 @@ namespace Lisple
   {
     ctx.file_system().remove_tree(args[0]->str());
     return Constant::NIL;
+  }
+
+  /** SymlinkBangFunction - lisple.io/symlink! */
+  FUNC_IMPL(SymlinkBangFunction,
+            SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
+                 EXEC_DISPATCH(&SymlinkBangFunction::exec_symlink))))
+
+  EXEC_BODY(SymlinkBangFunction, exec_symlink)
+  {
+    ctx.file_system().create_symlink(args[0]->str(), args[1]->str());
+    return Constant::NIL;
+  }
+
+  /** SymlinkPFunction - lisple.io/symlink? */
+  FUNC_IMPL(SymlinkPFunction,
+            SIG((FN_ARGS((&Type::STRING)),
+                 EXEC_DISPATCH(&SymlinkPFunction::exec_symlink_p))))
+
+  EXEC_BODY(SymlinkPFunction, exec_symlink_p)
+  {
+    return ctx.file_system().is_symlink(args[0]->str()) ? Constant::BOOL_TRUE
+                                                        : Constant::BOOL_FALSE;
+  }
+
+  /** ReadLinkBangFunction - lisple.io/read-link! */
+  FUNC_IMPL(ReadLinkBangFunction,
+            SIG((FN_ARGS((&Type::STRING)),
+                 EXEC_DISPATCH(&ReadLinkBangFunction::exec_read_link))))
+
+  EXEC_BODY(ReadLinkBangFunction, exec_read_link)
+  {
+    return Value::string(ctx.file_system().read_symlink(args[0]->str()));
   }
 
   /** SlurpEdnBangFunction - lisple.io/slurp-edn! */

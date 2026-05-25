@@ -40,6 +40,21 @@ namespace Lisple
     throw no_file_system_access("remove-tree", path);
   }
 
+  void NullFileSystem::create_symlink(const std::string& source, const std::string&)
+  {
+    throw no_file_system_access("symlink", source);
+  }
+
+  bool NullFileSystem::is_symlink(const std::string& path)
+  {
+    throw no_file_system_access("symlink?", path);
+  }
+
+  std::string NullFileSystem::read_symlink(const std::string& path)
+  {
+    throw no_file_system_access("read-link", path);
+  }
+
   std::vector<DirectoryEntry> NullFileSystem::list_directory(const std::string& path)
   {
     throw no_file_system_access("list-directory", path);

@@ -17,6 +17,9 @@ namespace Lisple
     symbols.emplace("spit!", SpitBangFunction::make());
     symbols.emplace("copy-file!", CopyFileBangFunction::make());
     symbols.emplace("remove-tree!", RemoveTreeBangFunction::make());
+    symbols.emplace("symlink!", SymlinkBangFunction::make());
+    symbols.emplace("symlink?", SymlinkPFunction::make());
+    symbols.emplace("read-link!", ReadLinkBangFunction::make());
     symbols.emplace("slurp-edn!", SlurpEdnBangFunction::make());
     symbols.emplace("spit-edn!", SpitEdnBangFunction::make());
     symbols.emplace("list-directory!", ListDirectoryBangFunction::make());

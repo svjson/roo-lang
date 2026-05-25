@@ -209,6 +209,52 @@ namespace Lisple
     }
   }
 
+  void DirRootFileSystem::create_symlink(const std::string& source, const std::string& link)
+  {
+    const std::filesystem::path source_path = writable_path(load_paths, source);
+    const std::filesystem::path link_path = writable_path(load_paths, link);
+    const auto parent_path = link_path.parent_path();
+    if (!parent_path.empty())
+    {
+      std::filesystem::create_directories(parent_path);
+    }
+
+    std::error_code ec;
+    if (std::filesystem::is_directory(source_path, ec))
+    {
+      std::filesystem::create_directory_symlink(source_path, link_path, ec);
+    }
+    else
+    {
+      std::filesystem::create_symlink(source_path, link_path, ec);
+    }
+    if (ec)
+    {
+      throw LispleException("Could not create symlink: '" + source_path.string() + "' -> '" +
+                            link_path.string() + "': " + ec.message());
+    }
+  }
+
+  bool DirRootFileSystem::is_symlink(const std::string& path)
+  {
+    const std::filesystem::path target = writable_path(load_paths, path);
+    std::error_code ec;
+    return std::filesystem::is_symlink(std::filesystem::symlink_status(target, ec));
+  }
+
+  std::string DirRootFileSystem::read_symlink(const std::string& path)
+  {
+    const std::filesystem::path target = writable_path(load_paths, path);
+    std::error_code ec;
+    const std::filesystem::path link_target = std::filesystem::read_symlink(target, ec);
+    if (ec)
+    {
+      throw LispleException("Could not read symlink: '" + target.string() +
+                            "': " + ec.message());
+    }
+    return link_target.lexically_normal().string();
+  }
+
   FileSystemStat DirRootFileSystem::stat(const std::string& path)
   {
     const std::filesystem::path requested(path);

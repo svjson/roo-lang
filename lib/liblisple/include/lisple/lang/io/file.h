@@ -67,6 +67,50 @@ namespace Lisple
   FUNC(RemoveTreeBangFunction, remove_tree)
 
   /*!
+   * @brief Create a symbolic link.
+   *
+   * Usage:
+   * @code
+   * (lisple.io/symlink! "/path/to/package" "repo/pkg/name/0.1.0")
+   * => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The source path the link points to.                              |
+   * | 1     | The symbolic link path to create.                                |
+   */
+  FUNC(SymlinkBangFunction, symlink)
+
+  /*!
+   * @brief Test whether a path is a symbolic link.
+   *
+   * Usage:
+   * @code
+   * (lisple.io/symlink? "repo/pkg/name/0.1.0") => true
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The path to inspect.                                             |
+   */
+  FUNC(SymlinkPFunction, symlink_p)
+
+  /*!
+   * @brief Read the target of a symbolic link.
+   *
+   * Usage:
+   * @code
+   * (lisple.io/read-link! "repo/pkg/name/0.1.0") => "/path/to/package"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The symbolic link path to inspect.                               |
+   */
+  FUNC(ReadLinkBangFunction, read_link)
+
+  /*!
    * @brief Read one EDN form from a text file.
    *
    * Usage:

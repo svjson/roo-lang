@@ -39,6 +39,9 @@ namespace Lisple
     virtual void write(const std::string& file_name, const std::string& contents);
     virtual void copy_file(const std::string& source, const std::string& destination);
     virtual void remove_tree(const std::string& path);
+    virtual void create_symlink(const std::string& source, const std::string& link);
+    virtual bool is_symlink(const std::string& path);
+    virtual std::string read_symlink(const std::string& path);
     virtual std::vector<DirectoryEntry> list_directory(const std::string& path);
     virtual FileSystemStat stat(const std::string& path);
     virtual bool exists(const std::string& path);

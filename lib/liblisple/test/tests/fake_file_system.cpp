@@ -20,7 +20,12 @@ namespace LispleTest
 
   const std::string FakeFileSystem::read(const std::string& file_name)
   {
-    return fs_contents.at(normalize(file_name));
+    const std::string normalized_file_name = normalize(file_name);
+    if (fs_symlinks.count(normalized_file_name))
+    {
+      return fs_contents.at(normalize(fs_symlinks.at(normalized_file_name)));
+    }
+    return fs_contents.at(normalized_file_name);
   }
 
   void FakeFileSystem::add_file(const std::string& file_name,
@@ -52,6 +57,10 @@ namespace LispleTest
   void FakeFileSystem::remove_tree(const std::string& path)
   {
     const std::string normalized_path = normalize(path);
+    if (fs_symlinks.erase(normalized_path) > 0)
+    {
+      return;
+    }
     for (auto it = fs_contents.begin(); it != fs_contents.end();)
     {
       if (it->first == normalized_path || it->first.rfind(normalized_path + "/", 0) == 0)
@@ -63,6 +72,32 @@ namespace LispleTest
         ++it;
       }
     }
+    for (auto it = fs_symlinks.begin(); it != fs_symlinks.end();)
+    {
+      if (it->first.rfind(normalized_path + "/", 0) == 0)
+      {
+        it = fs_symlinks.erase(it);
+      }
+      else
+      {
+        ++it;
+      }
+    }
+  }
+
+  void FakeFileSystem::create_symlink(const std::string& source, const std::string& link)
+  {
+    fs_symlinks[normalize(link)] = normalize(source);
+  }
+
+  bool FakeFileSystem::is_symlink(const std::string& path)
+  {
+    return fs_symlinks.count(normalize(path)) > 0;
+  }
+
+  std::string FakeFileSystem::read_symlink(const std::string& path)
+  {
+    return fs_symlinks.at(normalize(path));
   }
 
   std::vector<Lisple::DirectoryEntry> FakeFileSystem::list_directory(const std::string& path)
@@ -101,6 +136,37 @@ namespace LispleTest
       entry.hidden = hidden_name(name);
       entries[name] = entry;
     }
+    for (const auto& [link_path, target] : fs_symlinks)
+    {
+      (void)target;
+
+      std::filesystem::path relative;
+      if (normalized_path == "." || normalized_path.empty())
+      {
+        relative = link_path;
+      }
+      else if (link_path.rfind(normalized_path + "/", 0) == 0)
+      {
+        relative = link_path.substr(normalized_path.size() + 1);
+      }
+      else
+      {
+        continue;
+      }
+
+      if (relative.empty()) continue;
+      auto child = relative.begin();
+      const std::string name = child->string();
+      const bool directory = ++child != relative.end();
+
+      Lisple::DirectoryEntry entry;
+      entry.name = name;
+      entry.path = normalize((std::filesystem::path(normalized_path) / name).string());
+      entry.type = directory ? Lisple::FileSystemEntryType::DIRECTORY
+                             : Lisple::FileSystemEntryType::OTHER;
+      entry.hidden = hidden_name(name);
+      entries[name] = entry;
+    }
 
     std::vector<Lisple::DirectoryEntry> result;
     for (const auto& [name, entry] : entries)
@@ -115,6 +181,10 @@ namespace LispleTest
   {
     const std::string normalized_path = normalize(path);
     Lisple::FileSystemStat result;
+    if (fs_symlinks.count(normalized_path))
+    {
+      return stat(fs_symlinks.at(normalized_path));
+    }
     if (has_file(normalized_path))
     {
       result.exists = true;
@@ -132,17 +202,26 @@ namespace LispleTest
 
   bool FakeFileSystem::exists(const std::string& path)
   {
-    return has_file(path) || is_directory(path);
+    return is_symlink(path) || has_file(path) || is_directory(path);
   }
 
   bool FakeFileSystem::is_file(const std::string& path)
   {
-    return has_file(path);
+    const std::string normalized_path = normalize(path);
+    if (fs_symlinks.count(normalized_path))
+    {
+      return is_file(fs_symlinks.at(normalized_path));
+    }
+    return has_file(normalized_path);
   }
 
   bool FakeFileSystem::is_directory(const std::string& path)
   {
     const std::string normalized_path = normalize(path);
+    if (fs_symlinks.count(normalized_path))
+    {
+      return is_directory(fs_symlinks.at(normalized_path));
+    }
     if (normalized_path == "." || normalized_path.empty())
     {
       return true;

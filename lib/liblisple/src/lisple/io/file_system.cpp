@@ -20,6 +20,22 @@ namespace Lisple
     throw LispleException("File system does not support removing paths: '" + path + "'");
   }
 
+  void FileSystem::create_symlink(const std::string& source, const std::string& link)
+  {
+    throw LispleException("File system does not support creating symlinks: '" + source +
+                          "' -> '" + link + "'");
+  }
+
+  bool FileSystem::is_symlink(const std::string& path)
+  {
+    throw LispleException("File system does not support symlink checks: '" + path + "'");
+  }
+
+  std::string FileSystem::read_symlink(const std::string& path)
+  {
+    throw LispleException("File system does not support reading symlinks: '" + path + "'");
+  }
+
   std::vector<DirectoryEntry> FileSystem::list_directory(const std::string& path)
   {
     throw LispleException("File system does not support listing directories: '" + path +

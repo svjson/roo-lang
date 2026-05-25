@@ -12,6 +12,9 @@ namespace Lisple
     void write(const std::string& file_name, const std::string& contents) override;
     void copy_file(const std::string& source, const std::string& destination) override;
     void remove_tree(const std::string& path) override;
+    void create_symlink(const std::string& source, const std::string& link) override;
+    bool is_symlink(const std::string& path) override;
+    std::string read_symlink(const std::string& path) override;
     std::vector<DirectoryEntry> list_directory(const std::string& path) override;
     FileSystemStat stat(const std::string& path) override;
     bool exists(const std::string& path) override;
