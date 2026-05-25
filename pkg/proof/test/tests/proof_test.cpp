@@ -3,6 +3,8 @@
 #include <lisple-package/manifest.h>
 #include <lisple-package/native_loader.h>
 
+#include <string>
+
 #include <gtest/gtest.h>
 #include <proof/native.h>
 
@@ -25,6 +27,42 @@ TEST(ProofPackage, registers_and_runs_tests_from_load_path)
   EXPECT_EQ(results->to_string(),
             "[{:name addition :status :pass} {:name should-alias :status :pass} "
             "{:name assert-alias :status :pass}]");
+}
+
+TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
+{
+  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-streaming-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest first-stream-marker
+      (prn "first-body"))
+    (deftest second-stream-marker
+      (prn "second-body"))
+  )");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(run)");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(results->to_string(),
+            "[{:name first-stream-marker :status :pass} "
+            "{:name second-stream-marker :status :pass}]");
+
+  const auto first_body = output.find("first-body\n");
+  const auto first_result = output.find("  PASS first-stream-marker\n");
+  const auto second_body = output.find("second-body\n");
+
+  ASSERT_NE(first_body, std::string::npos);
+  ASSERT_NE(first_result, std::string::npos);
+  ASSERT_NE(second_body, std::string::npos);
+  EXPECT_LT(first_body, first_result);
+  EXPECT_LT(first_result, second_body);
 }
 
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)

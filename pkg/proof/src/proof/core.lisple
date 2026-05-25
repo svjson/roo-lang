@@ -109,5 +109,12 @@
   (report-summary (result-summary results))
   results)
 
+(defun run-and-report-test [results test]
+  (let [result (run-test test)]
+    (report-result result)
+    (append! results result)))
+
 (defun run []
-  (report (map tests run-test)))
+  (let [results (reduce tests [] run-and-report-test)]
+    (report-summary (result-summary results))
+    results))
