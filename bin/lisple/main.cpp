@@ -18,7 +18,8 @@ namespace
   void print_usage()
   {
     std::cout
-      << "Usage: lisple [--help|--version] [--load-path <path>] <file|package-tool>\n";
+      << "Usage: lisple [--help|--version] [--load-path <path>] <file|package-tool> "
+         "[args...]\n";
   }
 
   void print_help()
@@ -30,7 +31,9 @@ namespace
                  "  lisple --version\n"
                  "  lisple --load-path <path> <file>\n"
                  "  lisple --load-path <path1> --load-path <path2> <file>\n"
-                 "  lisple <dependency-name>\n";
+                 "  lisple <dependency-name>\n"
+                 "\n"
+                 "Arguments after <file|package-tool> are forwarded to that target.\n";
   }
 
   void print_version()
@@ -142,6 +145,12 @@ int main(int argc, char** argv)
   {
     const std::string arg = argv[i];
 
+    if (!file_path.empty())
+    {
+      app_args.push_back(arg);
+      continue;
+    }
+
     if (arg == "-h" || arg == "--help")
     {
       print_help();
@@ -181,12 +190,6 @@ int main(int argc, char** argv)
         return 1;
       }
       load_paths.push_back(load_path);
-      continue;
-    }
-
-    if (!file_path.empty())
-    {
-      app_args.push_back(arg);
       continue;
     }
 

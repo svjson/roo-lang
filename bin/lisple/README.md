@@ -17,6 +17,10 @@ lisple proof
 lisple --load-path src file.lisple
 ```
 
+Arguments after the file or package target are forwarded to that target. Global
+`lisple` options such as `--help`, `--version`, and `--load-path` must appear
+before the target.
+
 `lisple proof` is generic package tool dispatch: the current package must depend
 on a package named `proof`, and that package must declare a `run` tool in its
 `package.edn`.
