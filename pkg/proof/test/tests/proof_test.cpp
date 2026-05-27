@@ -1,11 +1,11 @@
-#include <lisple/io/dir_root_file_system.h>
-#include <lisple/runtime.h>
-#include <lisple-package/manifest.h>
-#include <lisple-package/native_loader.h>
-
 #include <string>
 
+#include <lisple/io/dir_root_file_system.h>
+#include <lisple/runtime.h>
+
 #include <gtest/gtest.h>
+#include <lisple-package/manifest.h>
+#include <lisple-package/native_loader.h>
 #include <proof/native.h>
 
 TEST(ProofPackage, registers_and_runs_tests_from_load_path)
@@ -107,17 +107,13 @@ TEST(ProofPackage, summarizes_result_sets_in_lisple)
   )");
 
   EXPECT_EQ(summary->to_string(), "{:total 2 :passed 1 :failed 1}");
-  EXPECT_EQ(runtime.eval("(pass-count [{:status :pass} {:status :fail}])")
-              ->to_string(),
+  EXPECT_EQ(runtime.eval("(pass-count [{:status :pass} {:status :fail}])")->to_string(),
             "1");
-  EXPECT_EQ(runtime.eval("(fail-count [{:status :pass} {:status :fail}])")
-              ->to_string(),
+  EXPECT_EQ(runtime.eval("(fail-count [{:status :pass} {:status :fail}])")->to_string(),
             "1");
-  EXPECT_EQ(runtime.eval(R"((summary-text {:total 2 :passed 1 :failed 1}))")
-              ->to_string(),
+  EXPECT_EQ(runtime.eval(R"((summary-text {:total 2 :passed 1 :failed 1}))")->to_string(),
             R"("proof: 1 passed, 1 failed, 2 total")");
-  EXPECT_EQ(runtime.eval(R"((summary-divider {:total 2 :passed 1 :failed 1}))")
-              ->to_string(),
+  EXPECT_EQ(runtime.eval(R"((summary-divider {:total 2 :passed 1 :failed 1}))")->to_string(),
             R"("----------------------------------")");
 }
 
@@ -188,7 +184,7 @@ TEST(ProofPackage, expect_records_failures_and_continues)
             "{:message \"Expected 3, got 4.\"}]}]");
 }
 
-TEST(ProofPackage, scenario_forms_execute_ordinary_lisple_code)
+TEST(ProofPackage, ScenarioFormsPassResultsBetweenPhases)
 {
   Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
   Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
@@ -201,14 +197,123 @@ TEST(ProofPackage, scenario_forms_execute_ordinary_lisple_code)
   runtime.eval(R"(
     (deftest scenario
       (given
-        (def value 4))
-      (when
-        (set! [value] (+ value 1)))
-      (then
-        (should (= value 5))))
+        {:value 4
+         :step 1})
+      (when [{:keys [value step]}]
+        (+ value step))
+      (then [result {:keys [value step]}]
+        (should (= result 5))
+        (should (= value 4))
+        (should (= step 1))))
   )");
 
   auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
+}
+
+TEST(ProofPackage, ScenarioThenCanOmitGivenResult)
+{
+  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-scenario-omit-given-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest scenario
+      (given
+        4)
+      (when [value]
+        (+ value 1))
+      (then [result]
+        (should (= result 5))))
+  )");
+
+  auto results = runtime.eval("(run)");
+
+  EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
+}
+
+TEST(ProofPackage, ScenarioWhenAndThenSupportEmptyArgVectors)
+{
+  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-scenario-empty-args-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest scenario
+      (given
+        4)
+      (when []
+        5)
+      (then []
+        (should true)))
+  )");
+
+  auto results = runtime.eval("(run)");
+
+  EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
+}
+
+TEST(ProofPackage, ScenarioFormsExecuteSurroundingAndInterspersedForms)
+{
+  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-scenario-order-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (def events [])
+    (deftest scenario-order
+      (append! events :before)
+      (given
+        (append! events :given)
+        4)
+      (append! events :after-given)
+      (when [value]
+        (append! events :when)
+        (+ value 1))
+      (append! events :after-when)
+      (then [result given-value]
+        (append! events :then)
+        (should (= result 5))
+        (should (= given-value 4)))
+      (append! events :after))
+  )");
+
+  auto results = runtime.eval("(run)");
+
+  EXPECT_EQ(results->to_string(), "[{:name scenario-order :status :pass}]");
+  EXPECT_EQ(runtime.eval("events")->to_string(),
+            "[:before :given :after-given :when :after-when :then :after]");
+}
+
+TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)
+{
+  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-scenario-arg-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+
+  EXPECT_THROW(runtime.eval(R"(
+    (deftest invalid-scenario-args
+      (given 4)
+      (when [value extra]
+        value))
+  )"),
+               std::exception);
 }

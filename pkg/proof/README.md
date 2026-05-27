@@ -89,22 +89,42 @@ registered tests and failures before defining new tests:
 ```lisp
 (deftest moving-onto-enemy-triggers-attack
   (given
-    (world/fixture :small-arena)
-    (unit/fixture :player {:at [2 2]})
-    (unit/fixture :enemy {:at [3 2]}))
+    {:world (world/fixture :small-arena)
+     :player (unit/fixture :player {:at [2 2]})
+     :enemy (unit/fixture :enemy {:at [3 2]})})
 
-  (when
-    (input/press! :right)
-    (game/tick! 3)
-    (events/drain!))
+  (when [{:keys [world player]}]
+    (input/press world :right)
+    (game/tick world 3)
+    (events/drain world))
 
-  (then
-    (is (= (unit/state :player) :attacking))))
+  (then [events {:keys [player]}]
+    (is (= (unit/state player) :attacking))
+    (is (= [:attack] (event/types events)))))
 ```
 
-These forms do not introduce a separate execution model. Code inside them runs
-as normal Lisple code. They are there for readability and for report/context
-structure.
+The phases execute in the order they occur. Each phase returns the value of its
+last expression and the phases feed those values forward:
+
+- `given` takes no arguments and returns the test fixture or precondition.
+- `when` takes an argument vector and receives the `given` result.
+- `then` takes an argument vector and receives the `when` result. It may also
+  receive the `given` result as a second argument.
+
+The argument vectors use normal Lisple function binding, including destructuring.
+If a phase does not need a value, omit it from the argument vector:
+
+```lisp
+(deftest simple-scenario
+  (given
+    4)
+
+  (when [value]
+    (+ value 1))
+
+  (then [result]
+    (is (= result 5))))
+```
 
 ## Results
 
