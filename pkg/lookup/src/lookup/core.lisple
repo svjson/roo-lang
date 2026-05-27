@@ -1,0 +1,67 @@
+(ns lookup.core)
+
+(def version "0.1.0")
+
+(def default-index-path "lisple-symbols.edn")
+
+(def usage-lines
+  ["Usage: lookup [--help|--version]"
+   "       lookup index [--out <file>] <package-dir>"])
+
+(defun help-lines []
+  (concat ["lookup: build Lisple symbol index artifacts"]
+          usage-lines))
+
+(defun version-text []
+  (str "lookup " version))
+
+(defun command [args]
+  (let [first-arg (nth args 0)]
+    (cond
+
+      (or (nil? first-arg)
+          (contains? ["--help" "-h"] first-arg))
+      :help
+
+      (= first-arg "--version")
+      :version
+
+      (= first-arg "index")
+      :index
+
+      true
+      :usage)))
+
+(defun print-lines! [lines]
+  (map lines prn))
+
+(defun print-usage! []
+  (print-lines! usage-lines))
+
+(defun print-help! []
+  (print-lines! (help-lines)))
+
+(defun print-version! []
+  (prn (version-text)))
+
+(defun print-index-placeholder! []
+  (prn "lookup: index generation is not implemented yet;"
+       "default output will be"
+       default-index-path)
+  (print-usage!))
+
+(defun main [args]
+  (let [command-name (command args)]
+    (cond
+
+      (= command-name :help)
+      (print-help!)
+
+      (= command-name :version)
+      (print-version!)
+
+      (= command-name :index)
+      (print-index-placeholder!)
+
+      true
+      (print-usage!))))

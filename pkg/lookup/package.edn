@@ -1,0 +1,6 @@
+{:name lookup
+ :version "0.1.0"
+ :description "Lisple symbol index generator."
+ :dependencies []
+ :load-roots ["src"]
+ :main lookup.core/main}

@@ -10,7 +10,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build install build-proofread install-loom install-proofread test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:lisple-cli test\:loom-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build install build-lookup build-proofread install-loom install-lookup install-proofread test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:lisple-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/liblisple/test/testlisple
 PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage
@@ -18,6 +18,7 @@ PROOF_TEST_BINARY := pkg/proof/test/testproof
 LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec
 SERVER_TEST_BINARY := lib/lisple-server/test/testserver
 LOOM_BINARY := loom
+LOOKUP_BINARY := lookup
 PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
   TEST_BINARY := lib/liblisple/test/testlisple.exe
@@ -26,6 +27,7 @@ ifeq ($(OS),Windows_NT)
   LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec.exe
   SERVER_TEST_BINARY := lib/lisple-server/test/testserver.exe
   LOOM_BINARY := loom.exe
+  LOOKUP_BINARY := lookup.exe
   PROOFREAD_BINARY := proofread.exe
 endif
 
@@ -53,6 +55,13 @@ install-loom: build
 	./build/lisplec build $(CURDIR)/pkg/loom --build-dir $(CURDIR)/build/loom-install --name loom
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/loom-install/build/$(LOOM_BINARY) $(PREFIX)/bin/$(LOOM_BINARY)
+
+build-lookup: build
+	./build/lisplec build $(CURDIR)/pkg/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup
+
+install-lookup: build-lookup
+	cmake -E make_directory $(PREFIX)/bin
+	cmake -E copy_if_different $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(PREFIX)/bin/$(LOOKUP_BINARY)
 
 build-proofread: build
 	./build/lisplec build $(CURDIR)/pkg/proofread --build-dir $(CURDIR)/build/proofread-install --name proofread
@@ -82,13 +91,16 @@ test\:lisplec: build
 	cmake --build build --target testlisplec
 	./build/$(LISPLEC_TEST_BINARY) $(GTEST_FILTER_ARG)
 
-test\:cli: test\:lisple-cli test\:loom-cli
+test\:cli: test\:lisple-cli test\:loom-cli test\:lookup-cli
 
 test\:lisple-cli: build
 	sh $(CURDIR)/bin/lisple/test/run-cli-tests.sh $(CURDIR)
 
 test\:loom-cli: build
 	sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
+
+test\:lookup-cli: build
+	sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
 
 test\:benchmark: build
 	cmake --build build --target testlisple

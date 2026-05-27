@@ -26,6 +26,7 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
   - **[lisple-server](lib/lisple-server/README.md)** Small server layer for remote Lisple message parsing and dispatch experiments.
   - **[lisple-package](lib/lisple-package/README.md)** Package manifest, dependency load paths, and native package loading.
 - pkg/
+  - **[lookup](pkg/lookup/README.md)** - Lisple indexing for tool-support.
   - **[loom](pkg/loom/README.md)** - Lisple package manager.
   - **[proof](pkg/proof/README.md)** - Lisple test framework package.
   - **[proofread](pkg/proofread/README.md)** - Lisple syntax checker.
