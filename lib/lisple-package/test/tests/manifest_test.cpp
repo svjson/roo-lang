@@ -76,6 +76,26 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.run, "proof");
 }
 
+TEST(PackageManifest, parses_namespace_roots_with_single_and_multiple_paths)
+{
+  auto manifest = Lisple::Package::parse_manifest(
+    R"({:name app
+        :version "0.1.0"
+        :dependencies []
+        :load-roots ["src"]
+        :namespace-roots {app.core "src"
+                          app.feature ["src" "test"]}})",
+    "app/package.edn");
+
+  ASSERT_EQ(manifest.namespace_roots.size(), 3u);
+  EXPECT_EQ(manifest.namespace_roots[0].ns_prefix, "app.core");
+  EXPECT_EQ(manifest.namespace_roots[0].path, "src");
+  EXPECT_EQ(manifest.namespace_roots[1].ns_prefix, "app.feature");
+  EXPECT_EQ(manifest.namespace_roots[1].path, "src");
+  EXPECT_EQ(manifest.namespace_roots[2].ns_prefix, "app.feature");
+  EXPECT_EQ(manifest.namespace_roots[2].path, "test");
+}
+
 TEST(PackageManifest, parses_dependency_map_with_versions_and_paths)
 {
   auto manifest = Lisple::Package::parse_manifest(
@@ -516,6 +536,48 @@ TEST(PackageManifest, namespace_roots_make_prefixed_namespaces_available_to_runt
   runtime.eval("(ns app (:require mylib.stuff.core))");
 
   EXPECT_EQ(runtime.eval("mylib.stuff.core/value")->to_string(), "42");
+
+  std::filesystem::remove_all(root);
+}
+
+TEST(PackageManifest, namespace_roots_make_multiple_paths_available_to_runtime)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "lisple-package-namespace-root-vector-test";
+  std::filesystem::remove_all(root);
+
+  write_file(root / "pkg/app/package.edn",
+             R"({:name app
+                 :dependencies []
+                 :load-roots ["src" "test"]
+                 :namespace-roots {mylib.stuff ["src/lisple/main-stuff"
+                                                "test/lisple/main-stuff"]}})");
+  write_file(root / "pkg/app/src/lisple/main-stuff/core.lisple",
+             R"((ns mylib.stuff.core)
+                (def value 42))");
+  write_file(root / "pkg/app/test/lisple/main-stuff/fixture.lisple",
+             R"((ns mylib.stuff.fixture)
+                (def value 99))");
+
+  Lisple::Package::LoadPlan host_plan;
+  host_plan.load_paths = {"/"};
+  auto manifest_fs = Lisple::Package::make_load_path_file_system(host_plan);
+  auto plan = Lisple::Package::resolve_load_plan(*manifest_fs, (root / "pkg/app").string());
+
+  ASSERT_EQ(plan.namespace_roots.size(), 2u);
+  EXPECT_EQ(plan.namespace_roots[0].path,
+            (root / "pkg/app/src/lisple/main-stuff").lexically_normal().string());
+  EXPECT_EQ(plan.namespace_roots[1].path,
+            (root / "pkg/app/test/lisple/main-stuff").lexically_normal().string());
+
+  auto package_fs = Lisple::Package::make_load_path_file_system(plan);
+  Lisple::Runtime runtime(package_fs.get());
+  Lisple::Package::configure_runtime_namespace_roots(runtime, plan);
+
+  runtime.eval("(ns app (:require mylib.stuff.core mylib.stuff.fixture))");
+
+  EXPECT_EQ(runtime.eval("mylib.stuff.core/value")->to_string(), "42");
+  EXPECT_EQ(runtime.eval("mylib.stuff.fixture/value")->to_string(), "99");
 
   std::filesystem::remove_all(root);
 }

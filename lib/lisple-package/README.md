@@ -37,7 +37,8 @@ Current fields:
 - `:description` is optional descriptive text.
 - `:dependencies` maps dependency names to local package locations or metadata.
 - `:load-roots` lists package-relative Lisple source roots.
-- `:namespace-roots` maps namespace prefixes to package-relative source roots.
+- `:namespace-roots` maps namespace prefixes to one package-relative source
+  root or a vector of package-relative source roots.
 - `:native-libraries` lists package-relative or absolute native libraries.
 - `:autoloads` lists namespaces loaded after native libraries are available.
 - `:config` maps package names to package-specific configuration data.
@@ -127,6 +128,16 @@ full-path lookup.
 
 Namespace roots are prefix mappings. The longest matching prefix wins, so a
 more specific mapping such as `mylib.stuff.ui` takes precedence over `mylib`.
+If a prefix can be loaded from more than one source root, use a vector. Paths
+are tried in the order declared:
+
+```lisp
+{:name mylib
+ :version "0.1.0"
+ :load-roots ["src" "test"]
+ :namespace-roots {mylib.stuff ["src/lisple/main-stuff"
+                                "test/lisple/main-stuff"]}}
+```
 
 ## Native Libraries
 

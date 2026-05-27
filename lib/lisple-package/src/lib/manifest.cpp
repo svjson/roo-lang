@@ -91,10 +91,22 @@ namespace Lisple::Package
       roots.reserve(children.size() / 2);
       for (size_t i = 0; i < children.size(); i += 2)
       {
-        roots.push_back(Lisple::NamespaceRoot{
-          atom_string(children[i], "namespace-roots", source_name),
-          atom_string(children[i + 1], "namespace-roots", source_name),
-        });
+        const std::string prefix = atom_string(children[i], "namespace-roots", source_name);
+        const auto& path_node = children[i + 1];
+        if (path_node->get_type() == Form::VECTOR)
+        {
+          for (const auto& path : vector_of_atoms(path_node, "namespace-roots", source_name))
+          {
+            roots.push_back(Lisple::NamespaceRoot{prefix, path});
+          }
+        }
+        else
+        {
+          roots.push_back(Lisple::NamespaceRoot{
+            prefix,
+            atom_string(path_node, "namespace-roots", source_name),
+          });
+        }
       }
       return roots;
     }
