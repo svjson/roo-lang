@@ -4,23 +4,23 @@
 
 (deftest package-id-uses-at-version
   (given
-    (def package-name "loom")
-    (def version "0.1.0"))
+    {:package-name "loom"
+     :version "0.1.0"})
 
-  (when
-    (def id (repository/package-id package-name version)))
+  (when [{:keys [package-name version]}]
+    (repository/package-id package-name version))
 
-  (then
+  (then [id]
     (is (= "loom@0.1.0" id))))
 
 (deftest package-paths-use-local-repository-layout
   (given
-    (def repo-root "/tmp/lisple-pkg"))
+    "/tmp/lisple-pkg")
 
-  (when
-    (def target-dir (repository/package-target-dir repo-root "loom" "0.1.0"))
-    (def manifest-path (repository/package-manifest-path repo-root "loom" "0.1.0")))
+  (when [repo-root]
+    {:target-dir (repository/package-target-dir repo-root "loom" "0.1.0")
+     :manifest-path (repository/package-manifest-path repo-root "loom" "0.1.0")})
 
-  (then
+  (then [{:keys [target-dir manifest-path]}]
     (is (= "/tmp/lisple-pkg/loom/0.1.0" target-dir))
     (is (= "/tmp/lisple-pkg/loom/0.1.0/package.edn" manifest-path))))

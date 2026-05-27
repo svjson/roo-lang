@@ -4,26 +4,26 @@
 
 (deftest finds-arguments-by-index
   (given
-    (def index-argv ["install" "pkg/loom"]))
+    ["install" "pkg/loom"])
 
-  (when
-    (def index-command (args/arg-at index-argv 0))
-    (def missing-index-arg (args/arg-at index-argv 3)))
+  (when [index-argv]
+    {:index-command (args/arg-at index-argv 0)
+     :missing-index-arg (args/arg-at index-argv 3)})
 
-  (then
+  (then [{:keys [index-command missing-index-arg]}]
     (is (= "install" index-command))
     (is (nil? missing-index-arg))))
 
 (deftest finds-options-and-flags-from-offset
   (given
-    (def options-argv ["install" "pkg/loom" "--repo" "build/repo" "--force"]))
+    ["install" "pkg/loom" "--repo" "build/repo" "--force"])
 
-  (when
-    (def option-repo (args/option-from options-argv 2 "--repo" "default-repo"))
-    (def force-option? (args/flag-from? options-argv 2 "--force"))
-    (def dry-run-option? (args/flag-from? options-argv 2 "--dry-run")))
+  (when [options-argv]
+    {:option-repo (args/option-from options-argv 2 "--repo" "default-repo")
+     :force-option? (args/flag-from? options-argv 2 "--force")
+     :dry-run-option? (args/flag-from? options-argv 2 "--dry-run")})
 
-  (then
+  (then [{:keys [option-repo force-option? dry-run-option?]}]
     (is (= "build/repo" option-repo))
     (is force-option?)
     (is (= false dry-run-option?))))

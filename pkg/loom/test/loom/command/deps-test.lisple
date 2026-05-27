@@ -4,18 +4,17 @@
 
 (deftest renders-dependency-graph-as-tree
   (given
-    (def tree-root
-      {:id "app@0.1.0"
-       :dependencies [{:id "alpha@1.0.0"
-                       :dependencies [{:id "common@1.0.0"
-                                       :dependencies []}]}
-                      {:id "beta@1.0.0"
-                       :dependencies []}]}))
+    {:id "app@0.1.0"
+     :dependencies [{:id "alpha@1.0.0"
+                     :dependencies [{:id "common@1.0.0"
+                                     :dependencies []}]}
+                    {:id "beta@1.0.0"
+                     :dependencies []}]})
 
-  (when
-    (def rendered-tree (deps/tree-lines tree-root false)))
+  (when [tree-root]
+    (deps/tree-lines tree-root false))
 
-  (then
+  (then [rendered-tree]
     (is (= ["app@0.1.0"
             "├── alpha@1.0.0"
             "│   └── common@1.0.0"
@@ -24,19 +23,18 @@
 
 (deftest omits-repeated-marker-by-default
   (given
-    (def default-repeated-root
-      {:id "app@0.1.0"
-       :dependencies [{:id "left@1.0.0"
-                       :dependencies [{:id "shared@1.0.0"
-                                       :dependencies []}]}
-                      {:id "right@1.0.0"
-                       :dependencies [{:id "shared@1.0.0"
-                                       :dependencies []}]}]}))
+    {:id "app@0.1.0"
+     :dependencies [{:id "left@1.0.0"
+                     :dependencies [{:id "shared@1.0.0"
+                                     :dependencies []}]}
+                    {:id "right@1.0.0"
+                     :dependencies [{:id "shared@1.0.0"
+                                     :dependencies []}]}]})
 
-  (when
-    (def default-repeated-tree (deps/tree-lines default-repeated-root false)))
+  (when [default-repeated-root]
+    (deps/tree-lines default-repeated-root false))
 
-  (then
+  (then [default-repeated-tree]
     (is (= ["app@0.1.0"
             "├── left@1.0.0"
             "│   └── shared@1.0.0"
@@ -46,19 +44,18 @@
 
 (deftest shows-repeated-marker-when-requested
   (given
-    (def marked-repeated-root
-      {:id "app@0.1.0"
-       :dependencies [{:id "left@1.0.0"
-                       :dependencies [{:id "shared@1.0.0"
-                                       :dependencies []}]}
-                      {:id "right@1.0.0"
-                       :dependencies [{:id "shared@1.0.0"
-                                       :dependencies []}]}]}))
+    {:id "app@0.1.0"
+     :dependencies [{:id "left@1.0.0"
+                     :dependencies [{:id "shared@1.0.0"
+                                     :dependencies []}]}
+                    {:id "right@1.0.0"
+                     :dependencies [{:id "shared@1.0.0"
+                                     :dependencies []}]}]})
 
-  (when
-    (def marked-repeated-tree (deps/tree-lines marked-repeated-root true)))
+  (when [marked-repeated-root]
+    (deps/tree-lines marked-repeated-root true))
 
-  (then
+  (then [marked-repeated-tree]
     (is (= ["app@0.1.0"
             "├── left@1.0.0"
             "│   └── shared@1.0.0"
@@ -68,17 +65,16 @@
 
 (deftest renders-flat-dependency-list
   (given
-    (def flat-root
-      {:id "app@0.1.0"
-       :dependencies [{:id "beta@1.0.0"
-                       :dependencies []}
-                      {:id "alpha@1.0.0"
-                       :dependencies [{:id "common@1.0.0"
-                                       :dependencies []}]}]}))
+    {:id "app@0.1.0"
+     :dependencies [{:id "beta@1.0.0"
+                     :dependencies []}
+                    {:id "alpha@1.0.0"
+                     :dependencies [{:id "common@1.0.0"
+                                     :dependencies []}]}]})
 
-  (when
-    (def flat-lines (deps/flat-lines flat-root)))
+  (when [flat-root]
+    (deps/flat-lines flat-root))
 
-  (then
+  (then [flat-lines]
     (is (= ["alpha@1.0.0" "beta@1.0.0" "common@1.0.0"]
            flat-lines))))

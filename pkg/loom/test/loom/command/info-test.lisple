@@ -5,25 +5,26 @@
             [loom.test-support :as support]))
 
 (deftest returns-manifest-for-installed-package
-  (let [repo-root (support/fresh-repo! "loom-proof-info")]
-    (given
-      (install/install! (support/loom-package-dir) repo-root true))
+  (given
+    (let [repo-root (support/fresh-repo! "loom-proof-info")]
+      (install/install! (support/loom-package-dir) repo-root true)
+      repo-root))
 
-    (when
-      (def installed-manifest (info/info! repo-root "loom" "0.1.0")))
+  (when [repo-root]
+    (info/info! repo-root "loom" "0.1.0"))
 
-    (then
-      (is (= "loom" (str (:name installed-manifest))))
-      (is (= "0.1.0" (:version installed-manifest)))
-      (is (= "Lisple package manager." (:description installed-manifest))))))
+  (then [installed-manifest]
+    (is (= "loom" (str (:name installed-manifest))))
+    (is (= "0.1.0" (:version installed-manifest)))
+    (is (= "Lisple package manager." (:description installed-manifest)))))
 
 (deftest returns-nil-for-missing-package
-  (let [repo-root (support/fresh-repo! "loom-proof-info-missing")]
-    (given
-      (def package-name "missing"))
+  (given
+    {:repo-root (support/fresh-repo! "loom-proof-info-missing")
+     :package-name "missing"})
 
-    (when
-      (def missing-manifest (info/info! repo-root package-name "0.1.0")))
+  (when [{:keys [repo-root package-name]}]
+    (info/info! repo-root package-name "0.1.0"))
 
-    (then
-      (is (nil? missing-manifest)))))
+  (then [missing-manifest]
+    (is (nil? missing-manifest))))

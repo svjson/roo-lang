@@ -4,25 +4,24 @@
 
 (deftest accepts-minimal-valid-manifest
   (given
-    (def valid-manifest {:name "loom"
-                         :version "0.1.0"
-                         :load-roots ["src"]}))
+    {:name "loom"
+     :version "0.1.0"
+     :load-roots ["src"]})
 
-  (when
-    (def valid-manifest-errors (manifest/validation-errors valid-manifest)))
+  (when [valid-manifest]
+    (manifest/validation-errors valid-manifest))
 
-  (then
+  (then [valid-manifest-errors]
     (is (= [] valid-manifest-errors))))
 
 (deftest reports-required-manifest-fields
   (given
-    (def missing-required-fields {:description "No identity."}))
+    {:description "No identity."})
 
-  (when
-    (def required-field-errors
-      (manifest/validation-errors missing-required-fields)))
+  (when [missing-required-fields]
+    (manifest/validation-errors missing-required-fields))
 
-  (then
+  (then [required-field-errors]
     (is (= ["missing required field :name"
             "missing required field :version"
             "missing required field :load-roots"]
@@ -30,15 +29,14 @@
 
 (deftest reports-invalid-manifest-field-types
   (given
-    (def invalid-field-types {:name ["loom"]
-                              :version {:major 0}
-                              :load-roots "src"}))
+    {:name ["loom"]
+     :version {:major 0}
+     :load-roots "src"})
 
-  (when
-    (def invalid-type-errors
-      (manifest/validation-errors invalid-field-types)))
+  (when [invalid-field-types]
+    (manifest/validation-errors invalid-field-types))
 
-  (then
+  (then [invalid-type-errors]
     (is (= [":name must be a string, symbol, or keyword"
             ":version must be a string, symbol, or keyword"
             ":load-roots must be a vector"]
@@ -46,14 +44,13 @@
 
 (deftest reports-invalid-load-root-values
   (given
-    (def invalid-load-roots {:name "loom"
-                             :version "0.1.0"
-                             :load-roots ["src" {:bad true}]}))
+    {:name "loom"
+     :version "0.1.0"
+     :load-roots ["src" {:bad true}]})
 
-  (when
-    (def invalid-load-root-errors
-      (manifest/validation-errors invalid-load-roots)))
+  (when [invalid-load-roots]
+    (manifest/validation-errors invalid-load-roots))
 
-  (then
+  (then [invalid-load-root-errors]
     (is (= [":load-roots must contain only strings, symbols, or keywords"]
            invalid-load-root-errors))))

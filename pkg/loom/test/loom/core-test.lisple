@@ -4,12 +4,11 @@
             [loom.test-support :as support]))
 
 (deftest dispatches-list-command
-  (let [repo-root (support/fresh-repo! "loom-proof-core-list")]
-    (given
-      (def list-argv ["list" "--repo" repo-root]))
+  (given
+    ["list" "--repo" (support/fresh-repo! "loom-proof-core-list")])
 
-    (when
-      (def list-result (core/main list-argv)))
+  (when [list-argv]
+    (core/main list-argv))
 
-    (then
-      (is (= [] list-result)))))
+  (then [list-result]
+    (is (= [] list-result))))

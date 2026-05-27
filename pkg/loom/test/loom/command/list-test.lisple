@@ -5,24 +5,24 @@
             [loom.test-support :as support]))
 
 (deftest lists-installed-packages-as-package-at-version
-  (let [repo-root (support/fresh-repo! "loom-proof-list")]
-    (given
+  (given
+    (let [repo-root (support/fresh-repo! "loom-proof-list")]
       (install/install! (support/loom-package-dir) repo-root true)
-      (install/install! (support/proof-package-dir) repo-root true))
+      (install/install! (support/proof-package-dir) repo-root true)
+      repo-root))
 
-    (when
-      (def installed-packages (list/installed-package-ids repo-root)))
+  (when [repo-root]
+    (list/installed-package-ids repo-root))
 
-    (then
-      (is (= ["loom@0.1.0" "proof@0.1.0"] installed-packages)))))
+  (then [installed-packages]
+    (is (= ["loom@0.1.0" "proof@0.1.0"] installed-packages))))
 
 (deftest empty-repository-lists-no-packages
-  (let [repo-root (support/fresh-repo! "loom-proof-list-empty")]
-    (given
-      (def expected []))
+  (given
+    (support/fresh-repo! "loom-proof-list-empty"))
 
-    (when
-      (def empty-packages (list/installed-package-ids repo-root)))
+  (when [repo-root]
+    (list/installed-package-ids repo-root))
 
-    (then
-      (is (= expected empty-packages)))))
+  (then [empty-packages]
+    (is (= [] empty-packages))))

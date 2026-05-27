@@ -5,15 +5,17 @@
             [loom.test-support :as support]))
 
 (deftest copies-existing-file-paths
-  (let [root (support/fresh-repo! "loom-proof-files")]
-    (given
-      (def source (io/join-path root "source/config.edn"))
-      (def target (io/join-path root "target/config.edn"))
-      (io/spit! source "{:ok true}"))
+  (given
+    (let [root (support/fresh-repo! "loom-proof-files")
+          source (io/join-path root "source/config.edn")
+          target (io/join-path root "target/config.edn")]
+      (io/spit! source "{:ok true}")
+      {:source source
+       :target target}))
 
-    (when
-      (files/copy-path-if-present! source target))
+  (when [{:keys [source target]}]
+    (files/copy-path-if-present! source target))
 
-    (then
-      (is (io/exists? target))
-      (is (= "{:ok true}" (io/slurp! target))))))
+  (then [copied-path {:keys [target]}]
+    (is (io/exists? target))
+    (is (= "{:ok true}" (io/slurp! target)))))

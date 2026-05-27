@@ -8,43 +8,41 @@
             [loom.test-support :as support]))
 
 (deftest uninstall-removes-installed-package-version
-  (let [repo-root (support/fresh-repo! "loom-proof-uninstall")]
-    (given
+  (given
+    (let [repo-root (support/fresh-repo! "loom-proof-uninstall")]
       (install/install! (support/loom-package-dir) repo-root true)
-      (def uninstall-target-dir
-        (repository/package-target-dir repo-root "loom" "0.1.0")))
+      {:repo-root repo-root
+       :target-dir (repository/package-target-dir repo-root "loom" "0.1.0")}))
 
-    (when
-      (def uninstalled-dir (uninstall/uninstall! repo-root "loom" "0.1.0")))
+  (when [{:keys [repo-root]}]
+    (uninstall/uninstall! repo-root "loom" "0.1.0"))
 
-    (then
-      (is (= uninstall-target-dir uninstalled-dir))
-      (is (= false (io/exists? uninstall-target-dir))))))
+  (then [uninstalled-dir {:keys [target-dir]}]
+    (is (= target-dir uninstalled-dir))
+    (is (= false (io/exists? target-dir)))))
 
 (deftest uninstall-command-accepts-package-at-version
-  (let [repo-root (support/fresh-repo! "loom-proof-uninstall-package-id")]
-    (given
+  (given
+    (let [repo-root (support/fresh-repo! "loom-proof-uninstall-package-id")]
       (install/install! (support/loom-package-dir) repo-root true)
-      (def uninstall-package-id-target-dir
-        (repository/package-target-dir repo-root "loom" "0.1.0")))
+      {:repo-root repo-root
+       :target-dir (repository/package-target-dir repo-root "loom" "0.1.0")}))
 
-    (when
-      (def uninstall-package-id-result
-        (core/uninstall-command ["uninstall" "loom@0.1.0" "--repo" repo-root])))
+  (when [{:keys [repo-root]}]
+    (core/uninstall-command ["uninstall" "loom@0.1.0" "--repo" repo-root]))
 
-    (then
-      (is (= uninstall-package-id-target-dir uninstall-package-id-result))
-      (is (= false (io/exists? uninstall-package-id-target-dir))))))
+  (then [uninstall-package-id-result {:keys [target-dir]}]
+    (is (= target-dir uninstall-package-id-result))
+    (is (= false (io/exists? target-dir)))))
 
 (deftest uninstall-returns-nil-for-missing-package
-  (let [repo-root (support/fresh-repo! "loom-proof-uninstall-missing")]
-    (given
-      (def missing-package-id (repository/package-id "missing" "0.1.0")))
+  (given
+    {:repo-root (support/fresh-repo! "loom-proof-uninstall-missing")
+     :package-id (repository/package-id "missing" "0.1.0")})
 
-    (when
-      (def missing-removed-dir
-        (uninstall/uninstall! repo-root "missing" "0.1.0")))
+  (when [{:keys [repo-root]}]
+    (uninstall/uninstall! repo-root "missing" "0.1.0"))
 
-    (then
-      (is (= "missing@0.1.0" missing-package-id))
-      (is (nil? missing-removed-dir)))))
+  (then [missing-removed-dir {:keys [package-id]}]
+    (is (= "missing@0.1.0" package-id))
+    (is (nil? missing-removed-dir))))
