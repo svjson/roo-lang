@@ -1,0 +1,10 @@
+{:name proofread
+ :version "0.1.0"
+ :description "Lisple syntax and style checker."
+ :dependencies []
+ :load-roots ["src"]
+ :native-libraries [{:name "proofread-native"
+                     :version "0.1.0"
+                     :path "native"
+                     :namespaces [proofread.native]}]
+ :main proofread.core/main}

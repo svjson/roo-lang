@@ -1,0 +1,4 @@
+(ns proofread.sample)
+
+(def answer 42)
+(def labels ["syntax" "style"])

@@ -1,0 +1,43 @@
+(ns proofread.core
+  (:require [proofread.native :as native]))
+
+(def version "0.1.0")
+
+(defun usage []
+  (prn "Usage: proofread [--help|--version] <file|pattern>..."))
+
+(defun print-help []
+  (prn "proofread: check that Lisple and EDN files parse")
+  (usage))
+
+(defun print-version []
+  (prn (str "proofread " version)))
+
+(defun starts-with? [text prefix]
+  (if (< (count text) (count prefix))
+    false
+    (= prefix (substr text 0 (count prefix)))))
+
+(defun report-ok [checked-count]
+  (prn (str "proofread: " checked-count " file"
+            (if (= checked-count 1) "" "s")
+            " ok"))
+  checked-count)
+
+(defun main [args]
+  (let [first-arg (if (= 0 (count args)) nil (nth args 0))]
+    (if (nil? first-arg)
+      (do
+        (usage)
+        (native/fail! "No files or patterns provided."))
+      (if (= first-arg "--help")
+        (print-help)
+        (if (= first-arg "-h")
+          (print-help)
+          (if (= first-arg "--version")
+            (print-version)
+            (if (starts-with? first-arg "--")
+              (do
+                (usage)
+                (native/fail! (str "Unknown option: " first-arg)))
+              (report-ok (native/check! args)))))))))
