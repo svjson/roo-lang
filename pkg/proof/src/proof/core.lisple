@@ -13,6 +13,7 @@
 (def when proof.syntax/when)
 (def then proof.syntax/then)
 (def run-test-body proof.syntax/run-test-body)
+(def declared-namespace proof.syntax/declared-namespace)
 
 (defun clear! []
   (set! [tests] [])

@@ -29,18 +29,43 @@
                        (discover-lisple-files (:path entry)))))))
     []))
 
-(defun load-test-file [path]
-  (include path)
-  path)
+(defun discover-test-files [context]
+  (flatten
+    (map (configured-test-roots context)
+         (fn [root]
+           (discover-lisple-files (absolute-test-root context root))))))
 
-(defun load-test-root [root]
-  (map (discover-lisple-files root) load-test-file))
+(defun append-namespace-if-new! [namespaces path]
+  (let [namespace (proof.core/declared-namespace path)]
+    (if (contains? namespaces namespace)
+      namespaces
+      (append! namespaces namespace))))
+
+(defun discovered-test-namespaces [context]
+  (reduce (discover-test-files context) [] append-namespace-if-new!))
+
+(defun require-entry [index namespace]
+  (str "[" namespace " :as __proof_test_" index "]"))
+
+(defun require-entries [namespaces]
+  (for-indexed [index namespace namespaces]
+    (require-entry index namespace)))
+
+(defun require-form [namespaces]
+  (str "(ns proof.runner.discovery (:require "
+       (apply join (concat [" "] (require-entries namespaces)))
+       "))"))
+
+(defun require-test-namespaces [namespaces]
+  (if (= 0 (count namespaces))
+    namespaces
+    (do
+      (eval (require-form namespaces))
+      namespaces)))
 
 (defun load-tests [context]
   (proof.core/clear!)
-  (map (configured-test-roots context)
-       (fn [root]
-         (load-test-root (absolute-test-root context root)))))
+  (require-test-namespaces (discovered-test-namespaces context)))
 
 (defun run [context]
   (load-tests context)

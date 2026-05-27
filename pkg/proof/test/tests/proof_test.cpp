@@ -1,3 +1,5 @@
+#include <filesystem>
+#include <fstream>
 #include <string>
 
 #include <lisple/io/dir_root_file_system.h>
@@ -7,6 +9,24 @@
 #include <lisple-package/manifest.h>
 #include <lisple-package/native_loader.h>
 #include <proof/native.h>
+
+namespace
+{
+  std::filesystem::path fresh_proof_fixture_root(const std::string& name)
+  {
+    auto root = std::filesystem::temp_directory_path() / "lisple-proof-tests" / name;
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+    return root;
+  }
+
+  void write_file(const std::filesystem::path& path, const std::string& contents)
+  {
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream out(path);
+    out << contents;
+  }
+} // namespace
 
 TEST(ProofPackage, registers_and_runs_tests_from_load_path)
 {
@@ -85,6 +105,36 @@ TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
   auto results = runtime.eval("(run)");
 
   EXPECT_EQ(results->to_string(), "[{:name dynamic-addition :status :pass}]");
+}
+
+TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
+{
+  const auto root = fresh_proof_fixture_root("namespace-require-discovery");
+  write_file(root / "test/sample/a-test.lisple",
+             R"((ns sample.a-test
+  (:require proof.core
+            [sample.fixture :as fixture]))
+
+(deftest fixture-loads-once
+  (is (= 42 fixture/value)))
+)");
+  write_file(root / "test/sample/fixture.lisple",
+             R"((ns sample.fixture)
+
+(def value 42)
+)");
+
+  Lisple::DirRootFileSystem fs(
+    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-package-test
+    (:require proof.runner)))");
+
+  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
+                              "\" :config {:test-roots [\"test\"]}})");
+
+  EXPECT_EQ(results->to_string(), "[{:name fixture-loads-once :status :pass}]");
 }
 
 TEST(ProofPackage, summarizes_result_sets_in_lisple)

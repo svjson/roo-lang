@@ -10,6 +10,8 @@
 #include <lisple/exception.h>
 #include <lisple/exec.h>
 #include <lisple/form.h>
+#include <lisple/io/file_system.h>
+#include <lisple/reader.h>
 #include <lisple/runtime/exec_node.h>
 #include <lisple/runtime/lower.h>
 #include <lisple/runtime/node.h>
@@ -35,6 +37,45 @@ namespace Lisple::Proof
     {
       return node->get_type() == Form::SYMBOL &&
              node->as<AST::Symbol>().get_identifier() == name;
+    }
+
+    std::string declared_namespace_name(const std::string& source,
+                                        const std::string& source_name)
+    {
+      Reader reader;
+      sptr_ast_node_v forms;
+      try
+      {
+        forms = reader.read_sexps(source);
+      }
+      catch (const ParseException& e)
+      {
+        throw ParseException("Error parsing '" + source_name + "': " + e.what());
+      }
+
+      for (const auto& form : forms)
+      {
+        if (form->get_type() != Form::LIST)
+        {
+          continue;
+        }
+
+        const auto& children = form->get_children();
+        if (children.size() < 2 || !is_symbol_named(children[0], "ns"))
+        {
+          continue;
+        }
+
+        if (children[1]->get_type() != Form::SYMBOL)
+        {
+          throw NamespaceException("Invalid ns form in '" + source_name +
+                                   "', expected namespace symbol: " + form->to_string());
+        }
+
+        return children[1]->as<AST::Symbol>().value;
+      }
+
+      throw NamespaceException("No ns declaration found in '" + source_name + "'.");
     }
 
     bool is_equality_form(const sptr_ast_node& node)
@@ -319,6 +360,27 @@ namespace Lisple::Proof
         {
           return Constant::NIL;
         }
+      }
+    };
+
+    class DeclaredNamespaceFunction : public Function
+    {
+     public:
+      DeclaredNamespaceFunction()
+        : Function(SIG((FN_ARGS((&Type::STRING)),
+                        EXEC_DISPATCH(&DeclaredNamespaceFunction::exec_declared_namespace))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<DeclaredNamespaceFunction>());
+      }
+
+      sptr_val exec_declared_namespace(Context& ctx, sptr_val_v& args)
+      {
+        const std::string& path = args[0]->str();
+        return Value::string(declared_namespace_name(ctx.file_system().read(path), path));
       }
     };
 
@@ -621,6 +683,7 @@ namespace Lisple::Proof
     ns->store("when", PhaseForm::make("when"));
     ns->store("then", PhaseForm::make("then"));
     ns->store("run-test-body", RunTestBodyFunction::make());
+    ns->store("declared-namespace", DeclaredNamespaceFunction::make());
     return ns;
   }
 
