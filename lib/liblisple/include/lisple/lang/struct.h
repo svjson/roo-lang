@@ -163,6 +163,23 @@ namespace Lisple
   FUNC(DissocFunction, dissoc);
 
   /*!
+   * @brief Create a modified copy of a nested map-like structure, removing
+   * one or more nested keys without mutating the original.
+   *
+   * Usage:
+   * @code
+   * (dissoc-in my-nested-map [:key :nested-key])
+   * (dissoc-in my-nested-map [:key1] [:key2 :nested-key])
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map or map-like from which to produce a modified copy        |
+   * | 1..n  | One or more paths to nested keys to remove                       |
+   */
+  FUNC(DissocInFunction, dissoc_in)
+
+  /*!
    * @brief Remove a key from a map.
    *
    * Does nothing if the key does not exist in the map.
@@ -175,6 +192,20 @@ namespace Lisple
    * @endcode
    */
   FUNC(DissocBangFunction, dissoc_bang)
+
+  /*!
+   * @brief Remove a nested key from a map, mutating it.
+   *
+   * Does nothing if the path does not exist.
+   *
+   * Returns the removed value.
+   *
+   * Usage:
+   * @code
+   * (dissoc-in! my-map [:key :nested-key])
+   * @endcode
+   */
+  FUNC(DissocInBangFunction, dissoc_in_bang)
 
   /*!
    * @brief Returns a vector of all keys present in a map or complex object.

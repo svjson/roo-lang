@@ -421,4 +421,98 @@ namespace Lisple::Dict
     return assoc_in_copy(current, path, 0, value);
   }
 
+  static bool can_dissoc_in_traverse(const sptr_val& current)
+  {
+    switch (current->type)
+    {
+    case Value::Type::NIL:
+    case Value::Type::MAP:
+    case Value::Type::OBJECT:
+    case Value::Type::NATIVE_OBJECT:
+    case Value::Type::VECTOR:
+    case Value::Type::LIST:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  static bool can_dissoc_property(const sptr_val& current)
+  {
+    switch (current->type)
+    {
+    case Value::Type::MAP:
+    case Value::Type::OBJECT:
+    case Value::Type::NATIVE_OBJECT:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  static void remove_property_from_copy(sptr_val& target, const sptr_val& property)
+  {
+    sptr_val_v& children = std::get<sptr_val_v>(target->value);
+
+    for (size_t i = 0; i < children.size(); i += 2)
+    {
+      if (*children[i] == *property)
+      {
+        children.erase(children.begin() + i, children.begin() + i + 2);
+        return;
+      }
+    }
+  }
+
+  static sptr_val dissoc_in_copy(const sptr_val& current,
+                                 const sptr_val_v& path,
+                                 size_t index)
+  {
+    if (index >= path.size())
+    {
+      throw InvocationException("dissoc-in path traversal went out of bounds.");
+    }
+
+    if (*current == *Constant::NIL)
+    {
+      return Constant::NIL;
+    }
+
+    if (!can_dissoc_in_traverse(current))
+    {
+      throw TypeError("dissoc-in cannot traverse through " + current->to_string());
+    }
+
+    const sptr_val& key = path[index];
+
+    if (index == path.size() - 1)
+    {
+      if (!can_dissoc_property(current))
+      {
+        throw TypeError("dissoc-in cannot remove property from " + current->to_string());
+      }
+
+      sptr_val result = Dict::shallow_copy(current);
+      remove_property_from_copy(result, key);
+      return result;
+    }
+
+    sptr_val result = Dict::shallow_copy(current);
+    auto [found, child] = Dict::find_property(current, key);
+    if (!found)
+    {
+      return result;
+    }
+
+    sptr_val new_child = dissoc_in_copy(child, path, index + 1);
+    Dict::set_property(result, key, new_child);
+
+    return result;
+  }
+
+  sptr_val dissoc_in(const sptr_val& current, const sptr_val_v& path)
+  {
+    return dissoc_in_copy(current, path, 0);
+  }
+
 } // namespace Lisple::Dict

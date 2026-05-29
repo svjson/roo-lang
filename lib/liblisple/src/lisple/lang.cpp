@@ -85,7 +85,9 @@ namespace Lisple
     lang_symbols.emplace("def", DefForm::make());
     lang_symbols.emplace("defun", DefunForm::make());
     lang_symbols.emplace("dissoc", DissocFunction::make());
+    lang_symbols.emplace("dissoc-in", DissocInFunction::make());
     lang_symbols.emplace("dissoc!", DissocBangFunction::make());
+    lang_symbols.emplace("dissoc-in!", DissocInBangFunction::make());
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
     lang_symbols.emplace("empty?", EmptyPFunction::make());

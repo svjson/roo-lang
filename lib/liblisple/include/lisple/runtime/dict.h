@@ -2,8 +2,8 @@
 #ifndef LISPLE__RUNTIME__DICT_H
 #define LISPLE__RUNTIME__DICT_H
 
-#include <utility>
 #include <unordered_set>
+#include <utility>
 
 #include <lisple/form.h>
 #include <lisple/runtime/value.h>
@@ -40,6 +40,7 @@ namespace Lisple::Dict
 
   sptr_val shallow_copy(const sptr_val& source);
   sptr_val assoc_in(const sptr_val& source, const sptr_val_v& path, const sptr_val& value);
+  sptr_val dissoc_in(const sptr_val& source, const sptr_val_v& path);
 
 } // namespace Lisple::Dict
 

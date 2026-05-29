@@ -367,6 +367,37 @@ namespace Lisple
     return Value::map(new_map_elements);
   }
 
+  /** DissocInFunction - dissoc-in */
+  FUNC_IMPL(DissocInFunction,
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&DissocInFunction::exec_dissoc_in))))
+
+  EXEC_BODY(DissocInFunction, exec_dissoc_in)
+  {
+    sptr_val result = args[0];
+
+    for (size_t dissoc_arg_i = 1; dissoc_arg_i < args.size(); dissoc_arg_i++)
+    {
+      const sptr_val& dissoc_path_value = args[dissoc_arg_i];
+      if (dissoc_path_value->type == Value::Type::NIL ||
+          !Type::SEQ.is_type_of(*dissoc_path_value))
+      {
+        throw TypeError("Path for dissoc-in must be a sequence, got: " +
+                        dissoc_path_value->to_string());
+      }
+
+      const sptr_val_v dissoc_path = Lisple::get_children(*dissoc_path_value);
+      if (dissoc_path.empty())
+      {
+        throw InvocationException("Path for dissoc-in cannot be empty.");
+      }
+
+      result = Dict::dissoc_in(result, dissoc_path);
+    }
+
+    return result;
+  }
+
   /* DissocBangFunction - dissoc! */
   FUNC_IMPL(DissocBangFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
@@ -380,6 +411,62 @@ namespace Lisple
     }
 
     return Dict::remove_property(args[0], args[1]);
+  }
+
+  /* DissocInBangFunction - dissoc-in! */
+  FUNC_IMPL(DissocInBangFunction,
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::VECTOR)),
+                 EXEC_DISPATCH(&DissocInBangFunction::exec_dissoc_in_bang))))
+
+  EXEC_BODY(DissocInBangFunction, exec_dissoc_in_bang)
+  {
+    const sptr_val_v& dissoc_path = args[1]->elements();
+    if (dissoc_path.empty())
+    {
+      throw InvocationException("Path for dissoc-in! cannot be empty.");
+    }
+
+    sptr_val target = args[0];
+    for (size_t i = 0; i < dissoc_path.size() - 1; i++)
+    {
+      if (*target == *Constant::NIL)
+      {
+        return Constant::NIL;
+      }
+
+      switch (target->type)
+      {
+      case Value::Type::NIL:
+      case Value::Type::MAP:
+      case Value::Type::OBJECT:
+      case Value::Type::NATIVE_OBJECT:
+      case Value::Type::VECTOR:
+      case Value::Type::LIST:
+        break;
+      default:
+        throw TypeError("dissoc-in! cannot traverse through " + target->to_string());
+      }
+
+      auto [found, value] = Dict::find_property(target, dissoc_path[i]);
+      if (!found)
+      {
+        return Constant::NIL;
+      }
+
+      target = value;
+    }
+
+    if (*target == *Constant::NIL)
+    {
+      return Constant::NIL;
+    }
+
+    if (target->type != Value::Type::MAP)
+    {
+      throw TypeError("dissoc-in! cannot remove property from " + target->to_string());
+    }
+
+    return Dict::remove_property(target, dissoc_path.back());
   }
 
   /** KeysFunction - keys */
