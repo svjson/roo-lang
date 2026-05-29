@@ -342,7 +342,7 @@ namespace Lisple
 
   /** DissocFunction - dissoc */
   FUNC_IMPL(DissocFunction,
-            SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&DissocFunction::exec_dissoc))))
 
   EXEC_BODY(DissocFunction, exec_dissoc)
@@ -357,7 +357,17 @@ namespace Lisple
 
     for (size_t i = 0; i < map_elements.size(); i += 2)
     {
-      if (*map_elements[i] != *args[1])
+      bool remove = false;
+      for (size_t key_i = 1; key_i < args.size(); key_i++)
+      {
+        if (*map_elements[i] == *args[key_i])
+        {
+          remove = true;
+          break;
+        }
+      }
+
+      if (!remove)
       {
         new_map_elements.push_back(map_elements[i]);
         new_map_elements.push_back(map_elements[i + 1]);

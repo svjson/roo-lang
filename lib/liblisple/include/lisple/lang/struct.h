@@ -160,6 +160,17 @@ namespace Lisple
    */
   FUNC(GetInFunction, get);
 
+  /*!
+   * @brief Create a copy of a map with one or more keys removed.
+   *
+   * Does nothing for keys that do not exist in the map.
+   *
+   * Usage:
+   * @code
+   * (dissoc my-map :key)
+   * (dissoc my-map :key1 :key2)
+   * @endcode
+   */
   FUNC(DissocFunction, dissoc);
 
   /*!
