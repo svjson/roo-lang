@@ -3,4 +3,8 @@
  :description "Lisple symbol index generator."
  :dependencies []
  :load-roots ["src"]
- :main lookup.core/main}
+ :native-libraries [{:name "lookup-native"
+                     :version "0.1.0"
+                     :path "native"
+                     :namespaces [lookup.native]}]
+ :main lookup.cli/main}

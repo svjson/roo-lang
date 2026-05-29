@@ -17,6 +17,11 @@ Usage: lookup [--help|--version]
 test "$("$LISPLE" "$LOOKUP_PACKAGE" --version)" = "lookup 0.1.0"
 
 INDEX_OUTPUT=$("$LISPLE" "$LOOKUP_PACKAGE" index "$LOOKUP_PACKAGE")
-test "$INDEX_OUTPUT" = "lookup: index generation is not implemented yet; default output will be lisple-symbols.edn
-Usage: lookup [--help|--version]
-       lookup index [--out <file>] <package-dir>"
+case "$INDEX_OUTPUT" in
+  *":format :lisple/symbol-index"*":package {:name \"lookup\""*":qualified-name \"lookup.cli/command\""*) ;;
+  *)
+    echo "unexpected lookup index output:" >&2
+    echo "$INDEX_OUTPUT" >&2
+    exit 1
+    ;;
+esac

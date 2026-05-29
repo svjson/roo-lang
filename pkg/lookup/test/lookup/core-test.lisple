@@ -1,31 +1,103 @@
 (ns lookup.core-test
   (:require proof.core
-            [lookup.core :as core]))
+            [lookup.core :as core]
+            [lookup.native :as native]))
 
-(deftest reports-usage-lines
-  (is (= ["Usage: lookup [--help|--version]"
-          "       lookup index [--out <file>] <package-dir>"]
-         core/usage-lines)))
+(deftest identifies-lisple-source-files
+  (is (core/source-file? "src/lookup/core.lisple"))
+  (is (core/source-file? "src/lookup/core.lspl"))
+  (is (= false (core/source-file? "package.edn"))))
 
-(deftest reports-help-lines
-  (is (= ["lookup: build Lisple symbol index artifacts"
-          "Usage: lookup [--help|--version]"
-          "       lookup index [--out <file>] <package-dir>"]
-         (core/help-lines))))
+(deftest builds-source-form-index
+  (let [index (core/source-form-index "..")
+        sources (:sources index)
+        paths (map sources (fn [source] (:path source)))
+        source (find-first sources
+                           (fn [source]
+                             (= "../src/lookup/core.lisple" (:path source))))
+        first-form (nth (:forms source) 0)]
+    (is (= :lisple/source-forms (:format index)))
+    (is (= 1 (:version index)))
+    (is (= "lookup" (:name (:package index))))
+    (is (= "0.1.0" (:version (:package index))))
+    (is (= 2 (count sources)))
+    (is (= ["../src/lookup/cli.lisple"
+            "../src/lookup/core.lisple"]
+           paths))
+    (is (= "../src/lookup/core.lisple" (:path source)))
+    (is (= "ns" (str (head (:form first-form)))))
+    (is (= "lookup.core" (str (nth (:form first-form) 1))))))
 
-(deftest reports-version-text
-  (is (= "lookup 0.1.0" (core/version-text))))
+(deftest builds-symbol-index-v1
+  (let [index (core/symbol-index "..")
+        sources (:sources index)
+        namespaces (:namespaces index)
+        symbols (:symbols index)
+        version-symbol (find-first symbols
+                                   (fn [symbol]
+                                     (= "lookup.core/version"
+                                        (:qualified-name symbol))))
+        symbol-index-symbol (find-first symbols
+                                        (fn [symbol]
+                                          (= "lookup.core/symbol-index"
+                                             (:qualified-name symbol))))
+        command-symbol (find-first symbols
+                                   (fn [symbol]
+                                     (= "lookup.cli/command"
+                                        (:qualified-name symbol))))
+        symbol-index-signature (nth (:signatures symbol-index-symbol) 0)]
+    (is (= :lisple/symbol-index (:format index)))
+    (is (= 1 (:version index)))
+    (is (= "lookup" (:name (:package index))))
+    (is (= [{:path "../src/lookup/cli.lisple"}
+            {:path "../src/lookup/core.lisple"}]
+           sources))
+    (is (= "lookup.cli" (:name (nth namespaces 0))))
+    (is (= "lookup.core" (:name (nth namespaces 1))))
+    (is (= :var (:kind version-symbol)))
+    (is (= :source (:origin version-symbol)))
+    (is (= :public (:visibility version-symbol)))
+    (is (= [] (:signatures version-symbol)))
+    (is (= :function (:kind symbol-index-symbol)))
+    (is (= "(symbol-index package-dir)" (:display symbol-index-signature)))
+    (is (= [{:name "args"
+             :type nil
+             :doc nil
+             :optional? false
+             :rest? false}]
+           (:params (nth (:signatures command-symbol) 0))))
+    (is (= [{:name "package-dir"
+             :type nil
+             :doc nil
+             :optional? false
+             :rest? false}]
+           (:params symbol-index-signature)))
+    (is (= {:min 1 :max 1 :variadic false}
+           (:arity symbol-index-signature)))
+    (is (= :plain (:format (:doc symbol-index-symbol))))
+    (is (= "../src/lookup/core.lisple"
+           (:path (:source symbol-index-symbol))))))
 
-(deftest resolves-help-commands
-  (is (= :help (core/command [])))
-  (is (= :help (core/command ["--help"])))
-  (is (= :help (core/command ["-h"]))))
-
-(deftest resolves-version-command
-  (is (= :version (core/command ["--version"]))))
-
-(deftest resolves-index-command
-  (is (= :index (core/command ["index" "pkg/lookup"]))))
-
-(deftest resolves-unknown-commands-to-usage
-  (is (= :usage (core/command ["wat"]))))
+(deftest reads-top-level-forms-with-source-locations
+  (let [forms (native/read-file-forms! "assets/read-forms-sample.lisple")
+        ns-entry (nth forms 0)
+        def-entry (nth forms 1)
+        defun-entry (nth forms 2)
+        ns-form (:form ns-entry)
+        def-form (:form def-entry)
+        defun-form (:form defun-entry)
+        ns-source (:source ns-entry)
+        def-source (:source def-entry)
+        defun-source (:source defun-entry)]
+    (is (= 3 (count forms)))
+    (is (= "ns" (str (head ns-form))))
+    (is (= "sample.forms" (str (nth ns-form 1))))
+    (is (= "def" (str (head def-form))))
+    (is (= "answer" (str (nth def-form 1))))
+    (is (= "defun" (str (head defun-form))))
+    (is (= "greet" (str (nth defun-form 1))))
+    (is (= "assets/read-forms-sample.lisple" (:path ns-source)))
+    (is (= 1 (:line ns-source)))
+    (is (= 1 (:column ns-source)))
+    (is (= 3 (:line def-source)))
+    (is (= 5 (:line defun-source)))))

@@ -42,7 +42,16 @@ Then run:
 
 ## Current Status
 
-`lookup` currently provides the package and command skeleton only.
+`lookup` currently provides the package and command skeleton plus the first
+native reader bridge:
+
+```lisple
+(lookup.native/read-file-forms! path)
+```
+
+The bridge reads one Lisple source file and returns top-level forms as ordinary
+Lisple data with source location metadata. The symbol-index analyzer is not
+implemented yet.
 
 ## License
 

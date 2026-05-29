@@ -8,3 +8,5 @@ install(DIRECTORY src/
 install(FILES package.edn README.md
   DESTINATION share/lisple/pkg/lookup
 )
+
+add_subdirectory(native)

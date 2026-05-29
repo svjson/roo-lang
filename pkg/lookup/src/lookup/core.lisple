@@ -1,67 +1,239 @@
-(ns lookup.core)
+(ns lookup.core
+  (:require [lisple.io :as io]
+            [lookup.native :as native]))
 
 (def version "0.1.0")
 
 (def default-index-path "lisple-symbols.edn")
 
-(def usage-lines
-  ["Usage: lookup [--help|--version]"
-   "       lookup index [--out <file>] <package-dir>"])
+(defun source-file? [path]
+  (contains? [".lisple" ".lspl"] (io/extension path)))
 
-(defun help-lines []
-  (concat ["lookup: build Lisple symbol index artifacts"]
-          usage-lines))
+(defun source-files-in [root]
+  (if (io/directory? root)
+    (let [entries (io/list-directory! root)
+          files (map (filter entries
+                             (fn [entry]
+                               (and (= (:type entry) :file)
+                                    (source-file? (:path entry)))))
+                     :path)
+          directories (filter entries (fn [entry] (= (:type entry) :directory)))]
+      (concat files
+              (flatten
+                (map directories
+                     (fn [entry]
+                       (source-files-in (:path entry)))))))
+    []))
 
-(defun version-text []
-  (str "lookup " version))
+(defun manifest-path [package-dir]
+  (io/join-path package-dir "package.edn"))
 
-(defun command [args]
-  (let [first-arg (nth args 0)]
+(defun read-manifest! [package-dir]
+  (io/slurp-edn! (manifest-path package-dir)))
+
+(defun package-info [manifest]
+  {:name (str (:name manifest))
+   :version (:version manifest)
+   :description (:description manifest)})
+
+(defun package-load-roots [manifest]
+  (if (nil? (:load-roots manifest))
+    ["src"]
+    (:load-roots manifest)))
+
+(defun source-files [package-dir manifest]
+  (sort
+    (flatten
+      (map (package-load-roots manifest)
+           (fn [root]
+             (source-files-in (io/join-path package-dir (str root))))))
+    <))
+
+(defun source-entry [path]
+  {:path path
+   :forms (native/read-file-forms! path)})
+
+(defun source-form-index [package-dir]
+  (let [manifest (read-manifest! package-dir)
+        files (source-files package-dir manifest)]
+    {:format :lisple/source-forms
+     :version 1
+     :package (package-info manifest)
+     :sources (map files source-entry)}))
+
+(defun empty-doc []
+  {:summary nil
+   :body nil
+   :format :plain
+   :params {}
+   :returns nil
+   :examples []
+   :see []})
+
+(defun empty-return []
+  {:type nil
+   :doc nil})
+
+(defun list-form? [form]
+  (= "list" (type-of form)))
+
+(defun symbol-name [symbol]
+  (str symbol))
+
+(defun form-head-name [form]
+  (if (list-form? form)
+    (symbol-name (head form))
+    nil))
+
+(defun form-named? [form name]
+  (= name (form-head-name form)))
+
+(defun ns-entry? [entry]
+  (form-named? (:form entry) "ns"))
+
+(defun ns-entry-name [entry]
+  (symbol-name (nth (:form entry) 1)))
+
+(defun source-namespace-entry [source]
+  (let [entry (find-first (:forms source) ns-entry?)]
+    (if (nil? entry)
+      nil
+      {:name (ns-entry-name entry)
+       :doc (empty-doc)
+       :source (:source entry)})))
+
+(defun source-namespace-name [source]
+  (let [entry (source-namespace-entry source)]
+    (if (nil? entry)
+      "user"
+      (:name entry))))
+
+(defun starts-with? [text prefix]
+  (if (< (count text) (count prefix))
+    false
+    (= prefix (substr text 0 (count prefix)))))
+
+(defun rest-param-name? [name]
+  (and (starts-with? name "&")
+       (not (= name "&"))))
+
+(defun clean-param-name [name]
+  (if (rest-param-name? name)
+    (substr name 1 (count name))
+    name))
+
+(defun param-info-step [state raw-param]
+  (let [display-name (symbol-name raw-param)
+        rest? (rest-param-name? display-name)]
+    (if (= display-name "&")
+      {:optional? true
+       :params (:params state)}
+      {:optional? (:optional? state)
+       :params (concat (:params state)
+                       [{:name (clean-param-name display-name)
+                         :display display-name
+                         :type nil
+                         :doc nil
+                         :optional? (or (:optional? state) rest?)
+                         :rest? rest?}])})))
+
+(defun params-info [raw-params]
+  (:params (reduce raw-params {:optional? false :params []} param-info-step)))
+
+(defun signature-display [name raw-params]
+  (let [param-names (map raw-params symbol-name)
+        params-display (apply join (concat [" "] param-names))]
+    (if (= 0 (count param-names))
+      (str "(" name ")")
+      (str "(" name " " params-display ")"))))
+
+(defun signature-arity [params]
+  (let [variadic? (not (nil? (find-first params (fn [param] (:rest? param)))))
+        required-params (filter params
+                                (fn [param]
+                                  (and (not (:optional? param))
+                                       (not (:rest? param)))))]
+    {:min (count required-params)
+     :max (if variadic? nil (count params))
+     :variadic variadic?}))
+
+(defun function-signature [name raw-params]
+  (let [params (params-info raw-params)]
+    {:display (signature-display name raw-params)
+     :params (map params
+                  (fn [param]
+                    {:name (:name param)
+                     :type (:type param)
+                     :doc (:doc param)
+                     :optional? (:optional? param)
+                     :rest? (:rest? param)}))
+     :returns (empty-return)
+     :arity (signature-arity params)}))
+
+(defun qualified-name [namespace name]
+  (str namespace "/" name))
+
+(defun base-symbol-entry [package namespace name kind source]
+  {:id (qualified-name namespace name)
+   :name name
+   :qualified-name (qualified-name namespace name)
+   :namespace namespace
+   :package package
+   :kind kind
+   :origin :source
+   :visibility :public
+   :status :stable
+   :source source
+   :doc-source nil
+   :doc (empty-doc)})
+
+(defun def-symbol-entry [package namespace entry]
+  (let [form (:form entry)
+        name (symbol-name (nth form 1))]
+    (merge (base-symbol-entry package namespace name :var (:source entry))
+           {:signatures []})))
+
+(defun defun-symbol-entry [package namespace entry]
+  (let [form (:form entry)
+        name (symbol-name (nth form 1))
+        params (nth form 2)]
+    (merge (base-symbol-entry package namespace name :function (:source entry))
+           {:signatures [(function-signature name params)]})))
+
+(defun symbol-entry [package namespace entry]
+  (let [form (:form entry)
+        head-name (form-head-name form)]
     (cond
 
-      (or (nil? first-arg)
-          (contains? ["--help" "-h"] first-arg))
-      :help
+      (= head-name "def")
+      (def-symbol-entry package namespace entry)
 
-      (= first-arg "--version")
-      :version
-
-      (= first-arg "index")
-      :index
+      (= head-name "defun")
+      (defun-symbol-entry package namespace entry)
 
       true
-      :usage)))
+      nil)))
 
-(defun print-lines! [lines]
-  (map lines prn))
+(defun source-symbols [package source]
+  (let [namespace (source-namespace-name source)]
+    (filter
+      (map (:forms source)
+           (fn [entry]
+             (symbol-entry package namespace entry)))
+      (fn [entry]
+        (not (nil? entry))))))
 
-(defun print-usage! []
-  (print-lines! usage-lines))
-
-(defun print-help! []
-  (print-lines! (help-lines)))
-
-(defun print-version! []
-  (prn (version-text)))
-
-(defun print-index-placeholder! []
-  (prn "lookup: index generation is not implemented yet;"
-       "default output will be"
-       default-index-path)
-  (print-usage!))
-
-(defun main [args]
-  (let [command-name (command args)]
-    (cond
-
-      (= command-name :help)
-      (print-help!)
-
-      (= command-name :version)
-      (print-version!)
-
-      (= command-name :index)
-      (print-index-placeholder!)
-
-      true
-      (print-usage!))))
+(defun symbol-index [package-dir]
+  (let [source-index (source-form-index package-dir)
+        package-name (:name (:package source-index))
+        sources (:sources source-index)]
+    {:format :lisple/symbol-index
+     :version 1
+     :package (:package source-index)
+     :sources (map sources (fn [source] {:path (:path source)}))
+     :namespaces (filter (map sources source-namespace-entry)
+                         (fn [entry] (not (nil? entry))))
+     :symbols (flatten
+                (map sources
+                     (fn [source]
+                       (source-symbols package-name source))))}))

@@ -1,0 +1,6 @@
+(ns sample.forms)
+
+(def answer 42)
+
+(defun greet [name]
+  (str "hello " name))

@@ -1,0 +1,64 @@
+(ns lookup.cli
+  (:require [lookup.core :as lookup]))
+
+(def usage-lines
+  ["Usage: lookup [--help|--version]"
+   "       lookup index [--out <file>] <package-dir>"])
+
+(defun help-lines []
+  (concat ["lookup: build Lisple symbol index artifacts"]
+          usage-lines))
+
+(defun version-text []
+  (str "lookup " lookup/version))
+
+(defun command [args]
+  (let [first-arg (nth args 0)]
+    (cond
+
+      (or (nil? first-arg)
+          (contains? ["--help" "-h"] first-arg))
+      :help
+
+      (= first-arg "--version")
+      :version
+
+      (= first-arg "index")
+      :index
+
+      true
+      :usage)))
+
+(defun print-lines! [lines]
+  (map lines prn))
+
+(defun print-usage! []
+  (print-lines! usage-lines))
+
+(defun print-help! []
+  (print-lines! (help-lines)))
+
+(defun print-version! []
+  (prn (version-text)))
+
+(defun print-index! [args]
+  (let [package-dir (nth args 1)]
+    (if (nil? package-dir)
+      (print-usage!)
+      (prn (lookup/symbol-index package-dir)))))
+
+(defun main [args]
+  (let [command-name (command args)]
+    (cond
+
+      (= command-name :help)
+      (print-help!)
+
+      (= command-name :version)
+      (print-version!)
+
+      (= command-name :index)
+      (print-index! args)
+
+      true
+      (print-usage!))))

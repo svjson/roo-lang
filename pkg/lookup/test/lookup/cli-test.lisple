@@ -1,0 +1,31 @@
+(ns lookup.cli-test
+  (:require proof.core
+            [lookup.cli :as cli]))
+
+(deftest reports-usage-lines
+  (is (= ["Usage: lookup [--help|--version]"
+          "       lookup index [--out <file>] <package-dir>"]
+         cli/usage-lines)))
+
+(deftest reports-help-lines
+  (is (= ["lookup: build Lisple symbol index artifacts"
+          "Usage: lookup [--help|--version]"
+          "       lookup index [--out <file>] <package-dir>"]
+         (cli/help-lines))))
+
+(deftest reports-version-text
+  (is (= "lookup 0.1.0" (cli/version-text))))
+
+(deftest resolves-help-commands
+  (is (= :help (cli/command [])))
+  (is (= :help (cli/command ["--help"])))
+  (is (= :help (cli/command ["-h"]))))
+
+(deftest resolves-version-command
+  (is (= :version (cli/command ["--version"]))))
+
+(deftest resolves-index-command
+  (is (= :index (cli/command ["index" "pkg/lookup"]))))
+
+(deftest resolves-unknown-commands-to-usage
+  (is (= :usage (cli/command ["wat"]))))
