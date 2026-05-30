@@ -55,8 +55,7 @@ namespace Rooc
 
     bool is_roo_source(const std::filesystem::path& path)
     {
-      return path.extension() == ".roo" || path.extension() == ".roo" ||
-             path.extension() == ".lspl";
+      return path.extension() == ".roo";
     }
 
     void add_unique_file(std::vector<EmbeddedFile>& files,
