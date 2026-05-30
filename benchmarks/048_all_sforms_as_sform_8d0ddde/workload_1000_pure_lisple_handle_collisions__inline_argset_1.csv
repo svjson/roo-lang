@@ -1,2 +1,0 @@
-timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv,lowered_expr,lowered_lit,lower_exec_res,lower_exec_unres,setup_lowered_expr,setup_lowered_lit,setup_lower_exec_res,setup_lower_exec_unres
-305607358,workload_1000_pure_lisple_handle_collisions__inline_argset_1,0,2,4,47,53,0,52978,19559,0,439,0,0,0,0,0,0,2073,0, 0,0,0,0, 4763,25448,223,0

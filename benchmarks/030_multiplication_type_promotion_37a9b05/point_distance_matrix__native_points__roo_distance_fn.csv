@@ -1,0 +1,4 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+190485819,point_distance_matrix__native_points__roo_distance_fn,0,0,1567,4,1571,0,19689013,5577789,0,1502,0,0,1,0,0,0,562500,0
+190867980,point_distance_matrix__native_points__roo_distance_fn,0,0,1552,5,1557,0,19689013,5577789,0,1502,0,0,1,0,0,0,562500,0
+191409298,point_distance_matrix__native_points__roo_distance_fn,0,0,1604,3,1607,0,19689013,5577789,0,1502,0,0,1,0,0,0,562500,0

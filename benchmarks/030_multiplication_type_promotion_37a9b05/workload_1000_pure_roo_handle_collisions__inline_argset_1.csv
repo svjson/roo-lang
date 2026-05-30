@@ -1,0 +1,6 @@
+timestamp,benchmark,parse_time_ms,lower_time_ms,exec_time_ms,unaccounted_time_ms,single_lowering_total_time_ms,eval_path,exec_path,rtval_cons,rtvw_cons,lit_cons,look_cons,to_ast,to_rt,uf_cons,uf_rt_cons,uf_ast_cons,uf_rt_inv,uf_ast_inv
+189534481,workload_1000_pure_roo_handle_collisions__inline_argset_1,1,0,8,36,45,0,59790,22113,0,5611,235,0,21,9,9,0,2073,0
+189784430,workload_1000_pure_roo_handle_collisions__inline_argset_1,1,0,7,37,45,0,59790,22105,0,5611,235,0,21,9,9,0,2073,0
+190392266,workload_1000_pure_roo_handle_collisions__inline_argset_1,0,0,8,37,45,0,59790,22047,0,5611,235,0,21,9,9,0,2073,0
+190774570,workload_1000_pure_roo_handle_collisions__inline_argset_1,1,0,8,36,45,0,59790,22079,0,5611,235,0,21,9,9,0,2073,0
+191316046,workload_1000_pure_roo_handle_collisions__inline_argset_1,0,0,8,37,45,0,59790,22051,0,5611,235,0,21,9,9,0,2073,0
