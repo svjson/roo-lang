@@ -4,9 +4,8 @@
 #include <map>
 #include <sstream>
 
-#include <lisple/exception.h>
-#include <lisple/io/dir_root_file_system.h>
-
+#include <roo/exception.h>
+#include <roo/io/dir_root_file_system.h>
 #include <rooc/project.h>
 
 namespace Rooc
@@ -41,7 +40,7 @@ namespace Rooc
       std::ifstream file(path, std::ios::binary);
       if (!file)
       {
-        throw Lisple::LispleException("Could not read file: " + path.string());
+        throw Roo::RooException("Could not read file: " + path.string());
       }
       std::ostringstream stream;
       stream << file.rdbuf();
@@ -55,7 +54,7 @@ namespace Rooc
 
     bool is_roo_source(const std::filesystem::path& path)
     {
-      return path.extension() == ".roo" || path.extension() == ".lisple" ||
+      return path.extension() == ".roo" || path.extension() == ".roo" ||
              path.extension() == ".lspl";
     }
 
@@ -83,8 +82,8 @@ namespace Rooc
         std::error_code ec;
         if (!std::filesystem::is_directory(load_path, ec))
         {
-          throw Lisple::LispleException("Package load root is not a directory: " +
-                                        load_path.string());
+          throw Roo::RooException("Package load root is not a directory: " +
+                                  load_path.string());
         }
 
         for (const auto& entry : std::filesystem::recursive_directory_iterator(load_path))
@@ -118,7 +117,7 @@ namespace Rooc
 
   GeneratedProject prepare_project(const Options& options)
   {
-    Lisple::DirRootFileSystem manifest_fs("/");
+    Roo::DirRootFileSystem manifest_fs("/");
     const auto package_dir =
       std::filesystem::absolute(options.package_dir).lexically_normal();
     auto plan = Roo::Package::resolve_load_plan(manifest_fs, package_dir.string());

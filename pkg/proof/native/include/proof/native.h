@@ -4,12 +4,12 @@
 #include <memory>
 #include <vector>
 
-#include <lisple/namespace.h>
+#include <roo/namespace.h>
 
-namespace Lisple::Proof
+namespace Roo::Proof
 {
   std::unique_ptr<Namespace> make_native_namespace();
   std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
-} // namespace Lisple::Proof
+} // namespace Roo::Proof
 
 #endif

@@ -1,8 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <lisple/exception.h>
-
+#include <roo/exception.h>
 #include <rooc/options.h>
 
 namespace Rooc
@@ -34,7 +33,7 @@ namespace Rooc
 
     if (argc <= 1)
     {
-      throw Lisple::LispleException("No command provided.");
+      throw Roo::RooException("No command provided.");
     }
 
     for (int i = 1; i < argc; ++i)
@@ -61,7 +60,7 @@ namespace Rooc
       {
         if (i + 1 >= argc)
         {
-          throw Lisple::LispleException("Missing value for --build-dir.");
+          throw Roo::RooException("Missing value for --build-dir.");
         }
         options.build_dir = argv[++i];
         continue;
@@ -76,7 +75,7 @@ namespace Rooc
       {
         if (i + 1 >= argc)
         {
-          throw Lisple::LispleException("Missing value for --name.");
+          throw Roo::RooException("Missing value for --name.");
         }
         options.executable_name = argv[++i];
         continue;
@@ -89,23 +88,23 @@ namespace Rooc
 
       if (!arg.empty() && arg.front() == '-')
       {
-        throw Lisple::LispleException("Unknown option: " + arg);
+        throw Roo::RooException("Unknown option: " + arg);
       }
 
       if (!options.package_dir.empty())
       {
-        throw Lisple::LispleException("Expected only one package directory.");
+        throw Roo::RooException("Expected only one package directory.");
       }
       options.package_dir = arg;
     }
 
     if (options.command != "generate" && options.command != "build")
     {
-      throw Lisple::LispleException("Unknown command: " + options.command);
+      throw Roo::RooException("Unknown command: " + options.command);
     }
     if (options.package_dir.empty())
     {
-      throw Lisple::LispleException("No package directory provided.");
+      throw Roo::RooException("No package directory provided.");
     }
     if (options.build_dir.empty())
     {

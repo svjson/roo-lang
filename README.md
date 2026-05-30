@@ -1,8 +1,8 @@
-# Lisple
+# Roo
 
 A modern, Clojure-inspired scripting language implemented in C++20, built to embed in C++ host applications.
 
-Lisple exposes a compact s-expression language with first-class functions, lexical closures,
+Roo exposes a compact s-expression language with first-class functions, lexical closures,
 pattern destructuring, a namespace system, and direct integration with C++ host objects. It
 compiles to a typed IR for evaluation rather than interpreting the AST directly.
 
@@ -22,14 +22,14 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
   - **[roo](bin/roo/README.md)** - Command-line executable for running Roo files and packages.
   - **[rooc](bin/rooc/)** - Compiler executable for generating bundled Roo application builds.
 - lib/
-  - **[liblisple](lib/liblisple/README.md)** - Core embeddable Lisple runtime.
+  - **[libroo](lib/libroo/README.md)** - Core embeddable Roo runtime.
   - **[roo-server](lib/libroo-server/README.md)** Small server layer for remote Roo message parsing and dispatch experiments.
   - **[roo-package](lib/libroo-package/README.md)** Package manifest, dependency load paths, and native package loading.
 - pkg/
-  - **[lookup](pkg/lookup/README.md)** - Lisple indexing for tool-support.
-  - **[loom](pkg/loom/README.md)** - Lisple package manager.
-  - **[proof](pkg/proof/README.md)** - Lisple test framework package.
-  - **[proofread](pkg/proofread/README.md)** - Lisple syntax checker.
+  - **[lookup](pkg/lookup/README.md)** - Roo indexing for tool-support.
+  - **[loom](pkg/loom/README.md)** - Roo package manager.
+  - **[proof](pkg/proof/README.md)** - Roo test framework package.
+  - **[proofread](pkg/proofread/README.md)** - Roo syntax checker.
 
 ## Language
 
@@ -89,14 +89,14 @@ Branching via `cond`, `case`, `if`, and `when`:
 
 ## Embedding
 
-Add `liblisple.a` or `liblisple.so` to your build and include `<lisple/runtime.h>`.
+Add `libroo.a` or `libroo.so` to your build and include `<roo/runtime.h>`.
 
 ### Basic evaluation
 
 ```cpp
-#include <lisple/runtime.h>
+#include <roo/runtime.h>
 
-Lisple::Runtime rt;
+Roo::Runtime rt;
 
 auto result = rt.eval("(+ 1 2)");
 result->i64();   // 3
@@ -108,20 +108,20 @@ rt.eval("(square 9)")->i64();   // 81
 ### Providing a host namespace
 
 ```cpp
-#include <lisple/runtime.h>
-#include <lisple/namespace.h>
+#include <roo/runtime.h>
+#include <roo/namespace.h>
 
-Lisple::Namespace app_ns("app");
-app_ns.def("pi", Lisple::Value::number(3.14159265));
-app_ns.def("version", Lisple::Value::string("1.0"));
+Roo::Namespace app_ns("app");
+app_ns.def("pi", Roo::Value::number(3.14159265));
+app_ns.def("version", Roo::Value::string("1.0"));
 
-Lisple::Runtime rt(app_ns);
+Roo::Runtime rt(app_ns);
 rt.eval("(* app/pi 2)")->f64();   // 6.28318...
 ```
 
 ### Exposing C++ objects
 
-Lisple provides a macro-based DSL for wrapping C++ types as first-class Lisple
+Roo provides a macro-based DSL for wrapping C++ types as first-class Roo
 values. Wrapped objects are accessible via keyword accessors and participate in
 `assoc` / `assoc!` just like plain maps.
 
@@ -142,9 +142,9 @@ public:
 writable properties:
 
 ```cpp
-#include <lisple/host/object.h>
+#include <roo/host/object.h>
 
-inline Lisple::HostTypeRef PRODUCT_TYPE("product", "shop/make-product");
+inline Roo::HostTypeRef PRODUCT_TYPE("product", "shop/make-product");
 
 NATIVE_ADAPTER(ProductAdapter, Product, (name, price), (price));
 ```
@@ -153,7 +153,7 @@ NATIVE_ADAPTER(ProductAdapter, Product, (name, price), (price));
 `set_x()` on the wrapped object:
 
 ```cpp
-#include <lisple/host/accessor.h>
+#include <roo/host/accessor.h>
 
 NATIVE_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT_TYPE, (name), (price));
 
@@ -167,7 +167,7 @@ Properties that are themselves wrapped objects use the `ADAPTER(...)` qualifier:
 ADAPTER_PROP_GET(OrderAdapter, METHOD(product), ADAPTER(ProductAdapter));
 ```
 
-**4. Usage from Lisple** - once registered in a namespace, the object behaves
+**4. Usage from Roo** - once registered in a namespace, the object behaves
 like any map:
 
 ```lisp
@@ -179,9 +179,9 @@ like any map:
 (assoc  p :price 12.50) ;; return modified copy
 ```
 
-See [object.h](lib/liblisple/include/lisple/host/object.h),
-[accessor.h](lib/liblisple/include/lisple/host/accessor.h), and the
-[host test examples](lib/liblisple/test/tests/host/) for namespace registration
+See [object.h](lib/libroo/include/roo/host/object.h),
+[accessor.h](lib/libroo/include/roo/host/accessor.h), and the
+[host test examples](lib/libroo/test/tests/host/) for namespace registration
 and make-functions.
 
 ## Building
@@ -191,7 +191,7 @@ Requires CMake 3.10+ and a C++20-capable compiler.
 ```bash
 make configure                   # Release build
 make configure BUILD_TYPE=Debug  # Debug build
-make build                       # Produces liblisple.a and liblisple.so
+make build                       # Produces libroo.a and libroo.so
 make install                     # Install to ~/.local (override with PREFIX=...)
 ```
 
@@ -201,7 +201,7 @@ make install                     # Install to ~/.local (override with PREFIX=...
 make configure BUILD_TYPE=Debug
 make build
 cd build && ctest                              # All tests
-cd build/lib/liblisple/test && ./testlisple --gtest_filter="*map*"  # Filtered
+cd build/lib/libroo/test && ./testroo --gtest_filter="*map*"  # Filtered
 ```
 
 ## CMake integration
@@ -209,8 +209,8 @@ cd build/lib/liblisple/test && ./testlisple --gtest_filter="*map*"  # Filtered
 After `make install`, the package is available via `find_package`:
 
 ```cmake
-find_package(lisple REQUIRED)
-target_link_libraries(my_app PRIVATE Lisple::lisple)
+find_package(roo REQUIRED)
+target_link_libraries(my_app PRIVATE Roo::roo)
 ```
 
 ## License

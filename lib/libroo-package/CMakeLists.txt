@@ -17,8 +17,8 @@ elseif (MSVC)
   add_compile_options(/W4)
 endif()
 
-if (NOT TARGET Lisple::lisple_shared)
-  find_package(lisple REQUIRED)
+if (NOT TARGET Roo::roo_shared)
+  find_package(roo REQUIRED)
 endif()
 
 get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
@@ -34,17 +34,17 @@ target_include_directories(roo-package_objects
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-if (EXISTS "${ROO_ROOT_DIR}/lib/liblisple/include")
+if (EXISTS "${ROO_ROOT_DIR}/lib/libroo/include")
   target_include_directories(roo-package_objects
     PRIVATE
-      ${ROO_ROOT_DIR}/lib/liblisple/include
+      ${ROO_ROOT_DIR}/lib/libroo/include
   )
 endif()
 
-if (TARGET Lisple::lisple_shared)
-  get_target_property(_lisple_include_dirs Lisple::lisple_shared INTERFACE_INCLUDE_DIRECTORIES)
-  if (_lisple_include_dirs)
-    target_include_directories(roo-package_objects PRIVATE ${_lisple_include_dirs})
+if (TARGET Roo::roo_shared)
+  get_target_property(_roo_include_dirs Roo::roo_shared INTERFACE_INCLUDE_DIRECTORIES)
+  if (_roo_include_dirs)
+    target_include_directories(roo-package_objects PRIVATE ${_roo_include_dirs})
   endif()
 endif()
 
@@ -75,12 +75,12 @@ set_target_properties(roo-package_shared PROPERTIES
 )
 
 target_link_libraries(roo-package_static
-  PUBLIC Lisple::lisple_static
+  PUBLIC Roo::roo_static
   PRIVATE ${CMAKE_DL_LIBS}
 )
 
 target_link_libraries(roo-package_shared
-  PUBLIC Lisple::lisple_shared
+  PUBLIC Roo::roo_shared
   PRIVATE ${CMAKE_DL_LIBS}
 )
 

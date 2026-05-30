@@ -13,7 +13,7 @@
 #define ROO_NATIVE_ABI_SYMBOL "roo_native_package_v1"
 #define ROO_NATIVE_CXX_ABI "roo-cxx"
 
-namespace Lisple
+namespace Roo
 {
   class Namespace;
 }
@@ -25,7 +25,7 @@ struct RooNativeHostV1
 
   void* user;
 
-  int (*register_namespace)(void* user, Lisple::Namespace* ns);
+  int (*register_namespace)(void* user, Roo::Namespace* ns);
   void (*note)(void* user, const char* message);
 };
 

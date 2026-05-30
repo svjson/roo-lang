@@ -1,11 +1,11 @@
 # roo-package
 
-`roo-package` is the package loading layer that sits next to `liblisple`.
+`roo-package` is the package loading layer that sits next to `libroo`.
 It reads `package.edn`, resolves local package dependencies, builds Roo load
 paths, loads native libraries declared by a package, and loads package bootstrap
 namespaces.
 
-This library is deliberately outside `liblisple`. `liblisple` stays an
+This library is deliberately outside `libroo`. `libroo` stays an
 embeddable language runtime; embedders that want package loading can opt into
 this layer and wire it into their runtime.
 
@@ -267,8 +267,8 @@ the host:
 ```c++
 int load_native_package(const RooNativeHostV1* host)
 {
-  auto ns = std::make_unique<Lisple::Namespace>("example.runtime");
-  ns->set_origin(Lisple::Namespace::Origin::native());
+  auto ns = std::make_unique<Roo::Namespace>("example.runtime");
+  ns->set_origin(Roo::Namespace::Origin::native());
   ns->store("answer", AnswerFunction::make());
   return host->register_namespace(host->user, ns.release());
 }
@@ -280,7 +280,7 @@ runtime.
 ## Building a Native Library
 
 Build the native component as a shared library. The shared library must link
-against `liblisple` and `roo-package`, because it uses Lisple runtime types
+against `libroo` and `roo-package`, because it uses Roo runtime types
 and the native package ABI.
 
 A minimal CMake target looks like this:
@@ -301,7 +301,7 @@ target_include_directories(example_native
 
 target_link_libraries(example_native
   PUBLIC
-    Lisple::lisple_shared
+    Roo::roo_shared
     Roo::package_shared
 )
 ```
@@ -324,7 +324,7 @@ to make the built library land where `package.edn` says it will be.
 
 ## Loading From an Embedded Application
 
-Applications that embed `liblisple` and construct `Lisple::Runtime` themselves
+Applications that embed `libroo` and construct `Roo::Runtime` themselves
 can use `roo-package` directly.
 
 Link the host application against both libraries:
@@ -334,16 +334,16 @@ find_package(roo-package REQUIRED)
 
 target_link_libraries(my_app
   PRIVATE
-    Lisple::lisple_shared
+    Roo::roo_shared
     Roo::package_shared
 )
 ```
 
-Use the package headers alongside the normal Lisple runtime headers:
+Use the package headers alongside the normal Roo runtime headers:
 
 ```c++
-#include <lisple/io/dir_root_file_system.h>
-#include <lisple/runtime.h>
+#include <roo/io/dir_root_file_system.h>
+#include <roo/runtime.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
 ```
@@ -364,13 +364,13 @@ The standard sequence is:
 Minimal example:
 
 ```c++
-Lisple::DirRootFileSystem manifest_fs("/");
+Roo::DirRootFileSystem manifest_fs("/");
 auto plan = Roo::Package::resolve_load_plan(manifest_fs, "/path/to/package");
 
 auto fs = Roo::Package::make_load_path_file_system(
   plan,
   {"/host/app/roo"});
-Lisple::Runtime runtime(fs.get());
+Roo::Runtime runtime(fs.get());
 
 Roo::Package::configure_runtime_namespace_roots(runtime, plan);
 auto native_packages = Roo::Package::load_native_libraries(runtime, plan);

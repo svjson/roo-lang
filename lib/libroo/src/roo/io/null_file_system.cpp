@@ -1,0 +1,96 @@
+#include "roo/io/null_file_system.h"
+
+#include <roo/exception.h>
+
+namespace Roo
+{
+  namespace
+  {
+    RooException no_file_system_access(const std::string& operation,
+                                       const std::string& path = "")
+    {
+      if (path.empty())
+      {
+        return RooException("This Roo context does not provide any file system access for " +
+                            operation);
+      }
+      return RooException("This Roo context does not provide any file system access for " +
+                          operation + ": '" + path + "'");
+    }
+  } // namespace
+
+  const std::string NullFileSystem::read(const std::string& file_name)
+  {
+    throw no_file_system_access("read", file_name);
+  }
+
+  void NullFileSystem::write(const std::string& file_name, const std::string&)
+  {
+    throw no_file_system_access("write", file_name);
+  }
+
+  void NullFileSystem::copy_file(const std::string& source, const std::string&)
+  {
+    throw no_file_system_access("copy-file", source);
+  }
+
+  void NullFileSystem::remove_tree(const std::string& path)
+  {
+    throw no_file_system_access("remove-tree", path);
+  }
+
+  void NullFileSystem::create_symlink(const std::string& source, const std::string&)
+  {
+    throw no_file_system_access("symlink", source);
+  }
+
+  bool NullFileSystem::is_symlink(const std::string& path)
+  {
+    throw no_file_system_access("symlink?", path);
+  }
+
+  std::string NullFileSystem::read_symlink(const std::string& path)
+  {
+    throw no_file_system_access("read-link", path);
+  }
+
+  std::vector<DirectoryEntry> NullFileSystem::list_directory(const std::string& path)
+  {
+    throw no_file_system_access("list-directory", path);
+  }
+
+  FileSystemStat NullFileSystem::stat(const std::string& path)
+  {
+    throw no_file_system_access("stat", path);
+  }
+
+  bool NullFileSystem::exists(const std::string& path)
+  {
+    throw no_file_system_access("exists", path);
+  }
+
+  bool NullFileSystem::is_file(const std::string& path)
+  {
+    throw no_file_system_access("file?", path);
+  }
+
+  bool NullFileSystem::is_directory(const std::string& path)
+  {
+    throw no_file_system_access("directory?", path);
+  }
+
+  std::string NullFileSystem::absolute_path(const std::string& path)
+  {
+    throw no_file_system_access("absolute-path", path);
+  }
+
+  std::string NullFileSystem::current_directory()
+  {
+    throw no_file_system_access("current-directory");
+  }
+
+  std::string NullFileSystem::home_directory()
+  {
+    throw no_file_system_access("home-directory");
+  }
+} // namespace Roo

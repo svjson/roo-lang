@@ -13,7 +13,7 @@ target_include_directories(proofread_native
 
 target_link_libraries(proofread_native
   PUBLIC
-    Lisple::lisple_shared
+    Roo::roo_shared
     Roo::package_shared
 )
 

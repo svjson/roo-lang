@@ -3,17 +3,16 @@
 #include <map>
 #include <string>
 
-#include <lisple/exception.h>
-#include <lisple/io/file_system.h>
-#include <lisple/runtime.h>
-
 #include <gtest/gtest.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
+#include <roo/exception.h>
+#include <roo/io/file_system.h>
+#include <roo/runtime.h>
 
 namespace
 {
-  class MemoryFileSystem : public Lisple::FileSystem
+  class MemoryFileSystem : public Roo::FileSystem
   {
     std::map<std::string, std::string> files;
 
@@ -160,7 +159,7 @@ TEST(PackageManifest, merges_extra_load_paths_before_resolved_package_paths)
 TEST(PackageManifest, rejects_non_map_manifest)
 {
   EXPECT_THROW(Roo::Package::parse_manifest("[proof]", "bad/package.edn"),
-               Lisple::LispleException);
+               Roo::RooException);
 }
 
 TEST(PackageManifest, resolves_pure_roo_dependencies_from_search_roots)
@@ -176,10 +175,9 @@ TEST(PackageManifest, resolves_pure_roo_dependencies_from_search_roots)
              :dependencies []
              :load-roots ["src"]})");
 
-  auto plan =
-    Roo::Package::resolve_load_plan(fs,
-                                       "/repo/pkg/app",
-                                       Roo::Package::ResolveOptions{{"/repo/pkg"}});
+  auto plan = Roo::Package::resolve_load_plan(fs,
+                                              "/repo/pkg/app",
+                                              Roo::Package::ResolveOptions{{"/repo/pkg"}});
 
   EXPECT_EQ(plan.package_root, "/repo/pkg/app");
   EXPECT_EQ(plan.package_roots,
@@ -211,8 +209,8 @@ TEST(PackageManifest, resolves_versioned_dependencies_from_repository_layout)
   // When
   auto plan =
     Roo::Package::resolve_load_plan(fs,
-                                       "/repo/app",
-                                       Roo::Package::ResolveOptions{{"/repo/packages"}});
+                                    "/repo/app",
+                                    Roo::Package::ResolveOptions{{"/repo/packages"}});
 
   // Then
   EXPECT_EQ(plan.package_roots,
@@ -274,8 +272,8 @@ TEST(PackageManifest, deduplicates_same_package_resolved_from_repository_and_pat
   // When
   auto plan =
     Roo::Package::resolve_load_plan(fs,
-                                       "/repo/app",
-                                       Roo::Package::ResolveOptions{{"/repo/packages"}});
+                                    "/repo/app",
+                                    Roo::Package::ResolveOptions{{"/repo/packages"}});
 
   // Then
   EXPECT_EQ(
@@ -314,9 +312,9 @@ TEST(PackageManifest, rejects_same_package_name_with_different_versions)
   // Then
   EXPECT_THROW(
     Roo::Package::resolve_load_plan(fs,
-                                       "/repo/app",
-                                       Roo::Package::ResolveOptions{{"/repo/packages"}}),
-    Lisple::LispleException);
+                                    "/repo/app",
+                                    Roo::Package::ResolveOptions{{"/repo/packages"}}),
+    Roo::RooException);
 }
 
 TEST(PackageManifest, resolved_load_plan_uses_root_package_main)
@@ -408,7 +406,7 @@ TEST(PackageManifest, rejects_path_dependency_with_mismatched_version)
              :dependencies []
              :load-roots ["src"]})");
 
-  EXPECT_THROW(Roo::Package::resolve_load_plan(fs, "/repo/app"), Lisple::LispleException);
+  EXPECT_THROW(Roo::Package::resolve_load_plan(fs, "/repo/app"), Roo::RooException);
 }
 
 TEST(PackageManifest, resolves_transitive_dependencies_before_dependents)
@@ -418,9 +416,8 @@ TEST(PackageManifest, resolves_transitive_dependencies_before_dependents)
   fs.add("pkg/ui/package.edn", R"({:name ui :dependencies [core] :load-roots ["src"]})");
   fs.add("pkg/core/package.edn", R"({:name core :dependencies [] :load-roots ["src"]})");
 
-  auto plan = Roo::Package::resolve_load_plan(fs,
-                                                 "pkg/app",
-                                                 Roo::Package::ResolveOptions{{"pkg"}});
+  auto plan =
+    Roo::Package::resolve_load_plan(fs, "pkg/app", Roo::Package::ResolveOptions{{"pkg"}});
 
   EXPECT_EQ(plan.package_roots, (std::vector<std::string>{"pkg/core", "pkg/ui", "pkg/app"}));
   EXPECT_EQ(plan.load_paths,
@@ -433,10 +430,9 @@ TEST(PackageManifest, reports_missing_dependencies)
   fs.add("pkg/app/package.edn",
          R"({:name app :dependencies [missing] :load-roots ["src"]})");
 
-  EXPECT_THROW(Roo::Package::resolve_load_plan(fs,
-                                                  "pkg/app",
-                                                  Roo::Package::ResolveOptions{{"pkg"}}),
-               Lisple::LispleException);
+  EXPECT_THROW(
+    Roo::Package::resolve_load_plan(fs, "pkg/app", Roo::Package::ResolveOptions{{"pkg"}}),
+    Roo::RooException);
 }
 
 TEST(PackageManifest, detects_dependency_cycles)
@@ -445,10 +441,9 @@ TEST(PackageManifest, detects_dependency_cycles)
   fs.add("pkg/app/package.edn", R"({:name app :dependencies [util] :load-roots ["src"]})");
   fs.add("pkg/util/package.edn", R"({:name util :dependencies [app] :load-roots ["src"]})");
 
-  EXPECT_THROW(Roo::Package::resolve_load_plan(fs,
-                                                  "pkg/app",
-                                                  Roo::Package::ResolveOptions{{"pkg"}}),
-               Lisple::LispleException);
+  EXPECT_THROW(
+    Roo::Package::resolve_load_plan(fs, "pkg/app", Roo::Package::ResolveOptions{{"pkg"}}),
+    Roo::RooException);
 }
 
 TEST(PackageManifest, resolved_pure_roo_dependencies_are_available_to_runtime)
@@ -473,13 +468,13 @@ TEST(PackageManifest, resolved_pure_roo_dependencies_are_available_to_runtime)
   Roo::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
-  auto plan = Roo::Package::resolve_load_plan(
-    *manifest_fs,
-    (root / "pkg/app").string(),
-    Roo::Package::ResolveOptions{{(root / "pkg").string()}});
+  auto plan =
+    Roo::Package::resolve_load_plan(*manifest_fs,
+                                    (root / "pkg/app").string(),
+                                    Roo::Package::ResolveOptions{{(root / "pkg").string()}});
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
-  Lisple::Runtime runtime(package_fs.get());
+  Roo::Runtime runtime(package_fs.get());
   runtime.read_file("app/core.roo");
 
   EXPECT_EQ(runtime.eval("(app.core/run)")->to_string(), "42");
@@ -503,7 +498,7 @@ TEST(PackageManifest, fixture_package_can_run_code_from_file_dependency)
                                       cafe_register_root.string()}));
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
-  Lisple::Runtime runtime(package_fs.get());
+  Roo::Runtime runtime(package_fs.get());
   runtime.read_file("cafe/register.roo");
 
   EXPECT_EQ(runtime.eval("(cafe.register/morning-sale-total)")->to_string(), "50");
@@ -530,7 +525,7 @@ TEST(PackageManifest, namespace_roots_make_prefixed_namespaces_available_to_runt
   auto plan = Roo::Package::resolve_load_plan(*manifest_fs, (root / "pkg/app").string());
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
-  Lisple::Runtime runtime(package_fs.get());
+  Roo::Runtime runtime(package_fs.get());
   Roo::Package::configure_runtime_namespace_roots(runtime, plan);
 
   runtime.eval("(ns app (:require mylib.stuff.core))");
@@ -571,7 +566,7 @@ TEST(PackageManifest, namespace_roots_make_multiple_paths_available_to_runtime)
             (root / "pkg/app/test/roo/main-stuff").lexically_normal().string());
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
-  Lisple::Runtime runtime(package_fs.get());
+  Roo::Runtime runtime(package_fs.get());
   Roo::Package::configure_runtime_namespace_roots(runtime, plan);
 
   runtime.eval("(ns app (:require mylib.stuff.core mylib.stuff.fixture))");
@@ -614,7 +609,7 @@ TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
   Roo::Package::LoadedNativePackages native_packages;
   {
     auto package_fs = Roo::Package::make_load_path_file_system(plan);
-    Lisple::Runtime runtime(package_fs.get());
+    Roo::Runtime runtime(package_fs.get());
     native_packages = Roo::Package::load_native_libraries(runtime, plan);
     runtime.read_file("native/app.roo");
 
@@ -655,7 +650,7 @@ TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)
   Roo::Package::LoadedNativePackages native_packages;
   {
     auto package_fs = Roo::Package::make_load_path_file_system(plan);
-    Lisple::Runtime runtime(package_fs.get());
+    Roo::Runtime runtime(package_fs.get());
     native_packages = Roo::Package::load_native_libraries(runtime, plan);
     Roo::Package::load_autoloads(runtime, plan);
 
@@ -669,5 +664,5 @@ TEST(PackageManifest, rejects_non_vector_list_fields)
 {
   EXPECT_THROW(
     Roo::Package::parse_manifest("{:name proof :load-roots \"src\"}", "bad/package.edn"),
-    Lisple::LispleException);
+    Roo::RooException);
 }

@@ -1,8 +1,7 @@
 #include <string>
 
-#include <lisple/exception.h>
-
 #include <gtest/gtest.h>
+#include <roo/exception.h>
 #include <rooc/options.h>
 
 namespace
@@ -47,8 +46,7 @@ TEST(RoocOptions, parses_build_dir_and_name)
 TEST(RoocOptions, parses_equals_form_options)
 {
   // When
-  auto options =
-    parse({"rooc", "build", "pkg/app", "--build-dir=out/rooc", "--name=app"});
+  auto options = parse({"rooc", "build", "pkg/app", "--build-dir=out/rooc", "--name=app"});
 
   // Then
   EXPECT_EQ(options.build_dir.generic_string(), "out/rooc");
@@ -58,11 +56,11 @@ TEST(RoocOptions, parses_equals_form_options)
 TEST(RoocOptions, rejects_unknown_command)
 {
   // Then
-  EXPECT_THROW(parse({"rooc", "run", "pkg/app"}), Lisple::LispleException);
+  EXPECT_THROW(parse({"rooc", "run", "pkg/app"}), Roo::RooException);
 }
 
 TEST(RoocOptions, rejects_unknown_option)
 {
   // Then
-  EXPECT_THROW(parse({"rooc", "build", "pkg/app", "--wat"}), Lisple::LispleException);
+  EXPECT_THROW(parse({"rooc", "build", "pkg/app", "--wat"}), Roo::RooException);
 }

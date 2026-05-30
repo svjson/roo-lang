@@ -2,8 +2,7 @@
 #include <fstream>
 #include <sstream>
 
-#include <lisple/exception.h>
-
+#include <roo/exception.h>
 #include <rooc/generator.h>
 
 namespace Rooc
@@ -16,7 +15,7 @@ namespace Rooc
       std::ofstream file(path, std::ios::binary);
       if (!file)
       {
-        throw Lisple::LispleException("Could not write file: " + path.string());
+        throw Roo::RooException("Could not write file: " + path.string());
       }
       file << contents;
     }
@@ -151,10 +150,10 @@ namespace Rooc
              "#define ROOC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n\n"
              "#include <map>\n"
              "#include <string>\n\n"
-             "#include <lisple/io/file_system.h>\n\n"
+             "#include <roo/io/file_system.h>\n\n"
              "namespace RoocGenerated\n"
              "{\n"
-             "  class EmbeddedFileSystem : public Lisple::FileSystem\n"
+             "  class EmbeddedFileSystem : public Roo::FileSystem\n"
              "  {\n"
              "    std::map<std::string, std::string> files_;\n\n"
              "   public:\n"
@@ -169,38 +168,37 @@ namespace Rooc
     std::string generated_embedded_file_system_cpp()
     {
       std::ostringstream out;
-      out
-        << "#include \"embedded_file_system.h\"\n\n"
-           "#include <filesystem>\n"
-           "#include <utility>\n"
-           "\n"
-           "#include <lisple/exception.h>\n\n"
-           "namespace\n"
-           "{\n"
-           "  std::string normalize_path(const std::string& path)\n"
-           "  {\n"
-           "    return std::filesystem::path(path).lexically_normal().generic_string();\n"
-           "  }\n\n"
-           "} // namespace\n\n"
-           "namespace RoocGenerated\n"
-           "{\n"
-           "  EmbeddedFileSystem::EmbeddedFileSystem(std::map<std::string, std::string> "
-           "files)\n"
-           "    : files_(std::move(files))\n"
-           "  {\n"
-           "  }\n\n"
-           "  const std::string EmbeddedFileSystem::read(const std::string& file_name)\n"
-           "  {\n"
-           "    const auto key = normalize_path(file_name);\n"
-           "    auto it = files_.find(key);\n"
-           "    if (it == files_.end())\n"
-           "    {\n"
-           "      throw Lisple::LispleException(\"Embedded namespace source not found: \" + "
-           "file_name);\n"
-           "    }\n"
-           "    return it->second;\n"
-           "  }\n"
-           "} // namespace RoocGenerated\n";
+      out << "#include \"embedded_file_system.h\"\n\n"
+             "#include <filesystem>\n"
+             "#include <utility>\n"
+             "\n"
+             "#include <roo/exception.h>\n\n"
+             "namespace\n"
+             "{\n"
+             "  std::string normalize_path(const std::string& path)\n"
+             "  {\n"
+             "    return std::filesystem::path(path).lexically_normal().generic_string();\n"
+             "  }\n\n"
+             "} // namespace\n\n"
+             "namespace RoocGenerated\n"
+             "{\n"
+             "  EmbeddedFileSystem::EmbeddedFileSystem(std::map<std::string, std::string> "
+             "files)\n"
+             "    : files_(std::move(files))\n"
+             "  {\n"
+             "  }\n\n"
+             "  const std::string EmbeddedFileSystem::read(const std::string& file_name)\n"
+             "  {\n"
+             "    const auto key = normalize_path(file_name);\n"
+             "    auto it = files_.find(key);\n"
+             "    if (it == files_.end())\n"
+             "    {\n"
+             "      throw Roo::RooException(\"Embedded namespace source not found: \" + "
+             "file_name);\n"
+             "    }\n"
+             "    return it->second;\n"
+             "  }\n"
+             "} // namespace RoocGenerated\n";
       return out.str();
     }
 
@@ -212,12 +210,12 @@ namespace Rooc
              "#include <map>\n"
              "#include <string>\n"
              "#include <vector>\n\n"
-             "#include <lisple/namespace_source.h>\n"
+             "#include <roo/namespace_source.h>\n"
              "#include <roo-package/manifest.h>\n\n"
              "namespace RoocGenerated\n"
              "{\n"
              "  std::map<std::string, std::string> embedded_files();\n"
-             "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots();\n"
+             "  std::vector<Roo::NamespaceRoot> embedded_namespace_roots();\n"
              "  std::vector<std::string> embedded_autoloads();\n"
              "  std::vector<std::string> embedded_entry_points();\n"
              "  std::vector<Roo::Package::NativeLibrary> embedded_native_libraries();\n"
@@ -247,13 +245,13 @@ namespace Rooc
 
       out << "    };\n"
              "  }\n\n"
-             "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots()\n"
+             "  std::vector<Roo::NamespaceRoot> embedded_namespace_roots()\n"
              "  {\n"
              "    return {\n";
 
       for (const auto& root : project.plan.namespace_roots)
       {
-        out << "      Lisple::NamespaceRoot{" << cpp_string_literal(root.ns_prefix) << ", "
+        out << "      Roo::NamespaceRoot{" << cpp_string_literal(root.ns_prefix) << ", "
             << cpp_string_literal(root.path) << "},\n";
       }
 
@@ -431,91 +429,90 @@ namespace Rooc
     std::string generated_main_cpp()
     {
       std::ostringstream out;
-      out
-        << "#include <exception>\n"
-           "#include <filesystem>\n"
-           "#include <iostream>\n"
-           "#include <memory>\n"
-           "#include <string>\n"
-           "#include <vector>\n\n"
-           "#include <lisple/exception.h>\n"
-           "#include <lisple/io/dir_root_file_system.h>\n"
-           "#include <lisple/io/file_system_namespace_source.h>\n"
-           "#include <lisple/runtime.h>\n"
-           "#include <roo-package/application.h>\n\n"
-           "#include <roo-package/native_loader.h>\n\n"
-           "#include \"embedded_file_system.h\"\n"
-           "#include \"embedded_sources.h\"\n\n"
-           "namespace\n"
-           "{\n"
-           "  void load_namespaces(Lisple::Runtime& runtime,\n"
-           "                       const std::vector<std::string>& namespaces,\n"
-           "                       const std::string& loader_ns,\n"
-           "                       const std::string& source_name)\n"
-           "  {\n"
-           "    for (const auto& ns : namespaces)\n"
-           "    {\n"
-           "      runtime.eval(\"(ns \" + loader_ns + \" (:require \" + ns + \"))\", "
-           "source_name);\n"
-           "    }\n"
-           "  }\n\n"
-           "} // namespace\n\n"
-           "int main(int argc, char** argv)\n"
-           "{\n"
-           "  try\n"
-           "  {\n"
-           "    Lisple::DirRootFileSystem app_fs({std::filesystem::current_path().string(), "
-           "\"/\"});\n"
-           "    RoocGenerated::EmbeddedFileSystem namespace_fs(\n"
-           "      RoocGenerated::embedded_files());\n"
-           "    auto namespace_source = "
-           "std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);\n"
-           "    Roo::Package::LoadPlan package_plan =\n"
-           "      RoocGenerated::embedded_load_plan();\n"
-           "    Roo::Package::LoadedNativePackages native_packages;\n"
-           "    Lisple::Runtime runtime(&app_fs, std::move(namespace_source));\n"
-           "    runtime.set_call_stack_diagnostics(true);\n"
-           "    runtime.set_namespace_roots(package_plan.namespace_roots);\n\n"
-           "    native_packages = Roo::Package::load_native_libraries(runtime, "
-           "package_plan);\n\n"
-           "    load_namespaces(runtime,\n"
-           "                    package_plan.autoloads,\n"
-           "                    \"roo.compiled.autoload\",\n"
-           "                    \"<package-autoload>\");\n\n"
-           "    if (package_plan.entry_points.empty() && package_plan.main.empty() &&\n"
-           "        package_plan.run.empty())\n"
-           "    {\n"
-           "      throw Lisple::LispleException(\"Compiled package has no :run, :main, or "
-           ":entry-points in package.edn.\");\n"
-           "    }\n"
-           "    if (!package_plan.run.empty())\n"
-           "    {\n"
-           "      Roo::Package::Application::invoke_tool(runtime, package_plan,\n"
-           "                                                package_plan.run);\n"
-           "    }\n"
-           "    else\n"
-           "    {\n"
-           "      load_namespaces(runtime, package_plan.entry_points, "
-           "\"roo.compiled.entry\", \"<package-entry>\");\n"
-           "      Roo::Package::Application::invoke_main(runtime, package_plan.main, "
-           "argc, "
-           "argv);\n"
-           "    }\n"
-           "  }\n"
-           "  catch (const std::exception& e)\n"
-           "  {\n"
-           "    std::cerr << e.what() << std::endl;\n"
-           "    return 1;\n"
-           "  }\n"
-           "  return 0;\n"
-           "}\n";
+      out << "#include <exception>\n"
+             "#include <filesystem>\n"
+             "#include <iostream>\n"
+             "#include <memory>\n"
+             "#include <string>\n"
+             "#include <vector>\n\n"
+             "#include <roo/exception.h>\n"
+             "#include <roo/io/dir_root_file_system.h>\n"
+             "#include <roo/io/file_system_namespace_source.h>\n"
+             "#include <roo/runtime.h>\n"
+             "#include <roo-package/application.h>\n\n"
+             "#include <roo-package/native_loader.h>\n\n"
+             "#include \"embedded_file_system.h\"\n"
+             "#include \"embedded_sources.h\"\n\n"
+             "namespace\n"
+             "{\n"
+             "  void load_namespaces(Roo::Runtime& runtime,\n"
+             "                       const std::vector<std::string>& namespaces,\n"
+             "                       const std::string& loader_ns,\n"
+             "                       const std::string& source_name)\n"
+             "  {\n"
+             "    for (const auto& ns : namespaces)\n"
+             "    {\n"
+             "      runtime.eval(\"(ns \" + loader_ns + \" (:require \" + ns + \"))\", "
+             "source_name);\n"
+             "    }\n"
+             "  }\n\n"
+             "} // namespace\n\n"
+             "int main(int argc, char** argv)\n"
+             "{\n"
+             "  try\n"
+             "  {\n"
+             "    Roo::DirRootFileSystem app_fs({std::filesystem::current_path().string(), "
+             "\"/\"});\n"
+             "    RoocGenerated::EmbeddedFileSystem namespace_fs(\n"
+             "      RoocGenerated::embedded_files());\n"
+             "    auto namespace_source = "
+             "std::make_unique<Roo::FileSystemNamespaceSource>(&namespace_fs);\n"
+             "    Roo::Package::LoadPlan package_plan =\n"
+             "      RoocGenerated::embedded_load_plan();\n"
+             "    Roo::Package::LoadedNativePackages native_packages;\n"
+             "    Roo::Runtime runtime(&app_fs, std::move(namespace_source));\n"
+             "    runtime.set_call_stack_diagnostics(true);\n"
+             "    runtime.set_namespace_roots(package_plan.namespace_roots);\n\n"
+             "    native_packages = Roo::Package::load_native_libraries(runtime, "
+             "package_plan);\n\n"
+             "    load_namespaces(runtime,\n"
+             "                    package_plan.autoloads,\n"
+             "                    \"roo.compiled.autoload\",\n"
+             "                    \"<package-autoload>\");\n\n"
+             "    if (package_plan.entry_points.empty() && package_plan.main.empty() &&\n"
+             "        package_plan.run.empty())\n"
+             "    {\n"
+             "      throw Roo::RooException(\"Compiled package has no :run, :main, or "
+             ":entry-points in package.edn.\");\n"
+             "    }\n"
+             "    if (!package_plan.run.empty())\n"
+             "    {\n"
+             "      Roo::Package::Application::invoke_tool(runtime, package_plan,\n"
+             "                                                package_plan.run);\n"
+             "    }\n"
+             "    else\n"
+             "    {\n"
+             "      load_namespaces(runtime, package_plan.entry_points, "
+             "\"roo.compiled.entry\", \"<package-entry>\");\n"
+             "      Roo::Package::Application::invoke_main(runtime, package_plan.main, "
+             "argc, "
+             "argv);\n"
+             "    }\n"
+             "  }\n"
+             "  catch (const std::exception& e)\n"
+             "  {\n"
+             "    std::cerr << e.what() << std::endl;\n"
+             "    return 1;\n"
+             "  }\n"
+             "  return 0;\n"
+             "}\n";
 
       return out.str();
     }
 
     std::string generated_cmake(const GeneratedProject& project)
     {
-      const auto lisple_lib = shared_library_path("lib/liblisple", "lisple");
+      const auto roo_lib = shared_library_path("lib/libroo", "roo");
       const auto package_lib = shared_library_path("lib/libroo-package", "roo-package");
       std::ostringstream out;
       out << "cmake_minimum_required(VERSION 3.20)\n\n"
@@ -532,13 +529,13 @@ namespace Rooc
              "  src/embedded_file_system.cpp\n"
              "  src/embedded_sources.cpp\n"
              ")\n\n"
-             "add_library(lisple_shared_imported SHARED IMPORTED)\n"
-             "set_target_properties(lisple_shared_imported PROPERTIES\n"
+             "add_library(roo_shared_imported SHARED IMPORTED)\n"
+             "set_target_properties(roo_shared_imported PROPERTIES\n"
              "    IMPORTED_LOCATION "
-          << cpp_string_literal(cmake_path(lisple_lib))
+          << cpp_string_literal(cmake_path(roo_lib))
           << "\n"
              "    INTERFACE_INCLUDE_DIRECTORIES "
-          << cpp_string_literal(cmake_path(repo_source_root() / "lib/liblisple/include"))
+          << cpp_string_literal(cmake_path(repo_source_root() / "lib/libroo/include"))
           << "\n"
              "  )\n"
              "add_library(roo_package_shared_imported SHARED IMPORTED)\n"
@@ -569,7 +566,7 @@ namespace Rooc
                "  )\n\n";
       }
       out << "  target_link_libraries(" << project.executable_name
-          << " PRIVATE lisple_shared_imported roo_package_shared_imported";
+          << " PRIVATE roo_shared_imported roo_package_shared_imported";
       for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
       {
         const auto& library = project.plan.native_libraries[i];
@@ -584,7 +581,7 @@ namespace Rooc
           << cpp_string_literal(
                [&]()
                {
-                 std::string rpath = cmake_path(lisple_lib.parent_path()) + ";" +
+                 std::string rpath = cmake_path(roo_lib.parent_path()) + ";" +
                                      cmake_path(package_lib.parent_path());
                  for (const auto& library : project.plan.native_libraries)
                  {

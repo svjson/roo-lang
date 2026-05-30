@@ -1,5 +1,3 @@
-#include <roo-package/native_loader.h>
-
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -7,10 +5,10 @@
 #include <vector>
 
 #include <roo-package/native_abi.h>
-
-#include <lisple/exception.h>
-#include <lisple/namespace.h>
-#include <lisple/runtime.h>
+#include <roo-package/native_loader.h>
+#include <roo/exception.h>
+#include <roo/namespace.h>
+#include <roo/runtime.h>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -20,9 +18,9 @@
 
 namespace Roo::Package
 {
-  using Lisple::LispleException;
-  using Lisple::Namespace;
-  using Lisple::Runtime;
+  using Roo::Namespace;
+  using Roo::RooException;
+  using Roo::Runtime;
 
   namespace
   {
@@ -145,9 +143,7 @@ namespace Roo::Package
       }
     }
 
-    void note(void*, const char*)
-    {
-    }
+    void note(void*, const char*) {}
 
     std::string package_error(const RooNativePackageV1* package)
     {
@@ -195,10 +191,7 @@ namespace Roo::Package
       LoadedLibrary(const LoadedLibrary&) = delete;
       LoadedLibrary& operator=(const LoadedLibrary&) = delete;
 
-      ~LoadedLibrary()
-      {
-        close();
-      }
+      ~LoadedLibrary() { close(); }
 
       void close()
       {
@@ -243,61 +236,54 @@ namespace Roo::Package
       LibraryHandle handle = open_library(path);
       if (!handle)
       {
-        throw LispleException("Could not load native package library '" + path +
-                              "': " + platform_error());
+        throw RooException("Could not load native package library '" + path +
+                           "': " + platform_error());
       }
 
       auto close_on_error = std::unique_ptr<void, void (*)(void*)>(
         handle,
-        [](void* value)
-        {
-          close_library(static_cast<LibraryHandle>(value));
-        });
+        [](void* value) { close_library(static_cast<LibraryHandle>(value)); });
 
       auto* symbol = find_symbol(handle, ROO_NATIVE_ABI_SYMBOL);
       if (!symbol)
       {
-        throw LispleException("Native package library '" + path +
-                              "' does not export " + ROO_NATIVE_ABI_SYMBOL +
-                              ": " + platform_error());
+        throw RooException("Native package library '" + path + "' does not export " +
+                           ROO_NATIVE_ABI_SYMBOL + ": " + platform_error());
       }
 
       auto package_fn = reinterpret_cast<RooNativePackageV1Fn>(symbol);
       const RooNativePackageV1* package = package_fn();
       if (!package)
       {
-        throw LispleException("Native package library '" + path +
-                              "' returned a null package descriptor.");
+        throw RooException("Native package library '" + path +
+                           "' returned a null package descriptor.");
       }
       if (package->abi_version != ROO_NATIVE_ABI_VERSION ||
           package->struct_size < sizeof(RooNativePackageV1))
       {
-        throw LispleException("Native package library '" + path +
-                              "' uses an incompatible native ABI.");
+        throw RooException("Native package library '" + path +
+                           "' uses an incompatible native ABI.");
       }
-      if (!package->roo_abi ||
-          std::string(package->roo_abi) != ROO_NATIVE_CXX_ABI)
+      if (!package->roo_abi || std::string(package->roo_abi) != ROO_NATIVE_CXX_ABI)
       {
-        throw LispleException("Native package library '" + path +
-                              "' targets an incompatible Roo ABI.");
+        throw RooException("Native package library '" + path +
+                           "' targets an incompatible Roo ABI.");
       }
       if (package->package_name && library.name != package->package_name)
       {
-        throw LispleException("Native package library '" + path + "' identifies as '" +
-                              package->package_name + "', expected '" + library.name +
-                              "'.");
+        throw RooException("Native package library '" + path + "' identifies as '" +
+                           package->package_name + "', expected '" + library.name + "'.");
       }
       if (!library.version.empty() && package->package_version &&
           library.version != package->package_version)
       {
-        throw LispleException("Native package library '" + path + "' has version '" +
-                              package->package_version + "', expected '" +
-                              library.version + "'.");
+        throw RooException("Native package library '" + path + "' has version '" +
+                           package->package_version + "', expected '" + library.version +
+                           "'.");
       }
       if (!package->load)
       {
-        throw LispleException("Native package library '" + path +
-                              "' has no load function.");
+        throw RooException("Native package library '" + path + "' has no load function.");
       }
 
       NativeLoadContext context{runtime, ""};
@@ -313,8 +299,7 @@ namespace Roo::Package
       {
         const std::string error =
           context.error.empty() ? package_error(package) : context.error;
-        throw LispleException("Native package library '" + path +
-                              "' failed to load: " + error);
+        throw RooException("Native package library '" + path + "' failed to load: " + error);
       }
 
       close_on_error.release();

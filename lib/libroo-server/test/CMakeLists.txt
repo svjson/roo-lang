@@ -13,7 +13,7 @@ add_executable(testserver ${TEST_SOURCES})
 target_link_libraries(testserver
   gtest
   gmock
-  Lisple::lisple_shared
+  Roo::roo_shared
   roo-server_shared
 )
 

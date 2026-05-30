@@ -5,21 +5,19 @@
 #include <string>
 #include <vector>
 
-#include <lisple/exception.h>
-#include <lisple/io/dir_root_file_system.h>
-#include <lisple/runtime.h>
-
 #include <roo-package/application.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
+#include <roo/exception.h>
+#include <roo/io/dir_root_file_system.h>
+#include <roo/runtime.h>
 
 namespace
 {
   void print_usage()
   {
-    std::cout
-      << "Usage: roo [--help|--version] [--load-path <path>] <file|package-tool> "
-         "[args...]\n";
+    std::cout << "Usage: roo [--help|--version] [--load-path <path>] <file|package-tool> "
+                 "[args...]\n";
   }
 
   void print_help()
@@ -108,25 +106,24 @@ namespace
            path.find('/') == std::string::npos && path.find('\\') == std::string::npos;
   }
 
-  void run_package_entry_points(Lisple::Runtime& runtime,
+  void run_package_entry_points(Roo::Runtime& runtime,
                                 const Roo::Package::LoadPlan& package_plan,
                                 const std::string& target_path)
   {
     if (package_plan.entry_points.empty())
     {
-      throw Lisple::LispleException(
+      throw Roo::RooException(
         "Directory target '" + target_path +
         "' resolves to a package with no :entry-points in package.edn.");
     }
 
     for (const auto& entry_point : package_plan.entry_points)
     {
-      runtime.eval("(ns roo.cli.entry (:require " + entry_point + "))",
-                   "<package-entry>");
+      runtime.eval("(ns roo.cli.entry (:require " + entry_point + "))", "<package-entry>");
     }
   }
 
-  void run_package_main(Lisple::Runtime& runtime,
+  void run_package_main(Roo::Runtime& runtime,
                         const Roo::Package::LoadPlan& package_plan,
                         const std::vector<std::string>& args)
   {
@@ -210,7 +207,7 @@ int main(int argc, char** argv)
 
   try
   {
-    Lisple::DirRootFileSystem manifest_fs("/");
+    Roo::DirRootFileSystem manifest_fs("/");
     const bool run_package = is_directory_target(file_path);
     const bool run_tool =
       !run_package && !path_exists(file_path) && is_bare_tool_target(file_path);
@@ -223,13 +220,13 @@ int main(int argc, char** argv)
     }
     else if (run_package)
     {
-      throw Lisple::LispleException("Directory target '" + file_path +
-                                    "' is not inside a package.");
+      throw Roo::RooException("Directory target '" + file_path +
+                              "' is not inside a package.");
     }
 
-    Lisple::DirRootFileSystem roo_fs(load_paths);
+    Roo::DirRootFileSystem roo_fs(load_paths);
     Roo::Package::LoadedNativePackages native_packages;
-    Lisple::Runtime runtime(&roo_fs);
+    Roo::Runtime runtime(&roo_fs);
     if (package_plan)
     {
       Roo::Package::configure_runtime_namespace_roots(runtime, *package_plan);

@@ -2,13 +2,12 @@
 #include <fstream>
 #include <string>
 
-#include <lisple/io/dir_root_file_system.h>
-#include <lisple/runtime.h>
-
 #include <gtest/gtest.h>
+#include <proof/native.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
-#include <proof/native.h>
+#include <roo/io/dir_root_file_system.h>
+#include <roo/runtime.h>
 
 namespace
 {
@@ -30,8 +29,8 @@ namespace
 
 TEST(ProofPackage, registers_and_runs_tests_from_load_path)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-test
@@ -51,8 +50,8 @@ TEST(ProofPackage, registers_and_runs_tests_from_load_path)
 
 TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-streaming-test
@@ -87,12 +86,12 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
 
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
 {
-  Lisple::DirRootFileSystem manifest_fs("/");
+  Roo::DirRootFileSystem manifest_fs("/");
   auto plan = Roo::Package::resolve_load_plan(manifest_fs, PROOF_PACKAGE_DIR);
 
   auto fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Package::LoadedNativePackages native_packages;
-  Lisple::Runtime runtime(fs.get());
+  Roo::Runtime runtime(fs.get());
   native_packages = Roo::Package::load_native_libraries(runtime, plan);
 
   runtime.eval(R"(
@@ -124,9 +123,9 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
 (def value 42)
 )");
 
-  Lisple::DirRootFileSystem fs(
+  Roo::DirRootFileSystem fs(
     {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"((ns proof.runner-package-test
     (:require proof.runner)))");
@@ -139,8 +138,8 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
 
 TEST(ProofPackage, summarizes_result_sets_in_roo)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-summary-test
@@ -169,8 +168,8 @@ TEST(ProofPackage, summarizes_result_sets_in_roo)
 
 TEST(ProofPackage, returns_failure_results)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-failure-test
@@ -188,8 +187,8 @@ TEST(ProofPackage, returns_failure_results)
 
 TEST(ProofPackage, records_failed_assertions_before_later_passing_expressions)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-hidden-failure-test
@@ -211,8 +210,8 @@ TEST(ProofPackage, records_failed_assertions_before_later_passing_expressions)
 
 TEST(ProofPackage, expect_records_failures_and_continues)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-expect-test
@@ -236,8 +235,8 @@ TEST(ProofPackage, expect_records_failures_and_continues)
 
 TEST(ProofPackage, ScenarioFormsPassResultsBetweenPhases)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-scenario-test
@@ -264,8 +263,8 @@ TEST(ProofPackage, ScenarioFormsPassResultsBetweenPhases)
 
 TEST(ProofPackage, ScenarioThenCanOmitGivenResult)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-scenario-omit-given-test
@@ -289,8 +288,8 @@ TEST(ProofPackage, ScenarioThenCanOmitGivenResult)
 
 TEST(ProofPackage, ScenarioWhenAndThenSupportEmptyArgVectors)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-scenario-empty-args-test
@@ -314,8 +313,8 @@ TEST(ProofPackage, ScenarioWhenAndThenSupportEmptyArgVectors)
 
 TEST(ProofPackage, ScenarioFormsExecuteSurroundingAndInterspersedForms)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-scenario-order-test
@@ -350,8 +349,8 @@ TEST(ProofPackage, ScenarioFormsExecuteSurroundingAndInterspersedForms)
 
 TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)
 {
-  Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
-  Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
     (ns proof.package-scenario-arg-test

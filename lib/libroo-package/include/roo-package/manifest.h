@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-#include <lisple/io/file_system.h>
-#include <lisple/namespace_source.h>
+#include <roo/io/file_system.h>
+#include <roo/namespace_source.h>
 
-namespace Lisple
+namespace Roo
 {
   class Runtime;
 }
@@ -39,7 +39,7 @@ namespace Roo::Package
     std::string description;
     std::vector<Dependency> dependencies;
     std::vector<std::string> load_roots;
-    std::vector<Lisple::NamespaceRoot> namespace_roots;
+    std::vector<Roo::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> autoloads;
@@ -66,7 +66,7 @@ namespace Roo::Package
     std::vector<std::string> package_roots;
     std::vector<PackageInfo> packages;
     std::vector<std::string> load_paths;
-    std::vector<Lisple::NamespaceRoot> namespace_roots;
+    std::vector<Roo::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
     std::vector<std::string> autoloads;
@@ -85,10 +85,10 @@ namespace Roo::Package
 
   Manifest parse_manifest(const std::string& source,
                           const std::string& source_name = "package.edn");
-  Manifest read_manifest(Lisple::FileSystem& fs,
+  Manifest read_manifest(Roo::FileSystem& fs,
                          const std::string& manifest_path = "package.edn");
   LoadPlan build_load_plan(const Manifest& manifest, const std::string& package_root);
-  LoadPlan resolve_load_plan(Lisple::FileSystem& fs,
+  LoadPlan resolve_load_plan(Roo::FileSystem& fs,
                              const std::string& package_root,
                              const ResolveOptions& options = {});
 
@@ -105,7 +105,7 @@ namespace Roo::Package
    * directory-root filesystem. Callers must keep the returned
    * filesystem alive for the runtime.
    */
-  std::unique_ptr<Lisple::FileSystem> make_load_path_file_system(
+  std::unique_ptr<Roo::FileSystem> make_load_path_file_system(
     const LoadPlan& plan,
     const std::vector<std::string>& extra_load_paths = {});
 
@@ -114,14 +114,14 @@ namespace Roo::Package
    * this after constructing the runtime with a filesystem that can
    * read the resolved package paths.
    */
-  void configure_runtime_namespace_roots(Lisple::Runtime& runtime, const LoadPlan& plan);
+  void configure_runtime_namespace_roots(Roo::Runtime& runtime, const LoadPlan& plan);
 
   /**
    * Load package-declared bootstrap namespaces. Call this after
    * native package * libraries are loaded, so autoload namespaces may
    * require native namespaces.
    */
-  void load_autoloads(Lisple::Runtime& runtime, const LoadPlan& plan);
+  void load_autoloads(Roo::Runtime& runtime, const LoadPlan& plan);
 } // namespace Roo::Package
 
 #endif

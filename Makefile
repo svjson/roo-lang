@@ -12,7 +12,7 @@ endif
 
 .PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread test test\:all test\:lang test\:package test\:proof test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
-TEST_BINARY := lib/liblisple/test/testlisple
+TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
 PROOF_TEST_BINARY := pkg/proof/test/testproof
 ROOC_TEST_BINARY := bin/rooc/test/testrooc
@@ -23,7 +23,7 @@ PROOF_NATIVE_LIBRARY := libproof-native.so
 PROOFREAD_NATIVE_LIBRARY := libproofread-native.so
 PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
-  TEST_BINARY := lib/liblisple/test/testlisple.exe
+  TEST_BINARY := lib/libroo/test/testroo.exe
   PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage.exe
   PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
   ROOC_TEST_BINARY := bin/rooc/test/testrooc.exe
@@ -42,9 +42,9 @@ endif
 RELINK_ARTIFACTS := \
 	$(CURDIR)/build/roo \
 	$(CURDIR)/build/rooc \
-	$(CURDIR)/build/lib/liblisple/liblisple.a \
-	$(CURDIR)/build/lib/liblisple/liblisple.so \
-	$(CURDIR)/build/lib/liblisple/test/testlisple \
+	$(CURDIR)/build/lib/libroo/libroo.a \
+	$(CURDIR)/build/lib/libroo/libroo.so \
+	$(CURDIR)/build/lib/libroo/test/testroo \
 	$(CURDIR)/build/lib/libroo-package/libroo-package.a \
 	$(CURDIR)/build/lib/libroo-package/libroo-package.so \
 	$(CURDIR)/build/lib/libroo-package/test/libroo-package-test-native.so \
@@ -122,7 +122,7 @@ test: test\:cli
 test\:all: test\:lang test\:package test\:proof test\:rooc test\:cli test\:server
 
 test\:lang: build
-	cmake --build build --target testlisple
+	cmake --build build --target testroo
 	./build/$(TEST_BINARY) --skip-benchmarks $(GTEST_FILTER_ARG)
 
 test\:package: build
@@ -149,7 +149,7 @@ test\:lookup-cli: build
 	sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
 
 test\:benchmark: build
-	cmake --build build --target testlisple
+	cmake --build build --target testroo
 	./build/$(TEST_BINARY) --benchmark $(GTEST_FILTER_ARG)
 
 test\:server: configure-server-tests

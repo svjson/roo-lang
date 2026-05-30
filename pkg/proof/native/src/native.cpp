@@ -6,21 +6,20 @@
 #include <variant>
 #include <vector>
 
-#include <lisple/context.h>
-#include <lisple/exception.h>
-#include <lisple/exec.h>
-#include <lisple/form.h>
-#include <lisple/io/file_system.h>
-#include <lisple/reader.h>
-#include <lisple/runtime/exec_node.h>
-#include <lisple/runtime/lower.h>
-#include <lisple/runtime/node.h>
-#include <lisple/runtime/value.h>
-
-#include <roo-package/native_abi.h>
 #include <proof/native.h>
+#include <roo-package/native_abi.h>
+#include <roo/context.h>
+#include <roo/exception.h>
+#include <roo/exec.h>
+#include <roo/form.h>
+#include <roo/io/file_system.h>
+#include <roo/reader.h>
+#include <roo/runtime/exec_node.h>
+#include <roo/runtime/lower.h>
+#include <roo/runtime/node.h>
+#include <roo/runtime/value.h>
 
-namespace Lisple::Proof
+namespace Roo::Proof
 {
   namespace
   {
@@ -149,9 +148,9 @@ namespace Lisple::Proof
 
       if (required_count > available_count)
       {
-        throw LispleException(
-          "Invalid " + phase_name + " argument vector, expected at most " +
-          std::to_string(available_count) + " required arguments: " + arg_vec.to_string());
+        throw RooException("Invalid " + phase_name + " argument vector, expected at most " +
+                           std::to_string(available_count) +
+                           " required arguments: " + arg_vec.to_string());
       }
 
       return std::min(total_count, available_count);
@@ -228,7 +227,7 @@ namespace Lisple::Proof
         auto& elements = ast_node->get_children();
         if (elements.size() != 2)
         {
-          throw LispleException("Invalid " + form_name + " form: " + ast_node->to_string());
+          throw RooException("Invalid " + form_name + " form: " + ast_node->to_string());
         }
 
         sptr_ast_node expr = elements[1];
@@ -324,9 +323,8 @@ namespace Lisple::Proof
 
       uptr_exec_node lower_form(LowerContext&, const sptr_ast_node& ast_node) override
       {
-        throw LispleException(
-          form_name +
-          " may only be used as a top-level deftest phase: " + ast_node->to_string());
+        throw RooException(form_name + " may only be used as a top-level deftest phase: " +
+                           ast_node->to_string());
       }
 
       sptr_val execnode_phase(Context&, SpecialFormNode&)
@@ -401,8 +399,8 @@ namespace Lisple::Proof
 
       if (elements.size() < 2 || elements[1]->get_type() != Form::VECTOR)
       {
-        throw LispleException("Invalid " + phase.name +
-                              " form, expected argument vector: " + phase.form->to_string());
+        throw RooException("Invalid " + phase.name +
+                           " form, expected argument vector: " + phase.form->to_string());
       }
 
       return elements[1];
@@ -499,7 +497,7 @@ namespace Lisple::Proof
 
       if (!when_phase && !then_phases.empty())
       {
-        throw LispleException("Invalid deftest scenario, then requires a preceding when.");
+        throw RooException("Invalid deftest scenario, then requires a preceding when.");
       }
 
       sptr_ast_node_v bindings{
@@ -549,8 +547,8 @@ namespace Lisple::Proof
         const int next_order = name == "given" ? 0 : name == "when" ? 1 : 2;
         if (next_order < order)
         {
-          throw LispleException("Invalid deftest scenario phase order: " +
-                                body[i]->to_string());
+          throw RooException("Invalid deftest scenario phase order: " +
+                             body[i]->to_string());
         }
         order = next_order;
 
@@ -558,7 +556,7 @@ namespace Lisple::Proof
         {
           if (seen_given)
           {
-            throw LispleException("Invalid deftest scenario, duplicate given.");
+            throw RooException("Invalid deftest scenario, duplicate given.");
           }
           seen_given = true;
         }
@@ -566,7 +564,7 @@ namespace Lisple::Proof
         {
           if (seen_when)
           {
-            throw LispleException("Invalid deftest scenario, duplicate when.");
+            throw RooException("Invalid deftest scenario, duplicate when.");
           }
           seen_when = true;
         }
@@ -627,12 +625,12 @@ namespace Lisple::Proof
         auto& elements = ast_node->get_children();
         if (elements.size() < 3)
         {
-          throw LispleException("Invalid deftest form: " + ast_node->to_string());
+          throw RooException("Invalid deftest form: " + ast_node->to_string());
         }
 
         if (!ctx.ctx)
         {
-          throw LispleException("deftest requires an active lowering context.");
+          throw RooException("deftest requires an active lowering context.");
         }
 
         sptr_val name = std::get<LiteralNode>(lower_literal(elements[1])->data).value;
@@ -693,13 +691,13 @@ namespace Lisple::Proof
     namespaces.push_back(make_native_namespace());
     return namespaces;
   }
-} // namespace Lisple::Proof
+} // namespace Roo::Proof
 
 namespace
 {
   int load_proof_native(const RooNativeHostV1* host)
   {
-    auto ns = Lisple::Proof::make_native_namespace();
+    auto ns = Roo::Proof::make_native_namespace();
     return host->register_namespace(host->user, ns.release());
   }
 

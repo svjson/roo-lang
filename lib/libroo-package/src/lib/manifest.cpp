@@ -9,36 +9,35 @@
 #include <utility>
 #include <vector>
 
-#include <lisple/exception.h>
-#include <lisple/form.h>
-#include <lisple/io/dir_root_file_system.h>
-#include <lisple/reader.h>
-#include <lisple/runtime.h>
-
 #include <roo-package/manifest.h>
+#include <roo/exception.h>
+#include <roo/form.h>
+#include <roo/io/dir_root_file_system.h>
+#include <roo/reader.h>
+#include <roo/runtime.h>
 
 namespace Roo::Package
 {
-  namespace AST = Lisple::AST;
-  using Lisple::Form;
-  using Lisple::LispleException;
-  using Lisple::Reader;
-  using Lisple::sptr_ast_node;
-  using Lisple::sptr_ast_node_v;
+  namespace AST = Roo::AST;
+  using Roo::Form;
+  using Roo::Reader;
+  using Roo::RooException;
+  using Roo::sptr_ast_node;
+  using Roo::sptr_ast_node_v;
 
   namespace
   {
-    std::string field_name(const Lisple::sptr_ast_node& key, const std::string& source_name)
+    std::string field_name(const Roo::sptr_ast_node& key, const std::string& source_name)
     {
       if (key->get_type() != Form::KEYWORD)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': expected keyword field name, got " + key->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': expected keyword field name, got " + key->to_string());
       }
       return key->as<AST::Keyword>().get_identifier();
     }
 
-    std::string atom_string(const Lisple::sptr_ast_node& node,
+    std::string atom_string(const Roo::sptr_ast_node& node,
                             const std::string& field,
                             const std::string& source_name)
     {
@@ -51,20 +50,20 @@ namespace Roo::Package
       case Form::KEYWORD:
         return node->as<AST::Keyword>().value;
       default:
-        throw LispleException(
-          "Invalid package manifest '" + source_name + "': field :" + field +
-          " expected string, symbol, or keyword, got " + node->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :" + field +
+                           " expected string, symbol, or keyword, got " + node->to_string());
       }
     }
 
-    std::vector<std::string> vector_of_atoms(const Lisple::sptr_ast_node& node,
+    std::vector<std::string> vector_of_atoms(const Roo::sptr_ast_node& node,
                                              const std::string& field,
                                              const std::string& source_name)
     {
       if (node->get_type() != Form::VECTOR)
       {
-        throw LispleException("Invalid package manifest '" + source_name + "': field :" +
-                              field + " expected vector, got " + node->to_string());
+        throw RooException("Invalid package manifest '" + source_name + "': field :" +
+                           field + " expected vector, got " + node->to_string());
       }
 
       std::vector<std::string> values;
@@ -77,22 +76,22 @@ namespace Roo::Package
       return values;
     }
 
-    std::vector<Lisple::NamespaceRoot> namespace_root_list(const Lisple::sptr_ast_node& node,
-                                                           const std::string& source_name)
+    std::vector<Roo::NamespaceRoot> namespace_root_list(const Roo::sptr_ast_node& node,
+                                                        const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': field :namespace-roots expected map, got " +
-                              node->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :namespace-roots expected map, got " +
+                           node->to_string());
       }
 
-      std::vector<Lisple::NamespaceRoot> roots;
+      std::vector<Roo::NamespaceRoot> roots;
       auto& children = node->get_children();
       if (children.size() % 2 != 0)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': namespace root map has an uneven number of forms.");
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': namespace root map has an uneven number of forms.");
       }
 
       roots.reserve(children.size() / 2);
@@ -104,12 +103,12 @@ namespace Roo::Package
         {
           for (const auto& path : vector_of_atoms(path_node, "namespace-roots", source_name))
           {
-            roots.push_back(Lisple::NamespaceRoot{prefix, path});
+            roots.push_back(Roo::NamespaceRoot{prefix, path});
           }
         }
         else
         {
-          roots.push_back(Lisple::NamespaceRoot{
+          roots.push_back(Roo::NamespaceRoot{
             prefix,
             atom_string(path_node, "namespace-roots", source_name),
           });
@@ -118,22 +117,22 @@ namespace Roo::Package
       return roots;
     }
 
-    std::map<std::string, std::string> source_map(const Lisple::sptr_ast_node& node,
+    std::map<std::string, std::string> source_map(const Roo::sptr_ast_node& node,
                                                   const std::string& field,
                                                   const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
-        throw LispleException("Invalid package manifest '" + source_name + "': field :" +
-                              field + " expected map, got " + node->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :" + field + " expected map, got " + node->to_string());
       }
 
       std::map<std::string, std::string> result;
       auto& children = node->get_children();
       if (children.size() % 2 != 0)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': field :" + field + " map has an uneven number of forms.");
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :" + field + " map has an uneven number of forms.");
       }
 
       for (size_t i = 0; i < children.size(); i += 2)
@@ -143,21 +142,21 @@ namespace Roo::Package
       return result;
     }
 
-    std::map<std::string, std::string> tool_map(const Lisple::sptr_ast_node& node,
+    std::map<std::string, std::string> tool_map(const Roo::sptr_ast_node& node,
                                                 const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': field :tools expected map, got " + node->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :tools expected map, got " + node->to_string());
       }
 
       std::map<std::string, std::string> result;
       auto& children = node->get_children();
       if (children.size() % 2 != 0)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': tools map has an uneven number of forms.");
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': tools map has an uneven number of forms.");
       }
 
       for (size_t i = 0; i < children.size(); i += 2)
@@ -168,21 +167,21 @@ namespace Roo::Package
       return result;
     }
 
-    std::map<std::string, sptr_ast_node> map_fields(const Lisple::sptr_ast_node& node,
+    std::map<std::string, sptr_ast_node> map_fields(const Roo::sptr_ast_node& node,
                                                     const std::string& source_name)
     {
       if (node->get_type() != Form::MAP)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': expected map, got " + node->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': expected map, got " + node->to_string());
       }
 
       std::map<std::string, sptr_ast_node> fields;
       auto& children = node->get_children();
       if (children.size() % 2 != 0)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': map has an uneven number of forms.");
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': map has an uneven number of forms.");
       }
 
       for (size_t i = 0; i < children.size(); i += 2)
@@ -234,13 +233,13 @@ namespace Roo::Package
       }
 
       default:
-        throw LispleException(
-          "Invalid package manifest '" + source_name + "': dependency '" + dependency.name +
-          "' expected version atom or option map, got " + value->to_string());
+        throw RooException("Invalid package manifest '" + source_name + "': dependency '" +
+                           dependency.name + "' expected version atom or option map, got " +
+                           value->to_string());
       }
     }
 
-    std::vector<Dependency> dependency_list(const Lisple::sptr_ast_node& node,
+    std::vector<Dependency> dependency_list(const Roo::sptr_ast_node& node,
                                             const std::string& source_name)
     {
       std::vector<Dependency> dependencies;
@@ -262,8 +261,8 @@ namespace Roo::Package
         auto& children = node->get_children();
         if (children.size() % 2 != 0)
         {
-          throw LispleException("Invalid package manifest '" + source_name +
-                                "': dependency map has an uneven number of forms.");
+          throw RooException("Invalid package manifest '" + source_name +
+                             "': dependency map has an uneven number of forms.");
         }
 
         dependencies.reserve(children.size() / 2);
@@ -275,9 +274,9 @@ namespace Roo::Package
         return dependencies;
       }
 
-      throw LispleException("Invalid package manifest '" + source_name +
-                            "': field :dependencies expected vector or map, got " +
-                            node->to_string());
+      throw RooException("Invalid package manifest '" + source_name +
+                         "': field :dependencies expected vector or map, got " +
+                         node->to_string());
     }
 
     NativeLibrary native_library_from_map(const sptr_ast_node& node,
@@ -306,21 +305,21 @@ namespace Roo::Package
 
       if (library.name.empty())
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': native library missing :name.");
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': native library missing :name.");
       }
 
       return library;
     }
 
-    std::vector<NativeLibrary> native_library_list(const Lisple::sptr_ast_node& node,
+    std::vector<NativeLibrary> native_library_list(const Roo::sptr_ast_node& node,
                                                    const std::string& source_name)
     {
       if (node->get_type() != Form::VECTOR)
       {
-        throw LispleException("Invalid package manifest '" + source_name +
-                              "': field :native-libraries expected vector, got " +
-                              node->to_string());
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :native-libraries expected vector, got " +
+                           node->to_string());
       }
 
       std::vector<NativeLibrary> libraries;
@@ -330,9 +329,9 @@ namespace Roo::Package
       {
         if (child->get_type() != Form::MAP)
         {
-          throw LispleException("Invalid package manifest '" + source_name +
-                                "': field :native-libraries expected maps, got " +
-                                child->to_string());
+          throw RooException("Invalid package manifest '" + source_name +
+                             "': field :native-libraries expected maps, got " +
+                             child->to_string());
         }
         libraries.push_back(native_library_from_map(child, source_name));
       }
@@ -409,12 +408,12 @@ namespace Roo::Package
                        dependency.version);
     }
 
-    std::string read_manifest_source(Lisple::FileSystem& fs, const std::string& package_root)
+    std::string read_manifest_source(Roo::FileSystem& fs, const std::string& package_root)
     {
       return fs.read(manifest_path(package_root));
     }
 
-    bool can_read_manifest(Lisple::FileSystem& fs, const std::string& package_root)
+    bool can_read_manifest(Roo::FileSystem& fs, const std::string& package_root)
     {
       try
       {
@@ -440,20 +439,20 @@ namespace Roo::Package
       }
     }
 
-    bool has_namespace_root(const std::vector<Lisple::NamespaceRoot>& roots,
-                            const Lisple::NamespaceRoot& root)
+    bool has_namespace_root(const std::vector<Roo::NamespaceRoot>& roots,
+                            const Roo::NamespaceRoot& root)
     {
       return std::find_if(roots.begin(),
                           roots.end(),
-                          [&](const Lisple::NamespaceRoot& existing)
+                          [&](const Roo::NamespaceRoot& existing)
                           {
                             return existing.ns_prefix == root.ns_prefix &&
                                    existing.path == root.path;
                           }) != roots.end();
     }
 
-    void append_unique(std::vector<Lisple::NamespaceRoot>& roots,
-                       const Lisple::NamespaceRoot& root)
+    void append_unique(std::vector<Roo::NamespaceRoot>& roots,
+                       const Roo::NamespaceRoot& root)
     {
       if (!has_namespace_root(roots, root))
       {
@@ -495,7 +494,7 @@ namespace Roo::Package
       return normalize_path(join_path(package_root, dependency.path));
     }
 
-    std::string find_dependency_root(Lisple::FileSystem& fs,
+    std::string find_dependency_root(Roo::FileSystem& fs,
                                      const Dependency& dependency,
                                      const std::string& package_root,
                                      const std::vector<std::string>& search_roots)
@@ -510,8 +509,8 @@ namespace Roo::Package
         }
         catch (const std::exception&)
         {
-          throw LispleException("Package dependency '" + dependency.name +
-                                "' was not found at path: " + root);
+          throw RooException("Package dependency '" + dependency.name +
+                             "' was not found at path: " + root);
         }
       }
 
@@ -533,7 +532,7 @@ namespace Roo::Package
         }
       }
 
-      throw LispleException(
+      throw RooException(
         "Package dependency '" + dependency.name +
         "' was not found under search roots: " + describe_roots(search_roots));
     }
@@ -549,16 +548,16 @@ namespace Roo::Package
 
       if (dependency_manifest.version != dependency.version)
       {
-        throw LispleException("Package dependency '" + dependency.name + "' at '" +
-                              dependency_root + "' has version '" +
-                              dependency_manifest.version + "', expected '" +
-                              dependency.version + "'.");
+        throw RooException("Package dependency '" + dependency.name + "' at '" +
+                           dependency_root + "' has version '" +
+                           dependency_manifest.version + "', expected '" +
+                           dependency.version + "'.");
       }
     }
 
     struct ResolveState
     {
-      Lisple::FileSystem& fs;
+      Roo::FileSystem& fs;
       std::vector<std::string> search_roots;
       std::set<std::string> visiting;
       std::set<std::string> visited;
@@ -585,10 +584,10 @@ namespace Roo::Package
       const std::string& existing_root = existing->second.second;
       if (existing_version != manifest.version)
       {
-        throw LispleException("Package dependency conflict for '" + manifest.name +
-                              "': already resolved version '" + existing_version + "' at '" +
-                              existing_root + "', but '" + package_root + "' has version '" +
-                              manifest.version + "'.");
+        throw RooException("Package dependency conflict for '" + manifest.name +
+                           "': already resolved version '" + existing_version + "' at '" +
+                           existing_root + "', but '" + package_root + "' has version '" +
+                           manifest.version + "'.");
       }
 
       return existing_root != package_root;
@@ -625,7 +624,7 @@ namespace Roo::Package
       plan.packages.push_back(package_info);
       for (const auto& root : manifest.namespace_roots)
       {
-        Lisple::NamespaceRoot resolved = root;
+        Roo::NamespaceRoot resolved = root;
         if (!resolved.path.empty() && !is_absolute_path(resolved.path))
         {
           resolved.path = normalize_path(join_path(package_root, resolved.path));
@@ -676,7 +675,7 @@ namespace Roo::Package
       }
       if (state.visiting.count(package_root))
       {
-        throw LispleException("Cyclic package dependency involving '" + package_root + "'.");
+        throw RooException("Cyclic package dependency involving '" + package_root + "'.");
       }
 
       state.visiting.insert(package_root);
@@ -711,15 +710,15 @@ namespace Roo::Package
     sptr_ast_node_v forms = reader.read_sexps(source);
     if (forms.size() != 1)
     {
-      throw LispleException("Invalid package manifest '" + source_name +
-                            "': expected one top-level map.");
+      throw RooException("Invalid package manifest '" + source_name +
+                         "': expected one top-level map.");
     }
 
     sptr_ast_node manifest_form = forms.front();
     if (manifest_form->get_type() != Form::MAP)
     {
-      throw LispleException("Invalid package manifest '" + source_name +
-                            "': expected top-level map.");
+      throw RooException("Invalid package manifest '" + source_name +
+                         "': expected top-level map.");
     }
 
     std::map<std::string, sptr_ast_node> fields = map_fields(manifest_form, source_name);
@@ -792,7 +791,7 @@ namespace Roo::Package
     return manifest;
   }
 
-  Manifest read_manifest(Lisple::FileSystem& fs, const std::string& manifest_path)
+  Manifest read_manifest(Roo::FileSystem& fs, const std::string& manifest_path)
   {
     return parse_manifest(fs.read(manifest_path), manifest_path);
   }
@@ -866,7 +865,7 @@ namespace Roo::Package
     return plan;
   }
 
-  LoadPlan resolve_load_plan(Lisple::FileSystem& fs,
+  LoadPlan resolve_load_plan(Roo::FileSystem& fs,
                              const std::string& package_root,
                              const ResolveOptions& options)
   {
@@ -898,20 +897,20 @@ namespace Roo::Package
     return load_paths;
   }
 
-  std::unique_ptr<Lisple::FileSystem> make_load_path_file_system(
+  std::unique_ptr<Roo::FileSystem> make_load_path_file_system(
     const LoadPlan& plan,
     const std::vector<std::string>& extra_load_paths)
   {
-    return std::make_unique<Lisple::DirRootFileSystem>(
+    return std::make_unique<Roo::DirRootFileSystem>(
       merge_load_paths(plan, extra_load_paths));
   }
 
-  void configure_runtime_namespace_roots(Lisple::Runtime& runtime, const LoadPlan& plan)
+  void configure_runtime_namespace_roots(Roo::Runtime& runtime, const LoadPlan& plan)
   {
     runtime.set_namespace_roots(plan.namespace_roots);
   }
 
-  void load_autoloads(Lisple::Runtime& runtime, const LoadPlan& plan)
+  void load_autoloads(Roo::Runtime& runtime, const LoadPlan& plan)
   {
     for (const auto& autoload : plan.autoloads)
     {

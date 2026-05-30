@@ -18,8 +18,8 @@ elseif (MSVC)
   add_compile_options(/W4)
 endif()
 
-if (NOT TARGET Lisple::lisple_shared)
-  find_package(lisple REQUIRED)
+if (NOT TARGET Roo::roo_shared)
+  find_package(roo REQUIRED)
 endif()
 
 get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
@@ -37,17 +37,17 @@ target_include_directories(roo-server_objects
     ${CMAKE_CURRENT_SOURCE_DIR}/include/roo-server
 )
 
-if (EXISTS "${ROO_ROOT_DIR}/lib/liblisple/include")
+if (EXISTS "${ROO_ROOT_DIR}/lib/libroo/include")
   target_include_directories(roo-server_objects
     PRIVATE
-      ${ROO_ROOT_DIR}/lib/liblisple/include
+      ${ROO_ROOT_DIR}/lib/libroo/include
   )
 endif()
 
-if (TARGET Lisple::lisple_shared)
-  get_target_property(_lisple_include_dirs Lisple::lisple_shared INTERFACE_INCLUDE_DIRECTORIES)
-  if (_lisple_include_dirs)
-    target_include_directories(roo-server_objects PRIVATE ${_lisple_include_dirs})
+if (TARGET Roo::roo_shared)
+  get_target_property(_roo_include_dirs Roo::roo_shared INTERFACE_INCLUDE_DIRECTORIES)
+  if (_roo_include_dirs)
+    target_include_directories(roo-server_objects PRIVATE ${_roo_include_dirs})
   endif()
 endif()
 
@@ -77,12 +77,12 @@ endforeach()
 
 target_link_libraries(roo-server_static
   PUBLIC
-    Lisple::lisple_static
+    Roo::roo_static
 )
 
 target_link_libraries(roo-server_shared
   PUBLIC
-    Lisple::lisple_shared
+    Roo::roo_shared
 )
 
 set_target_properties(roo-server_static PROPERTIES
@@ -106,7 +106,7 @@ add_executable(roo-server-exec
 target_link_libraries(roo-server-exec
   PRIVATE
     Roo::server_shared
-    Lisple::lisple_shared
+    Roo::roo_shared
 )
 
 set_target_properties(roo-server-exec PROPERTIES

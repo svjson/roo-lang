@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(lisple VERSION 0.1 LANGUAGES CXX)
+project(roo VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
@@ -20,7 +20,7 @@ if (MSVC)
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /W4")
 endif()
 
-add_subdirectory(lib/liblisple)
+add_subdirectory(lib/libroo)
 add_subdirectory(lib/libroo-package)
 add_subdirectory(lib/libroo-server)
 add_subdirectory(pkg)
@@ -44,7 +44,7 @@ target_include_directories(rooc_objects
 )
 target_link_libraries(rooc_objects
   PUBLIC
-    Lisple::lisple_shared
+    Roo::roo_shared
     Roo::package_shared
 )
 target_compile_definitions(rooc_objects
@@ -61,21 +61,21 @@ add_executable(rooc_cli
 
 set_target_properties(roo_cli PROPERTIES
   OUTPUT_NAME roo
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 set_target_properties(rooc_cli PROPERTIES
   OUTPUT_NAME rooc
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 target_link_libraries(roo_cli
   PRIVATE
-    Lisple::lisple_shared
+    Roo::roo_shared
     Roo::package_shared
 )
 target_compile_definitions(roo_cli
@@ -179,38 +179,38 @@ set_tests_properties(
 add_subdirectory(bin/rooc/test)
 
 install(CODE [[
-  set(lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")
-  if(EXISTS "${lisple_installed_include_dir}")
-    message(STATUS "Removing stale installed Lisple headers: ${lisple_installed_include_dir}")
-    file(REMOVE_RECURSE "${lisple_installed_include_dir}")
+  set(legacy_lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")
+  if(EXISTS "${legacy_lisple_installed_include_dir}")
+    message(STATUS "Removing stale installed legacy headers: ${legacy_lisple_installed_include_dir}")
+    file(REMOVE_RECURSE "${legacy_lisple_installed_include_dir}")
   endif()
 ]])
 
-install(DIRECTORY lib/liblisple/include/ DESTINATION include)
+install(DIRECTORY lib/libroo/include/ DESTINATION include)
 
-install(TARGETS lisple_static lisple_shared lisple roo_cli rooc_cli
-  EXPORT lispleTargets
+install(TARGETS roo_static roo_shared roo roo_cli rooc_cli
+  EXPORT rooTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
-install(EXPORT lispleTargets
-  FILE lispleTargets.cmake
+install(EXPORT rooTargets
+  FILE rooTargets.cmake
   NAMESPACE Roo::
-  DESTINATION lib/cmake/lisple
+  DESTINATION lib/cmake/roo
 )
 
-install(FILES cmake/lispleConfig.cmake
-  DESTINATION lib/cmake/lisple
+install(FILES cmake/rooConfig.cmake
+  DESTINATION lib/cmake/roo
 )
 
 #Enable Include What You Use analyzer with USE_IWYU = true
 if(DEFINED ENV{USE_IWYU})
   find_program(iwyu_path NAMES include-what-you-use iwyu)
-  message("-- Configuring include-what-you-use for lisple...")
+  message("-- Configuring include-what-you-use for roo...")
   if(NOT iwyu_path)
     message(FATAL_ERROR "Could not find the program include-what-you-use")
   endif()
-  set_property(TARGET lisple PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+  set_property(TARGET roo PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()

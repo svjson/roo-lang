@@ -5,7 +5,7 @@
 
 #include <roo-package/manifest.h>
 
-namespace Lisple
+namespace Roo
 {
   class Runtime;
 }
@@ -30,12 +30,11 @@ namespace Roo::Package
 
     explicit LoadedNativePackages(std::unique_ptr<Impl> impl);
 
-    friend LoadedNativePackages load_native_libraries(Lisple::Runtime& runtime,
+    friend LoadedNativePackages load_native_libraries(Roo::Runtime& runtime,
                                                       const LoadPlan& plan);
   };
 
-  LoadedNativePackages load_native_libraries(Lisple::Runtime& runtime,
-                                             const LoadPlan& plan);
+  LoadedNativePackages load_native_libraries(Roo::Runtime& runtime, const LoadPlan& plan);
 } // namespace Roo::Package
 
 #endif

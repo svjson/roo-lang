@@ -1,7 +1,3 @@
-#include <proofread/native.h>
-
-#include <roo-package/native_abi.h>
-
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
@@ -15,14 +11,16 @@
 #include <string>
 #include <vector>
 
-#include <lisple/context.h>
-#include <lisple/exception.h>
-#include <lisple/exec.h>
-#include <lisple/reader.h>
-#include <lisple/runtime/value.h>
-#include <lisple/source.h>
+#include <proofread/native.h>
+#include <roo-package/native_abi.h>
+#include <roo/context.h>
+#include <roo/exception.h>
+#include <roo/exec.h>
+#include <roo/reader.h>
+#include <roo/runtime/value.h>
+#include <roo/source.h>
 
-namespace Lisple::Proofread
+namespace Roo::Proofread
 {
   namespace
   {
@@ -122,35 +120,25 @@ namespace Lisple::Proofread
     {
      public:
       FailFunction()
-        : Function(SIG((FN_ARGS((&Type::STRING)),
-                        EXEC_DISPATCH(&FailFunction::exec_fail))))
+        : Function(SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&FailFunction::exec_fail))))
       {
       }
 
-      static sptr_val make()
-      {
-        return Value::executable(std::make_shared<FailFunction>());
-      }
+      static sptr_val make() { return Value::executable(std::make_shared<FailFunction>()); }
 
-      sptr_val exec_fail(Context&, sptr_val_v& args)
-      {
-        throw LispleException(args[0]->str());
-      }
+      sptr_val exec_fail(Context&, sptr_val_v& args) { throw RooException(args[0]->str()); }
     };
 
     class CheckFunction : public Function
     {
      public:
       CheckFunction()
-        : Function(SIG((FN_ARGS((&Type::VECTOR)),
-                        EXEC_DISPATCH(&CheckFunction::exec_check))))
+        : Function(
+            SIG((FN_ARGS((&Type::VECTOR)), EXEC_DISPATCH(&CheckFunction::exec_check))))
       {
       }
 
-      static sptr_val make()
-      {
-        return Value::executable(std::make_shared<CheckFunction>());
-      }
+      static sptr_val make() { return Value::executable(std::make_shared<CheckFunction>()); }
 
       sptr_val exec_check(Context&, sptr_val_v& args)
       {
@@ -204,7 +192,7 @@ namespace Lisple::Proofread
           {
             std::cerr << error << "\n";
           }
-          throw LispleException("proofread: checks failed");
+          throw RooException("proofread: checks failed");
         }
 
         return Value::number(static_cast<int>(checked_count));
@@ -227,19 +215,17 @@ namespace Lisple::Proofread
     namespaces.push_back(make_native_namespace());
     return namespaces;
   }
-} // namespace Lisple::Proofread
+} // namespace Roo::Proofread
 
 namespace
 {
   int load_proofread_native(const RooNativeHostV1* host)
   {
-    auto ns = Lisple::Proofread::make_native_namespace();
+    auto ns = Roo::Proofread::make_native_namespace();
     return host->register_namespace(host->user, ns.release());
   }
 
-  void unload_proofread_native()
-  {
-  }
+  void unload_proofread_native() {}
 
   const char* proofread_native_last_error()
   {
@@ -247,8 +233,7 @@ namespace
   }
 } // namespace
 
-extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1*
-roo_native_package_v1()
+extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
 {
   static const RooNativePackageV1 package{
     ROO_NATIVE_ABI_VERSION,

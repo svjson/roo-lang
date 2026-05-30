@@ -66,7 +66,7 @@ namespace
   }
 
   Rooc::Options main_app_options_for(const std::filesystem::path& build_dir,
-                                        const std::filesystem::path& package_dir)
+                                     const std::filesystem::path& package_dir)
   {
     Rooc::Options options;
     options.command = "build";
@@ -132,7 +132,7 @@ namespace
  :tools {run runner.tool/run}})");
     write_file(root / "runner/src/runner/tool.roo",
                R"((ns runner.tool
-  (:require [lisple.io :as io]))
+  (:require [roo.io :as io]))
 
 (defun run [context]
   (io/spit! "run-tool.txt"
@@ -208,7 +208,7 @@ TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sour
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
   EXPECT_THAT(main_cpp,
               HasSubstr("LoadedNativePackages native_packages;\n"
-                        "    Lisple::Runtime runtime"));
+                        "    Roo::Runtime runtime"));
   EXPECT_THAT(embedded_file_system_cpp, HasSubstr("EmbeddedFileSystem::read"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.roo"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.roo"));
@@ -246,7 +246,7 @@ TEST(RoocGenerator, generated_executable_passes_no_args_to_zero_arity_main)
                           R"((ns main.app)
 
 (defun main []
-  (lisple.io/spit! "main-ran.txt" "zero"))
+  (roo.io/spit! "main-ran.txt" "zero"))
 )");
   auto options = main_app_options_for(build_dir, package_dir);
   auto project = Rooc::prepare_project(options);
@@ -272,7 +272,7 @@ TEST(RoocGenerator, generated_executable_passes_cli_args_vector_to_one_arity_mai
                           R"((ns main.app)
 
 (defun main [args]
-  (lisple.io/spit! "main-ran.txt"
+  (roo.io/spit! "main-ran.txt"
                    (str (count args) ":" (nth args 0) ":" (nth args 1))))
 )");
   auto options = main_app_options_for(build_dir, package_dir);
@@ -299,7 +299,7 @@ TEST(RoocGenerator, generated_executable_pads_main_arity_with_nil_values)
                           R"((ns main.app)
 
 (defun main [args x y z]
-  (lisple.io/spit! "main-ran.txt"
+  (roo.io/spit! "main-ran.txt"
                    (str (count args) ":"
                         (nth args 0) ":"
                         (if x "x" "nil") ":"

@@ -2,8 +2,7 @@
 #include <filesystem>
 #include <string>
 
-#include <lisple/exception.h>
-
+#include <roo/exception.h>
 #include <rooc/builder.h>
 
 namespace Rooc
@@ -35,7 +34,7 @@ namespace Rooc
       const int status = std::system(command.c_str());
       if (status != 0)
       {
-        throw Lisple::LispleException("Command failed: " + command);
+        throw Roo::RooException("Command failed: " + command);
       }
     }
   } // namespace

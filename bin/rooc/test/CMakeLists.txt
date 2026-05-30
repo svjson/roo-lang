@@ -11,7 +11,7 @@ add_executable(testrooc
 add_dependencies(testrooc roo-package-test-native)
 
 set_target_properties(testrooc PROPERTIES
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
 )
 

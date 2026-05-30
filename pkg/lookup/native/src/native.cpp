@@ -1,7 +1,3 @@
-#include <lookup/native.h>
-
-#include <roo-package/native_abi.h>
-
 #include <cerrno>
 #include <cstring>
 #include <filesystem>
@@ -11,14 +7,16 @@
 #include <string>
 #include <vector>
 
-#include <lisple/context.h>
-#include <lisple/exception.h>
-#include <lisple/exec.h>
-#include <lisple/reader.h>
-#include <lisple/runtime/value.h>
-#include <lisple/source.h>
+#include <lookup/native.h>
+#include <roo-package/native_abi.h>
+#include <roo/context.h>
+#include <roo/exception.h>
+#include <roo/exec.h>
+#include <roo/reader.h>
+#include <roo/runtime/value.h>
+#include <roo/source.h>
 
-namespace Lisple::Lookup
+namespace Roo::Lookup
 {
   namespace
   {
@@ -111,10 +109,10 @@ namespace Lisple::Lookup
         {
           if (ec)
           {
-            throw LispleException("Could not inspect file: " + path.string() + ": " +
-                                  ec.message());
+            throw RooException("Could not inspect file: " + path.string() + ": " +
+                               ec.message());
           }
-          throw LispleException("Not a regular file: " + path.string());
+          throw RooException("Not a regular file: " + path.string());
         }
 
         SourceMap source_map;
@@ -127,8 +125,8 @@ namespace Lisple::Lookup
         }
         catch (const std::exception& e)
         {
-          throw LispleException("Could not read Roo forms from " + path.string() +
-                                ": " + e.what());
+          throw RooException("Could not read Roo forms from " + path.string() + ": " +
+                             e.what());
         }
 
         sptr_val_v entries;
@@ -156,19 +154,17 @@ namespace Lisple::Lookup
     namespaces.push_back(make_native_namespace());
     return namespaces;
   }
-} // namespace Lisple::Lookup
+} // namespace Roo::Lookup
 
 namespace
 {
   int load_lookup_native(const RooNativeHostV1* host)
   {
-    auto ns = Lisple::Lookup::make_native_namespace();
+    auto ns = Roo::Lookup::make_native_namespace();
     return host->register_namespace(host->user, ns.release());
   }
 
-  void unload_lookup_native()
-  {
-  }
+  void unload_lookup_native() {}
 
   const char* lookup_native_last_error()
   {
@@ -176,8 +172,7 @@ namespace
   }
 } // namespace
 
-extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1*
-roo_native_package_v1()
+extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
 {
   static const RooNativePackageV1 package{
     ROO_NATIVE_ABI_VERSION,

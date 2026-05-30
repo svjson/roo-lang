@@ -6,23 +6,22 @@
 #include <string>
 #include <vector>
 
-#include <lisple/exception.h>
-#include <lisple/exec.h>
-#include <lisple/runtime.h>
-#include <lisple/runtime/value.h>
-
 #include <roo-package/manifest.h>
+#include <roo/exception.h>
+#include <roo/exec.h>
+#include <roo/runtime.h>
+#include <roo/runtime/value.h>
 
 namespace Roo::Package::Application
 {
-  namespace Constant = Lisple::Constant;
-  using Lisple::Executable;
-  using Lisple::LispleException;
-  using Lisple::Runtime;
-  using Lisple::Signature;
-  using Lisple::Value;
-  using Lisple::sptr_val;
-  using Lisple::sptr_val_v;
+  namespace Constant = Roo::Constant;
+  using Roo::Executable;
+  using Roo::RooException;
+  using Roo::Runtime;
+  using Roo::Signature;
+  using Roo::sptr_val;
+  using Roo::sptr_val_v;
+  using Roo::Value;
 
   inline std::string qualifier_of(const std::string& symbol)
   {
@@ -82,8 +81,8 @@ namespace Roo::Package::Application
     {
       return fallback->get_arguments().size();
     }
-    throw LispleException("Package :main is not callable as a runtime function: " +
-                          main_function);
+    throw RooException("Package :main is not callable as a runtime function: " +
+                       main_function);
   }
 
   inline sptr_val_v main_args_for_arity(std::size_t arity, const sptr_val& cli_args)
@@ -115,7 +114,7 @@ namespace Roo::Package::Application
     const auto main_namespace = qualifier_of(main_function);
     if (main_namespace.empty())
     {
-      throw LispleException("Package :main must be a qualified function.");
+      throw RooException("Package :main must be a qualified function.");
     }
 
     runtime.eval("(ns roo.package.main (:require " + main_namespace + "))",
@@ -124,7 +123,7 @@ namespace Roo::Package::Application
     const auto main_value = runtime.lookup(main_function);
     if (main_value->type != Value::Type::FUNCTION)
     {
-      throw LispleException("Package :main is not a function: " + main_function);
+      throw RooException("Package :main is not a function: " + main_function);
     }
 
     sptr_val_v args =
@@ -246,29 +245,29 @@ namespace Roo::Package::Application
     const auto* package = root_package(plan);
     if (!package)
     {
-      throw LispleException("Package load plan has no root package metadata.");
+      throw RooException("Package load plan has no root package metadata.");
     }
 
     const auto* tool_package = find_package(plan, tool_package_name);
     if (!tool_package)
     {
-      throw LispleException("Package '" + package->name + "' has no dependency named '" +
-                            tool_package_name + "'.");
+      throw RooException("Package '" + package->name + "' has no dependency named '" +
+                         tool_package_name + "'.");
     }
 
     const auto tool_it = tool_package->tools.find(tool_name);
     if (tool_it == tool_package->tools.end())
     {
-      throw LispleException("Package '" + tool_package_name + "' does not declare a '" +
-                            tool_name + "' tool in package.edn.");
+      throw RooException("Package '" + tool_package_name + "' does not declare a '" +
+                         tool_name + "' tool in package.edn.");
     }
 
     const std::string& tool_function = tool_it->second;
     const std::string tool_namespace = qualifier_of(tool_function);
     if (tool_namespace.empty())
     {
-      throw LispleException("Package tool '" + tool_package_name + "/" + tool_name +
-                            "' must be a qualified function.");
+      throw RooException("Package tool '" + tool_package_name + "/" + tool_name +
+                         "' must be a qualified function.");
     }
 
     runtime.eval("(ns roo.package.tool (:require " + tool_namespace + "))",

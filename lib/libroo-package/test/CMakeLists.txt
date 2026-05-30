@@ -11,7 +11,7 @@ add_library(roo-package-test-native SHARED
 
 target_link_libraries(roo-package-test-native
   PRIVATE
-    Lisple::lisple_shared
+    Roo::roo_shared
 )
 
 target_include_directories(roo-package-test-native
@@ -23,7 +23,7 @@ add_executable(testpackage ${ROO_PACKAGE_TEST_SOURCES})
 add_dependencies(testpackage roo-package-test-native)
 
 set_target_properties(testpackage PROPERTIES
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>;$<TARGET_FILE_DIR:roo-package-test-native>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>;$<TARGET_FILE_DIR:roo-package-test-native>"
   BUILD_RPATH_USE_LINK_PATH OFF
 )
 
