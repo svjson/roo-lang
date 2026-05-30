@@ -82,6 +82,8 @@ namespace Lisple
   {
     Namespace io = make_io_namespace();
     namespaces.emplace(io.get_name(), std::move(io));
+    Namespace lisple_io = make_lisple_io_namespace();
+    namespaces.emplace(lisple_io.get_name(), std::move(lisple_io));
 
     set_namespace_source(std::move(namespace_source));
     switch_namespace(DEFAULT_NAMESPACE);
