@@ -19,7 +19,7 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
 ## Repository Overview
 
 - bin/
-  - **[lisple](bin/lisple/README.md)** - Command-line executable for running Lisple files and packages.
+  - **[roo](bin/roo/README.md)** - Command-line executable for running Roo files and packages.
   - **[rooc](bin/rooc/)** - Compiler executable for generating bundled Roo application builds.
 - lib/
   - **[liblisple](lib/liblisple/README.md)** - Core embeddable Lisple runtime.

@@ -1,4 +1,4 @@
-{:name lisple-main-app
+{:name roo-main-app
  :version "0.1.0"
  :load-roots ["src"]
  :main main.app/main}

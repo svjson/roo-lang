@@ -25,12 +25,8 @@ add_subdirectory(lib/libroo-package)
 add_subdirectory(lib/libroo-server)
 add_subdirectory(pkg)
 
-add_executable(lisple_cli
-  bin/lisple/main.cpp
-)
-
 add_executable(roo_cli
-  bin/lisple/main.cpp
+  bin/roo/main.cpp
 )
 
 set(rooc_SOURCES
@@ -63,13 +59,6 @@ add_executable(rooc_cli
   $<TARGET_OBJECTS:rooc_objects>
 )
 
-set_target_properties(lisple_cli PROPERTIES
-  OUTPUT_NAME lisple
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
-  BUILD_RPATH_USE_LINK_PATH OFF
-  INSTALL_RPATH "\$ORIGIN/../lib"
-)
-
 set_target_properties(roo_cli PROPERTIES
   OUTPUT_NAME roo
   BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
@@ -84,22 +73,13 @@ set_target_properties(rooc_cli PROPERTIES
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
-target_link_libraries(lisple_cli
-  PRIVATE
-    Lisple::lisple_shared
-    Roo::package_shared
-)
-target_compile_definitions(lisple_cli
-  PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
-)
-
 target_link_libraries(roo_cli
   PRIVATE
     Lisple::lisple_shared
     Roo::package_shared
 )
 target_compile_definitions(roo_cli
-  PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
+  PRIVATE ROO_VERSION="${PROJECT_VERSION}"
 )
 
 target_link_libraries(rooc_cli
@@ -109,56 +89,56 @@ target_link_libraries(rooc_cli
 
 enable_testing()
 add_test(
-  NAME lisple_cli_runs_package_file_with_file_dependency
-  COMMAND $<TARGET_FILE:lisple_cli>
+  NAME roo_cli_runs_package_file_with_file_dependency
+  COMMAND $<TARGET_FILE:roo_cli>
           ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register/src/cafe/run.roo
 )
 add_test(
-  NAME lisple_cli_runs_package_directory_entry_point
-  COMMAND $<TARGET_FILE:lisple_cli> .
+  NAME roo_cli_runs_package_directory_entry_point
+  COMMAND $<TARGET_FILE:roo_cli> .
 )
 set_tests_properties(
-  lisple_cli_runs_package_directory_entry_point
+  roo_cli_runs_package_directory_entry_point
   PROPERTIES
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
 )
 add_test(
-  NAME lisple_cli_runs_package_with_dynamic_proof_dependency
-  COMMAND $<TARGET_FILE:lisple_cli> .
+  NAME roo_cli_runs_package_with_dynamic_proof_dependency
+  COMMAND $<TARGET_FILE:roo_cli> .
 )
 set_tests_properties(
-  lisple_cli_runs_package_with_dynamic_proof_dependency
+  roo_cli_runs_package_with_dynamic_proof_dependency
   PROPERTIES
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/pkg/proof/test/assets/dynamic-smoke
 )
 add_test(
-  NAME lisple_cli_runs_package_tool_from_dependency
-  COMMAND $<TARGET_FILE:lisple_cli> proof
+  NAME roo_cli_runs_package_tool_from_dependency
+  COMMAND $<TARGET_FILE:roo_cli> proof
 )
 set_tests_properties(
-  lisple_cli_runs_package_tool_from_dependency
+  roo_cli_runs_package_tool_from_dependency
   PROPERTIES
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/pkg/proof/test/assets/dynamic-smoke
 )
 add_test(
-  NAME lisple_cli_runs_package_with_namespace_roots
-  COMMAND $<TARGET_FILE:lisple_cli> .
+  NAME roo_cli_runs_package_with_namespace_roots
+  COMMAND $<TARGET_FILE:roo_cli> .
 )
 set_tests_properties(
-  lisple_cli_runs_package_with_namespace_roots
+  roo_cli_runs_package_with_namespace_roots
   PROPERTIES
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/namespace-root-app
 )
 add_test(
-  NAME lisple_cli_runs_package_with_autoloads
-  COMMAND $<TARGET_FILE:lisple_cli> .
+  NAME roo_cli_runs_package_with_autoloads
+  COMMAND $<TARGET_FILE:roo_cli> .
 )
 set_tests_properties(
-  lisple_cli_runs_package_with_autoloads
+  roo_cli_runs_package_with_autoloads
   PROPERTIES
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/autoload-app
@@ -208,7 +188,7 @@ install(CODE [[
 
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
-install(TARGETS lisple_static lisple_shared lisple lisple_cli roo_cli rooc_cli
+install(TARGETS lisple_static lisple_shared lisple roo_cli rooc_cli
   EXPORT lispleTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

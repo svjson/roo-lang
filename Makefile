@@ -10,7 +10,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread test test\:all test\:lang test\:package test\:proof test\:rooc test\:cli test\:lisple-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread test test\:all test\:lang test\:package test\:proof test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/liblisple/test/testlisple
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
@@ -40,7 +40,7 @@ ifeq ($(shell uname -s),Darwin)
 endif
 
 RELINK_ARTIFACTS := \
-	$(CURDIR)/build/lisple \
+	$(CURDIR)/build/roo \
 	$(CURDIR)/build/rooc \
 	$(CURDIR)/build/lib/liblisple/liblisple.a \
 	$(CURDIR)/build/lib/liblisple/liblisple.so \
@@ -137,10 +137,10 @@ test\:rooc: build
 	cmake --build build --target testrooc
 	./build/$(ROOC_TEST_BINARY) $(GTEST_FILTER_ARG)
 
-test\:cli: test\:lisple-cli test\:loom-cli test\:lookup-cli
+test\:cli: test\:roo-cli test\:loom-cli test\:lookup-cli
 
-test\:lisple-cli: build
-	sh $(CURDIR)/bin/lisple/test/run-cli-tests.sh $(CURDIR)
+test\:roo-cli: build
+	sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
 
 test\:loom-cli: build
 	sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)

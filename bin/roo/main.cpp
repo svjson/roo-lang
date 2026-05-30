@@ -18,27 +18,27 @@ namespace
   void print_usage()
   {
     std::cout
-      << "Usage: lisple [--help|--version] [--load-path <path>] <file|package-tool> "
+      << "Usage: roo [--help|--version] [--load-path <path>] <file|package-tool> "
          "[args...]\n";
   }
 
   void print_help()
   {
-    std::cout << "lisple: run a lisple file with the Lisple runtime\n"
+    std::cout << "roo: run a Roo file with the Roo runtime\n"
                  "Usage:\n"
-                 "  lisple <file>\n"
-                 "  lisple --help\n"
-                 "  lisple --version\n"
-                 "  lisple --load-path <path> <file>\n"
-                 "  lisple --load-path <path1> --load-path <path2> <file>\n"
-                 "  lisple <dependency-name>\n"
+                 "  roo <file>\n"
+                 "  roo --help\n"
+                 "  roo --version\n"
+                 "  roo --load-path <path> <file>\n"
+                 "  roo --load-path <path1> --load-path <path2> <file>\n"
+                 "  roo <dependency-name>\n"
                  "\n"
                  "Arguments after <file|package-tool> are forwarded to that target.\n";
   }
 
   void print_version()
   {
-    std::cout << "lisple " << LISPLE_VERSION << "\n";
+    std::cout << "roo " << ROO_VERSION << "\n";
   }
 
   void print_error_and_usage(const std::string& message)
@@ -121,7 +121,7 @@ namespace
 
     for (const auto& entry_point : package_plan.entry_points)
     {
-      runtime.eval("(ns lisple.cli.entry (:require " + entry_point + "))",
+      runtime.eval("(ns roo.cli.entry (:require " + entry_point + "))",
                    "<package-entry>");
     }
   }
@@ -227,9 +227,9 @@ int main(int argc, char** argv)
                                     "' is not inside a package.");
     }
 
-    Lisple::DirRootFileSystem lisple_fs(load_paths);
+    Lisple::DirRootFileSystem roo_fs(load_paths);
     Roo::Package::LoadedNativePackages native_packages;
-    Lisple::Runtime runtime(&lisple_fs);
+    Lisple::Runtime runtime(&roo_fs);
     if (package_plan)
     {
       Roo::Package::configure_runtime_namespace_roots(runtime, *package_plan);
