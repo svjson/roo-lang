@@ -29,6 +29,10 @@ add_executable(lisple_cli
   bin/lisple/main.cpp
 )
 
+add_executable(roo_cli
+  bin/lisple/main.cpp
+)
+
 set(lisplec_SOURCES
   bin/lisplec/src/builder.cpp
   bin/lisplec/src/generator.cpp
@@ -66,6 +70,13 @@ set_target_properties(lisple_cli PROPERTIES
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
+set_target_properties(roo_cli PROPERTIES
+  OUTPUT_NAME roo
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH_USE_LINK_PATH OFF
+  INSTALL_RPATH "\$ORIGIN/../lib"
+)
+
 set_target_properties(lisplec_cli PROPERTIES
   OUTPUT_NAME lisplec
   BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
@@ -79,6 +90,15 @@ target_link_libraries(lisple_cli
     Lisple::package_shared
 )
 target_compile_definitions(lisple_cli
+  PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
+)
+
+target_link_libraries(roo_cli
+  PRIVATE
+    Lisple::lisple_shared
+    Lisple::package_shared
+)
+target_compile_definitions(roo_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
 )
 
