@@ -6,7 +6,7 @@
    "       lookup index [--out <file>] <package-dir>"])
 
 (defun help-lines []
-  (concat ["lookup: build Lisple symbol index artifacts"]
+  (concat ["lookup: build Roo symbol index artifacts"]
           usage-lines))
 
 (defun version-text []

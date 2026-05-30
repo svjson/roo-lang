@@ -1,13 +1,11 @@
 install(DIRECTORY src/
-  DESTINATION share/lisple/pkg/lookup/src
+  DESTINATION share/roo/pkg/lookup/src
   FILES_MATCHING
-    PATTERN "*.lisple"
-    PATTERN "*.lspl"
     PATTERN "*.roo"
 )
 
 install(FILES package.edn README.md
-  DESTINATION share/lisple/pkg/lookup
+  DESTINATION share/roo/pkg/lookup
 )
 
 add_subdirectory(native)

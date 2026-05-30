@@ -1,13 +1,13 @@
 (ns lookup.core
-  (:require [lisple.io :as io]
+  (:require [roo.io :as io]
             [lookup.native :as native]))
 
 (def version "0.1.0")
 
-(def default-index-path "lisple-symbols.edn")
+(def default-index-path "roo-symbols.edn")
 
 (defun source-file? [path]
-  (contains? [".lisple" ".lspl" ".roo"] (io/extension path)))
+  (= ".roo" (io/extension path)))
 
 (defun source-files-in [root]
   (if (io/directory? root)
@@ -56,7 +56,7 @@
 (defun source-form-index [package-dir]
   (let [manifest (read-manifest! package-dir)
         files (source-files package-dir manifest)]
-    {:format :lisple/source-forms
+    {:format :roo/source-forms
      :version 1
      :package (package-info manifest)
      :sources (map files source-entry)}))
@@ -227,7 +227,7 @@
   (let [source-index (source-form-index package-dir)
         package-name (:name (:package source-index))
         sources (:sources source-index)]
-    {:format :lisple/symbol-index
+    {:format :roo/symbol-index
      :version 1
      :package (:package source-index)
      :sources (map sources (fn [source] {:path (:path source)}))

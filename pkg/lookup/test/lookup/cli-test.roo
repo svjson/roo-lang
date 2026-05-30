@@ -8,7 +8,7 @@
          cli/usage-lines)))
 
 (deftest reports-help-lines
-  (is (= ["lookup: build Lisple symbol index artifacts"
+  (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
           "       lookup index [--out <file>] <package-dir>"]
          (cli/help-lines))))

@@ -1,18 +1,18 @@
 # lookup
 
-`lookup` builds Lisple symbol index artifacts for editor tooling,
+`lookup` builds Roo symbol index artifacts for editor tooling,
 documentation lookup, and future language-server integrations.
 
 The package is intentionally a skeleton for now. Its first real implementation
-should produce a compact Lisple-native index that can later be exported to
+should produce a compact Roo-native index that can later be exported to
 interoperability formats such as SCIP.
 
 ## Intended Index Scope
 
 The index should describe:
 
-- Lisple built-in symbols.
-- Symbols defined by Lisple source files in a package or source tree.
+- Roo built-in symbols.
+- Symbols defined by Roo source files in a package or source tree.
 - Symbols provided by installed package dependencies.
 - Native symbols exposed by packages through metadata.
 
@@ -25,13 +25,13 @@ define a conventional path for it.
 From the repository root:
 
 ```sh
-./build/lisple pkg/lookup index pkg/lookup
+./build/roo pkg/lookup index pkg/lookup
 ```
 
 Build a standalone `lookup` command with:
 
 ```sh
-./build/lisplec build pkg/lookup --build-dir build/lookup-install --name lookup
+./build/rooc build pkg/lookup --build-dir build/lookup-install --name lookup
 ```
 
 Then run:
@@ -45,12 +45,12 @@ Then run:
 `lookup` currently provides the package and command skeleton plus the first
 native reader bridge:
 
-```lisple
+```roo
 (lookup.native/read-file-forms! path)
 ```
 
-The bridge reads one Lisple source file and returns top-level forms as ordinary
-Lisple data with source location metadata. The symbol-index analyzer is not
+The bridge reads one Roo source file and returns top-level forms as ordinary
+Roo data with source location metadata. The symbol-index analyzer is not
 implemented yet.
 
 ## License

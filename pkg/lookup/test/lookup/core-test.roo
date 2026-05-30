@@ -3,9 +3,7 @@
             [lookup.core :as core]
             [lookup.native :as native]))
 
-(deftest identifies-lisple-source-files
-  (is (core/source-file? "src/lookup/core.lisple"))
-  (is (core/source-file? "src/lookup/core.lspl"))
+(deftest identifies-roo-source-files
   (is (core/source-file? "src/lookup/core.roo"))
   (is (= false (core/source-file? "package.edn"))))
 
@@ -15,17 +13,17 @@
         paths (map sources (fn [source] (:path source)))
         source (find-first sources
                            (fn [source]
-                             (= "../src/lookup/core.lisple" (:path source))))
+                             (= "../src/lookup/core.roo" (:path source))))
         first-form (nth (:forms source) 0)]
-    (is (= :lisple/source-forms (:format index)))
+    (is (= :roo/source-forms (:format index)))
     (is (= 1 (:version index)))
     (is (= "lookup" (:name (:package index))))
     (is (= "0.1.0" (:version (:package index))))
     (is (= 2 (count sources)))
-    (is (= ["../src/lookup/cli.lisple"
-            "../src/lookup/core.lisple"]
+    (is (= ["../src/lookup/cli.roo"
+            "../src/lookup/core.roo"]
            paths))
-    (is (= "../src/lookup/core.lisple" (:path source)))
+    (is (= "../src/lookup/core.roo" (:path source)))
     (is (= "ns" (str (head (:form first-form)))))
     (is (= "lookup.core" (str (nth (:form first-form) 1))))))
 
@@ -47,11 +45,11 @@
                                      (= "lookup.cli/command"
                                         (:qualified-name symbol))))
         symbol-index-signature (nth (:signatures symbol-index-symbol) 0)]
-    (is (= :lisple/symbol-index (:format index)))
+    (is (= :roo/symbol-index (:format index)))
     (is (= 1 (:version index)))
     (is (= "lookup" (:name (:package index))))
-    (is (= [{:path "../src/lookup/cli.lisple"}
-            {:path "../src/lookup/core.lisple"}]
+    (is (= [{:path "../src/lookup/cli.roo"}
+            {:path "../src/lookup/core.roo"}]
            sources))
     (is (= "lookup.cli" (:name (nth namespaces 0))))
     (is (= "lookup.core" (:name (nth namespaces 1))))
@@ -76,11 +74,11 @@
     (is (= {:min 1 :max 1 :variadic false}
            (:arity symbol-index-signature)))
     (is (= :plain (:format (:doc symbol-index-symbol))))
-    (is (= "../src/lookup/core.lisple"
+    (is (= "../src/lookup/core.roo"
            (:path (:source symbol-index-symbol))))))
 
 (deftest reads-top-level-forms-with-source-locations
-  (let [forms (native/read-file-forms! "assets/read-forms-sample.lisple")
+  (let [forms (native/read-file-forms! "assets/read-forms-sample.roo")
         ns-entry (nth forms 0)
         def-entry (nth forms 1)
         defun-entry (nth forms 2)
@@ -97,7 +95,7 @@
     (is (= "answer" (str (nth def-form 1))))
     (is (= "defun" (str (head defun-form))))
     (is (= "greet" (str (nth defun-form 1))))
-    (is (= "assets/read-forms-sample.lisple" (:path ns-source)))
+    (is (= "assets/read-forms-sample.roo" (:path ns-source)))
     (is (= 1 (:line ns-source)))
     (is (= 1 (:column ns-source)))
     (is (= 3 (:line def-source)))

@@ -127,7 +127,7 @@ namespace Lisple::Lookup
         }
         catch (const std::exception& e)
         {
-          throw LispleException("Could not read Lisple forms from " + path.string() +
+          throw LispleException("Could not read Roo forms from " + path.string() +
                                 ": " + e.what());
         }
 
