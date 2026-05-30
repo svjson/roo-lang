@@ -14,7 +14,7 @@ namespace
 {
   std::filesystem::path fresh_proof_fixture_root(const std::string& name)
   {
-    auto root = std::filesystem::temp_directory_path() / "lisple-proof-tests" / name;
+    auto root = std::filesystem::temp_directory_path() / "roo-proof-tests" / name;
     std::filesystem::remove_all(root);
     std::filesystem::create_directories(root);
     return root;
@@ -118,7 +118,7 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
 (deftest fixture-loads-once
   (is (= 42 fixture/value)))
 )");
-  write_file(root / "test/sample/fixture.lisple",
+  write_file(root / "test/sample/fixture.roo",
              R"((ns sample.fixture)
 
 (def value 42)
@@ -137,7 +137,7 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
   EXPECT_EQ(results->to_string(), "[{:name fixture-loads-once :status :pass}]");
 }
 
-TEST(ProofPackage, summarizes_result_sets_in_lisple)
+TEST(ProofPackage, summarizes_result_sets_in_roo)
 {
   Lisple::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
   Lisple::Runtime runtime(Lisple::Proof::make_native_namespaces(), &fs);

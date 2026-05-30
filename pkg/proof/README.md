@@ -1,8 +1,8 @@
 # proof
 
-`proof` is the canonical test framework for Lisple.
+`proof` is the canonical test framework for Roo.
 
-It is intentionally small: tests are ordinary Lisple code, assertions are built
+It is intentionally small: tests are ordinary Roo code, assertions are built
 around a single primitive form, and scenario-style tests are just structured
 blocks layered on top of normal execution.
 
@@ -73,7 +73,7 @@ Register tests with `deftest`:
     (is (= 61 (- subtotal discount)))))
 ```
 
-The test name is a symbol. The body is ordinary Lisple code.
+The test name is a symbol. The body is ordinary Roo code.
 
 Use `clear!` if a test file or REPL session needs to reset the currently
 registered tests and failures before defining new tests:
@@ -111,7 +111,7 @@ last expression and the phases feed those values forward:
 - `then` takes an argument vector and receives the `when` result. It may also
   receive the `given` result as a second argument.
 
-The argument vectors use normal Lisple function binding, including destructuring.
+The argument vectors use normal Roo function binding, including destructuring.
 If a phase does not need a value, omit it from the argument vector:
 
 ```lisp
@@ -152,7 +152,7 @@ A failing result has:
 
 ## Reporting
 
-The default reporter is composed from ordinary Lisple functions in `proof.core`:
+The default reporter is composed from ordinary Roo functions in `proof.core`:
 
 - `passed?`
 - `failed?`
@@ -180,7 +180,7 @@ For example:
 
 ## Package Tests
 
-When proof is a dependency, the `lisple` binary can launch proof through package
+When proof is a dependency, the `roo` binary can launch proof through package
 tool dispatch:
 
 ```lisp
@@ -193,10 +193,10 @@ tool dispatch:
 Then run:
 
 ```sh
-lisple proof
+roo proof
 ```
 
-By default, proof discovers and loads `.lisple` files under the package's
+By default, proof discovers and loads `.roo` files under the package's
 `test/` directory, then runs the registered tests.
 
 Test namespaces should require `proof.core` and define tests:
@@ -221,5 +221,5 @@ If tests live elsewhere, configure proof in `package.edn`:
  :config {proof {:test-roots ["test" "integration"]}}}
 ```
 
-Proof tests can also be run manually from Lisple code by loading test namespaces and
+Proof tests can also be run manually from Roo code by loading test namespaces and
 calling `(run)` yourself.

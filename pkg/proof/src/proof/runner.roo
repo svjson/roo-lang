@@ -1,6 +1,6 @@
 (ns proof.runner
   (:require proof.core
-            [lisple.io :as io]))
+            [roo.io :as io]))
 
 (defun configured-test-roots [context]
   (let [roots (:test-roots (:config context))]
@@ -11,29 +11,29 @@
 (defun absolute-test-root [context root]
   (io/join-path (:package-root context) root))
 
-(defun lisple-file-entry? [entry]
-  (contains? [".lisple" ".lspl" ".roo"] (io/extension (:path entry))))
+(defun roo-file-entry? [entry]
+  (= ".roo" (io/extension (:path entry))))
 
 (defun directory-entry? [entry]
   (= (:type entry) :directory))
 
-(defun discover-lisple-files [root]
+(defun discover-roo-files [root]
   (if (io/directory? root)
     (let [entries (io/list-directory! root)
-          files (map (filter entries lisple-file-entry?) :path)
+          files (map (filter entries roo-file-entry?) :path)
           directories (filter entries directory-entry?)]
       (concat files
               (flatten
                 (map directories
                      (fn [entry]
-                       (discover-lisple-files (:path entry)))))))
+                       (discover-roo-files (:path entry)))))))
     []))
 
 (defun discover-test-files [context]
   (flatten
     (map (configured-test-roots context)
          (fn [root]
-           (discover-lisple-files (absolute-test-root context root))))))
+           (discover-roo-files (absolute-test-root context root))))))
 
 (defun append-namespace-if-new! [namespaces path]
   (let [namespace (proof.core/declared-namespace path)]

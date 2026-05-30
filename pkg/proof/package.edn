@@ -1,6 +1,6 @@
 {:name proof
  :version "0.1.0"
- :description "Lisple test framework."
+ :description "Roo test framework."
  :dependencies []
  :load-roots ["src"]
  :native-libraries [{:name "proof-native"
