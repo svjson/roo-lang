@@ -12,7 +12,7 @@
   (io/join-path (:package-root context) root))
 
 (defun lisple-file-entry? [entry]
-  (= ".lisple" (io/extension (:path entry))))
+  (contains? [".lisple" ".lspl" ".roo"] (io/extension (:path entry))))
 
 (defun directory-entry? [entry]
   (= (:type entry) :directory))

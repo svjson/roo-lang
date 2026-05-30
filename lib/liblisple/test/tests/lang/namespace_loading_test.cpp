@@ -190,6 +190,21 @@ TEST_F(FileSystemNamespaceSource, falls_back_to_lspl_extension)
   EXPECT_EQ(result->source, "(ns foo)");
 }
 
+TEST_F(FileSystemNamespaceSource, falls_back_to_roo_extension)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("foo.roo", "(ns foo)");
+  Lisple::FileSystemNamespaceSource source(&fs);
+
+  // When
+  auto result = source.fetch("foo", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "(ns foo)");
+}
+
 TEST_F(FileSystemNamespaceSource, lisple_extension_takes_priority_over_lspl)
 {
   // Given

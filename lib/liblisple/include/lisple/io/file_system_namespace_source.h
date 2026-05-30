@@ -15,7 +15,7 @@ namespace Lisple
   /**
    * Resolves namespace names to source files under a FileSystem.
    * Dots in namespace names map to path separators; dashes are preserved as-is.
-   * Extensions are tried in priority order (default: .lisple, .lspl).
+   * Extensions are tried in priority order (default: .lisple, .lspl, .roo).
    */
   class FileSystemNamespaceSource : public NamespaceSource, public NamespaceRootConfigurable
   {

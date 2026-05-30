@@ -126,7 +126,7 @@ namespace Lisple
   } // namespace
 
   FileSystemNamespaceSource::FileSystemNamespaceSource(FileSystem* fs)
-    : FileSystemNamespaceSource(fs, {".lisple", ".lspl"})
+    : FileSystemNamespaceSource(fs, {".lisple", ".lspl", ".roo"})
   {
   }
 

@@ -3,6 +3,7 @@ install(DIRECTORY src/
   FILES_MATCHING
     PATTERN "*.lisple"
     PATTERN "*.lspl"
+    PATTERN "*.roo"
 )
 
 install(FILES package.edn README.md

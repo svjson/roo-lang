@@ -110,7 +110,7 @@ TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
 TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
 {
   const auto root = fresh_proof_fixture_root("namespace-require-discovery");
-  write_file(root / "test/sample/a-test.lisple",
+  write_file(root / "test/sample/a-test.roo",
              R"((ns sample.a-test
   (:require proof.core
             [sample.fixture :as fixture]))

@@ -55,7 +55,8 @@ namespace Lisplec
 
     bool is_lisple_source(const std::filesystem::path& path)
     {
-      return path.extension() == ".lisple" || path.extension() == ".lspl";
+      return path.extension() == ".lisple" || path.extension() == ".lspl" ||
+             path.extension() == ".roo";
     }
 
     void add_unique_file(std::vector<EmbeddedFile>& files,

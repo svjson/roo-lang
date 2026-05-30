@@ -7,7 +7,7 @@
 (def default-index-path "lisple-symbols.edn")
 
 (defun source-file? [path]
-  (contains? [".lisple" ".lspl"] (io/extension path)))
+  (contains? [".lisple" ".lspl" ".roo"] (io/extension path)))
 
 (defun source-files-in [root]
   (if (io/directory? root)

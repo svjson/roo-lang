@@ -6,6 +6,7 @@
 (deftest identifies-lisple-source-files
   (is (core/source-file? "src/lookup/core.lisple"))
   (is (core/source-file? "src/lookup/core.lspl"))
+  (is (core/source-file? "src/lookup/core.roo"))
   (is (= false (core/source-file? "package.edn"))))
 
 (deftest builds-source-form-index
