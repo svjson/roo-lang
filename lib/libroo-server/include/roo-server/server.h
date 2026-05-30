@@ -1,5 +1,5 @@
-#ifndef __SERVER_H_
-#define __SERVER_H_
+#ifndef ROO_SERVER_SERVER_H
+#define ROO_SERVER_SERVER_H
 
 #include <poll.h>
 #include <string>
@@ -11,35 +11,36 @@
 namespace Lisple
 {
   /*!
-   * @brief Forward-declaration of the Lisple Runtime
+   * @brief Forward-declaration of the core runtime
    */
   class Runtime;
+}
 
+namespace Roo::Server
+{
   /*!
-   * @namespace Lisple::Server
-   * @brief Namespace containing the Lisple Embedabble REPL Server and all of
+   * @namespace Roo::Server
+   * @brief Namespace containing the Roo Embeddable REPL Server and all of
    * its required collaborators.
    */
-  namespace Server
-  {
     /*!
      * @brief Default server name that a started server will identify itself
      * as.
      *
      * This should typically be specified by any application that embeds a
-     * Lisple Server, and this will only be used if the application fails to do
+     * Roo Server, and this will only be used if the application fails to do
      * so.
      *
      * It has no functional purpose, other than letting the connect REPL know
      * what it is talking to.
      */
-    inline constexpr const char __NAME[] = "Lisple Emeddable REPL Server";
+    inline constexpr const char __NAME[] = "Roo Embeddable REPL Server";
 
     /*!
      * @brief Default version number that a started server will identify itself
      * as.
      *
-     * This can be overriden by any application that embeds a Lisple Server.
+     * This can be overriden by any application that embeds a Roo Server.
      */
     inline constexpr const char __VERSION[] = "0.1";
 
@@ -71,7 +72,7 @@ namespace Lisple
     };
 
     /*!
-     * @brief Struct for providing configuration to a Lisple Server, most
+     * @brief Struct for providing configuration to a Roo Server, most
      * importantly which port to bind to.
      */
     struct ServerConfig
@@ -112,7 +113,7 @@ namespace Lisple
     };
 
     /*!
-     * @brief The Lisple Embeddable REPL Server itself.
+     * @brief The Roo Embeddable REPL Server itself.
      *
      * After instantiation @ref Server::start() must be called to start the
      * server and allow it to bind to the specified port.
@@ -132,7 +133,7 @@ namespace Lisple
     private:
       /*!
        * @brief The configuration that should be used to start the Server.
-       * @see Lisple::Server::ServerConfig.
+       * @see Roo::Server::ServerConfig.
        */
       ServerConfig config;
       /*!
@@ -158,9 +159,9 @@ namespace Lisple
     public:
       /*!
        * @brief Creates a new Server instance with the provided configuration
-       * and Lisple runtime.
+       * and runtime.
        */
-      Server(const ServerConfig& config, Runtime& runtime);
+      Server(const ServerConfig& config, Lisple::Runtime& runtime);
       /*!
        * @brief Start the server, ie bind to the specified port and start
        * listening for messages.
@@ -185,7 +186,6 @@ namespace Lisple
        */
       void query_sockets();
     };
-  }
 }
 
 #endif

@@ -22,7 +22,7 @@ endif()
 
 add_subdirectory(lib/liblisple)
 add_subdirectory(lib/libroo-package)
-add_subdirectory(lib/lisple-server)
+add_subdirectory(lib/libroo-server)
 add_subdirectory(pkg)
 
 add_executable(lisple_cli

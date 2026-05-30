@@ -1,6 +1,6 @@
 
-#ifndef __LISPLE_SERVER__DISPATCH_H_
-#define __LISPLE_SERVER__DISPATCH_H_
+#ifndef ROO_SERVER_DISPATCH_H
+#define ROO_SERVER_DISPATCH_H
 
 #include <variant>
 
@@ -9,9 +9,10 @@
 namespace Lisple
 {
   class Runtime;
+}
 
-  namespace Server
-  {
+namespace Roo::Server
+{
     struct ServerConfig;
 
     /*!
@@ -26,13 +27,13 @@ namespace Lisple
        */
       const ServerConfig& config;
       /*!
-       * @brief The Lisple runtime that the Server is exposing for remote
+       * @brief The runtime that the Server is exposing for remote
        * access.
        */
-      Runtime& runtime;
+      Lisple::Runtime& runtime;
 
     public:
-      Dispatcher(const ServerConfig& config, Runtime& runtime);
+      Dispatcher(const ServerConfig& config, Lisple::Runtime& runtime);
 
       /*!
        * @brief Analyze and dispatch an incoming message to the appropriate
@@ -45,7 +46,6 @@ namespace Lisple
        */
       std::variant<Response, Error> execute_command(const Command& command);
     };
-  }
 }
 
 

@@ -1,5 +1,5 @@
 
-#include "lisple-server/dispatch.h"
+#include "roo-server/dispatch.h"
 
 #include <exception>
 #include <map>
@@ -11,12 +11,12 @@
 #include <lisple/runtime.h>
 #include <lisple/namespace.h>
 
-#include "lisple-server/server.h"
+#include "roo-server/server.h"
 
-namespace Lisple
+namespace Roo::Server
 {
-  namespace Server
-  {
+    using Lisple::Runtime;
+
     const std::string _NS = "NS";
 
     const std::string _SERVER_NAME = "SERVER_NAME";
@@ -106,5 +106,4 @@ namespace Lisple
 
       return Error { 0x01, "Unrecognized CMD with @ID=" + cmd.get_property(_ID) };
     }
-  }
 }

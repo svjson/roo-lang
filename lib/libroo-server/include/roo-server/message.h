@@ -1,6 +1,6 @@
 
-#ifndef __LISPLE_SERVER__MESSAGE_H_
-#define __LISPLE_SERVER__MESSAGE_H_
+#ifndef ROO_SERVER_MESSAGE_H
+#define ROO_SERVER_MESSAGE_H
 
 #include <cstdint>
 #include <map>
@@ -10,10 +10,8 @@
 #include <string>
 #include <variant>
 
-namespace Lisple
+namespace Roo::Server
 {
-  namespace Server
-  {
     /*! @brief Constant for Message/MSG block name */
     extern const std::string _MSG;
     /*! @brief Constant for Command/CMD block name */
@@ -256,7 +254,6 @@ namespace Lisple
        */
       std::optional<Error> read_property(const std::string& data, size_t* i, MessageBuilder* builder);
     };
-  }
 }
 
 

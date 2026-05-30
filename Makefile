@@ -16,7 +16,7 @@ TEST_BINARY := lib/liblisple/test/testlisple
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
 PROOF_TEST_BINARY := pkg/proof/test/testproof
 LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec
-SERVER_TEST_BINARY := lib/lisple-server/test/testserver
+SERVER_TEST_BINARY := lib/libroo-server/test/testserver
 LOOM_BINARY := loom
 LOOKUP_BINARY := lookup
 PROOF_NATIVE_LIBRARY := libproof-native.so
@@ -27,7 +27,7 @@ ifeq ($(OS),Windows_NT)
   PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage.exe
   PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
   LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec.exe
-  SERVER_TEST_BINARY := lib/lisple-server/test/testserver.exe
+  SERVER_TEST_BINARY := lib/libroo-server/test/testserver.exe
   LOOM_BINARY := loom.exe
   LOOKUP_BINARY := lookup.exe
   PROOF_NATIVE_LIBRARY := proof-native.dll
@@ -49,10 +49,10 @@ RELINK_ARTIFACTS := \
 	$(CURDIR)/build/lib/libroo-package/libroo-package.so \
 	$(CURDIR)/build/lib/libroo-package/test/libroo-package-test-native.so \
 	$(CURDIR)/build/lib/libroo-package/test/testpackage \
-	$(CURDIR)/build/lib/lisple-server/liblisple-server.a \
-	$(CURDIR)/build/lib/lisple-server/liblisple-server.so \
-	$(CURDIR)/build/lib/lisple-server/lisple-server \
-	$(CURDIR)/build/lib/lisple-server/test/testserver \
+	$(CURDIR)/build/lib/libroo-server/libroo-server.a \
+	$(CURDIR)/build/lib/libroo-server/libroo-server.so \
+	$(CURDIR)/build/lib/libroo-server/roo-server \
+	$(CURDIR)/build/lib/libroo-server/test/testserver \
 	$(CURDIR)/build/bin/lisplec/test/testlisplec \
 	$(CURDIR)/build/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) \
 	$(CURDIR)/build/pkg/proof/native/libproof_native.a \
@@ -67,14 +67,14 @@ configure:
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 		-DCMAKE_INSTALL_PREFIX=$(PREFIX) \
 		-DCMAKE_PREFIX_PATH=$(PREFIX) \
-		-DLISPLE_SERVER_BUILD_TESTS=OFF
+		-DROO_SERVER_BUILD_TESTS=OFF
 
 configure-server-tests:
 	cmake -S . -B build \
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 		-DCMAKE_INSTALL_PREFIX=$(PREFIX) \
 		-DCMAKE_PREFIX_PATH=$(PREFIX) \
-		-DLISPLE_SERVER_BUILD_TESTS=ON
+		-DROO_SERVER_BUILD_TESTS=ON
 
 build: configure
 	cmake --build build

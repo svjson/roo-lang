@@ -23,7 +23,7 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
   - **[lisplec](bin/lisplec/)** - Compiler executable for generating bundled Lisple application builds.
 - lib/
   - **[liblisple](lib/liblisple/README.md)** - Core embeddable Lisple runtime.
-  - **[lisple-server](lib/lisple-server/README.md)** Small server layer for remote Lisple message parsing and dispatch experiments.
+  - **[roo-server](lib/libroo-server/README.md)** Small server layer for remote Roo message parsing and dispatch experiments.
   - **[roo-package](lib/libroo-package/README.md)** Package manifest, dependency load paths, and native package loading.
 - pkg/
   - **[lookup](pkg/lookup/README.md)** - Lisple indexing for tool-support.

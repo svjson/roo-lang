@@ -6,16 +6,16 @@
 #include <lisple/runtime.h>
 #include <lisple/type.h>
 
-#include <lisple-server/server.h>
+#include <roo-server/server.h>
 
 int main(int, char**)
 {
-  Lisple::Namespace lisple_lang = Lisple::make_language_namespace();
-  Lisple::DirRootFileSystem lisple_fs(".");
-  Lisple::Runtime runtime(&lisple_fs);
+  Lisple::Namespace roo_lang = Lisple::make_language_namespace();
+  Lisple::DirRootFileSystem roo_fs(".");
+  Lisple::Runtime runtime(&roo_fs);
   runtime.set_call_stack_diagnostics(true);
 
-  Lisple::Server::Server server({.application_name = "Lisple Stand-alone REPL Server",
+  Roo::Server::Server server({.application_name = "Roo Stand-alone REPL Server",
                                  .application_version = "0.1",
                                  .port = 8100},
                                 runtime);

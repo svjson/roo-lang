@@ -14,10 +14,10 @@ target_link_libraries(testserver
   gtest
   gmock
   Lisple::lisple_shared
-  lisple-server_shared
+  roo-server_shared
 )
 
 target_include_directories(testserver
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/lisple-server
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/roo-server
 )

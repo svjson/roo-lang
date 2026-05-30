@@ -1,15 +1,13 @@
 
-#include "lisple-server/message.h"
+#include "roo-server/message.h"
 
 #include <optional>
 #include <stack>
 #include <string>
 #include <variant>
 
-namespace Lisple
+namespace Roo::Server
 {
-  namespace Server
-  {
     const std::string _MSG = "MSG";
     const std::string _CMD = "CMD";
     const std::string _RESP = "RESP";
@@ -326,5 +324,4 @@ namespace Lisple
         return *err;
       return builder->set_property(std::get<std::string>(symbol), std::get<std::string>(value));
     }
-  }
 }

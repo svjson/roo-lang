@@ -1,5 +1,5 @@
 
-#include "lisple-server/server.h"
+#include "roo-server/server.h"
 
 #include <arpa/inet.h>
 #include <iostream>
@@ -9,12 +9,12 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "lisple-server/dispatch.h"
+#include "roo-server/dispatch.h"
 
-namespace Lisple
+namespace Roo::Server
 {
-  namespace Server
-  {
+    using Lisple::Runtime;
+
     void set_socket_non_blocking(int socket_fd)
     {
       int flags = fcntl(socket_fd, F_GETFL, 0);
@@ -158,5 +158,4 @@ namespace Lisple
       std::cout << "--------------->" << std::endl;
       send(socket, response.c_str(), response.length(), 0);
     }
-  }
 }
