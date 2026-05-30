@@ -82,8 +82,6 @@ namespace Roo
   {
     Namespace io = make_io_namespace();
     namespaces.emplace(io.get_name(), std::move(io));
-    Namespace legacy_io = make_legacy_io_namespace();
-    namespaces.emplace(legacy_io.get_name(), std::move(legacy_io));
 
     set_namespace_source(std::move(namespace_source));
     switch_namespace(DEFAULT_NAMESPACE);

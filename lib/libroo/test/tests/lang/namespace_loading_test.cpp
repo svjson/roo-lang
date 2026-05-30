@@ -175,53 +175,6 @@ TEST_F(FileSystemNamespaceSource, dashes_are_preserved_in_path)
   ASSERT_TRUE(result.has_value());
 }
 
-TEST_F(FileSystemNamespaceSource, falls_back_to_lspl_extension)
-{
-  // Given
-  InMemoryFileSystem fs;
-  fs.add("foo.lspl", "(ns foo)");
-  Roo::FileSystemNamespaceSource source(&fs);
-
-  // When
-  auto result = source.fetch("foo", {});
-
-  // Then
-  ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->source, "(ns foo)");
-}
-
-TEST_F(FileSystemNamespaceSource, falls_back_to_lisple_extension)
-{
-  // Given
-  InMemoryFileSystem fs;
-  fs.add("foo.lisple", "(ns foo)");
-  Roo::FileSystemNamespaceSource source(&fs);
-
-  // When
-  auto result = source.fetch("foo", {});
-
-  // Then
-  ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->source, "(ns foo)");
-}
-
-TEST_F(FileSystemNamespaceSource, roo_extension_takes_priority_over_lspl)
-{
-  // Given
-  InMemoryFileSystem fs;
-  fs.add("foo.roo", "roo-content");
-  fs.add("foo.lisple", "lisple-content");
-  fs.add("foo.lspl", "lspl-content");
-  Roo::FileSystemNamespaceSource source(&fs);
-
-  // When
-  auto result = source.fetch("foo", {});
-
-  // Then
-  ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->source, "roo-content");
-}
-
 TEST_F(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
 {
   // Given
@@ -242,7 +195,7 @@ TEST_F(FileSystemNamespaceSource, namespace_root_resolves_prefix_before_full_pat
   fs.add("mapped/core.roo", "mapped-content");
   fs.add("mylib/stuff/core.roo", "full-path-content");
   Roo::FileSystemNamespaceSource source(&fs,
-                                        {".roo", ".lspl"},
+                                        {".roo"},
                                         {Roo::NamespaceRoot{"mylib.stuff", "mapped"}});
 
   // When
@@ -262,7 +215,7 @@ TEST_F(FileSystemNamespaceSource, namespace_root_uses_longest_matching_prefix)
   fs.add("specific/tool.roo", "specific-content");
   Roo::FileSystemNamespaceSource source(
     &fs,
-    {".roo", ".lspl"},
+    {".roo"},
     {Roo::NamespaceRoot{"mylib", "general"}, Roo::NamespaceRoot{"mylib.stuff", "specific"}});
 
   // When

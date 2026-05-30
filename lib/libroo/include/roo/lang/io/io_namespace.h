@@ -12,7 +12,6 @@ namespace Roo
    * observation functions, and pure path manipulation functions.
    */
   Namespace make_io_namespace();
-  Namespace make_legacy_io_namespace();
 } // namespace Roo
 
 #endif

@@ -15,7 +15,7 @@ namespace Roo
   /**
    * Resolves namespace names to source files under a FileSystem.
    * Dots in namespace names map to path separators; dashes are preserved as-is.
-   * Extensions are tried in priority order (default: .roo, .lisple, .lspl).
+   * Extensions are tried in priority order (default: .roo).
    */
   class FileSystemNamespaceSource : public NamespaceSource, public NamespaceRootConfigurable
   {
