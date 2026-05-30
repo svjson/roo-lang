@@ -27,7 +27,7 @@ TEST(LisplecOptions, parses_generate_command_with_defaults)
   // Then
   EXPECT_EQ(options.command, "generate");
   EXPECT_EQ(options.package_dir.generic_string(), "pkg/app");
-  EXPECT_EQ(options.build_dir.generic_string(), ".lisplec");
+  EXPECT_EQ(options.build_dir.generic_string(), ".rooc");
   EXPECT_TRUE(options.executable_name.empty());
 }
 

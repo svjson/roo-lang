@@ -50,7 +50,7 @@ namespace
     Lisplec::Options options;
     options.command = "generate";
     options.package_dir =
-      repo_root() / "lib/lisple-package/test/tests/assets/packages/cafe-register";
+      repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register";
     options.build_dir = build_dir;
     options.executable_name = "test_generated_cafe";
     return options;
@@ -119,7 +119,7 @@ namespace
  :version "0.1.0"
  :load-roots ["src"]
  :main main.app/main})");
-    write_file(package_dir / "src/main/app.lisple", main_source);
+    write_file(package_dir / "src/main/app.roo", main_source);
   }
 
   void create_run_tool_app_fixture(const std::filesystem::path& root)
@@ -130,7 +130,7 @@ namespace
  :version "0.1.0"
  :load-roots ["src"]
  :tools {run runner.tool/run}})");
-    write_file(root / "runner/src/runner/tool.lisple",
+    write_file(root / "runner/src/runner/tool.roo",
                R"((ns runner.tool
   (:require [lisple.io :as io]))
 
@@ -148,7 +148,7 @@ namespace
  :load-roots ["src"]
  :config {runner {:message "ok"}}
  :run runner})");
-    write_file(root / "app/src/run/app.lisple", "(ns run.app)\n");
+    write_file(root / "app/src/run/app.roo", "(ns run.app)\n");
   }
 
   void run_generated_executable(const Lisplec::GeneratedProject& project,
@@ -210,8 +210,8 @@ TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_s
               HasSubstr("LoadedNativePackages native_packages;\n"
                         "    Lisple::Runtime runtime"));
   EXPECT_THAT(embedded_file_system_cpp, HasSubstr("EmbeddedFileSystem::read"));
-  EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.lisple"));
-  EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.lisple"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.roo"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.roo"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_native_libraries"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_main_function"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_load_plan"));

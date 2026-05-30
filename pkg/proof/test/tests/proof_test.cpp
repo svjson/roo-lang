@@ -6,8 +6,8 @@
 #include <lisple/runtime.h>
 
 #include <gtest/gtest.h>
-#include <lisple-package/manifest.h>
-#include <lisple-package/native_loader.h>
+#include <roo-package/manifest.h>
+#include <roo-package/native_loader.h>
 #include <proof/native.h>
 
 namespace
@@ -88,12 +88,12 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
 {
   Lisple::DirRootFileSystem manifest_fs("/");
-  auto plan = Lisple::Package::resolve_load_plan(manifest_fs, PROOF_PACKAGE_DIR);
+  auto plan = Roo::Package::resolve_load_plan(manifest_fs, PROOF_PACKAGE_DIR);
 
-  auto fs = Lisple::Package::make_load_path_file_system(plan);
-  Lisple::Package::LoadedNativePackages native_packages;
+  auto fs = Roo::Package::make_load_path_file_system(plan);
+  Roo::Package::LoadedNativePackages native_packages;
   Lisple::Runtime runtime(fs.get());
-  native_packages = Lisple::Package::load_native_libraries(runtime, plan);
+  native_packages = Roo::Package::load_native_libraries(runtime, plan);
 
   runtime.eval(R"(
     (ns proof.package-dynamic-test

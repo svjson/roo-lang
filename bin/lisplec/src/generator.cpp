@@ -95,7 +95,7 @@ namespace Lisplec
 #endif
     }
 
-    std::filesystem::path native_library_path(const Lisple::Package::NativeLibrary& library)
+    std::filesystem::path native_library_path(const Roo::Package::NativeLibrary& library)
     {
       if (!library.path.empty())
       {
@@ -213,16 +213,16 @@ namespace Lisplec
              "#include <string>\n"
              "#include <vector>\n\n"
              "#include <lisple/namespace_source.h>\n"
-             "#include <lisple-package/manifest.h>\n\n"
+             "#include <roo-package/manifest.h>\n\n"
              "namespace LisplecGenerated\n"
              "{\n"
              "  std::map<std::string, std::string> embedded_files();\n"
              "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots();\n"
              "  std::vector<std::string> embedded_autoloads();\n"
              "  std::vector<std::string> embedded_entry_points();\n"
-             "  std::vector<Lisple::Package::NativeLibrary> embedded_native_libraries();\n"
+             "  std::vector<Roo::Package::NativeLibrary> embedded_native_libraries();\n"
              "  std::string embedded_main_function();\n"
-             "  Lisple::Package::LoadPlan embedded_load_plan();\n"
+             "  Roo::Package::LoadPlan embedded_load_plan();\n"
              "} // namespace LisplecGenerated\n\n"
              "#endif\n";
       return out.str();
@@ -288,13 +288,13 @@ namespace Lisplec
       out << "};\n"
              "  }\n"
              "\n"
-             "  std::vector<Lisple::Package::NativeLibrary> embedded_native_libraries()\n"
+             "  std::vector<Roo::Package::NativeLibrary> embedded_native_libraries()\n"
              "  {\n"
-             "    std::vector<Lisple::Package::NativeLibrary> libraries;\n";
+             "    std::vector<Roo::Package::NativeLibrary> libraries;\n";
       for (const auto& library : project.plan.native_libraries)
       {
         out << "    {\n"
-               "      Lisple::Package::NativeLibrary library;\n"
+               "      Roo::Package::NativeLibrary library;\n"
                "      library.name = "
             << cpp_string_literal(library.name)
             << ";\n"
@@ -330,9 +330,9 @@ namespace Lisplec
           << ";\n"
              "  }\n"
              "\n"
-             "  Lisple::Package::LoadPlan embedded_load_plan()\n"
+             "  Roo::Package::LoadPlan embedded_load_plan()\n"
              "  {\n"
-             "    Lisple::Package::LoadPlan plan;\n"
+             "    Roo::Package::LoadPlan plan;\n"
              "    plan.package_root = "
           << cpp_string_literal(project.plan.package_root)
           << ";\n"
@@ -376,7 +376,7 @@ namespace Lisplec
       for (const auto& package : project.plan.packages)
       {
         out << "    {\n"
-               "      Lisple::Package::PackageInfo package;\n"
+               "      Roo::Package::PackageInfo package;\n"
                "      package.name = "
             << cpp_string_literal(package.name)
             << ";\n"
@@ -442,8 +442,8 @@ namespace Lisplec
            "#include <lisple/io/dir_root_file_system.h>\n"
            "#include <lisple/io/file_system_namespace_source.h>\n"
            "#include <lisple/runtime.h>\n"
-           "#include <lisple-package/application.h>\n\n"
-           "#include <lisple-package/native_loader.h>\n\n"
+           "#include <roo-package/application.h>\n\n"
+           "#include <roo-package/native_loader.h>\n\n"
            "#include \"embedded_file_system.h\"\n"
            "#include \"embedded_sources.h\"\n\n"
            "namespace\n"
@@ -470,13 +470,13 @@ namespace Lisplec
            "      LisplecGenerated::embedded_files());\n"
            "    auto namespace_source = "
            "std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);\n"
-           "    Lisple::Package::LoadPlan package_plan =\n"
+           "    Roo::Package::LoadPlan package_plan =\n"
            "      LisplecGenerated::embedded_load_plan();\n"
-           "    Lisple::Package::LoadedNativePackages native_packages;\n"
+           "    Roo::Package::LoadedNativePackages native_packages;\n"
            "    Lisple::Runtime runtime(&app_fs, std::move(namespace_source));\n"
            "    runtime.set_call_stack_diagnostics(true);\n"
            "    runtime.set_namespace_roots(package_plan.namespace_roots);\n\n"
-           "    native_packages = Lisple::Package::load_native_libraries(runtime, "
+           "    native_packages = Roo::Package::load_native_libraries(runtime, "
            "package_plan);\n\n"
            "    load_namespaces(runtime,\n"
            "                    package_plan.autoloads,\n"
@@ -490,14 +490,14 @@ namespace Lisplec
            "    }\n"
            "    if (!package_plan.run.empty())\n"
            "    {\n"
-           "      Lisple::Package::Application::invoke_tool(runtime, package_plan,\n"
+           "      Roo::Package::Application::invoke_tool(runtime, package_plan,\n"
            "                                                package_plan.run);\n"
            "    }\n"
            "    else\n"
            "    {\n"
            "      load_namespaces(runtime, package_plan.entry_points, "
            "\"lisple.compiled.entry\", \"<package-entry>\");\n"
-           "      Lisple::Package::Application::invoke_main(runtime, package_plan.main, "
+           "      Roo::Package::Application::invoke_main(runtime, package_plan.main, "
            "argc, "
            "argv);\n"
            "    }\n"
@@ -516,7 +516,7 @@ namespace Lisplec
     std::string generated_cmake(const GeneratedProject& project)
     {
       const auto lisple_lib = shared_library_path("lib/liblisple", "lisple");
-      const auto package_lib = shared_library_path("lib/lisple-package", "lisple-package");
+      const auto package_lib = shared_library_path("lib/libroo-package", "roo-package");
       std::ostringstream out;
       out << "cmake_minimum_required(VERSION 3.20)\n\n"
              "project("
@@ -541,14 +541,14 @@ namespace Lisplec
           << cpp_string_literal(cmake_path(repo_source_root() / "lib/liblisple/include"))
           << "\n"
              "  )\n"
-             "add_library(lisple_package_shared_imported SHARED IMPORTED)\n"
-             "set_target_properties(lisple_package_shared_imported PROPERTIES\n"
+             "add_library(roo_package_shared_imported SHARED IMPORTED)\n"
+             "set_target_properties(roo_package_shared_imported PROPERTIES\n"
              "    IMPORTED_LOCATION "
           << cpp_string_literal(cmake_path(package_lib))
           << "\n"
              "    INTERFACE_INCLUDE_DIRECTORIES "
           << cpp_string_literal(
-               cmake_path(repo_source_root() / "lib/lisple-package/include"))
+               cmake_path(repo_source_root() / "lib/libroo-package/include"))
           << "\n"
              "  )\n"
              "\n";
@@ -569,7 +569,7 @@ namespace Lisplec
                "  )\n\n";
       }
       out << "  target_link_libraries(" << project.executable_name
-          << " PRIVATE lisple_shared_imported lisple_package_shared_imported";
+          << " PRIVATE lisple_shared_imported roo_package_shared_imported";
       for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
       {
         const auto& library = project.plan.native_libraries[i];

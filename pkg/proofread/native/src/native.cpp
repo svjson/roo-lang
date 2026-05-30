@@ -1,6 +1,6 @@
 #include <proofread/native.h>
 
-#include <lisple-package/native_abi.h>
+#include <roo-package/native_abi.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -231,7 +231,7 @@ namespace Lisple::Proofread
 
 namespace
 {
-  int load_proofread_native(const LispleNativeHostV1* host)
+  int load_proofread_native(const RooNativeHostV1* host)
   {
     auto ns = Lisple::Proofread::make_native_namespace();
     return host->register_namespace(host->user, ns.release());
@@ -247,15 +247,15 @@ namespace
   }
 } // namespace
 
-extern "C" LISPLE_NATIVE_EXPORT const LispleNativePackageV1*
-lisple_native_package_v1()
+extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1*
+roo_native_package_v1()
 {
-  static const LispleNativePackageV1 package{
-    LISPLE_NATIVE_ABI_VERSION,
-    sizeof(LispleNativePackageV1),
+  static const RooNativePackageV1 package{
+    ROO_NATIVE_ABI_VERSION,
+    sizeof(RooNativePackageV1),
     "proofread-native",
     "0.1.0",
-    LISPLE_NATIVE_CXX_ABI,
+    ROO_NATIVE_CXX_ABI,
     load_proofread_native,
     unload_proofread_native,
     proofread_native_last_error,

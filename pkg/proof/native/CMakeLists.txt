@@ -14,7 +14,7 @@ target_include_directories(proof_native
 target_link_libraries(proof_native
   PUBLIC
     Lisple::lisple_shared
-    Lisple::package_shared
+    Roo::package_shared
 )
 
 add_custom_command(TARGET proof_native POST_BUILD

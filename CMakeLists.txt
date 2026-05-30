@@ -21,7 +21,7 @@ if (MSVC)
 endif()
 
 add_subdirectory(lib/liblisple)
-add_subdirectory(lib/lisple-package)
+add_subdirectory(lib/libroo-package)
 add_subdirectory(lib/lisple-server)
 add_subdirectory(pkg)
 
@@ -49,7 +49,7 @@ target_include_directories(lisplec_objects
 target_link_libraries(lisplec_objects
   PUBLIC
     Lisple::lisple_shared
-    Lisple::package_shared
+    Roo::package_shared
 )
 target_compile_definitions(lisplec_objects
   PUBLIC
@@ -70,28 +70,28 @@ add_executable(rooc_cli
 
 set_target_properties(lisple_cli PROPERTIES
   OUTPUT_NAME lisple
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 set_target_properties(roo_cli PROPERTIES
   OUTPUT_NAME roo
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 set_target_properties(lisplec_cli PROPERTIES
   OUTPUT_NAME lisplec
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
 
 set_target_properties(rooc_cli PROPERTIES
   OUTPUT_NAME rooc
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
 )
@@ -99,7 +99,7 @@ set_target_properties(rooc_cli PROPERTIES
 target_link_libraries(lisple_cli
   PRIVATE
     Lisple::lisple_shared
-    Lisple::package_shared
+    Roo::package_shared
 )
 target_compile_definitions(lisple_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
@@ -108,7 +108,7 @@ target_compile_definitions(lisple_cli
 target_link_libraries(roo_cli
   PRIVATE
     Lisple::lisple_shared
-    Lisple::package_shared
+    Roo::package_shared
 )
 target_compile_definitions(roo_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
@@ -128,7 +128,7 @@ enable_testing()
 add_test(
   NAME lisple_cli_runs_package_file_with_file_dependency
   COMMAND $<TARGET_FILE:lisple_cli>
-          ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register/src/cafe/run.lisple
+          ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register/src/cafe/run.roo
 )
 add_test(
   NAME lisple_cli_runs_package_directory_entry_point
@@ -138,7 +138,7 @@ set_tests_properties(
   lisple_cli_runs_package_directory_entry_point
   PROPERTIES
     WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
 )
 add_test(
   NAME lisple_cli_runs_package_with_dynamic_proof_dependency
@@ -168,7 +168,7 @@ set_tests_properties(
   lisple_cli_runs_package_with_namespace_roots
   PROPERTIES
     WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/namespace-root-app
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/namespace-root-app
 )
 add_test(
   NAME lisple_cli_runs_package_with_autoloads
@@ -178,14 +178,14 @@ set_tests_properties(
   lisple_cli_runs_package_with_autoloads
   PROPERTIES
     WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/autoload-app
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/autoload-app
 )
 
 add_test(
   NAME lisplec_cli_generates_cafe_register
   COMMAND $<TARGET_FILE:lisplec_cli>
           generate
-          ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+          ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
           --build-dir
           ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-generate
           --name
@@ -195,7 +195,7 @@ add_test(
   NAME lisplec_cli_builds_cafe_register
   COMMAND $<TARGET_FILE:lisplec_cli>
           build
-          ${CMAKE_CURRENT_SOURCE_DIR}/lib/lisple-package/test/tests/assets/packages/cafe-register
+          ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
           --build-dir
           ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-cafe
           --name
@@ -234,7 +234,7 @@ install(TARGETS lisple_static lisple_shared lisple lisple_cli roo_cli lisplec_cl
 
 install(EXPORT lispleTargets
   FILE lispleTargets.cmake
-  NAMESPACE Lisple::
+  NAMESPACE Roo::
   DESTINATION lib/cmake/lisple
 )
 

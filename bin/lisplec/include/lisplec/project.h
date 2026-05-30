@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <lisple-package/manifest.h>
+#include <roo-package/manifest.h>
 #include <lisplec/options.h>
 
 namespace Lisplec
@@ -18,7 +18,7 @@ namespace Lisplec
   struct GeneratedProject
   {
     std::string executable_name;
-    Lisple::Package::LoadPlan plan;
+    Roo::Package::LoadPlan plan;
     std::vector<EmbeddedFile> files;
   };
 

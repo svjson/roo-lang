@@ -7,7 +7,7 @@ enable_testing()
 add_executable(testproof ${PROOF_TEST_SOURCES})
 
 set_target_properties(testproof PROPERTIES
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>;$<TARGET_FILE_DIR:proof_native>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>;$<TARGET_FILE_DIR:proof_native>"
   BUILD_RPATH_USE_LINK_PATH OFF
 )
 
@@ -16,7 +16,7 @@ target_link_libraries(testproof
   gtest_main
   gmock
   lisple_shared
-  lisple-package_shared
+  roo-package_shared
   proof_native
 )
 

@@ -53,10 +53,10 @@ namespace Lisplec
       return path.lexically_normal().generic_string();
     }
 
-    bool is_lisple_source(const std::filesystem::path& path)
+    bool is_roo_source(const std::filesystem::path& path)
     {
-      return path.extension() == ".lisple" || path.extension() == ".lspl" ||
-             path.extension() == ".roo";
+      return path.extension() == ".roo" || path.extension() == ".lisple" ||
+             path.extension() == ".lspl";
     }
 
     void add_unique_file(std::vector<EmbeddedFile>& files,
@@ -72,7 +72,7 @@ namespace Lisplec
       files.push_back(EmbeddedFile{key, source});
     }
 
-    std::vector<EmbeddedFile> collect_sources(const Lisple::Package::LoadPlan& plan)
+    std::vector<EmbeddedFile> collect_sources(const Roo::Package::LoadPlan& plan)
     {
       std::vector<EmbeddedFile> files;
       std::map<std::string, size_t> indexes;
@@ -89,7 +89,7 @@ namespace Lisplec
 
         for (const auto& entry : std::filesystem::recursive_directory_iterator(load_path))
         {
-          if (!entry.is_regular_file() || !is_lisple_source(entry.path()))
+          if (!entry.is_regular_file() || !is_roo_source(entry.path()))
           {
             continue;
           }
@@ -106,7 +106,7 @@ namespace Lisplec
       return files;
     }
 
-    std::string default_executable_name(const Lisple::Package::LoadPlan& plan)
+    std::string default_executable_name(const Roo::Package::LoadPlan& plan)
     {
       const auto root_package = std::find_if(
         plan.packages.begin(),
@@ -121,7 +121,7 @@ namespace Lisplec
     Lisple::DirRootFileSystem manifest_fs("/");
     const auto package_dir =
       std::filesystem::absolute(options.package_dir).lexically_normal();
-    auto plan = Lisple::Package::resolve_load_plan(manifest_fs, package_dir.string());
+    auto plan = Roo::Package::resolve_load_plan(manifest_fs, package_dir.string());
 
     std::string executable_name = options.executable_name.empty()
                                     ? default_executable_name(plan)

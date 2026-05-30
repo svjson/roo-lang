@@ -109,7 +109,7 @@ namespace Lisplec
     }
     if (options.build_dir.empty())
     {
-      options.build_dir = ".lisplec";
+      options.build_dir = ".rooc";
     }
 
     return options;

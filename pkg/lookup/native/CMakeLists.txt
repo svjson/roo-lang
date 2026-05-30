@@ -14,7 +14,7 @@ target_include_directories(lookup_native
 target_link_libraries(lookup_native
   PUBLIC
     Lisple::lisple_shared
-    Lisple::package_shared
+    Roo::package_shared
 )
 
 add_custom_command(TARGET lookup_native POST_BUILD

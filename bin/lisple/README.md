@@ -3,7 +3,7 @@
 `lisple` is the command-line executable for running Lisple files and packages.
 
 It constructs a Lisple runtime, applies command-line load paths, uses
-`lisple-package` when a `package.edn` is available, loads package native
+`roo-package` when a `package.edn` is available, loads package native
 libraries, and evaluates either a target file or a package's configured entry
 point namespaces. From inside a package, it can also invoke a dependency's
 declared `run` tool.
@@ -11,10 +11,10 @@ declared `run` tool.
 Basic usage:
 
 ```sh
-lisple file.lisple
+lisple file.roo
 lisple .
 lisple proof
-lisple --load-path src file.lisple
+lisple --load-path src file.roo
 ```
 
 Arguments after the file or package target are forwarded to that target. Global

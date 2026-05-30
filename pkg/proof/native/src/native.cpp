@@ -17,7 +17,7 @@
 #include <lisple/runtime/node.h>
 #include <lisple/runtime/value.h>
 
-#include <lisple-package/native_abi.h>
+#include <roo-package/native_abi.h>
 #include <proof/native.h>
 
 namespace Lisple::Proof
@@ -697,7 +697,7 @@ namespace Lisple::Proof
 
 namespace
 {
-  int load_proof_native(const LispleNativeHostV1* host)
+  int load_proof_native(const RooNativeHostV1* host)
   {
     auto ns = Lisple::Proof::make_native_namespace();
     return host->register_namespace(host->user, ns.release());
@@ -711,14 +711,14 @@ namespace
   }
 } // namespace
 
-extern "C" LISPLE_NATIVE_EXPORT const LispleNativePackageV1* lisple_native_package_v1()
+extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
 {
-  static const LispleNativePackageV1 package{
-    LISPLE_NATIVE_ABI_VERSION,
-    sizeof(LispleNativePackageV1),
+  static const RooNativePackageV1 package{
+    ROO_NATIVE_ABI_VERSION,
+    sizeof(RooNativePackageV1),
     "proof-native",
     "0.1.0",
-    LISPLE_NATIVE_CXX_ABI,
+    ROO_NATIVE_CXX_ABI,
     load_proof_native,
     unload_proof_native,
     proof_native_last_error,

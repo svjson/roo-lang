@@ -13,7 +13,7 @@ endif
 .PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread test test\:all test\:lang test\:package test\:proof test\:lisplec test\:cli test\:lisple-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/liblisple/test/testlisple
-PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage
+PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
 PROOF_TEST_BINARY := pkg/proof/test/testproof
 LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec
 SERVER_TEST_BINARY := lib/lisple-server/test/testserver
@@ -24,7 +24,7 @@ PROOFREAD_NATIVE_LIBRARY := libproofread-native.so
 PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
   TEST_BINARY := lib/liblisple/test/testlisple.exe
-  PACKAGE_TEST_BINARY := lib/lisple-package/test/testpackage.exe
+  PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage.exe
   PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
   LISPLEC_TEST_BINARY := bin/lisplec/test/testlisplec.exe
   SERVER_TEST_BINARY := lib/lisple-server/test/testserver.exe
@@ -45,10 +45,10 @@ RELINK_ARTIFACTS := \
 	$(CURDIR)/build/lib/liblisple/liblisple.a \
 	$(CURDIR)/build/lib/liblisple/liblisple.so \
 	$(CURDIR)/build/lib/liblisple/test/testlisple \
-	$(CURDIR)/build/lib/lisple-package/liblisple-package.a \
-	$(CURDIR)/build/lib/lisple-package/liblisple-package.so \
-	$(CURDIR)/build/lib/lisple-package/test/liblisple-package-test-native.so \
-	$(CURDIR)/build/lib/lisple-package/test/testpackage \
+	$(CURDIR)/build/lib/libroo-package/libroo-package.a \
+	$(CURDIR)/build/lib/libroo-package/libroo-package.so \
+	$(CURDIR)/build/lib/libroo-package/test/libroo-package-test-native.so \
+	$(CURDIR)/build/lib/libroo-package/test/testpackage \
 	$(CURDIR)/build/lib/lisple-server/liblisple-server.a \
 	$(CURDIR)/build/lib/lisple-server/liblisple-server.so \
 	$(CURDIR)/build/lib/lisple-server/lisple-server \
@@ -95,12 +95,12 @@ build-proof: build
 	cmake --build build --target proof_native
 
 install-proof: build-proof
-	cmake -E make_directory $(PREFIX)/share/lisple/pkg/proof/src
-	cmake -E make_directory $(PREFIX)/share/lisple/pkg/proof/native
-	cmake -E copy_directory $(CURDIR)/pkg/proof/src $(PREFIX)/share/lisple/pkg/proof/src
-	cmake -E copy_if_different $(CURDIR)/pkg/proof/package.edn $(PREFIX)/share/lisple/pkg/proof/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/proof/README.md $(PREFIX)/share/lisple/pkg/proof/README.md
-	cmake -E copy_if_different $(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/lisple/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/proof/src
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/proof/native
+	cmake -E copy_directory $(CURDIR)/pkg/proof/src $(PREFIX)/share/roo/pkg/proof/src
+	cmake -E copy_if_different $(CURDIR)/pkg/proof/package.edn $(PREFIX)/share/roo/pkg/proof/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/proof/README.md $(PREFIX)/share/roo/pkg/proof/README.md
+	cmake -E copy_if_different $(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
 
 build-lookup: build
 	./build/lisplec build $(CURDIR)/pkg/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup

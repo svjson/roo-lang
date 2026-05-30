@@ -1,6 +1,6 @@
 #include <lookup/native.h>
 
-#include <lisple-package/native_abi.h>
+#include <roo-package/native_abi.h>
 
 #include <cerrno>
 #include <cstring>
@@ -160,7 +160,7 @@ namespace Lisple::Lookup
 
 namespace
 {
-  int load_lookup_native(const LispleNativeHostV1* host)
+  int load_lookup_native(const RooNativeHostV1* host)
   {
     auto ns = Lisple::Lookup::make_native_namespace();
     return host->register_namespace(host->user, ns.release());
@@ -176,15 +176,15 @@ namespace
   }
 } // namespace
 
-extern "C" LISPLE_NATIVE_EXPORT const LispleNativePackageV1*
-lisple_native_package_v1()
+extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1*
+roo_native_package_v1()
 {
-  static const LispleNativePackageV1 package{
-    LISPLE_NATIVE_ABI_VERSION,
-    sizeof(LispleNativePackageV1),
+  static const RooNativePackageV1 package{
+    ROO_NATIVE_ABI_VERSION,
+    sizeof(RooNativePackageV1),
     "lookup-native",
     "0.1.0",
-    LISPLE_NATIVE_CXX_ABI,
+    ROO_NATIVE_CXX_ABI,
     load_lookup_native,
     unload_lookup_native,
     lookup_native_last_error,

@@ -21,7 +21,7 @@ namespace
     Lisplec::Options options;
     options.command = "generate";
     options.package_dir = package_dir;
-    options.build_dir = ".lisplec";
+    options.build_dir = ".rooc";
     return options;
   }
 
@@ -37,7 +37,7 @@ TEST(LisplecProject, prepares_pure_package_with_file_dependency)
 {
   // Given
   auto options =
-    options_for(repo_root() / "lib/lisple-package/test/tests/assets/packages/cafe-register");
+    options_for(repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register");
 
   // When
   auto project = Lisplec::prepare_project(options);
@@ -46,9 +46,9 @@ TEST(LisplecProject, prepares_pure_package_with_file_dependency)
   EXPECT_EQ(project.executable_name, "cafe_register");
   EXPECT_THAT(project.plan.entry_points, Contains("cafe.run"));
   EXPECT_THAT(project.files,
-              Contains(Field(&Lisplec::EmbeddedFile::key, "cafe/run.lisple")));
+              Contains(Field(&Lisplec::EmbeddedFile::key, "cafe/run.roo")));
   EXPECT_THAT(project.files,
-              Contains(Field(&Lisplec::EmbeddedFile::key, "recipe/book.lisple")));
+              Contains(Field(&Lisplec::EmbeddedFile::key, "recipe/book.roo")));
 }
 
 TEST(LisplecProject, collects_roo_source_files)
@@ -77,7 +77,7 @@ TEST(LisplecProject, sanitizes_explicit_executable_name)
 {
   // Given
   auto options =
-    options_for(repo_root() / "lib/lisple-package/test/tests/assets/packages/cafe-register");
+    options_for(repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register");
   options.executable_name = "123 cafe-register";
 
   // When
@@ -97,8 +97,8 @@ TEST(LisplecProject, prepares_package_with_native_dependency)
 
   // Then
   EXPECT_THAT(project.plan.native_libraries,
-              Contains(Field(&Lisple::Package::NativeLibrary::name, "proof-native")));
+              Contains(Field(&Roo::Package::NativeLibrary::name, "proof-native")));
   EXPECT_THAT(project.plan.native_namespaces, Contains("proof.syntax"));
   EXPECT_THAT(project.files, Contains(Field(&Lisplec::EmbeddedFile::key,
-                                            "proof/core.lisple")));
+                                            "proof/core.roo")));
 }
