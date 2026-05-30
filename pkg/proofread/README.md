@@ -1,23 +1,23 @@
 # proofread
 
-`proofread` is a syntax and style checker for Lisple source and EDN data.
+`proofread` is a syntax and style checker for Roo source and EDN data.
 
 It is intentionally small for now. The first version checks that every requested
-file can be parsed by the Lisple reader.
+file can be parsed by the Roo reader.
 
 ## Running proofread From Source
 
 From the repository root:
 
 ```sh
-./build/lisple pkg/proofread <file|pattern>...
+./build/roo pkg/proofread <file|pattern>...
 ```
 
 Examples:
 
 ```sh
-./build/lisple pkg/proofread path/to/file.lisple
-./build/lisple pkg/proofread 'src/*.lisple' package.edn
+./build/roo pkg/proofread path/to/file.roo
+./build/roo pkg/proofread 'src/*.roo' package.edn
 ```
 
 ## Building the proofread Binary
@@ -28,7 +28,7 @@ From the repository root:
 make build-proofread
 ```
 
-This builds proofread with `lisplec` and writes the executable under:
+This builds proofread with `rooc` and writes the executable under:
 
 ```text
 build/proofread-install/build/proofread
@@ -42,7 +42,7 @@ From the repository root:
 make install-proofread
 ```
 
-This builds proofread with `lisplec` and copies the executable to `$(PREFIX)/bin`.
+This builds proofread with `rooc` and copies the executable to `$(PREFIX)/bin`.
 
 The default `PREFIX` is:
 
@@ -52,7 +52,7 @@ The default `PREFIX` is:
 After installation:
 
 ```sh
-proofread path/to/file.lisple
+proofread path/to/file.roo
 ```
 
 ## Commands
@@ -62,13 +62,13 @@ proofread path/to/file.lisple
 Check one or more files:
 
 ```sh
-proofread path/to/file.lisple package.edn
+proofread path/to/file.roo package.edn
 ```
 
 Check files matched by a shell-style pattern:
 
 ```sh
-proofread 'src/*.lisple'
+proofread 'src/*.roo'
 ```
 
 If every file parses, proofread prints a short success summary:
@@ -100,7 +100,7 @@ proofread --version
 
 - Style checks are not implemented yet.
 - Recursive `**` glob behavior is not implemented yet.
-- Parse diagnostics currently use the Lisple reader's existing error messages.
+- Parse diagnostics currently use the Roo reader's existing error messages.
 
 ## Tests
 
@@ -110,7 +110,7 @@ From the repository root:
 ctest --test-dir build -R proofread --output-on-failure
 ```
 
-This runs proofread's CLI smoke tests for valid Lisple, valid EDN, and invalid
+This runs proofread's CLI smoke tests for valid Roo, valid EDN, and invalid
 syntax.
 
 ## License

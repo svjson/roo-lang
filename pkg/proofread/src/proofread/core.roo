@@ -7,7 +7,7 @@
   (prn "Usage: proofread [--help|--version] <file|pattern>..."))
 
 (defun print-help []
-  (prn "proofread: check that Lisple and EDN files parse")
+  (prn "proofread: check that Roo and EDN files parse")
   (usage))
 
 (defun print-version []
