@@ -63,6 +63,11 @@ add_executable(lisplec_cli
   $<TARGET_OBJECTS:lisplec_objects>
 )
 
+add_executable(rooc_cli
+  bin/lisplec/main.cpp
+  $<TARGET_OBJECTS:lisplec_objects>
+)
+
 set_target_properties(lisple_cli PROPERTIES
   OUTPUT_NAME lisple
   BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
@@ -79,6 +84,13 @@ set_target_properties(roo_cli PROPERTIES
 
 set_target_properties(lisplec_cli PROPERTIES
   OUTPUT_NAME lisplec
+  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
+  BUILD_RPATH_USE_LINK_PATH OFF
+  INSTALL_RPATH "\$ORIGIN/../lib"
+)
+
+set_target_properties(rooc_cli PROPERTIES
+  OUTPUT_NAME rooc
   BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:lisple-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
@@ -103,6 +115,11 @@ target_compile_definitions(roo_cli
 )
 
 target_link_libraries(lisplec_cli
+  PRIVATE
+    lisplec_objects
+)
+
+target_link_libraries(rooc_cli
   PRIVATE
     lisplec_objects
 )
@@ -208,7 +225,7 @@ install(CODE [[
 
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
-install(TARGETS lisple_static lisple_shared lisple lisple_cli lisplec_cli
+install(TARGETS lisple_static lisple_shared lisple lisple_cli roo_cli lisplec_cli rooc_cli
   EXPORT lispleTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
