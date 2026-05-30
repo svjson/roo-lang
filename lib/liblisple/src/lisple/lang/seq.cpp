@@ -30,6 +30,7 @@ namespace Lisple
         fn(child);
       }
     }
+
   } // namespace
 
   /* AppendBangFunction - append_bang */
@@ -153,6 +154,125 @@ namespace Lisple
                         { return *lmnt == *args.back(); }) != vector.end()
              ? Constant::BOOL_TRUE
              : Constant::BOOL_FALSE;
+  }
+
+  /**
+   * ContainsAnyPFunction - contains-any?
+   */
+  FUNC_IMPL(ContainsAnyPFunction,
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::SEQ_OR_STRING)),
+                 EXEC_DISPATCH(&ContainsAnyPFunction::exec_contains_any))))
+
+  EXEC_BODY(ContainsAnyPFunction, exec_contains_any)
+  {
+    sptr_val_v haystack;
+    if (*Constant::NIL != *args[0])
+    {
+      if (Lisple::has_indexed_children(*args[0]))
+      {
+        const size_t n_children = Lisple::child_count(*args[0]);
+        haystack.reserve(n_children);
+        for (size_t i = 0; i < n_children; i++)
+        {
+          haystack.push_back(Lisple::get_child(*args[0], i));
+        }
+      }
+      else
+      {
+        haystack = Lisple::get_children(*args[0]);
+      }
+    }
+
+    sptr_val_v needles;
+    if (*Constant::NIL != *args[1])
+    {
+      if (Lisple::has_indexed_children(*args[1]))
+      {
+        const size_t n_children = Lisple::child_count(*args[1]);
+        needles.reserve(n_children);
+        for (size_t i = 0; i < n_children; i++)
+        {
+          needles.push_back(Lisple::get_child(*args[1], i));
+        }
+      }
+      else
+      {
+        needles = Lisple::get_children(*args[1]);
+      }
+    }
+
+    for (const sptr_val& needle : needles)
+    {
+      for (const sptr_val& value : haystack)
+      {
+        if (*value == *needle) return Constant::BOOL_TRUE;
+      }
+    }
+
+    return Constant::BOOL_FALSE;
+  }
+
+  /**
+   * ContainsAllPFunction - contains-all?
+   */
+  FUNC_IMPL(ContainsAllPFunction,
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::SEQ_OR_STRING)),
+                 EXEC_DISPATCH(&ContainsAllPFunction::exec_contains_all))))
+
+  EXEC_BODY(ContainsAllPFunction, exec_contains_all)
+  {
+    sptr_val_v haystack;
+    if (*Constant::NIL != *args[0])
+    {
+      if (Lisple::has_indexed_children(*args[0]))
+      {
+        const size_t n_children = Lisple::child_count(*args[0]);
+        haystack.reserve(n_children);
+        for (size_t i = 0; i < n_children; i++)
+        {
+          haystack.push_back(Lisple::get_child(*args[0], i));
+        }
+      }
+      else
+      {
+        haystack = Lisple::get_children(*args[0]);
+      }
+    }
+
+    sptr_val_v needles;
+    if (*Constant::NIL != *args[1])
+    {
+      if (Lisple::has_indexed_children(*args[1]))
+      {
+        const size_t n_children = Lisple::child_count(*args[1]);
+        needles.reserve(n_children);
+        for (size_t i = 0; i < n_children; i++)
+        {
+          needles.push_back(Lisple::get_child(*args[1], i));
+        }
+      }
+      else
+      {
+        needles = Lisple::get_children(*args[1]);
+      }
+    }
+
+    for (const sptr_val& needle : needles)
+    {
+      bool found = false;
+      for (const sptr_val& value : haystack)
+      {
+        if (*value == *needle)
+        {
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) return Constant::BOOL_FALSE;
+    }
+
+    return Constant::BOOL_TRUE;
   }
 
   /** CountFunction - count */

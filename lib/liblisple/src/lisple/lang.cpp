@@ -78,6 +78,8 @@ namespace Lisple
     lang_symbols.emplace("concat", ConcatFunction::make());
     lang_symbols.emplace("concat!", ConcatBangFunction::make());
     lang_symbols.emplace("cond", CondForm::make());
+    lang_symbols.emplace("contains-all?", ContainsAllPFunction::make());
+    lang_symbols.emplace("contains-any?", ContainsAnyPFunction::make());
     lang_symbols.emplace("contains?", ContainsPFunction::make());
     lang_symbols.emplace("cos", CosFunction::make());
     lang_symbols.emplace("count", CountFunction::make());

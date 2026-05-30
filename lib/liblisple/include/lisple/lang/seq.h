@@ -54,6 +54,36 @@ namespace Lisple
    */
   FUNC(ContainsPFunction, contains)
 
+  /*!
+   * @brief Tests if a Seq contains at least one element from another Seq.
+   *
+   * Usage:
+   * @code
+   * (contains-any? [1 2 3] [0 3])
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The Seq to test                                                  |
+   * | 1     | The Seq of values to test for                                    |
+   */
+  FUNC(ContainsAnyPFunction, contains_any)
+
+  /*!
+   * @brief Tests if a Seq contains all elements from another Seq.
+   *
+   * Usage:
+   * @code
+   * (contains-all? [1 2 3] [1 3])
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The Seq to test                                                  |
+   * | 1     | The Seq of values to test for                                    |
+   */
+  FUNC(ContainsAllPFunction, contains_all)
+
   FUNC(CountFunction, count)
 
   /*!
