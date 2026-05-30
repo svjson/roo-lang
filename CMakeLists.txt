@@ -179,10 +179,10 @@ set_tests_properties(
 add_subdirectory(bin/rooc/test)
 
 install(CODE [[
-  set(legacy_lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")
-  if(EXISTS "${legacy_lisple_installed_include_dir}")
-    message(STATUS "Removing stale installed legacy headers: ${legacy_lisple_installed_include_dir}")
-    file(REMOVE_RECURSE "${legacy_lisple_installed_include_dir}")
+  set(roo_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/roo")
+  if(EXISTS "${roo_installed_include_dir}")
+    message(STATUS "Removing stale installed Roo headers: ${roo_installed_include_dir}")
+    file(REMOVE_RECURSE "${roo_installed_include_dir}")
   endif()
 ]])
 
