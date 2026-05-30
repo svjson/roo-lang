@@ -7,9 +7,9 @@
 #include <lisple/exception.h>
 #include <lisple/io/dir_root_file_system.h>
 
-#include <lisplec/project.h>
+#include <rooc/project.h>
 
-namespace Lisplec
+namespace Rooc
 {
   namespace
   {
@@ -17,7 +17,7 @@ namespace Lisplec
     {
       if (value.empty())
       {
-        return "lisple_app";
+        return "roo_app";
       }
 
       for (char& c : value)
@@ -112,7 +112,7 @@ namespace Lisplec
         plan.packages.begin(),
         plan.packages.end(),
         [&](const auto& package) { return package.package_root == plan.package_root; });
-      return root_package == plan.packages.end() ? "lisple_app" : root_package->name;
+      return root_package == plan.packages.end() ? "roo_app" : root_package->name;
     }
   } // namespace
 
@@ -133,4 +133,4 @@ namespace Lisplec
       std::move(files),
     };
   }
-} // namespace Lisplec
+} // namespace Rooc

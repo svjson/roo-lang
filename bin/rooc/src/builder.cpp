@@ -4,9 +4,9 @@
 
 #include <lisple/exception.h>
 
-#include <lisplec/builder.h>
+#include <rooc/builder.h>
 
-namespace Lisplec
+namespace Rooc
 {
   namespace
   {
@@ -50,4 +50,4 @@ namespace Lisplec
     run_command(configure);
     run_command(build);
   }
-} // namespace Lisplec
+} // namespace Rooc

@@ -8,9 +8,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <lisplec/builder.h>
-#include <lisplec/generator.h>
-#include <lisplec/project.h>
+#include <rooc/builder.h>
+#include <rooc/generator.h>
+#include <rooc/project.h>
 
 using ::testing::HasSubstr;
 
@@ -18,12 +18,12 @@ namespace
 {
   std::filesystem::path repo_root()
   {
-    return std::filesystem::path(LISPLEC_TEST_REPO_ROOT);
+    return std::filesystem::path(ROOC_TEST_REPO_ROOT);
   }
 
   std::filesystem::path build_root()
   {
-    return std::filesystem::path(LISPLEC_TEST_BUILD_ROOT);
+    return std::filesystem::path(ROOC_TEST_BUILD_ROOT);
   }
 
   std::string read_file(const std::filesystem::path& path)
@@ -45,9 +45,9 @@ namespace
     file << source;
   }
 
-  Lisplec::Options options_for(const std::filesystem::path& build_dir)
+  Rooc::Options options_for(const std::filesystem::path& build_dir)
   {
-    Lisplec::Options options;
+    Rooc::Options options;
     options.command = "generate";
     options.package_dir =
       repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register";
@@ -56,28 +56,28 @@ namespace
     return options;
   }
 
-  Lisplec::Options main_app_options_for(const std::filesystem::path& build_dir)
+  Rooc::Options main_app_options_for(const std::filesystem::path& build_dir)
   {
-    Lisplec::Options options;
+    Rooc::Options options;
     options.command = "build";
-    options.package_dir = repo_root() / "bin/lisplec/test/assets/main-app";
+    options.package_dir = repo_root() / "bin/rooc/test/assets/main-app";
     options.build_dir = build_dir;
     return options;
   }
 
-  Lisplec::Options main_app_options_for(const std::filesystem::path& build_dir,
+  Rooc::Options main_app_options_for(const std::filesystem::path& build_dir,
                                         const std::filesystem::path& package_dir)
   {
-    Lisplec::Options options;
+    Rooc::Options options;
     options.command = "build";
     options.package_dir = package_dir;
     options.build_dir = build_dir;
     return options;
   }
 
-  Lisplec::Options dynamic_smoke_options_for(const std::filesystem::path& build_dir)
+  Rooc::Options dynamic_smoke_options_for(const std::filesystem::path& build_dir)
   {
-    Lisplec::Options options;
+    Rooc::Options options;
     options.command = "build";
     options.package_dir = repo_root() / "pkg/proof/test/assets/dynamic-smoke";
     options.build_dir = build_dir;
@@ -151,15 +151,15 @@ namespace
     write_file(root / "app/src/run/app.roo", "(ns run.app)\n");
   }
 
-  void run_generated_executable(const Lisplec::GeneratedProject& project,
+  void run_generated_executable(const Rooc::GeneratedProject& project,
                                 const std::filesystem::path& build_dir,
                                 const std::filesystem::path& run_dir,
                                 const std::vector<std::string>& args = {})
   {
     const auto executable =
       build_dir / "build" /
-      (project.executable_name + std::string(LISPLEC_TEST_EXECUTABLE_SUFFIX));
-    std::string command = std::string(LISPLEC_TEST_CMAKE_COMMAND) + " -E chdir " +
+      (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
+    std::string command = std::string(ROOC_TEST_CMAKE_COMMAND) + " -E chdir " +
                           shell_arg(run_dir) + " " + shell_arg(executable);
     for (const auto& arg : args)
     {
@@ -169,15 +169,15 @@ namespace
   }
 } // namespace
 
-TEST(LisplecGenerator, writes_generated_project_files)
+TEST(RoocGenerator, writes_generated_project_files)
 {
   // Given
-  const auto build_dir = build_root() / "lisplec-gtest-generated";
+  const auto build_dir = build_root() / "rooc-gtest-generated";
   auto options = options_for(build_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
 
   // When
-  Lisplec::generate_project(options, project);
+  Rooc::generate_project(options, project);
 
   // Then
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "CMakeLists.txt"));
@@ -188,15 +188,15 @@ TEST(LisplecGenerator, writes_generated_project_files)
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_sources.cpp"));
 }
 
-TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sources)
+TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sources)
 {
   // Given
-  const auto build_dir = build_root() / "lisplec-gtest-generated";
+  const auto build_dir = build_root() / "rooc-gtest-generated";
   auto options = options_for(build_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
 
   // When
-  Lisplec::generate_project(options, project);
+  Rooc::generate_project(options, project);
 
   // Then
   const std::string main_cpp = read_file(build_dir / "src/main.cpp");
@@ -204,7 +204,7 @@ TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_s
   const std::string embedded_file_system_cpp =
     read_file(build_dir / "src/embedded_file_system.cpp");
 
-  EXPECT_THAT(main_cpp, HasSubstr("LisplecGenerated::EmbeddedFileSystem namespace_fs"));
+  EXPECT_THAT(main_cpp, HasSubstr("RoocGenerated::EmbeddedFileSystem namespace_fs"));
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
   EXPECT_THAT(main_cpp,
               HasSubstr("LoadedNativePackages native_packages;\n"
@@ -217,31 +217,31 @@ TEST(LisplecGenerator, generated_project_splits_bootstrap_runtime_and_embedded_s
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_load_plan"));
 }
 
-TEST(LisplecGenerator, generated_executable_invokes_main_function)
+TEST(RoocGenerator, generated_executable_invokes_main_function)
 {
   // Given
-  const auto build_dir = build_root() / "lisplec-gtest-main-build";
-  const auto run_dir = build_root() / "lisplec-gtest-main-run";
+  const auto build_dir = build_root() / "rooc-gtest-main-build";
+  const auto run_dir = build_root() / "rooc-gtest-main-run";
   auto options = main_app_options_for(build_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
   std::filesystem::remove(run_dir / "main-ran.txt");
 
   // When
-  Lisplec::generate_project(options, project);
-  Lisplec::build_project(options, project);
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
   run_generated_executable(project, build_dir, run_dir);
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "ok");
 }
 
-TEST(LisplecGenerator, generated_executable_passes_no_args_to_zero_arity_main)
+TEST(RoocGenerator, generated_executable_passes_no_args_to_zero_arity_main)
 {
   // Given
-  const auto package_dir = build_root() / "lisplec-gtest-main-zero-package";
-  const auto build_dir = build_root() / "lisplec-gtest-main-zero-build";
-  const auto run_dir = build_root() / "lisplec-gtest-main-zero-run";
+  const auto package_dir = build_root() / "rooc-gtest-main-zero-package";
+  const auto build_dir = build_root() / "rooc-gtest-main-zero-build";
+  const auto run_dir = build_root() / "rooc-gtest-main-zero-run";
   create_main_app_fixture(package_dir,
                           R"((ns main.app)
 
@@ -249,25 +249,25 @@ TEST(LisplecGenerator, generated_executable_passes_no_args_to_zero_arity_main)
   (lisple.io/spit! "main-ran.txt" "zero"))
 )");
   auto options = main_app_options_for(build_dir, package_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
   std::filesystem::remove(run_dir / "main-ran.txt");
 
   // When
-  Lisplec::generate_project(options, project);
-  Lisplec::build_project(options, project);
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
   run_generated_executable(project, build_dir, run_dir, {"alpha", "beta"});
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "zero");
 }
 
-TEST(LisplecGenerator, generated_executable_passes_cli_args_vector_to_one_arity_main)
+TEST(RoocGenerator, generated_executable_passes_cli_args_vector_to_one_arity_main)
 {
   // Given
-  const auto package_dir = build_root() / "lisplec-gtest-main-one-package";
-  const auto build_dir = build_root() / "lisplec-gtest-main-one-build";
-  const auto run_dir = build_root() / "lisplec-gtest-main-one-run";
+  const auto package_dir = build_root() / "rooc-gtest-main-one-package";
+  const auto build_dir = build_root() / "rooc-gtest-main-one-build";
+  const auto run_dir = build_root() / "rooc-gtest-main-one-run";
   create_main_app_fixture(package_dir,
                           R"((ns main.app)
 
@@ -276,25 +276,25 @@ TEST(LisplecGenerator, generated_executable_passes_cli_args_vector_to_one_arity_
                    (str (count args) ":" (nth args 0) ":" (nth args 1))))
 )");
   auto options = main_app_options_for(build_dir, package_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
   std::filesystem::remove(run_dir / "main-ran.txt");
 
   // When
-  Lisplec::generate_project(options, project);
-  Lisplec::build_project(options, project);
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
   run_generated_executable(project, build_dir, run_dir, {"alpha", "beta"});
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "2:alpha:beta");
 }
 
-TEST(LisplecGenerator, generated_executable_pads_main_arity_with_nil_values)
+TEST(RoocGenerator, generated_executable_pads_main_arity_with_nil_values)
 {
   // Given
-  const auto package_dir = build_root() / "lisplec-gtest-main-padded-package";
-  const auto build_dir = build_root() / "lisplec-gtest-main-padded-build";
-  const auto run_dir = build_root() / "lisplec-gtest-main-padded-run";
+  const auto package_dir = build_root() / "rooc-gtest-main-padded-package";
+  const auto build_dir = build_root() / "rooc-gtest-main-padded-build";
+  const auto run_dir = build_root() / "rooc-gtest-main-padded-run";
   create_main_app_fixture(package_dir,
                           R"((ns main.app)
 
@@ -307,53 +307,53 @@ TEST(LisplecGenerator, generated_executable_pads_main_arity_with_nil_values)
                         (if z "z" "nil"))))
 )");
   auto options = main_app_options_for(build_dir, package_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
   std::filesystem::remove(run_dir / "main-ran.txt");
 
   // When
-  Lisplec::generate_project(options, project);
-  Lisplec::build_project(options, project);
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
   run_generated_executable(project, build_dir, run_dir, {"alpha"});
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "1:alpha:nil:nil:nil");
 }
 
-TEST(LisplecGenerator, generated_executable_invokes_run_tool)
+TEST(RoocGenerator, generated_executable_invokes_run_tool)
 {
   // Given
-  const auto fixture_root = build_root() / "lisplec-gtest-run-tool-fixture";
+  const auto fixture_root = build_root() / "rooc-gtest-run-tool-fixture";
   const auto package_dir = fixture_root / "app";
-  const auto build_dir = build_root() / "lisplec-gtest-run-tool-build";
-  const auto run_dir = build_root() / "lisplec-gtest-run-tool-run";
+  const auto build_dir = build_root() / "rooc-gtest-run-tool-build";
+  const auto run_dir = build_root() / "rooc-gtest-run-tool-run";
   create_run_tool_app_fixture(fixture_root);
   auto options = main_app_options_for(build_dir, package_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
   std::filesystem::remove(run_dir / "run-tool.txt");
 
   // When
-  Lisplec::generate_project(options, project);
-  Lisplec::build_project(options, project);
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
   run_generated_executable(project, build_dir, run_dir);
 
   // Then
   EXPECT_EQ(read_file(run_dir / "run-tool.txt"), "run-app:runner:run:ok");
 }
 
-TEST(LisplecGenerator, generated_executable_loads_native_package_dependencies)
+TEST(RoocGenerator, generated_executable_loads_native_package_dependencies)
 {
   // Given
-  const auto build_dir = build_root() / "lisplec-gtest-native-build";
-  const auto run_dir = build_root() / "lisplec-gtest-native-run";
+  const auto build_dir = build_root() / "rooc-gtest-native-build";
+  const auto run_dir = build_root() / "rooc-gtest-native-run";
   auto options = dynamic_smoke_options_for(build_dir);
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
 
   // When
-  Lisplec::generate_project(options, project);
-  Lisplec::build_project(options, project);
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
   run_generated_executable(project, build_dir, run_dir);
 
   // Then

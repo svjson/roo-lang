@@ -3,29 +3,29 @@
 
 #include <lisple/exception.h>
 
-#include <lisplec/options.h>
+#include <rooc/options.h>
 
-namespace Lisplec
+namespace Rooc
 {
   void print_usage()
   {
-    std::cout << "Usage: lisplec <generate|build> <package-dir> "
+    std::cout << "Usage: rooc <generate|build> <package-dir> "
                  "[--build-dir <dir>] [--name <name>]\n";
   }
 
   void print_help()
   {
-    std::cout << "lisplec: generate and build a native Lisple executable project\n"
+    std::cout << "rooc: generate and build a native Roo executable project\n"
                  "Usage:\n"
-                 "  lisplec generate <package-dir> [--build-dir <dir>] [--name <name>]\n"
-                 "  lisplec build <package-dir> [--build-dir <dir>] [--name <name>]\n"
-                 "  lisplec --help\n"
-                 "  lisplec --version\n";
+                 "  rooc generate <package-dir> [--build-dir <dir>] [--name <name>]\n"
+                 "  rooc build <package-dir> [--build-dir <dir>] [--name <name>]\n"
+                 "  rooc --help\n"
+                 "  rooc --version\n";
   }
 
   void print_version()
   {
-    std::cout << "lisplec " << LISPLE_VERSION << "\n";
+    std::cout << "rooc " << ROO_VERSION << "\n";
   }
 
   Options parse_args(int argc, char** argv)
@@ -114,4 +114,4 @@ namespace Lisplec
 
     return options;
   }
-} // namespace Lisplec
+} // namespace Rooc

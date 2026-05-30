@@ -4,7 +4,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <lisplec/project.h>
+#include <rooc/project.h>
 
 using ::testing::Contains;
 using ::testing::Field;
@@ -13,12 +13,12 @@ namespace
 {
   std::filesystem::path repo_root()
   {
-    return std::filesystem::path(LISPLEC_TEST_REPO_ROOT);
+    return std::filesystem::path(ROOC_TEST_REPO_ROOT);
   }
 
-  Lisplec::Options options_for(const std::filesystem::path& package_dir)
+  Rooc::Options options_for(const std::filesystem::path& package_dir)
   {
-    Lisplec::Options options;
+    Rooc::Options options;
     options.command = "generate";
     options.package_dir = package_dir;
     options.build_dir = ".rooc";
@@ -33,29 +33,29 @@ namespace
   }
 } // namespace
 
-TEST(LisplecProject, prepares_pure_package_with_file_dependency)
+TEST(RoocProject, prepares_pure_package_with_file_dependency)
 {
   // Given
   auto options =
     options_for(repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register");
 
   // When
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
 
   // Then
   EXPECT_EQ(project.executable_name, "cafe_register");
   EXPECT_THAT(project.plan.entry_points, Contains("cafe.run"));
   EXPECT_THAT(project.files,
-              Contains(Field(&Lisplec::EmbeddedFile::key, "cafe/run.roo")));
+              Contains(Field(&Rooc::EmbeddedFile::key, "cafe/run.roo")));
   EXPECT_THAT(project.files,
-              Contains(Field(&Lisplec::EmbeddedFile::key, "recipe/book.roo")));
+              Contains(Field(&Rooc::EmbeddedFile::key, "recipe/book.roo")));
 }
 
-TEST(LisplecProject, collects_roo_source_files)
+TEST(RoocProject, collects_roo_source_files)
 {
   // Given
   const auto root =
-    std::filesystem::temp_directory_path() / "lisplec-project-roo-source-test";
+    std::filesystem::temp_directory_path() / "rooc-project-roo-source-test";
   std::filesystem::remove_all(root);
   write_file(root / "package.edn",
              "{:name roo-source-app\n"
@@ -66,14 +66,14 @@ TEST(LisplecProject, collects_roo_source_files)
   auto options = options_for(root);
 
   // When
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
 
   // Then
-  EXPECT_THAT(project.files, Contains(Field(&Lisplec::EmbeddedFile::key,
+  EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key,
                                             "main/app.roo")));
 }
 
-TEST(LisplecProject, sanitizes_explicit_executable_name)
+TEST(RoocProject, sanitizes_explicit_executable_name)
 {
   // Given
   auto options =
@@ -81,24 +81,24 @@ TEST(LisplecProject, sanitizes_explicit_executable_name)
   options.executable_name = "123 cafe-register";
 
   // When
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
 
   // Then
   EXPECT_EQ(project.executable_name, "_123_cafe_register");
 }
 
-TEST(LisplecProject, prepares_package_with_native_dependency)
+TEST(RoocProject, prepares_package_with_native_dependency)
 {
   // Given
   auto options = options_for(repo_root() / "pkg/proof/test/assets/dynamic-smoke");
 
   // When
-  auto project = Lisplec::prepare_project(options);
+  auto project = Rooc::prepare_project(options);
 
   // Then
   EXPECT_THAT(project.plan.native_libraries,
               Contains(Field(&Roo::Package::NativeLibrary::name, "proof-native")));
   EXPECT_THAT(project.plan.native_namespaces, Contains("proof.syntax"));
-  EXPECT_THAT(project.files, Contains(Field(&Lisplec::EmbeddedFile::key,
+  EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key,
                                             "proof/core.roo")));
 }

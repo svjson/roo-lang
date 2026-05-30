@@ -1,10 +1,10 @@
-#ifndef LISPLEC_OPTIONS_H
-#define LISPLEC_OPTIONS_H
+#ifndef ROOC_OPTIONS_H
+#define ROOC_OPTIONS_H
 
 #include <filesystem>
 #include <string>
 
-namespace Lisplec
+namespace Rooc
 {
   struct Options
   {
@@ -18,6 +18,6 @@ namespace Lisplec
   void print_help();
   void print_version();
   Options parse_args(int argc, char** argv);
-} // namespace Lisplec
+} // namespace Rooc
 
 #endif

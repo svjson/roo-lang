@@ -4,9 +4,9 @@
 
 #include <lisple/exception.h>
 
-#include <lisplec/generator.h>
+#include <rooc/generator.h>
 
-namespace Lisplec
+namespace Rooc
 {
   namespace
   {
@@ -64,12 +64,12 @@ namespace Lisplec
 
     std::filesystem::path repo_source_root()
     {
-      return std::filesystem::path(LISPLE_SOURCE_ROOT).lexically_normal();
+      return std::filesystem::path(ROO_SOURCE_ROOT).lexically_normal();
     }
 
     std::filesystem::path repo_build_root()
     {
-      return std::filesystem::path(LISPLE_BUILD_ROOT).lexically_normal();
+      return std::filesystem::path(ROO_BUILD_ROOT).lexically_normal();
     }
 
     std::filesystem::path shared_library_path(const std::string& directory,
@@ -147,12 +147,12 @@ namespace Lisplec
     std::string generated_embedded_file_system_h()
     {
       std::ostringstream out;
-      out << "#ifndef LISPLEC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n"
-             "#define LISPLEC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n\n"
+      out << "#ifndef ROOC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n"
+             "#define ROOC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n\n"
              "#include <map>\n"
              "#include <string>\n\n"
              "#include <lisple/io/file_system.h>\n\n"
-             "namespace LisplecGenerated\n"
+             "namespace RoocGenerated\n"
              "{\n"
              "  class EmbeddedFileSystem : public Lisple::FileSystem\n"
              "  {\n"
@@ -161,7 +161,7 @@ namespace Lisplec
              "    explicit EmbeddedFileSystem(std::map<std::string, std::string> files);\n\n"
              "    const std::string read(const std::string& file_name) override;\n"
              "  };\n"
-             "} // namespace LisplecGenerated\n\n"
+             "} // namespace RoocGenerated\n\n"
              "#endif\n";
       return out.str();
     }
@@ -182,7 +182,7 @@ namespace Lisplec
            "    return std::filesystem::path(path).lexically_normal().generic_string();\n"
            "  }\n\n"
            "} // namespace\n\n"
-           "namespace LisplecGenerated\n"
+           "namespace RoocGenerated\n"
            "{\n"
            "  EmbeddedFileSystem::EmbeddedFileSystem(std::map<std::string, std::string> "
            "files)\n"
@@ -200,21 +200,21 @@ namespace Lisplec
            "    }\n"
            "    return it->second;\n"
            "  }\n"
-           "} // namespace LisplecGenerated\n";
+           "} // namespace RoocGenerated\n";
       return out.str();
     }
 
     std::string generated_embedded_sources_h()
     {
       std::ostringstream out;
-      out << "#ifndef LISPLEC_GENERATED_EMBEDDED_SOURCES_H\n"
-             "#define LISPLEC_GENERATED_EMBEDDED_SOURCES_H\n\n"
+      out << "#ifndef ROOC_GENERATED_EMBEDDED_SOURCES_H\n"
+             "#define ROOC_GENERATED_EMBEDDED_SOURCES_H\n\n"
              "#include <map>\n"
              "#include <string>\n"
              "#include <vector>\n\n"
              "#include <lisple/namespace_source.h>\n"
              "#include <roo-package/manifest.h>\n\n"
-             "namespace LisplecGenerated\n"
+             "namespace RoocGenerated\n"
              "{\n"
              "  std::map<std::string, std::string> embedded_files();\n"
              "  std::vector<Lisple::NamespaceRoot> embedded_namespace_roots();\n"
@@ -223,7 +223,7 @@ namespace Lisplec
              "  std::vector<Roo::Package::NativeLibrary> embedded_native_libraries();\n"
              "  std::string embedded_main_function();\n"
              "  Roo::Package::LoadPlan embedded_load_plan();\n"
-             "} // namespace LisplecGenerated\n\n"
+             "} // namespace RoocGenerated\n\n"
              "#endif\n";
       return out.str();
     }
@@ -233,7 +233,7 @@ namespace Lisplec
       std::ostringstream out;
       out << "#include \"embedded_sources.h\"\n\n"
              "#include <utility>\n\n"
-             "namespace LisplecGenerated\n"
+             "namespace RoocGenerated\n"
              "{\n"
              "  std::map<std::string, std::string> embedded_files()\n"
              "  {\n"
@@ -423,7 +423,7 @@ namespace Lisplec
       }
       out << "    return plan;\n"
              "  }\n"
-             "} // namespace LisplecGenerated\n";
+             "} // namespace RoocGenerated\n";
 
       return out.str();
     }
@@ -466,12 +466,12 @@ namespace Lisplec
            "  {\n"
            "    Lisple::DirRootFileSystem app_fs({std::filesystem::current_path().string(), "
            "\"/\"});\n"
-           "    LisplecGenerated::EmbeddedFileSystem namespace_fs(\n"
-           "      LisplecGenerated::embedded_files());\n"
+           "    RoocGenerated::EmbeddedFileSystem namespace_fs(\n"
+           "      RoocGenerated::embedded_files());\n"
            "    auto namespace_source = "
            "std::make_unique<Lisple::FileSystemNamespaceSource>(&namespace_fs);\n"
            "    Roo::Package::LoadPlan package_plan =\n"
-           "      LisplecGenerated::embedded_load_plan();\n"
+           "      RoocGenerated::embedded_load_plan();\n"
            "    Roo::Package::LoadedNativePackages native_packages;\n"
            "    Lisple::Runtime runtime(&app_fs, std::move(namespace_source));\n"
            "    runtime.set_call_stack_diagnostics(true);\n"
@@ -480,7 +480,7 @@ namespace Lisplec
            "package_plan);\n\n"
            "    load_namespaces(runtime,\n"
            "                    package_plan.autoloads,\n"
-           "                    \"lisple.compiled.autoload\",\n"
+           "                    \"roo.compiled.autoload\",\n"
            "                    \"<package-autoload>\");\n\n"
            "    if (package_plan.entry_points.empty() && package_plan.main.empty() &&\n"
            "        package_plan.run.empty())\n"
@@ -496,7 +496,7 @@ namespace Lisplec
            "    else\n"
            "    {\n"
            "      load_namespaces(runtime, package_plan.entry_points, "
-           "\"lisple.compiled.entry\", \"<package-entry>\");\n"
+           "\"roo.compiled.entry\", \"<package-entry>\");\n"
            "      Roo::Package::Application::invoke_main(runtime, package_plan.main, "
            "argc, "
            "argv);\n"
@@ -610,4 +610,4 @@ namespace Lisplec
     write_file(options.build_dir / "src/embedded_sources.cpp",
                generated_embedded_sources_cpp(project));
   }
-} // namespace Lisplec
+} // namespace Rooc

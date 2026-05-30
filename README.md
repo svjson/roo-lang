@@ -20,7 +20,7 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
 
 - bin/
   - **[lisple](bin/lisple/README.md)** - Command-line executable for running Lisple files and packages.
-  - **[lisplec](bin/lisplec/)** - Compiler executable for generating bundled Lisple application builds.
+  - **[rooc](bin/rooc/)** - Compiler executable for generating bundled Roo application builds.
 - lib/
   - **[liblisple](lib/liblisple/README.md)** - Core embeddable Lisple runtime.
   - **[roo-server](lib/libroo-server/README.md)** Small server layer for remote Roo message parsing and dispatch experiments.

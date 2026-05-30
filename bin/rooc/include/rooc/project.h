@@ -1,13 +1,13 @@
-#ifndef LISPLEC_PROJECT_H
-#define LISPLEC_PROJECT_H
+#ifndef ROOC_PROJECT_H
+#define ROOC_PROJECT_H
 
 #include <string>
 #include <vector>
 
 #include <roo-package/manifest.h>
-#include <lisplec/options.h>
+#include <rooc/options.h>
 
-namespace Lisplec
+namespace Rooc
 {
   struct EmbeddedFile
   {
@@ -23,6 +23,6 @@ namespace Lisplec
   };
 
   GeneratedProject prepare_project(const Options& options);
-} // namespace Lisplec
+} // namespace Rooc
 
 #endif

@@ -33,39 +33,34 @@ add_executable(roo_cli
   bin/lisple/main.cpp
 )
 
-set(lisplec_SOURCES
-  bin/lisplec/src/builder.cpp
-  bin/lisplec/src/generator.cpp
-  bin/lisplec/src/options.cpp
-  bin/lisplec/src/project.cpp
+set(rooc_SOURCES
+  bin/rooc/src/builder.cpp
+  bin/rooc/src/generator.cpp
+  bin/rooc/src/options.cpp
+  bin/rooc/src/project.cpp
 )
 
-add_library(lisplec_objects OBJECT ${lisplec_SOURCES})
+add_library(rooc_objects OBJECT ${rooc_SOURCES})
 
-target_include_directories(lisplec_objects
+target_include_directories(rooc_objects
   PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/bin/lisplec/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/bin/rooc/include
 )
-target_link_libraries(lisplec_objects
+target_link_libraries(rooc_objects
   PUBLIC
     Lisple::lisple_shared
     Roo::package_shared
 )
-target_compile_definitions(lisplec_objects
+target_compile_definitions(rooc_objects
   PUBLIC
-    LISPLE_VERSION="${PROJECT_VERSION}"
-    LISPLE_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
-    LISPLE_BUILD_ROOT="${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-add_executable(lisplec_cli
-  bin/lisplec/main.cpp
-  $<TARGET_OBJECTS:lisplec_objects>
+    ROO_VERSION="${PROJECT_VERSION}"
+    ROO_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+    ROO_BUILD_ROOT="${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 add_executable(rooc_cli
-  bin/lisplec/main.cpp
-  $<TARGET_OBJECTS:lisplec_objects>
+  bin/rooc/main.cpp
+  $<TARGET_OBJECTS:rooc_objects>
 )
 
 set_target_properties(lisple_cli PROPERTIES
@@ -77,13 +72,6 @@ set_target_properties(lisple_cli PROPERTIES
 
 set_target_properties(roo_cli PROPERTIES
   OUTPUT_NAME roo
-  BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
-  BUILD_RPATH_USE_LINK_PATH OFF
-  INSTALL_RPATH "\$ORIGIN/../lib"
-)
-
-set_target_properties(lisplec_cli PROPERTIES
-  OUTPUT_NAME lisplec
   BUILD_RPATH "$<TARGET_FILE_DIR:lisple_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "\$ORIGIN/../lib"
@@ -114,14 +102,9 @@ target_compile_definitions(roo_cli
   PRIVATE LISPLE_VERSION="${PROJECT_VERSION}"
 )
 
-target_link_libraries(lisplec_cli
-  PRIVATE
-    lisplec_objects
-)
-
 target_link_libraries(rooc_cli
   PRIVATE
-    lisplec_objects
+    rooc_objects
 )
 
 enable_testing()
@@ -182,38 +165,38 @@ set_tests_properties(
 )
 
 add_test(
-  NAME lisplec_cli_generates_cafe_register
-  COMMAND $<TARGET_FILE:lisplec_cli>
+  NAME rooc_cli_generates_cafe_register
+  COMMAND $<TARGET_FILE:rooc_cli>
           generate
           ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
           --build-dir
-          ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-generate
+          ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-generate
           --name
           cafe_register_compiled
 )
 add_test(
-  NAME lisplec_cli_builds_cafe_register
-  COMMAND $<TARGET_FILE:lisplec_cli>
+  NAME rooc_cli_builds_cafe_register
+  COMMAND $<TARGET_FILE:rooc_cli>
           build
           ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
           --build-dir
-          ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-cafe
+          ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe
           --name
           cafe_register_compiled
 )
 add_test(
-  NAME lisplec_cli_runs_compiled_cafe_register
+  NAME rooc_cli_runs_compiled_cafe_register
   COMMAND
-    ${CMAKE_CURRENT_BINARY_DIR}/lisplec-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}
+    ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}
 )
 set_tests_properties(
-  lisplec_cli_runs_compiled_cafe_register
+  rooc_cli_runs_compiled_cafe_register
   PROPERTIES
-    DEPENDS lisplec_cli_builds_cafe_register
+    DEPENDS rooc_cli_builds_cafe_register
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_subdirectory(bin/lisplec/test)
+add_subdirectory(bin/rooc/test)
 
 install(CODE [[
   set(lisple_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/lisple")
@@ -225,7 +208,7 @@ install(CODE [[
 
 install(DIRECTORY lib/liblisple/include/ DESTINATION include)
 
-install(TARGETS lisple_static lisple_shared lisple lisple_cli roo_cli lisplec_cli rooc_cli
+install(TARGETS lisple_static lisple_shared lisple lisple_cli roo_cli rooc_cli
   EXPORT lispleTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
