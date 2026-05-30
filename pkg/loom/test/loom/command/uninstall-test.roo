@@ -1,6 +1,6 @@
 (ns loom.command.uninstall-test
   (:require proof.core
-            [lisple.io :as io]
+            [roo.io :as io]
             [loom.core :as core]
             [loom.command.install :as install]
             [loom.command.uninstall :as uninstall]

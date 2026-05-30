@@ -15,12 +15,12 @@
 
 (deftest package-paths-use-local-repository-layout
   (given
-    "/tmp/lisple-pkg")
+    "/tmp/roo-pkg")
 
   (when [repo-root]
     {:target-dir (repository/package-target-dir repo-root "loom" "0.1.0")
      :manifest-path (repository/package-manifest-path repo-root "loom" "0.1.0")})
 
   (then [{:keys [target-dir manifest-path]}]
-    (is (= "/tmp/lisple-pkg/loom/0.1.0" target-dir))
-    (is (= "/tmp/lisple-pkg/loom/0.1.0/package.edn" manifest-path))))
+    (is (= "/tmp/roo-pkg/loom/0.1.0" target-dir))
+    (is (= "/tmp/roo-pkg/loom/0.1.0/package.edn" manifest-path))))

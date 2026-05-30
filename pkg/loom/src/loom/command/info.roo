@@ -1,5 +1,5 @@
 (ns loom.command.info
-  (:require [lisple.io :as io]
+  (:require [roo.io :as io]
             [loom.common.manifest :as manifest]
             [loom.common.repository :as repository]))
 

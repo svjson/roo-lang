@@ -1,5 +1,5 @@
 (ns loom.common.manifest
-  (:require [lisple.io :as io]
+  (:require [roo.io :as io]
             [loom.common.repository :as repository]))
 
 (defun manifest-path [package-dir]

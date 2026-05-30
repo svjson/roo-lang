@@ -1,6 +1,6 @@
 (ns loom.command.install-test
   (:require proof.core
-            [lisple.io :as io]
+            [roo.io :as io]
             [loom.command.install :as install]
             [loom.common.repository :as repository]
             [loom.test-support :as support]))
@@ -18,9 +18,9 @@
            install-loom-target-dir))
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0" "package.edn")))
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
-                                            "src/loom/core.lisple")))
+                                            "src/loom/core.roo")))
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
-                                            "src/loom/command/install.lisple")))))
+                                            "src/loom/command/install.roo")))))
 
 (deftest installs-native-libraries-when-declared
   (given

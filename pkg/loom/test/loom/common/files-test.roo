@@ -1,6 +1,6 @@
 (ns loom.common.files-test
   (:require proof.core
-            [lisple.io :as io]
+            [roo.io :as io]
             [loom.common.files :as files]
             [loom.test-support :as support]))
 

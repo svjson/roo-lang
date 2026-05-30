@@ -1,6 +1,6 @@
 {:name loom
  :version "0.1.0"
- :description "Lisple package manager."
+ :description "Roo package manager."
  :dependencies []
  :load-roots ["src"]
  :main loom.core/main}

@@ -16,7 +16,7 @@
   (then [installed-manifest]
     (is (= "loom" (str (:name installed-manifest))))
     (is (= "0.1.0" (:version installed-manifest)))
-    (is (= "Lisple package manager." (:description installed-manifest)))))
+    (is (= "Roo package manager." (:description installed-manifest)))))
 
 (deftest returns-nil-for-missing-package
   (given

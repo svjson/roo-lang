@@ -1,5 +1,5 @@
 (ns loom.command.install
-  (:require [lisple.io :as io]
+  (:require [roo.io :as io]
             [loom.command.uninstall :as uninstall]
             [loom.common.files :as files]
             [loom.common.manifest :as manifest]

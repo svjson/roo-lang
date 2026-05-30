@@ -1,5 +1,5 @@
 (ns loom.common.files
-  (:require [lisple.io :as io]))
+  (:require [roo.io :as io]))
 
 (defun copy-tree! [source target]
   (if (io/file? source)

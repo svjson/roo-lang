@@ -1,8 +1,8 @@
 # Loom
 
-Loom is a Lisple package manager.
+Loom is a Roo package manager.
 
-It manages packages in a shared local repository instead of creating project-local dependency trees. A project can depend on a package by name and version, and Lisple tooling can resolve that package from the local repository.
+It manages packages in a shared local repository instead of creating project-local dependency trees. A project can depend on a package by name and version, and Roo tooling can resolve that package from the local repository.
 
 Remote repositories are not implemented yet. For now, Loom installs packages from local source directories.
 
@@ -11,19 +11,19 @@ Remote repositories are not implemented yet. For now, Loom installs packages fro
 The default repository is:
 
 ```text
-~/.local/share/lisple/pkg
+~/.local/share/roo/pkg
 ```
 
 Packages are stored by name and version:
 
 ```text
-~/.local/share/lisple/pkg/<name>/<version>
+~/.local/share/roo/pkg/<name>/<version>
 ```
 
 For example:
 
 ```text
-~/.local/share/lisple/pkg/proof/0.1.0/package.edn
+~/.local/share/roo/pkg/proof/0.1.0/package.edn
 ```
 
 Projects can then refer to installed packages by version:
@@ -39,13 +39,13 @@ Use `--repo <dir>` with any Loom command to operate on a different repository ro
 From the repository root:
 
 ```sh
-./build/lisple pkg/loom <command>
+./build/roo pkg/loom <command>
 ```
 
 Example:
 
 ```sh
-./build/lisple pkg/loom list
+./build/roo pkg/loom list
 ```
 
 ## Installing the Loom Binary
@@ -56,7 +56,7 @@ From the repository root:
 make install-loom
 ```
 
-This builds Loom with `lisplec` and copies the executable to `$(PREFIX)/bin`.
+This builds Loom with `rooc` and copies the executable to `$(PREFIX)/bin`.
 
 The default `PREFIX` is:
 
