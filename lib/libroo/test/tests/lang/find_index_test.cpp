@@ -1,8 +1,9 @@
 #include <vector>
 
+#include <roo/adapter.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/adapter.h>
 
 using FindIndexFunction = RooTest::RuntimeTestFixture;
 

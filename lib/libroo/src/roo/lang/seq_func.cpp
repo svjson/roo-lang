@@ -1,7 +1,8 @@
 
+#include "roo/host/object.h"
+
 #include <algorithm>
 
-#include "roo/host/object.h"
 #include <roo/lang/seq_func.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/exec_node.h>

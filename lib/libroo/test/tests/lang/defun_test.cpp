@@ -1,8 +1,9 @@
 
+#include <roo/lang/func.h>
+
 #include "../runtime_fixture.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/lang/func.h>
 
 using DefunForm = RooTest::RuntimeTestFixture;
 TEST_F(DefunForm, define_no_arg_fun)

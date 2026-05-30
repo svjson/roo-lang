@@ -2,12 +2,13 @@
 #include <fstream>
 #include <string>
 
+#include <roo/io/dir_root_file_system.h>
+#include <roo/runtime.h>
+
 #include <gtest/gtest.h>
 #include <proof/native.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
-#include <roo/io/dir_root_file_system.h>
-#include <roo/runtime.h>
 
 namespace
 {

@@ -1,16 +1,18 @@
 
+#include "roo/runtime/value.h"
+
 #include <map>
 #include <string>
 
-#include "host/test_adapters/vehicle_native_adapters.h"
-#include "roo/runtime/value.h"
-#include "runtime_fixture.h"
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <roo/exception.h>
 #include <roo/io/file_system.h>
 #include <roo/io/file_system_namespace_source.h>
 #include <roo/namespace_source.h>
+
+#include "host/test_adapters/vehicle_native_adapters.h"
+#include "runtime_fixture.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using FileSystemNamespaceSource = RooTest::RuntimeTestFixture;
 using NamespaceLoading = RooTest::RuntimeTestFixture;

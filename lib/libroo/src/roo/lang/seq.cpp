@@ -1,9 +1,10 @@
 
+#include "roo/runtime/value.h"
+#include "roo/type.h"
+
 #include <algorithm>
 #include <cmath>
 
-#include "roo/runtime/value.h"
-#include "roo/type.h"
 #include <roo/lang/seq.h>
 #include <roo/runtime/seq.h>
 

@@ -1,11 +1,12 @@
 
+#include <roo/runtime.h>
+
 #include "benchmark.h"
 #include "fixtures/pixils_point.h"
 #include "fixtures/point_vec.h"
 #include "host/test_adapters/vectorgfx_native_adapters.h"
 #include "host/test_adapters/vectorgfx_native_cachedprops_adapters.h"
 #include <gtest/gtest.h>
-#include <roo/runtime.h>
 
 const std::string NS__POINT_SORT = R"(
   (ns test.point-sort

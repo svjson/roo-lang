@@ -1,6 +1,7 @@
 
 #include "roo/runtime/value.h"
 #include "roo/type.h"
+
 #include <roo/lang/predicate.h>
 #include <roo/runtime/seq.h>
 

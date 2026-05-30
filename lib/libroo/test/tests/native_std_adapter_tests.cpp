@@ -3,12 +3,13 @@
 #include <string>
 #include <vector>
 
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <roo/adapter.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
 #include <roo/runtime/value.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using NativeStdVectorAdapter_int = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_int_string = RooTest::RuntimeTestFixture;

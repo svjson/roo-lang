@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include <roo/exception.h>
+
 #include <rooc/generator.h>
 
 namespace Rooc

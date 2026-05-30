@@ -1,7 +1,8 @@
 
+#include <roo/runtime.h>
+
 #include "benchmark.h"
 #include <gtest/gtest.h>
-#include <roo/runtime.h>
 
 TEST(Benchmark_DoTimes, benchmark_dotimes_100_000_with_addition)
 {

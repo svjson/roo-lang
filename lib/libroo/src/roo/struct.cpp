@@ -1,9 +1,10 @@
 
 #include "roo/struct.h"
 
+#include "roo/runtime/dict.h"
+
 #include <map>
 
-#include "roo/runtime/dict.h"
 #include <roo/exception.h>
 #include <roo/form.h>
 #include <roo/type.h>

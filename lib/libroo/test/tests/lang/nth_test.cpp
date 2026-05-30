@@ -1,10 +1,11 @@
 
 #include <vector>
 
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <roo/adapter.h>
 #include <roo/exception.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using NthFunction = RooTest::RuntimeTestFixture;
 

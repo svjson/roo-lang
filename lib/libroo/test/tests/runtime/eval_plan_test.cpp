@@ -1,6 +1,7 @@
 
-#include <gtest/gtest.h>
 #include <roo/runtime/eval_plan.h>
+
+#include <gtest/gtest.h>
 
 TEST(EvalPattern, get_repeating)
 {

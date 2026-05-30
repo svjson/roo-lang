@@ -1,9 +1,10 @@
 #include <string>
 
+#include <roo/runtime/exec_node.h>
+
 #include "benchmark/benchmark.h"
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/runtime/exec_node.h>
 
 int main(int argc, char** argv)
 {

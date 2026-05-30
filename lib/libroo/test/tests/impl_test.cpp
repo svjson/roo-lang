@@ -1,9 +1,11 @@
 
 #include "roo/runtime/value.h"
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
+
 #include <roo/form.h>
 #include <roo/impl.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using str_val = RooTest::RuntimeTestFixture;
 using subst_sexp_lmnt = RooTest::RuntimeTestFixture;

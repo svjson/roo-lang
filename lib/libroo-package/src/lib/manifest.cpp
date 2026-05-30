@@ -9,12 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include <roo-package/manifest.h>
 #include <roo/exception.h>
 #include <roo/form.h>
 #include <roo/io/dir_root_file_system.h>
 #include <roo/reader.h>
 #include <roo/runtime.h>
+
+#include <roo-package/manifest.h>
 
 namespace Roo::Package
 {

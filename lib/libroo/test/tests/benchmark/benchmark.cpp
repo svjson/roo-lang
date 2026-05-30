@@ -1,15 +1,15 @@
 #include "benchmark.h"
 
+#include "roo/form.h"
+#include "roo/runtime/node.h"
+#include "roo/runtime/value.h"
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-#include "roo/form.h"
-#include "roo/runtime/node.h"
-#include "roo/runtime/value.h"
-#include <gtest/gtest.h>
 #include <roo/context.h>
 #include <roo/debug.h>
 #include <roo/exception.h>
@@ -17,6 +17,8 @@
 #include <roo/runtime.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/lower.h>
+
+#include <gtest/gtest.h>
 
 namespace RooTest
 {

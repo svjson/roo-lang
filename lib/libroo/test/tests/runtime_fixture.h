@@ -7,13 +7,14 @@
 #include <string>
 #include <vector>
 
-#include "fake_file_system.h"
-#include <gtest/gtest.h>
 #include <roo/context.h>
 #include <roo/io/dir_root_file_system.h>
 #include <roo/io/file_system.h>
 #include <roo/lang.h>
 #include <roo/runtime.h>
+
+#include "fake_file_system.h"
+#include <gtest/gtest.h>
 
 namespace RooTest
 {

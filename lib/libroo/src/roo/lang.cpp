@@ -1,11 +1,11 @@
 
 #include "roo/lang.h"
 
-#include <map>
-
 #include "roo/lang/num.h"
 #include "roo/runtime/value.h"
-#include <bits/std_abs.h>
+
+#include <map>
+
 #include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/exception.h>
@@ -30,6 +30,8 @@
 #include <roo/runtime/dict.h>
 #include <roo/scope.h>
 #include <roo/type.h>
+
+#include <bits/std_abs.h>
 
 namespace Roo
 {

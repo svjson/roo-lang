@@ -1,12 +1,13 @@
 
 #include "roo/runtime/dict.h"
 
-#include <algorithm>
-#include <iostream>
-
 #include "roo/exception.h"
 #include "roo/runtime/value.h"
 #include "roo/type.h"
+
+#include <algorithm>
+#include <iostream>
+
 #include <roo/host/object.h>
 #include <roo/runtime/seq.h>
 

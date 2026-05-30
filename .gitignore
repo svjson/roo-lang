@@ -6,9 +6,9 @@ Makefile
 !cmake/*.cmake
 **/CMakeCache.txt
 /compile_commands.json
-liblisple.a
-liblisple.so
-test/testlisple
+libroo.a
+libroo.so
+test/testroo
 test/cmake*.json
 pkg/*/native/*.dll
 pkg/*/native/*.dylib

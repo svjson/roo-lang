@@ -1,8 +1,9 @@
 
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/value.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using Dict_map_entry = RooTest::RuntimeTestFixture;
 using Dict_keys = RooTest::RuntimeTestFixture;

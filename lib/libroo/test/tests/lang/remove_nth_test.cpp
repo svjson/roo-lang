@@ -1,8 +1,9 @@
 
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <roo/exception.h>
 #include <roo/runtime/seq.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using RemoveNthFunction = RooTest::RuntimeTestFixture;
 /*

@@ -6,8 +6,6 @@
 #include <variant>
 #include <vector>
 
-#include <proof/native.h>
-#include <roo-package/native_abi.h>
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
@@ -18,6 +16,9 @@
 #include <roo/runtime/lower.h>
 #include <roo/runtime/node.h>
 #include <roo/runtime/value.h>
+
+#include <proof/native.h>
+#include <roo-package/native_abi.h>
 
 namespace Roo::Proof
 {

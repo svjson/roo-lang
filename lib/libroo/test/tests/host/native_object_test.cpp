@@ -3,11 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "host/test_adapters/optional_native_adapters.h"
-#include "host/test_adapters/product_native_adapters.h"
-#include "host/test_adapters/vehicle_impl.h"
-#include "host/test_adapters/vehicle_native_adapters.h"
-#include <gtest/gtest.h>
 #include <roo/context.h>
 #include <roo/form.h>
 #include <roo/host/accessor.h>
@@ -18,6 +13,12 @@
 #include <roo/runtime.h>
 #include <roo/runtime/dict.h>
 #include <roo/type.h>
+
+#include "host/test_adapters/optional_native_adapters.h"
+#include "host/test_adapters/product_native_adapters.h"
+#include "host/test_adapters/vehicle_impl.h"
+#include "host/test_adapters/vehicle_native_adapters.h"
+#include <gtest/gtest.h>
 
 namespace
 {

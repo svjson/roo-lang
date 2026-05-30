@@ -1,9 +1,10 @@
 
 #include <vector>
 
+#include <roo/adapter.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/adapter.h>
 
 using SortFunction = RooTest::RuntimeTestFixture;
 TEST_F(SortFunction, sort_int_vector_with_function_symbol)

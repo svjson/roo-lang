@@ -5,12 +5,13 @@
 #include <string>
 #include <vector>
 
-#include <roo-package/application.h>
-#include <roo-package/manifest.h>
-#include <roo-package/native_loader.h>
 #include <roo/exception.h>
 #include <roo/io/dir_root_file_system.h>
 #include <roo/runtime.h>
+
+#include <roo-package/application.h>
+#include <roo-package/manifest.h>
+#include <roo-package/native_loader.h>
 
 namespace
 {

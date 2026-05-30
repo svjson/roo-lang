@@ -1,13 +1,14 @@
 
 #include <memory>
 
+#include <roo/form.h>
+#include <roo/namespace.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/form.h>
-#include <roo/namespace.h>
 
 using Namespace = RooTest::RuntimeTestFixture;
 TEST_F(Namespace, store_and_lookup)

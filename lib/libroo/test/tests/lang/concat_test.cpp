@@ -1,8 +1,9 @@
 
+#include <roo/exception.h>
+
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/exception.h>
 
 using ConcatFunction = RooTest::RuntimeTestFixture;
 

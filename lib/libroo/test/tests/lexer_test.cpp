@@ -1,11 +1,12 @@
 
 #include <string>
 
+#include <roo/lexer.h>
+
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/lexer.h>
 
 Roo::Lexer lexer;
 

@@ -6,11 +6,12 @@
 #include <string>
 #include <vector>
 
-#include <roo-package/manifest.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/runtime.h>
 #include <roo/runtime/value.h>
+
+#include <roo-package/manifest.h>
 
 namespace Roo::Package::Application
 {

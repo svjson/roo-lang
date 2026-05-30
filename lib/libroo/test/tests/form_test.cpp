@@ -1,13 +1,14 @@
 
 #include <memory>
 
+#include <roo/exception.h>
+#include <roo/form.h>
+#include <roo/type.h>
+
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/exception.h>
-#include <roo/form.h>
-#include <roo/type.h>
 
 TEST(nil, equality)
 {

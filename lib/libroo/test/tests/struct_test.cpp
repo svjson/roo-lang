@@ -2,14 +2,15 @@
 #include <exception>
 #include <string>
 
+#include <roo/form.h>
+#include <roo/struct.h>
+#include <roo/type.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/form.h>
-#include <roo/struct.h>
-#include <roo/type.h>
 
 using MapStruct = RooTest::RuntimeTestFixture;
 bool __mapstruct_validate(Roo::MapStruct& map_struct, Roo::sptr_ast_node& map)

@@ -1,8 +1,9 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
 #include <roo/form.h>
+
+#include <gtest/gtest.h>
 
 TEST(Number, from_string)
 {

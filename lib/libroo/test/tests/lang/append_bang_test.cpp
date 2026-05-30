@@ -1,6 +1,7 @@
+#include <roo/exception.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/exception.h>
 
 using AppendBangFunction = RooTest::RuntimeTestFixture;
 

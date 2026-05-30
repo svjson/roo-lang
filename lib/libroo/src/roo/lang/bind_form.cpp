@@ -1,8 +1,9 @@
 
-#include <utility>
-
 #include "roo/runtime/lower.h"
 #include "roo/runtime/value.h"
+
+#include <utility>
+
 #include <roo/bind.h>
 #include <roo/exception.h>
 #include <roo/lang/bind_form.h>

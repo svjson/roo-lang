@@ -1,8 +1,9 @@
 
+#include <roo/exception.h>
+
 #include "gmock/gmock.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/exception.h>
 
 using AssocInFunction = RooTest::RuntimeTestFixture;
 using namespace ::testing;

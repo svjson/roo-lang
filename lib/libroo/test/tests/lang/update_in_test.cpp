@@ -1,7 +1,8 @@
+#include <roo/exception.h>
+
 #include "gmock/gmock.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/exception.h>
 
 using UpdateInFunction = RooTest::RuntimeTestFixture;
 using namespace ::testing;

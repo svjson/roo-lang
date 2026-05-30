@@ -4,11 +4,12 @@
 #include <utility>
 #include <vector>
 
-#include <roo-package/native_abi.h>
-#include <roo-package/native_loader.h>
 #include <roo/exception.h>
 #include <roo/namespace.h>
 #include <roo/runtime.h>
+
+#include <roo-package/native_abi.h>
+#include <roo-package/native_loader.h>
 
 #if defined(_WIN32)
 #include <windows.h>

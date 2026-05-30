@@ -3,15 +3,16 @@
 #include <string>
 #include <vector>
 
+#include <roo/form.h>
+#include <roo/lexer.h>
+#include <roo/parser.h>
+#include <roo/type.h>
+
 #include <ext/alloc_traits.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/form.h>
-#include <roo/lexer.h>
-#include <roo/parser.h>
-#include <roo/type.h>
 
 using namespace ::testing;
 using namespace Roo;

@@ -1,6 +1,7 @@
 
-#include <gtest/gtest.h>
 #include <roo/runtime/value.h>
+
+#include <gtest/gtest.h>
 
 TEST(Value_keyword, equals)
 {

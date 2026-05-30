@@ -1,7 +1,8 @@
 
+#include <roo/lang/base.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/lang/base.h>
 
 using DefForm = RooTest::RuntimeTestFixture;
 TEST_F(DefForm, exec_def__string)

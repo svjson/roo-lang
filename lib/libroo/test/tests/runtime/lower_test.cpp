@@ -4,13 +4,15 @@
 #include "roo/reader.h"
 #include "roo/runtime/node.h"
 #include "roo/type.h"
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
+
 #include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/form.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/lower.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using LowerTest = RooTest::RuntimeTestFixture;
 TEST_F(LowerTest, number__literal_node)

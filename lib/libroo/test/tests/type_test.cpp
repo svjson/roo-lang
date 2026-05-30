@@ -1,14 +1,15 @@
 
+#include <roo/context.h>
+#include <roo/form.h>
+#include <roo/runtime.h>
+#include <roo/type.h>
+
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/context.h>
-#include <roo/form.h>
-#include <roo/runtime.h>
-#include <roo/type.h>
 
 using TypeRef = RooTest::RuntimeTestFixture;
 using MultiRef = RooTest::RuntimeTestFixture;

@@ -7,14 +7,15 @@
 #include <string>
 #include <vector>
 
-#include <lookup/native.h>
-#include <roo-package/native_abi.h>
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/reader.h>
 #include <roo/runtime/value.h>
 #include <roo/source.h>
+
+#include <lookup/native.h>
+#include <roo-package/native_abi.h>
 
 namespace Roo::Lookup
 {

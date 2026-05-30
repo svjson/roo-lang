@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <roo/exception.h>
+
 #include <rooc/options.h>
 
 namespace Rooc

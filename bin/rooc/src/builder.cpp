@@ -3,6 +3,7 @@
 #include <string>
 
 #include <roo/exception.h>
+
 #include <rooc/builder.h>
 
 namespace Rooc

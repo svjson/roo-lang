@@ -4,11 +4,12 @@
 #include <string>
 #include <vector>
 
-#include "benchmark.h"
-#include <gtest/gtest.h>
 #include <roo/adapter.h>
 #include <roo/namespace.h>
 #include <roo/runtime/value.h>
+
+#include "benchmark.h"
+#include <gtest/gtest.h>
 
 namespace
 {

@@ -1,10 +1,12 @@
 
 #include "roo/form.h"
+
+#include <roo/exception.h>
+#include <roo/runtime/dict.h>
+
 #include "runtime_fixture.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <roo/exception.h>
-#include <roo/runtime/dict.h>
 
 using AssocFunction = RooTest::RuntimeTestFixture;
 using namespace ::testing;

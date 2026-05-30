@@ -1,11 +1,12 @@
 #ifndef ROOTEST__HOST__VEHICLE_NATIVE_ADAPTERS_H
 #define ROOTEST__HOST__VEHICLE_NATIVE_ADAPTERS_H
 
-#include "vehicle_impl.h"
 #include <roo/adapter.h>
 #include <roo/exec.h>
 #include <roo/host/object.h>
 #include <roo/runtime/value.h>
+
+#include "vehicle_impl.h"
 
 namespace RooTest
 {

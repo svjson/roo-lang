@@ -1,6 +1,7 @@
-#include "host/test_adapters/product_native_adapters.h"
 #include "roo/form.h"
 #include "roo/runtime/value.h"
+
+#include "host/test_adapters/product_native_adapters.h"
 #include "test_adapters/vehicle_native_adapters.h"
 #include <gtest/gtest.h>
 

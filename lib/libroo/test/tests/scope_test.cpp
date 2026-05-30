@@ -1,12 +1,13 @@
 
 #include <memory>
 
+#include <roo/form.h>
+#include <roo/scope.h>
+
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
 #include <gtest/gtest_pred_impl.h>
-#include <roo/form.h>
-#include <roo/scope.h>
 
 using namespace Roo;
 using namespace Roo::AST;

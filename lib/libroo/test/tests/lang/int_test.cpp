@@ -1,7 +1,8 @@
 
+#include <roo/exception.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/exception.h>
 
 using IntFunction = RooTest::RuntimeTestFixture;
 TEST_F(IntFunction, char_to_int)

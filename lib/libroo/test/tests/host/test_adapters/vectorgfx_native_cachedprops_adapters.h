@@ -1,12 +1,13 @@
 #ifndef ROOTEST__HOST__VECTORGFX_NATIVE_CACHED_ADAPTERS_H
 #define ROOTEST__HOST__VECTORGFX_NATIVE_CACHED_ADAPTERS_H
 
-#include "vectorgfx_impl.h"
 #include <roo/exec.h>
 #include <roo/host/object.h>
 #include <roo/namespace.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
+
+#include "vectorgfx_impl.h"
 
 namespace RooTest::CachedNative
 {

@@ -1,10 +1,11 @@
 
-#include <variant>
-
 #include "roo/runtime/lower.h"
 #include "roo/runtime/node.h"
 #include "roo/runtime/value.h"
 #include "roo/type.h"
+
+#include <variant>
+
 #include <roo/lang/rewrite.h>
 #include <roo/runtime/exec_node.h>
 

@@ -1,9 +1,10 @@
 
 #include <vector>
 
+#include <roo/adapter.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/adapter.h>
 
 using ApplyFunction = RooTest::RuntimeTestFixture;
 TEST_F(ApplyFunction, apply_concat)

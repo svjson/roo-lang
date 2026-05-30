@@ -1,15 +1,9 @@
 
+#include "roo/runtime/value.h"
+
 #include <memory>
 #include <stdexcept>
 
-#include "gmock/gmock.h"
-#include "roo/runtime/value.h"
-#include "runtime_fixture.h"
-#include <gtest/gtest-matchers.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/form.h>
@@ -20,6 +14,14 @@
 #include <roo/lang/seq_func.h>
 #include <roo/runtime.h>
 #include <roo/type.h>
+
+#include "gmock/gmock.h"
+#include "runtime_fixture.h"
+#include <gtest/gtest-matchers.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using Executable = RooTest::RuntimeTestFixture;
 using UserFunction = RooTest::RuntimeTestFixture;

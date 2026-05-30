@@ -7,10 +7,11 @@
 #include <string>
 #include <utility>
 
-#include "roo-server/server.h"
 #include <roo/form.h>
 #include <roo/namespace.h>
 #include <roo/runtime.h>
+
+#include "roo-server/server.h"
 
 namespace Roo::Server
 {

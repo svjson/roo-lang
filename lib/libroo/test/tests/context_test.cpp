@@ -2,17 +2,18 @@
 #include <exception>
 #include <memory>
 
-#include "runtime_fixture.h"
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
 #include <roo/context.h>
 #include <roo/form.h>
 #include <roo/namespace.h>
 #include <roo/runtime.h>
 #include <roo/scope.h>
 #include <roo/type.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using Context = RooTest::RuntimeTestFixture;
 TEST_F(Context, lang_lookup)

@@ -1,11 +1,12 @@
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <roo/context.h>
 #include <roo/exec.h>
 #include <roo/form.h>
 #include <roo/lang.h>
 #include <roo/namespace.h>
 #include <roo/type.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using ReduceKeyValueFunction = RooTest::RuntimeTestFixture;
 /*

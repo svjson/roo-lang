@@ -1,7 +1,8 @@
 
+#include <roo/runtime/seq.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/runtime/seq.h>
 
 using RangeFunction = RooTest::RuntimeTestFixture;
 TEST_F(RangeFunction, rising_numbers)

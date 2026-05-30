@@ -2,11 +2,12 @@
 #include <string>
 #include <vector>
 
+#include <roo/adapter.h>
+#include <roo/runtime/value.h>
+
 #include "host/test_adapters/vectorgfx_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/adapter.h>
-#include <roo/runtime/value.h>
 
 using Semantic_StructuralEquality = RooTest::RuntimeTestFixture;
 

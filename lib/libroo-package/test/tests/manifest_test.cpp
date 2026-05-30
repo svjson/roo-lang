@@ -3,12 +3,13 @@
 #include <map>
 #include <string>
 
-#include <gtest/gtest.h>
-#include <roo-package/manifest.h>
-#include <roo-package/native_loader.h>
 #include <roo/exception.h>
 #include <roo/io/file_system.h>
 #include <roo/runtime.h>
+
+#include <gtest/gtest.h>
+#include <roo-package/manifest.h>
+#include <roo-package/native_loader.h>
 
 namespace
 {

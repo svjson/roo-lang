@@ -1,11 +1,12 @@
 #ifndef ROOTEST__HOST__PRODUCT_NATIVE_ADAPTERS_H
 #define ROOTEST__HOST__PRODUCT_NATIVE_ADAPTERS_H
 
-#include "product_impl.h"
 #include <roo/exec.h>
 #include <roo/host/object.h>
 #include <roo/macro_support.h>
 #include <roo/runtime/value.h>
+
+#include "product_impl.h"
 
 namespace RooTest::Native
 {

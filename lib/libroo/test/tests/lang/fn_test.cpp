@@ -1,7 +1,8 @@
 
+#include <roo/exec.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/exec.h>
 
 using FnForm = RooTest::RuntimeTestFixture;
 TEST_F(FnForm, define_and_exec_lambda)

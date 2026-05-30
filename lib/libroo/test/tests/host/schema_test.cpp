@@ -1,13 +1,15 @@
 
+#include "roo/runtime/value.h"
+
+#include <roo/context.h>
+#include <roo/host/schema.h>
+
 #include "host/test_adapters/vectorgfx_impl.h"
 #include "host/test_adapters/vectorgfx_native_adapters.h"
-#include "roo/runtime/value.h"
 #include "runtime_fixture.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
-#include <roo/context.h>
-#include <roo/host/schema.h>
 
 using MapSchema = RooTest::RuntimeTestFixture;
 using MapSchema_Inspector = RooTest::RuntimeTestFixture;

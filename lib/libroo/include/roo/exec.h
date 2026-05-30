@@ -2,13 +2,14 @@
 #ifndef __SEXP_EXEC_H_
 #define __SEXP_EXEC_H_
 
+#include "roo/runtime/lower.h"
+
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "roo/runtime/lower.h"
 #include <roo/bind.h>
 #include <roo/form.h>
 #include <roo/macro_support.h>

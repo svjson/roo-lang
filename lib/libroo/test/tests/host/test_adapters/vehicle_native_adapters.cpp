@@ -2,6 +2,7 @@
 #include "vehicle_native_adapters.h"
 
 #include "roo/host/schema.h"
+
 #include <roo/host/accessor.h>
 #include <roo/runtime/dict.h>
 

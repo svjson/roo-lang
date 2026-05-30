@@ -1,10 +1,11 @@
 
 #include <vector>
 
-#include "runtime_fixture.h"
-#include <gtest/gtest.h>
 #include <roo/adapter.h>
 #include <roo/runtime/seq.h>
+
+#include "runtime_fixture.h"
+#include <gtest/gtest.h>
 
 using FilterFunction = RooTest::RuntimeTestFixture;
 /*

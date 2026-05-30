@@ -2,12 +2,6 @@
 #include <memory>
 #include <string>
 
-#include "runtime_fixture.h"
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest-message.h>
-#include <gtest/gtest-test-part.h>
-#include <gtest/gtest.h>
-#include <gtest/gtest_pred_impl.h>
 #include <roo/context.h>
 #include <roo/form.h>
 #include <roo/io/dir_root_file_system.h>
@@ -15,6 +9,13 @@
 #include <roo/runtime.h>
 #include <roo/runtime/seq.h>
 #include <roo/type.h>
+
+#include "runtime_fixture.h"
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
 
 using Runtime = RooTest::RuntimeTestFixture;
 const std::string RUNTIME_TEST_DIR = "test_resources/script/runtime_test";

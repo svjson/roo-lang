@@ -1,7 +1,8 @@
 #include <string>
 
-#include <gtest/gtest.h>
 #include <roo/exception.h>
+
+#include <gtest/gtest.h>
 #include <rooc/options.h>
 
 namespace

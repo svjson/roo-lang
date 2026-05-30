@@ -1,7 +1,8 @@
 
+#include <roo/runtime/value.h>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
-#include <roo/runtime/value.h>
 
 using Semantic_NumberTypes = RooTest::RuntimeTestFixture;
 /*

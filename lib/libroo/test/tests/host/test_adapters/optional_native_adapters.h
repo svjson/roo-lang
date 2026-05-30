@@ -1,9 +1,10 @@
 #ifndef ROOTEST__HOST__OPTIONAL_NATIVE_ADAPTERS_H
 #define ROOTEST__HOST__OPTIONAL_NATIVE_ADAPTERS_H
 
-#include "optional_impl.h"
 #include <roo/host/object.h>
 #include <roo/runtime/value.h>
+
+#include "optional_impl.h"
 
 namespace RooTest::Native
 {
