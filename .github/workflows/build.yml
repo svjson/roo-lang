@@ -1,0 +1,234 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-libroo:
+    name: Build libroo
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DROO_SERVER_BUILD_TESTS=OFF
+
+      - name: Build core runtime
+        run: cmake --build build --parallel --target roo_static roo_shared
+
+      - name: Pack core build tree
+        run: tar -czf build-libroo.tar.gz build
+
+      - name: Upload core build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libroo
+          path: build-libroo.tar.gz
+          retention-days: 3
+
+  build-libroo-package:
+    name: Build libroo-package
+    runs-on: ubuntu-24.04
+    needs: build-libroo
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download core build tree
+        uses: actions/download-artifact@v4
+        with:
+          name: build-libroo
+          path: artifacts
+
+      - name: Unpack core build tree
+        run: tar -xzf artifacts/build-libroo.tar.gz
+
+      - name: Build package library
+        run: >
+          cmake --build build --parallel
+          --target roo-package_static roo-package_shared
+
+      - name: Pack package build tree
+        run: tar -czf build-libroo-package.tar.gz build
+
+      - name: Upload package build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libroo-package
+          path: build-libroo-package.tar.gz
+          retention-days: 3
+
+  build-libroo-server:
+    name: Build libroo-server
+    runs-on: ubuntu-24.04
+    needs: build-libroo
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download core build tree
+        uses: actions/download-artifact@v4
+        with:
+          name: build-libroo
+          path: artifacts
+
+      - name: Unpack core build tree
+        run: tar -xzf artifacts/build-libroo.tar.gz
+
+      - name: Build server library and executable
+        run: >
+          cmake --build build --parallel
+          --target roo-server_static roo-server_shared roo-server-exec
+
+      - name: Pack server build tree
+        run: tar -czf build-libroo-server.tar.gz build
+
+      - name: Upload server build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libroo-server
+          path: build-libroo-server.tar.gz
+          retention-days: 3
+
+  build-tools:
+    name: Build roo and rooc
+    runs-on: ubuntu-24.04
+    needs: build-libroo-package
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download package build tree
+        uses: actions/download-artifact@v4
+        with:
+          name: build-libroo-package
+          path: artifacts
+
+      - name: Unpack package build tree
+        run: tar -xzf artifacts/build-libroo-package.tar.gz
+
+      - name: Build command line tools
+        run: cmake --build build --parallel --target roo_cli rooc_cli
+
+      - name: Pack tools build tree
+        run: tar -czf build-tools.tar.gz build
+
+      - name: Upload tools build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-tools
+          path: build-tools.tar.gz
+          retention-days: 3
+
+  build-native-packages:
+    name: Build native packages
+    runs-on: ubuntu-24.04
+    needs: build-libroo-package
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download package build tree
+        uses: actions/download-artifact@v4
+        with:
+          name: build-libroo-package
+          path: artifacts
+
+      - name: Unpack package build tree
+        run: tar -xzf artifacts/build-libroo-package.tar.gz
+
+      - name: Build native package libraries
+        run: >
+          cmake --build build --parallel
+          --target proof_native lookup_native proofread_native
+
+      - name: Pack native package build tree
+        run: tar -czf build-native-packages.tar.gz build
+
+      - name: Upload native package build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-native-packages
+          path: build-native-packages.tar.gz
+          retention-days: 3
+
+      - name: Pack native package source artifacts
+        run: >
+          tar -czf source-native-package-libraries.tar.gz
+          pkg/proof/native/*.so
+          pkg/lookup/native/*.so
+          pkg/proofread/native/*.so
+
+      - name: Upload native package source artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-native-package-libraries
+          path: source-native-package-libraries.tar.gz
+          retention-days: 3
+
+  build-package-binaries:
+    name: Build package binaries
+    runs-on: ubuntu-24.04
+    needs:
+      - build-tools
+      - build-native-packages
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v4
+        with:
+          name: build-tools
+          path: artifacts
+
+      - name: Download native package source artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: source-native-package-libraries
+          path: artifacts
+
+      - name: Unpack tools and native package artifacts
+        run: |
+          tar -xzf artifacts/build-tools.tar.gz
+          tar -xzf artifacts/source-native-package-libraries.tar.gz
+
+      - name: Build Loom binary
+        run: ./build/rooc build "$PWD/pkg/loom" --build-dir "$PWD/build/loom-build" --name loom
+
+      - name: Build Lookup binary
+        run: ./build/rooc build "$PWD/pkg/lookup" --build-dir "$PWD/build/lookup-build" --name lookup
+
+      - name: Build Proof binary
+        run: ./build/rooc build "$PWD/pkg/proof" --build-dir "$PWD/build/proof-build" --name proof
+
+      - name: Build Proofread binary
+        run: ./build/rooc build "$PWD/pkg/proofread" --build-dir "$PWD/build/proofread-build" --name proofread
+
+      - name: Pack package binary build tree
+        run: tar -czf build-package-binaries.tar.gz build
+
+      - name: Upload package binary build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-package-binaries
+          path: build-package-binaries.tar.gz
+          retention-days: 3
