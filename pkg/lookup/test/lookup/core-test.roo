@@ -100,3 +100,34 @@
     (is (= 1 (:column ns-source)))
     (is (= 3 (:line def-source)))
     (is (= 5 (:line defun-source)))))
+
+(deftest resolves-thing-at-local-let-binding
+  (let [source "(ns sample.core)\n(let [command-value 1]\n  command-value)\n"
+        result (core/thing-at "." "src/sample.roo" "3" "3" source)
+        thing (:thing result)
+        resolution (:resolution thing)
+        source-location (:source resolution)]
+    (is (= :ok (:status result)))
+    (is (= "command-value" (:text thing)))
+    (is (= :symbol (:kind thing)))
+    (is (= :local-reference (:role thing)))
+    (is (= :local (:kind resolution)))
+    (is (= "command-value" (:name resolution)))
+    (is (= "local binding" (:signature resolution)))
+    (is (= "src/sample.roo" (:path source-location)))
+    (is (= 2 (:line source-location)))
+    (is (= 7 (:column source-location)))))
+
+(deftest resolves-thing-at-function-parameter
+  (let [source "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n"
+        result (core/thing-at "." "src/sample.roo" "3" "3" source)
+        thing (:thing result)
+        resolution (:resolution thing)
+        source-location (:source resolution)]
+    (is (= :ok (:status result)))
+    (is (= "command-value" (:text thing)))
+    (is (= :local-reference (:role thing)))
+    (is (= "command-value" (:name resolution)))
+    (is (= "parameter" (:signature resolution)))
+    (is (= 2 (:line source-location)))
+    (is (= 16 (:column source-location)))))

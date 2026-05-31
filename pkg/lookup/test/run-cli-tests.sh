@@ -12,7 +12,8 @@ LOOKUP_PACKAGE="$ROOT_DIR/pkg/lookup"
 
 test "$("$ROO" "$LOOKUP_PACKAGE" --help)" = "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
-       lookup index [--out <file>] <package-dir>"
+       lookup index [--out <file>] <package-dir>
+       lookup thing-at <package-dir> <file> <line> <column>"
 
 test "$("$ROO" "$LOOKUP_PACKAGE" --version)" = "lookup 0.1.0"
 
@@ -22,6 +23,16 @@ case "$INDEX_OUTPUT" in
   *)
     echo "unexpected lookup index output:" >&2
     echo "$INDEX_OUTPUT" >&2
+    exit 1
+    ;;
+esac
+
+THING_AT_OUTPUT=$(printf '(ns sample.core)\n(let [command-value 1]\n  command-value)\n' | "$ROO" "$LOOKUP_PACKAGE" thing-at . src/sample.roo 3 3)
+case "$THING_AT_OUTPUT" in
+  *":status :ok"*":text \"command-value\""*":role :local-reference"*":signature \"local binding\""*) ;;
+  *)
+    echo "unexpected lookup thing-at output:" >&2
+    echo "$THING_AT_OUTPUT" >&2
     exit 1
     ;;
 esac

@@ -28,6 +28,14 @@ From the repository root:
 ./build/roo pkg/lookup index pkg/lookup
 ```
 
+Ask for position-aware information about a buffer by passing the current
+source on standard input:
+
+```sh
+printf '(ns sample.core)\n(let [command-value 1]\n  command-value)\n' \
+  | ./build/roo pkg/lookup thing-at . src/sample.roo 3 3
+```
+
 Build a standalone `lookup` command with:
 
 ```sh
@@ -42,16 +50,15 @@ Then run:
 
 ## Current Status
 
-`lookup` currently provides the package and command skeleton plus the first
-native reader bridge:
+`lookup` currently provides a symbol index and a position-aware `thing-at`
+query for editor tooling.  The native reader bridge is:
 
 ```roo
 (lookup.native/read-file-forms! path)
 ```
 
 The bridge reads one Roo source file and returns top-level forms as ordinary
-Roo data with source location metadata. The symbol-index analyzer is not
-implemented yet.
+Roo data with source location metadata.
 
 ## License
 

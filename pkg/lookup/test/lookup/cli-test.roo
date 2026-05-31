@@ -4,13 +4,15 @@
 
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
-          "       lookup index [--out <file>] <package-dir>"]
+          "       lookup index [--out <file>] <package-dir>"
+          "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
 (deftest reports-help-lines
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
-          "       lookup index [--out <file>] <package-dir>"]
+          "       lookup index [--out <file>] <package-dir>"
+          "       lookup thing-at <package-dir> <file> <line> <column>"]
          (cli/help-lines))))
 
 (deftest reports-version-text
@@ -26,6 +28,9 @@
 
 (deftest resolves-index-command
   (is (= :index (cli/command ["index" "pkg/lookup"]))))
+
+(deftest resolves-thing-at-command
+  (is (= :thing-at (cli/command ["thing-at" "pkg/lookup" "src/sample.roo" "1" "1"]))))
 
 (deftest resolves-unknown-commands-to-usage
   (is (= :usage (cli/command ["wat"]))))

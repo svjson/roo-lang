@@ -237,3 +237,9 @@
                 (map sources
                      (fn [source]
                        (source-symbols package-name source))))}))
+
+(defun read-stdin! []
+  (native/read-stdin!))
+
+(defun thing-at [package-dir file line column source]
+  (native/thing-at! package-dir file line column source))

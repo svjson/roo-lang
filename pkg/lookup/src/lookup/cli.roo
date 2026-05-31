@@ -3,7 +3,8 @@
 
 (def usage-lines
   ["Usage: lookup [--help|--version]"
-   "       lookup index [--out <file>] <package-dir>"])
+   "       lookup index [--out <file>] <package-dir>"
+   "       lookup thing-at <package-dir> <file> <line> <column>"])
 
 (defun help-lines []
   (concat ["lookup: build Roo symbol index artifacts"]
@@ -26,6 +27,9 @@
       (= first-arg "index")
       :index
 
+      (= first-arg "thing-at")
+      :thing-at
+
       true
       :usage)))
 
@@ -47,6 +51,22 @@
       (print-usage!)
       (prn (lookup/symbol-index package-dir)))))
 
+(defun print-thing-at! [args]
+  (let [package-dir (nth args 1)
+        file (nth args 2)
+        line (nth args 3)
+        column (nth args 4)]
+    (if (or (nil? package-dir)
+            (nil? file)
+            (nil? line)
+            (nil? column))
+      (print-usage!)
+      (prn (lookup/thing-at package-dir
+                            file
+                            line
+                            column
+                            (lookup/read-stdin!))))))
+
 (defun main [args]
   (let [command-name (command args)]
     (cond
@@ -59,6 +79,9 @@
 
       (= command-name :index)
       (print-index! args)
+
+      (= command-name :thing-at)
+      (print-thing-at! args)
 
       true
       (print-usage!))))
