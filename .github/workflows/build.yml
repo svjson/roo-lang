@@ -20,14 +20,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Configure
-        run: >
-          cmake -S . -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DROO_SERVER_BUILD_TESTS=OFF
-
       - name: Build core runtime
-        run: cmake --build build --parallel --target roo_static roo_shared
+        run: make -f Makefile.ci ci-build-libroo
 
       - name: Pack core build tree
         run: tar -czf build-libroo.tar.gz build
@@ -49,7 +43,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download core build tree
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-libroo
           path: artifacts
@@ -58,9 +52,7 @@ jobs:
         run: tar -xzf artifacts/build-libroo.tar.gz
 
       - name: Build package library
-        run: >
-          cmake --build build --parallel
-          --target roo-package_static roo-package_shared
+        run: make -f Makefile.ci ci-build-libroo-package
 
       - name: Pack package build tree
         run: tar -czf build-libroo-package.tar.gz build
@@ -82,7 +74,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download core build tree
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-libroo
           path: artifacts
@@ -91,9 +83,7 @@ jobs:
         run: tar -xzf artifacts/build-libroo.tar.gz
 
       - name: Build server library and executable
-        run: >
-          cmake --build build --parallel
-          --target roo-server_static roo-server_shared roo-server-exec
+        run: make -f Makefile.ci ci-build-libroo-server
 
       - name: Pack server build tree
         run: tar -czf build-libroo-server.tar.gz build
@@ -115,7 +105,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download package build tree
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-libroo-package
           path: artifacts
@@ -124,7 +114,7 @@ jobs:
         run: tar -xzf artifacts/build-libroo-package.tar.gz
 
       - name: Build command line tools
-        run: cmake --build build --parallel --target roo_cli rooc_cli
+        run: make -f Makefile.ci ci-build-tools
 
       - name: Pack tools build tree
         run: tar -czf build-tools.tar.gz build
@@ -146,7 +136,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download package build tree
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-libroo-package
           path: artifacts
@@ -155,9 +145,7 @@ jobs:
         run: tar -xzf artifacts/build-libroo-package.tar.gz
 
       - name: Build native package libraries
-        run: >
-          cmake --build build --parallel
-          --target proof_native lookup_native proofread_native
+        run: make -f Makefile.ci ci-build-native-packages
 
       - name: Pack native package build tree
         run: tar -czf build-native-packages.tar.gz build
@@ -195,13 +183,13 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download tools build tree
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-tools
           path: artifacts
 
       - name: Download native package source artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: source-native-package-libraries
           path: artifacts
@@ -212,16 +200,16 @@ jobs:
           tar -xzf artifacts/source-native-package-libraries.tar.gz
 
       - name: Build Loom binary
-        run: ./build/rooc build "$PWD/pkg/loom" --build-dir "$PWD/build/loom-build" --name loom
+        run: make -f Makefile.ci ci-build-loom
 
       - name: Build Lookup binary
-        run: ./build/rooc build "$PWD/pkg/lookup" --build-dir "$PWD/build/lookup-build" --name lookup
+        run: make -f Makefile.ci ci-build-lookup
 
       - name: Build Proof binary
-        run: ./build/rooc build "$PWD/pkg/proof" --build-dir "$PWD/build/proof-build" --name proof
+        run: make -f Makefile.ci ci-build-proof
 
       - name: Build Proofread binary
-        run: ./build/rooc build "$PWD/pkg/proofread" --build-dir "$PWD/build/proofread-build" --name proofread
+        run: make -f Makefile.ci ci-build-proofread
 
       - name: Pack package binary build tree
         run: tar -czf build-package-binaries.tar.gz build

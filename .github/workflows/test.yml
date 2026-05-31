@@ -1,0 +1,299 @@
+name: Test
+
+on:
+  workflow_run:
+    workflows:
+      - Build
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: test-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+jobs:
+  test-libroo:
+    name: Test libroo
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libgmock-dev
+
+      - name: Download libroo build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack libroo build
+        run: tar -xzf artifacts/build-libroo.tar.gz
+
+      - name: Run libroo tests
+        run: make -f Makefile.ci ci-test-lang
+
+  test-libroo-package:
+    name: Test libroo-package
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libgmock-dev
+
+      - name: Download libroo-package build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-package
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack libroo-package build
+        run: tar -xzf artifacts/build-libroo-package.tar.gz
+
+      - name: Run libroo-package tests
+        run: make -f Makefile.ci ci-test-package
+
+  test-libroo-server:
+    name: Test libroo-server
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libgmock-dev
+
+      - name: Download libroo-server build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-server
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack libroo-server build
+        run: tar -xzf artifacts/build-libroo-server.tar.gz
+
+      - name: Run libroo-server tests
+        run: make -f Makefile.ci ci-test-server
+
+  test-proof:
+    name: Test proof
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libgmock-dev
+
+      - name: Download native package build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-native-packages
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack native package build
+        run: tar -xzf artifacts/build-native-packages.tar.gz
+
+      - name: Run proof tests
+        run: make -f Makefile.ci ci-test-proof
+
+  test-rooc:
+    name: Test rooc
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libgmock-dev
+
+      - name: Download tool build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool build
+        run: tar -xzf artifacts/build-tools.tar.gz
+
+      - name: Run rooc tests
+        run: make -f Makefile.ci ci-test-rooc
+
+  test-roo-cli:
+    name: Test roo CLI
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download tool build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool build
+        run: tar -xzf artifacts/build-tools.tar.gz
+
+      - name: Run roo CLI tests
+        run: make -f Makefile.ci ci-test-roo-cli
+
+  test-loom-cli:
+    name: Test loom CLI
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download tool build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Download native package artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: source-native-package-libraries
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          tar -xzf artifacts/build-tools.tar.gz
+          tar -xzf artifacts/source-native-package-libraries.tar.gz
+
+      - name: Run loom CLI tests
+        run: make -f Makefile.ci ci-test-loom-cli
+
+  test-lookup-cli:
+    name: Test lookup CLI
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download tool build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Download native package artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: source-native-package-libraries
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          tar -xzf artifacts/build-tools.tar.gz
+          tar -xzf artifacts/source-native-package-libraries.tar.gz
+
+      - name: Run lookup CLI tests
+        run: make -f Makefile.ci ci-test-lookup-cli
+
+  test-proofread:
+    name: Test proofread
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download tool build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Download native package artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: source-native-package-libraries
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          tar -xzf artifacts/build-tools.tar.gz
+          tar -xzf artifacts/source-native-package-libraries.tar.gz
+
+      - name: Run proofread tests
+        run: make -f Makefile.ci ci-test-proofread
