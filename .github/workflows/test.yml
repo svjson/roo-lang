@@ -155,8 +155,19 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Unpack tool build
-        run: tar -xzf artifacts/build-tools.tar.gz
+      - name: Download native package artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: source-native-package-libraries
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          tar -xzf artifacts/build-tools.tar.gz
+          tar -xzf artifacts/source-native-package-libraries.tar.gz
 
       - name: Run rooc tests
         run: make -f Makefile.ci ci-test-rooc
