@@ -393,6 +393,32 @@ TEST(PackageManifest, resolves_dependency_paths_from_manifest)
                                       "/repo/app/src"}));
 }
 
+TEST(PackageManifest, resolves_deep_file_dependency_paths_relative_to_manifest)
+{
+  MemoryFileSystem fs;
+  fs.add("/repo/packages/apps/app/package.edn",
+         R"({:name app
+             :dependencies {util "file:../../util"}
+             :load-roots ["src"]})");
+  fs.add("/repo/packages/apps/util/package.edn",
+         R"({:name wrong-util
+             :dependencies []
+             :load-roots ["src"]})");
+  fs.add("/repo/packages/util/package.edn",
+         R"({:name util
+             :dependencies []
+             :load-roots ["src"]})");
+
+  auto plan = Roo::Package::resolve_load_plan(fs, "/repo/packages/apps/app");
+
+  EXPECT_EQ(
+    plan.package_roots,
+    (std::vector<std::string>{"/repo/packages/util", "/repo/packages/apps/app"}));
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{"/repo/packages/util/src",
+                                      "/repo/packages/apps/app/src"}));
+}
+
 TEST(PackageManifest, rejects_path_dependency_with_mismatched_version)
 {
   MemoryFileSystem fs;
@@ -473,6 +499,53 @@ TEST(PackageManifest, resolved_pure_roo_dependencies_are_available_to_runtime)
     Roo::Package::resolve_load_plan(*manifest_fs,
                                     (root / "pkg/app").string(),
                                     Roo::Package::ResolveOptions{{(root / "pkg").string()}});
+
+  auto package_fs = Roo::Package::make_load_path_file_system(plan);
+  Roo::Runtime runtime(package_fs.get());
+  runtime.read_file("app/core.roo");
+
+  EXPECT_EQ(runtime.eval("(app.core/run)")->to_string(), "42");
+
+  std::filesystem::remove_all(root);
+}
+
+TEST(PackageManifest, deep_file_dependency_paths_load_the_grandparent_package)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "roo-package-deep-file-dependency-test";
+  std::filesystem::remove_all(root);
+
+  write_file(root / "pkg/util/package.edn",
+             R"({:name util :dependencies [] :load-roots ["src"]})");
+  write_file(root / "pkg/util/src/util/core.roo",
+             R"((ns util.core)
+                (def dependency-value 42))");
+  write_file(root / "pkg/apps/util/package.edn",
+             R"({:name wrong-util :dependencies [] :load-roots ["src"]})");
+  write_file(root / "pkg/apps/util/src/util/core.roo",
+             R"((ns util.core)
+                (def dependency-value 7))");
+  write_file(root / "pkg/apps/app/package.edn",
+             R"({:name app
+                 :dependencies {util "file:../../util"}
+                 :load-roots ["src"]})");
+  write_file(root / "pkg/apps/app/src/app/core.roo",
+             R"((ns app.core
+                  (:require util.core))
+                (defun run []
+                  dependency-value))");
+
+  Roo::Package::LoadPlan host_plan;
+  host_plan.load_paths = {"/"};
+  auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
+  auto plan =
+    Roo::Package::resolve_load_plan(*manifest_fs,
+                                    (root / "pkg/apps/app").string(),
+                                    Roo::Package::ResolveOptions{{(root / "pkg").string()}});
+
+  EXPECT_EQ(plan.package_roots,
+            (std::vector<std::string>{(root / "pkg/util").string(),
+                                      (root / "pkg/apps/app").string()}));
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Runtime runtime(package_fs.get());
