@@ -1,6 +1,7 @@
 (ns loom.core
   (:require [loom.command.deps :as deps]
             [loom.command.info :as info]
+            [loom.command.init :as init]
             [loom.command.install :as install]
             [loom.command.link :as link]
             [loom.command.list :as list]
@@ -10,12 +11,32 @@
             [loom.common.repository :as repository]))
 
 (defun usage []
-  (prn "Usage: loom install <package-dir> [--repo <dir>]")
+  (prn "Usage: loom init [package-dir] [--name <name>] [--version <version>]")
+  (prn "       loom install <package-dir> [--repo <dir>]")
   (prn "       loom link <package-dir> [--repo <dir>]")
   (prn "       loom uninstall <package@version> [--repo <dir>]")
   (prn "       loom list [--repo <dir>]")
   (prn "       loom info <package@version> [--repo <dir>]")
   (prn "       loom deps <package-dir> [--repo <dir>] [--flat] [--show-repeated]"))
+
+(defun option? [arg]
+  (if (nil? arg)
+    false
+    (if (= 0 (count arg))
+      false
+      (= "-" (str (nth arg 0))))))
+
+(defun init-package-dir [argv]
+  (let [first-arg (args/arg-at argv 1)]
+    (if (option? first-arg)
+      nil
+      first-arg)))
+
+(defun init-command [argv]
+  (let [package-dir (init-package-dir argv)]
+    (init/init! package-dir
+                (args/option-from argv 1 "--name" nil)
+                (args/option-from argv 1 "--version" nil))))
 
 (defun install-command [argv]
   (let [package-dir (args/arg-at argv 1)]
@@ -71,16 +92,18 @@
 
 (defun main [args]
   (let [command (args/arg-at args 0)]
-    (if (= command "install")
-      (install-command args)
-      (if (= command "link")
-        (link-command args)
-        (if (= command "uninstall")
-          (uninstall-command args)
-          (if (= command "list")
-            (list-command args)
-            (if (= command "info")
-              (info-command args)
-              (if (= command "deps")
-                (deps-command args)
-                (usage)))))))))
+    (if (= command "init")
+      (init-command args)
+      (if (= command "install")
+        (install-command args)
+        (if (= command "link")
+          (link-command args)
+          (if (= command "uninstall")
+            (uninstall-command args)
+            (if (= command "list")
+              (list-command args)
+              (if (= command "info")
+                (info-command args)
+                (if (= command "deps")
+                  (deps-command args)
+                  (usage))))))))))

@@ -1,0 +1,49 @@
+(ns loom.command.init-test
+  (:require proof.core
+            [roo.io :as io]
+            [loom.command.init :as init]
+            [loom.test-support :as support]))
+
+(defun fresh-init-dir! [name]
+  (let [path (support/build-path name)]
+    (if (io/exists? path)
+      (io/remove-tree! path)
+      nil)
+    path))
+
+(deftest initializes-package-manifest-using-directory-name
+  (given
+    (fresh-init-dir! "loom-proof-init-sample-package"))
+
+  (when [package-dir]
+    (init/init! package-dir nil nil))
+
+  (then [manifest-path package-dir]
+    (is (= (io/join-path package-dir "package.edn") manifest-path))
+    (is (= "{:name loom-proof-init-sample-package\n :version \"0.1.0\"\n :dependencies []\n :load-roots [\"src\"]}\n"
+           (io/slurp! manifest-path)))))
+
+(deftest initializes-package-manifest-with-explicit-name-and-version
+  (given
+    (fresh-init-dir! "loom-proof-init-explicit"))
+
+  (when [package-dir]
+    (init/init! package-dir "sample-app" "1.2.3"))
+
+  (then [manifest-path]
+    (is (= "{:name sample-app\n :version \"1.2.3\"\n :dependencies []\n :load-roots [\"src\"]}\n"
+           (io/slurp! manifest-path)))))
+
+(deftest init-refuses-to-overwrite-existing-manifest
+  (given
+    (let [package-dir (fresh-init-dir! "loom-proof-init-existing")
+          manifest-path (io/join-path package-dir "package.edn")]
+      (io/spit! manifest-path "{:name existing}\n")
+      manifest-path))
+
+  (when [manifest-path]
+    (init/init! (io/parent-path manifest-path) "new-name" "9.9.9"))
+
+  (then [init-result existing-manifest-path]
+    (is (nil? init-result))
+    (is (= "{:name existing}\n" (io/slurp! existing-manifest-path)))))

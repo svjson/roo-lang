@@ -6,6 +6,7 @@ ROO="$ROOT_DIR/build/roo"
 LOOM_PACKAGE="$ROOT_DIR/pkg/loom"
 LOOM_REPO="$ROOT_DIR/build/loom-test-repo"
 LOOM_LINK_REPO="$ROOT_DIR/build/loom-link-test-repo"
+LOOM_INIT_DIR="$ROOT_DIR/build/loom-init-test-package"
 PROOF_REPO="$ROOT_DIR/build/loom-proof-test-repo"
 
 (
@@ -19,6 +20,7 @@ cmake -E rm -rf "$LOOM_REPO"
 test -f "$LOOM_REPO/loom/0.1.0/package.edn"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/core.roo"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/deps.roo"
+test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/init.roo"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/install.roo"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/link.roo"
 test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/uninstall.roo"
@@ -35,6 +37,19 @@ test "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO")" = "loom@0.1.0"
 "$ROO" "$LOOM_PACKAGE" info loom@0.1.0 --repo "$LOOM_REPO"
 DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat)
 test "$DEPS_OUTPUT" = ""
+
+cmake -E rm -rf "$LOOM_INIT_DIR"
+"$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name cli-sample --version 0.2.0
+test -f "$LOOM_INIT_DIR/package.edn"
+test "$(cat "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
+ :version \"0.2.0\"
+ :dependencies []
+ :load-roots [\"src\"]}"
+test "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)" = "loom: package manifest already exists: $LOOM_INIT_DIR/package.edn"
+test "$(cat "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
+ :version \"0.2.0\"
+ :dependencies []
+ :load-roots [\"src\"]}"
 
 cmake -E rm -rf "$LOOM_LINK_REPO"
 "$ROO" "$LOOM_PACKAGE" link "$LOOM_PACKAGE" --repo "$LOOM_LINK_REPO"

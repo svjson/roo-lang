@@ -1,0 +1,37 @@
+(ns loom.command.init
+  (:require [roo.io :as io]
+            [loom.common.manifest :as manifest]))
+
+(defun package-name-from-dir [package-dir]
+  (let [basename (io/basename (io/absolute-path! package-dir))]
+    (if (blank? basename)
+      "app"
+      basename)))
+
+(defun package-name [package-dir explicit-name]
+  (if (nil? explicit-name)
+    (package-name-from-dir package-dir)
+    (let [name (str explicit-name)]
+      (if (blank? name)
+        "app"
+        name))))
+
+(defun manifest-source [name version]
+  (str "{:name " name "\n"
+       " :version \"" version "\"\n"
+       " :dependencies []\n"
+       " :load-roots [\"src\"]}\n"))
+
+(defun init! [package-dir name version]
+  (let [target-dir (if (nil? package-dir) "." package-dir)
+        package-name (package-name target-dir name)
+        package-version (if (nil? version) "0.1.0" version)
+        manifest-path (manifest/manifest-path target-dir)]
+    (if (io/exists? manifest-path)
+      (do
+        (prn (str "loom: package manifest already exists: " manifest-path))
+        nil)
+      (do
+        (io/spit! manifest-path (manifest-source package-name package-version))
+        (prn (str "Initialized " package-name " at " manifest-path))
+        manifest-path))))

@@ -71,6 +71,34 @@ loom list
 
 ## Commands
 
+### init
+
+Create a package manifest:
+
+```sh
+loom init
+```
+
+By default, Loom writes `package.edn` in the current directory, uses the
+directory name as the package name, sets the version to `0.1.0`, and includes
+`src` as the load root:
+
+```edn
+{:name my-package
+ :version "0.1.0"
+ :dependencies []
+ :load-roots ["src"]}
+```
+
+You can initialize a different directory and override the generated package
+name or version:
+
+```sh
+loom init /path/to/package --name my-package --version 0.2.0
+```
+
+Loom refuses to overwrite an existing `package.edn`.
+
 ### install
 
 Copy a local package into the repository:
