@@ -1,5 +1,6 @@
 (ns loom.common.dependency-graph-test
   (:require proof.core
+            [roo.io :as io]
             [loom.command.install :as install]
             [loom.common.dependency-graph :as graph]
             [loom.test-support :as support]))
@@ -83,3 +84,32 @@
     (is (= false (:missing? file-middle-node)))
     (is (= false (:missing? file-leaf-node)))
     (is (graph/complete? file-graph))))
+
+(deftest resolves-deep-file-path-dependencies-relative-to-declaring-package
+  (given
+    (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph-deep-file")
+          root (support/build-path "loom-proof-graph-deep-file")
+          deep-app-dir (io/join-path root "apps/app")]
+      (if (io/exists? root)
+        (io/remove-tree! root)
+        nil)
+      (support/fresh-package-at! (io/join-path root "util")
+                                 "{:name util :version \"1.0.0\" :dependencies [] :load-roots [\"src\"]}")
+      (support/fresh-package-at! (io/join-path root "apps/util")
+                                 "{:name wrong-util :version \"1.0.0\" :dependencies [] :load-roots [\"src\"]}")
+      (support/fresh-package-at! deep-app-dir
+                                 "{:name app :version \"0.1.0\" :dependencies {util \"file:../../util\"} :load-roots [\"src\"]}")
+      {:repo-root repo-root
+       :deep-app-dir deep-app-dir}))
+
+  (when [{:keys [repo-root deep-app-dir]}]
+    (let [deep-file-graph (graph/root-node! deep-app-dir repo-root)
+          util-node (nth (:dependencies deep-file-graph) 0)]
+      {:deep-file-graph deep-file-graph
+       :util-node util-node}))
+
+  (then [{:keys [deep-file-graph util-node]}]
+    (is (= "app@0.1.0" (:id deep-file-graph)))
+    (is (= "util@1.0.0" (:id util-node)))
+    (is (= false (:missing? util-node)))
+    (is (graph/complete? deep-file-graph))))

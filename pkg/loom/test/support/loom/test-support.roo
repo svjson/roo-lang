@@ -23,6 +23,13 @@
     (io/spit! (io/join-path path "package.edn") manifest-source)
     path))
 
+(defun fresh-package-at! [path manifest-source]
+  (if (io/exists? path)
+    (io/remove-tree! path)
+    nil)
+  (io/spit! (io/join-path path "package.edn") manifest-source)
+  path)
+
 (defun loom-package-dir []
   (io/join-path (io/current-directory!) ".."))
 
