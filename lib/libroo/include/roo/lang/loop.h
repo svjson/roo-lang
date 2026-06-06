@@ -42,6 +42,23 @@ namespace Roo
   SPECIAL_FORM_DECL(ForForm, for)
 
   /*!
+   * @brief Executes body forms for every element in a sequence, binding the
+   * element to the local scope. Returns nil and does not retain per-iteration
+   * return values.
+   *
+   * Usage:
+   * @code
+   * (doseq [num [1 2 3 4]] (prn num)) => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Binding form, [<var-name> <seq>]                                 |
+   * | 1...  | Form body to execute                                             |
+   */
+  SPECIAL_FORM_DECL(DoseqForm, doseq)
+
+  /*!
    * @brief Executes a form for every element in a sequence, just like
    * (for ...), but takes a leading binding in the binding form containing
    * the zero-based iteration index

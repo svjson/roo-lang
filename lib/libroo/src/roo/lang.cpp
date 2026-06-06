@@ -91,6 +91,7 @@ namespace Roo
     lang_symbols.emplace("dissoc!", DissocBangFunction::make());
     lang_symbols.emplace("dissoc-in!", DissocInBangFunction::make());
     lang_symbols.emplace("do", DoForm::make());
+    lang_symbols.emplace("doseq", DoseqForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
     lang_symbols.emplace("empty?", EmptyPFunction::make());
     lang_symbols.emplace("epoch-ms", EpochMsFunction::make());

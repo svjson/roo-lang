@@ -187,6 +187,83 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
+  /* DoseqForm - doseq */
+  SPECIAL_FORM_IMPL(DoseqForm,
+                    SIG((FN_ARGS((&Type::SEQ, &Eval::BIND_SYM_VAL),
+                                 (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&DoseqForm::execnode_doseq))))
+
+  SFORM_LOWER_IMPL(DoseqForm)
+  {
+    sptr_ast_node_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw RooException("doseq: No loop expression - " + ast_node->to_string());
+    }
+
+    if (elements[1]->get_type() != Form::VECTOR || elements[1]->size() != 2)
+    {
+      throw RooException("doseq: Invalid loop expression - " + ast_node->to_string());
+    }
+
+    sptr_ast_node_v& bind_forms = elements[1]->get_children();
+    std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+    bindings.reserve(1);
+
+    auto sym_node = lower_literal(bind_forms[0]);
+    bindings.push_back(
+      std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                     std::make_unique<ExecNode>(Constant::NIL)));
+
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
+    exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
+
+    for (size_t i = 2; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+  }
+
+  EXECNODE_BODY(DoseqForm, execnode_doseq)
+  {
+    auto* binding = snode.bind_forms.front().first.get();
+
+    sptr_val seq = exec(ctx, *snode.exec_nodes[0]);
+
+    if (seq->type != Value::Type::NIL && (Type::STRICT_SEQ_OR_STRING.is_type_of(*seq) ||
+                                          seq->type == Value::Type::NATIVE_OBJECT))
+    {
+      sptr_val_v elements = Roo::get_children(*seq);
+      if (elements.size() > 0)
+      {
+        ctx.push_context(true);
+        Scope& iter_scope = ctx.current_scope();
+        size_t n_args = snode.exec_nodes.size();
+
+        for (auto& item : elements)
+        {
+          binding->apply(iter_scope, item);
+
+          for (size_t j = 1; j < n_args; j++)
+          {
+            exec(ctx, *snode.exec_nodes[j]);
+          }
+
+          iter_scope.clear();
+        }
+
+        ctx.pop_context();
+      }
+    }
+
+    return Constant::NIL;
+  }
+
   /** ForIndexedForm - for-indexed */
   SPECIAL_FORM_IMPL(ForIndexedForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
