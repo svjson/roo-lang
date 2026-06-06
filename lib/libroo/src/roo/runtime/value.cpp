@@ -1,6 +1,9 @@
 
 #include "roo/runtime/value.h"
 
+#include <algorithm>
+#include <string>
+
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/form.h>
@@ -14,6 +17,78 @@ namespace Roo
   int rtvalue_wrappers_constructed = 0;
   int to_ast_conversions = 0;
   int to_rtvalue_conversions = 0;
+
+  namespace
+  {
+    std::string indent(int width)
+    {
+      return std::string(static_cast<size_t>(std::max(0, width)), ' ');
+    }
+
+    std::string pretty_value(const Value& value, int depth, int indent_width);
+
+    std::string pretty_seq(const sptr_val_v& values,
+                           const std::string& open,
+                           const std::string& close,
+                           int depth,
+                           int indent_width)
+    {
+      if (values.empty())
+      {
+        return open + close;
+      }
+
+      const int child_depth = depth + indent_width;
+      std::string result = open + "\n";
+      for (size_t i = 0; i < values.size(); i++)
+      {
+        result += indent(child_depth);
+        result += pretty_value(*values[i], child_depth, indent_width);
+        result += "\n";
+      }
+      result += indent(depth) + close;
+      return result;
+    }
+
+    std::string pretty_map(const sptr_val_v& values, int depth, int indent_width)
+    {
+      if (values.empty())
+      {
+        return "{}";
+      }
+
+      const int child_depth = depth + indent_width;
+      std::string result = "{\n";
+      for (size_t i = 0; i < values.size(); i += 2)
+      {
+        result += indent(child_depth);
+        result += pretty_value(*values[i], child_depth, indent_width);
+        if (i + 1 < values.size())
+        {
+          result += " ";
+          result += pretty_value(*values[i + 1], child_depth, indent_width);
+        }
+        result += "\n";
+      }
+      result += indent(depth) + "}";
+      return result;
+    }
+
+    std::string pretty_value(const Value& value, int depth, int indent_width)
+    {
+      switch (value.type)
+      {
+      case Value::Type::LIST:
+        return pretty_seq(std::get<sptr_val_v>(value.value), "(", ")", depth, indent_width);
+      case Value::Type::VECTOR:
+        return pretty_seq(std::get<sptr_val_v>(value.value), "[", "]", depth, indent_width);
+      case Value::Type::MAP:
+        return pretty_map(std::get<sptr_val_v>(value.value), depth, indent_width);
+      default:
+        return value.to_string();
+      }
+    }
+  } // namespace
 
   std::string val_type_name(Value::Type type)
   {
@@ -615,6 +690,11 @@ namespace Roo
     }
 
     return r;
+  }
+
+  std::string Value::to_pretty_string(int indent_width) const
+  {
+    return pretty_value(*this, 0, std::max(1, indent_width));
   }
 
   bool Value::operator==(const Value& other) const

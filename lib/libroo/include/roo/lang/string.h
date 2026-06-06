@@ -22,6 +22,22 @@ namespace Roo
   FUNC(StrFunction, str)
 
   /*!
+   * @brief Formats a Roo value as a pretty-printed EDN-style string.
+   *
+   * Usage:
+   * @code
+   * (pretty-str {:name "Roo" :ok true})
+   * => "{\n  :name \"Roo\"\n  :ok true\n}"
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value to format.                                             |
+   * | 1     | Optional map with :indent number.                                |
+   */
+  FUNC(PrettyStrFunction, pretty_str)
+
+  /*!
    * @brief Joins multiple strings with a separator.
    *
    * Usage:

@@ -7,6 +7,7 @@
 #include <roo/form.h>
 #include <roo/io/file_system.h>
 #include <roo/reader.h>
+#include <roo/runtime/dict.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
 
@@ -14,6 +15,57 @@ namespace Roo
 {
   namespace
   {
+    struct EdnWriteOptions
+    {
+      bool pretty = false;
+      int indent = 2;
+    };
+
+    bool option_bool(Value& options,
+                     const std::string& option_name,
+                     bool default_value,
+                     const std::string& function_name)
+    {
+      sptr_val value = Dict::get_property(options, option_name);
+      if (value->type == Value::Type::NIL)
+      {
+        return default_value;
+      }
+      if (value->type != Value::Type::BOOL)
+      {
+        throw TypeError(function_name + " option :" + option_name +
+                        " must be a boolean, got: " + value->to_string());
+      }
+      return std::get<bool>(value->value);
+    }
+
+    int option_indent_width(Value& options, const std::string& function_name)
+    {
+      sptr_val value = Dict::get_property(options, "indent");
+      if (value->type == Value::Type::NIL)
+      {
+        return 2;
+      }
+      if (value->type != Value::Type::NUMBER)
+      {
+        throw TypeError(function_name +
+                        " option :indent must be a number, got: " + value->to_string());
+      }
+
+      const int indent = value->num().get_int();
+      if (indent < 1)
+      {
+        throw TypeError(function_name + " option :indent must be greater than zero.");
+      }
+      return indent;
+    }
+
+    EdnWriteOptions parse_edn_write_options(Value& options)
+    {
+      return {option_bool(options, "pretty?", false, "roo.io/spit-edn!"),
+              option_indent_width(options, "roo.io/spit-edn!")};
+    }
+
     sptr_val edn_to_rt_value(const AST::ASTNode& obj)
     {
       switch (obj.get_type())
@@ -179,12 +231,24 @@ namespace Roo
 
   /** SpitEdnBangFunction - roo.io/spit-edn! */
   FUNC_IMPL(SpitEdnBangFunction,
-            SIG((FN_ARGS((&Type::STRING), (&Type::ANY)),
-                 EXEC_DISPATCH(&SpitEdnBangFunction::exec_spit_edn))))
+            MULTI_SIG((FN_ARGS((&Type::STRING), (&Type::ANY)),
+                       EXEC_DISPATCH(&SpitEdnBangFunction::exec_spit_edn)),
+                      (FN_ARGS((&Type::STRING), (&Type::ANY), (&Type::MAP)),
+                       EXEC_DISPATCH(&SpitEdnBangFunction::exec_spit_edn))))
 
   EXEC_BODY(SpitEdnBangFunction, exec_spit_edn)
   {
-    ctx.file_system().write(args[0]->str(), args[1]->to_string());
+    if (args.size() > 2)
+    {
+      const EdnWriteOptions options = parse_edn_write_options(*args[2]);
+      ctx.file_system().write(
+        args[0]->str(),
+        options.pretty ? args[1]->to_pretty_string(options.indent) : args[1]->to_string());
+    }
+    else
+    {
+      ctx.file_system().write(args[0]->str(), args[1]->to_string());
+    }
     return Constant::NIL;
   }
 

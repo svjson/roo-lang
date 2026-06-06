@@ -9,6 +9,8 @@
 #include <roo/exception.h>
 #include <roo/impl.h>
 #include <roo/lang/string.h>
+#include <roo/runtime/dict.h>
+#include <roo/runtime/value.h>
 #include <roo/type.h>
 
 namespace Roo
@@ -30,6 +32,27 @@ namespace Roo
       }
 
       return str.substr(start, end - start);
+    }
+
+    int option_indent_width(Value& options, const std::string& function_name)
+    {
+      sptr_val value = Dict::get_property(options, "indent");
+      if (value->type == Value::Type::NIL)
+      {
+        return 2;
+      }
+      if (value->type != Value::Type::NUMBER)
+      {
+        throw TypeError(function_name +
+                        " option :indent must be a number, got: " + value->to_string());
+      }
+
+      const int indent = value->num().get_int();
+      if (indent < 1)
+      {
+        throw TypeError(function_name + " option :indent must be greater than zero.");
+      }
+      return indent;
     }
 
     char lower_ascii(char c)
@@ -260,6 +283,20 @@ namespace Roo
     }
 
     return Value::string(result);
+  }
+
+  /** PrettyStrFunction - pretty-str */
+  FUNC_IMPL(PrettyStrFunction,
+            MULTI_SIG((FN_ARGS((&Type::ANY)),
+                       EXEC_DISPATCH(&PrettyStrFunction::exec_pretty_str)),
+                      (FN_ARGS((&Type::ANY), (&Type::MAP)),
+                       EXEC_DISPATCH(&PrettyStrFunction::exec_pretty_str))))
+
+  EXEC_BODY(PrettyStrFunction, exec_pretty_str)
+  {
+    const int indent_width =
+      args.size() > 1 ? option_indent_width(*args[1], "pretty-str") : 2;
+    return Value::string(args[0]->to_pretty_string(indent_width));
   }
 
   /** JoinFunction - join */

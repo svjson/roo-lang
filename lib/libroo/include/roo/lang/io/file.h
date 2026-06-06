@@ -132,12 +132,16 @@ namespace Roo
    * @code
    * (roo.io/spit-edn! "config.edn" {:name "Roo" :ok true})
    * => nil
+   *
+   * (roo.io/spit-edn! "config.edn" {:name "Roo" :ok true} {:pretty? true})
+   * => nil
    * @endcode
    *
    * | Arg # | Description                                                      |
    * |-------|------------------------------------------------------------------|
    * | 0     | The path of the EDN file to write.                               |
    * | 1     | The value to serialize with to_string().                         |
+   * | 2     | Optional map with :pretty? boolean and :indent number.           |
    */
   FUNC(SpitEdnBangFunction, spit_edn)
 } // namespace Roo

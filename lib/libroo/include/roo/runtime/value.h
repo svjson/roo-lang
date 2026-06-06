@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -118,6 +119,7 @@ namespace Roo
 
     static std::string to_string(const sptr_val_v&);
     std::string to_string() const;
+    std::string to_pretty_string(int indent_width = 2) const;
 
     uint8_t ui8() const;
     unsigned short ui16() const;
