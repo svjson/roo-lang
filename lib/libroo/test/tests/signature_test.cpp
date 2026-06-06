@@ -40,6 +40,47 @@ namespace SignatureTest
   Roo::uptr_exec_node NODE_ARRAY = std::make_unique<Roo::ExecNode>(ARRAY);
   Roo::uptr_exec_node NODE_FUNCTION = std::make_unique<Roo::ExecNode>(FUNCTION);
 
+  const Roo::HostTypeRef VEHICLE_MODEL_SHAPE_TYPE("vehicle-model-shape");
+
+  class VehicleModelShapeAdapter : public Roo::NativeObjectBase
+  {
+    std::string model_name;
+    int seats;
+
+    static Roo::sptr_val get_model_name(const Roo::NativeObjectBase* adapter)
+    {
+      auto* self = static_cast<const VehicleModelShapeAdapter*>(adapter);
+      return Roo::Value::string(self->model_name);
+    }
+
+    static Roo::sptr_val get_seats(const Roo::NativeObjectBase* adapter)
+    {
+      auto* self = static_cast<const VehicleModelShapeAdapter*>(adapter);
+      return Roo::Value::number(self->seats);
+    }
+
+   public:
+    VehicleModelShapeAdapter(const std::string& model_name, int seats)
+      : model_name(model_name)
+      , seats(seats)
+    {
+    }
+
+    const Roo::NativeObjectTraits* get_traits() const override
+    {
+      static const Roo::NAccessorTable accessors{
+        {"model-name", Roo::NAccessors(get_model_name, Roo::n_no_setter)},
+        {"seats", Roo::NAccessors(get_seats, Roo::n_no_setter)}};
+      static const Roo::NativeObjectTraits traits(&VEHICLE_MODEL_SHAPE_TYPE, accessors);
+      return &traits;
+    }
+
+    void* self_object_ptr() const override
+    {
+      return const_cast<VehicleModelShapeAdapter*>(this);
+    }
+  };
+
 } // namespace SignatureTest
 
 using SignatureTest::ARRAY;
@@ -220,6 +261,33 @@ TEST_F(Signature, coerce_args__map_to_native_type__native_function)
   // Then
   EXPECT_EQ(result->type, Roo::Value::Type::NATIVE_OBJECT);
   EXPECT_TRUE(RooTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
+}
+
+TEST_F(Signature, coerce_args__structural_native_adapter_to_native_type__native_function)
+{
+  // Given
+  auto& reader = runtime;
+  reader.switch_namespace("vehicle");
+  reader.get_current_namespace().store("make-vehicle-model",
+                                       RooTest::Native::VehicleModelMakeFunction::make());
+  reader.switch_namespace("user");
+
+  Roo::sptr_val structural_model = Roo::Value::native_object(
+    std::make_shared<SignatureTest::VehicleModelShapeAdapter>("Gonzo-mobile", 8));
+  Roo::sptr_val prn_vehicle = RooTest::Native::PrnVehicle::make();
+  Roo::sptr_val_v args{structural_model};
+
+  // When
+  Roo::sptr_val result = prn_vehicle->exec().execute(ctx, args);
+
+  // Then
+  EXPECT_EQ(result->type, Roo::Value::Type::NATIVE_OBJECT);
+  EXPECT_TRUE(RooTest::VEHICLE_MODEL_TYPE.is_type_of(*result));
+
+  RooTest::VehicleModel& vehicle_model =
+    result->adapter<RooTest::Native::VehicleModelAdapter>().get_object();
+  EXPECT_EQ(vehicle_model.get_model_name(), "Gonzo-mobile");
+  EXPECT_EQ(vehicle_model.get_seats(), 8);
 }
 
 TEST_F(Signature, coerce_args__no_coercion_available)

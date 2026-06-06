@@ -70,12 +70,14 @@ namespace Roo
           *make_fn + "' is not executable: " + function->to_string());
       }
       auto& make_exec = function->exec();
+      sptr_val structural_map = nullptr;
 
       for (auto& sig : make_exec.signatures)
       {
         if (sig->get_arguments().size() != 1) continue;
 
-        if (sig->get_arguments().front().matches(*obj))
+        bool sig_matches_obj = sig->get_arguments().front().matches(*obj);
+        if (sig_matches_obj)
         {
           sptr_val_v arg_list{obj};
           try
@@ -85,6 +87,28 @@ namespace Roo
           catch (const RooException& e)
           {
             // Ignore
+          }
+        }
+
+        if (!sig_matches_obj && obj->type == Value::Type::NATIVE_OBJECT &&
+            obj->nobj()->structural_kind() == NativeObjectStructuralKind::MAP)
+        {
+          if (!structural_map)
+          {
+            structural_map = Value::map(obj->nobj()->native_children());
+          }
+
+          if (sig->get_arguments().front().matches(*structural_map))
+          {
+            sptr_val_v arg_list{structural_map};
+            try
+            {
+              return CoercionResult{true, sig->invoke(ctx, arg_list)};
+            }
+            catch (const RooException& e)
+            {
+              // Ignore
+            }
           }
         }
       }
