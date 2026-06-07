@@ -68,6 +68,26 @@ namespace Roo
   FUNC(FindIndexFunction, find_index)
 
   /*!
+   * @brief Returns the index of the first element in a seq equal to a value,
+   * or nil if no match is found.
+   *
+   * Usage:
+   * @code
+   * (index-of ["a" "b" "c"] "b")
+   * => 1
+   *
+   * (index-of [1 3 4] 2)
+   * => nil
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The sequence to query                                            |
+   * | 1     | The value to find                                                |
+   */
+  FUNC(IndexOfFunction, index_of)
+
+  /*!
    * @brief Essentially functions as a combination of map and filter, but
    * determines if an element is to be kept based on non-nil/nil instead
    * of truthiness, like map.

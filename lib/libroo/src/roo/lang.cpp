@@ -114,6 +114,7 @@ namespace Roo
     lang_symbols.emplace("if-let", IfLetForm::make());
     lang_symbols.emplace("inc", IncFunction::make());
     lang_symbols.emplace("include", IncludeFunction::make());
+    lang_symbols.emplace("index-of", IndexOfFunction::make());
     lang_symbols.emplace("int", IntFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());

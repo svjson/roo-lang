@@ -109,6 +109,27 @@ namespace Roo
     return Constant::NIL;
   }
 
+  /** IndexOfFunction - index-of */
+  FUNC_IMPL(IndexOfFunction,
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY)),
+                 EXEC_DISPATCH(&IndexOfFunction::exec_index_of))))
+
+  EXEC_BODY(IndexOfFunction, exec_index_of)
+  {
+    if (*args[0] == *Constant::NIL) return Constant::NIL;
+
+    sptr_val_v children = Roo::get_children(*args[0]);
+    for (size_t i = 0; i < children.size(); i++)
+    {
+      if (*children[i] == *args[1])
+      {
+        return Value::number(static_cast<int>(i));
+      }
+    }
+
+    return Constant::NIL;
+  }
+
   /* KeepFunction - keep */
   FUNC_IMPL(KeepFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
