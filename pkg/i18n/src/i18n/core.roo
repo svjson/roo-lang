@@ -1,0 +1,35 @@
+(ns i18n.core)
+
+(defun catalog [default-locale translations]
+  {:default-locale default-locale
+   :translations translations})
+
+(defun default-locale [catalog]
+  (:default-locale catalog))
+
+(defun translations [catalog]
+  (get catalog :translations {}))
+
+(defun locale-messages [catalog locale]
+  (get (translations catalog) locale {}))
+
+(defun message [catalog locale key]
+  (get (locale-messages catalog locale) key))
+
+(defun translated? [catalog locale key]
+  (not (nil? (message catalog locale key))))
+
+(defun fallback-message [catalog key]
+  (message catalog (default-locale catalog) key))
+
+(defun translate [catalog locale key]
+  (let [localized (message catalog locale key)]
+    (if (nil? localized)
+      (let [fallback (fallback-message catalog key)]
+        (if (nil? fallback)
+          (str key)
+          fallback))
+      localized)))
+
+(defun missing? [catalog locale key]
+  (nil? (message catalog locale key)))

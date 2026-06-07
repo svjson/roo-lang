@@ -1,0 +1,29 @@
+(ns i18n.core-test
+  (:require proof.core
+            [i18n.core :as i18n]))
+
+(def sample-catalog
+  (i18n/catalog :en
+                {:en {:greeting "Hello"
+                      :checkout "Checkout"}
+                 :sv {:greeting "Hej"}}))
+
+(deftest creates-catalogs
+  (is (= :en (i18n/default-locale sample-catalog)))
+  (is (= {:greeting "Hej"} (i18n/locale-messages sample-catalog :sv))))
+
+(deftest returns-exact-locale-messages
+  (is (= "Hej" (i18n/message sample-catalog :sv :greeting)))
+  (is (nil? (i18n/message sample-catalog :sv :checkout))))
+
+(deftest translates-with-default-locale-fallback
+  (is (= "Hej" (i18n/translate sample-catalog :sv :greeting)))
+  (is (= "Checkout" (i18n/translate sample-catalog :sv :checkout))))
+
+(deftest returns-key-text-when-translation-is-missing
+  (is (= ":missing" (i18n/translate sample-catalog :sv :missing))))
+
+(deftest reports-missing-exact-locale-translations
+  (is (= true (i18n/translated? sample-catalog :sv :greeting)))
+  (is (= false (i18n/translated? sample-catalog :sv :checkout)))
+  (is (= true (i18n/missing? sample-catalog :sv :checkout))))
