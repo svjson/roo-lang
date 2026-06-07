@@ -70,6 +70,20 @@ TEST(Parser, parse_map_with_char_key)
   EXPECT_EQ(*form.get_children().at(3), String("Beta"));
 }
 
+TEST(Parser, parse_apostrophe_char)
+{
+  // Given
+  Parser parser;
+  std::vector<TokenSymbol> symbols{TokenSymbol(Token::CHAR, "'")};
+
+  // When
+  auto sexps = parser.parse_sexps(symbols);
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  EXPECT_EQ(*sexps.at(0), Char('\''));
+}
+
 TEST(Parser, parse_form_with_multiple_paren_types)
 {
   // Given

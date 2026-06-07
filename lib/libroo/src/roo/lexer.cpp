@@ -198,6 +198,37 @@ namespace Roo
         val = "";
         continue;
       }
+      else if (ct == Token::SQUOT && c == '\\')
+      {
+        if (offset == input.size())
+        {
+          throw ParseException("Unexpected token: '\\': " + line + " <---");
+        }
+
+        char escaped = input.at(offset++);
+        switch (escaped)
+        {
+        case 'n':
+          val += '\n';
+          break;
+        case 'r':
+          val += '\r';
+          break;
+        case 't':
+          val += '\t';
+          break;
+        case '\'':
+          val += '\'';
+          break;
+        case '\\':
+          val += '\\';
+          break;
+        default:
+          val += escaped;
+          break;
+        }
+        continue;
+      }
       // Check if the currently determined Token is still valid with the new character
       if ((ct == Token::SYMBOL && std::regex_match(val + cs, regex_alphanum)) ||
           (ct == Token::NUMBER && std::regex_match(val + cs, regex_num)) ||

@@ -189,6 +189,30 @@ TEST(Lexer, parse_semicolon_char)
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::CHAR, ";")));
 }
 
+TEST(Lexer, parse_escaped_apostrophe_char)
+{
+  // Given
+  std::string input = R"('\'')";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::CHAR, "'")));
+}
+
+TEST(Lexer, parse_escaped_backslash_char)
+{
+  // Given
+  std::string input = R"('\\')";
+
+  // When
+  auto symbols = lexer.read_symbols(input);
+
+  // Then
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::CHAR, "\\")));
+}
+
 TEST(Lexer, parse_form_with_lists_vector_and_map)
 {
   // Given
