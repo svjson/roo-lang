@@ -7,6 +7,58 @@
 
 namespace Roo
 {
+  namespace
+  {
+    struct UpdateCall
+    {
+      Executable* updater = nullptr;
+      sptr_val_v args;
+    };
+
+    UpdateCall make_update_call(const sptr_val& current_value,
+                                const sptr_val& updater_spec,
+                                const std::string& function_name)
+    {
+      UpdateCall call{nullptr, {current_value}};
+      if (updater_spec->type != Value::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
+      {
+        call.updater = &updater_spec->exec();
+      }
+      else if (updater_spec->type != Value::Type::NIL &&
+               updater_spec->type != Value::Type::MAP && Type::SEQ.is_type_of(*updater_spec))
+      {
+        sptr_val_v spec_parts = Roo::get_children(*updater_spec);
+        if (spec_parts.empty())
+        {
+          throw InvocationException("Updater spec for " + function_name +
+                                    " cannot be empty.");
+        }
+        if (spec_parts[0]->type == Value::Type::NIL ||
+            !Type::EXEC.is_type_of(*spec_parts[0]))
+        {
+          throw TypeError(
+            "Updater spec for " + function_name +
+            " must begin with an executable, got: " + spec_parts[0]->to_string());
+        }
+
+        call.updater = &spec_parts[0]->exec();
+        call.args.reserve(spec_parts.size());
+        for (size_t spec_i = 1; spec_i < spec_parts.size(); spec_i++)
+        {
+          call.args.push_back(spec_parts[spec_i]);
+        }
+      }
+      else
+      {
+        throw TypeError(
+          "Updater spec for " + function_name +
+          " must be executable or a sequence, got: " + updater_spec->to_string());
+      }
+
+      return call;
+    }
+  } // namespace
+
   /* AssocFunction - assoc */
   FUNC_IMPL(AssocFunction,
             MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
@@ -191,47 +243,43 @@ namespace Roo
       sptr_val current_value = Dict::get_property(result, args[update_arg_i]);
       const sptr_val& updater_spec = args[update_arg_i + 1];
 
-      Executable* updater = nullptr;
-      sptr_val_v updater_args{current_value};
-      if (updater_spec->type != Value::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
-      {
-        updater = &updater_spec->exec();
-      }
-      else if (updater_spec->type != Value::Type::NIL &&
-               updater_spec->type != Value::Type::MAP && Type::SEQ.is_type_of(*updater_spec))
-      {
-        sptr_val_v spec_parts = Roo::get_children(*updater_spec);
-        if (spec_parts.empty())
-        {
-          throw InvocationException("Updater spec for update cannot be empty.");
-        }
-        if (spec_parts[0]->type == Value::Type::NIL ||
-            !Type::EXEC.is_type_of(*spec_parts[0]))
-        {
-          throw TypeError("Updater spec for update must begin with an executable, got: " +
-                          spec_parts[0]->to_string());
-        }
-
-        updater = &spec_parts[0]->exec();
-        updater_args.reserve(spec_parts.size());
-        for (size_t spec_i = 1; spec_i < spec_parts.size(); spec_i++)
-        {
-          updater_args.push_back(spec_parts[spec_i]);
-        }
-      }
-      else
-      {
-        throw TypeError("Updater spec for update must be executable or a sequence, got: " +
-                        updater_spec->to_string());
-      }
-
-      sptr_val updated_value = updater->execute(ctx, updater_args);
+      UpdateCall call = make_update_call(current_value, updater_spec, "update");
+      sptr_val updated_value = call.updater->execute(ctx, call.args);
       sptr_val new_result = Dict::shallow_copy(result);
       Dict::set_property(new_result, args[update_arg_i], updated_value);
       result = new_result;
     }
 
     return result;
+  }
+
+  /* UpdateBangFunction - update! */
+  FUNC_IMPL(
+    UpdateBangFunction,
+    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateBangFunction::exec_update_bang)),
+              (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateBangFunction::exec_update_bang))))
+
+  EXEC_BODY(UpdateBangFunction, exec_update_bang)
+  {
+    if (args.size() % 2 == 0)
+    {
+      throw Roo::InvocationException("No updater given for key '" +
+                                     args.back()->to_string() + " '");
+    }
+
+    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
+    {
+      sptr_val current_value = Dict::get_property(args[0], args[update_arg_i]);
+      const sptr_val& updater_spec = args[update_arg_i + 1];
+
+      UpdateCall call = make_update_call(current_value, updater_spec, "update!");
+      sptr_val updated_value = call.updater->execute(ctx, call.args);
+      Dict::set_property(args[0], args[update_arg_i], updated_value);
+    }
+
+    return args[0];
   }
 
   /* UpdateInFunction - update-in */
@@ -270,46 +318,62 @@ namespace Roo
       sptr_val current_value = Dict::get_property_path(result, assoc_path);
       const sptr_val& updater_spec = args[update_arg_i + 1];
 
-      Executable* updater = nullptr;
-      sptr_val_v updater_args{current_value};
-      if (updater_spec->type != Value::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
-      {
-        updater = &updater_spec->exec();
-      }
-      else if (updater_spec->type != Value::Type::NIL &&
-               updater_spec->type != Value::Type::MAP && Type::SEQ.is_type_of(*updater_spec))
-      {
-        sptr_val_v spec_parts = Roo::get_children(*updater_spec);
-        if (spec_parts.empty())
-        {
-          throw InvocationException("Updater spec for update-in cannot be empty.");
-        }
-        if (spec_parts[0]->type == Value::Type::NIL ||
-            !Type::EXEC.is_type_of(*spec_parts[0]))
-        {
-          throw TypeError("Updater spec for update-in must begin with an executable, got: " +
-                          spec_parts[0]->to_string());
-        }
-
-        updater = &spec_parts[0]->exec();
-        updater_args.reserve(spec_parts.size());
-        for (size_t spec_i = 1; spec_i < spec_parts.size(); spec_i++)
-        {
-          updater_args.push_back(spec_parts[spec_i]);
-        }
-      }
-      else
-      {
-        throw TypeError(
-          "Updater spec for update-in must be executable or a sequence, got: " +
-          updater_spec->to_string());
-      }
-
-      sptr_val updated_value = updater->execute(ctx, updater_args);
+      UpdateCall call = make_update_call(current_value, updater_spec, "update-in");
+      sptr_val updated_value = call.updater->execute(ctx, call.args);
       result = Dict::assoc_in(result, assoc_path, updated_value);
     }
 
     return result;
+  }
+
+  /* UpdateInBangFunction - update-in! */
+  FUNC_IMPL(
+    UpdateInBangFunction,
+    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateInBangFunction::exec_update_in_bang)),
+              (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
+               EXEC_DISPATCH(&UpdateInBangFunction::exec_update_in_bang))))
+
+  EXEC_BODY(UpdateInBangFunction, exec_update_in_bang)
+  {
+    if (args.size() % 2 == 0)
+    {
+      throw Roo::InvocationException("No updater given for path '" +
+                                     args.back()->to_string() + " '");
+    }
+
+    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
+    {
+      const sptr_val& assoc_path_value = args[update_arg_i];
+      if (assoc_path_value->type == Value::Type::NIL ||
+          !Type::SEQ.is_type_of(*assoc_path_value))
+      {
+        throw TypeError("Path for update-in! must be a sequence, got: " +
+                        assoc_path_value->to_string());
+      }
+
+      const sptr_val_v assoc_path = Roo::get_children(*assoc_path_value);
+      if (assoc_path.empty())
+      {
+        throw InvocationException("Path for update-in! cannot be empty.");
+      }
+
+      sptr_val current_value = Dict::get_property_path(args[0], assoc_path);
+      const sptr_val& updater_spec = args[update_arg_i + 1];
+
+      UpdateCall call = make_update_call(current_value, updater_spec, "update-in!");
+      sptr_val updated_value = call.updater->execute(ctx, call.args);
+
+      sptr_val target = args[0];
+      for (size_t i = 0; i < assoc_path.size() - 1; i++)
+      {
+        target = Dict::get_property(target, *assoc_path[i]);
+      }
+
+      Dict::set_property(target, assoc_path.back(), updated_value);
+    }
+
+    return args[0];
   }
 
   /** GetFunction - get */

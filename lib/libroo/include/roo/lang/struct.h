@@ -104,6 +104,26 @@ namespace Roo
   FUNC(UpdateFunction, update)
 
   /*!
+   * @brief Mutate a map-like structure or sequence by applying a function to
+   * the current value at one or more keys or indices.
+   *
+   * Usage:
+   * @code
+   * (update! my-map :count (fn [x] (+ x 1)))
+   * (update! my-map :count [+ 10])
+   * (update! my-vec 1 [* 10])
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map/object or sequence to mutate                             |
+   * | 1     | The key or index to update                                       |
+   * | 2     | The updater spec, executable or sequence of executable + args    |
+   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
+   */
+  FUNC(UpdateBangFunction, update_bang)
+
+  /*!
    * @brief Create a modified copy of a nested map-like structure or sequence by
    * applying a function to the current value at one or more paths.
    *
@@ -123,6 +143,26 @@ namespace Roo
    * | 3..n  | Optional repetitions of Arg #1 and #2                            |
    */
   FUNC(UpdateInFunction, update_in)
+
+  /*!
+   * @brief Mutate a nested map-like structure or sequence by applying a function
+   * to the current value at one or more paths.
+   *
+   * Usage:
+   * @code
+   * (update-in! my-map [:count] (fn [x] (+ x 1)))
+   * (update-in! my-map [:count] [+ 10])
+   * (update-in! my-map [:nested :count] [* 10])
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The map/object or sequence to mutate                             |
+   * | 1     | The path to the value to update                                  |
+   * | 2     | The updater spec, executable or sequence of executable + args    |
+   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
+   */
+  FUNC(UpdateInBangFunction, update_in_bang)
 
   /*!
    * @brief Get a property by value from a complex object, ie a map

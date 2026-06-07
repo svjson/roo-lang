@@ -62,7 +62,9 @@ namespace Roo
     lang_symbols.emplace("assoc-in", AssocInFunction::make());
     lang_symbols.emplace("assoc-in!", AssocInBangFunction::make());
     lang_symbols.emplace("update", UpdateFunction::make());
+    lang_symbols.emplace("update!", UpdateBangFunction::make());
     lang_symbols.emplace("update-in", UpdateInFunction::make());
+    lang_symbols.emplace("update-in!", UpdateInBangFunction::make());
     lang_symbols.emplace("between?", BetweenPredicateFunction::make());
     lang_symbols.emplace("bit-and", BitAndFunction::make());
     lang_symbols.emplace("bit-not", BitNotFunction::make());
