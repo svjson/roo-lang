@@ -42,6 +42,8 @@ set(roo_SOURCES
   src/roo/lang/seq.cpp
   src/roo/lang/seq_func.cpp
   src/roo/lang/string.cpp
+  src/roo/lang/string/replace.cpp
+  src/roo/lang/string/string_namespace.cpp
   src/roo/lang/struct.cpp
   src/roo/lang/time.cpp
   src/roo/lexer.cpp

@@ -19,6 +19,7 @@
 #include <roo/io/null_file_system.h>
 #include <roo/lang.h>
 #include <roo/lang/io/io_namespace.h>
+#include <roo/lang/string/string_namespace.h>
 #include <roo/namespace.h>
 #include <roo/namespace_loader.h>
 #include <roo/reader.h>
@@ -82,6 +83,8 @@ namespace Roo
   {
     Namespace io = make_io_namespace();
     namespaces.emplace(io.get_name(), std::move(io));
+    Namespace string = make_string_namespace();
+    namespaces.emplace(string.get_name(), std::move(string));
 
     set_namespace_source(std::move(namespace_source));
     switch_namespace(DEFAULT_NAMESPACE);
