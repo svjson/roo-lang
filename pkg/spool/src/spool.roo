@@ -1,0 +1,14 @@
+(ns spool
+  (:require [spool.core :as core]))
+
+(defun enter! [context-key & metadata &rest]
+  (apply core/enter! (concat [context-key metadata] rest)))
+
+(defun leave! [context-key & metadata &rest]
+  (apply core/leave! (concat [context-key metadata] rest)))
+
+(defun reset! []
+  (core/reset!))
+
+(defun report! [& report?]
+  (core/report! report?))

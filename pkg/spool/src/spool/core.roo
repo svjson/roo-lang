@@ -1,0 +1,176 @@
+(ns spool.core)
+
+(def spool-state
+  {:roots []
+   :stack []})
+
+(defun now-ms []
+  (epoch-ms))
+
+(defun context-node [context-key metadata start-ms]
+  {:key context-key
+   :metadata metadata
+   :start-ms start-ms
+   :end-ms nil
+   :elapsed-ms nil
+   :children []})
+
+(defun metadata-map [metadata rest]
+  (apply merge
+         (concat [{}]
+                 (filter (concat [metadata] rest)
+                         (fn [value]
+                           (not (nil? value)))))))
+
+(defun empty-path? [path]
+  (or (nil? path)
+      (empty? path)))
+
+(defun add-child-at-path [nodes path child]
+  (if (empty-path? path)
+    (concat nodes [child])
+    (let [index (head path)
+          node (nth nodes index)]
+      (assoc nodes
+             index
+             (assoc node
+                    :children
+                    (add-child-at-path (:children node)
+                                       (tail path)
+                                       child))))))
+
+(defun update-node-at-path [nodes path update-fn]
+  (let [index (head path)
+        node (nth nodes index)]
+    (if (empty? (tail path))
+      (assoc nodes index (update-fn node))
+      (assoc nodes
+             index
+             (assoc node
+                    :children
+                    (update-node-at-path (:children node)
+                                         (tail path)
+                                         update-fn))))))
+
+(defun node-at-path [nodes path]
+  (let [node (nth nodes (head path))]
+    (if (empty? (tail path))
+      node
+      (node-at-path (:children node) (tail path)))))
+
+(defun append-index [path index]
+  (concat (or path []) [index]))
+
+(defun child-count-at-path [nodes path]
+  (if (empty-path? path)
+    (count nodes)
+    (let [node (nth nodes (head path))]
+      (child-count-at-path (:children node) (tail path)))))
+
+(defun next-child-path [roots parent-path]
+  (let [parent-path (or parent-path [])]
+    (append-index parent-path (child-count-at-path roots parent-path))))
+
+(defun enter! [context-key & metadata &rest]
+  (let [metadata (metadata-map metadata rest)
+        node (context-node context-key metadata (now-ms))
+        parent-path (head (:stack spool-state))
+        node-path (next-child-path (:roots spool-state) parent-path)]
+    (assoc! spool-state
+            :roots
+            (add-child-at-path (:roots spool-state) parent-path node)
+            :stack
+            (concat [node-path] (:stack spool-state)))
+    node-path))
+
+(defun leave-node [metadata end-ms node]
+  (assoc node
+         :metadata (merge (or (:metadata node) {}) (or metadata {}))
+         :end-ms end-ms
+         :elapsed-ms (- end-ms (:start-ms node))))
+
+(defun leave! [context-key & metadata &rest]
+  (let [metadata (metadata-map metadata rest)
+        path (head (:stack spool-state))
+        end-ms (now-ms)]
+    (if (and path
+             (= context-key (:key (node-at-path (:roots spool-state) path))))
+      (do
+        (assoc! spool-state
+                :roots
+                (update-node-at-path (:roots spool-state)
+                                     path
+                                     (fn [node]
+                                       (leave-node metadata end-ms node)))
+                :stack
+                (tail (:stack spool-state)))
+        path)
+      nil)))
+
+(defun reset! []
+  (assoc! spool-state
+          :roots []
+          :stack []))
+
+(defun report-tree []
+  {:contexts (:roots spool-state)})
+
+(defun default-report? [_tree]
+  true)
+
+(defun elapsed-label [context]
+  (if (nil? (:elapsed-ms context))
+    "open"
+    (str (:elapsed-ms context) "ms")))
+
+(defun metadata-label [metadata]
+  (if (empty? (or metadata {}))
+    ""
+    (str " " metadata)))
+
+(defun context-label [context]
+  (str (:key context)
+       " "
+       (elapsed-label context)
+       (metadata-label (:metadata context))))
+
+(defun child-branch [last?]
+  (if last?
+    "└── "
+    "├── "))
+
+(defun child-prefix [last?]
+  (if last?
+    "    "
+    "│   "))
+
+(defun append-context-lines! [lines contexts prefix]
+  (let [index 0
+        contexts (or contexts [])]
+    (while (< index (count contexts))
+      (let [context (nth contexts index)
+            last? (= index (- (count contexts) 1))]
+        (append! lines
+                 (str prefix
+                      (child-branch last?)
+                      (context-label context)))
+        (append-context-lines! lines
+                               (:children context)
+                               (str prefix (child-prefix last?)))
+        (set! [index] (+ index 1))))))
+
+(defun report-lines [tree]
+  (let [lines ["spool"]]
+    (append-context-lines! lines (:contexts tree) "")
+    lines))
+
+(defun print-lines! [lines]
+  (map lines prn)
+  lines)
+
+(defun report! [& report?]
+  (let [report? (or report? default-report?)
+        tree (report-tree)]
+    (when (report? tree)
+      (print-lines! (report-lines tree)))
+    tree))

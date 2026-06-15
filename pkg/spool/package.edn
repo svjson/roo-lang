@@ -1,0 +1,5 @@
+{:name spool
+ :version "0.1.0"
+ :description "Frame-scoped context timing reports for Roo programs."
+ :dependencies []
+ :load-roots ["src"]}

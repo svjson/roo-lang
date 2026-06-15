@@ -1,0 +1,73 @@
+(ns spool.core-test
+  (:require proof.core
+            [spool :as spool]
+            [spool.core :as spool-core]))
+
+(deftest reset-clears-report-tree
+  (spool/reset!)
+  (is (= {:contexts []}
+         (spool/report! (fn [_tree] false)))))
+
+(deftest enter-and-leave-records-context
+  (spool/reset!)
+  (spool/enter! :frame {:frame 1})
+  (spool/leave! :frame {:changed? true})
+  (let [tree (spool/report! (fn [_tree] false))
+        node (-> tree :contexts head)]
+    (is (= :frame (:key node)))
+    (is (= {:frame 1
+            :changed? true}
+           (:metadata node)))
+    (is (not (nil? (:start-ms node))))
+    (is (not (nil? (:end-ms node))))
+    (is (not (nil? (:elapsed-ms node))))))
+
+(deftest nested-contexts-build-readable-tree
+  (spool/reset!)
+  (spool/enter! :frame)
+  (spool/enter! "visibility")
+  (spool/leave! "visibility" {:cells 3})
+  (spool/leave! :frame)
+  (let [tree (spool/report! (fn [_tree] false))
+        frame (-> tree :contexts head)
+        visibility (-> frame :children head)]
+    (is (= :frame (:key frame)))
+    (is (= "visibility" (:key visibility)))
+    (is (= {:cells 3} (:metadata visibility)))))
+
+(deftest leave-ignores-mismatched-context-key
+  (spool/reset!)
+  (spool/enter! :frame)
+  (let [leave-result (spool/leave! :wrong)
+        tree (spool/report! (fn [_tree] false))
+        frame (-> tree :contexts head)]
+    (is (nil? leave-result))
+    (is (= :frame (:key frame)))
+    (is (nil? (:end-ms frame)))
+    (is (nil? (:elapsed-ms frame)))))
+
+(deftest report-predicate-controls-output-without-changing_return_value
+  (spool/reset!)
+  (spool/enter! :frame)
+  (spool/leave! :frame)
+  (let [tree (spool/report! (fn [tree]
+                              (> (count (:contexts tree)) 10)))]
+    (is (= :frame (-> tree :contexts head :key)))))
+
+(deftest report-lines-render-context-tree
+  (let [tree {:contexts [{:key :frame
+                          :metadata {:command-count 1}
+                          :elapsed-ms 10
+                          :children [{:key :command
+                                      :metadata {}
+                                      :elapsed-ms 4
+                                      :children []}
+                                     {:key "messages"
+                                      :metadata {:message-count 2}
+                                      :elapsed-ms nil
+                                      :children []}]}]}]
+    (is (= ["spool"
+            "└── :frame 10ms {:command-count 1}"
+            "    ├── :command 4ms"
+            "    └── messages open {:message-count 2}"]
+           (spool-core/report-lines tree)))))
