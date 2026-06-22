@@ -19,7 +19,8 @@ parts of the tree are printed.
                  (:changed? (:metadata (head (:contexts tree))))))
 
 (spool/report! {:only-keys [:visibility]
-                :collapse-keys [:visibility]})
+                :collapse-keys [:visibility]
+                :collapse-below-ms 10})
 ```
 
 The report tree is returned from `report!` whether or not the predicate allows
@@ -27,6 +28,8 @@ printing. Render options only affect printed output:
 
 - `:collapse-keys` renders matching nodes without rendering their children.
 - `:only-keys` renders matching nodes and their ancestor path, omitting other branches and non-matching children.
+- `:collapse-below-ms` renders closed nodes with elapsed time below the threshold
+  as leaves, without rendering their children.
 
 When printed, reports are rendered as a compact tree:
 

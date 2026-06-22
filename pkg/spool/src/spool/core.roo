@@ -154,14 +154,26 @@
       (:collapsed-keys options)
       []))
 
+(defun collapse-below-ms [options]
+  (or (:collapse-below-ms options)
+      (:collapse-elapsed-below-ms options)
+      (:leaf-below-ms options)))
+
 (defun key-selected? [keys key]
   (contains? (or keys []) key))
+
+(defun elapsed-below-threshold? [context threshold]
+  (and (not (nil? threshold))
+       (not (nil? (:elapsed-ms context)))
+       (< (:elapsed-ms context) threshold)))
 
 (defun only-filter-active? [options]
   (not (empty? (only-keys options))))
 
 (defun context-collapsed? [context options]
-  (key-selected? (collapse-keys options) (:key context)))
+  (or (key-selected? (collapse-keys options) (:key context))
+      (elapsed-below-threshold? context
+                                (collapse-below-ms options))))
 
 (defun project-context [context options]
   (let [projected-children

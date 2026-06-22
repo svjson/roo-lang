@@ -88,6 +88,37 @@
             "    └── :visibility 4ms {:cells 3}"]
            (spool-core/report-lines tree {:collapse-keys [:visibility]})))))
 
+(deftest report-lines-collapse-context-children-below_elapsed_threshold
+  (let [tree {:contexts [{:key :frame
+                          :metadata {}
+                          :elapsed-ms 25
+                          :children [{:key :visibility
+                                      :metadata {:cells 3}
+                                      :elapsed-ms 8
+                                      :children [{:key :ray
+                                                  :metadata {}
+                                                  :elapsed-ms 1
+                                                  :children []}]}
+                                     {:key :messages
+                                      :metadata {:message-count 2}
+                                      :elapsed-ms 12
+                                      :children [{:key :format
+                                                  :metadata {}
+                                                  :elapsed-ms 2
+                                                  :children []}]}]}]}]
+    (is (= ["spool"
+            "└── :frame 25ms"
+            "    ├── :visibility 8ms {:cells 3}"
+            "    └── :messages 12ms {:message-count 2}"
+            "        └── :format 2ms"]
+           (spool-core/report-lines tree {:collapse-below-ms 10})))))
+
+(deftest report-lines-do-not-collapse-open-contexts_below_elapsed_threshold
+  (let [tree {:contexts [{:key :frame :metadata {} :elapsed-ms nil
+                          :children [{:key :child :metadata {} :elapsed-ms 1 :children []}]}]}]
+    (is (= ["spool" "└── :frame open" "    └── :child 1ms"]
+           (spool-core/report-lines tree {:collapse-below-ms 10})))))
+
 (deftest report-lines-only-keys-keep-matching-nodes-and-ancestors
   (let [tree {:contexts [{:key :frame
                           :metadata {}
