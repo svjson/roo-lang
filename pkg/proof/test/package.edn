@@ -1,0 +1,5 @@
+{:name proof-tests
+ :version "0.1.0"
+ :dependencies {proof "file:.."}
+ :load-roots ["assets/dynamic-smoke/src" "assets/dynamic-smoke/test"]
+ :config {proof {:test-roots ["assets/dynamic-smoke/test"]}}}

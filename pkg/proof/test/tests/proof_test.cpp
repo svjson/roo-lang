@@ -137,6 +137,106 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
   EXPECT_EQ(results->to_string(), "[{:name fixture-loads-once :status :pass}]");
 }
 
+TEST(ProofPackage, run_selected_filters_registered_tests_by_name)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-selected-name-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest checkout-total
+      (is true))
+    (deftest profile-page
+      (is false))
+    (deftest checkout-discount
+      (is true))
+  )");
+
+  auto results = runtime.eval(R"((run-selected {:filter "*checkout*"}))");
+
+  EXPECT_EQ(results->to_string(),
+            "[{:name checkout-total :status :pass} {:name checkout-discount :status :pass}]");
+}
+
+TEST(ProofPackage, run_selected_filters_registered_tests_by_namespace)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns app.checkout
+      (:require proof.core))
+    (deftest completes-order
+      (is true))
+    (deftest applies-discount
+      (is true))
+  )");
+  runtime.eval(R"(
+    (ns app.checkout.card
+      (:require proof.core))
+    (deftest stores-card
+      (is true))
+  )");
+  runtime.eval(R"(
+    (ns app.profile
+      (:require proof.core))
+    (deftest updates-profile
+      (is false))
+  )");
+
+  auto exact_results =
+    runtime.eval(R"((proof.core/run-selected {:namespace "app.checkout"}))");
+  auto subtree_results = runtime.eval(R"((proof.core/run-selected {:namespace "app"
+                                                                   :include-sub-namespaces? true
+                                                                   :filter "*discount*"}))");
+  auto qualified_name_results =
+    runtime.eval(R"((proof.core/run-selected {:filter "app.checkout/*discount"}))");
+
+  EXPECT_EQ(exact_results->to_string(),
+            "[{:name completes-order :status :pass} {:name applies-discount :status :pass}]");
+  EXPECT_EQ(subtree_results->to_string(), "[{:name applies-discount :status :pass}]");
+  EXPECT_EQ(qualified_name_results->to_string(), "[{:name applies-discount :status :pass}]");
+}
+
+TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
+{
+  const auto root = fresh_proof_fixture_root("filter-after-load");
+  write_file(root / "test/app/checkout-test.roo",
+             R"((ns app.checkout-test
+  (:require proof.core))
+
+(deftest checkout-total
+  (is true))
+)");
+  write_file(root / "test/app/admin-test.roo",
+             R"((ns app.admin-test
+  (:require proof.core))
+
+(def loaded? true)
+
+(deftest hidden-failure
+  (is false))
+)");
+
+  Roo::DirRootFileSystem fs(
+    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-filter-test
+    (:require proof.runner)))");
+
+  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
+                              "\" :config {:test-roots [\"test\"] "
+                              ":namespace \"app.checkout-test\"}})");
+
+  EXPECT_EQ(results->to_string(), "[{:name checkout-total :status :pass}]");
+  EXPECT_EQ(runtime.eval("app.admin-test/loaded?")->to_string(), "true");
+}
+
 TEST(ProofPackage, summarizes_result_sets_in_roo)
 {
   Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});

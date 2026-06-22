@@ -32,6 +32,22 @@ proof: 1 passed, 0 failed, 1 total
 ----------------------------------
 ```
 
+Use `run-selected` to run only registered tests matching a selection map:
+
+```lisp
+(run-selected {:filter "*checkout*"})
+(run-selected {:namespace "app.checkout"})
+(run-selected {:namespace "app"
+               :include-sub-namespaces? true
+               :filter "*discount*"})
+```
+
+Discovery and namespace loading still happen before selection. The `:filter`
+option supports `*` as a wildcard and matches both bare test names and qualified
+names such as `app.checkout-test/applies-discount`. The `:namespace` option
+matches an exact namespace by default. Add `:include-sub-namespaces? true` to
+also include namespaces below that prefix.
+
 ## Assertions
 
 Use `is` for the canonical assertion form:
@@ -219,6 +235,18 @@ If tests live elsewhere, configure proof in `package.edn`:
  :dependencies {proof "file:../path/to/proof"}
  :load-roots ["src" "test" "integration"]
  :config {proof {:test-roots ["test" "integration"]}}}
+```
+
+The same config map can select tests for `roo proof`:
+
+```lisp
+{:name my-package
+ :dependencies {proof "file:../path/to/proof"}
+ :load-roots ["src" "test"]
+ :config {proof {:test-roots ["test"]
+                 :namespace "my-package.checkout"
+                 :include-sub-namespaces? true
+                 :filter "*discount*"}}}
 ```
 
 Proof tests can also be run manually from Roo code by loading test namespaces and

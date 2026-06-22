@@ -20,9 +20,72 @@
   (set! [current-failures] [])
   tests)
 
-(defun register-test! [name body]
-  (append! tests {:name name :body body})
+(defun register-test! [name body & namespace]
+  (append! tests {:name name :namespace namespace :body body})
   name)
+
+(defun starts-with? [text prefix]
+  (if (< (count text) (count prefix))
+    false
+    (= prefix (substr text 0 (count prefix)))))
+
+(defun sub-namespace? [parent namespace]
+  (and (not (nil? namespace))
+       (starts-with? namespace (str parent "."))))
+
+(defun test-name-text [test]
+  (str (:name test)))
+
+(defun qualified-test-name [test]
+  (if (nil? (:namespace test))
+    (test-name-text test)
+    (str (:namespace test) "/" (test-name-text test))))
+
+(defun wildcard-match-from? [pattern pattern-index text text-index]
+  (if (= pattern-index (count pattern))
+    (= text-index (count text))
+    (let [pattern-char (str (nth pattern pattern-index))]
+      (if (= "*" pattern-char)
+        (or (wildcard-match-from? pattern (+ pattern-index 1) text text-index)
+            (and (< text-index (count text))
+                 (wildcard-match-from? pattern pattern-index text (+ text-index 1))))
+        (and (< text-index (count text))
+             (= pattern-char (str (nth text text-index)))
+             (wildcard-match-from? pattern
+                                   (+ pattern-index 1)
+                                   text
+                                   (+ text-index 1)))))))
+
+(defun wildcard-match? [pattern text]
+  (wildcard-match-from? (str pattern) 0 (str text) 0))
+
+(defun test-name-matches? [options test]
+  (let [pattern (:filter options)]
+    (if (nil? pattern)
+      true
+      (or (wildcard-match? pattern (test-name-text test))
+          (wildcard-match? pattern (qualified-test-name test))))))
+
+(defun test-namespace-matches? [options test]
+  (let [namespace (:namespace options)]
+    (if (nil? namespace)
+      true
+      (let [namespace-text (str namespace)
+            test-namespace (:namespace test)]
+        (if (:include-sub-namespaces? options)
+          (or (= namespace-text test-namespace)
+              (sub-namespace? namespace-text test-namespace))
+          (= namespace-text test-namespace))))))
+
+(defun test-selected? [options test]
+  (and (test-namespace-matches? options test)
+       (test-name-matches? options test)))
+
+(defun selected-tests [options]
+  (let [selection (if (nil? options) {} options)]
+    (filter tests
+            (fn [test]
+              (test-selected? selection test)))))
 
 (defun pass-result [name]
   {:name name :status :pass})
@@ -115,7 +178,10 @@
     (report-result result)
     (append! results result)))
 
-(defun run []
-  (let [results (reduce tests [] run-and-report-test)]
+(defun run-selected [options]
+  (let [results (reduce (selected-tests options) [] run-and-report-test)]
     (report-summary (result-summary results))
     results))
+
+(defun run []
+  (run-selected {}))

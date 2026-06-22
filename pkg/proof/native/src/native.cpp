@@ -663,7 +663,9 @@ namespace Roo::Proof
           throw InvocationException("Invalid deftest execution node.");
         }
 
-        ctx.call("proof.core/register-test!", snode.values);
+        sptr_val_v args = snode.values;
+        args.push_back(Value::string(ctx.get_current_namespace()->get_name()));
+        ctx.call("proof.core/register-test!", args);
         return snode.values.front();
       }
     };

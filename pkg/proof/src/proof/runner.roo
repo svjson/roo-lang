@@ -69,4 +69,4 @@
 
 (defun run [context]
   (load-tests context)
-  (proof.core/run))
+  (proof.core/run-selected (:config context)))
