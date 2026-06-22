@@ -144,6 +144,47 @@
     "    "
     "│   "))
 
+(defun only-keys [options]
+  (or (:only-keys options)
+      (:include-keys options)
+      []))
+
+(defun collapse-keys [options]
+  (or (:collapse-keys options)
+      (:collapsed-keys options)
+      []))
+
+(defun key-selected? [keys key]
+  (contains? (or keys []) key))
+
+(defun only-filter-active? [options]
+  (not (empty? (only-keys options))))
+
+(defun context-collapsed? [context options]
+  (key-selected? (collapse-keys options) (:key context)))
+
+(defun project-context [context options]
+  (let [projected-children
+        (if (context-collapsed? context options)
+          []
+          (project-contexts (:children context) options))
+        include-self?
+        (or (not (only-filter-active? options))
+            (key-selected? (only-keys options) (:key context)))]
+    (if (or include-self? (not (empty? projected-children)))
+      (assoc context :children projected-children)
+      nil)))
+
+(defun project-contexts [contexts options]
+  (filter (map (or contexts [])
+               (fn [context]
+                 (project-context context options)))
+          (fn [context]
+            (not (nil? context)))))
+
+(defun project-tree [tree options]
+  (assoc tree :contexts (project-contexts (:contexts tree) options)))
+
 (defun append-context-lines! [lines contexts prefix]
   (let [index 0
         contexts (or contexts [])]
@@ -159,8 +200,9 @@
                                (str prefix (child-prefix last?)))
         (set! [index] (+ index 1))))))
 
-(defun report-lines [tree]
-  (let [lines ["spool"]]
+(defun report-lines [tree & options]
+  (let [tree (project-tree tree (or options {}))
+        lines ["spool"]]
     (append-context-lines! lines (:contexts tree) "")
     lines))
 
@@ -168,9 +210,17 @@
   (map lines prn)
   lines)
 
-(defun report! [& report?]
-  (let [report? (or report? default-report?)
+(defun report-arguments [report-arg rest]
+  (if (= "map" (type-of report-arg))
+    {:report? default-report?
+     :options report-arg}
+    {:report? (or report-arg default-report?)
+     :options (or (head (or rest [])) {})}))
+
+(defun report! [& report-arg &rest]
+  (let [arguments (report-arguments report-arg rest)
+        report? (:report? arguments)
         tree (report-tree)]
     (when (report? tree)
-      (print-lines! (report-lines tree)))
+      (print-lines! (report-lines tree (:options arguments))))
     tree))

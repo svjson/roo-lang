@@ -10,5 +10,5 @@
 (defun reset! []
   (core/reset!))
 
-(defun report! [& report?]
-  (core/report! report?))
+(defun report! [& report-arg &rest]
+  (apply core/report! (concat [report-arg] rest)))
