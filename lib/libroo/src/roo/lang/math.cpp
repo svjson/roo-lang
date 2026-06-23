@@ -55,6 +55,23 @@ namespace Roo
       std::cos(std::get<const Value::Number>(args[0]->value).get_float()));
   }
 
+  /* PowFunction - pow */
+  FUNC_IMPL(PowFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&PowFunction::exec_pow))))
+
+  EXEC_BODY(PowFunction, exec_pow)
+  {
+    if (args[0]->type == Value::Type::NIL || args[1]->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
+    const auto& base = std::get<const Value::Number>(args[0]->value);
+    const auto& exponent = std::get<const Value::Number>(args[1]->value);
+    return Value::number(std::pow(base.get_float(), exponent.get_float()));
+  }
+
   /* SqrtFunction - sqrt */
   FUNC_IMPL(SqrtFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SqrtFunction::exec_sqrt))))

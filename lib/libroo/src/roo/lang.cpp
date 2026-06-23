@@ -143,6 +143,7 @@ namespace Roo
     lang_symbols.emplace("or", OrForm::make());
     lang_symbols.emplace("partition", PartitionFunction::make());
     lang_symbols.emplace("pascal-case", PascalCaseFunction::make());
+    lang_symbols.emplace("pow", PowFunction::make());
     lang_symbols.emplace("pretty-str", PrettyStrFunction::make());
     lang_symbols.emplace("prn", PrnFunction::make());
     lang_symbols.emplace("qualifier", QualifierFunction::make());

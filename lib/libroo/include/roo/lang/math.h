@@ -52,6 +52,7 @@ namespace Roo
   FUNC(CeilFunction, ceil)
 
   FUNC(CosFunction, cos);
+  FUNC(PowFunction, pow);
   FUNC(SinFunction, sin);
   FUNC(SqrtFunction, sqrt);
 
