@@ -35,6 +35,35 @@
          (fn [root]
            (discover-roo-files (absolute-test-root context root))))))
 
+(defun relative-package-path [context path]
+  (let [package-root (:package-root context)]
+    (if (nil? package-root)
+      path
+      (let [prefix (str package-root "/")]
+        (if (proof.core/starts-with? path prefix)
+          (substr path (count prefix))
+          path)))))
+
+(defun test-file-entry [context path]
+  {:path path
+   :display-file (relative-package-path context path)
+   :namespace (proof.core/declared-namespace path)})
+
+(defun test-namespace-seen? [entries namespace]
+  (contains? (map entries :namespace) namespace))
+
+(defun append-test-file-entry-if-new! [context entries path]
+  (let [entry (test-file-entry context path)]
+    (if (test-namespace-seen? entries (:namespace entry))
+      entries
+      (append! entries entry))))
+
+(defun discovered-test-file-entries [context]
+  (reduce (discover-test-files context)
+          []
+          (fn [entries path]
+            (append-test-file-entry-if-new! context entries path))))
+
 (defun append-namespace-if-new! [namespaces path]
   (let [namespace (proof.core/declared-namespace path)]
     (if (contains? namespaces namespace)
@@ -65,7 +94,17 @@
 
 (defun load-tests [context]
   (proof.core/clear!)
-  (require-test-namespaces (discovered-test-namespaces context)))
+  (let [entries (discovered-test-file-entries context)]
+    (require-test-namespaces (map entries :namespace))
+    (proof.core/annotate-tests!
+      (reduce entries
+              {}
+              (fn [metadata entry]
+                (assoc metadata
+                       (:namespace entry)
+                       {:file (:path entry)
+                        :display-file (:display-file entry)}))))
+    entries))
 
 (defun run [context]
   (load-tests context)

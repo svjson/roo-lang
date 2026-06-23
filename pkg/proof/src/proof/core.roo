@@ -24,6 +24,19 @@
   (append! tests {:name name :namespace namespace :body body})
   name)
 
+(defun annotate-test [metadata-by-namespace test]
+  (let [metadata (get metadata-by-namespace (:namespace test) nil)]
+    (if (nil? metadata)
+      test
+      (merge test metadata))))
+
+(defun annotate-tests! [metadata-by-namespace]
+  (set! [tests]
+        (map tests
+             (fn [test]
+               (annotate-test metadata-by-namespace test))))
+  tests)
+
 (defun starts-with? [text prefix]
   (if (< (count text) (count prefix))
     false
@@ -173,13 +186,86 @@
   (report-summary (result-summary results))
   results)
 
+(defun reporter [options]
+  (let [configured (:reporter options)]
+    (if (nil? configured)
+      :simple
+      configured)))
+
+(defun tree-reporter? [reporter-name]
+  (or (= reporter-name :tree)
+      (= reporter-name "tree")))
+
+(defun test-display-file [test]
+  (if (nil? (:display-file test))
+    (if (nil? (:file test))
+      (if (nil? (:namespace test))
+        "<inline>"
+        (str (:namespace test)))
+      (:file test))
+    (:display-file test)))
+
+(defun increment-file-count [counts test]
+  (let [file (test-display-file test)]
+    (assoc counts file (+ 1 (get counts file 0)))))
+
+(defun file-counts [tests-to-run]
+  (reduce tests-to-run {} increment-file-count))
+
+(defun initial-report-state [reporter-name tests-to-run]
+  (if (tree-reporter? reporter-name)
+    {:current-file nil
+     :indexes {}
+     :counts (file-counts tests-to-run)}
+    {}))
+
+(defun report-tree-result [state test result]
+  (let [file (test-display-file test)
+        current-index (+ 1 (get (:indexes state) file 0))
+        total (get (:counts state) file)
+        glyph (if (= current-index total) "└──" "├──")
+        status (if (passed? result) "PASS" "FAIL")]
+    (if (not= file (:current-file state))
+      (prn file))
+    (prn (str glyph " " status " - " (:name result)))
+    (if (failed? result)
+      (report-failures (:failures result)))
+    (assoc state
+           :current-file file
+           :indexes (assoc (:indexes state) file current-index))))
+
+(defun report-test-result [reporter-name state test result]
+  (if (tree-reporter? reporter-name)
+    (report-tree-result state test result)
+    (do
+      (report-result result)
+      state)))
+
 (defun run-and-report-test [results test]
   (let [result (run-test test)]
     (report-result result)
     (append! results result)))
 
+(defun run-and-report-selected-test [run-state test]
+  (let [result (run-test test)
+        report-state (report-test-result (:reporter run-state)
+                                         (:report-state run-state)
+                                         test
+                                         result)]
+    (assoc run-state
+           :report-state report-state
+           :results (append! (:results run-state) result))))
+
 (defun run-selected [options]
-  (let [results (reduce (selected-tests options) [] run-and-report-test)]
+  (let [selection (if (nil? options) {} options)
+        tests-to-run (selected-tests selection)
+        reporter-name (reporter selection)
+        run-state (reduce tests-to-run
+                          {:results []
+                           :reporter reporter-name
+                           :report-state (initial-report-state reporter-name tests-to-run)}
+                          run-and-report-selected-test)
+        results (:results run-state)]
     (report-summary (result-summary results))
     results))
 

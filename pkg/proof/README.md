@@ -168,7 +168,29 @@ A failing result has:
 
 ## Reporting
 
-The default reporter is composed from ordinary Roo functions in `proof.core`:
+The default reporter is `:simple`, which streams one line per test as it runs:
+
+```text
+  PASS addition
+  FAIL bad-math
+```
+
+Package-driven runs can use the tree reporter:
+
+```lisp
+{:config {proof {:test-roots ["test"]
+                 :reporter :tree}}}
+```
+
+That groups streamed results by source file:
+
+```text
+test/app/checkout-test.roo
+├── PASS - checkout-total
+└── FAIL - checkout-discount
+```
+
+The simple reporter is composed from ordinary Roo functions in `proof.core`:
 
 - `passed?`
 - `failed?`
@@ -246,7 +268,8 @@ The same config map can select tests for `roo proof`:
  :config {proof {:test-roots ["test"]
                  :namespace "my-package.checkout"
                  :include-sub-namespaces? true
-                 :filter "*discount*"}}}
+                 :filter "*discount*"
+                 :reporter :tree}}}
 ```
 
 Proof tests can also be run manually from Roo code by loading test namespaces and

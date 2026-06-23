@@ -237,6 +237,55 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
   EXPECT_EQ(runtime.eval("app.admin-test/loaded?")->to_string(), "true");
 }
 
+TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
+{
+  const auto root = fresh_proof_fixture_root("tree-reporter");
+  write_file(root / "test/app/checkout-test.roo",
+             R"((ns app.checkout-test
+  (:require proof.core))
+
+(deftest checkout-total
+  (is true))
+
+(deftest checkout-discount
+  (is (= 5 (+ 2 2))))
+)");
+  write_file(root / "test/app/profile-test.roo",
+             R"((ns app.profile-test
+  (:require proof.core))
+
+(deftest profile-page
+  (is true))
+)");
+
+  Roo::DirRootFileSystem fs(
+    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-tree-reporter-test
+    (:require proof.runner)))");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
+                              "\" :config {:test-roots [\"test\"] "
+                              ":reporter :tree}})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(results->to_string(),
+            "[{:name checkout-total :status :pass} "
+            "{:name checkout-discount :status :fail :message \"Expected 5, got 4.\" "
+            ":failures [{:message \"Expected 5, got 4.\"}]} "
+            "{:name profile-page :status :pass}]");
+  EXPECT_NE(output.find("test/app/checkout-test.roo\n"
+                        "├── PASS - checkout-total\n"
+                        "└── FAIL - checkout-discount\n"
+                        "    - Expected 5, got 4.\n"),
+            std::string::npos);
+  EXPECT_NE(output.find("test/app/profile-test.roo\n"
+                        "└── PASS - profile-page\n"),
+            std::string::npos);
+}
+
 TEST(ProofPackage, summarizes_result_sets_in_roo)
 {
   Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
