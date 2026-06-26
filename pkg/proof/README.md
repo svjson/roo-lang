@@ -182,6 +182,13 @@ Package-driven runs can use the tree reporter:
                  :reporter :tree}}}
 ```
 
+The same setting can be supplied on the command line when running proof as a
+package tool:
+
+```sh
+roo proof --reporter tree
+```
+
 That groups streamed results by source file:
 
 ```text
@@ -271,6 +278,24 @@ The same config map can select tests for `roo proof`:
                  :filter "*discount*"
                  :reporter :tree}}}
 ```
+
+Command-line flags override the `package.edn` values for a single run:
+
+```sh
+roo proof --test-root test \
+          --filter '*discount*' \
+          --namespace my-package.checkout \
+          --include-sub-namespaces \
+          --reporter tree
+```
+
+Supported flags are:
+
+- `--test-root <path>` or `--test-root=<path>`; repeat it to provide multiple roots
+- `--filter <pattern>` or `--filter=<pattern>`
+- `--namespace <namespace>` or `--namespace=<namespace>`
+- `--include-sub-namespaces`, `--include-sub-namespaces=true|false`, and `--no-include-sub-namespaces`
+- `--reporter simple|tree` or `--reporter=simple|tree`
 
 Proof tests can also be run manually from Roo code by loading test namespaces and
 calling `(run)` yourself.

@@ -237,7 +237,11 @@ int main(int argc, char** argv)
     runtime.set_call_stack_diagnostics(true);
     if (run_tool && package_plan)
     {
-      Roo::Package::Application::invoke_tool(runtime, *package_plan, file_path);
+      Roo::Package::Application::invoke_tool(runtime,
+                                             *package_plan,
+                                             file_path,
+                                             "run",
+                                             app_args);
     }
     else if (run_package && package_plan && !package_plan->main.empty())
     {

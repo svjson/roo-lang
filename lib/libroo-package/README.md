@@ -429,7 +429,8 @@ The `roo` binary uses this to run dependency-provided tools. `roo proof`
 from inside the application package loads the normal package environment, finds
 the `proof` dependency, then invokes its `run` tool with a context map containing
 the application package root, package name, load paths, tool name, and the
-`proof` config block.
+`proof` config block. Arguments after the tool name are forwarded in the context
+as `:args`.
 
 ## Loading From the `roo` Binary
 
@@ -457,12 +458,12 @@ native libraries, then loads `:autoloads` before reading the file.
 Running a dependency-provided package tool:
 
 ```sh
-roo proof
+roo proof --reporter tree --filter '*checkout*'
 ```
 
 uses the nearest parent `package.edn`, resolves the package and dependencies,
 loads native libraries and autoloads, then invokes the dependency package's
-declared `run` tool with package context data.
+declared `run` tool with package context data and forwarded tool arguments.
 
 ## Current Limitations
 

@@ -2,6 +2,143 @@
   (:require proof.core
             [roo.io :as io]))
 
+(defun base-config [context]
+  (let [config (:config context)]
+    (if (nil? config)
+      {}
+      config)))
+
+(defun cli-args [context]
+  (let [args (:args context)]
+    (if (nil? args)
+      []
+      args)))
+
+(defun flag-value [arg flag]
+  (let [prefix (str flag "=")]
+    (if (proof.core/starts-with? arg prefix)
+      (substr arg (count prefix))
+      nil)))
+
+(defun cli-keyword [value]
+  (if (proof.core/starts-with? value ":")
+    (keyword (substr value 1))
+    (keyword value)))
+
+(defun false-cli-value? [value]
+  (or (= value "false")
+      (= value "0")
+      (= value "no")))
+
+(defun cli-bool [value]
+  (not (false-cli-value? value)))
+
+(defun next-value? [args index]
+  (and (< (+ index 1) (count args))
+       (not (proof.core/starts-with? (nth args (+ index 1)) "--"))))
+
+(defun parse-proof-args-from [args index config roots]
+  (if (= index (count args))
+    (if (= 0 (count roots))
+      config
+      (assoc config :test-roots roots))
+    (let [arg (nth args index)
+          reporter (flag-value arg "--reporter")
+          filter-pattern (flag-value arg "--filter")
+          namespace (flag-value arg "--namespace")
+          test-root (flag-value arg "--test-root")
+          test-roots (flag-value arg "--test-roots")
+          include-sub-namespaces (flag-value arg "--include-sub-namespaces")
+          include-sub-namespaces-p (flag-value arg "--include-sub-namespaces?")]
+      (cond
+        (not (nil? reporter))
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config :reporter (cli-keyword reporter))
+                               roots)
+
+        (not (nil? filter-pattern))
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config :filter filter-pattern)
+                               roots)
+
+        (not (nil? namespace))
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config :namespace namespace)
+                               roots)
+
+        (not (nil? test-root))
+        (parse-proof-args-from args (+ index 1) config (append! roots test-root))
+
+        (not (nil? test-roots))
+        (parse-proof-args-from args (+ index 1) config (append! roots test-roots))
+
+        (not (nil? include-sub-namespaces))
+        (parse-proof-args-from
+          args
+          (+ index 1)
+          (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces))
+          roots)
+
+        (not (nil? include-sub-namespaces-p))
+        (parse-proof-args-from
+          args
+          (+ index 1)
+          (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces-p))
+          roots)
+
+        (= arg "--reporter")
+        (parse-proof-args-from args
+                               (+ index 2)
+                               (assoc config
+                                      :reporter
+                                      (cli-keyword (nth args (+ index 1))))
+                               roots)
+
+        (= arg "--filter")
+        (parse-proof-args-from args
+                               (+ index 2)
+                               (assoc config :filter (nth args (+ index 1)))
+                               roots)
+
+        (= arg "--namespace")
+        (parse-proof-args-from args
+                               (+ index 2)
+                               (assoc config :namespace (nth args (+ index 1)))
+                               roots)
+
+        (or (= arg "--test-root") (= arg "--test-roots"))
+        (parse-proof-args-from args
+                               (+ index 2)
+                               config
+                               (append! roots (nth args (+ index 1))))
+
+        (or (= arg "--include-sub-namespaces") (= arg "--include-sub-namespaces?"))
+        (if (next-value? args index)
+          (parse-proof-args-from
+            args
+            (+ index 2)
+            (assoc config :include-sub-namespaces? (cli-bool (nth args (+ index 1))))
+            roots)
+          (parse-proof-args-from args
+                                 (+ index 1)
+                                 (assoc config :include-sub-namespaces? true)
+                                 roots))
+
+        (= arg "--no-include-sub-namespaces")
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config :include-sub-namespaces? false)
+                               roots)
+
+        :else
+        (parse-proof-args-from args (+ index 1) config roots)))))
+
+(defun configured-proof [context]
+  (parse-proof-args-from (cli-args context) 0 (base-config context) []))
+
 (defun configured-test-roots [context]
   (let [roots (:test-roots (:config context))]
     (if (nil? roots)
@@ -107,5 +244,7 @@
     entries))
 
 (defun run [context]
-  (load-tests context)
-  (proof.core/run-selected (:config context)))
+  (let [config (configured-proof context)
+        run-context (assoc context :config config)]
+    (load-tests run-context)
+    (proof.core/run-selected config)))

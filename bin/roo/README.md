@@ -23,4 +23,8 @@ before the target.
 
 `roo proof` is generic package tool dispatch: the current package must depend
 on a package named `proof`, and that package must declare a `run` tool in its
-`package.edn`.
+`package.edn`. Arguments after the tool target are forwarded to that tool:
+
+```sh
+roo proof --reporter tree --filter '*checkout*'
+```

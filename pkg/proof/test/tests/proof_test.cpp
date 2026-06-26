@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 #include <proof/native.h>
+#include <roo-package/application.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
 
@@ -283,6 +284,77 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
             std::string::npos);
   EXPECT_NE(output.find("test/app/profile-test.roo\n"
                         "└── PASS - profile-page\n"),
+            std::string::npos);
+}
+
+TEST(ProofPackage, runner_merges_cli_args_over_package_config)
+{
+  const auto root = fresh_proof_fixture_root("cli-config");
+  write_file(root / "spec/app/checkout-test.roo",
+             R"((ns app.checkout-test
+  (:require proof.core))
+
+(deftest checkout-total
+  (is true))
+
+(deftest checkout-discount
+  (is true))
+)");
+  write_file(root / "test/app/ignored-test.roo",
+             R"((ns app.ignored-test
+  (:require proof.core))
+
+(deftest ignored-failure
+  (is false))
+)");
+
+  Roo::DirRootFileSystem fs(
+    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "spec").string()});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-cli-args-test
+    (:require proof.runner)))");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
+                              "\" :config {:test-roots [\"test\"] "
+                              ":filter \"ignored*\"} "
+                              ":args [\"--test-root\" \"spec\" "
+                              "\"--filter=checkout-discount\" "
+                              "\"--reporter\" \"tree\"]})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(results->to_string(), "[{:name checkout-discount :status :pass}]");
+  EXPECT_NE(output.find("spec/app/checkout-test.roo\n"
+                        "└── PASS - checkout-discount\n"),
+            std::string::npos);
+}
+
+TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
+{
+  const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-smoke";
+
+  Roo::DirRootFileSystem manifest_fs("/");
+  auto plan = Roo::Package::resolve_load_plan(manifest_fs, root.string());
+
+  auto fs = Roo::Package::make_load_path_file_system(plan);
+  Roo::Package::LoadedNativePackages native_packages;
+  Roo::Runtime runtime(fs.get());
+  native_packages = Roo::Package::load_native_libraries(runtime, plan);
+  Roo::Package::load_autoloads(runtime, plan);
+
+  testing::internal::CaptureStdout();
+  auto results = Roo::Package::Application::invoke_tool(
+    runtime,
+    plan,
+    "proof",
+    "run",
+    {"--reporter=tree", "--filter", "discovered-proof"});
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(results->to_string(), "[{:name discovered-proof :status :pass}]");
+  EXPECT_NE(output.find("test/smoke/discovered.roo\n"
+                        "└── PASS - discovered-proof\n"),
             std::string::npos);
 }
 

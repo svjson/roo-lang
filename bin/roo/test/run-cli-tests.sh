@@ -12,3 +12,13 @@ test "$(cat "$OUTPUT_FILE")" = "3:alpha:beta:nil:nil:nil"
 
 "$ROO" "$ROOT_DIR/bin/roo/test/assets/main-app" "$OUTPUT_FILE" --version --help
 test "$(cat "$OUTPUT_FILE")" = "3:--version:--help:nil:nil:nil"
+
+PROOF_OUTPUT="$(
+  cd "$ROOT_DIR/pkg/proof/test/assets/dynamic-smoke"
+  "$ROO" proof --reporter tree --filter discovered-proof
+)"
+
+case "$PROOF_OUTPUT" in
+  *"test/smoke/discovered.roo"*"└── PASS - discovered-proof"*) ;;
+  *) echo "$PROOF_OUTPUT"; exit 1 ;;
+esac

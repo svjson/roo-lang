@@ -45,7 +45,7 @@ namespace Roo::Package::Application
     return Value::vector(values);
   }
 
-  inline sptr_val cli_args_value(int argc, char** argv)
+  inline std::vector<std::string> cli_args_vector(int argc, char** argv)
   {
     std::vector<std::string> args;
     if (argc > 1)
@@ -56,7 +56,12 @@ namespace Roo::Package::Application
     {
       args.push_back(argv[i]);
     }
-    return cli_args_value(args);
+    return args;
+  }
+
+  inline sptr_val cli_args_value(int argc, char** argv)
+  {
+    return cli_args_value(cli_args_vector(argc, argv));
   }
 
   inline std::size_t declared_main_arity(const Executable& executable,
@@ -222,7 +227,8 @@ namespace Roo::Package::Application
   inline std::string tool_invocation_context(const LoadPlan& plan,
                                              const PackageInfo& package,
                                              const PackageInfo& tool_package,
-                                             const std::string& tool_name)
+                                             const std::string& tool_name,
+                                             const std::vector<std::string>& args)
   {
     const auto config_it = package.config.find(tool_package.name);
     const std::string config = config_it == package.config.end() ? "{}" : config_it->second;
@@ -234,14 +240,16 @@ namespace Roo::Package::Application
            << " :package-load-roots " << source_string_vector_literal(package.load_roots)
            << " :load-paths " << source_string_vector_literal(plan.load_paths)
            << " :tool-package " << source_string_literal(tool_package.name) << " :tool-name "
-           << source_string_literal(tool_name) << " :config " << config << "}";
+           << source_string_literal(tool_name) << " :config " << config << " :args "
+           << source_string_vector_literal(args) << "}";
     return stream.str();
   }
 
   inline sptr_val invoke_tool(Runtime& runtime,
                               const LoadPlan& plan,
                               const std::string& tool_package_name,
-                              const std::string& tool_name = "run")
+                              const std::string& tool_name = "run",
+                              const std::vector<std::string>& args = {})
   {
     const auto* package = root_package(plan);
     if (!package)
@@ -274,9 +282,22 @@ namespace Roo::Package::Application
     runtime.eval("(ns roo.package.tool (:require " + tool_namespace + "))",
                  "<package-tool>");
     return runtime.eval("(" + tool_function + " " +
-                          tool_invocation_context(plan, *package, *tool_package, tool_name) +
+                          tool_invocation_context(plan,
+                                                  *package,
+                                                  *tool_package,
+                                                  tool_name,
+                                                  args) +
                           ")",
                         "<package-tool>");
+  }
+
+  inline sptr_val invoke_tool(Runtime& runtime,
+                              const LoadPlan& plan,
+                              const std::string& tool_package_name,
+                              int argc,
+                              char** argv)
+  {
+    return invoke_tool(runtime, plan, tool_package_name, "run", cli_args_vector(argc, argv));
   }
 } // namespace Roo::Package::Application
 
