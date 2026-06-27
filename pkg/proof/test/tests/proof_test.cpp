@@ -430,6 +430,65 @@ TEST(ProofPackage, records_failed_assertions_before_later_passing_expressions)
             ":failures [{:message \"Expected 1, got 2.\"}]}]");
 }
 
+TEST(ProofPackage, wrapped_assertion_abort_marks_test_failed_and_continues)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-wrapped-assertion-abort-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.set_call_stack_diagnostics(true);
+  runtime.eval(R"(
+    (deftest assertion-through-apply
+      (apply (fn [] (is (= 1 2))) []))
+    (deftest after-wrapped-assertion
+      (is true))
+  )");
+
+  auto results = runtime.eval("(run)");
+
+  EXPECT_EQ(results->to_string(),
+            "[{:name assertion-through-apply :status :fail "
+            ":message \"Expected 1, got 2.\" "
+            ":failures [{:message \"Expected 1, got 2.\"}]} "
+            "{:name after-wrapped-assertion :status :pass}]");
+}
+
+TEST(ProofPackage, runtime_error_marks_test_error_and_continues)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-error-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest division-error
+      (/ 1 0))
+    (deftest after-error
+      (is true))
+  )");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(run)");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(results->to_string(),
+            "[{:name division-error :status :error :message \"Division by zero\"} "
+            "{:name after-error :status :pass}]");
+  EXPECT_NE(output.find("  ERROR division-error\n"
+                        "    - Division by zero\n"),
+            std::string::npos);
+  EXPECT_NE(output.find("  PASS after-error\n"), std::string::npos);
+  EXPECT_NE(output.find("proof: 1 passed, 0 failed, 1 errored, 2 total"),
+            std::string::npos);
+}
+
 TEST(ProofPackage, expect_records_failures_and_continues)
 {
   Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});

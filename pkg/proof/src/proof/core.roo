@@ -109,6 +109,11 @@
    :message (:message (head failures))
    :failures failures})
 
+(defun error-result [name message]
+  {:name name
+   :status :error
+   :message message})
+
 (defun record-failure! [message]
   (let [failure {:message message}]
     (append! current-failures failure)
@@ -116,10 +121,12 @@
 
 (defun run-test [test]
   (set! [current-failures] [])
-  (run-test-body (:body test))
-  (if (= 0 (count current-failures))
-    (pass-result (:name test))
-    (fail-result (:name test) current-failures)))
+  (let [body-result (run-test-body (:body test))]
+    (if (and (not (nil? body-result)) (errored? body-result))
+      (error-result (:name test) (:message body-result))
+      (if (= 0 (count current-failures))
+        (pass-result (:name test))
+        (fail-result (:name test) current-failures)))))
 
 (defun passed? [result]
   (= (:status result) :pass))
@@ -127,11 +134,17 @@
 (defun failed? [result]
   (= (:status result) :fail))
 
+(defun errored? [result]
+  (= (:status result) :error))
+
 (defun passed-results [results]
   (filter results passed?))
 
 (defun failed-results [results]
   (filter results failed?))
+
+(defun error-results [results]
+  (filter results errored?))
 
 (defun pass-count [results]
   (count (passed-results results)))
@@ -139,14 +152,24 @@
 (defun fail-count [results]
   (count (failed-results results)))
 
+(defun error-count [results]
+  (count (error-results results)))
+
 (defun result-summary [results]
-  {:total (count results)
-   :passed (pass-count results)
-   :failed (fail-count results)})
+  (let [summary {:total (count results)
+                 :passed (pass-count results)
+                 :failed (fail-count results)}
+        errors (error-count results)]
+    (if (= 0 errors)
+      summary
+      (assoc summary :errored errors))))
 
 (defun summary-text [summary]
   (str "proof: " (:passed summary) " passed, "
        (:failed summary) " failed, "
+       (if (nil? (:errored summary))
+         ""
+         (str (:errored summary) " errored, "))
        (:total summary) " total"))
 
 (defun divider [width]
@@ -173,9 +196,13 @@
 (defun report-result [result]
   (if (passed? result)
     (prn "  PASS" (:name result))
-    (do
-      (prn "  FAIL" (:name result))
-      (report-failures (:failures result))))
+    (if (failed? result)
+      (do
+        (prn "  FAIL" (:name result))
+        (report-failures (:failures result)))
+      (do
+        (prn "  ERROR" (:name result))
+        (prn "    -" (:message result)))))
   result)
 
 (defun report-results [results]
@@ -224,12 +251,16 @@
         current-index (+ 1 (get (:indexes state) file 0))
         total (get (:counts state) file)
         glyph (if (= current-index total) "└──" "├──")
-        status (if (passed? result) "PASS" "FAIL")]
+        status (if (passed? result)
+                 "PASS"
+                 (if (failed? result) "FAIL" "ERROR"))]
     (if (not= file (:current-file state))
       (prn file))
     (prn (str glyph " " status " - " (:name result)))
     (if (failed? result)
       (report-failures (:failures result)))
+    (if (errored? result)
+      (prn "    -" (:message result)))
     (assoc state
            :current-file file
            :indexes (assoc (:indexes state) file current-index))))

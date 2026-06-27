@@ -33,6 +33,22 @@ namespace Roo::Proof
       }
     };
 
+    bool is_assertion_abort(const std::exception& e)
+    {
+      return std::string(e.what()).find("proof assertion aborted test body") !=
+             std::string::npos;
+    }
+
+    sptr_val body_error_result(const std::exception& e)
+    {
+      return Value::map({
+        Value::keyword("status"),
+        Value::keyword("error"),
+        Value::keyword("message"),
+        Value::string(e.what()),
+      });
+    }
+
     bool is_symbol_named(const sptr_ast_node& node, const std::string& name)
     {
       return node->get_type() == Form::SYMBOL &&
@@ -358,6 +374,14 @@ namespace Roo::Proof
         catch (const AssertionAbort&)
         {
           return Constant::NIL;
+        }
+        catch (const std::exception& e)
+        {
+          if (is_assertion_abort(e))
+          {
+            return Constant::NIL;
+          }
+          return body_error_result(e);
         }
       }
     };

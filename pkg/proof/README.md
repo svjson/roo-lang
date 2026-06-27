@@ -166,6 +166,13 @@ A failing result has:
 - `:message`, the first failure message
 - `:failures`, all recorded failures for that test
 
+If a test body throws an unexpected runtime error, proof records an error result
+and continues with the remaining tests:
+
+- `:name`
+- `:status :error`
+- `:message`, the runtime error text
+
 ## Reporting
 
 The default reporter is `:simple`, which streams one line per test as it runs:
@@ -173,6 +180,7 @@ The default reporter is `:simple`, which streams one line per test as it runs:
 ```text
   PASS addition
   FAIL bad-math
+  ERROR division-error
 ```
 
 Package-driven runs can use the tree reporter:
