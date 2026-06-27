@@ -297,8 +297,12 @@ roo proof --test-root test \
           --reporter tree
 ```
 
+Use `roo proof --help` to print the proof-specific options without loading or
+running tests.
+
 Supported flags are:
 
+- `--help` or `-h`
 - `--test-root <path>` or `--test-root=<path>`; repeat it to provide multiple roots
 - `--filter <pattern>` or `--filter=<pattern>`
 - `--namespace <namespace>` or `--namespace=<namespace>`

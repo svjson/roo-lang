@@ -14,6 +14,23 @@
       []
       args)))
 
+(defun help-requested? [context]
+  (let [args (cli-args context)]
+    (or (contains? args "--help")
+        (contains? args "-h"))))
+
+(defun print-help []
+  (prn "Usage: roo proof [options]")
+  (prn "")
+  (prn "Options:")
+  (prn "  --help, -h                         Show this help.")
+  (prn "  --test-root <path>                 Add a test root. Repeat for multiple roots.")
+  (prn "  --filter <pattern>                 Select tests by name or qualified name.")
+  (prn "  --namespace <namespace>            Select tests in a namespace.")
+  (prn "  --include-sub-namespaces           Include child namespaces with --namespace.")
+  (prn "  --no-include-sub-namespaces        Exclude child namespaces with --namespace.")
+  (prn "  --reporter simple|tree             Select the test reporter."))
+
 (defun flag-value [arg flag]
   (let [prefix (str flag "=")]
     (if (proof.core/starts-with? arg prefix)
@@ -244,7 +261,11 @@
     entries))
 
 (defun run [context]
-  (let [config (configured-proof context)
-        run-context (assoc context :config config)]
-    (load-tests run-context)
-    (proof.core/run-selected config)))
+  (if (help-requested? context)
+    (do
+      (print-help)
+      nil)
+    (let [config (configured-proof context)
+          run-context (assoc context :config config)]
+      (load-tests run-context)
+      (proof.core/run-selected config))))

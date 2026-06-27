@@ -330,6 +330,37 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
             std::string::npos);
 }
 
+TEST(ProofPackage, runner_prints_help_without_loading_tests)
+{
+  const auto root = fresh_proof_fixture_root("runner-help");
+  write_file(root / "test/app/failing-test.roo",
+             R"((ns app.failing-test
+  (:require proof.core))
+
+(deftest should-not-run
+  (is false))
+)");
+
+  Roo::DirRootFileSystem fs(
+    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-help-test
+    (:require proof.runner)))");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
+                              "\" :config {:test-roots [\"test\"]} "
+                              ":args [\"--help\"]})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(results->to_string(), "nil");
+  EXPECT_NE(output.find("Usage: roo proof [options]\n"), std::string::npos);
+  EXPECT_NE(output.find("--reporter simple|tree"), std::string::npos);
+  EXPECT_EQ(output.find("should-not-run"), std::string::npos);
+  EXPECT_EQ(output.find("FAIL"), std::string::npos);
+}
+
 TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
 {
   const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-smoke";

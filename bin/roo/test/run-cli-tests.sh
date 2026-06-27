@@ -22,3 +22,18 @@ case "$PROOF_OUTPUT" in
   *"test/smoke/discovered.roo"*"└── PASS - discovered-proof"*) ;;
   *) echo "$PROOF_OUTPUT"; exit 1 ;;
 esac
+
+PROOF_HELP_OUTPUT="$(
+  cd "$ROOT_DIR/pkg/proof/test/assets/dynamic-smoke"
+  "$ROO" proof --help
+)"
+
+case "$PROOF_HELP_OUTPUT" in
+  *"Usage: roo proof [options]"*"--reporter simple|tree"*) ;;
+  *) echo "$PROOF_HELP_OUTPUT"; exit 1 ;;
+esac
+
+case "$PROOF_HELP_OUTPUT" in
+  *"test/smoke/discovered.roo"*|*"PASS "*|*"FAIL "*|*"ERROR "*) echo "$PROOF_HELP_OUTPUT"; exit 1 ;;
+  *) ;;
+esac
