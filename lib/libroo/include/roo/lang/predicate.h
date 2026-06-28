@@ -55,6 +55,42 @@ namespace Roo
   FUNC(EmptyPFunction, emptyp)
 
   /*!
+   * @brief Query if a value is callable as a Roo call target.
+   *
+   * Function/executable values are callable, and keywords are callable as
+   * lookup forms.
+   *
+   * Usage:
+   * @code
+   * (callable? (fn [x] x))
+   * => true
+   *
+   * (callable? :name)
+   * => true
+   *
+   * (callable? 42)
+   * => false
+   * @endcode
+   */
+  FUNC(CallablePFunction, callable)
+
+  /*!
+   * @brief Query if a value is a function/executable value.
+   *
+   * Keywords are callable lookup forms, but are not functions.
+   *
+   * Usage:
+   * @code
+   * (fn? (fn [x] x))
+   * => true
+   *
+   * (fn? :name)
+   * => false
+   * @endcode
+   */
+  FUNC(FnPFunction, fn)
+
+  /*!
    * @brief Tests a seq or string(sequence of characters) for the presence of any
    * elements.
    *

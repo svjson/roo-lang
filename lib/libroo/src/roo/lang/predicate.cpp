@@ -31,6 +31,26 @@ namespace Roo
     return Roo::count(*args[0]) == 0 ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
+  /** CallablePFunction - callable? */
+  FUNC_IMPL(CallablePFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&CallablePFunction::exec_callable))))
+
+  EXEC_BODY(CallablePFunction, exec_callable)
+  {
+    return args[0]->type == Value::Type::FUNCTION || args[0]->type == Value::Type::KEYWORD
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
+  }
+
+  /** FnPFunction - fn? */
+  FUNC_IMPL(FnPFunction, SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&FnPFunction::exec_fn))))
+
+  EXEC_BODY(FnPFunction, exec_fn)
+  {
+    return args[0]->type == Value::Type::FUNCTION ? Constant::BOOL_TRUE
+                                                  : Constant::BOOL_FALSE;
+  }
+
   /** NotEmptyPFunction */
   FUNC_IMPL(NotEmptyPFunction,
             SIG((FN_ARGS((&Roo::Type::SEQ_OR_STRING)),

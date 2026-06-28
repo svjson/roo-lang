@@ -76,6 +76,7 @@ namespace Roo
     lang_symbols.emplace("capitalize", CapitalizeFunction::make());
     lang_symbols.emplace("capitalize-first", CapitalizeFirstFunction::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
+    lang_symbols.emplace("callable?", CallablePFunction::make());
     lang_symbols.emplace("comment", CommentForm::make());
     lang_symbols.emplace("concat", ConcatFunction::make());
     lang_symbols.emplace("concat!", ConcatBangFunction::make());
@@ -105,6 +106,7 @@ namespace Roo
     lang_symbols.emplace("find-first", FindFirstFunction::make());
     lang_symbols.emplace("find-index", FindIndexFunction::make());
     lang_symbols.emplace("fn", FnForm::make());
+    lang_symbols.emplace("fn?", FnPFunction::make());
     lang_symbols.emplace("for", ForForm::make());
     lang_symbols.emplace("for-indexed", ForIndexedForm::make());
     lang_symbols.emplace("get", GetFunction::make());
