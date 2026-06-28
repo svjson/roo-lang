@@ -109,6 +109,7 @@ namespace Roo
     lang_symbols.emplace("fn?", FnPFunction::make());
     lang_symbols.emplace("for", ForForm::make());
     lang_symbols.emplace("for-indexed", ForIndexedForm::make());
+    lang_symbols.emplace("float", FloatFunction::make());
     lang_symbols.emplace("get", GetFunction::make());
     lang_symbols.emplace("get-in", GetInFunction::make());
     lang_symbols.emplace("head", HeadFunction::make());

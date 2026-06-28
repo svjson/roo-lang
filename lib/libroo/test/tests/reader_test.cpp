@@ -86,6 +86,52 @@ TEST(Reader, parses_semicolon_char)
   EXPECT_EQ(sexps.at(0)->as<Char>().value, ';');
 }
 
+TEST(Reader, parses_escaped_quote_char)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps(R"('\'')");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::CHAR);
+  EXPECT_EQ(sexps.at(0)->as<Char>().value, '\'');
+}
+
+TEST(Reader, parses_brace_chars)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps("['{' '}']");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->size(), 2);
+  EXPECT_EQ(sexps.at(0)->get_children().at(0)->as<Char>().value, '{');
+  EXPECT_EQ(sexps.at(0)->get_children().at(1)->as<Char>().value, '}');
+}
+
+TEST(Reader, parses_char_keyed_map_with_nested_map_values)
+{
+  // Given
+  Reader reader;
+
+  // When
+  auto sexps = reader.read_sexps("{' ' {:x 1} '{' {:x 2} '}' {:x 3}}");
+
+  // Then
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->get_type(), Form::MAP);
+  ASSERT_EQ(sexps.at(0)->get_children().size(), 6);
+  EXPECT_EQ(sexps.at(0)->get_children().at(0)->as<Char>().value, ' ');
+  EXPECT_EQ(sexps.at(0)->get_children().at(2)->as<Char>().value, '{');
+  EXPECT_EQ(sexps.at(0)->get_children().at(4)->as<Char>().value, '}');
+}
+
 TEST(Reader, parses_semicolon_string)
 {
   // Given

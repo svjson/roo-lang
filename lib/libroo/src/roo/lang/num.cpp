@@ -111,6 +111,63 @@ namespace Roo
     throw RooException("Cannot convert " + obj->to_string() + " to integer.");
   }
 
+  /** FloatFunction - float */
+  FUNC_IMPL(FloatFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&FloatFunction::exec_to_float))))
+
+  EXEC_BODY(FloatFunction, exec_to_float)
+  {
+    sptr_val& obj = args[0];
+
+    if (!obj || obj->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
+    if (Type::NUMBER.is_type_of(*obj))
+    {
+      return Value::number(
+        Value::Number{.num_type = Value::NumberType::FLOAT,
+                      .float_value = std::get<const Value::Number>(obj->value).get_float()});
+    }
+    else if (Type::CHAR.is_type_of(*obj))
+    {
+      return Value::number(
+        Value::Number{.num_type = Value::NumberType::FLOAT,
+                      .float_value = static_cast<float>(std::get<char>(obj->value))});
+    }
+    else if (Type::STRING.is_type_of(*obj))
+    {
+      try
+      {
+        size_t parsed = 0;
+        const std::string value = obj->str();
+        const float result = std::stof(value, &parsed);
+        while (parsed < value.size() &&
+               std::isspace(static_cast<unsigned char>(value[parsed])))
+        {
+          parsed++;
+        }
+        if (parsed != value.size())
+        {
+          return Constant::NIL;
+        }
+        return Value::number(Value::Number{.num_type = Value::NumberType::FLOAT,
+                                           .float_value = result});
+      }
+      catch (const std::invalid_argument&)
+      {
+        return Constant::NIL;
+      }
+      catch (const std::out_of_range&)
+      {
+        return Constant::NIL;
+      }
+    }
+
+    throw RooException("Cannot convert " + obj->to_string() + " to float.");
+  }
+
   /** MaxFunction - max */
   FUNC_IMPL(MaxFunction,
             SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),

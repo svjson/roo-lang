@@ -57,6 +57,7 @@ namespace Roo
   FUNC(IncFunction, inc)
 
   FUNC(IntFunction, to_int)
+  FUNC(FloatFunction, to_float)
 
   FUNC(MinFunction, min)
   FUNC(MaxFunction, max)
