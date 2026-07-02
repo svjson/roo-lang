@@ -1,0 +1,5 @@
+{:name workbook
+ :version "0.1.0"
+ :description "Controlled state updates with patch history for Roo programs."
+ :dependencies []
+ :load-roots ["src"]}

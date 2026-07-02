@@ -1,0 +1,45 @@
+(ns workbook.value)
+
+(def default-limit 200)
+
+(defun initial-history [options]
+  {:undo []
+   :redo []
+   :tx nil
+   :current-revision 0
+   :saved-revision 0
+   :next-revision 1
+   :limit (or (:limit options) default-limit)})
+
+(defun init [value & options &rest]
+  {:value value
+   :history (initial-history (or options {}))})
+
+(defun value [book]
+  (:value book))
+
+(defun history [book]
+  (:history book))
+
+(defun dirty? [book]
+  (let [history (:history book)]
+    (or (not (nil? (:tx history)))
+        (not= (:current-revision history)
+              (:saved-revision history)))))
+
+(defun mark-saved [book]
+  (assoc-in book
+            [:history :saved-revision]
+            (get-in book [:history :current-revision])))
+
+(defun can-undo? [book]
+  (not (empty? (get-in book [:history :undo]))))
+
+(defun can-redo? [book]
+  (not (empty? (get-in book [:history :redo]))))
+
+(defun undo-label [book]
+  (:label (head (get-in book [:history :undo]))))
+
+(defun redo-label [book]
+  (:label (head (get-in book [:history :redo]))))

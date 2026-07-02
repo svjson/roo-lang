@@ -1,0 +1,47 @@
+(ns workbook.patch.intent
+  (:require [workbook.patch.apply :as patch-apply]))
+
+(defun set-patch [value path after]
+  {:op :set
+   :path path
+   :before (get-in value path)
+   :after after})
+
+(defun insert-patch [value path index item]
+  {:op :insert
+   :path path
+   :index index
+   :value item})
+
+(defun remove-patch [value path index]
+  {:op :remove
+   :path path
+   :index index
+   :value (nth (get-in value path) index)})
+
+(defun normalize-patch [value patch]
+  (cond
+    (= (type-of patch) "map")
+    patch
+
+    (= (head patch) :set)
+    (set-patch value (nth patch 1) (nth patch 2))
+
+    (= (head patch) :insert)
+    (insert-patch value (nth patch 1) (nth patch 2) (nth patch 3))
+
+    (= (head patch) :remove)
+    (remove-patch value (nth patch 1) (nth patch 2))
+
+    :default patch))
+
+(defun normalize-patches [value patches]
+  (let [normalized []
+        next-value value]
+    (map (or patches [])
+         (fn [patch]
+           (let [normalized-patch (normalize-patch next-value patch)]
+             (append! normalized normalized-patch)
+             (set! [next-value]
+                   (patch-apply/apply-patch next-value normalized-patch)))))
+    normalized))

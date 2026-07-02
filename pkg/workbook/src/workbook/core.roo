@@ -1,0 +1,60 @@
+(ns workbook.core
+  (:require [workbook.history :as history-core]
+            [workbook.value :as value-core]))
+
+(defun initial-history [options]
+  (value-core/initial-history options))
+
+(defun value [book]
+  (value-core/value book))
+
+(defun history [book]
+  (value-core/history book))
+
+(defun dirty? [book]
+  (value-core/dirty? book))
+
+(defun mark-saved [book]
+  (value-core/mark-saved book))
+
+(defun can-undo? [book]
+  (value-core/can-undo? book))
+
+(defun can-redo? [book]
+  (value-core/can-redo? book))
+
+(defun undo-label [book]
+  (value-core/undo-label book))
+
+(defun redo-label [book]
+  (value-core/redo-label book))
+
+(defun init [value & options &rest]
+  (value-core/init value (or options {})))
+
+(defun change [book change]
+  (history-core/change book change))
+
+(defun set [book path after & options &rest]
+  (history-core/set book path after (or options {})))
+
+(defun insert [book path index item & options &rest]
+  (history-core/insert book path index item (or options {})))
+
+(defun remove [book path index & options &rest]
+  (history-core/remove book path index (or options {})))
+
+(defun begin [book label]
+  (history-core/begin book label))
+
+(defun commit [book]
+  (history-core/commit book))
+
+(defun cancel [book]
+  (history-core/cancel book))
+
+(defun undo [book]
+  (history-core/undo book))
+
+(defun redo [book]
+  (history-core/redo book))

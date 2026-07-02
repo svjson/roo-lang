@@ -1,0 +1,125 @@
+(ns workbook.history
+  (:require [workbook.patch.apply :as patch-apply]
+            [workbook.patch.intent :as patch-intent]))
+
+(defun entry [history label patches]
+  (let [after-revision (:next-revision history)]
+    {:label label
+     :patches patches
+     :before-revision (:current-revision history)
+     :after-revision after-revision}))
+
+(defun advance-history [history entry]
+  (assoc history
+         :undo (patch-apply/keep-count
+                (concat [entry] (:undo history))
+                (:limit history))
+         :redo []
+         :current-revision (:after-revision entry)
+         :next-revision (inc (:next-revision history))))
+
+(defun record-patches [book label patches]
+  (let [history (:history book)
+        normalized (patch-intent/normalize-patches (:value book) patches)
+        next-value (patch-apply/apply-patches (:value book) normalized)]
+    (if (:tx history)
+      (assoc book
+             :value next-value
+             :history
+             (assoc history
+                    :tx
+                    (assoc (:tx history)
+                           :patches
+                           (concat (get-in history [:tx :patches])
+                                   normalized))))
+      (let [entry (entry history label normalized)]
+        (assoc book
+               :value next-value
+               :history (advance-history history entry))))))
+
+(defun change [book change]
+  (record-patches book
+                  (:label change)
+                  (:patches change)))
+
+(defun set [book path after & options &rest]
+  (record-patches book
+                  (:label (or options {}))
+                  [[:set path after]]))
+
+(defun insert [book path index item & options &rest]
+  (record-patches book
+                  (:label (or options {}))
+                  [[:insert path index item]]))
+
+(defun remove [book path index & options &rest]
+  (record-patches book
+                  (:label (or options {}))
+                  [[:remove path index]]))
+
+(defun begin [book label]
+  (let [history (:history book)]
+    (if (:tx history)
+      book
+      (assoc-in book
+                [:history :tx]
+                {:label label
+                 :patches []
+                 :before-revision (:current-revision history)}))))
+
+(defun commit [book]
+  (let [history (:history book)
+        tx (:tx history)]
+    (cond
+      (nil? tx)
+      book
+
+      (empty? (:patches tx))
+      (assoc-in book [:history :tx] nil)
+
+      :default
+      (let [after-revision (:next-revision history)
+            entry {:label (:label tx)
+                   :patches (:patches tx)
+                   :before-revision (:before-revision tx)
+                   :after-revision after-revision}
+            history (assoc history :tx nil)]
+        (assoc book
+               :history
+               (advance-history history entry))))))
+
+(defun cancel [book]
+  (let [tx (get-in book [:history :tx])]
+    (if tx
+      (assoc book
+             :value (patch-apply/revert-patches (:value book) (:patches tx))
+             :history (assoc (:history book) :tx nil))
+      book)))
+
+(defun undo [book]
+  (let [undo-stack (get-in book [:history :undo])
+        entry (head undo-stack)]
+    (if entry
+      (assoc book
+             :value (patch-apply/revert-patches (:value book)
+                                                (:patches entry))
+             :history
+             (assoc (:history book)
+                    :undo (tail undo-stack)
+                    :redo (concat [entry] (get-in book [:history :redo]))
+                    :current-revision (:before-revision entry)))
+      book)))
+
+(defun redo [book]
+  (let [redo-stack (get-in book [:history :redo])
+        entry (head redo-stack)]
+    (if entry
+      (assoc book
+             :value (patch-apply/apply-patches (:value book)
+                                               (:patches entry))
+             :history
+             (assoc (:history book)
+                    :undo (concat [entry] (get-in book [:history :undo]))
+                    :redo (tail redo-stack)
+                    :current-revision (:after-revision entry)))
+      book)))

@@ -1,0 +1,89 @@
+(ns workbook.patch.apply)
+
+(defun keep-count [items limit]
+  (let [kept []
+        index 0
+        items (or items [])]
+    (while (and (< index (count items))
+                (< index limit))
+      (append! kept (nth items index))
+      (set! [index] (inc index)))
+    kept))
+
+(defun reverse-items [items]
+  (let [result []
+        index (dec (count (or items [])))]
+    (while (>= index 0)
+      (append! result (nth items index))
+      (set! [index] (dec index)))
+    result))
+
+(defun insert-at [items index item]
+  (let [result []
+        cursor 0
+        items (or items [])]
+    (while (< cursor index)
+      (append! result (nth items cursor))
+      (set! [cursor] (inc cursor)))
+    (append! result item)
+    (while (< cursor (count items))
+      (append! result (nth items cursor))
+      (set! [cursor] (inc cursor)))
+    result))
+
+(defun remove-at [items index]
+  (let [result []
+        cursor 0
+        items (or items [])]
+    (while (< cursor (count items))
+      (when (not= cursor index)
+        (append! result (nth items cursor)))
+      (set! [cursor] (inc cursor)))
+    result))
+
+(defun apply-patch [value patch]
+  (cond
+    (= (:op patch) :set)
+    (assoc-in value (:path patch) (:after patch))
+
+    (= (:op patch) :insert)
+    (assoc-in value
+              (:path patch)
+              (insert-at (get-in value (:path patch))
+                         (:index patch)
+                         (:value patch)))
+
+    (= (:op patch) :remove)
+    (assoc-in value
+              (:path patch)
+              (remove-at (get-in value (:path patch))
+                         (:index patch)))
+
+    :default value))
+
+(defun invert-patch [patch]
+  (cond
+    (= (:op patch) :set)
+    (assoc patch
+           :before (:after patch)
+           :after (:before patch))
+
+    (= (:op patch) :insert)
+    (assoc patch :op :remove)
+
+    (= (:op patch) :remove)
+    (assoc patch :op :insert)
+
+    :default patch))
+
+(defun apply-patches [value patches]
+  (reduce (or patches [])
+          value
+          (fn [current patch]
+            (apply-patch current patch))))
+
+(defun revert-patches [value patches]
+  (reduce (reverse-items (or patches []))
+          value
+          (fn [current patch]
+            (apply-patch current (invert-patch patch)))))

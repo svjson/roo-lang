@@ -1,0 +1,56 @@
+(ns workbook
+  (:require [workbook.core :as core]))
+
+(defun init [value & options &rest]
+  (core/init value (or options {})))
+
+(defun value [book]
+  (core/value book))
+
+(defun history [book]
+  (core/history book))
+
+(defun dirty? [book]
+  (core/dirty? book))
+
+(defun mark-saved [book]
+  (core/mark-saved book))
+
+(defun can-undo? [book]
+  (core/can-undo? book))
+
+(defun can-redo? [book]
+  (core/can-redo? book))
+
+(defun undo-label [book]
+  (core/undo-label book))
+
+(defun redo-label [book]
+  (core/redo-label book))
+
+(defun change [book change]
+  (core/change book change))
+
+(defun set [book path after & options &rest]
+  (core/set book path after (or options {})))
+
+(defun insert [book path index item & options &rest]
+  (core/insert book path index item (or options {})))
+
+(defun remove [book path index & options &rest]
+  (core/remove book path index (or options {})))
+
+(defun begin [book label]
+  (core/begin book label))
+
+(defun commit [book]
+  (core/commit book))
+
+(defun cancel [book]
+  (core/cancel book))
+
+(defun undo [book]
+  (core/undo book))
+
+(defun redo [book]
+  (core/redo book))

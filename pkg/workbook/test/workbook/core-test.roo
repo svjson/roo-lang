@@ -1,0 +1,117 @@
+(ns workbook.core-test
+  (:require proof.core
+            [workbook :as workbook]
+            [workbook.patch.apply :as patch-apply]
+            [workbook.patch.intent :as patch-intent]))
+
+(deftest init-wraps-editable-value
+  (let [book (workbook/init {:name "Map"})]
+    (is (= {:name "Map"} (workbook/value book)))
+    (is (= false (workbook/dirty? book)))
+    (is (= false (workbook/can-undo? book)))
+    (is (= false (workbook/can-redo? book)))))
+
+(deftest set-records-forward-and-inverse-patch
+  (let [book (-> (workbook/init {:name "Map"})
+                 (workbook/set [:name] "Overworld"
+                               {:label "Rename map"}))]
+    (is (= {:name "Overworld"} (workbook/value book)))
+    (is (= true (workbook/dirty? book)))
+    (is (= true (workbook/can-undo? book)))
+    (is (= "Rename map" (workbook/undo-label book)))
+    (is (= {:name "Map"} (workbook/value (workbook/undo book))))))
+
+(deftest redo-reapplies-undone-entry
+  (let [book (-> (workbook/init {:name "Map"})
+                 (workbook/set [:name] "Overworld"
+                               {:label "Rename map"}))
+        undone (workbook/undo book)
+        redone (workbook/redo undone)]
+    (is (= {:name "Map"} (workbook/value undone)))
+    (is (= true (workbook/can-redo? undone)))
+    (is (= "Rename map" (workbook/redo-label undone)))
+    (is (= {:name "Overworld"} (workbook/value redone)))))
+
+(deftest insert-and-remove-patch-vector-values
+  (let [book (-> (workbook/init {:layers [:ground :objects]})
+                 (workbook/insert [:layers] 1 :terrain
+                                  {:label "Add layer"})
+                 (workbook/remove [:layers] 0
+                                  {:label "Remove layer"}))]
+    (is (= {:layers [:terrain :objects]} (workbook/value book)))
+    (is (= {:layers [:ground :terrain :objects]}
+           (workbook/value (workbook/undo book))))
+    (is (= {:layers [:ground :objects]}
+           (workbook/value (-> book workbook/undo workbook/undo))))))
+
+(deftest patch-intent-captures-before-values
+  (let [patches (patch-intent/normalize-patches
+                 {:map {:w 10 :h 10}}
+                 [[:set [:map :w] 20]
+                  [:set [:map :h] 15]])]
+    (is (= [{:op :set
+             :path [:map :w]
+             :before 10
+             :after 20}
+            {:op :set
+             :path [:map :h]
+             :before 10
+             :after 15}]
+           patches))))
+
+(deftest patch-apply-reverts-patches-in-reverse-order
+  (let [patches (patch-intent/normalize-patches
+                 {:layers [:ground :objects]}
+                 [[:insert [:layers] 1 :terrain]
+                  [:remove [:layers] 0]])
+        value (patch-apply/apply-patches {:layers [:ground :objects]}
+                                         patches)]
+    (is (= {:layers [:terrain :objects]} value))
+    (is (= {:layers [:ground :objects]}
+           (patch-apply/revert-patches value patches)))))
+
+(deftest transactions-group-multiple-writes-into-one-undo-entry
+  (let [book (-> (workbook/init {:tiles [[:water :water]]})
+                 (workbook/begin "Paint tiles")
+                 (workbook/set [:tiles 0 0] :grass)
+                 (workbook/set [:tiles 0 1] :grass)
+                 (workbook/commit))]
+    (is (= {:tiles [[:grass :grass]]} (workbook/value book)))
+    (is (= "Paint tiles" (workbook/undo-label book)))
+    (is (= {:tiles [[:water :water]]}
+           (workbook/value (workbook/undo book))))))
+
+(deftest cancel-transaction-reverts-uncommitted-patches
+  (let [book (-> (workbook/init {:name "Map"})
+                 (workbook/begin "Rename map")
+                 (workbook/set [:name] "Overworld")
+                 (workbook/cancel))]
+    (is (= {:name "Map"} (workbook/value book)))
+    (is (= false (workbook/can-undo? book)))))
+
+(deftest mark-saved-clears-dirty-until-next-change
+  (let [saved (-> (workbook/init {:name "Map"})
+                  (workbook/set [:name] "Overworld")
+                  (workbook/mark-saved))]
+    (is (= false (workbook/dirty? saved)))
+    (is (= true (workbook/dirty?
+                 (workbook/set saved [:name] "Dungeon"))))))
+
+(deftest new-change-after-undo-clears-redo
+  (let [undone (-> (workbook/init {:name "Map"})
+                   (workbook/set [:name] "Overworld")
+                   (workbook/undo))
+        changed (workbook/set undone [:name] "Dungeon")]
+    (is (= true (workbook/can-redo? undone)))
+    (is (= false (workbook/can-redo? changed)))
+    (is (= {:name "Dungeon"} (workbook/value changed)))))
+
+(deftest change-applies-multiple-patches-as-one-entry
+  (let [book (workbook/change
+              (workbook/init {:map {:w 10 :h 10}})
+              {:label "Resize map"
+               :patches [[:set [:map :w] 20]
+                         [:set [:map :h] 15]]})]
+    (is (= {:map {:w 20 :h 15}} (workbook/value book)))
+    (is (= {:map {:w 10 :h 10}}
+           (workbook/value (workbook/undo book))))))

@@ -1,0 +1,6 @@
+{:name workbook-tests
+ :version "0.1.0"
+ :dependencies {workbook "file:.."
+                proof "file:../../proof"}
+ :load-roots ["."]
+ :config {proof {:test-roots ["workbook"]}}}
