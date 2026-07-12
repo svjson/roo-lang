@@ -1,5 +1,7 @@
 **/CMakeFiles
 build/
+build-release/
+dist/
 Makefile
 !/Makefile
 **/*.cmake

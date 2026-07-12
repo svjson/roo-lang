@@ -72,18 +72,6 @@ namespace Rooc
       return std::filesystem::path(ROO_BUILD_ROOT).lexically_normal();
     }
 
-    std::filesystem::path shared_library_path(const std::string& directory,
-                                              const std::string& name)
-    {
-#if defined(_WIN32)
-      return repo_build_root() / directory / (name + ".dll");
-#elif defined(__APPLE__)
-      return repo_build_root() / directory / ("lib" + name + ".dylib");
-#else
-      return repo_build_root() / directory / ("lib" + name + ".so");
-#endif
-    }
-
     std::string platform_library_file_name(const std::string& name)
     {
 #if defined(_WIN32)
@@ -92,6 +80,36 @@ namespace Rooc
       return "lib" + name + ".dylib";
 #else
       return "lib" + name + ".so";
+#endif
+    }
+
+    std::filesystem::path build_shared_library_path(const std::string& directory,
+                                                    const std::string& name)
+    {
+      return repo_build_root() / directory / platform_library_file_name(name);
+    }
+
+    bool is_installed_rooc(const Options& options)
+    {
+      return options.executable_path.parent_path().filename() == "bin";
+    }
+
+    std::filesystem::path rooc_prefix(const Options& options)
+    {
+      if (is_installed_rooc(options))
+      {
+        return options.executable_path.parent_path().parent_path().lexically_normal();
+      }
+      return options.executable_path.parent_path().lexically_normal();
+    }
+
+    std::filesystem::path installed_shared_library_path(const std::filesystem::path& prefix,
+                                                        const std::string& name)
+    {
+#if defined(_WIN32)
+      return prefix / "bin" / platform_library_file_name(name);
+#else
+      return prefix / "lib" / platform_library_file_name(name);
 #endif
     }
 
@@ -513,10 +531,19 @@ namespace Rooc
       return out.str();
     }
 
-    std::string generated_cmake(const GeneratedProject& project)
+    std::string generated_cmake(const Options& options, const GeneratedProject& project)
     {
-      const auto roo_lib = shared_library_path("lib/libroo", "roo");
-      const auto package_lib = shared_library_path("lib/libroo-package", "roo-package");
+      const auto prefix = rooc_prefix(options);
+      const bool installed = is_installed_rooc(options);
+      const auto roo_lib = installed ? installed_shared_library_path(prefix, "roo")
+                                     : build_shared_library_path("lib/libroo", "roo");
+      const auto package_lib =
+        installed ? installed_shared_library_path(prefix, "roo-package")
+                  : build_shared_library_path("lib/libroo-package", "roo-package");
+      const auto roo_include_dir =
+        installed ? prefix / "include" : repo_source_root() / "lib/libroo/include";
+      const auto package_include_dir =
+        installed ? prefix / "include" : repo_source_root() / "lib/libroo-package/include";
       std::ostringstream out;
       out << "cmake_minimum_required(VERSION 3.20)\n\n"
              "project("
@@ -538,7 +565,7 @@ namespace Rooc
           << cpp_string_literal(cmake_path(roo_lib))
           << "\n"
              "    INTERFACE_INCLUDE_DIRECTORIES "
-          << cpp_string_literal(cmake_path(repo_source_root() / "lib/libroo/include"))
+          << cpp_string_literal(cmake_path(roo_include_dir))
           << "\n"
              "  )\n"
              "add_library(roo_package_shared_imported SHARED IMPORTED)\n"
@@ -547,8 +574,7 @@ namespace Rooc
           << cpp_string_literal(cmake_path(package_lib))
           << "\n"
              "    INTERFACE_INCLUDE_DIRECTORIES "
-          << cpp_string_literal(
-               cmake_path(repo_source_root() / "lib/libroo-package/include"))
+          << cpp_string_literal(cmake_path(package_include_dir))
           << "\n"
              "  )\n"
              "\n";
@@ -600,7 +626,7 @@ namespace Rooc
 
   void generate_project(const Options& options, const GeneratedProject& project)
   {
-    write_file(options.build_dir / "CMakeLists.txt", generated_cmake(project));
+    write_file(options.build_dir / "CMakeLists.txt", generated_cmake(options, project));
     write_file(options.build_dir / "src/main.cpp", generated_main_cpp());
     write_file(options.build_dir / "src/embedded_file_system.h",
                generated_embedded_file_system_h());

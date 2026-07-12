@@ -4,6 +4,7 @@ add_library(proof_native SHARED
 
 set_target_properties(proof_native PROPERTIES
   OUTPUT_NAME proof-native
+  INSTALL_RPATH "${ROO_PACKAGE_NATIVE_INSTALL_RPATH}"
 )
 
 target_include_directories(proof_native
@@ -27,8 +28,8 @@ add_custom_command(TARGET proof_native POST_BUILD
 )
 
 install(TARGETS proof_native
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION share/roo/pkg/proof/native
+  RUNTIME DESTINATION share/roo/pkg/proof/native
 )
 
 install(DIRECTORY include/

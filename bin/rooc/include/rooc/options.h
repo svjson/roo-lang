@@ -8,6 +8,7 @@ namespace Rooc
 {
   struct Options
   {
+    std::filesystem::path executable_path;
     std::string command;
     std::filesystem::path package_dir;
     std::filesystem::path build_dir;

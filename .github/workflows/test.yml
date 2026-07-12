@@ -132,6 +132,43 @@ jobs:
       - name: Run proof tests
         run: make -f Makefile.ci ci-test-proof
 
+  test-workbook:
+    name: Test workbook
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download tool build
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Download native package artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: source-native-package-libraries
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          tar -xzf artifacts/build-tools.tar.gz
+          tar -xzf artifacts/source-native-package-libraries.tar.gz
+
+      - name: Run workbook tests
+        run: make -f Makefile.ci ci-test-workbook
+
   test-rooc:
     name: Test rooc
     runs-on: ubuntu-24.04

@@ -6,7 +6,7 @@ ci-help:
 
 include Makefile
 
-.PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-proofread
+.PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-workbook ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-proofread
 
 ci-build-libroo: configure
 	cmake --build build --target roo_static roo_shared
@@ -50,6 +50,9 @@ ci-test-server: configure-server-tests
 ci-test-proof:
 	cmake --build build --target testproof
 	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
+
+ci-test-workbook:
+	cd $(CURDIR)/pkg/workbook/test && $(CURDIR)/build/roo proof
 
 ci-test-rooc:
 	cmake --build build --target testrooc

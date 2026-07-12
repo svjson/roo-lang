@@ -42,7 +42,7 @@ namespace Roo::Server
    *
    * This can be overriden by any application that embeds a Roo Server.
    */
-  inline constexpr const char __VERSION[] = "0.1";
+  inline constexpr const char __VERSION[] = "0.1.0";
 
   /*!
    * @brief Type-alias used to signify a Server Status Code.

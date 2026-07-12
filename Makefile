@@ -10,7 +10,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread test test\:all test\:lang test\:package test\:proof test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook release test test\:all test\:lang test\:package test\:proof test\:workbook test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
@@ -116,10 +116,19 @@ install-proofread: build-proofread
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/proofread-install/build/$(PROOFREAD_BINARY) $(PREFIX)/bin/$(PROOFREAD_BINARY)
 
-test: test\:lang test\:package test\:proof test\:rooc
+install-workbook: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/workbook/src
+	cmake -E copy_directory $(CURDIR)/pkg/workbook/src $(PREFIX)/share/roo/pkg/workbook/src
+	cmake -E copy_if_different $(CURDIR)/pkg/workbook/package.edn $(PREFIX)/share/roo/pkg/workbook/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/workbook/README.md $(PREFIX)/share/roo/pkg/workbook/README.md
+
+release:
+	sh $(CURDIR)/tools/release/package.sh $(VERSION)
+
+test: test\:lang test\:package test\:proof test\:workbook test\:rooc
 test: test\:cli
 
-test\:all: test\:lang test\:package test\:proof test\:rooc test\:cli test\:server
+test\:all: test\:lang test\:package test\:proof test\:workbook test\:rooc test\:cli test\:server
 
 test\:lang: build
 	cmake --build build --target testroo
@@ -132,6 +141,9 @@ test\:package: build
 test\:proof: build
 	cmake --build build --target testproof
 	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
+
+test\:workbook: build
+	cd $(CURDIR)/pkg/workbook/test && $(CURDIR)/build/roo proof
 
 test\:rooc: build
 	cmake --build build --target testrooc

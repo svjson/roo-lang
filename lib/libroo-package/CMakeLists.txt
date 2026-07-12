@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(roo-package VERSION 0.1 LANGUAGES CXX)
+get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+if (NOT DEFINED ROO_PROJECT_VERSION)
+  file(STRINGS "${ROO_ROOT_DIR}/VERSION" ROO_PROJECT_VERSION LIMIT_COUNT 1)
+  string(STRIP "${ROO_PROJECT_VERSION}" ROO_PROJECT_VERSION)
+endif()
+if (NOT DEFINED ROO_ABI_VERSION)
+  set(ROO_ABI_VERSION 0)
+endif()
+
+project(roo-package VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -20,8 +29,6 @@ endif()
 if (NOT TARGET Roo::roo_shared)
   find_package(roo REQUIRED)
 endif()
-
-get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 
 set(roo-package_SOURCES
   src/lib/manifest.cpp
@@ -72,6 +79,8 @@ set_target_properties(roo-package_static PROPERTIES
 
 set_target_properties(roo-package_shared PROPERTIES
   EXPORT_NAME package_shared
+  VERSION ${PROJECT_VERSION}
+  SOVERSION ${ROO_ABI_VERSION}
 )
 
 target_link_libraries(roo-package_static

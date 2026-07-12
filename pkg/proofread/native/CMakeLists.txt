@@ -4,6 +4,7 @@ add_library(proofread_native SHARED
 
 set_target_properties(proofread_native PROPERTIES
   OUTPUT_NAME proofread-native
+  INSTALL_RPATH "${ROO_PACKAGE_NATIVE_INSTALL_RPATH}"
 )
 
 target_include_directories(proofread_native
@@ -27,8 +28,8 @@ add_custom_command(TARGET proofread_native POST_BUILD
 )
 
 install(TARGETS proofread_native
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION share/roo/pkg/proofread/native
+  RUNTIME DESTINATION share/roo/pkg/proofread/native
 )
 
 install(DIRECTORY include/

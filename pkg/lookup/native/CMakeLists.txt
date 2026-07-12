@@ -4,6 +4,7 @@ add_library(lookup_native SHARED
 
 set_target_properties(lookup_native PROPERTIES
   OUTPUT_NAME lookup-native
+  INSTALL_RPATH "${ROO_PACKAGE_NATIVE_INSTALL_RPATH}"
 )
 
 target_include_directories(lookup_native
@@ -27,8 +28,8 @@ add_custom_command(TARGET lookup_native POST_BUILD
 )
 
 install(TARGETS lookup_native
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION share/roo/pkg/lookup/native
+  RUNTIME DESTINATION share/roo/pkg/lookup/native
 )
 
 install(DIRECTORY include/

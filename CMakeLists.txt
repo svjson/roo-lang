@@ -1,6 +1,21 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(roo VERSION 0.1 LANGUAGES CXX)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" ROO_PROJECT_VERSION LIMIT_COUNT 1)
+string(STRIP "${ROO_PROJECT_VERSION}" ROO_PROJECT_VERSION)
+set(ROO_ABI_VERSION 0)
+
+project(roo VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
+
+if (APPLE)
+  set(ROO_BIN_INSTALL_RPATH "@loader_path/../lib")
+  set(ROO_PACKAGE_NATIVE_INSTALL_RPATH "@loader_path/../../../../../lib")
+elseif (UNIX)
+  set(ROO_BIN_INSTALL_RPATH "$ORIGIN/../lib")
+  set(ROO_PACKAGE_NATIVE_INSTALL_RPATH "$ORIGIN/../../../../../lib")
+else()
+  set(ROO_BIN_INSTALL_RPATH "")
+  set(ROO_PACKAGE_NATIVE_INSTALL_RPATH "")
+endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
@@ -63,14 +78,14 @@ set_target_properties(roo_cli PROPERTIES
   OUTPUT_NAME roo
   BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
-  INSTALL_RPATH "\$ORIGIN/../lib"
+  INSTALL_RPATH "${ROO_BIN_INSTALL_RPATH}"
 )
 
 set_target_properties(rooc_cli PROPERTIES
   OUTPUT_NAME rooc
   BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
-  INSTALL_RPATH "\$ORIGIN/../lib"
+  INSTALL_RPATH "${ROO_BIN_INSTALL_RPATH}"
 )
 
 target_link_libraries(roo_cli

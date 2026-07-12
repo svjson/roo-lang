@@ -87,6 +87,11 @@ foreach(target roo_static roo_shared)
   )
 endforeach()
 
+set_target_properties(roo_shared PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION ${ROO_ABI_VERSION}
+)
+
 target_link_libraries(roo INTERFACE roo_shared)
 
 add_subdirectory(test)

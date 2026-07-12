@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(roo-server VERSION 0.1 LANGUAGES CXX)
+get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+if (NOT DEFINED ROO_PROJECT_VERSION)
+  file(STRINGS "${ROO_ROOT_DIR}/VERSION" ROO_PROJECT_VERSION LIMIT_COUNT 1)
+  string(STRIP "${ROO_PROJECT_VERSION}" ROO_PROJECT_VERSION)
+endif()
+if (NOT DEFINED ROO_ABI_VERSION)
+  set(ROO_ABI_VERSION 0)
+endif()
+
+project(roo-server VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -21,8 +30,6 @@ endif()
 if (NOT TARGET Roo::roo_shared)
   find_package(roo REQUIRED)
 endif()
-
-get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 
 set(roo-server_SOURCES
   src/lib/server.cpp
@@ -91,6 +98,8 @@ set_target_properties(roo-server_static PROPERTIES
 
 set_target_properties(roo-server_shared PROPERTIES
   EXPORT_NAME server_shared
+  VERSION ${PROJECT_VERSION}
+  SOVERSION ${ROO_ABI_VERSION}
 )
 
 add_library(Roo::server_static ALIAS roo-server_static)
@@ -111,7 +120,7 @@ target_link_libraries(roo-server-exec
 
 set_target_properties(roo-server-exec PROPERTIES
   OUTPUT_NAME "roo-server"
-  INSTALL_RPATH "$ORIGIN/../lib"
+  INSTALL_RPATH "${ROO_BIN_INSTALL_RPATH}"
 )
 
 # =========================
