@@ -1,0 +1,28 @@
+(ns footsteps
+  (:require [footsteps.core :as core]))
+
+(def append-strategy core/append-strategy)
+
+(defun make [spec]
+  (core/make spec))
+
+(defun advance [work]
+  (core/advance work))
+
+(defun run [work & opts &rest]
+  (core/run work (or opts {})))
+
+(defun complete? [work]
+  (core/complete? work))
+
+(defun progress [work]
+  (core/progress work))
+
+(defun progress-report [value]
+  (core/progress-report value))
+
+(defun data [work]
+  (core/data work))
+
+(defun result [work]
+  (core/result work))

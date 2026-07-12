@@ -1,0 +1,5 @@
+{:name footsteps
+ :version "0.1.0"
+ :description "Cooperative resumable work and progress accounting for Roo programs."
+ :dependencies []
+ :load-roots ["src"]}

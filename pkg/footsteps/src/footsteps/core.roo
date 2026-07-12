@@ -1,0 +1,349 @@
+(ns footsteps.core)
+
+(def append-strategy
+  {:within-current-scope :footsteps.append/within-current-scope
+   :after-current :footsteps.append/after-current
+   :hidden :footsteps.append/hidden})
+
+(def default-progress-max 1000)
+(def default-work-slice-limit 1000)
+
+(defun clamp [min-value max-value value]
+  (max min-value (min max-value value)))
+
+(defun map-values [values f]
+  (map (or values [])
+       (fn [value]
+         (f value))))
+
+(defun step-key [entry]
+  (if (= "map" (type-of entry))
+    (or (:step entry) (:id entry))
+    entry))
+
+(defun entry-id [entry]
+  (if (= "map" (type-of entry))
+    (or (:id entry) (:step entry))
+    entry))
+
+(defun entry-data [entry]
+  (if (= "map" (type-of entry))
+    (:data entry)
+    nil))
+
+(defun step-config [work step-key]
+  (get (:steps work) step-key))
+
+(defun step-weight [step]
+  (let [weight (:weight step)]
+    (cond
+      (nil? weight) 1
+      (= :inherit weight) 1
+      :default weight)))
+
+(defun scope [id start end]
+  {:id id
+   :start start
+   :end end})
+
+(defun scope-size [scope]
+  (max 0 (- (:end scope) (:start scope))))
+
+(defun instance [work entry scope]
+  (let [key (step-key entry)
+        config (step-config work key)]
+    (merge config
+           {:step key
+            :id (entry-id entry)
+            :scope scope
+            :entry-data (entry-data entry)
+            :started? false
+            :complete? false})))
+
+(defun total-weight [work entries]
+  (let [sum 0]
+    (for [entry (or entries [])]
+      (let [config (step-config work (step-key entry))]
+        (set! [sum] (+ sum (step-weight config)))))
+    (if (> sum 0) sum 1)))
+
+(defun allocate-instances [work entries parent-scope]
+  (let [entries (or entries [])
+        total (total-weight work entries)
+        cursor (:start parent-scope)
+        width (scope-size parent-scope)
+        result []]
+    (for [entry entries]
+      (let [config (step-config work (step-key entry))
+            fraction (/ (step-weight config) total)
+            next-cursor (if (= entry (last entries))
+                          (:end parent-scope)
+                          (+ cursor (* width fraction)))
+            child-scope (scope (entry-id entry) cursor next-cursor)]
+        (append! result (instance work entry child-scope))
+        (set! [cursor] next-cursor)))
+    result))
+
+(defun queue-total-end [queue fallback]
+  (if (empty? (or queue []))
+    fallback
+    (-> queue last :scope :end)))
+
+(defun make [spec]
+  (let [progress-max (or (:progress-max spec) default-progress-max)
+        root-scope (scope (:id spec) 0 progress-max)
+        work (assoc spec
+                    :progress-max progress-max
+                    :queue []
+                    :completed []
+                    :current nil
+                    :status :footsteps.status/running
+                    :highest-progress 0
+                    :result nil)]
+    (assoc work
+           :queue
+           (allocate-instances work (:start spec) root-scope))))
+
+(defun complete? [work]
+  (= :footsteps.status/complete (:status work)))
+
+(defun data [work]
+  (:data work))
+
+(defun result [work]
+  (:result work))
+
+(defun running-instance [work]
+  (or (:current work)
+      (head (:queue work))))
+
+(defun progress-report? [value]
+  (and (= "map" (type-of value))
+       (not (nil? (:progress-value value)))
+       (not (nil? (:progress-max value)))))
+
+(defun progress-report [value]
+  (if (progress-report? value)
+    {:progress-value (or (:progress-value value) 0)
+     :progress-max (max 1 (or (:progress-max value) 1))
+     :label (:label value)
+     :step-id (:step-id value)
+     :scope-id (:scope-id value)
+     :scope-progress-value (:scope-progress-value value)
+     :scope-progress-max (:scope-progress-max value)}
+    (progress value)))
+
+(defun progress-ratio [report]
+  (let [report (progress-report report)]
+    (clamp 0 1 (/ (or (:progress-value report) 0)
+                  (max 1 (or (:progress-max report) 1))))))
+
+(defun projected-progress-value [step]
+  (if-let [report (:progress step)]
+    (+ (-> step :scope :start)
+       (* (scope-size (:scope step))
+          (progress-ratio report)))
+    (-> step :scope :start)))
+
+(defun raw-progress-value [work]
+  (cond
+    (complete? work) (:progress-max work)
+    (:current work) (projected-progress-value (:current work))
+    (not (empty? (:queue work))) (-> work :queue head :scope :start)
+    :default (:progress-max work)))
+
+(defun progress [work]
+  (let [raw (raw-progress-value work)
+        highest (or (:highest-progress work) 0)
+        value (clamp highest (:progress-max work) raw)
+        instance (running-instance work)
+        scope (:scope instance)]
+    {:progress-value value
+     :progress-max (:progress-max work)
+     :label (or (-> instance :progress :label)
+                (:label instance)
+                (:label work))
+     :step-id (or (-> instance :progress :step-id)
+                  (:id instance)
+                  (:id work))
+     :scope-id (:id scope)
+     :scope-progress-value (if scope (- value (:start scope)) value)
+     :scope-progress-max (if scope (scope-size scope) (:progress-max work))}))
+
+(defun start-current [work]
+  (if (:current work)
+    work
+    (if-let [next (head (:queue work))]
+      (assoc work
+             :current (assoc next :started? true)
+             :queue (tail (:queue work)))
+      (assoc work
+             :status :footsteps.status/complete
+             :highest-progress (:progress-max work)))))
+
+(defun normalized-append [append]
+  (cond
+    (nil? append) []
+    (= "vector" (type-of append)) append
+    :default [append]))
+
+(defun append-strategy-for [work step result]
+  (or (:append-strategy result)
+      (:append-strategy step)
+      (:default-append-strategy work)
+      (:within-current-scope append-strategy)))
+
+(defun progress-start-for-after-current [work step]
+  (max (:highest-progress work)
+       (queue-total-end (:completed work) 0)
+       (-> step :scope :end)))
+
+(defun queued-entry [instance]
+  {:step (:step instance)
+   :id (:id instance)
+   :data (:entry-data instance)})
+
+(defun append-after-current [work step entries]
+  (let [start (progress-start-for-after-current work step)
+        end (:progress-max work)
+        parent-scope (scope :footsteps.scope/appended start end)
+        remaining (concat entries
+                          (map-values (:queue work) queued-entry))
+        queue (allocate-instances work remaining parent-scope)]
+    (assoc work :queue queue)))
+
+(defun append-within-current-scope [work step entries]
+  (let [appended (allocate-instances work entries (:scope step))]
+    (assoc work :queue (concat appended (:queue work)))))
+
+(defun append-hidden [work entries]
+  (let [current (:current work)
+        hidden-scope (scope :footsteps.scope/hidden
+                            (-> current :scope :start)
+                            (-> current :scope :start))
+        appended (map-values entries
+                             (fn [entry]
+                               (instance work entry hidden-scope)))]
+    (assoc work :queue (concat appended (:queue work)))))
+
+(defun append-work [work step result]
+  (let [entries (normalized-append (:append result))]
+    (if (empty? entries)
+      work
+      (let [strategy (append-strategy-for work step result)]
+        (cond
+          (= (:after-current append-strategy) strategy)
+          (append-after-current work step entries)
+
+          (= (:hidden append-strategy) strategy)
+          (append-hidden work entries)
+
+          :default
+          (append-within-current-scope work step entries))))))
+
+(defun completed-if-drained [work]
+  (if (and (nil? (:current work))
+           (empty? (:queue work)))
+    (assoc work
+           :status :footsteps.status/complete
+           :result (:data work)
+           :highest-progress (:progress-max work))
+    work))
+
+(defun finish-current [work step result]
+  (let [next-work (assoc work
+                         :data (or (:data result) (:data work))
+                         :current nil
+                         :completed (concat (:completed work)
+                                            [(assoc step :complete? true)])
+                         :highest-progress
+                         (max (or (:highest-progress work) 0)
+                              (-> step :scope :end)))]
+    (completed-if-drained
+     (append-work next-work step result))))
+
+(defun complete-current [work result]
+  (assoc work
+         :data (or (:data result) (:data work))
+         :result (or (:result result) (:data result) (:data work))
+         :status :footsteps.status/complete
+         :current nil
+         :queue []
+         :highest-progress (:progress-max work)))
+
+(defun apply-step-result [work step result]
+  (let [result (or result {})]
+    (if (:complete-work? result)
+      (complete-current work result)
+      (if (= false (:complete? result))
+        (let [next-current (merge step
+                                  (:work result)
+                                  (if-let [report (:progress result)]
+                                    {:progress (progress-report report)}
+                                    {}))]
+          (assoc work
+                 :data (or (:data result) (:data work))
+                 :current next-current
+                 :highest-progress
+                 (max (or (:highest-progress work) 0)
+                      (projected-progress-value next-current))))
+        (finish-current work step result)))))
+
+(defun advance-running [work]
+  (let [work (start-current work)]
+    (if (complete? work)
+      {:work work
+       :complete? true
+       :result (:result work)
+       :progress (progress work)}
+      (let [step (:current work)
+            ctx {:work work
+                 :data (:data work)
+                 :step step
+                 :entry-data (:entry-data step)}
+            step-result ((:run step) ctx)
+            next-work (apply-step-result work step step-result)]
+        {:work next-work
+         :complete? (complete? next-work)
+         :result (:result next-work)
+         :progress (progress next-work)
+         :metadata (:metadata step-result)}))))
+
+(defun advance [work]
+  (advance-running work))
+
+(defun default-clock []
+  (epoch-ms))
+
+(defun budget-available? [started now advanced-any? opts]
+  (let [min-ms (or (:min-duration-ms opts) 0)
+        max-ms (:max-duration-ms opts)]
+    (and (or (not advanced-any?)
+             (< (- now started) min-ms)
+             (and max-ms (< (- now started) max-ms)))
+         (or (nil? max-ms)
+             (< (- now started) max-ms)))))
+
+(defun run [work opts]
+  (let [clock (or (:clock opts) default-clock)
+        started (clock)
+        current work
+        advanced-any? false
+        count 0
+        limit (or (:max-steps opts) default-work-slice-limit)
+        last-result {:work work
+                     :complete? (complete? work)
+                     :result (:result work)
+                     :progress (progress work)}]
+    (while (and (not (complete? current))
+                (< count limit)
+                (budget-available? started (clock) advanced-any? opts))
+      (let [advanced (advance current)]
+        (set! [current] (:work advanced))
+        (set! [last-result] advanced)
+        (set! [advanced-any?] true)
+        (set! [count] (+ count 1))))
+    (assoc last-result
+           :work current
+           :steps-run count
+           :progress (progress current))))
