@@ -10,7 +10,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook release test test\:all test\:lang test\:package test\:proof test\:workbook test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
@@ -122,13 +122,19 @@ install-workbook: build
 	cmake -E copy_if_different $(CURDIR)/pkg/workbook/package.edn $(PREFIX)/share/roo/pkg/workbook/package.edn
 	cmake -E copy_if_different $(CURDIR)/pkg/workbook/README.md $(PREFIX)/share/roo/pkg/workbook/README.md
 
+install-footsteps: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/footsteps/src
+	cmake -E copy_directory $(CURDIR)/pkg/footsteps/src $(PREFIX)/share/roo/pkg/footsteps/src
+	cmake -E copy_if_different $(CURDIR)/pkg/footsteps/package.edn $(PREFIX)/share/roo/pkg/footsteps/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/footsteps/README.md $(PREFIX)/share/roo/pkg/footsteps/README.md
+
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
 
-test: test\:lang test\:package test\:proof test\:workbook test\:rooc
+test: test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc
 test: test\:cli
 
-test\:all: test\:lang test\:package test\:proof test\:workbook test\:rooc test\:cli test\:server
+test\:all: test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:server
 
 test\:lang: build
 	cmake --build build --target testroo
@@ -144,6 +150,9 @@ test\:proof: build
 
 test\:workbook: build
 	cd $(CURDIR)/pkg/workbook/test && $(CURDIR)/build/roo proof
+
+test\:footsteps: build
+	cd $(CURDIR)/pkg/footsteps/test && $(CURDIR)/build/roo proof
 
 test\:rooc: build
 	cmake --build build --target testrooc
