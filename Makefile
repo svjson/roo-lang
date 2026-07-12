@@ -39,6 +39,14 @@ ifeq ($(shell uname -s),Darwin)
   PROOFREAD_NATIVE_LIBRARY := libproofread-native.dylib
 endif
 
+ifeq ($(shell uname -s),Darwin)
+  SET_PACKAGE_NATIVE_RPATH = install_name_tool -add_rpath @loader_path/../../../../../lib $(1) 2>/dev/null || true
+else ifeq ($(OS),Windows_NT)
+  SET_PACKAGE_NATIVE_RPATH = true
+else
+  SET_PACKAGE_NATIVE_RPATH = patchelf --set-rpath '$$ORIGIN/../../../../../lib' $(1)
+endif
+
 RELINK_ARTIFACTS := \
 	$(CURDIR)/build/roo \
 	$(CURDIR)/build/rooc \
@@ -101,6 +109,7 @@ install-proof: build-proof
 	cmake -E copy_if_different $(CURDIR)/pkg/proof/package.edn $(PREFIX)/share/roo/pkg/proof/package.edn
 	cmake -E copy_if_different $(CURDIR)/pkg/proof/README.md $(PREFIX)/share/roo/pkg/proof/README.md
 	cmake -E copy_if_different $(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
+	$(call SET_PACKAGE_NATIVE_RPATH,$(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY))
 
 build-lookup: build
 	./build/rooc build $(CURDIR)/pkg/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup

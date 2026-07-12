@@ -81,6 +81,7 @@ set_target_properties(roo-package_shared PROPERTIES
   EXPORT_NAME package_shared
   VERSION ${PROJECT_VERSION}
   SOVERSION ${ROO_ABI_VERSION}
+  INSTALL_RPATH "${ROO_LIB_INSTALL_RPATH}"
 )
 
 target_link_libraries(roo-package_static

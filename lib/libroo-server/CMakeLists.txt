@@ -100,6 +100,7 @@ set_target_properties(roo-server_shared PROPERTIES
   EXPORT_NAME server_shared
   VERSION ${PROJECT_VERSION}
   SOVERSION ${ROO_ABI_VERSION}
+  INSTALL_RPATH "${ROO_LIB_INSTALL_RPATH}"
 )
 
 add_library(Roo::server_static ALIAS roo-server_static)

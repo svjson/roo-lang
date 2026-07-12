@@ -10,6 +10,8 @@ archive=$1
 version=$2
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 jobs=${ROO_RELEASE_JOBS:-1}
+archive_dir=$(CDPATH= cd -- "$(dirname -- "$archive")" && pwd)
+archive="$archive_dir/$(basename -- "$archive")"
 
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/roo-release-smoke.XXXXXX")
 cleanup()
@@ -110,5 +112,33 @@ fi
 if [ -d "$release_root/share/roo/pkg/proofread" ]; then
   test "$("$roo" "$release_root/share/roo/pkg/proofread" --version)" = "proofread 0.1.0"
 fi
+
+footsteps_pkg="$tmp_dir/footsteps-smoke"
+cmake -E make_directory "$footsteps_pkg/src/footsteps_smoke"
+cat > "$footsteps_pkg/package.edn" <<EOF
+{:name footsteps-smoke
+ :version "0.1.0"
+ :dependencies {footsteps "file:$release_root/share/roo/pkg/footsteps"}
+ :load-roots ["src"]
+ :main footsteps_smoke.app/main}
+EOF
+cat > "$footsteps_pkg/src/footsteps_smoke/app.roo" <<'EOF'
+(ns footsteps_smoke.app
+  (:require [footsteps :as footsteps]))
+
+(defun main [args]
+  (let [work (footsteps/make
+              {:id :smoke
+               :data {}
+               :steps {:done {:label "Done"
+                              :run (fn [_ctx] {:data {:ok true}})}}
+               :start [:done]})
+        advanced (footsteps/advance work)]
+    (prn (if (= true (:ok (footsteps/data (:work advanced))))
+           "footsteps-smoke-ok"
+           "footsteps-smoke-fail"))))
+EOF
+
+test "$("$roo" "$footsteps_pkg")" = "footsteps-smoke-ok"
 
 printf '%s\n' "release smoke passed: $archive"
