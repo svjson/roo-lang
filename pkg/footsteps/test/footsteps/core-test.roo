@@ -181,6 +181,49 @@
     (is (= true
            (>= second-value first-value)))))
 
+(deftest project-progress-maps-child-report-into-explicit-scope
+  (let [progress (footsteps/project-progress
+                  {:id :setup/step
+                   :start 2
+                   :end 3
+                   :progress-max 10
+                   :label "Setup step"}
+                  {:progress-value 2
+                   :progress-max 4
+                   :label "Child work"
+                   :step-id :child/work})]
+    (is (= 2.500000
+           (:progress-value progress)))
+    (is (= 10
+           (:progress-max progress)))
+    (is (= "Child work"
+           (:label progress)))
+    (is (= :child/work
+           (:step-id progress)))
+    (is (= :setup/step
+           (:scope-id progress)))
+    (is (= 0.500000
+           (:scope-progress-value progress)))
+    (is (= 1
+           (:scope-progress-max progress)))))
+
+(deftest project-progress-uses-scope-label-and-step-when-child-omits-them
+  (let [progress (footsteps/project-progress
+                  {:id :setup/step
+                   :step-id :setup/step
+                   :start 0
+                   :end 5
+                   :progress-max 10
+                   :label "Setup step"}
+                  {:progress-value 1
+                   :progress-max 5})]
+    (is (= 1
+           (:progress-value progress)))
+    (is (= "Setup step"
+           (:label progress)))
+    (is (= :setup/step
+           (:step-id progress)))))
+
 (deftest run-respects-injected-time-budget
   (let [ticks {:values [0 1 2 3 4 5 6 7 8 9 10]
                :index 0}

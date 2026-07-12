@@ -138,6 +138,34 @@
     (clamp 0 1 (/ (or (:progress-value report) 0)
                   (max 1 (or (:progress-max report) 1))))))
 
+(defun project-progress [scope-spec report]
+  (let [report (progress-report report)
+        scope (scope (or (:scope-id scope-spec)
+                         (:id scope-spec)
+                         (:step-id scope-spec))
+                     (or (:start scope-spec) 0)
+                     (or (:end scope-spec)
+                         (:progress-max scope-spec)
+                         default-progress-max))
+        progress-max (max 1 (or (:progress-max scope-spec)
+                                (:end scope)))
+        value (clamp (or (:minimum-progress-value scope-spec)
+                         (:start scope))
+                     progress-max
+                     (+ (:start scope)
+                        (* (scope-size scope)
+                           (progress-ratio report))))]
+    {:progress-value value
+     :progress-max progress-max
+     :label (or (:label report)
+                (:label scope-spec))
+     :step-id (or (:step-id report)
+                  (:step-id scope-spec)
+                  (:id scope))
+     :scope-id (:id scope)
+     :scope-progress-value (- value (:start scope))
+     :scope-progress-max (scope-size scope)}))
+
 (defun projected-progress-value [step]
   (if-let [report (:progress step)]
     (+ (-> step :scope :start)

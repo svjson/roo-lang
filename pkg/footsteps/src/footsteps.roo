@@ -21,6 +21,9 @@
 (defun progress-report [value]
   (core/progress-report value))
 
+(defun project-progress [scope report]
+  (core/project-progress scope report))
+
 (defun data [work]
   (core/data work))
 
