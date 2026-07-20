@@ -43,6 +43,20 @@ build_dir=${ROO_RELEASE_BUILD_DIR:-"$root_dir/build-release"}
 dist_dir=${ROO_RELEASE_DIST_DIR:-"$root_dir/dist"}
 jobs=${ROO_RELEASE_JOBS:-1}
 stage_dir="$dist_dir/$dist_name"
+release_targets=${ROO_RELEASE_TARGETS:-"
+roo_static
+roo_shared
+roo_cli
+rooc_cli
+roo-package_static
+roo-package_shared
+roo-server_static
+roo-server_shared
+roo-server-exec
+proof_native
+lookup_native
+proofread_native
+"}
 
 if [ "$platform_os" = "windows" ]; then
   archive="$dist_dir/$dist_name.zip"
@@ -56,8 +70,11 @@ cmake -S "$root_dir" -B "$build_dir" \
   -DCMAKE_INSTALL_PREFIX="$stage_dir" \
   -DROO_SERVER_BUILD_TESTS=OFF
 
-printf '%s\n' "==> Building release tree"
-cmake --build "$build_dir" --parallel "$jobs"
+printf '%s\n' "==> Building release targets"
+for target in $release_targets; do
+  printf '%s\n' "    $target"
+  cmake --build "$build_dir" --parallel "$jobs" --target "$target"
+done
 
 printf '%s\n' "==> Recreating staged install tree"
 cmake -E rm -rf "$stage_dir"
