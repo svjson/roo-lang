@@ -103,6 +103,7 @@ install(TARGETS roo-package_static roo-package_shared
   EXPORT roo-packageTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/ DESTINATION include)
