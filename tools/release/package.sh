@@ -59,6 +59,13 @@ lookup_native
 proofread_native
 "}
 
+case "$stage_dir" in
+  "$HOME/.local"|"$HOME/.local/"|"$HOME/.local/"*|/usr|/usr/|/usr/*|/usr/local|/usr/local/|/usr/local/*)
+    printf '%s\n' "refusing to stage release into install prefix: $stage_dir" >&2
+    exit 1
+    ;;
+esac
+
 if [ -n "${ROO_CMAKE_C_COMPILER:-}" ]; then
   export CC="$ROO_CMAKE_C_COMPILER"
 fi

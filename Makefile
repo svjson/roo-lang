@@ -4,12 +4,7 @@ GTEST_FILTER_ARG := $(if $(FILTER),--gtest_filter=$(FILTER),)
 NATIVE_PACKAGE_STAGE := $(CURDIR)/build/native-package-stage/pkg
 
 LOCAL_PREFIX := $(HOME)/.local
-PATH_HAS_LOCAL_BIN := $(findstring $(LOCAL_PREFIX)/bin,$(PATH))
-ifeq ($(PATH_HAS_LOCAL_BIN),)
-  PREFIX ?= /usr/local
-else
-  PREFIX ?= $(LOCAL_PREFIX)
-endif
+PREFIX ?= $(LOCAL_PREFIX)
 
 .PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
