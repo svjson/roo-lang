@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-linux-x86_64:
+    name: Validate Linux x86_64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Verify release tag
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            printf '%s\n' "Release tag '${GITHUB_REF_NAME}' does not match VERSION '${version}'." >&2
+            exit 1
+          fi
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libgmock-dev
+
+      - name: Build validation artifacts
+        run: |
+          make -f Makefile.ci ci-build-libroo
+          make -f Makefile.ci ci-build-libroo-package
+          make -f Makefile.ci ci-build-libroo-server
+          make -f Makefile.ci ci-build-tools
+          make -f Makefile.ci ci-build-native-packages
+          make -f Makefile.ci ci-build-loom
+          make -f Makefile.ci ci-build-lookup
+          make -f Makefile.ci ci-build-proof
+          make -f Makefile.ci ci-build-proofread
+
+      - name: Run validation tests
+        run: |
+          make -f Makefile.ci ci-test-lang
+          make -f Makefile.ci ci-test-package
+          make -f Makefile.ci ci-test-server
+          make -f Makefile.ci ci-test-proof
+          make -f Makefile.ci ci-test-workbook
+          make -f Makefile.ci ci-test-footsteps
+          make -f Makefile.ci ci-test-rooc
+          make -f Makefile.ci ci-test-roo-cli
+          make -f Makefile.ci ci-test-loom-cli
+          make -f Makefile.ci ci-test-lookup-cli
+          make -f Makefile.ci ci-test-proofread
+
+  package-linux-x86_64:
+    name: Package Linux x86_64
+    runs-on: ubuntu-24.04
+    needs: validate-linux-x86_64
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Verify release tag
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            printf '%s\n' "Release tag '${GITHUB_REF_NAME}' does not match VERSION '${version}'." >&2
+            exit 1
+          fi
+
+      - name: Build release archive
+        run: ROO_RELEASE_JOBS=1 make release
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: roo-linux-x86_64-release
+          path: |
+            dist/roo-*.tar.gz
+            dist/SHA256SUMS
+          retention-days: 14
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" \
+              dist/roo-*.tar.gz \
+              dist/SHA256SUMS \
+              --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --title "roo ${GITHUB_REF_NAME#v}" \
+              --notes "Roo ${GITHUB_REF_NAME#v}" \
+              dist/roo-*.tar.gz \
+              dist/SHA256SUMS
+          fi
