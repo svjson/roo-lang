@@ -1,4 +1,5 @@
 
+include(${ROO_ROOT_DIR}/cmake/rooTestDeps.cmake)
 include(GoogleTest)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -11,8 +12,8 @@ enable_testing()
 add_executable(testserver ${TEST_SOURCES})
 
 target_link_libraries(testserver
-  gtest
-  gmock
+  GTest::gtest
+  GTest::gmock
   Roo::roo_shared
   roo-server_shared
 )

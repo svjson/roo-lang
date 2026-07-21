@@ -2,7 +2,7 @@
 set -eu
 
 ROOT_DIR="${1:?repo root required}"
-ROO="$ROOT_DIR/build/roo"
+ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
 PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
 PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"

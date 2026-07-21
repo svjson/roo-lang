@@ -1,3 +1,4 @@
+include(${CMAKE_SOURCE_DIR}/cmake/rooTestDeps.cmake)
 include(GoogleTest)
 
 file(GLOB_RECURSE ROOC_TEST_SOURCES tests/*.cpp)
@@ -16,9 +17,9 @@ set_target_properties(testrooc PROPERTIES
 )
 
 target_link_libraries(testrooc
-  gtest
-  gtest_main
-  gmock
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
   rooc_objects
 )
 

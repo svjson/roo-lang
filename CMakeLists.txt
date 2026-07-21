@@ -5,6 +5,7 @@ string(STRIP "${ROO_PROJECT_VERSION}" ROO_PROJECT_VERSION)
 set(ROO_ABI_VERSION 0)
 
 project(roo VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
+set(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if (APPLE)
   set(ROO_BIN_INSTALL_RPATH "@loader_path/../lib")
@@ -187,10 +188,19 @@ add_test(
           --name
           cafe_register_compiled
 )
+if(CMAKE_CONFIGURATION_TYPES)
+  set(rooc_test_cafe_executable
+    "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/$<CONFIG>/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
+  )
+else()
+  set(rooc_test_cafe_executable
+    "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
+  )
+endif()
 add_test(
   NAME rooc_cli_runs_compiled_cafe_register
   COMMAND
-    ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}
+    ${rooc_test_cafe_executable}
 )
 set_tests_properties(
   rooc_cli_runs_compiled_cafe_register

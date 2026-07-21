@@ -13,6 +13,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  platform-matrix:
+    name: Load platform matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.platforms.outputs.matrix }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Read platform matrix
+        id: platforms
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          with open(".github/platforms.json", encoding="utf-8") as f:
+              print("matrix=" + json.dumps(json.load(f), separators=(",", ":")))
+          PY
+
   validate-linux-x86_64:
     name: Validate Linux x86_64
     runs-on: ubuntu-24.04
@@ -61,23 +80,12 @@ jobs:
   package:
     name: Package ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
-    needs: validate-linux-x86_64
+    needs:
+      - platform-matrix
+      - validate-linux-x86_64
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: linux-x86_64
-            runner: ubuntu-24.04
-            archive-pattern: dist/roo-*.tar.gz
-          - platform: macos-arm64
-            runner: macos-15
-            archive-pattern: dist/roo-*.tar.gz
-          - platform: macos-x86_64
-            runner: macos-15-intel
-            archive-pattern: dist/roo-*.tar.gz
-          - platform: windows-x86_64
-            runner: windows-2025
-            archive-pattern: dist/roo-*.zip
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
     defaults:
       run:
         shell: bash
@@ -128,29 +136,12 @@ jobs:
             exit 1
           fi
 
-      - name: Download Linux x86_64 archive
+      - name: Download platform archives
         uses: actions/download-artifact@v8
         with:
-          name: roo-linux-x86_64-release
+          pattern: roo-*-release
           path: release-assets
-
-      - name: Download macOS arm64 archive
-        uses: actions/download-artifact@v8
-        with:
-          name: roo-macos-arm64-release
-          path: release-assets
-
-      - name: Download macOS x86_64 archive
-        uses: actions/download-artifact@v8
-        with:
-          name: roo-macos-x86_64-release
-          path: release-assets
-
-      - name: Download Windows x86_64 archive
-        uses: actions/download-artifact@v8
-        with:
-          name: roo-windows-x86_64-release
-          path: release-assets
+          merge-multiple: true
 
       - name: Write combined checksums
         run: |

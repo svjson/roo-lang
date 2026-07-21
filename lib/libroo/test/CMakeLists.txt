@@ -1,3 +1,4 @@
+include(${ROO_ROOT_DIR}/cmake/rooTestDeps.cmake)
 include(GoogleTest)
 
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
@@ -16,8 +17,8 @@ target_include_directories(testroo
 )
 
 target_link_libraries(testroo
-  gtest
-  gmock
+  GTest::gtest
+  GTest::gmock
   roo_shared
 )
 

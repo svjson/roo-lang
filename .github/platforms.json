@@ -1,0 +1,24 @@
+{
+  "include": [
+    {
+      "platform": "linux-x86_64",
+      "runner": "ubuntu-24.04",
+      "archive-pattern": "dist/roo-*.tar.gz"
+    },
+    {
+      "platform": "macos-arm64",
+      "runner": "macos-15",
+      "archive-pattern": "dist/roo-*.tar.gz"
+    },
+    {
+      "platform": "macos-x86_64",
+      "runner": "macos-15-intel",
+      "archive-pattern": "dist/roo-*.tar.gz"
+    },
+    {
+      "platform": "windows-x86_64",
+      "runner": "windows-2025",
+      "archive-pattern": "dist/roo-*.zip"
+    }
+  ]
+}

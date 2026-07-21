@@ -161,9 +161,14 @@ namespace
                                 const std::filesystem::path& run_dir,
                                 const std::vector<std::string>& args = {})
   {
-    const auto executable =
+    auto executable =
       build_dir / "build" /
       (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
+    if (!std::filesystem::exists(executable))
+    {
+      executable = build_dir / "build" / "Release" /
+                   (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
+    }
     std::string command = std::string(ROOC_TEST_CMAKE_COMMAND) + " -E chdir " +
                           shell_arg(run_dir) + " " + shell_arg(executable);
     for (const auto& arg : args)
