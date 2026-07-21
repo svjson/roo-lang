@@ -18,7 +18,11 @@
     {
       "platform": "windows-x86_64",
       "runner": "windows-2025",
-      "archive-pattern": "dist/roo-*.zip"
+      "archive-pattern": "dist/roo-*.zip",
+      "cmake_generator": "Ninja",
+      "c_compiler": "clang-cl",
+      "cxx_compiler": "clang-cl",
+      "msvc_arch": "x64"
     }
   ]
 }

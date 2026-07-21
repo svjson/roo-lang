@@ -102,7 +102,17 @@ jobs:
             exit 1
           fi
 
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
       - name: Build release archive
+        env:
+          ROO_CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+          ROO_CMAKE_C_COMPILER: ${{ matrix.c_compiler }}
+          ROO_CMAKE_CXX_COMPILER: ${{ matrix.cxx_compiler }}
         run: ROO_RELEASE_JOBS=1 sh tools/release/package.sh
 
       - name: Rename checksum

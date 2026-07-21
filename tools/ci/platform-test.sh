@@ -7,6 +7,13 @@ build_dir=${ROO_CI_BUILD_DIR:-"$root_dir/build-platform"}
 jobs=${ROO_CI_JOBS:-1}
 config=${ROO_CI_CONFIG:-Release}
 
+if [ -n "${ROO_CMAKE_C_COMPILER:-}" ]; then
+  export CC="$ROO_CMAKE_C_COMPILER"
+fi
+if [ -n "${ROO_CMAKE_CXX_COMPILER:-}" ]; then
+  export CXX="$ROO_CMAKE_CXX_COMPILER"
+fi
+
 exe_suffix=
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) exe_suffix=.exe ;;
@@ -24,9 +31,16 @@ find_built_executable()
 }
 
 printf '%s\n' "==> Configuring platform test build"
-cmake -S "$root_dir" -B "$build_dir" \
-  -DCMAKE_BUILD_TYPE="$config" \
-  -DROO_SERVER_BUILD_TESTS=ON
+if [ -n "${ROO_CMAKE_GENERATOR:-}" ]; then
+  cmake -S "$root_dir" -B "$build_dir" \
+    -G "$ROO_CMAKE_GENERATOR" \
+    -DCMAKE_BUILD_TYPE="$config" \
+    -DROO_SERVER_BUILD_TESTS=ON
+else
+  cmake -S "$root_dir" -B "$build_dir" \
+    -DCMAKE_BUILD_TYPE="$config" \
+    -DROO_SERVER_BUILD_TESTS=ON
+fi
 
 printf '%s\n' "==> Building platform test targets"
 cmake --build "$build_dir" --config "$config" --parallel "$jobs" \

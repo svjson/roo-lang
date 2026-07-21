@@ -59,6 +59,13 @@ lookup_native
 proofread_native
 "}
 
+if [ -n "${ROO_CMAKE_C_COMPILER:-}" ]; then
+  export CC="$ROO_CMAKE_C_COMPILER"
+fi
+if [ -n "${ROO_CMAKE_CXX_COMPILER:-}" ]; then
+  export CXX="$ROO_CMAKE_CXX_COMPILER"
+fi
+
 if [ "$platform_os" = "windows" ]; then
   archive="$dist_dir/$dist_name.zip"
 else
@@ -66,10 +73,18 @@ else
 fi
 
 printf '%s\n' "==> Configuring release build"
-cmake -S "$root_dir" -B "$build_dir" \
-  -DCMAKE_BUILD_TYPE="$config" \
-  -DCMAKE_INSTALL_PREFIX="$stage_dir" \
-  -DROO_SERVER_BUILD_TESTS=OFF
+if [ -n "${ROO_CMAKE_GENERATOR:-}" ]; then
+  cmake -S "$root_dir" -B "$build_dir" \
+    -G "$ROO_CMAKE_GENERATOR" \
+    -DCMAKE_BUILD_TYPE="$config" \
+    -DCMAKE_INSTALL_PREFIX="$stage_dir" \
+    -DROO_SERVER_BUILD_TESTS=OFF
+else
+  cmake -S "$root_dir" -B "$build_dir" \
+    -DCMAKE_BUILD_TYPE="$config" \
+    -DCMAKE_INSTALL_PREFIX="$stage_dir" \
+    -DROO_SERVER_BUILD_TESTS=OFF
+fi
 
 printf '%s\n' "==> Building release targets"
 for target in $release_targets; do

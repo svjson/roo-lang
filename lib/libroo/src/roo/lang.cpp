@@ -31,8 +31,6 @@
 #include <roo/scope.h>
 #include <roo/type.h>
 
-#include <bits/std_abs.h>
-
 namespace Roo
 {
   Namespace make_language_namespace()
