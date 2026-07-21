@@ -44,9 +44,10 @@ namespace Rooc
   {
     const auto cmake_build_dir = options.build_dir / "build";
     const std::string configure = "cmake -S " + shell_arg(cmake_path(options.build_dir)) +
-                                  " -B " + shell_arg(cmake_path(cmake_build_dir));
+                                  " -B " + shell_arg(cmake_path(cmake_build_dir)) +
+                                  " -DCMAKE_BUILD_TYPE=Release";
     const std::string build = "cmake --build " + shell_arg(cmake_path(cmake_build_dir)) +
-                              " --target " + project.executable_name;
+                              " --config Release --target " + project.executable_name;
     run_command(configure);
     run_command(build);
   }

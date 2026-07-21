@@ -10,6 +10,7 @@ archive=$1
 version=$2
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 jobs=${ROO_RELEASE_JOBS:-1}
+config=${ROO_RELEASE_CONFIG:-Release}
 archive_dir=$(CDPATH= cd -- "$(dirname -- "$archive")" && pwd)
 archive="$archive_dir/$(basename -- "$archive")"
 
@@ -72,6 +73,9 @@ test "$("$roo" "$smoke_pkg")" = "smoke-app-ok"
 compiled_dir="$tmp_dir/compiled-smoke"
 "$rooc" build "$smoke_pkg" --build-dir "$compiled_dir" --name smoke_app
 compiled_app="$compiled_dir/build/smoke_app$exe_suffix"
+if [ ! -f "$compiled_app" ]; then
+  compiled_app="$compiled_dir/build/$config/smoke_app$exe_suffix"
+fi
 test "$("$compiled_app")" = "smoke-app-ok"
 
 cmake_pkg="$tmp_dir/cmake-smoke"
@@ -102,8 +106,12 @@ int main()
 EOF
 
 cmake -S "$cmake_pkg" -B "$cmake_pkg/build" -DCMAKE_PREFIX_PATH="$release_root"
-cmake --build "$cmake_pkg/build" --parallel "$jobs"
-"$cmake_pkg/build/roo_release_cmake_smoke$exe_suffix"
+cmake --build "$cmake_pkg/build" --config "$config" --parallel "$jobs"
+cmake_smoke="$cmake_pkg/build/roo_release_cmake_smoke$exe_suffix"
+if [ ! -f "$cmake_smoke" ]; then
+  cmake_smoke="$cmake_pkg/build/$config/roo_release_cmake_smoke$exe_suffix"
+fi
+"$cmake_smoke"
 
 if [ -d "$release_root/share/roo/pkg/lookup" ]; then
   test "$("$roo" "$release_root/share/roo/pkg/lookup" --version)" = "lookup 0.1.0"
