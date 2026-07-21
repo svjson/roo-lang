@@ -18,15 +18,6 @@ target_link_libraries(proof_native
     Roo::package_shared
 )
 
-add_custom_command(TARGET proof_native POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory
-          ${CMAKE_CURRENT_SOURCE_DIR}/../native
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          $<TARGET_FILE:proof_native>
-          ${CMAKE_CURRENT_SOURCE_DIR}/../native/$<TARGET_FILE_NAME:proof_native>
-  COMMENT "Copying proof native package artifact into pkg/proof/native"
-)
-
 install(TARGETS proof_native
   LIBRARY DESTINATION share/roo/pkg/proof/native
   RUNTIME DESTINATION share/roo/pkg/proof/native

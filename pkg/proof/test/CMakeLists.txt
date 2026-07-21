@@ -21,7 +21,7 @@ target_link_libraries(testproof
 )
 
 target_compile_definitions(testproof
-  PRIVATE PROOF_PACKAGE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/.."
+  PRIVATE PROOF_PACKAGE_DIR="${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof"
 )
 
 gtest_discover_tests(testproof)

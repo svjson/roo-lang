@@ -306,21 +306,33 @@ target_link_libraries(example_native
 )
 ```
 
-If the manifest uses `:path "native"`, copy the built artifact into that
-directory after building:
+If the manifest uses `:path "native"`, stage the package into a build or
+install tree and place the built artifact in that staged `native` directory:
 
 ```cmake
-add_custom_command(TARGET example_native POST_BUILD
+set(EXAMPLE_PACKAGE_STAGE_DIR
+  "${CMAKE_BINARY_DIR}/native-package-stage/pkg/example"
+)
+
+add_custom_target(stage_example_package
   COMMAND ${CMAKE_COMMAND} -E make_directory
-          ${CMAKE_CURRENT_SOURCE_DIR}/../native
+          ${EXAMPLE_PACKAGE_STAGE_DIR}/native
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${CMAKE_CURRENT_SOURCE_DIR}/../src
+          ${EXAMPLE_PACKAGE_STAGE_DIR}/src
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${CMAKE_CURRENT_SOURCE_DIR}/../package.edn
+          ${EXAMPLE_PACKAGE_STAGE_DIR}/package.edn
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           $<TARGET_FILE:example_native>
-          ${CMAKE_CURRENT_SOURCE_DIR}/../native/$<TARGET_FILE_NAME:example_native>
+          ${EXAMPLE_PACKAGE_STAGE_DIR}/native/$<TARGET_FILE_NAME:example_native>
+  DEPENDS example_native
 )
 ```
 
-That copy step is not magic or required by the loader. It is just one simple way
-to make the built library land where `package.edn` says it will be.
+That staging step is not magic or required by the loader. It is just one simple
+way to make the built library land where `package.edn` says it will be without
+writing generated binaries back into the source package.
 
 ## Loading From an Embedded Application
 

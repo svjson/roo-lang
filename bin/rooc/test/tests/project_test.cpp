@@ -16,6 +16,11 @@ namespace
     return std::filesystem::path(ROOC_TEST_REPO_ROOT);
   }
 
+  std::filesystem::path package_stage_root()
+  {
+    return std::filesystem::path(ROOC_TEST_PACKAGE_STAGE_ROOT);
+  }
+
   Rooc::Options options_for(const std::filesystem::path& package_dir)
   {
     Rooc::Options options;
@@ -86,7 +91,7 @@ TEST(RoocProject, sanitizes_explicit_executable_name)
 TEST(RoocProject, prepares_package_with_native_dependency)
 {
   // Given
-  auto options = options_for(repo_root() / "pkg/proof/test/assets/dynamic-smoke");
+  auto options = options_for(package_stage_root() / "proof/test/assets/dynamic-smoke");
 
   // When
   auto project = Rooc::prepare_project(options);

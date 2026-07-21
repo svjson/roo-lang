@@ -3,7 +3,8 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="$ROOT_DIR/build/roo"
-LOOM_PACKAGE="$ROOT_DIR/pkg/loom"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+LOOM_PACKAGE="$PACKAGE_STAGE_ROOT/loom"
 LOOM_REPO="$ROOT_DIR/build/loom-test-repo"
 LOOM_LINK_REPO="$ROOT_DIR/build/loom-link-test-repo"
 LOOM_INIT_DIR="$ROOT_DIR/build/loom-init-test-package"
@@ -66,6 +67,6 @@ test ! -e "$LOOM_REPO/loom/0.1.0/stale-file"
 test ! -e "$LOOM_REPO/loom/0.1.0/package.edn"
 
 cmake -E rm -rf "$PROOF_REPO"
-"$ROO" "$LOOM_PACKAGE" install "$ROOT_DIR/pkg/proof" --repo "$PROOF_REPO" --force
+"$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --repo "$PROOF_REPO" --force
 test -f "$PROOF_REPO/proof/0.1.0/package.edn"
 test -f "$PROOF_REPO/proof/0.1.0/native/libproof-native.so"

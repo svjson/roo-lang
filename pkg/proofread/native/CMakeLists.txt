@@ -18,15 +18,6 @@ target_link_libraries(proofread_native
     Roo::package_shared
 )
 
-add_custom_command(TARGET proofread_native POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory
-          ${CMAKE_CURRENT_SOURCE_DIR}/../native
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          $<TARGET_FILE:proofread_native>
-          ${CMAKE_CURRENT_SOURCE_DIR}/../native/$<TARGET_FILE_NAME:proofread_native>
-  COMMENT "Copying proofread native package artifact into pkg/proofread/native"
-)
-
 install(TARGETS proofread_native
   LIBRARY DESTINATION share/roo/pkg/proofread/native
   RUNTIME DESTINATION share/roo/pkg/proofread/native

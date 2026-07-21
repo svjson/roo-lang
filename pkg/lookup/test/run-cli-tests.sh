@@ -3,10 +3,11 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="$ROOT_DIR/build/roo"
-LOOKUP_PACKAGE="$ROOT_DIR/pkg/lookup"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+LOOKUP_PACKAGE="$PACKAGE_STAGE_ROOT/lookup"
 
 (
-  cd "$ROOT_DIR/pkg/lookup/test"
+  cd "$LOOKUP_PACKAGE/test"
   "$ROO" proof
 )
 

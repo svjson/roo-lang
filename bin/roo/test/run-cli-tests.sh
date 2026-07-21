@@ -3,6 +3,8 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="$ROOT_DIR/build/roo"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"
 OUTPUT_FILE="$RUN_DIR/main-ran.txt"
 
@@ -14,7 +16,7 @@ test "$(cat "$OUTPUT_FILE")" = "3:alpha:beta:nil:nil:nil"
 test "$(cat "$OUTPUT_FILE")" = "3:--version:--help:nil:nil:nil"
 
 PROOF_OUTPUT="$(
-  cd "$ROOT_DIR/pkg/proof/test/assets/dynamic-smoke"
+  cd "$PROOF_SMOKE_PACKAGE"
   "$ROO" proof --reporter tree --filter discovered-proof
 )"
 
@@ -24,7 +26,7 @@ case "$PROOF_OUTPUT" in
 esac
 
 PROOF_HELP_OUTPUT="$(
-  cd "$ROOT_DIR/pkg/proof/test/assets/dynamic-smoke"
+  cd "$PROOF_SMOKE_PACKAGE"
   "$ROO" proof --help
 )"
 

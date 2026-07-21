@@ -1,6 +1,7 @@
 BUILD_TYPE ?= Release
 FILTER ?=
 GTEST_FILTER_ARG := $(if $(FILTER),--gtest_filter=$(FILTER),)
+NATIVE_PACKAGE_STAGE := $(CURDIR)/build/native-package-stage/pkg
 
 LOCAL_PREFIX := $(HOME)/.local
 PATH_HAS_LOCAL_BIN := $(findstring $(LOCAL_PREFIX)/bin,$(PATH))
@@ -10,7 +11,7 @@ else
   PREFIX ?= $(LOCAL_PREFIX)
 endif
 
-.PHONY: configure configure-server-tests build relink install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
@@ -20,6 +21,7 @@ SERVER_TEST_BINARY := lib/libroo-server/test/testserver
 LOOM_BINARY := loom
 LOOKUP_BINARY := lookup
 PROOF_NATIVE_LIBRARY := libproof-native.so
+LOOKUP_NATIVE_LIBRARY := liblookup-native.so
 PROOFREAD_NATIVE_LIBRARY := libproofread-native.so
 PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
@@ -31,12 +33,20 @@ ifeq ($(OS),Windows_NT)
   LOOM_BINARY := loom.exe
   LOOKUP_BINARY := lookup.exe
   PROOF_NATIVE_LIBRARY := proof-native.dll
+  LOOKUP_NATIVE_LIBRARY := lookup-native.dll
   PROOFREAD_NATIVE_LIBRARY := proofread-native.dll
   PROOFREAD_BINARY := proofread.exe
 endif
 ifeq ($(shell uname -s),Darwin)
   PROOF_NATIVE_LIBRARY := libproof-native.dylib
+  LOOKUP_NATIVE_LIBRARY := liblookup-native.dylib
   PROOFREAD_NATIVE_LIBRARY := libproofread-native.dylib
+endif
+
+ifeq ($(OS),Windows_NT)
+  DEV_NATIVE_ARTIFACT = cmake -E copy_if_different $(1) $(2)
+else
+  DEV_NATIVE_ARTIFACT = cmake -E create_symlink $(1) $(2)
 endif
 
 ifeq ($(shell uname -s),Darwin)
@@ -65,9 +75,11 @@ RELINK_ARTIFACTS := \
 	$(CURDIR)/build/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) \
 	$(CURDIR)/build/pkg/proof/native/libproof_native.a \
 	$(CURDIR)/build/pkg/proof/test/testproof \
+	$(CURDIR)/build/pkg/lookup/native/$(LOOKUP_NATIVE_LIBRARY) \
 	$(CURDIR)/build/pkg/proofread/native/$(PROOFREAD_NATIVE_LIBRARY) \
 	$(CURDIR)/build/pkg/proofread/proofread \
 	$(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) \
+	$(CURDIR)/pkg/lookup/native/$(LOOKUP_NATIVE_LIBRARY) \
 	$(CURDIR)/pkg/proofread/native/$(PROOFREAD_NATIVE_LIBRARY)
 
 configure:
@@ -86,40 +98,59 @@ configure-server-tests:
 
 build: configure
 	cmake --build build
+	$(MAKE) dev-native-package-links
 
 relink: configure
 	cmake -E rm -f $(RELINK_ARTIFACTS)
 	cmake --build build
+	$(MAKE) dev-native-package-links
+
+dev-native-packages: configure
+	cmake --build build --target proof_native lookup_native proofread_native
+	$(MAKE) dev-native-package-links
+
+dev-native-package-links:
+	cmake -E make_directory $(CURDIR)/pkg/proof/native
+	cmake -E make_directory $(CURDIR)/pkg/lookup/native
+	cmake -E make_directory $(CURDIR)/pkg/proofread/native
+	cmake -E rm -f $(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
+	cmake -E rm -f $(CURDIR)/pkg/lookup/native/$(LOOKUP_NATIVE_LIBRARY)
+	cmake -E rm -f $(CURDIR)/pkg/proofread/native/$(PROOFREAD_NATIVE_LIBRARY)
+	$(call DEV_NATIVE_ARTIFACT,$(CURDIR)/build/pkg/proof/native/$(PROOF_NATIVE_LIBRARY),$(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY))
+	$(call DEV_NATIVE_ARTIFACT,$(CURDIR)/build/pkg/lookup/native/$(LOOKUP_NATIVE_LIBRARY),$(CURDIR)/pkg/lookup/native/$(LOOKUP_NATIVE_LIBRARY))
+	$(call DEV_NATIVE_ARTIFACT,$(CURDIR)/build/pkg/proofread/native/$(PROOFREAD_NATIVE_LIBRARY),$(CURDIR)/pkg/proofread/native/$(PROOFREAD_NATIVE_LIBRARY))
+
+stage-native-packages: configure
+	cmake --build build --target stage_native_packages
 
 install: build
 	cmake --build build --target install
 
-install-loom: build
-	./build/rooc build $(CURDIR)/pkg/loom --build-dir $(CURDIR)/build/loom-install --name loom
+install-loom: build stage-native-packages
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/loom --build-dir $(CURDIR)/build/loom-install --name loom
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/loom-install/build/$(LOOM_BINARY) $(PREFIX)/bin/$(LOOM_BINARY)
 
-build-proof: build
-	cmake --build build --target proof_native
+build-proof: build stage-native-packages
 
 install-proof: build-proof
 	cmake -E make_directory $(PREFIX)/share/roo/pkg/proof/src
 	cmake -E make_directory $(PREFIX)/share/roo/pkg/proof/native
-	cmake -E copy_directory $(CURDIR)/pkg/proof/src $(PREFIX)/share/roo/pkg/proof/src
-	cmake -E copy_if_different $(CURDIR)/pkg/proof/package.edn $(PREFIX)/share/roo/pkg/proof/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/proof/README.md $(PREFIX)/share/roo/pkg/proof/README.md
-	cmake -E copy_if_different $(CURDIR)/pkg/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
+	cmake -E copy_directory $(NATIVE_PACKAGE_STAGE)/proof/src $(PREFIX)/share/roo/pkg/proof/src
+	cmake -E copy_if_different $(NATIVE_PACKAGE_STAGE)/proof/package.edn $(PREFIX)/share/roo/pkg/proof/package.edn
+	cmake -E copy_if_different $(NATIVE_PACKAGE_STAGE)/proof/README.md $(PREFIX)/share/roo/pkg/proof/README.md
+	cmake -E copy_if_different $(NATIVE_PACKAGE_STAGE)/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
 	$(call SET_PACKAGE_NATIVE_RPATH,$(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY))
 
-build-lookup: build
-	./build/rooc build $(CURDIR)/pkg/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup
+build-lookup: build stage-native-packages
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup
 
 install-lookup: build-lookup
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(PREFIX)/bin/$(LOOKUP_BINARY)
 
-build-proofread: build
-	./build/rooc build $(CURDIR)/pkg/proofread --build-dir $(CURDIR)/build/proofread-install --name proofread
+build-proofread: build stage-native-packages
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-install --name proofread
 
 install-proofread: build-proofread
 	cmake -E make_directory $(PREFIX)/bin
@@ -157,26 +188,26 @@ test\:proof: build
 	cmake --build build --target testproof
 	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
 
-test\:workbook: build
-	cd $(CURDIR)/pkg/workbook/test && $(CURDIR)/build/roo proof
+test\:workbook: build stage-native-packages
+	cd $(NATIVE_PACKAGE_STAGE)/workbook/test && $(CURDIR)/build/roo proof
 
-test\:footsteps: build
-	cd $(CURDIR)/pkg/footsteps/test && $(CURDIR)/build/roo proof
+test\:footsteps: build stage-native-packages
+	cd $(NATIVE_PACKAGE_STAGE)/footsteps/test && $(CURDIR)/build/roo proof
 
-test\:rooc: build
+test\:rooc: build stage-native-packages
 	cmake --build build --target testrooc
 	./build/$(ROOC_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 test\:cli: test\:roo-cli test\:loom-cli test\:lookup-cli
 
-test\:roo-cli: build
-	sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
+test\:roo-cli: build stage-native-packages
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
 
-test\:loom-cli: build
-	sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
+test\:loom-cli: build stage-native-packages
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
 
-test\:lookup-cli: build
-	sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
+test\:lookup-cli: build stage-native-packages
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
 
 test\:benchmark: build
 	cmake --build build --target testroo

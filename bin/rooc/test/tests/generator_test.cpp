@@ -26,6 +26,11 @@ namespace
     return std::filesystem::path(ROOC_TEST_BUILD_ROOT);
   }
 
+  std::filesystem::path package_stage_root()
+  {
+    return std::filesystem::path(ROOC_TEST_PACKAGE_STAGE_ROOT);
+  }
+
   std::string read_file(const std::filesystem::path& path)
   {
     std::ifstream file(path, std::ios::binary);
@@ -79,7 +84,7 @@ namespace
   {
     Rooc::Options options;
     options.command = "build";
-    options.package_dir = repo_root() / "pkg/proof/test/assets/dynamic-smoke";
+    options.package_dir = package_stage_root() / "proof/test/assets/dynamic-smoke";
     options.build_dir = build_dir;
     options.executable_name = "dynamic_smoke_compiled";
     return options;

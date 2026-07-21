@@ -152,10 +152,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -164,7 +164,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run workbook tests
         run: make -f Makefile.ci ci-test-workbook
@@ -189,10 +189,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -201,7 +201,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run footsteps tests
         run: make -f Makefile.ci ci-test-footsteps
@@ -229,10 +229,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -241,7 +241,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run rooc tests
         run: make -f Makefile.ci ci-test-rooc
@@ -266,10 +266,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -278,7 +278,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run roo CLI tests
         run: make -f Makefile.ci ci-test-roo-cli
@@ -303,10 +303,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -315,7 +315,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run loom CLI tests
         run: make -f Makefile.ci ci-test-loom-cli
@@ -340,10 +340,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -352,7 +352,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run lookup CLI tests
         run: make -f Makefile.ci ci-test-lookup-cli
@@ -377,10 +377,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Download native package artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -389,7 +389,7 @@ jobs:
       - name: Unpack tool and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Run proofread tests
         run: make -f Makefile.ci ci-test-proofread

@@ -21,19 +21,19 @@ ci-build-tools:
 	cmake --build build --target roo_cli rooc_cli
 
 ci-build-native-packages:
-	cmake --build build --target proof_native lookup_native proofread_native
+	cmake --build build --target stage_native_packages
 
 ci-build-loom:
-	./build/rooc build $(CURDIR)/pkg/loom --build-dir $(CURDIR)/build/loom-build --name loom
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/loom --build-dir $(CURDIR)/build/loom-build --name loom
 
 ci-build-lookup:
-	./build/rooc build $(CURDIR)/pkg/lookup --build-dir $(CURDIR)/build/lookup-build --name lookup
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/lookup --build-dir $(CURDIR)/build/lookup-build --name lookup
 
 ci-build-proof:
-	./build/rooc build $(CURDIR)/pkg/proof --build-dir $(CURDIR)/build/proof-build --name proof
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/proof --build-dir $(CURDIR)/build/proof-build --name proof
 
 ci-build-proofread:
-	./build/rooc build $(CURDIR)/pkg/proofread --build-dir $(CURDIR)/build/proofread-build --name proofread
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-build --name proofread
 
 ci-test-lang:
 	cmake --build build --target testroo
@@ -52,23 +52,23 @@ ci-test-proof:
 	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 ci-test-workbook:
-	cd $(CURDIR)/pkg/workbook/test && $(CURDIR)/build/roo proof
+	cd $(NATIVE_PACKAGE_STAGE)/workbook/test && $(CURDIR)/build/roo proof
 
 ci-test-footsteps:
-	cd $(CURDIR)/pkg/footsteps/test && $(CURDIR)/build/roo proof
+	cd $(NATIVE_PACKAGE_STAGE)/footsteps/test && $(CURDIR)/build/roo proof
 
 ci-test-rooc:
 	cmake --build build --target testrooc
 	./build/$(ROOC_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 ci-test-roo-cli:
-	sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
 
 ci-test-loom-cli:
-	sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
 
 ci-test-lookup-cli:
-	sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
 
 ci-test-proofread:
 	ctest --test-dir build -R proofread --output-on-failure

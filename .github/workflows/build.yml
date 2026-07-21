@@ -157,18 +157,16 @@ jobs:
           path: build-native-packages.tar.gz
           retention-days: 3
 
-      - name: Pack native package source artifacts
+      - name: Pack native package stage
         run: >
-          tar -czf source-native-package-libraries.tar.gz
-          pkg/proof/native/*.so
-          pkg/lookup/native/*.so
-          pkg/proofread/native/*.so
+          tar -czf native-package-stage.tar.gz
+          build/native-package-stage
 
-      - name: Upload native package source artifacts
+      - name: Upload native package stage
         uses: actions/upload-artifact@v7
         with:
-          name: source-native-package-libraries
-          path: source-native-package-libraries.tar.gz
+          name: native-package-stage
+          path: native-package-stage.tar.gz
           retention-days: 3
 
   build-package-binaries:
@@ -188,16 +186,16 @@ jobs:
           name: build-tools
           path: artifacts
 
-      - name: Download native package source artifacts
+      - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: source-native-package-libraries
+          name: native-package-stage
           path: artifacts
 
       - name: Unpack tools and native package artifacts
         run: |
           tar -xzf artifacts/build-tools.tar.gz
-          tar -xzf artifacts/source-native-package-libraries.tar.gz
+          tar -xzf artifacts/native-package-stage.tar.gz
 
       - name: Build Loom binary
         run: make -f Makefile.ci ci-build-loom
