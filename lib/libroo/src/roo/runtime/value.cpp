@@ -501,6 +501,12 @@ namespace Roo
       Value::Number{.num_type = Value::NumberType::LONG, .long_value = v});
   }
 
+  sptr_val Value::number(long long v)
+  {
+    return std::make_shared<Value>(
+      Value::Number{.num_type = Value::NumberType::LONG, .long_value = v});
+  }
+
   sptr_val Value::number(const Value::Number& num)
   {
     if (num.num_type == Value::NumberType::INT)

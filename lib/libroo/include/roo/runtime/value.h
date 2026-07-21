@@ -104,6 +104,7 @@ namespace Roo
     static sptr_val boolean(bool);
     static sptr_val number(int);
     static sptr_val number(long);
+    static sptr_val number(long long);
     static sptr_val number(double);
     static sptr_val number(const Value::Number&);
     static sptr_val string(const std::string&);
@@ -157,6 +158,10 @@ namespace Roo
     return Value::number(value);
   }
   inline sptr_val number(long value)
+  {
+    return Value::number(value);
+  }
+  inline sptr_val number(long long value)
   {
     return Value::number(value);
   }

@@ -427,6 +427,13 @@ namespace Roo::AST
   {
   }
 
+  Number::Number(long long value)
+    : Value(Form::NUMBER, static_cast<float>(value))
+    , i64val(value)
+    , num_type(NumberType::LONG)
+  {
+  }
+
   bool Number::is_num_type(NumberType type) const
   {
     return num_type == type;
@@ -462,7 +469,7 @@ namespace Roo::AST
     return value;
   }
 
-  long Number::long_value() const
+  long long Number::long_value() const
   {
     switch (num_type)
     {
@@ -471,10 +478,10 @@ namespace Roo::AST
     case NumberType::LONG:
       return i64val;
     case NumberType::FLOAT:
-      return static_cast<long>(f32val);
+      return static_cast<long long>(f32val);
     }
 
-    return static_cast<long>(value);
+    return static_cast<long long>(value);
   }
 
   std::shared_ptr<Number> Number::operator+(const Number& other)
@@ -529,7 +536,7 @@ namespace Roo::AST
     case NumberType::FLOAT:
       return Number::make(flipped);
     case NumberType::LONG:
-      return Number::make(static_cast<long>(flipped));
+      return Number::make(static_cast<long long>(flipped));
     }
 
     return Number::make(flipped);
@@ -584,6 +591,11 @@ namespace Roo::AST
     return std::make_shared<Number>(value);
   }
 
+  std::shared_ptr<Number> Number::make(long long value)
+  {
+    return std::make_shared<Number>(value);
+  }
+
   std::shared_ptr<Number> Number::make(double value)
   {
     return std::make_shared<Number>(value);
@@ -602,7 +614,7 @@ namespace Roo::AST
       {
         if (str_value.size() >= 10)
         {
-          return Number::make(stol(str_value));
+          return Number::make(stoll(str_value));
         }
         return Number::make(stoi(str_value));
       }

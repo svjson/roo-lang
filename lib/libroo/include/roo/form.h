@@ -246,13 +246,14 @@ namespace Roo
       union
       {
         int i32val;
-        long i64val;
+        long long i64val;
         float f32val;
       };
 
      public:
       Number(int value);
       Number(long value);
+      Number(long long value);
       Number(unsigned int value);
       Number(unsigned long value);
       Number(float value);
@@ -262,7 +263,7 @@ namespace Roo
 
       NumberType num_type;
       int int_value() const;
-      long long_value() const;
+      long long long_value() const;
       float float_value() const;
 
       bool is_num_type(NumberType type) const;
@@ -280,6 +281,7 @@ namespace Roo
       static std::shared_ptr<Number> make(int value);
       static std::shared_ptr<Number> make(unsigned long value);
       static std::shared_ptr<Number> make(long value);
+      static std::shared_ptr<Number> make(long long value);
       static std::shared_ptr<Number> make(float value);
       static std::shared_ptr<Number> make(double value);
       static std::shared_ptr<Number> make(unsigned int value);
