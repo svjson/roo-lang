@@ -1,4 +1,5 @@
 include(${CMAKE_SOURCE_DIR}/cmake/rooTestDeps.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/rooTestRuntime.cmake)
 include(GoogleTest)
 
 file(GLOB_RECURSE ROOC_TEST_SOURCES tests/*.cpp)
@@ -21,6 +22,12 @@ target_link_libraries(testrooc
   GTest::gtest_main
   GTest::gmock
   rooc_objects
+)
+
+roo_copy_runtime_dlls(testrooc
+  roo_shared
+  roo-package_shared
+  roo-package-test-native
 )
 
 target_compile_definitions(testrooc

@@ -1,5 +1,6 @@
 
 include(${ROO_ROOT_DIR}/cmake/rooTestDeps.cmake)
+include(${ROO_ROOT_DIR}/cmake/rooTestRuntime.cmake)
 include(GoogleTest)
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -15,6 +16,11 @@ target_link_libraries(testserver
   GTest::gtest
   GTest::gmock
   Roo::roo_shared
+  roo-server_shared
+)
+
+roo_copy_runtime_dlls(testserver
+  roo_shared
   roo-server_shared
 )
 

@@ -1,4 +1,5 @@
 include(${ROO_ROOT_DIR}/cmake/rooTestDeps.cmake)
+include(${ROO_ROOT_DIR}/cmake/rooTestRuntime.cmake)
 include(GoogleTest)
 
 file(GLOB_RECURSE PROOF_TEST_SOURCES tests/*.cpp)
@@ -16,6 +17,12 @@ target_link_libraries(testproof
   GTest::gtest
   GTest::gtest_main
   GTest::gmock
+  roo_shared
+  roo-package_shared
+  proof_native
+)
+
+roo_copy_runtime_dlls(testproof
   roo_shared
   roo-package_shared
   proof_native

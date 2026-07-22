@@ -1,4 +1,5 @@
 include(${ROO_ROOT_DIR}/cmake/rooTestDeps.cmake)
+include(${ROO_ROOT_DIR}/cmake/rooTestRuntime.cmake)
 include(GoogleTest)
 
 file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
@@ -19,6 +20,10 @@ target_include_directories(testroo
 target_link_libraries(testroo
   GTest::gtest
   GTest::gmock
+  roo_shared
+)
+
+roo_copy_runtime_dlls(testroo
   roo_shared
 )
 
