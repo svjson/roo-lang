@@ -1,7 +1,7 @@
 #ifndef ROO_SERVER_SERVER_H
 #define ROO_SERVER_SERVER_H
 
-#include <poll.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -18,6 +18,15 @@ namespace Roo
 
 namespace Roo::Server
 {
+  using SocketHandle = std::uintptr_t;
+
+  struct SocketDescriptor
+  {
+    SocketHandle fd;
+    short events;
+    short revents;
+  };
+
   /*!
    * @namespace Roo::Server
    * @brief Namespace containing the Roo Embeddable REPL Server and all of
@@ -141,7 +150,8 @@ namespace Roo::Server
      * all active connections. The server socket will always be stored at
      * position 0.
      */
-    std::vector<pollfd> socket_descriptors;
+    std::vector<SocketDescriptor> socket_descriptors;
+    bool socket_runtime_started = false;
     /*!
      * @brief Responsible for parsing incoming messages. @see MessageParser.
      */
@@ -154,7 +164,7 @@ namespace Roo::Server
      * @brief Accepts, reads and handles an incoming message on the specified
      * socket.
      */
-    void accept_request(int socket);
+    void accept_request(SocketHandle socket);
 
    public:
     /*!

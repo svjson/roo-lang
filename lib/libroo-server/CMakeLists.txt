@@ -92,6 +92,11 @@ target_link_libraries(roo-server_shared
     Roo::roo_shared
 )
 
+if(WIN32)
+  target_link_libraries(roo-server_static PUBLIC ws2_32)
+  target_link_libraries(roo-server_shared PUBLIC ws2_32)
+endif()
+
 set_target_properties(roo-server_static PROPERTIES
   EXPORT_NAME server_static
 )
