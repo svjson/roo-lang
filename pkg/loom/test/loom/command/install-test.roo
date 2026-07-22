@@ -33,8 +33,9 @@
   (then [install-proof-target-dir {:keys [repo-root]}]
     (is (= (repository/package-target-dir repo-root "proof" "0.1.0")
            install-proof-target-dir))
-    (is (io/exists? (support/installed-path repo-root "proof" "0.1.0"
-                                            "native/libproof-native.so")))))
+    (let [native-dir (support/installed-path repo-root "proof" "0.1.0" "native")]
+      (is (io/directory? native-dir))
+      (is (= false (empty? (io/list-directory! native-dir)))))))
 
 (deftest reinstall-removes-previous-package-contents
   (given

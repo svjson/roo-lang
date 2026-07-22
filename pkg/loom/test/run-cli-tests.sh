@@ -9,9 +9,15 @@ LOOM_REPO="$ROOT_DIR/build/loom-test-repo"
 LOOM_LINK_REPO="$ROOT_DIR/build/loom-link-test-repo"
 LOOM_INIT_DIR="$ROOT_DIR/build/loom-init-test-package"
 PROOF_REPO="$ROOT_DIR/build/loom-proof-test-repo"
+PROOF_NATIVE_LIBRARY=libproof-native.so
+
+case "$(uname -s)" in
+  Darwin) PROOF_NATIVE_LIBRARY=libproof-native.dylib ;;
+  MINGW*|MSYS*|CYGWIN*) PROOF_NATIVE_LIBRARY=proof-native.dll ;;
+esac
 
 (
-  cd "$ROOT_DIR/pkg/loom/test"
+  cd "$LOOM_PACKAGE/test"
   "$ROO" proof
 )
 
@@ -69,4 +75,4 @@ test ! -e "$LOOM_REPO/loom/0.1.0/package.edn"
 cmake -E rm -rf "$PROOF_REPO"
 "$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --repo "$PROOF_REPO" --force
 test -f "$PROOF_REPO/proof/0.1.0/package.edn"
-test -f "$PROOF_REPO/proof/0.1.0/native/libproof-native.so"
+test -f "$PROOF_REPO/proof/0.1.0/native/$PROOF_NATIVE_LIBRARY"
