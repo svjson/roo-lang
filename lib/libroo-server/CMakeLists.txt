@@ -96,6 +96,12 @@ set_target_properties(roo-server_static PROPERTIES
   EXPORT_NAME server_static
 )
 
+if(WIN32)
+  set_target_properties(roo-server_static PROPERTIES
+    ARCHIVE_OUTPUT_NAME roo-server-static
+  )
+endif()
+
 set_target_properties(roo-server_shared PROPERTIES
   EXPORT_NAME server_shared
   VERSION ${PROJECT_VERSION}

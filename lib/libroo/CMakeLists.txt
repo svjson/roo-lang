@@ -92,6 +92,12 @@ set_target_properties(roo_shared PROPERTIES
   SOVERSION ${ROO_ABI_VERSION}
 )
 
+if(WIN32)
+  set_target_properties(roo_static PROPERTIES
+    ARCHIVE_OUTPUT_NAME roo-static
+  )
+endif()
+
 target_link_libraries(roo INTERFACE roo_shared)
 
 add_subdirectory(test)

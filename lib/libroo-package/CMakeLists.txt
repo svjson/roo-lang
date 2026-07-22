@@ -77,6 +77,12 @@ set_target_properties(roo-package_static PROPERTIES
   EXPORT_NAME package_static
 )
 
+if(WIN32)
+  set_target_properties(roo-package_static PROPERTIES
+    ARCHIVE_OUTPUT_NAME roo-package-static
+  )
+endif()
+
 set_target_properties(roo-package_shared PROPERTIES
   EXPORT_NAME package_shared
   VERSION ${PROJECT_VERSION}
