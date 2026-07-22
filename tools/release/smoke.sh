@@ -44,7 +44,11 @@ fi
 
 exe_suffix=
 case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*) exe_suffix=.exe ;;
+  MINGW*|MSYS*|CYGWIN*)
+    exe_suffix=.exe
+    PATH="$release_root/bin:$PATH"
+    export PATH
+    ;;
 esac
 
 roo="$release_root/bin/roo$exe_suffix"
