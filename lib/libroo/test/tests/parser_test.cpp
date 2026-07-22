@@ -8,7 +8,6 @@
 #include <roo/parser.h>
 #include <roo/type.h>
 
-#include <ext/alloc_traits.h>
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 #include <gtest/gtest.h>
