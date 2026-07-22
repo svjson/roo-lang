@@ -4,16 +4,17 @@
 
 #include <memory>
 
+#include <roo/export.h>
 #include <roo/runtime/node.h>
 
 namespace Roo
 {
-  extern int lowered_expressions;
-  extern int lowered_literals;
-  extern int lower_time_exec_resolutions;
-  extern int lower_time_exec_unresolved;
+  ROO_API extern int lowered_expressions;
+  ROO_API extern int lowered_literals;
+  ROO_API extern int lower_time_exec_resolutions;
+  ROO_API extern int lower_time_exec_unresolved;
 
-  extern int deprecated_special_form_invocations;
+  ROO_API extern int deprecated_special_form_invocations;
 
   struct LCtxFrame
   {

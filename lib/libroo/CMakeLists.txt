@@ -62,6 +62,10 @@ target_include_directories(roo_objects
   PRIVATE
     ${ROO_ROOT_DIR}/lib/libroo/include
 )
+target_compile_definitions(roo_objects
+  PRIVATE
+    ROO_BUILDING_ROO
+)
 
 set_target_properties(roo_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -86,6 +90,11 @@ foreach(target roo_static roo_shared)
       $<INSTALL_INTERFACE:include>
   )
 endforeach()
+
+target_compile_definitions(roo_static
+  INTERFACE
+    ROO_STATIC_DEFINE
+)
 
 set_target_properties(roo_shared PROPERTIES
   VERSION ${PROJECT_VERSION}

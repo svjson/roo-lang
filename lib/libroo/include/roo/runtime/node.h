@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <variant>
 
+#include <roo/export.h>
 #include <roo/form.h>
 #include <roo/runtime/value.h>
 #include <roo/source.h>
@@ -12,12 +13,12 @@
 
 namespace Roo
 {
-  extern int exec_nodes_constructed;
-  extern int call_nodes_constructed;
-  extern int literal_nodes_constructed;
-  extern int lookup_nodes_constructed;
+  ROO_API extern int exec_nodes_constructed;
+  ROO_API extern int call_nodes_constructed;
+  ROO_API extern int literal_nodes_constructed;
+  ROO_API extern int lookup_nodes_constructed;
 
-  void record_exec_node_constructed();
+  ROO_API void record_exec_node_constructed();
 
   struct ExecNode;
   class Function;
