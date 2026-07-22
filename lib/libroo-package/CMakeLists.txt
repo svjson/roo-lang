@@ -81,6 +81,9 @@ if(WIN32)
   set_target_properties(roo-package_static PROPERTIES
     ARCHIVE_OUTPUT_NAME roo-package-static
   )
+  set_target_properties(roo-package_shared PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+  )
 endif()
 
 set_target_properties(roo-package_shared PROPERTIES

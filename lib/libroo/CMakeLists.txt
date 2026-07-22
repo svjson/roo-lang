@@ -96,6 +96,9 @@ if(WIN32)
   set_target_properties(roo_static PROPERTIES
     ARCHIVE_OUTPUT_NAME roo-static
   )
+  set_target_properties(roo_shared PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+  )
 endif()
 
 target_link_libraries(roo INTERFACE roo_shared)
