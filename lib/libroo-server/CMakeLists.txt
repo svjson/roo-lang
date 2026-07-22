@@ -43,6 +43,10 @@ target_include_directories(roo-server_objects
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/roo-server
 )
+target_compile_definitions(roo-server_objects
+  PRIVATE
+    ROO_SERVER_BUILDING
+)
 
 if (EXISTS "${ROO_ROOT_DIR}/lib/libroo/include")
   target_include_directories(roo-server_objects
@@ -81,6 +85,11 @@ foreach(target roo-server_static roo-server_shared)
   )
 
 endforeach()
+
+target_compile_definitions(roo-server_static
+  INTERFACE
+    ROO_SERVER_STATIC_DEFINE
+)
 
 target_link_libraries(roo-server_static
   PUBLIC

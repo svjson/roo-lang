@@ -10,20 +10,22 @@
 #include <string>
 #include <variant>
 
+#include <roo-server/export.h>
+
 namespace Roo::Server
 {
   /*! @brief Constant for Message/MSG block name */
-  extern const std::string _MSG;
+  extern ROO_SERVER_API const std::string _MSG;
   /*! @brief Constant for Command/CMD block name */
-  extern const std::string _CMD;
+  extern ROO_SERVER_API const std::string _CMD;
   /*! @brief Constant for Response/RESP block name */
-  extern const std::string _RESP;
+  extern ROO_SERVER_API const std::string _RESP;
   /*! @brief Constant for id/ID poperty name */
-  extern const std::string _ID;
+  extern ROO_SERVER_API const std::string _ID;
   /*! @brief Constant for code/CODE poperty name */
-  extern const std::string _CODE;
+  extern ROO_SERVER_API const std::string _CODE;
   /*! @brief Constant for body/BODY poperty name */
-  extern const std::string _BODY;
+  extern ROO_SERVER_API const std::string _BODY;
 
   /*!
    * @brief Describes a parsing error
