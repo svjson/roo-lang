@@ -18,13 +18,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Warnings
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+if (MSVC)
+  add_compile_options(/W4)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-Wall -Wextra -Werror)
   if (DEFINED ENV{DEBUG_SYMBOLS})
     add_compile_options(-g)
   endif()
-elseif (MSVC)
-  add_compile_options(/W4)
 endif()
 
 if (NOT TARGET Roo::roo_shared)
