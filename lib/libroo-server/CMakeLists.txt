@@ -142,6 +142,13 @@ target_link_libraries(roo-server-exec
     Roo::roo_shared
 )
 
+if(COMMAND roo_copy_runtime_dlls)
+  roo_copy_runtime_dlls(roo-server-exec
+    roo_shared
+    roo-server_shared
+  )
+endif()
+
 set_target_properties(roo-server-exec PROPERTIES
   OUTPUT_NAME "roo-server"
   INSTALL_RPATH "${ROO_BIN_INSTALL_RPATH}"

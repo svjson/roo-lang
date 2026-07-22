@@ -7,6 +7,7 @@ set(ROO_ABI_VERSION 0)
 project(roo VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
 set(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 option(ROO_BUILD_TESTS "Build Roo test suites." ON)
+include(${ROO_ROOT_DIR}/cmake/rooTestRuntime.cmake)
 
 if (APPLE)
   set(ROO_BIN_INSTALL_RPATH "@loader_path/../lib")
@@ -110,6 +111,16 @@ target_compile_definitions(roo_cli
 target_link_libraries(rooc_cli
   PRIVATE
     rooc_objects
+)
+
+roo_copy_runtime_dlls(roo_cli
+  roo_shared
+  roo-package_shared
+)
+
+roo_copy_runtime_dlls(rooc_cli
+  roo_shared
+  roo-package_shared
 )
 
 if(ROO_BUILD_TESTS)
