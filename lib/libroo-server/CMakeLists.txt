@@ -174,6 +174,6 @@ endif()
 # Tests
 # =========================
 option(ROO_SERVER_BUILD_TESTS "Build roo-server test suite." OFF)
-if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR OR ROO_SERVER_BUILD_TESTS)
+if(ROO_BUILD_TESTS AND (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR OR ROO_SERVER_BUILD_TESTS))
   add_subdirectory(test)
 endif()

@@ -100,4 +100,6 @@ endif()
 
 target_link_libraries(roo INTERFACE roo_shared)
 
-add_subdirectory(test)
+if(ROO_BUILD_TESTS)
+  add_subdirectory(test)
+endif()

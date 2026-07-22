@@ -103,7 +103,9 @@ target_link_libraries(roo-package_shared
 add_library(Roo::package_static ALIAS roo-package_static)
 add_library(Roo::package_shared ALIAS roo-package_shared)
 
-add_subdirectory(test)
+if(ROO_BUILD_TESTS)
+  add_subdirectory(test)
+endif()
 
 install(TARGETS roo-package_static roo-package_shared
   EXPORT roo-packageTargets

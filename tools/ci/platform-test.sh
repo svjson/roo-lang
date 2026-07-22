@@ -35,10 +35,12 @@ if [ -n "${ROO_CMAKE_GENERATOR:-}" ]; then
   cmake -S "$root_dir" -B "$build_dir" \
     -G "$ROO_CMAKE_GENERATOR" \
     -DCMAKE_BUILD_TYPE="$config" \
+    -DROO_BUILD_TESTS=ON \
     -DROO_SERVER_BUILD_TESTS=ON
 else
   cmake -S "$root_dir" -B "$build_dir" \
     -DCMAKE_BUILD_TYPE="$config" \
+    -DROO_BUILD_TESTS=ON \
     -DROO_SERVER_BUILD_TESTS=ON
 fi
 

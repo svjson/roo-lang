@@ -9,4 +9,6 @@ install(FILES package.edn README.md
 )
 
 add_subdirectory(native)
-add_subdirectory(test)
+if(ROO_BUILD_TESTS)
+  add_subdirectory(test)
+endif()

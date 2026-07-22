@@ -85,11 +85,13 @@ if [ -n "${ROO_CMAKE_GENERATOR:-}" ]; then
     -G "$ROO_CMAKE_GENERATOR" \
     -DCMAKE_BUILD_TYPE="$config" \
     -DCMAKE_INSTALL_PREFIX="$stage_dir" \
+    -DROO_BUILD_TESTS=OFF \
     -DROO_SERVER_BUILD_TESTS=OFF
 else
   cmake -S "$root_dir" -B "$build_dir" \
     -DCMAKE_BUILD_TYPE="$config" \
     -DCMAKE_INSTALL_PREFIX="$stage_dir" \
+    -DROO_BUILD_TESTS=OFF \
     -DROO_SERVER_BUILD_TESTS=OFF
 fi
 

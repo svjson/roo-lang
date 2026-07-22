@@ -1,4 +1,6 @@
-enable_testing()
+if(ROO_BUILD_TESTS)
+  enable_testing()
+endif()
 
 set(ROO_NATIVE_PACKAGE_STAGE_DIR
   "${CMAKE_BINARY_DIR}/native-package-stage/pkg"

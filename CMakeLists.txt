@@ -6,6 +6,7 @@ set(ROO_ABI_VERSION 0)
 
 project(roo VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
 set(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+option(ROO_BUILD_TESTS "Build Roo test suites." ON)
 
 if (APPLE)
   set(ROO_BIN_INSTALL_RPATH "@loader_path/../lib")
@@ -111,105 +112,107 @@ target_link_libraries(rooc_cli
     rooc_objects
 )
 
-enable_testing()
-add_test(
-  NAME roo_cli_runs_package_file_with_file_dependency
-  COMMAND $<TARGET_FILE:roo_cli>
-          ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register/src/cafe/run.roo
-)
-add_test(
-  NAME roo_cli_runs_package_directory_entry_point
-  COMMAND $<TARGET_FILE:roo_cli> .
-)
-set_tests_properties(
-  roo_cli_runs_package_directory_entry_point
-  PROPERTIES
-    WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
-)
-add_test(
-  NAME roo_cli_runs_package_with_dynamic_proof_dependency
-  COMMAND $<TARGET_FILE:roo_cli> .
-)
-set_tests_properties(
-  roo_cli_runs_package_with_dynamic_proof_dependency
-  PROPERTIES
-    WORKING_DIRECTORY
-      ${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
-)
-add_test(
-  NAME roo_cli_runs_package_tool_from_dependency
-  COMMAND $<TARGET_FILE:roo_cli> proof
-)
-set_tests_properties(
-  roo_cli_runs_package_tool_from_dependency
-  PROPERTIES
-    WORKING_DIRECTORY
-      ${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
-)
-add_test(
-  NAME roo_cli_runs_package_with_namespace_roots
-  COMMAND $<TARGET_FILE:roo_cli> .
-)
-set_tests_properties(
-  roo_cli_runs_package_with_namespace_roots
-  PROPERTIES
-    WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/namespace-root-app
-)
-add_test(
-  NAME roo_cli_runs_package_with_autoloads
-  COMMAND $<TARGET_FILE:roo_cli> .
-)
-set_tests_properties(
-  roo_cli_runs_package_with_autoloads
-  PROPERTIES
-    WORKING_DIRECTORY
-      ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/autoload-app
-)
+if(ROO_BUILD_TESTS)
+  enable_testing()
+  add_test(
+    NAME roo_cli_runs_package_file_with_file_dependency
+    COMMAND $<TARGET_FILE:roo_cli>
+            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register/src/cafe/run.roo
+  )
+  add_test(
+    NAME roo_cli_runs_package_directory_entry_point
+    COMMAND $<TARGET_FILE:roo_cli> .
+  )
+  set_tests_properties(
+    roo_cli_runs_package_directory_entry_point
+    PROPERTIES
+      WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
+  )
+  add_test(
+    NAME roo_cli_runs_package_with_dynamic_proof_dependency
+    COMMAND $<TARGET_FILE:roo_cli> .
+  )
+  set_tests_properties(
+    roo_cli_runs_package_with_dynamic_proof_dependency
+    PROPERTIES
+      WORKING_DIRECTORY
+        ${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
+  )
+  add_test(
+    NAME roo_cli_runs_package_tool_from_dependency
+    COMMAND $<TARGET_FILE:roo_cli> proof
+  )
+  set_tests_properties(
+    roo_cli_runs_package_tool_from_dependency
+    PROPERTIES
+      WORKING_DIRECTORY
+        ${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
+  )
+  add_test(
+    NAME roo_cli_runs_package_with_namespace_roots
+    COMMAND $<TARGET_FILE:roo_cli> .
+  )
+  set_tests_properties(
+    roo_cli_runs_package_with_namespace_roots
+    PROPERTIES
+      WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/namespace-root-app
+  )
+  add_test(
+    NAME roo_cli_runs_package_with_autoloads
+    COMMAND $<TARGET_FILE:roo_cli> .
+  )
+  set_tests_properties(
+    roo_cli_runs_package_with_autoloads
+    PROPERTIES
+      WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/autoload-app
+  )
 
-add_test(
-  NAME rooc_cli_generates_cafe_register
-  COMMAND $<TARGET_FILE:rooc_cli>
-          generate
-          ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
-          --build-dir
-          ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-generate
-          --name
-          cafe_register_compiled
-)
-add_test(
-  NAME rooc_cli_builds_cafe_register
-  COMMAND $<TARGET_FILE:rooc_cli>
-          build
-          ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
-          --build-dir
-          ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe
-          --name
-          cafe_register_compiled
-)
-if(CMAKE_CONFIGURATION_TYPES)
-  set(rooc_test_cafe_executable
-    "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/$<CONFIG>/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
+  add_test(
+    NAME rooc_cli_generates_cafe_register
+    COMMAND $<TARGET_FILE:rooc_cli>
+            generate
+            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
+            --build-dir
+            ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-generate
+            --name
+            cafe_register_compiled
   )
-else()
-  set(rooc_test_cafe_executable
-    "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
+  add_test(
+    NAME rooc_cli_builds_cafe_register
+    COMMAND $<TARGET_FILE:rooc_cli>
+            build
+            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
+            --build-dir
+            ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe
+            --name
+            cafe_register_compiled
   )
+  if(CMAKE_CONFIGURATION_TYPES)
+    set(rooc_test_cafe_executable
+      "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/$<CONFIG>/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
+    )
+  else()
+    set(rooc_test_cafe_executable
+      "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
+    )
+  endif()
+  add_test(
+    NAME rooc_cli_runs_compiled_cafe_register
+    COMMAND
+      ${rooc_test_cafe_executable}
+  )
+  set_tests_properties(
+    rooc_cli_runs_compiled_cafe_register
+    PROPERTIES
+      DEPENDS rooc_cli_builds_cafe_register
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  add_subdirectory(bin/rooc/test)
 endif()
-add_test(
-  NAME rooc_cli_runs_compiled_cafe_register
-  COMMAND
-    ${rooc_test_cafe_executable}
-)
-set_tests_properties(
-  rooc_cli_runs_compiled_cafe_register
-  PROPERTIES
-    DEPENDS rooc_cli_builds_cafe_register
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-add_subdirectory(bin/rooc/test)
 
 install(CODE [[
   set(roo_installed_include_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/roo")
