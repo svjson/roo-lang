@@ -3,18 +3,18 @@
 A modern, Clojure-inspired scripting language implemented in C++20, built to embed in C++ host applications.
 
 Roo exposes a compact s-expression language with first-class functions, lexical closures,
-pattern destructuring, a namespace system, and direct integration with C++ host objects. It
-compiles to a typed IR for evaluation rather than interpreting the AST directly.
+destructuring bindings, a namespace system, and direct integration with C++ host objects.
+It lowers forms to an executable IR for evaluation rather than interpreting the AST directly.
 
 ## Features
 
 - S-expression syntax with vectors `[...]`, maps `{...}`, and keyword access `(:key map)`
 - First-class functions and lexical closures
-- Pattern destructuring in function arguments
-- Named and optional/rest parameters
+- Map and vector destructuring in bindings, with map destructuring in function arguments
+- Required, optional, and rest parameters
 - Namespace system with import and aliasing
 - Powerful C++ interop macros for exposing native host objects to scripts
-- Embeds as a static or shared library with a single `#include`
+- Embeds as a static or shared C++ library
 
 ## Repository Overview
 
@@ -23,13 +23,17 @@ compiles to a typed IR for evaluation rather than interpreting the AST directly.
   - **[rooc](bin/rooc/)** - Compiler executable for generating bundled Roo application builds.
 - lib/
   - **[libroo](lib/libroo/README.md)** - Core embeddable Roo runtime.
-  - **[roo-server](lib/libroo-server/README.md)** Small server layer for remote Roo message parsing and dispatch experiments.
+  - **[roo-server](lib/libroo-server/README.md)** - Small server layer for remote Roo message parsing and dispatch experiments.
   - **[roo-package](lib/libroo-package/README.md)** Package manifest, dependency load paths, and native package loading.
 - pkg/
   - **[lookup](pkg/lookup/README.md)** - Roo indexing for tool-support.
   - **[loom](pkg/loom/README.md)** - Roo package manager.
   - **[proof](pkg/proof/README.md)** - Roo test framework package.
   - **[proofread](pkg/proofread/README.md)** - Roo syntax checker.
+  - **[footsteps](pkg/footsteps/README.md)** - Stepwise work/progress orchestration.
+  - **[workbook](pkg/workbook/)** - Persistent structured workbook values.
+  - **[spool](pkg/spool/)** - Tree-shaped progress/reporting helpers.
+  - **[i18n](pkg/i18n/)** - Small localization helper package.
 
 ## Language
 
@@ -64,16 +68,16 @@ Functions are first-class and close over their environment:
 (add-ten 5)    ;; => 15
 ```
 
-Sequence operations compose naturally with the thread-last macro `->>`:
+Sequence operations compose naturally with the thread-first macro `->`:
 
 ```lisp
 (def vehicles [{:name "Saloon" :seats 4}
                {:name "Compact" :seats 2}
                {:name "Van" :seats 8}])
 
-(->> vehicles
-     (filter (fn [v] (> (:seats v) 3)))
-     (map    (fn [v] (:name v))))
+(-> vehicles
+    (filter (fn [v] (> (:seats v) 3)))
+    (map    (fn [v] (:name v))))
 ;; => ["Saloon" "Van"]
 ```
 
@@ -84,12 +88,13 @@ Branching via `cond`, `case`, `if`, and `when`:
   (cond
     (< n 10)  :small
     (< n 100) :medium
-    :default  :large))
+    :else     :large))
 ```
 
 ## Embedding
 
-Add `libroo.a` or `libroo.so` to your build and include `<roo/runtime.h>`.
+Link `libroo` into your build and include `<roo/runtime.h>` for the core runtime.
+Host object adapters use the additional headers shown below.
 
 ### Basic evaluation
 
@@ -112,8 +117,8 @@ rt.eval("(square 9)")->i64();   // 81
 #include <roo/namespace.h>
 
 Roo::Namespace app_ns("app");
-app_ns.def("pi", Roo::Value::number(3.14159265));
-app_ns.def("version", Roo::Value::string("1.0"));
+app_ns.store("pi", Roo::Value::number(3.14159265));
+app_ns.store("version", Roo::Value::string("1.0"));
 
 Roo::Runtime rt(app_ns);
 rt.eval("(* app/pi 2)")->f64();   // 6.28318...
@@ -157,8 +162,8 @@ NATIVE_ADAPTER(ProductAdapter, Product, (name, price), (price));
 
 NATIVE_ADAPTER_IMPL(ProductAdapter, Product, &PRODUCT_TYPE, (name), (price));
 
-ADAPTER_PROP_GET(ProductAdapter, METHOD(name));
-ADAPTER_PROP_GET_SET(ProductAdapter, METHOD(price));
+NOBJ_PROP_GET__METHOD(ProductAdapter, name);
+NOBJ_PROP_GET_SET__METHOD(ProductAdapter, price);
 ```
 
 Properties that are themselves wrapped objects use the `ADAPTER(...)` qualifier:
@@ -186,13 +191,14 @@ and make-functions.
 
 ## Building
 
-Requires CMake 3.10+ and a C++20-capable compiler.
+Requires CMake 3.20+ and a C++20-capable compiler.
 
 ```bash
 make configure                   # Release build
 make configure BUILD_TYPE=Debug  # Debug build
-make build                       # Produces libroo.a and libroo.so
+make build                       # Builds libraries, tools, and local development package links
 make install                     # Install to ~/.local (override with PREFIX=...)
+make release                     # Build a staged release archive under dist/
 ```
 
 ### Tests
@@ -200,7 +206,7 @@ make install                     # Install to ~/.local (override with PREFIX=...
 ```bash
 make configure BUILD_TYPE=Debug
 make build
-cd build && ctest                              # All tests
+ctest --test-dir build --output-on-failure     # All CTest tests
 cd build/lib/libroo/test && ./testroo --gtest_filter="*map*"  # Filtered
 ```
 
