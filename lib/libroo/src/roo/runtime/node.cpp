@@ -12,6 +12,11 @@ namespace Roo
   int literal_nodes_constructed = 0;
   int lookup_nodes_constructed = 0;
 
+  void record_exec_node_constructed()
+  {
+    exec_nodes_constructed++;
+  }
+
   LiteralNode::LiteralNode(const sptr_val& v)
     : value(v)
     , ast_node(Roo::AST::NIL)

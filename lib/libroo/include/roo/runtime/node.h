@@ -17,6 +17,8 @@ namespace Roo
   extern int literal_nodes_constructed;
   extern int lookup_nodes_constructed;
 
+  void record_exec_node_constructed();
+
   struct ExecNode;
   class Function;
   class SpecialForm;
@@ -150,7 +152,7 @@ namespace Roo
       , source()
       , data(std::move(node))
     {
-      exec_nodes_constructed++;
+      record_exec_node_constructed();
     }
 
     /**
@@ -170,7 +172,7 @@ namespace Roo
       , source(form ? form->get_source() : SourceRef{})
       , data(std::move(node))
     {
-      exec_nodes_constructed++;
+      record_exec_node_constructed();
     }
 
     uptr_exec_node clone() const;
