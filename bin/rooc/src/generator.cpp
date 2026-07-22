@@ -83,10 +83,25 @@ namespace Rooc
 #endif
     }
 
+    std::string platform_import_library_file_name(const std::string& name)
+    {
+#if defined(_WIN32)
+      return name + ".lib";
+#else
+      return platform_library_file_name(name);
+#endif
+    }
+
     std::filesystem::path build_shared_library_path(const std::string& directory,
                                                     const std::string& name)
     {
       return repo_build_root() / directory / platform_library_file_name(name);
+    }
+
+    std::filesystem::path build_import_library_path(const std::string& directory,
+                                                    const std::string& name)
+    {
+      return repo_build_root() / directory / platform_import_library_file_name(name);
     }
 
     bool is_installed_rooc(const Options& options)
@@ -110,6 +125,16 @@ namespace Rooc
       return prefix / "bin" / platform_library_file_name(name);
 #else
       return prefix / "lib" / platform_library_file_name(name);
+#endif
+    }
+
+    std::filesystem::path installed_import_library_path(const std::filesystem::path& prefix,
+                                                        const std::string& name)
+    {
+#if defined(_WIN32)
+      return prefix / "lib" / platform_import_library_file_name(name);
+#else
+      return installed_shared_library_path(prefix, name);
 #endif
     }
 
@@ -537,9 +562,15 @@ namespace Rooc
       const bool installed = is_installed_rooc(options);
       const auto roo_lib = installed ? installed_shared_library_path(prefix, "roo")
                                      : build_shared_library_path("lib/libroo", "roo");
+      [[maybe_unused]] const auto roo_import_lib =
+        installed ? installed_import_library_path(prefix, "roo")
+                  : build_import_library_path("lib/libroo", "roo");
       const auto package_lib =
         installed ? installed_shared_library_path(prefix, "roo-package")
                   : build_shared_library_path("lib/libroo-package", "roo-package");
+      [[maybe_unused]] const auto package_import_lib =
+        installed ? installed_import_library_path(prefix, "roo-package")
+                  : build_import_library_path("lib/libroo-package", "roo-package");
       const auto roo_include_dir =
         installed ? prefix / "include" : repo_source_root() / "lib/libroo/include";
       const auto package_include_dir =
@@ -564,6 +595,11 @@ namespace Rooc
              "    IMPORTED_LOCATION "
           << cpp_string_literal(cmake_path(roo_lib))
           << "\n"
+#if defined(_WIN32)
+             "    IMPORTED_IMPLIB "
+          << cpp_string_literal(cmake_path(roo_import_lib))
+          << "\n"
+#endif
              "    INTERFACE_INCLUDE_DIRECTORIES "
           << cpp_string_literal(cmake_path(roo_include_dir))
           << "\n"
@@ -573,6 +609,11 @@ namespace Rooc
              "    IMPORTED_LOCATION "
           << cpp_string_literal(cmake_path(package_lib))
           << "\n"
+#if defined(_WIN32)
+             "    IMPORTED_IMPLIB "
+          << cpp_string_literal(cmake_path(package_import_lib))
+          << "\n"
+#endif
              "    INTERFACE_INCLUDE_DIRECTORIES "
           << cpp_string_literal(cmake_path(package_include_dir))
           << "\n"
@@ -595,14 +636,20 @@ namespace Rooc
                "  )\n\n";
       }
       out << "  target_link_libraries(" << project.executable_name
-          << " PRIVATE roo_shared_imported roo_package_shared_imported";
-      for (size_t i = 0; i < project.plan.native_libraries.size(); ++i)
-      {
-        const auto& library = project.plan.native_libraries[i];
-        out << " native_library_" << i << "_" << sanitize_target_name(library.name);
-      }
-      out << ")\n"
+          << " PRIVATE roo_shared_imported roo_package_shared_imported)\n"
              "\n"
+#if defined(_WIN32)
+             "add_custom_command(TARGET "
+          << project.executable_name
+          << " POST_BUILD\n"
+             "  COMMAND ${CMAKE_COMMAND} -E copy_if_different\n"
+             "          $<TARGET_FILE:roo_shared_imported>\n"
+             "          $<TARGET_FILE:roo_package_shared_imported>\n"
+             "          $<TARGET_FILE_DIR:"
+          << project.executable_name
+          << ">\n"
+             ")\n\n"
+#endif
              "set_target_properties("
           << project.executable_name
           << " PROPERTIES\n"
