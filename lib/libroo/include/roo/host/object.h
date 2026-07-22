@@ -614,7 +614,7 @@ namespace Roo
   class NAccessorTable;
   struct NativeObjectTraits;
 
-  extern const NAccessorTable NO_N_ACCESSORS;
+  extern ROO_API const NAccessorTable NO_N_ACCESSORS;
 
   typedef std::unordered_map<std::string, NAccessors> n_acc_map;
   typedef std::unordered_map<sptr_val, NAccessors> key_n_acc_map;
@@ -628,12 +628,12 @@ namespace Roo
    * @brief Stock getter-implementation for non-gettable properties that will
    * always return NIL
    */
-  extern const n_acc_get_t n_no_getter;
+  extern ROO_API const n_acc_get_t n_no_getter;
   /*!
    * @brief Stock setter-implementation for non-settable properties that will
    * always throw InvocationException
    */
-  extern const n_acc_set_t n_no_setter;
+  extern ROO_API const n_acc_set_t n_no_setter;
 
   /*!
    * @brief Holds function references to getters and setters for a specific

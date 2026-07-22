@@ -12,7 +12,7 @@
 
 namespace Roo
 {
-  extern const std::string EMPTY_STRING;
+  extern ROO_API const std::string EMPTY_STRING;
 
   /*!
    * @brief Extracts the string value of a roo symbol, discarding

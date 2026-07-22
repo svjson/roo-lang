@@ -13,10 +13,10 @@
 
 namespace Roo
 {
-  ROO_API extern int exec_nodes_constructed;
-  ROO_API extern int call_nodes_constructed;
-  ROO_API extern int literal_nodes_constructed;
-  ROO_API extern int lookup_nodes_constructed;
+  extern ROO_API int exec_nodes_constructed;
+  extern ROO_API int call_nodes_constructed;
+  extern ROO_API int literal_nodes_constructed;
+  extern ROO_API int lookup_nodes_constructed;
 
   ROO_API void record_exec_node_constructed();
 

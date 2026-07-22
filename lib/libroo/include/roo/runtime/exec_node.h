@@ -6,8 +6,8 @@
 
 namespace Roo
 {
-  extern int eval_executions;
-  extern int exec_executions;
+  extern ROO_API int eval_executions;
+  extern ROO_API int exec_executions;
 
   sptr_val exec(Context& ctx, ExecNode& node);
 

@@ -7,12 +7,14 @@
 #include <variant>
 #include <vector>
 
+#include <roo/export.h>
+
 namespace Roo
 {
-  extern int rtvalues_constructed;
-  extern int rtvalue_wrappers_constructed;
-  extern int to_ast_conversions;
-  extern int to_rtvalue_conversions;
+  extern ROO_API int rtvalues_constructed;
+  extern ROO_API int rtvalue_wrappers_constructed;
+  extern ROO_API int to_ast_conversions;
+  extern ROO_API int to_rtvalue_conversions;
 
   namespace AST
   {

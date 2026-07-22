@@ -23,10 +23,10 @@ namespace Roo
     class Number;
     class Keyword;
 
-    extern const int INT_CONSTANTS_SIZE;
-    extern std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
+    extern ROO_API const int INT_CONSTANTS_SIZE;
+    extern ROO_API std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
 
-    extern std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
+    extern ROO_API std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
 
     /*!
      * @brief Abstract base class for all form implementations
