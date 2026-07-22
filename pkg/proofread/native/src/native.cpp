@@ -3,13 +3,21 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <glob.h>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <glob.h>
+#endif
 
 #include <roo/context.h>
 #include <roo/exception.h>
@@ -30,6 +38,38 @@ namespace Roo::Proofread
       return pattern.find_first_of("*?[") != std::string::npos;
     }
 
+#ifdef _WIN32
+    std::string windows_error_message(DWORD error)
+    {
+      if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND)
+      {
+        return {};
+      }
+
+      LPSTR buffer = nullptr;
+      const DWORD size =
+        FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                         FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr,
+                       error,
+                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                       reinterpret_cast<LPSTR>(&buffer),
+                       0,
+                       nullptr);
+      std::string message =
+        size == 0 ? "Windows error " + std::to_string(error) : std::string(buffer, size);
+      if (buffer != nullptr)
+      {
+        LocalFree(buffer);
+      }
+      while (!message.empty() && (message.back() == '\n' || message.back() == '\r'))
+      {
+        message.pop_back();
+      }
+      return message;
+    }
+#endif
+
     std::vector<std::filesystem::path> expand_pattern(const std::string& pattern)
     {
       if (!has_glob_meta(pattern))
@@ -37,6 +77,44 @@ namespace Roo::Proofread
         return {pattern};
       }
 
+#ifdef _WIN32
+      WIN32_FIND_DATAA find_data;
+      std::filesystem::path input(pattern);
+      const std::filesystem::path parent = input.parent_path();
+      const std::string native_pattern = input.make_preferred().string();
+      HANDLE handle = FindFirstFileA(native_pattern.c_str(), &find_data);
+      if (handle == INVALID_HANDLE_VALUE)
+      {
+        const std::string message = windows_error_message(GetLastError());
+        if (message.empty())
+        {
+          throw std::runtime_error("No files matched pattern: " + pattern);
+        }
+        throw std::runtime_error("Could not expand pattern: " + pattern + ": " + message);
+      }
+
+      std::vector<std::filesystem::path> paths;
+      do
+      {
+        const std::string filename = find_data.cFileName;
+        if (filename != "." && filename != "..")
+        {
+          paths.push_back((parent / filename).lexically_normal());
+        }
+      } while (FindNextFileA(handle, &find_data));
+
+      const DWORD last_error = GetLastError();
+      FindClose(handle);
+      if (last_error != ERROR_NO_MORE_FILES)
+      {
+        throw std::runtime_error("Could not expand pattern: " + pattern + ": " +
+                                 windows_error_message(last_error));
+      }
+      if (paths.empty())
+      {
+        throw std::runtime_error("No files matched pattern: " + pattern);
+      }
+#else
       glob_t matches{};
       const int result = glob(pattern.c_str(), GLOB_TILDE, nullptr, &matches);
       std::vector<std::filesystem::path> paths;
@@ -59,8 +137,12 @@ namespace Roo::Proofread
       {
         throw std::runtime_error("Could not expand pattern: " + pattern);
       }
+#endif
 
-      std::sort(paths.begin(), paths.end());
+      std::sort(paths.begin(),
+                paths.end(),
+                [](const auto& lhs, const auto& rhs)
+                { return lhs.generic_string() < rhs.generic_string(); });
       return paths;
     }
 
