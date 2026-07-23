@@ -18,14 +18,18 @@ namespace Roo
       return arg->num();
     }
 
-    long integer_arg(const sptr_val& arg, const char* function_name)
+    std::int64_t integer_arg(const sptr_val& arg, const char* function_name)
     {
       const Value::Number& num = number_arg(arg, function_name);
       if (num.num_type == Value::NumberType::FLOAT)
       {
         throw TypeError(std::string(function_name) + " expects integer arguments.");
       }
-      return num.get_long();
+      if (num.num_type == Value::NumberType::INT)
+      {
+        return num.int_value;
+      }
+      return num.long_value;
     }
 
     unsigned int shift_bits(sptr_val_v& args, const char* function_name)
@@ -35,7 +39,7 @@ namespace Roo
         return 1;
       }
 
-      long bits = integer_arg(args[1], function_name);
+      std::int64_t bits = integer_arg(args[1], function_name);
       if (bits < 0 || bits > 63)
       {
         throw RooException(std::string(function_name) +
@@ -44,12 +48,12 @@ namespace Roo
       return static_cast<unsigned int>(bits);
     }
 
-    long from_bits(std::uint64_t bits)
+    long long from_bits(std::uint64_t bits)
     {
       std::int64_t signed_bits = 0;
       static_assert(sizeof(signed_bits) == sizeof(bits));
       std::memcpy(&signed_bits, &bits, sizeof(bits));
-      return static_cast<long>(signed_bits);
+      return static_cast<long long>(signed_bits);
     }
 
     std::int64_t arithmetic_right_shift(std::int64_t value, unsigned int bits)
@@ -209,7 +213,7 @@ namespace Roo
   {
     const auto value = static_cast<std::int64_t>(integer_arg(args[0], ">>"));
     return Value::number(
-      static_cast<long>(arithmetic_right_shift(value, shift_bits(args, ">>"))));
+      static_cast<long long>(arithmetic_right_shift(value, shift_bits(args, ">>"))));
   }
 
   /** LogicalShiftLeftFunction - <<< */
