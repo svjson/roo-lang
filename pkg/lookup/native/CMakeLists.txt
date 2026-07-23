@@ -12,6 +12,11 @@ target_include_directories(lookup_native
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(lookup_native
+  PRIVATE
+    LOOKUP_NATIVE_BUILDING
+)
+
 target_link_libraries(lookup_native
   PUBLIC
     Roo::roo_shared

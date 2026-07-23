@@ -4,12 +4,13 @@
 #include <memory>
 #include <vector>
 
+#include <lookup/export.h>
 #include <roo/namespace.h>
 
 namespace Roo::Lookup
 {
-  std::unique_ptr<Namespace> make_native_namespace();
-  std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
+  LOOKUP_NATIVE_API std::unique_ptr<Namespace> make_native_namespace();
+  LOOKUP_NATIVE_API std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
 } // namespace Roo::Lookup
 
 #endif
