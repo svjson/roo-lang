@@ -169,7 +169,7 @@ namespace
       executable = build_dir / "build" / "Release" /
                    (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
     }
-    std::string command = std::string(ROOC_TEST_CMAKE_COMMAND) + " -E chdir " +
+    std::string command = shell_arg(std::string(ROOC_TEST_CMAKE_COMMAND)) + " -E chdir " +
                           shell_arg(run_dir) + " " + shell_arg(executable);
     for (const auto& arg : args)
     {
