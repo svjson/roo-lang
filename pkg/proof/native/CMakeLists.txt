@@ -12,6 +12,11 @@ target_include_directories(proof_native
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(proof_native
+  PRIVATE
+    PROOF_NATIVE_BUILDING
+)
+
 target_link_libraries(proof_native
   PUBLIC
     Roo::roo_shared

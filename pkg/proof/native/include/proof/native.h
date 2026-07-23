@@ -4,12 +4,13 @@
 #include <memory>
 #include <vector>
 
+#include <proof/export.h>
 #include <roo/namespace.h>
 
 namespace Roo::Proof
 {
-  std::unique_ptr<Namespace> make_native_namespace();
-  std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
+  PROOF_NATIVE_API std::unique_ptr<Namespace> make_native_namespace();
+  PROOF_NATIVE_API std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
 } // namespace Roo::Proof
 
 #endif
