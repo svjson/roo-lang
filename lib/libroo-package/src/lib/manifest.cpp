@@ -358,7 +358,7 @@ namespace Roo::Package
 
     std::string normalize_path(const std::string& path)
     {
-      return std::filesystem::path(path).lexically_normal().string();
+      return std::filesystem::path(path).lexically_normal().generic_string();
     }
 
     bool is_absolute_path(const std::string& path)
@@ -399,14 +399,15 @@ namespace Roo::Package
     std::string package_root_for_dependency(const std::string& search_root,
                                             const std::string& dependency)
     {
-      return join_path(search_root, dependency);
+      return normalize_path(join_path(search_root, dependency));
     }
 
     std::string package_version_root_for_dependency(const std::string& search_root,
                                                     const Dependency& dependency)
     {
-      return join_path(package_root_for_dependency(search_root, dependency.name),
-                       dependency.version);
+      return normalize_path(
+        join_path(package_root_for_dependency(search_root, dependency.name),
+                  dependency.version));
     }
 
     std::string read_manifest_source(Roo::FileSystem& fs, const std::string& package_root)
@@ -616,7 +617,7 @@ namespace Roo::Package
       package_info.load_roots.reserve(manifest.load_roots.size());
       for (const auto& root : manifest.load_roots)
       {
-        const std::string resolved_root = join_path(package_root, root);
+        const std::string resolved_root = normalize_path(join_path(package_root, root));
         append_unique(plan.load_paths, resolved_root);
         package_info.load_roots.push_back(resolved_root);
       }
@@ -815,13 +816,14 @@ namespace Roo::Package
 
   LoadPlan build_load_plan(const Manifest& manifest, const std::string& package_root)
   {
+    const std::string normalized_package_root = normalize_path(package_root);
     LoadPlan plan;
-    plan.package_root = package_root;
-    plan.package_roots.push_back(package_root);
+    plan.package_root = normalized_package_root;
+    plan.package_roots.push_back(normalized_package_root);
     PackageInfo package_info;
     package_info.name = manifest.name;
     package_info.version = manifest.version;
-    package_info.package_root = package_root;
+    package_info.package_root = normalized_package_root;
     package_info.config = manifest.config;
     package_info.tools = manifest.tools;
     plan.native_namespaces = manifest.native_namespaces;
@@ -834,10 +836,11 @@ namespace Roo::Package
 
     for (auto& native_library : plan.native_libraries)
     {
-      native_library.package_root = package_root;
+      native_library.package_root = normalized_package_root;
       if (!native_library.path.empty() && !is_absolute_path(native_library.path))
       {
-        native_library.path = normalize_path(join_path(package_root, native_library.path));
+        native_library.path =
+          normalize_path(join_path(normalized_package_root, native_library.path));
       }
       for (const auto& native_namespace : native_library.namespaces)
       {
@@ -849,7 +852,8 @@ namespace Roo::Package
     {
       if (!namespace_root.path.empty() && !is_absolute_path(namespace_root.path))
       {
-        namespace_root.path = normalize_path(join_path(package_root, namespace_root.path));
+        namespace_root.path =
+          normalize_path(join_path(normalized_package_root, namespace_root.path));
       }
     }
 
@@ -857,7 +861,8 @@ namespace Roo::Package
     package_info.load_roots.reserve(manifest.load_roots.size());
     for (const auto& root : manifest.load_roots)
     {
-      const std::string resolved_root = join_path(package_root, root);
+      const std::string resolved_root =
+        normalize_path(join_path(normalized_package_root, root));
       plan.load_paths.push_back(resolved_root);
       package_info.load_roots.push_back(resolved_root);
     }
@@ -870,22 +875,30 @@ namespace Roo::Package
                              const std::string& package_root,
                              const ResolveOptions& options)
   {
+    const std::string normalized_package_root = normalize_path(package_root);
+    std::vector<std::string> normalized_search_roots;
+    normalized_search_roots.reserve(options.package_search_roots.size());
+    for (const auto& search_root : options.package_search_roots)
+    {
+      normalized_search_roots.push_back(normalize_path(search_root));
+    }
+
     ResolveState state{
       fs,
-      options.package_search_roots,
+      normalized_search_roots,
       {},
       {},
       {},
       {},
     };
-    append_unique(state.search_roots, parent_path(package_root));
+    append_unique(state.search_roots, parent_path(normalized_package_root));
     for (const auto& search_root : default_package_search_roots())
     {
       append_unique(state.search_roots, search_root);
     }
-    state.plan.package_root = package_root;
+    state.plan.package_root = normalized_package_root;
 
-    resolve_package(state, package_root);
+    resolve_package(state, normalized_package_root);
 
     return state.plan;
   }

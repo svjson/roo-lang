@@ -49,6 +49,11 @@ namespace
     std::ofstream stream(path);
     stream << source;
   }
+
+  std::string package_path(const std::filesystem::path& path)
+  {
+    return path.lexically_normal().generic_string();
+  }
 } // namespace
 
 TEST(PackageManifest, parses_current_package_metadata_shape)
@@ -411,12 +416,11 @@ TEST(PackageManifest, resolves_deep_file_dependency_paths_relative_to_manifest)
 
   auto plan = Roo::Package::resolve_load_plan(fs, "/repo/packages/apps/app");
 
+  EXPECT_EQ(plan.package_roots,
+            (std::vector<std::string>{"/repo/packages/util", "/repo/packages/apps/app"}));
   EXPECT_EQ(
-    plan.package_roots,
-    (std::vector<std::string>{"/repo/packages/util", "/repo/packages/apps/app"}));
-  EXPECT_EQ(plan.load_paths,
-            (std::vector<std::string>{"/repo/packages/util/src",
-                                      "/repo/packages/apps/app/src"}));
+    plan.load_paths,
+    (std::vector<std::string>{"/repo/packages/util/src", "/repo/packages/apps/app/src"}));
 }
 
 TEST(PackageManifest, rejects_path_dependency_with_mismatched_version)
@@ -495,10 +499,10 @@ TEST(PackageManifest, resolved_pure_roo_dependencies_are_available_to_runtime)
   Roo::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
-  auto plan =
-    Roo::Package::resolve_load_plan(*manifest_fs,
-                                    (root / "pkg/app").string(),
-                                    Roo::Package::ResolveOptions{{(root / "pkg").string()}});
+  auto plan = Roo::Package::resolve_load_plan(
+    *manifest_fs,
+    package_path(root / "pkg/app"),
+    Roo::Package::ResolveOptions{{package_path(root / "pkg")}});
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Runtime runtime(package_fs.get());
@@ -538,14 +542,14 @@ TEST(PackageManifest, deep_file_dependency_paths_load_the_grandparent_package)
   Roo::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
-  auto plan =
-    Roo::Package::resolve_load_plan(*manifest_fs,
-                                    (root / "pkg/apps/app").string(),
-                                    Roo::Package::ResolveOptions{{(root / "pkg").string()}});
+  auto plan = Roo::Package::resolve_load_plan(
+    *manifest_fs,
+    package_path(root / "pkg/apps/app"),
+    Roo::Package::ResolveOptions{{package_path(root / "pkg")}});
 
   EXPECT_EQ(plan.package_roots,
-            (std::vector<std::string>{(root / "pkg/util").string(),
-                                      (root / "pkg/apps/app").string()}));
+            (std::vector<std::string>{package_path(root / "pkg/util"),
+                                      package_path(root / "pkg/apps/app")}));
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Runtime runtime(package_fs.get());
@@ -565,11 +569,12 @@ TEST(PackageManifest, fixture_package_can_run_code_from_file_dependency)
   Roo::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
-  auto plan = Roo::Package::resolve_load_plan(*manifest_fs, cafe_register_root.string());
+  auto plan =
+    Roo::Package::resolve_load_plan(*manifest_fs, package_path(cafe_register_root));
 
   EXPECT_EQ(plan.package_roots,
-            (std::vector<std::string>{(packages_root / "recipe-book").string(),
-                                      cafe_register_root.string()}));
+            (std::vector<std::string>{package_path(packages_root / "recipe-book"),
+                                      package_path(cafe_register_root)}));
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Runtime runtime(package_fs.get());
@@ -596,7 +601,7 @@ TEST(PackageManifest, namespace_roots_make_prefixed_namespaces_available_to_runt
   Roo::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
-  auto plan = Roo::Package::resolve_load_plan(*manifest_fs, (root / "pkg/app").string());
+  auto plan = Roo::Package::resolve_load_plan(*manifest_fs, package_path(root / "pkg/app"));
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Runtime runtime(package_fs.get());
@@ -631,13 +636,12 @@ TEST(PackageManifest, namespace_roots_make_multiple_paths_available_to_runtime)
   Roo::Package::LoadPlan host_plan;
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
-  auto plan = Roo::Package::resolve_load_plan(*manifest_fs, (root / "pkg/app").string());
+  auto plan = Roo::Package::resolve_load_plan(*manifest_fs, package_path(root / "pkg/app"));
 
   ASSERT_EQ(plan.namespace_roots.size(), 2u);
-  EXPECT_EQ(plan.namespace_roots[0].path,
-            (root / "pkg/app/src/roo/main-stuff").lexically_normal().string());
+  EXPECT_EQ(plan.namespace_roots[0].path, package_path(root / "pkg/app/src/roo/main-stuff"));
   EXPECT_EQ(plan.namespace_roots[1].path,
-            (root / "pkg/app/test/roo/main-stuff").lexically_normal().string());
+            package_path(root / "pkg/app/test/roo/main-stuff"));
 
   auto package_fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Runtime runtime(package_fs.get());
@@ -678,7 +682,7 @@ TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
   auto plan =
-    Roo::Package::resolve_load_plan(*manifest_fs, (root / "pkg/native-app").string());
+    Roo::Package::resolve_load_plan(*manifest_fs, package_path(root / "pkg/native-app"));
 
   Roo::Package::LoadedNativePackages native_packages;
   {
@@ -719,7 +723,7 @@ TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)
   host_plan.load_paths = {"/"};
   auto manifest_fs = Roo::Package::make_load_path_file_system(host_plan);
   auto plan =
-    Roo::Package::resolve_load_plan(*manifest_fs, (root / "pkg/native-app").string());
+    Roo::Package::resolve_load_plan(*manifest_fs, package_path(root / "pkg/native-app"));
 
   Roo::Package::LoadedNativePackages native_packages;
   {
