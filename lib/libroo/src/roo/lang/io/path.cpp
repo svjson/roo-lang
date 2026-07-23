@@ -15,8 +15,9 @@ namespace Roo
 
   EXEC_BODY(JoinPathFunction, exec_join_path)
   {
-    return Value::string(
-      (std::filesystem::path(args[0]->str()) / args[1]->str()).lexically_normal().string());
+    return Value::string((std::filesystem::path(args[0]->str()) / args[1]->str())
+                           .lexically_normal()
+                           .generic_string());
   }
 
   /** ParentPathFunction - roo.io/parent-path */

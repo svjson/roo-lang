@@ -9,7 +9,7 @@ namespace RooTest
   {
     std::string normalize(const std::string& path)
     {
-      return std::filesystem::path(path).lexically_normal().string();
+      return std::filesystem::path(path).lexically_normal().generic_string();
     }
 
     bool hidden_name(const std::string& name)
