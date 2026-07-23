@@ -110,8 +110,11 @@ namespace
     return shell_arg(path.generic_string());
   }
 
-  void run_command(const std::string& command)
+  void run_command(std::string command)
   {
+#ifdef _WIN32
+    command = "call " + command;
+#endif
     ASSERT_EQ(std::system(command.c_str()), 0) << command;
   }
 
