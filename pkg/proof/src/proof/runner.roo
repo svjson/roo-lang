@@ -1,6 +1,7 @@
 (ns proof.runner
   (:require proof.core
-            [roo.io :as io]))
+            [roo.io :as io]
+            [roo.string :as string]))
 
 (defun base-config [context]
   (let [config (:config context)]
@@ -165,6 +166,15 @@
 (defun absolute-test-root [context root]
   (io/join-path (:package-root context) root))
 
+(defun normalized-path [path]
+  (string/replace (str path) "\\" "/"))
+
+(defun trim-trailing-slash [path]
+  (if (and (> (count path) 1)
+           (= "/" (str (nth path (- (count path) 1)))))
+    (substr path 0 (- (count path) 1))
+    path))
+
 (defun roo-file-entry? [entry]
   (= ".roo" (io/extension (:path entry))))
 
@@ -192,11 +202,13 @@
 (defun relative-package-path [context path]
   (let [package-root (:package-root context)]
     (if (nil? package-root)
-      path
-      (let [prefix (str package-root "/")]
-        (if (proof.core/starts-with? path prefix)
-          (substr path (count prefix))
-          path)))))
+      (normalized-path path)
+      (let [normalized-root (trim-trailing-slash (normalized-path package-root))
+            normalized-file (normalized-path path)
+            prefix (str normalized-root "/")]
+        (if (proof.core/starts-with? normalized-file prefix)
+          (substr normalized-file (count prefix))
+          normalized-file)))))
 
 (defun test-file-entry [context path]
   {:path path

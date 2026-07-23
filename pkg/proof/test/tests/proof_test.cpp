@@ -27,6 +27,16 @@ namespace
     std::ofstream out(path);
     out << contents;
   }
+
+  std::string roo_string(const std::filesystem::path& path)
+  {
+    return Roo::Package::Application::source_string_literal(path.string());
+  }
+
+  std::string roo_source_string(const std::string& value)
+  {
+    return Roo::Package::Application::source_string_literal(value);
+  }
 } // namespace
 
 TEST(ProofPackage, registers_and_runs_tests_from_load_path)
@@ -132,10 +142,26 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
   runtime.eval(R"((ns proof.runner-package-test
     (:require proof.runner)))");
 
-  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
-                              "\" :config {:test-roots [\"test\"]}})");
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :config {:test-roots [\"test\"]}})");
 
   EXPECT_EQ(results->to_string(), "[{:name fixture-loads-once :status :pass}]");
+}
+
+TEST(ProofPackage, runner_normalizes_windows_style_display_paths)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-windows-path-test
+    (:require proof.runner)))");
+
+  auto display_path = runtime.eval(
+    "(proof.runner/relative-package-path {:package-root " +
+    roo_source_string("D:\\a\\roo-lang\\roo-lang") + "} " +
+    roo_source_string("D:\\a\\roo-lang\\roo-lang\\test\\app\\checkout-test.roo") + ")");
+
+  EXPECT_EQ(display_path->to_string(), "\"test/app/checkout-test.roo\"");
 }
 
 TEST(ProofPackage, run_selected_filters_registered_tests_by_name)
@@ -230,8 +256,8 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
   runtime.eval(R"((ns proof.runner-filter-test
     (:require proof.runner)))");
 
-  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
-                              "\" :config {:test-roots [\"test\"] "
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :config {:test-roots [\"test\"] "
                               ":namespace \"app.checkout-test\"}})");
 
   EXPECT_EQ(results->to_string(), "[{:name checkout-total :status :pass}]");
@@ -267,8 +293,8 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
     (:require proof.runner)))");
 
   testing::internal::CaptureStdout();
-  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
-                              "\" :config {:test-roots [\"test\"] "
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :config {:test-roots [\"test\"] "
                               ":reporter :tree}})");
   std::string output = testing::internal::GetCapturedStdout();
 
@@ -316,8 +342,8 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
     (:require proof.runner)))");
 
   testing::internal::CaptureStdout();
-  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
-                              "\" :config {:test-roots [\"test\"] "
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :config {:test-roots [\"test\"] "
                               ":filter \"ignored*\"} "
                               ":args [\"--test-root\" \"spec\" "
                               "\"--filter=checkout-discount\" "
@@ -349,8 +375,8 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
     (:require proof.runner)))");
 
   testing::internal::CaptureStdout();
-  auto results = runtime.eval("(proof.runner/run {:package-root \"" + root.string() +
-                              "\" :config {:test-roots [\"test\"]} "
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :config {:test-roots [\"test\"]} "
                               ":args [\"--help\"]})");
   std::string output = testing::internal::GetCapturedStdout();
 
