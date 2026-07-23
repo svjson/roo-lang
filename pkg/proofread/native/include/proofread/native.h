@@ -4,12 +4,13 @@
 #include <memory>
 #include <vector>
 
+#include <proofread/export.h>
 #include <roo/namespace.h>
 
 namespace Roo::Proofread
 {
-  std::unique_ptr<Namespace> make_native_namespace();
-  std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
+  PROOFREAD_NATIVE_API std::unique_ptr<Namespace> make_native_namespace();
+  PROOFREAD_NATIVE_API std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
 } // namespace Roo::Proofread
 
 #endif
