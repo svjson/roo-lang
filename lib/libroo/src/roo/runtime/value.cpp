@@ -18,6 +18,13 @@ namespace Roo
   int to_ast_conversions = 0;
   int to_rtvalue_conversions = 0;
 
+  namespace Constant
+  {
+    const sptr_val BOOL_TRUE = std::make_shared<Value>(true);
+    const sptr_val BOOL_FALSE = std::make_shared<Value>(false);
+    const sptr_val NIL = std::make_shared<Value>(std::monostate());
+  } // namespace Constant
+
   namespace
   {
     std::string indent(int width)

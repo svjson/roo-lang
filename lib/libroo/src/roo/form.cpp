@@ -17,6 +17,8 @@
 
 namespace Roo::AST
 {
+  std::shared_ptr<ASTNode> NIL = std::make_shared<Nil>();
+
   const int INT_CONSTANTS_SIZE = 1001;
   std::vector<std::shared_ptr<Number>> INT_CONSTANTS = []()
   {
@@ -291,6 +293,9 @@ namespace Roo::AST
   {
     return value ? B_TRUE : B_FALSE;
   }
+
+  const std::shared_ptr<Boolean> B_TRUE = std::make_shared<Boolean>(true);
+  const std::shared_ptr<Boolean> B_FALSE = std::make_shared<Boolean>(false);
 
   /**
    * Char form

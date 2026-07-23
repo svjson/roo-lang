@@ -220,9 +220,9 @@ namespace Roo
 
   namespace Constant
   {
-    inline const sptr_val BOOL_TRUE = std::make_shared<Value>(true);
-    inline const sptr_val BOOL_FALSE = std::make_shared<Value>(false);
-    inline const sptr_val NIL = std::make_shared<Value>(std::monostate());
+    extern ROO_API const sptr_val BOOL_TRUE;
+    extern ROO_API const sptr_val BOOL_FALSE;
+    extern ROO_API const sptr_val NIL;
   } // namespace Constant
 
   sptr_val to_rt_value(sptr_ast_node& obj);

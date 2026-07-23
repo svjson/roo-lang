@@ -106,7 +106,7 @@ namespace Roo
       std::string to_string(int depth = -1) const override;
     };
 
-    inline std::shared_ptr<ASTNode> NIL = std::make_shared<Nil>();
+    extern ROO_API std::shared_ptr<ASTNode> NIL;
 
     template <typename T> class Value : public ASTNode
     {
@@ -208,8 +208,8 @@ namespace Roo
       static std::shared_ptr<Boolean> wrap(bool value);
     };
 
-    inline const std::shared_ptr<Boolean> B_TRUE = std::make_shared<Boolean>(true);
-    inline const std::shared_ptr<Boolean> B_FALSE = std::make_shared<Boolean>(false);
+    extern ROO_API const std::shared_ptr<Boolean> B_TRUE;
+    extern ROO_API const std::shared_ptr<Boolean> B_FALSE;
 
     class Keyword : public QualifiableStringValue
     {
