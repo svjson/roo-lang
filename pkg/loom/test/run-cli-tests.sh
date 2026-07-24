@@ -11,6 +11,11 @@ LOOM_INIT_DIR="$ROOT_DIR/build/loom-init-test-package"
 PROOF_REPO="$ROOT_DIR/build/loom-proof-test-repo"
 PROOF_NATIVE_LIBRARY=libproof-native.so
 
+manifest_contents()
+{
+  tr -d '\r' < "$1"
+}
+
 case "$(uname -s)" in
   Darwin) PROOF_NATIVE_LIBRARY=libproof-native.dylib ;;
   MINGW*|MSYS*|CYGWIN*) PROOF_NATIVE_LIBRARY=proof-native.dll ;;
@@ -21,6 +26,7 @@ esac
   "$ROO" proof
 )
 
+printf '%s\n' "==> Testing loom install/list/info/deps"
 cmake -E rm -rf "$LOOM_REPO"
 "$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO" --force
 
@@ -45,19 +51,21 @@ test "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO")" = "loom@0.1.0"
 DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat)
 test "$DEPS_OUTPUT" = ""
 
+printf '%s\n' "==> Testing loom init"
 cmake -E rm -rf "$LOOM_INIT_DIR"
 "$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name cli-sample --version 0.2.0
 test -f "$LOOM_INIT_DIR/package.edn"
-test "$(cat "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
+test "$(manifest_contents "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
  :version \"0.2.0\"
  :dependencies []
  :load-roots [\"src\"]}"
 test "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)" = "loom: package manifest already exists: $LOOM_INIT_DIR/package.edn"
-test "$(cat "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
+test "$(manifest_contents "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
  :version \"0.2.0\"
  :dependencies []
  :load-roots [\"src\"]}"
 
+printf '%s\n' "==> Testing loom link/uninstall"
 cmake -E rm -rf "$LOOM_LINK_REPO"
 "$ROO" "$LOOM_PACKAGE" link "$LOOM_PACKAGE" --repo "$LOOM_LINK_REPO"
 test -L "$LOOM_LINK_REPO/loom/0.1.0"
@@ -72,6 +80,7 @@ test ! -e "$LOOM_REPO/loom/0.1.0/stale-file"
 "$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_REPO"
 test ! -e "$LOOM_REPO/loom/0.1.0/package.edn"
 
+printf '%s\n' "==> Testing loom native package install"
 cmake -E rm -rf "$PROOF_REPO"
 "$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --repo "$PROOF_REPO" --force
 test -f "$PROOF_REPO/proof/0.1.0/package.edn"
