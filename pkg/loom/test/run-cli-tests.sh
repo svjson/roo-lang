@@ -35,8 +35,8 @@ assert_not_exists()
 assert_eq()
 {
   label=$1
-  expected=$2
-  actual=$3
+  expected=$(printf '%s' "$2" | tr -d '\r')
+  actual=$(printf '%s' "$3" | tr -d '\r')
   if [ "$actual" != "$expected" ]; then
     printf '%s\n' "loom CLI test failed: $label" >&2
     printf '%s\n' "expected:" >&2
@@ -50,6 +50,15 @@ assert_eq()
 manifest_contents()
 {
   tr -d '\r' < "$1"
+}
+
+expected_init_manifest()
+{
+  printf '%s\n' \
+    "{:name cli-sample" \
+    " :version \"0.2.0\"" \
+    " :dependencies []" \
+    " :load-roots [\"src\"]}"
 }
 
 case "$(uname -s)" in
@@ -91,17 +100,15 @@ printf '%s\n' "==> Testing loom init"
 cmake -E rm -rf "$LOOM_INIT_DIR"
 "$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name cli-sample --version 0.2.0
 assert_file "$LOOM_INIT_DIR/package.edn"
-assert_eq "loom init package.edn contents" "{:name cli-sample
- :version \"0.2.0\"
- :dependencies []
- :load-roots [\"src\"]}" "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
+assert_eq "loom init package.edn contents" \
+  "$(expected_init_manifest)" \
+  "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
 assert_eq "loom init existing-manifest output" \
   "loom: package manifest already exists: $LOOM_INIT_DIR/package.edn" \
   "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)"
-assert_eq "loom init preserves existing package.edn contents" "{:name cli-sample
- :version \"0.2.0\"
- :dependencies []
- :load-roots [\"src\"]}" "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
+assert_eq "loom init preserves existing package.edn contents" \
+  "$(expected_init_manifest)" \
+  "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
 
 printf '%s\n' "==> Testing loom link/uninstall"
 cmake -E rm -rf "$LOOM_LINK_REPO"
