@@ -79,6 +79,7 @@ case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) PROOF_NATIVE_LIBRARY=proof-native.dll ;;
 esac
 
+printf '%s\n' "==> Testing loom proof suite"
 (
   cd "$LOOM_PACKAGE/test"
   "$ROO" proof
@@ -104,9 +105,14 @@ assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/manifest.roo"
 assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/package-spec.roo"
 assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/repository.roo"
 
-assert_eq "loom list output" "loom@0.1.0" "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO")"
+if ! LIST_OUTPUT=$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO"); then
+  fail "loom list command failed"
+fi
+assert_eq "loom list output" "loom@0.1.0" "$LIST_OUTPUT"
 "$ROO" "$LOOM_PACKAGE" info loom@0.1.0 --repo "$LOOM_REPO"
-DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat)
+if ! DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat); then
+  fail "loom deps --flat command failed"
+fi
 assert_eq "loom deps --flat output" "" "$DEPS_OUTPUT"
 
 printf '%s\n' "==> Testing loom init"
@@ -116,9 +122,12 @@ assert_file "$LOOM_INIT_DIR/package.edn"
 assert_eq "loom init package.edn contents" \
   "$(expected_init_manifest)" \
   "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
+if ! INIT_EXISTS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten); then
+  fail "loom init existing-manifest command failed"
+fi
 assert_eq "loom init existing-manifest output" \
   "loom: package manifest already exists: $(display_path "$LOOM_INIT_DIR/package.edn")" \
-  "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)"
+  "$INIT_EXISTS_OUTPUT"
 assert_eq "loom init preserves existing package.edn contents" \
   "$(expected_init_manifest)" \
   "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
@@ -127,9 +136,12 @@ printf '%s\n' "==> Testing loom link/uninstall"
 cmake -E rm -rf "$LOOM_LINK_REPO"
 "$ROO" "$LOOM_PACKAGE" link "$LOOM_PACKAGE" --repo "$LOOM_LINK_REPO"
 assert_symlink "$LOOM_LINK_REPO/loom/0.1.0"
+if ! LINK_LIST_OUTPUT=$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_LINK_REPO"); then
+  fail "loom list linked repo command failed"
+fi
 assert_eq "loom list linked repo output" \
   "loom@0.1.0" \
-  "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_LINK_REPO")"
+  "$LINK_LIST_OUTPUT"
 "$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_LINK_REPO"
 assert_not_exists "$LOOM_LINK_REPO/loom/0.1.0"
 
