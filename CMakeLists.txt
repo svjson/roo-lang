@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" ROO_PROJECT_VERSION LIMIT_COUNT 1)
-string(STRIP "${ROO_PROJECT_VERSION}" ROO_PROJECT_VERSION)
 set(ROO_ABI_VERSION 0)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/rooVersion.cmake")
 
 project(roo VERSION ${ROO_PROJECT_VERSION} LANGUAGES CXX)
 set(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -75,7 +74,7 @@ target_link_libraries(rooc_objects
 )
 target_compile_definitions(rooc_objects
   PUBLIC
-    ROO_VERSION="${PROJECT_VERSION}"
+    ROO_VERSION="${ROO_VERSION}"
     ROO_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
     ROO_BUILD_ROOT="${CMAKE_CURRENT_BINARY_DIR}"
 )
@@ -105,7 +104,7 @@ target_link_libraries(roo_cli
     Roo::package_shared
 )
 target_compile_definitions(roo_cli
-  PRIVATE ROO_VERSION="${PROJECT_VERSION}"
+  PRIVATE ROO_VERSION="${ROO_VERSION}"
 )
 
 target_link_libraries(rooc_cli

@@ -207,8 +207,8 @@ Download the archive for your platform from the GitHub Release page, unpack it,
 and add its `bin` directory to `PATH`.
 
 ```bash
-tar -xzf roo-0.1.0-linux-x86_64.tar.gz
-export PATH="$PWD/roo-0.1.0-linux-x86_64/bin:$PATH"
+tar -xzf roo-0.1.0-alpha.1-linux-x86_64.tar.gz
+export PATH="$PWD/roo-0.1.0-alpha.1-linux-x86_64/bin:$PATH"
 roo --version
 ```
 

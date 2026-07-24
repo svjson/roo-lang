@@ -147,7 +147,7 @@ archive in CI.
 ```yaml
 - name: Download Roo
   run: |
-    version=0.1.0
+    version=0.1.0-alpha.1
     platform=linux-x86_64
     curl -L -o roo.tar.gz \
       "https://github.com/<owner>/<repo>/releases/download/v${version}/roo-${version}-${platform}.tar.gz"
@@ -163,6 +163,5 @@ For CMake consumers, add:
 
 ```yaml
 env:
-  CMAKE_PREFIX_PATH: ${{ github.workspace }}/roo-0.1.0-linux-x86_64
+  CMAKE_PREFIX_PATH: ${{ github.workspace }}/roo-0.1.0-alpha.1-linux-x86_64
 ```
-

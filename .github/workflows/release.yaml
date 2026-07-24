@@ -161,7 +161,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          release_flags=
+          latest_flag=
+          case "${GITHUB_REF_NAME}" in
+            *-alpha.*|*-alpha-*|*-beta.*|*-beta-*|*-rc.*|*-rc-*)
+              release_flags="--prerelease"
+              latest_flag="--latest=false"
+              ;;
+          esac
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            if [ -n "$release_flags" ]; then
+              gh release edit "${GITHUB_REF_NAME}" $release_flags
+            fi
             gh release upload "${GITHUB_REF_NAME}" \
               release-assets/roo-*.tar.gz \
               release-assets/roo-*.zip \
@@ -169,6 +180,8 @@ jobs:
               --clobber
           else
             gh release create "${GITHUB_REF_NAME}" \
+              $release_flags \
+              $latest_flag \
               --verify-tag \
               --title "roo ${GITHUB_REF_NAME#v}" \
               --notes "Roo ${GITHUB_REF_NAME#v}" \

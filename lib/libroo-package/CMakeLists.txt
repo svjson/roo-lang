@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
-if (NOT DEFINED ROO_PROJECT_VERSION)
-  file(STRINGS "${ROO_ROOT_DIR}/VERSION" ROO_PROJECT_VERSION LIMIT_COUNT 1)
-  string(STRIP "${ROO_PROJECT_VERSION}" ROO_PROJECT_VERSION)
-endif()
+include("${ROO_ROOT_DIR}/cmake/rooVersion.cmake")
 if (NOT DEFINED ROO_ABI_VERSION)
   set(ROO_ABI_VERSION 0)
 endif()
