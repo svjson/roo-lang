@@ -11,6 +11,42 @@ LOOM_INIT_DIR="$ROOT_DIR/build/loom-init-test-package"
 PROOF_REPO="$ROOT_DIR/build/loom-proof-test-repo"
 PROOF_NATIVE_LIBRARY=libproof-native.so
 
+fail()
+{
+  printf '%s\n' "loom CLI test failed: $1" >&2
+  exit 1
+}
+
+assert_file()
+{
+  test -f "$1" || fail "expected file to exist: $1"
+}
+
+assert_symlink()
+{
+  test -L "$1" || fail "expected symlink to exist: $1"
+}
+
+assert_not_exists()
+{
+  test ! -e "$1" || fail "expected path not to exist: $1"
+}
+
+assert_eq()
+{
+  label=$1
+  expected=$2
+  actual=$3
+  if [ "$actual" != "$expected" ]; then
+    printf '%s\n' "loom CLI test failed: $label" >&2
+    printf '%s\n' "expected:" >&2
+    printf '%s\n' "$expected" >&2
+    printf '%s\n' "actual:" >&2
+    printf '%s\n' "$actual" >&2
+    exit 1
+  fi
+}
+
 manifest_contents()
 {
   tr -d '\r' < "$1"
@@ -30,58 +66,62 @@ printf '%s\n' "==> Testing loom install/list/info/deps"
 cmake -E rm -rf "$LOOM_REPO"
 "$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO" --force
 
-test -f "$LOOM_REPO/loom/0.1.0/package.edn"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/core.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/deps.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/init.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/install.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/link.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/uninstall.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/list.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/command/info.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/args.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/dependency-graph.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/files.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/manifest.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/package-spec.roo"
-test -f "$LOOM_REPO/loom/0.1.0/src/loom/common/repository.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/package.edn"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/core.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/deps.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/init.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/install.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/link.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/uninstall.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/list.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/command/info.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/args.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/dependency-graph.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/files.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/manifest.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/package-spec.roo"
+assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/repository.roo"
 
-test "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO")" = "loom@0.1.0"
+assert_eq "loom list output" "loom@0.1.0" "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO")"
 "$ROO" "$LOOM_PACKAGE" info loom@0.1.0 --repo "$LOOM_REPO"
 DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat)
-test "$DEPS_OUTPUT" = ""
+assert_eq "loom deps --flat output" "" "$DEPS_OUTPUT"
 
 printf '%s\n' "==> Testing loom init"
 cmake -E rm -rf "$LOOM_INIT_DIR"
 "$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name cli-sample --version 0.2.0
-test -f "$LOOM_INIT_DIR/package.edn"
-test "$(manifest_contents "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
+assert_file "$LOOM_INIT_DIR/package.edn"
+assert_eq "loom init package.edn contents" "{:name cli-sample
  :version \"0.2.0\"
  :dependencies []
- :load-roots [\"src\"]}"
-test "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)" = "loom: package manifest already exists: $LOOM_INIT_DIR/package.edn"
-test "$(manifest_contents "$LOOM_INIT_DIR/package.edn")" = "{:name cli-sample
+ :load-roots [\"src\"]}" "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
+assert_eq "loom init existing-manifest output" \
+  "loom: package manifest already exists: $LOOM_INIT_DIR/package.edn" \
+  "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)"
+assert_eq "loom init preserves existing package.edn contents" "{:name cli-sample
  :version \"0.2.0\"
  :dependencies []
- :load-roots [\"src\"]}"
+ :load-roots [\"src\"]}" "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
 
 printf '%s\n' "==> Testing loom link/uninstall"
 cmake -E rm -rf "$LOOM_LINK_REPO"
 "$ROO" "$LOOM_PACKAGE" link "$LOOM_PACKAGE" --repo "$LOOM_LINK_REPO"
-test -L "$LOOM_LINK_REPO/loom/0.1.0"
-test "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_LINK_REPO")" = "loom@0.1.0"
+assert_symlink "$LOOM_LINK_REPO/loom/0.1.0"
+assert_eq "loom list linked repo output" \
+  "loom@0.1.0" \
+  "$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_LINK_REPO")"
 "$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_LINK_REPO"
-test ! -e "$LOOM_LINK_REPO/loom/0.1.0"
+assert_not_exists "$LOOM_LINK_REPO/loom/0.1.0"
 
 cmake -E touch "$LOOM_REPO/loom/0.1.0/stale-file"
 "$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO"
-test ! -e "$LOOM_REPO/loom/0.1.0/stale-file"
+assert_not_exists "$LOOM_REPO/loom/0.1.0/stale-file"
 
 "$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_REPO"
-test ! -e "$LOOM_REPO/loom/0.1.0/package.edn"
+assert_not_exists "$LOOM_REPO/loom/0.1.0/package.edn"
 
 printf '%s\n' "==> Testing loom native package install"
 cmake -E rm -rf "$PROOF_REPO"
 "$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --repo "$PROOF_REPO" --force
-test -f "$PROOF_REPO/proof/0.1.0/package.edn"
-test -f "$PROOF_REPO/proof/0.1.0/native/$PROOF_NATIVE_LIBRARY"
+assert_file "$PROOF_REPO/proof/0.1.0/package.edn"
+assert_file "$PROOF_REPO/proof/0.1.0/native/$PROOF_NATIVE_LIBRARY"
