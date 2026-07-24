@@ -54,8 +54,43 @@ esac
 roo="$release_root/bin/roo$exe_suffix"
 rooc="$release_root/bin/rooc$exe_suffix"
 
-test "$("$roo" --version)" = "roo $version"
-test "$("$rooc" --version)" = "rooc $version"
+fail()
+{
+  printf '%s\n' "release smoke failed: $1" >&2
+  exit 1
+}
+
+assert_eq()
+{
+  label=$1
+  expected=$(printf '%s' "$2" | tr -d '\r')
+  actual=$(printf '%s' "$3" | tr -d '\r')
+  if [ "$actual" != "$expected" ]; then
+    printf '%s\n' "release smoke failed: $label" >&2
+    printf '%s\n' "expected:" >&2
+    printf '%s\n' "$expected" >&2
+    printf '%s\n' "actual:" >&2
+    printf '%s\n' "$actual" >&2
+    exit 1
+  fi
+}
+
+host_path()
+{
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+      if command -v cygpath >/dev/null 2>&1; then
+        cygpath -m "$1"
+        return
+      fi
+      ;;
+  esac
+  printf '%s\n' "$1"
+}
+
+printf '%s\n' "==> Testing release tool versions"
+assert_eq "roo --version output" "roo $version" "$("$roo" --version)"
+assert_eq "rooc --version output" "rooc $version" "$("$rooc" --version)"
 
 smoke_pkg="$tmp_dir/smoke-app"
 cmake -E make_directory "$smoke_pkg/src/smoke"
@@ -72,15 +107,17 @@ cat > "$smoke_pkg/src/smoke/app.roo" <<'EOF'
   (prn "smoke-app-ok"))
 EOF
 
-test "$("$roo" "$smoke_pkg")" = "smoke-app-ok"
+printf '%s\n' "==> Testing release roo package execution"
+assert_eq "roo smoke package output" "smoke-app-ok" "$("$roo" "$smoke_pkg")"
 
 compiled_dir="$tmp_dir/compiled-smoke"
+printf '%s\n' "==> Testing release rooc package build"
 "$rooc" build "$smoke_pkg" --build-dir "$compiled_dir" --name smoke_app
 compiled_app="$compiled_dir/build/smoke_app$exe_suffix"
 if [ ! -f "$compiled_app" ]; then
   compiled_app="$compiled_dir/build/$config/smoke_app$exe_suffix"
 fi
-test "$("$compiled_app")" = "smoke-app-ok"
+assert_eq "compiled smoke package output" "smoke-app-ok" "$("$compiled_app")"
 
 cmake_pkg="$tmp_dir/cmake-smoke"
 cmake -E make_directory "$cmake_pkg"
@@ -109,6 +146,7 @@ int main()
 }
 EOF
 
+printf '%s\n' "==> Testing release CMake package"
 cmake -S "$cmake_pkg" -B "$cmake_pkg/build" -DCMAKE_PREFIX_PATH="$release_root"
 cmake --build "$cmake_pkg/build" --config "$config" --parallel "$jobs"
 cmake_smoke="$cmake_pkg/build/roo_release_cmake_smoke$exe_suffix"
@@ -118,19 +156,26 @@ fi
 "$cmake_smoke"
 
 if [ -d "$release_root/share/roo/pkg/lookup" ]; then
-  test "$("$roo" "$release_root/share/roo/pkg/lookup" --version)" = "lookup 0.1.0"
+  printf '%s\n' "==> Testing release lookup package"
+  assert_eq "lookup --version output" \
+    "lookup 0.1.0" \
+    "$("$roo" "$release_root/share/roo/pkg/lookup" --version)"
 fi
 
 if [ -d "$release_root/share/roo/pkg/proofread" ]; then
-  test "$("$roo" "$release_root/share/roo/pkg/proofread" --version)" = "proofread 0.1.0"
+  printf '%s\n' "==> Testing release proofread package"
+  assert_eq "proofread --version output" \
+    "proofread 0.1.0" \
+    "$("$roo" "$release_root/share/roo/pkg/proofread" --version)"
 fi
 
 footsteps_pkg="$tmp_dir/footsteps-smoke"
+footsteps_dependency_path=$(host_path "$release_root/share/roo/pkg/footsteps")
 cmake -E make_directory "$footsteps_pkg/src/footsteps_smoke"
 cat > "$footsteps_pkg/package.edn" <<EOF
 {:name footsteps-smoke
  :version "0.1.0"
- :dependencies {footsteps "file:$release_root/share/roo/pkg/footsteps"}
+ :dependencies {footsteps "file:$footsteps_dependency_path"}
  :load-roots ["src"]
  :main footsteps_smoke.app/main}
 EOF
@@ -151,6 +196,9 @@ cat > "$footsteps_pkg/src/footsteps_smoke/app.roo" <<'EOF'
            "footsteps-smoke-fail"))))
 EOF
 
-test "$("$roo" "$footsteps_pkg")" = "footsteps-smoke-ok"
+printf '%s\n' "==> Testing release footsteps package"
+assert_eq "footsteps smoke package output" \
+  "footsteps-smoke-ok" \
+  "$("$roo" "$footsteps_pkg")"
 
 printf '%s\n' "release smoke passed: $archive"

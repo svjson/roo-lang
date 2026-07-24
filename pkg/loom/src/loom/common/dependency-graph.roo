@@ -92,10 +92,20 @@
    :cycle? cycle?
    :dependencies dependencies})
 
+(defun path-separator? [text]
+  (or (= "/" text)
+      (= "\\" text)))
+
+(defun windows-drive-path? [path]
+  (and (> (count path) 2)
+       (= ":" (str (nth path 1)))
+       (path-separator? (str (nth path 2)))))
+
 (defun absolute-path? [path]
   (if (= 0 (count path))
     false
-    (= "/" (str (nth path 0)))))
+    (or (path-separator? (str (nth path 0)))
+        (windows-drive-path? path))))
 
 (defun dependency-path-root [package-root spec]
   (let [path (:path spec)]

@@ -54,6 +54,20 @@
     (is (= ["missing@9.9.9"] (graph/collect-missing-package-ids missing-graph)))
     (is (= false (graph/complete? missing-graph)))))
 
+(deftest detects-platform-absolute-paths
+  (is (graph/absolute-path? "/tmp/pkg"))
+  (is (graph/absolute-path? "\\tmp\\pkg"))
+  (is (graph/absolute-path? "C:/tmp/pkg"))
+  (is (graph/absolute-path? "C:\\tmp\\pkg"))
+  (is (= false (graph/absolute-path? "tmp/pkg")))
+  (is (= false (graph/absolute-path? "file:tmp/pkg"))))
+
+(deftest does-not-join-windows-drive-path-dependencies-under-package-root
+  (is (= "C:/tmp/pkg"
+         (graph/dependency-path-root "/repo/app" {:path "C:/tmp/pkg"})))
+  (is (= "C:\\tmp\\pkg"
+         (graph/dependency-path-root "/repo/app" {:path "C:\\tmp\\pkg"}))))
+
 (deftest resolves-file-path-dependencies-relative-to-declaring-package
   (given
     (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph-file")
