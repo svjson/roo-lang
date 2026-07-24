@@ -1,5 +1,6 @@
 (ns lookup.core
   (:require [roo.io :as io]
+            [roo.string :as string]
             [lookup.native :as native]))
 
 (def version "0.1.0")
@@ -49,9 +50,18 @@
              (source-files-in (io/join-path package-dir (str root))))))
     <))
 
+(defun normalized-path [path]
+  (string/replace (str path) "\\" "/"))
+
+(defun normalized-source-location [source]
+  (assoc source :path (normalized-path (:path source))))
+
+(defun source-form-entry [entry]
+  (assoc entry :source (normalized-source-location (:source entry))))
+
 (defun source-entry [path]
-  {:path path
-   :forms (native/read-file-forms! path)})
+  {:path (normalized-path path)
+   :forms (map (native/read-file-forms! path) source-form-entry)})
 
 (defun source-form-index [package-dir]
   (let [manifest (read-manifest! package-dir)
