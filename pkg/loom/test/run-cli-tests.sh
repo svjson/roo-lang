@@ -52,6 +52,19 @@ manifest_contents()
   tr -d '\r' < "$1"
 }
 
+display_path()
+{
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+      if command -v cygpath >/dev/null 2>&1; then
+        cygpath -m "$1"
+        return
+      fi
+      ;;
+  esac
+  printf '%s\n' "$1"
+}
+
 expected_init_manifest()
 {
   printf '%s\n' \
@@ -104,7 +117,7 @@ assert_eq "loom init package.edn contents" \
   "$(expected_init_manifest)" \
   "$(manifest_contents "$LOOM_INIT_DIR/package.edn")"
 assert_eq "loom init existing-manifest output" \
-  "loom: package manifest already exists: $LOOM_INIT_DIR/package.edn" \
+  "loom: package manifest already exists: $(display_path "$LOOM_INIT_DIR/package.edn")" \
   "$("$ROO" "$LOOM_PACKAGE" init "$LOOM_INIT_DIR" --name overwritten)"
 assert_eq "loom init preserves existing package.edn contents" \
   "$(expected_init_manifest)" \
