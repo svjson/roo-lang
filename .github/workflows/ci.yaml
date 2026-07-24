@@ -1,0 +1,846 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ROO_CI_CONFIG: Release
+  ROO_CI_JOBS: "1"
+
+jobs:
+  platform-matrix:
+    name: Load Platform Matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.platforms.outputs.matrix }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Read platform matrix
+        id: platforms
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          with open(".github/platforms.json", encoding="utf-8") as f:
+              print("matrix=" + json.dumps(json.load(f), separators=(",", ":")))
+          PY
+
+  build-libroo:
+    name: Build libroo ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs: platform-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Configure build
+        env:
+          ROO_CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+          ROO_CMAKE_C_COMPILER: ${{ matrix.c_compiler }}
+          ROO_CMAKE_CXX_COMPILER: ${{ matrix.cxx_compiler }}
+        run: |
+          if [ -n "${ROO_CMAKE_C_COMPILER:-}" ]; then
+            export CC="$ROO_CMAKE_C_COMPILER"
+          fi
+          if [ -n "${ROO_CMAKE_CXX_COMPILER:-}" ]; then
+            export CXX="$ROO_CMAKE_CXX_COMPILER"
+          fi
+          if [ -n "${ROO_CMAKE_GENERATOR:-}" ]; then
+            cmake -S . -B build \
+              -G "$ROO_CMAKE_GENERATOR" \
+              -DCMAKE_BUILD_TYPE="$ROO_CI_CONFIG" \
+              -DROO_BUILD_TESTS=ON \
+              -DROO_SERVER_BUILD_TESTS=OFF
+          else
+            cmake -S . -B build \
+              -DCMAKE_BUILD_TYPE="$ROO_CI_CONFIG" \
+              -DROO_BUILD_TESTS=ON \
+              -DROO_SERVER_BUILD_TESTS=OFF
+          fi
+
+      - name: Build core runtime
+        run: >
+          cmake --build build
+          --config "$ROO_CI_CONFIG"
+          --parallel "$ROO_CI_JOBS"
+          --target roo_static roo_shared
+
+      - name: Pack core build tree
+        run: cmake -E tar czf "build-libroo-${{ matrix.platform }}.tar.gz" build
+
+      - name: Upload core build tree
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-libroo-${{ matrix.platform }}
+          path: build-libroo-${{ matrix.platform }}.tar.gz
+          retention-days: 3
+
+  test-libroo:
+    name: Test libroo ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download core build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack core build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-${{ matrix.platform }}.tar.gz"
+
+      - name: Build and run libroo tests
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testroo
+          ./build/lib/libroo/test/testroo${{ runner.os == 'Windows' && '.exe' || '' }} --skip-benchmarks
+
+  build-libroo-package:
+    name: Build libroo-package ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download core build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack core build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-${{ matrix.platform }}.tar.gz"
+
+      - name: Build package library
+        run: >
+          cmake --build build
+          --config "$ROO_CI_CONFIG"
+          --parallel "$ROO_CI_JOBS"
+          --target roo-package_static roo-package_shared
+
+      - name: Pack package build tree
+        run: cmake -E tar czf "build-libroo-package-${{ matrix.platform }}.tar.gz" build
+
+      - name: Upload package build tree
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-libroo-package-${{ matrix.platform }}
+          path: build-libroo-package-${{ matrix.platform }}.tar.gz
+          retention-days: 3
+
+  test-libroo-package:
+    name: Test libroo-package ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo-package
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download package build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-package-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack package build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-package-${{ matrix.platform }}.tar.gz"
+
+      - name: Build and run package tests
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testpackage
+          ./build/lib/libroo-package/test/testpackage${{ runner.os == 'Windows' && '.exe' || '' }}
+
+  build-libroo-server:
+    name: Build libroo-server ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download core build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack core build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-${{ matrix.platform }}.tar.gz"
+
+      - name: Build server library and executable
+        run: >
+          cmake --build build
+          --config "$ROO_CI_CONFIG"
+          --parallel "$ROO_CI_JOBS"
+          --target roo-server_static roo-server_shared roo-server-exec
+
+      - name: Pack server build tree
+        run: cmake -E tar czf "build-libroo-server-${{ matrix.platform }}.tar.gz" build
+
+      - name: Upload server build tree
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-libroo-server-${{ matrix.platform }}
+          path: build-libroo-server-${{ matrix.platform }}.tar.gz
+          retention-days: 3
+
+  test-libroo-server:
+    name: Test libroo-server ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo-server
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download server build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-server-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack server build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-server-${{ matrix.platform }}.tar.gz"
+
+      - name: Enable server tests
+        run: cmake -S . -B build -DROO_BUILD_TESTS=ON -DROO_SERVER_BUILD_TESTS=ON
+
+      - name: Build and run server tests
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testserver
+          ./build/lib/libroo-server/test/testserver${{ runner.os == 'Windows' && '.exe' || '' }}
+
+  build-tools:
+    name: Build roo and rooc ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo-package
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download package build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-package-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack package build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-package-${{ matrix.platform }}.tar.gz"
+
+      - name: Build command line tools
+        run: >
+          cmake --build build
+          --config "$ROO_CI_CONFIG"
+          --parallel "$ROO_CI_JOBS"
+          --target roo_cli rooc_cli
+
+      - name: Pack tools build tree
+        run: cmake -E tar czf "build-tools-${{ matrix.platform }}.tar.gz" build
+
+      - name: Upload tools build tree
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: build-tools-${{ matrix.platform }}.tar.gz
+          retention-days: 3
+
+  build-native-packages:
+    name: Build native packages ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo-package
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download package build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-package-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack package build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-package-${{ matrix.platform }}.tar.gz"
+
+      - name: Build native package libraries
+        run: >
+          cmake --build build
+          --config "$ROO_CI_CONFIG"
+          --parallel "$ROO_CI_JOBS"
+          --target stage_native_packages
+
+      - name: Pack native package build tree
+        run: cmake -E tar czf "build-native-packages-${{ matrix.platform }}.tar.gz" build
+
+      - name: Upload native package build tree
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-native-packages-${{ matrix.platform }}
+          path: build-native-packages-${{ matrix.platform }}.tar.gz
+          retention-days: 3
+
+      - name: Pack native package stage
+        run: cmake -E tar czf "native-package-stage-${{ matrix.platform }}.tar.gz" build/native-package-stage
+
+      - name: Upload native package stage
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: native-package-stage-${{ matrix.platform }}.tar.gz
+          retention-days: 3
+
+  test-proof:
+    name: Test proof ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download native package build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-native-packages-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack native package build tree
+        run: cmake -E tar xzf "artifacts/build-native-packages-${{ matrix.platform }}.tar.gz"
+
+      - name: Build and run proof tests
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testproof
+          ./build/pkg/proof/test/testproof${{ runner.os == 'Windows' && '.exe' || '' }}
+
+  test-workbook:
+    name: Test workbook ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run workbook tests
+        run: cd build/native-package-stage/pkg/workbook/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-footsteps:
+    name: Test footsteps ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run footsteps tests
+        run: cd build/native-package-stage/pkg/footsteps/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-rooc:
+    name: Test rooc ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Build and run rooc tests
+        env:
+          ROO_CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+          ROO_CMAKE_C_COMPILER: ${{ matrix.c_compiler }}
+          ROO_CMAKE_CXX_COMPILER: ${{ matrix.cxx_compiler }}
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testrooc
+          ./build/bin/rooc/test/testrooc${{ runner.os == 'Windows' && '.exe' || '' }}
+
+  test-roo-cli:
+    name: Test roo CLI ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run roo CLI tests
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh bin/roo/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+
+  test-loom-cli:
+    name: Test loom CLI ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run loom CLI tests
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/loom/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+
+  test-lookup-cli:
+    name: Test lookup CLI ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run lookup CLI tests
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/lookup/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+
+  test-proofread:
+    name: Test proofread ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run proofread tests
+        run: ctest --test-dir build -C "$ROO_CI_CONFIG" -R proofread --output-on-failure
+
+  build-package-binaries:
+    name: Build package binaries ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      ROO_CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+      ROO_CMAKE_C_COMPILER: ${{ matrix.c_compiler }}
+      ROO_CMAKE_CXX_COMPILER: ${{ matrix.cxx_compiler }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Build Loom binary
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/loom --build-dir build/loom-build --name loom
+
+      - name: Build Lookup binary
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/lookup --build-dir build/lookup-build --name lookup
+
+      - name: Build Proof binary
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/proof --build-dir build/proof-build --name proof
+
+      - name: Build Proofread binary
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/proofread --build-dir build/proofread-build --name proofread
