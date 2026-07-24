@@ -201,6 +201,23 @@ make install                     # Install to ~/.local (override with PREFIX=...
 make release                     # Build a staged release archive under dist/
 ```
 
+## Installing A Release
+
+Download the archive for your platform from the GitHub Release page, unpack it,
+and add its `bin` directory to `PATH`.
+
+```bash
+tar -xzf roo-0.1.0-linux-x86_64.tar.gz
+export PATH="$PWD/roo-0.1.0-linux-x86_64/bin:$PATH"
+roo --version
+```
+
+Release archives include `roo`, `rooc`, libraries, headers, CMake package files,
+and bundled Roo packages under `share/roo/pkg`.
+
+See [Installing Roo](INSTALL.md) for checksum verification, Windows usage,
+bundled packages, and CMake integration.
+
 ### Tests
 
 ```bash
