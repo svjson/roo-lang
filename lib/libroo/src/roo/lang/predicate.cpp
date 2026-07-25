@@ -71,6 +71,28 @@ namespace Roo
     return *args[0] == *args[1] ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
+  /** SeqPFunction - seq? */
+  FUNC_IMPL(SeqPFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&SeqPFunction::exec_seq))))
+
+  EXEC_BODY(SeqPFunction, exec_seq)
+  {
+    if (args[0]->type == Value::Type::NIL) return Constant::BOOL_FALSE;
+    return Type::SEQ.is_type_of(*args[0]) ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+  }
+
+  /** SeqLikePFunction - seq-like? */
+  FUNC_IMPL(SeqLikePFunction,
+            SIG((FN_ARGS((&Type::ANY)),
+                 EXEC_DISPATCH(&SeqLikePFunction::exec_seq_like))))
+
+  EXEC_BODY(SeqLikePFunction, exec_seq_like)
+  {
+    if (args[0]->type == Value::Type::NIL) return Constant::BOOL_FALSE;
+    return Type::SEQ_OR_STRING.is_type_of(*args[0]) ? Constant::BOOL_TRUE
+                                                    : Constant::BOOL_FALSE;
+  }
+
   /** NilPFunction - nil? */
   FUNC_IMPL(NilPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NilPFunction::exec_is_nil))))

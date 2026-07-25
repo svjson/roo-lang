@@ -163,6 +163,8 @@ namespace Roo
     lang_symbols.emplace("reverse", ReverseFunction::make());
     lang_symbols.emplace("rnd", RndFunction::make());
     lang_symbols.emplace("select-keys", SelectKeysFunction::make());
+    lang_symbols.emplace("seq?", SeqPFunction::make());
+    lang_symbols.emplace("seq-like?", SeqLikePFunction::make());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());

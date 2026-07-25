@@ -120,6 +120,22 @@ namespace Roo
   FUNC(NotEqualsFunction, not_equals)
 
   /*!
+   * @brief Query if a value is a Roo sequence.
+   *
+   * Lists, vectors, maps, and host sequences are sequences. Strings are not
+   * sequences; use @code seq-like? @endcode when strings should count as
+   * character sequences.
+   */
+  FUNC(SeqPFunction, seq)
+
+  /*!
+   * @brief Query if a value can be treated as a sequence by seq-like functions.
+   *
+   * This includes every value accepted by @code seq? @endcode plus strings.
+   */
+  FUNC(SeqLikePFunction, seq_like)
+
+  /*!
    * @brief Tests if the result of an expression is nil.
    *
    * Usage:
