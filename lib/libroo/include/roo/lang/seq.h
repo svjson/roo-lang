@@ -231,6 +231,17 @@ namespace Roo
    */
   FUNC(RepeatFunction, repeat)
 
+  /*!
+   * @brief Creates a new vector containing the elements of a sequence in reverse order.
+   *
+   * Usage:
+   * @code
+   * (reverse [1 2 3])
+   * => [3 2 1]
+   * @endcode
+   */
+  FUNC(ReverseFunction, reverse)
+
   FUNC(TailFunction, tail)
 
   /*!

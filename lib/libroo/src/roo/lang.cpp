@@ -160,6 +160,7 @@ namespace Roo
     lang_symbols.emplace("remove-nth!", RemoveNthBangFunction::make());
     lang_symbols.emplace("repeat", RepeatFunction::make());
     lang_symbols.emplace("resolve", ResolveFunction::make());
+    lang_symbols.emplace("reverse", ReverseFunction::make());
     lang_symbols.emplace("rnd", RndFunction::make());
     lang_symbols.emplace("select-keys", SelectKeysFunction::make());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());

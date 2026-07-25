@@ -501,6 +501,30 @@ namespace Roo
     return Value::vector(std::move(vector));
   }
 
+  /** ReverseFunction - reverse */
+  FUNC_IMPL(ReverseFunction,
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING)),
+                 EXEC_DISPATCH(&ReverseFunction::exec_reverse))))
+
+  EXEC_BODY(ReverseFunction, exec_reverse)
+  {
+    sptr_val_v result;
+    if (Roo::has_indexed_children(*args[0]))
+    {
+      const size_t n_children = Roo::child_count(*args[0]);
+      result.reserve(n_children);
+      for (size_t i = n_children; i > 0; i--)
+      {
+        result.push_back(Roo::get_child(*args[0], i - 1));
+      }
+      return Value::vector(std::move(result));
+    }
+
+    result = Roo::get_children(*args[0]);
+    std::reverse(result.begin(), result.end());
+    return Value::vector(std::move(result));
+  }
+
   /** TailFunction - tail */
   FUNC_IMPL(TailFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&TailFunction::exec_tail))))
