@@ -2,6 +2,9 @@
 #include "roo/runtime/value.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <limits>
 #include <string>
 
 #include <roo/exception.h>
@@ -525,10 +528,15 @@ namespace Roo
 
   sptr_val Value::number(double v)
   {
-    int intval = static_cast<int>(v);
-    if (intval == v)
+    if (std::isfinite(v) &&
+        v >= static_cast<double>(std::numeric_limits<std::int32_t>::min()) &&
+        v <= static_cast<double>(std::numeric_limits<std::int32_t>::max()))
     {
-      return Value::number(intval);
+      const int intval = static_cast<int>(v);
+      if (static_cast<double>(intval) == v)
+      {
+        return Value::number(intval);
+      }
     }
     rtvalues_constructed++;
     return std::make_shared<Value>(

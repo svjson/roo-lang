@@ -6,6 +6,9 @@
 #include "roo/runtime/value.h"
 
 #include <cctype>
+#include <cmath>
+#include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -13,12 +16,24 @@ namespace Roo
 {
   namespace
   {
+    sptr_val integral_number(std::int64_t value)
+    {
+      if (value >= std::numeric_limits<std::int32_t>::min() &&
+          value <= std::numeric_limits<std::int32_t>::max())
+      {
+        return Value::number(static_cast<int>(value));
+      }
+
+      return Value::number(
+        Value::Number{.num_type = Value::NumberType::LONG, .long_value = value});
+    }
+
     sptr_val parse_int_string(const std::string& value)
     {
       try
       {
         size_t parsed = 0;
-        const int result = std::stoi(value, &parsed);
+        const std::int64_t result = std::stoll(value, &parsed);
         while (parsed < value.size() &&
                std::isspace(static_cast<unsigned char>(value[parsed])))
         {
@@ -28,7 +43,7 @@ namespace Roo
         {
           return Constant::NIL;
         }
-        return Value::number(result);
+        return integral_number(result);
       }
       catch (const std::invalid_argument&)
       {
@@ -38,6 +53,26 @@ namespace Roo
       {
         return Constant::NIL;
       }
+    }
+
+    sptr_val float_to_integral_number(double value)
+    {
+      if (!std::isfinite(value))
+      {
+        return Constant::NIL;
+      }
+
+      const long double min =
+        static_cast<long double>(std::numeric_limits<std::int64_t>::min());
+      const long double max =
+        static_cast<long double>(std::numeric_limits<std::int64_t>::max());
+      const long double candidate = static_cast<long double>(value);
+      if (candidate < min || candidate > max)
+      {
+        return Constant::NIL;
+      }
+
+      return integral_number(static_cast<std::int64_t>(value));
     }
   } // namespace
 
@@ -97,11 +132,21 @@ namespace Roo
 
     if (Type::NUMBER.is_type_of(*obj))
     {
-      return Value::number(std::get<const Value::Number>(obj->value).get_int());
+      const Value::Number& num = std::get<const Value::Number>(obj->value);
+      switch (num.num_type)
+      {
+      case Value::NumberType::INT:
+        return Value::number(num.int_value);
+      case Value::NumberType::LONG:
+        return integral_number(num.long_value);
+      case Value::NumberType::FLOAT:
+      default:
+        return float_to_integral_number(num.float_value);
+      }
     }
     else if (Type::CHAR.is_type_of(*obj))
     {
-      return Value::number(static_cast<int>(std::get<char>(obj->value)));
+      return integral_number(static_cast<std::int64_t>(std::get<char>(obj->value)));
     }
     else if (Type::STRING.is_type_of(*obj))
     {
@@ -152,8 +197,8 @@ namespace Roo
         {
           return Constant::NIL;
         }
-        return Value::number(Value::Number{.num_type = Value::NumberType::FLOAT,
-                                           .float_value = result});
+        return Value::number(
+          Value::Number{.num_type = Value::NumberType::FLOAT, .float_value = result});
       }
       catch (const std::invalid_argument&)
       {
