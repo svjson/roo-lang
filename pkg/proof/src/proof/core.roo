@@ -1,5 +1,6 @@
 (ns proof.core
-  (:require proof.syntax))
+  (:require proof.syntax
+            [proof.reporter :as reporter]))
 
 (def tests [])
 (def current-failures [])
@@ -46,13 +47,11 @@
   (and (not (nil? namespace))
        (starts-with? namespace (str parent "."))))
 
-(defun test-name-text [test]
-  (str (:name test)))
-
 (defun qualified-test-name [test]
-  (if (nil? (:namespace test))
-    (test-name-text test)
-    (str (:namespace test) "/" (test-name-text test))))
+  (str (if-let [ns (:namespace test)]
+         (str ns "/")
+         "")
+       (-> test :name str)))
 
 (defun wildcard-match-from? [pattern pattern-index text text-index]
   (if (= pattern-index (count pattern))
@@ -76,7 +75,7 @@
   (let [pattern (:filter options)]
     (if (nil? pattern)
       true
-      (or (wildcard-match? pattern (test-name-text test))
+      (or (wildcard-match? pattern (-> test :name str))
           (wildcard-match? pattern (qualified-test-name test))))))
 
 (defun test-namespace-matches? [options test]
@@ -95,33 +94,8 @@
        (test-name-matches? options test)))
 
 (defun selected-tests [options]
-  (let [selection (if (nil? options) {} options)]
-    (filter tests
-            (fn [test]
-              (test-selected? selection test)))))
-
-(defun pass-result [name]
-  {:name name :status :pass})
-
-(defun fail-result [name failures]
-  {:name name
-   :status :fail
-   :message (:message (head failures))
-   :failures failures})
-
-(defun error-result [name message]
-  {:name name
-   :status :error
-   :message message})
-
-(defun elapsed-ms-since [start-ms]
-  (let [elapsed-ms (- (epoch-ms) start-ms)]
-    (if (< elapsed-ms 0)
-      0
-      elapsed-ms)))
-
-(defun with-elapsed-ms [result start-ms]
-  (assoc result :elapsed-ms (elapsed-ms-since start-ms)))
+  (filter tests
+          (fn [test] (test-selected? options test))))
 
 (defun record-failure! [message]
   (let [failure {:message message}]
@@ -131,165 +105,43 @@
 (defun run-test [test]
   (set! [current-failures] [])
   (let [start-ms (epoch-ms)
-        body-result (run-test-body (:body test))]
-    (with-elapsed-ms
-      (if (and (not (nil? body-result)) (:error body-result))
-        (error-result (:name test) (:message body-result))
-        (if (= 0 (count current-failures))
-          (pass-result (:name test))
-          (fail-result (:name test) current-failures)))
-      start-ms)))
+        body-result (run-test-body (:body test))
+        test-result {:name (:name test)
+                     :status (cond
+                               (= (:status body-result) :error) :error
+                               (> (count current-failures) 0) :fail
+                               true :pass)
+                     :elapsed-ms (max 0 (- (epoch-ms) start-ms))}]
+    (merge test-result
+           (case (:status test-result)
+             :fail {:message (:message (head current-failures))
+                    :failures current-failures}
+             :error {:message (:message body-result)}))))
 
-(defun status-count [results status]
-  (count (filter results (fn [r] (= (:status r) status)))))
-
-(defun result-summary [results]
-  (let [summary {:total (count results)
-                 :passed (status-count results :pass)
-                 :failed (status-count results :fail)}
-        errors (status-count results :error)]
-    (if (= 0 errors)
-      summary
-      (assoc summary :errored errors))))
-
-(defun summary-text [summary]
-  (str "proof: " (:passed summary) " passed, "
-       (:failed summary) " failed, "
-       (if (nil? (:errored summary))
-         ""
-         (str (:errored summary) " errored, "))
-       (:total summary) " total"))
-
-(defun divider [width]
-  (apply join (concat [""] (repeat width "-"))))
-
-(defun summary-divider [summary]
-  (divider (count (summary-text summary))))
-
-(defun report-summary [summary]
-  (let [line (summary-text summary)
-        separator (divider (count line))]
-    (prn separator)
-    (prn line)
-    (prn separator)
-    summary))
-
-(defun report-failure [failure]
-  (prn "    -" (:message failure))
-  failure)
-
-(defun report-failures [failures]
-  (map failures report-failure))
-
-(defun duration-suffix [options result]
-  (if (:durations? options)
-    (str " ("
-         (get result :elapsed-ms 0)
-         "ms)")
-    ""))
-
-(defun report-result [result & options &rest]
-  (prn "  "
-       (-> result :status name upper-case)
-       (:name result)
-       (duration-suffix options result)))
-
-(defun report-results [results & options &rest]
-  (map results
-       (fn [result]
-         (report-result result options))))
-
-(defun report [results & options &rest]
-  (report-results results options)
-  (report-summary (result-summary results))
-  results)
-
-(defun reporter [options]
-  (let [configured (:reporter options)]
-    (if (nil? configured)
-      :simple
-      configured)))
-
-(defun tree-reporter? [reporter-name]
-  (or (= reporter-name :tree)
-      (= reporter-name "tree")))
-
-(defun test-display-file [test]
-  (if (nil? (:display-file test))
-    (if (nil? (:file test))
-      (if (nil? (:namespace test))
-        "<inline>"
-        (str (:namespace test)))
-      (:file test))
-    (:display-file test)))
-
-(defun increment-file-count [counts test]
-  (let [file (test-display-file test)]
-    (assoc counts file (+ 1 (get counts file 0)))))
-
-(defun file-counts [tests-to-run]
-  (reduce tests-to-run {} increment-file-count))
-
-(defun initial-report-state [reporter-name tests-to-run]
-  (if (tree-reporter? reporter-name)
-    {:current-file nil
-     :indexes {}
-     :counts (file-counts tests-to-run)}
-    {}))
-
-(defun report-tree-result [state test result options]
-  (let [file (test-display-file test)
-        current-index (+ 1 (get (:indexes state) file 0))
-        total (get (:counts state) file)
-        glyph (if (= current-index total) "└──" "├──")
-        status ]
-    (if (not= file (:current-file state))
-      (prn file))
-    (prn glyph
-         (-> result :status name upper-case)
-         "-"
-         (:name result)
-         (duration-suffix options result))
-    (case (:status result)
-      :fail (report-failures (:failures result))
-      :error (prn "    -" (:message result)))
-    (assoc state
-           :current-file file
-           :indexes (assoc (:indexes state) file current-index))))
-
-(defun report-test-result [options state test result]
-  (if (tree-reporter? (reporter options))
-    (report-tree-result state test result options)
-    (do
-      (report-result result options)
-      state)))
-
-(defun run-and-report-test [results test]
-  (let [result (run-test test)]
-    (report-result result)
-    (append! results result)))
+(defun report-test-result [reporter test result options]
+  (assoc reporter
+         :state ((:reporter reporter) (:state reporter) test result options)))
 
 (defun run-and-report-selected-test [run-state test]
-  (let [result (run-test test)
-        report-state (report-test-result (:options run-state)
-                                         (:report-state run-state)
-                                         test
-                                         result)]
+  (let [result (run-test test)]
     (assoc run-state
-           :report-state report-state
+           :reporter (report-test-result (:reporter run-state)
+                                         test
+                                         result
+                                         (:options run-state))
            :results (append! (:results run-state) result))))
 
 (defun run-selected [options]
-  (let [selection (if (nil? options) {} options)
-        tests-to-run (selected-tests selection)
-        reporter-name (reporter selection)
-        run-state (reduce tests-to-run
-                          {:results []
-                           :options selection
-                           :report-state (initial-report-state reporter-name tests-to-run)}
-                          run-and-report-selected-test)
-        results (:results run-state)]
-    (report-summary (result-summary results))
+  (let [tests-to-run (selected-tests options)
+        results (-> tests-to-run
+                    (reduce {:results []
+                             :options options
+                             :reporter (reporter/make options tests-to-run)}
+                            run-and-report-selected-test)
+                    :results)]
+    (-> results
+        reporter/result-summary
+        reporter/print!)
     results))
 
 (defun run []

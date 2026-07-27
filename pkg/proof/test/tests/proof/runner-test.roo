@@ -1,0 +1,10 @@
+(ns proof.runner-test
+  (:require proof.core
+            [proof.runner :as runner]))
+
+(deftest normalizes-windows-style-display-paths
+  (is (= "test/app/checkout-test.roo"
+         (runner/relative-package-path
+           {:package-root "D:\\a\\roo-lang\\roo-lang"}
+           "D:\\a\\roo-lang\\roo-lang\\test\\app\\checkout-test.roo"))))
+

@@ -1,0 +1,29 @@
+(ns proof.reporter.tree
+  (:require [proof.reporter.common :as rc]))
+
+(defun increment-file-count [counts test]
+  (update-in counts
+             [(rc/test-display-file test)]
+             (fn [count] (inc (or count 0)))))
+
+(defun report-test-result [state test result options]
+  (let [file (rc/test-display-file test)
+        current-index (+ 1 (get (:indexes state) file 0))]
+    (if (not= file (:current-file state))
+      (prn file))
+    (apply prn
+           (concat [(if (= current-index (get (:counts state) file)) "└──" "├──")
+                    (-> result :status name upper-case)
+                    "-"
+                    (:name result)]
+                   (rc/duration-args options result)))
+    (rc/report-result-details result)
+    (assoc state
+           :current-file file
+           :indexes (assoc (:indexes state) file current-index))))
+
+(defun make [tests]
+  {:state {:current-file nil
+           :indexes {}
+           :counts (reduce tests {} increment-file-count)}
+   :reporter report-test-result})

@@ -1,0 +1,188 @@
+(ns proof.core-test
+  (:require proof.core))
+
+(defun assert-result [result expected-name expected-status]
+  (is (= expected-name (str (:name result))))
+  (is (= expected-status (:status result)))
+  (is (not (nil? (:elapsed-ms result))))
+  (is (not (< (:elapsed-ms result) 0))))
+
+(deftest registers-and-runs-tests
+  (clear!)
+  (deftest addition
+    (is (= 4 (+ 2 2))))
+  (deftest should-alias
+    (should true))
+  (deftest assert-alias
+    (assert true))
+  (let [results (run)]
+    (clear!)
+    (is (= 3 (count results)))
+    (assert-result (nth results 0) "addition" :pass)
+    (assert-result (nth results 1) "should-alias" :pass)
+    (assert-result (nth results 2) "assert-alias" :pass)))
+
+(deftest records-elapsed-ms-for-each-result
+  (let [results [(run-test {:name "passing-test" :body (fn [] (is true))})
+                 (run-test {:name "failing-test" :body (fn [] (is false))})
+                 (run-test {:name "error-test" :body (fn [] (/ 1 0))})]]
+    (is (= 3 (count results)))
+    (assert-result (nth results 0) "passing-test" :pass)
+    (assert-result (nth results 1) "failing-test" :fail)
+    (is (= "Expected truthy expression: false." (:message (nth results 1))))
+    (is (= [{:message "Expected truthy expression: false."}]
+           (:failures (nth results 1))))
+    (assert-result (nth results 2) "error-test" :error)
+    (is (contains-all? (:message (nth results 2)) "Division by zero"))))
+
+(deftest run-selected-filters-registered-tests-by-name
+  (clear!)
+  (deftest checkout-total
+    (is true))
+  (deftest profile-page
+    (is false))
+  (deftest checkout-discount
+    (is true))
+  (let [results (run-selected {:filter "*checkout*"})]
+    (clear!)
+    (is (= 2 (count results)))
+    (assert-result (nth results 0) "checkout-total" :pass)
+    (assert-result (nth results 1) "checkout-discount" :pass)))
+
+(deftest run-selected-filters-registered-tests-by-namespace
+  (clear!)
+  (register-test! 'completes-order (fn [] (is true)) "app.checkout")
+  (register-test! 'applies-discount (fn [] (is true)) "app.checkout")
+  (register-test! 'stores-card (fn [] (is true)) "app.checkout.card")
+  (register-test! 'updates-profile (fn [] (is false)) "app.profile")
+  (let [exact-results (run-selected {:namespace "app.checkout"})
+        subtree-results (run-selected {:namespace "app"
+                                       :include-sub-namespaces? true
+                                       :filter "*discount*"})
+        qualified-name-results (run-selected {:filter "app.checkout/*discount"})]
+    (clear!)
+    (is (= 2 (count exact-results)))
+    (assert-result (nth exact-results 0) "completes-order" :pass)
+    (assert-result (nth exact-results 1) "applies-discount" :pass)
+    (is (= 1 (count subtree-results)))
+    (assert-result (head subtree-results) "applies-discount" :pass)
+    (is (= 1 (count qualified-name-results)))
+    (assert-result (head qualified-name-results) "applies-discount" :pass)))
+
+(deftest returns-failure-results
+  (let [result (run-test {:name "bad-math"
+                          :body (fn [] (is (= 5 (+ 2 2))))})]
+    (clear!)
+    (assert-result result "bad-math" :fail)
+    (is (= "Expected 5, got 4." (:message result)))
+    (is (= [{:message "Expected 5, got 4."}] (:failures result)))))
+
+(deftest records-failed-assertions-before-later-passing-expressions
+  (let [result (run-test {:name "hidden-failure"
+                          :body (fn []
+                                  (is (= 1 2))
+                                  (expect (= 3 4)))})]
+    (clear!)
+    (assert-result result "hidden-failure" :fail)
+    (is (= "Expected 1, got 2." (:message result)))
+    (is (= [{:message "Expected 1, got 2."}] (:failures result)))))
+
+(deftest wrapped-assertion-abort-marks-test-failed-and-continues
+  (let [results [(run-test {:name "assertion-through-apply"
+                            :body (fn [] (apply (fn [] (is (= 1 2))) []))})
+                 (run-test {:name "after-wrapped-assertion"
+                            :body (fn [] (is true))})]]
+    (is (= 2 (count results)))
+    (assert-result (nth results 0) "assertion-through-apply" :fail)
+    (is (= "Expected 1, got 2." (:message (nth results 0))))
+    (is (= [{:message "Expected 1, got 2."}]
+           (:failures (nth results 0))))
+    (assert-result (nth results 1) "after-wrapped-assertion" :pass)))
+
+(deftest runtime-error-marks-test-error-and-continues
+  (let [results [(run-test {:name "division-error"
+                            :body (fn [] (/ 1 0))})
+                 (run-test {:name "after-error"
+                            :body (fn [] (is true))})]]
+    (is (= 2 (count results)))
+    (assert-result (nth results 0) "division-error" :error)
+    (is (contains-all? (:message (nth results 0)) "Division by zero"))
+    (assert-result (nth results 1) "after-error" :pass)))
+
+(deftest expect-records-failures-and-continues
+  (let [result (run-test {:name "multiple-expectations"
+                          :body (fn []
+                                  (expect (= 1 2))
+                                  (expect (= 3 4)))})]
+    (clear!)
+    (assert-result result "multiple-expectations" :fail)
+    (is (= "Expected 1, got 2." (:message result)))
+    (is (= [{:message "Expected 1, got 2."}
+            {:message "Expected 3, got 4."}]
+           (:failures result)))))
+
+(deftest scenario-forms-pass-results-between-phases
+  (clear!)
+  (deftest scenario
+    (given
+      {:value 4
+       :step 1})
+    (when [{:keys [value step]}]
+      (+ value step))
+    (then [result {:keys [value step]}]
+      (should (= result 5))
+      (should (= value 4))
+      (should (= step 1))))
+  (let [result (head (run))]
+    (clear!)
+    (assert-result result "scenario" :pass)))
+
+(deftest scenario-then-can-omit-given-result
+  (clear!)
+  (deftest scenario
+    (given
+      4)
+    (when [value]
+      (+ value 1))
+    (then [result]
+      (should (= result 5))))
+  (let [result (head (run))]
+    (clear!)
+    (assert-result result "scenario" :pass)))
+
+(deftest scenario-when-and-then-support-empty-arg-vectors
+  (clear!)
+  (deftest scenario
+    (given
+      4)
+    (when []
+      5)
+    (then []
+      (should true)))
+  (let [result (head (run))]
+    (clear!)
+    (assert-result result "scenario" :pass)))
+
+(deftest scenario-forms-execute-surrounding-and-interspersed-forms
+  (clear!)
+  (def events [])
+  (deftest scenario-order
+    (append! events :before)
+    (given
+      (append! events :given)
+      4)
+    (append! events :after-given)
+    (when [value]
+      (append! events :when)
+      (+ value 1))
+    (append! events :after-when)
+    (then [result given-value]
+      (append! events :then)
+      (should (= result 5))
+      (should (= given-value 4)))
+    (append! events :after))
+  (let [result (head (run))]
+    (clear!)
+    (assert-result result "scenario-order" :pass)
+    (is (= [:before :given :after-given :when :after-when :then :after]
+           events))))

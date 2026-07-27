@@ -226,29 +226,26 @@ test/app/checkout-test.roo
 └── FAIL - checkout-discount (0ms)
 ```
 
-The simple reporter is composed from ordinary Roo functions in `proof.core`:
+Reporter behavior is implemented in ordinary Roo namespaces:
 
-- `passed?`
-- `failed?`
-- `passed-results`
-- `failed-results`
-- `pass-count`
-- `fail-count`
+- `proof.reporter` contains reporter selection and summary printing.
+- `proof.reporter.common` contains shared result-detail, duration, and
+  file-display helpers.
+- `proof.reporter.simple` streams the default one-line-per-test report.
+- `proof.reporter.tree` streams grouped output by test file.
+
+`proof.reporter` exposes summary helpers:
+
+- `status-count`
 - `result-summary`
 - `summary-text`
-- `summary-divider`
-- `report-result`
-- `report-results`
-- `report-failure`
-- `report-failures`
-- `report-summary`
-- `report`
+- `print!`
 
 For example:
 
 ```lisp
-(let [results (run)
-      summary (result-summary results)]
+(let [results (run-selected {:filter "*checkout*"})
+      summary (proof.reporter/result-summary results)]
   (is (= 0 (:failed summary))))
 ```
 

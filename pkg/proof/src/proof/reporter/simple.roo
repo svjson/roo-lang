@@ -1,0 +1,24 @@
+(ns proof.reporter.simple
+  (:require [proof.reporter.common :as rc]))
+
+(defun report-result [result & options &rest]
+  (apply prn
+         (concat [" "
+                  (-> result :status name upper-case)
+                  (:name result)]
+                 (rc/duration-args options result)))
+  (rc/report-result-details result)
+  result)
+
+(defun report-results [results & options &rest]
+  (map results
+       (fn [result]
+         (report-result result options))))
+
+(defun report-test-result [state test result options]
+  (report-result result options)
+  state)
+
+(defun make [tests]
+  {:state {}
+   :reporter report-test-result})

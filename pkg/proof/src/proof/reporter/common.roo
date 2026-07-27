@@ -1,0 +1,23 @@
+(ns proof.reporter.common)
+
+(defun report-result-details [result]
+  (case (:status result)
+    :fail (map (:failures result)
+               (fn [failure]
+                 (prn "    -" (:message failure))))
+    :error (prn "    -" (:message result)))
+  result)
+
+(defun duration-args [options result]
+  (if (:durations? options)
+    [(str "(" (get result :elapsed-ms 0) "ms)")]
+    []))
+
+(defun test-display-file [test]
+  (if (nil? (:display-file test))
+    (if (nil? (:file test))
+      (if (nil? (:namespace test))
+        "<inline>"
+        (str (:namespace test)))
+      (:file test))
+    (:display-file test)))

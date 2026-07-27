@@ -1,0 +1,37 @@
+(ns proof.reporter
+  (:require [proof.reporter.simple :as simple]
+            [proof.reporter.tree :as tree]))
+
+(defun status-count [results status]
+  (count (filter results (fn [result] (= (:status result) status)))))
+
+(defun result-summary [results]
+  (let [summary {:total (count results)
+                 :passed (status-count results :pass)
+                 :failed (status-count results :fail)}
+        errors (status-count results :error)]
+    (if (= 0 errors)
+      summary
+      (assoc summary :errored errors))))
+
+(defun summary-text [summary]
+  (str "proof: " (:passed summary) " passed, "
+       (:failed summary) " failed, "
+       (if-let [error-count (:errored summary)]
+         (str error-count " errored, ")
+         "")
+       (:total summary) " total"))
+
+(defun print! [summary]
+  (let [report-text (summary-text summary)
+        separator (apply join (concat [""]
+                                      (repeat (count report-text) "-")))]
+    (prn separator)
+    (prn report-text)
+    (prn separator)
+    summary))
+
+(defun make [options tests-to-run]
+  (case (get options :reporter :simple)
+    :tree (tree/make tests-to-run)
+    :default (simple/make tests-to-run)))

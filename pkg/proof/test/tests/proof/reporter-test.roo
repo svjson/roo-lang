@@ -1,0 +1,17 @@
+(ns proof.reporter-test
+  (:require proof.core
+            [proof.reporter :as reporter]))
+
+(deftest summarizes-result-sets
+  (let [results [{:name :passing-test :status :pass}
+                 {:name :failing-test
+                  :status :fail
+                  :message "Expected true."
+                  :failures [{:message "Expected true."}]}]]
+    (is (= {:total 2 :passed 1 :failed 1}
+           (reporter/result-summary results)))
+    (is (= 1 (reporter/status-count results :pass)))
+    (is (= 1 (reporter/status-count results :fail)))
+    (is (= "proof: 1 passed, 1 failed, 2 total"
+           (reporter/summary-text {:total 2 :passed 1 :failed 1})))))
+

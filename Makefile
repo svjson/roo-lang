@@ -182,6 +182,7 @@ test\:package: build
 test\:proof: build
 	cmake --build build --target testproof
 	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
+	cd $(NATIVE_PACKAGE_STAGE)/proof/test && $(CURDIR)/build/roo proof
 
 test\:workbook: build stage-native-packages
 	cd $(NATIVE_PACKAGE_STAGE)/workbook/test && $(CURDIR)/build/roo proof
