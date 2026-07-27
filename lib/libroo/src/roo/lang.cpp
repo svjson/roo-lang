@@ -127,6 +127,7 @@ namespace Roo
     lang_symbols.emplace("let", LetForm::make());
     lang_symbols.emplace("lower-case", LowerCaseFunction::make());
     lang_symbols.emplace("map", MapFunction::make());
+    lang_symbols.emplace("map?", MapPFunction::make());
     lang_symbols.emplace("max", MaxFunction::make());
     lang_symbols.emplace("merge", MergeFunction::make());
     lang_symbols.emplace("min", MinFunction::make());
@@ -164,8 +165,9 @@ namespace Roo
     lang_symbols.emplace("rnd", RndFunction::make());
     lang_symbols.emplace("select-keys", SelectKeysFunction::make());
     lang_symbols.emplace("seq?", SeqPFunction::make());
-    lang_symbols.emplace("seq-like?", SeqLikePFunction::make());
+    lang_symbols.emplace("seqable?", SeqablePFunction::make());
     lang_symbols.emplace("seq-match", SeqMatchFunction::make());
+    lang_symbols.emplace("sequential?", SequentialPFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());
     lang_symbols.emplace("some?", SomeFunction::make());

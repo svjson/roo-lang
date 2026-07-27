@@ -144,12 +144,12 @@ namespace Roo
     inline const MultiRef SEQ(std::vector<const TypeRef*>{&LIST, &VECTOR, &MAP, &HOST_SEQ},
                               "Seq");
     inline const MultiRef STRICT_SEQ(std::vector<const TypeRef*>{&LIST, &VECTOR, &HOST_SEQ},
-                                     "Seq");
+                                     "Sequential");
     inline const MultiRef SEQ_OR_STRING(std::vector<const TypeRef*>({&SEQ, &STRING}),
-                                        "SeqLike");
+                                        "Seqable");
     inline const MultiRef STRICT_SEQ_OR_STRING(std::vector<const TypeRef*>({&STRICT_SEQ,
                                                                             &STRING}),
-                                               "SeqLike");
+                                               "Sequential|String");
     inline const MultiRef EXEC(std::vector<const TypeRef*>{&FUNCTION, &MACRO, &KEYWORD},
                                "Exec");
     inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP,

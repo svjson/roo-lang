@@ -71,6 +71,15 @@ namespace Roo
     return *args[0] == *args[1] ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
+  /** MapPFunction - map? */
+  FUNC_IMPL(MapPFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&MapPFunction::exec_map))))
+
+  EXEC_BODY(MapPFunction, exec_map)
+  {
+    return args[0]->type == Value::Type::MAP ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+  }
+
   /** SeqPFunction - seq? */
   FUNC_IMPL(SeqPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&SeqPFunction::exec_seq))))
@@ -81,12 +90,24 @@ namespace Roo
     return Type::SEQ.is_type_of(*args[0]) ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** SeqLikePFunction - seq-like? */
-  FUNC_IMPL(SeqLikePFunction,
+  /** SequentialPFunction - sequential? */
+  FUNC_IMPL(SequentialPFunction,
             SIG((FN_ARGS((&Type::ANY)),
-                 EXEC_DISPATCH(&SeqLikePFunction::exec_seq_like))))
+                 EXEC_DISPATCH(&SequentialPFunction::exec_sequential))))
 
-  EXEC_BODY(SeqLikePFunction, exec_seq_like)
+  EXEC_BODY(SequentialPFunction, exec_sequential)
+  {
+    if (args[0]->type == Value::Type::NIL) return Constant::BOOL_FALSE;
+    return Type::STRICT_SEQ.is_type_of(*args[0]) ? Constant::BOOL_TRUE
+                                                 : Constant::BOOL_FALSE;
+  }
+
+  /** SeqablePFunction - seqable? */
+  FUNC_IMPL(SeqablePFunction,
+            SIG((FN_ARGS((&Type::ANY)),
+                 EXEC_DISPATCH(&SeqablePFunction::exec_seqable))))
+
+  EXEC_BODY(SeqablePFunction, exec_seqable)
   {
     if (args[0]->type == Value::Type::NIL) return Constant::BOOL_FALSE;
     return Type::SEQ_OR_STRING.is_type_of(*args[0]) ? Constant::BOOL_TRUE

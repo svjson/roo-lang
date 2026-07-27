@@ -120,20 +120,94 @@ namespace Roo
   FUNC(NotEqualsFunction, not_equals)
 
   /*!
+   * @brief Query if a value is a map.
+   *
+   * Usage:
+   * @code
+   * (map? {:name "Ada"})
+   * => true
+   *
+   * (map? [:name "Ada"])
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value whose type to query.                                   |
+   */
+  FUNC(MapPFunction, map)
+
+  /*!
    * @brief Query if a value is a Roo sequence.
    *
    * Lists, vectors, maps, and host sequences are sequences. Strings are not
-   * sequences; use @code seq-like? @endcode when strings should count as
+   * sequences; use @code seqable? @endcode when strings should count as
    * character sequences.
+   *
+   * Usage:
+   * @code
+   * (seq? [1 2 3])
+   * => true
+   *
+   * (seq? {:a 1})
+   * => true
+   *
+   * (seq? "abc")
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value whose type to query.                                   |
    */
   FUNC(SeqPFunction, seq)
 
   /*!
-   * @brief Query if a value can be treated as a sequence by seq-like functions.
+   * @brief Query if a value is a sequential collection.
+   *
+   * Lists, vectors, and host sequences are sequential. Maps and strings are
+   * not sequential.
+   *
+   * Usage:
+   * @code
+   * (sequential? [1 2 3])
+   * => true
+   *
+   * (sequential? '(1 2 3))
+   * => true
+   *
+   * (sequential? {:a 1})
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value whose type to query.                                   |
+   */
+  FUNC(SequentialPFunction, sequential)
+
+  /*!
+   * @brief Query if a value can be consumed by sequence functions.
    *
    * This includes every value accepted by @code seq? @endcode plus strings.
+   *
+   * Usage:
+   * @code
+   * (seqable? [1 2 3])
+   * => true
+   *
+   * (seqable? {:a 1})
+   * => true
+   *
+   * (seqable? "abc")
+   * => true
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The value whose type to query.                                   |
    */
-  FUNC(SeqLikePFunction, seq_like)
+  FUNC(SeqablePFunction, seqable)
 
   /*!
    * @brief Tests if the result of an expression is nil.
