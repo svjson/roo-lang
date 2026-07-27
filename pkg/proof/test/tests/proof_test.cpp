@@ -118,6 +118,19 @@ namespace
       expect_elapsed_ms(result);
     }
   }
+
+  void expect_duration_output_line(const std::string& output, const std::string& prefix)
+  {
+    const auto line_start = output.find(prefix + " (");
+    ASSERT_NE(line_start, std::string::npos) << output;
+
+    const auto line_end = output.find('\n', line_start);
+    ASSERT_NE(line_end, std::string::npos) << output;
+
+    const auto timing_end = output.find("ms)", line_start);
+    ASSERT_NE(timing_end, std::string::npos) << output;
+    EXPECT_LT(timing_end, line_end);
+  }
 } // namespace
 
 TEST(ProofPackage, registers_and_runs_tests_from_load_path)
@@ -207,6 +220,41 @@ TEST(ProofPackage, records_elapsed_ms_for_each_test_result)
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
             "{:name error-test :status :error :message \"Division by zero\"}]");
   expect_elapsed_ms_for_results(results);
+}
+
+TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-simple-durations-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest duration-pass
+      (is true))
+    (deftest duration-fail
+      (is false))
+    (deftest duration-error
+      (/ 1 0))
+  )");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(run-selected {:durations? true})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(without_elapsed_ms_string(results),
+            "[{:name duration-pass :status :pass} "
+            "{:name duration-fail :status :fail "
+            ":message \"Expected truthy expression: false.\" "
+            ":failures [{:message \"Expected truthy expression: false.\"}]} "
+            "{:name duration-error :status :error :message \"Division by zero\"}]");
+  expect_elapsed_ms_for_results(results);
+  expect_duration_output_line(output, "  PASS duration-pass");
+  expect_duration_output_line(output, "  FAIL duration-fail");
+  expect_duration_output_line(output, "  ERROR duration-error");
 }
 
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
@@ -436,6 +484,42 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
             std::string::npos);
 }
 
+TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-tree-durations-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest duration-pass
+      (is true))
+    (deftest duration-fail
+      (is false))
+    (deftest duration-error
+      (/ 1 0))
+  )");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(run-selected {:reporter :tree :durations? true})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(without_elapsed_ms_string(results),
+            "[{:name duration-pass :status :pass} "
+            "{:name duration-fail :status :fail "
+            ":message \"Expected truthy expression: false.\" "
+            ":failures [{:message \"Expected truthy expression: false.\"}]} "
+            "{:name duration-error :status :error :message \"Division by zero\"}]");
+  expect_elapsed_ms_for_results(results);
+  EXPECT_NE(output.find("proof.package-tree-durations-test\n"), std::string::npos);
+  expect_duration_output_line(output, "├── PASS - duration-pass");
+  expect_duration_output_line(output, "├── FAIL - duration-fail");
+  expect_duration_output_line(output, "└── ERROR - duration-error");
+}
+
 TEST(ProofPackage, runner_merges_cli_args_over_package_config)
 {
   const auto root = fresh_proof_fixture_root("cli-config");
@@ -467,16 +551,19 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
   testing::internal::CaptureStdout();
   auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
                               " :config {:test-roots [\"test\"] "
-                              ":filter \"ignored*\"} "
+                              ":filter \"ignored*\" "
+                              ":durations? true} "
                               ":args [\"--test-root\" \"spec\" "
                               "\"--filter=checkout-discount\" "
-                              "\"--reporter\" \"tree\"]})");
+                              "\"--reporter\" \"tree\" "
+                              "\"--no-durations\"]})");
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-discount :status :pass}]");
   EXPECT_NE(output.find("spec/app/checkout-test.roo\n"
                         "└── PASS - checkout-discount\n"),
             std::string::npos);
+  EXPECT_EQ(output.find("checkout-discount ("), std::string::npos);
 }
 
 TEST(ProofPackage, runner_prints_help_without_loading_tests)
@@ -506,6 +593,7 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
   EXPECT_EQ(without_elapsed_ms_string(results), "nil");
   EXPECT_NE(output.find("Usage: roo proof [options]\n"), std::string::npos);
   EXPECT_NE(output.find("--reporter simple|tree"), std::string::npos);
+  EXPECT_NE(output.find("--durations"), std::string::npos);
   EXPECT_EQ(output.find("should-not-run"), std::string::npos);
   EXPECT_EQ(output.find("FAIL"), std::string::npos);
 }
@@ -529,13 +617,12 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
     plan,
     "proof",
     "run",
-    {"--reporter=tree", "--filter", "discovered-proof"});
+    {"--reporter=tree", "--durations", "--filter", "discovered-proof"});
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name discovered-proof :status :pass}]");
-  EXPECT_NE(output.find("test/smoke/discovered.roo\n"
-                        "└── PASS - discovered-proof\n"),
-            std::string::npos);
+  EXPECT_NE(output.find("test/smoke/discovered.roo\n"), std::string::npos);
+  expect_duration_output_line(output, "└── PASS - discovered-proof");
 }
 
 TEST(ProofPackage, summarizes_result_sets_in_roo)

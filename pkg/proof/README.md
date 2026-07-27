@@ -185,6 +185,17 @@ The default reporter is `:simple`, which streams one line per test as it runs:
   ERROR division-error
 ```
 
+Set `:durations? true` to include each test's elapsed time in the streamed
+report:
+
+```lisp
+(run-selected {:durations? true})
+```
+
+```text
+  PASS addition (0ms)
+```
+
 Package-driven runs can use the tree reporter:
 
 ```lisp
@@ -196,7 +207,7 @@ The same setting can be supplied on the command line when running proof as a
 package tool:
 
 ```sh
-roo proof --reporter tree
+roo proof --reporter tree --durations
 ```
 
 That groups streamed results by source file:
@@ -205,6 +216,14 @@ That groups streamed results by source file:
 test/app/checkout-test.roo
 ├── PASS - checkout-total
 └── FAIL - checkout-discount
+```
+
+With durations enabled:
+
+```text
+test/app/checkout-test.roo
+├── PASS - checkout-total (1ms)
+└── FAIL - checkout-discount (0ms)
 ```
 
 The simple reporter is composed from ordinary Roo functions in `proof.core`:
@@ -310,6 +329,7 @@ Supported flags are:
 - `--namespace <namespace>` or `--namespace=<namespace>`
 - `--include-sub-namespaces`, `--include-sub-namespaces=true|false`, and `--no-include-sub-namespaces`
 - `--reporter simple|tree` or `--reporter=simple|tree`
+- `--durations`, `--durations=true|false`, and `--no-durations`
 
 Proof tests can also be run manually from Roo code by loading test namespaces and
 calling `(run)` yourself.

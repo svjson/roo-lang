@@ -30,7 +30,8 @@
   (prn "  --namespace <namespace>            Select tests in a namespace.")
   (prn "  --include-sub-namespaces           Include child namespaces with --namespace.")
   (prn "  --no-include-sub-namespaces        Exclude child namespaces with --namespace.")
-  (prn "  --reporter simple|tree             Select the test reporter."))
+  (prn "  --reporter simple|tree             Select the test reporter.")
+  (prn "  --durations                        Print each test duration."))
 
 (defun flag-value [arg flag]
   (let [prefix (str flag "=")]
@@ -66,6 +67,8 @@
           namespace (flag-value arg "--namespace")
           test-root (flag-value arg "--test-root")
           test-roots (flag-value arg "--test-roots")
+          durations (flag-value arg "--durations")
+          durations-p (flag-value arg "--durations?")
           include-sub-namespaces (flag-value arg "--include-sub-namespaces")
           include-sub-namespaces-p (flag-value arg "--include-sub-namespaces?")]
       (cond
@@ -92,6 +95,20 @@
 
         (not (nil? test-roots))
         (parse-proof-args-from args (+ index 1) config (append! roots test-roots))
+
+        (not (nil? durations))
+        (parse-proof-args-from
+          args
+          (+ index 1)
+          (assoc config :durations? (cli-bool durations))
+          roots)
+
+        (not (nil? durations-p))
+        (parse-proof-args-from
+          args
+          (+ index 1)
+          (assoc config :durations? (cli-bool durations-p))
+          roots)
 
         (not (nil? include-sub-namespaces))
         (parse-proof-args-from
@@ -133,6 +150,18 @@
                                config
                                (append! roots (nth args (+ index 1))))
 
+        (or (= arg "--durations") (= arg "--durations?"))
+        (if (next-value? args index)
+          (parse-proof-args-from
+            args
+            (+ index 2)
+            (assoc config :durations? (cli-bool (nth args (+ index 1))))
+            roots)
+          (parse-proof-args-from args
+                                 (+ index 1)
+                                 (assoc config :durations? true)
+                                 roots))
+
         (or (= arg "--include-sub-namespaces") (= arg "--include-sub-namespaces?"))
         (if (next-value? args index)
           (parse-proof-args-from
@@ -149,6 +178,12 @@
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :include-sub-namespaces? false)
+                               roots)
+
+        (= arg "--no-durations")
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config :durations? false)
                                roots)
 
         :else

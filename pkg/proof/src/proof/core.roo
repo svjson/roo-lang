@@ -133,45 +133,21 @@
   (let [start-ms (epoch-ms)
         body-result (run-test-body (:body test))]
     (with-elapsed-ms
-      (if (and (not (nil? body-result)) (errored? body-result))
+      (if (and (not (nil? body-result)) (:error body-result))
         (error-result (:name test) (:message body-result))
         (if (= 0 (count current-failures))
           (pass-result (:name test))
           (fail-result (:name test) current-failures)))
       start-ms)))
 
-(defun passed? [result]
-  (= (:status result) :pass))
-
-(defun failed? [result]
-  (= (:status result) :fail))
-
-(defun errored? [result]
-  (= (:status result) :error))
-
-(defun passed-results [results]
-  (filter results passed?))
-
-(defun failed-results [results]
-  (filter results failed?))
-
-(defun error-results [results]
-  (filter results errored?))
-
-(defun pass-count [results]
-  (count (passed-results results)))
-
-(defun fail-count [results]
-  (count (failed-results results)))
-
-(defun error-count [results]
-  (count (error-results results)))
+(defun status-count [results status]
+  (count (filter results (fn [r] (= (:status r) status)))))
 
 (defun result-summary [results]
   (let [summary {:total (count results)
-                 :passed (pass-count results)
-                 :failed (fail-count results)}
-        errors (error-count results)]
+                 :passed (status-count results :pass)
+                 :failed (status-count results :fail)}
+        errors (status-count results :error)]
     (if (= 0 errors)
       summary
       (assoc summary :errored errors))))
@@ -205,23 +181,26 @@
 (defun report-failures [failures]
   (map failures report-failure))
 
-(defun report-result [result]
-  (if (passed? result)
-    (prn "  PASS" (:name result))
-    (if (failed? result)
-      (do
-        (prn "  FAIL" (:name result))
-        (report-failures (:failures result)))
-      (do
-        (prn "  ERROR" (:name result))
-        (prn "    -" (:message result)))))
-  result)
+(defun duration-suffix [options result]
+  (if (:durations? options)
+    (str " ("
+         (get result :elapsed-ms 0)
+         "ms)")
+    ""))
 
-(defun report-results [results]
-  (map results report-result))
+(defun report-result [result & options &rest]
+  (prn "  "
+       (-> result :status name upper-case)
+       (:name result)
+       (duration-suffix options result)))
 
-(defun report [results]
-  (report-results results)
+(defun report-results [results & options &rest]
+  (map results
+       (fn [result]
+         (report-result result options))))
+
+(defun report [results & options &rest]
+  (report-results results options)
   (report-summary (result-summary results))
   results)
 
@@ -258,30 +237,31 @@
      :counts (file-counts tests-to-run)}
     {}))
 
-(defun report-tree-result [state test result]
+(defun report-tree-result [state test result options]
   (let [file (test-display-file test)
         current-index (+ 1 (get (:indexes state) file 0))
         total (get (:counts state) file)
         glyph (if (= current-index total) "└──" "├──")
-        status (if (passed? result)
-                 "PASS"
-                 (if (failed? result) "FAIL" "ERROR"))]
+        status ]
     (if (not= file (:current-file state))
       (prn file))
-    (prn (str glyph " " status " - " (:name result)))
-    (if (failed? result)
-      (report-failures (:failures result)))
-    (if (errored? result)
-      (prn "    -" (:message result)))
+    (prn glyph
+         (-> result :status name upper-case)
+         "-"
+         (:name result)
+         (duration-suffix options result))
+    (case (:status result)
+      :fail (report-failures (:failures result))
+      :error (prn "    -" (:message result)))
     (assoc state
            :current-file file
            :indexes (assoc (:indexes state) file current-index))))
 
-(defun report-test-result [reporter-name state test result]
-  (if (tree-reporter? reporter-name)
-    (report-tree-result state test result)
+(defun report-test-result [options state test result]
+  (if (tree-reporter? (reporter options))
+    (report-tree-result state test result options)
     (do
-      (report-result result)
+      (report-result result options)
       state)))
 
 (defun run-and-report-test [results test]
@@ -291,7 +271,7 @@
 
 (defun run-and-report-selected-test [run-state test]
   (let [result (run-test test)
-        report-state (report-test-result (:reporter run-state)
+        report-state (report-test-result (:options run-state)
                                          (:report-state run-state)
                                          test
                                          result)]
@@ -305,7 +285,7 @@
         reporter-name (reporter selection)
         run-state (reduce tests-to-run
                           {:results []
-                           :reporter reporter-name
+                           :options selection
                            :report-state (initial-report-state reporter-name tests-to-run)}
                           run-and-report-selected-test)
         results (:results run-state)]
