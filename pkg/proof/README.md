@@ -147,21 +147,24 @@ If a phase does not need a value, omit it from the argument vector:
 `run` returns a vector of result maps:
 
 ```lisp
-[{:name addition :status :pass}
+[{:name addition :status :pass :elapsed-ms 0}
  {:name bad-math
   :status :fail
+  :elapsed-ms 1
   :message "Expected 5, got 4."
   :failures [{:message "Expected 5, got 4."}]}]
 ```
 
-A passing result has:
+Every result has:
 
 - `:name`
-- `:status :pass`
+- `:status`
+- `:elapsed-ms`, the test body execution time in milliseconds
+
+A passing result has `:status :pass`.
 
 A failing result has:
 
-- `:name`
 - `:status :fail`
 - `:message`, the first failure message
 - `:failures`, all recorded failures for that test
@@ -169,7 +172,6 @@ A failing result has:
 If a test body throws an unexpected runtime error, proof records an error result
 and continues with the remaining tests:
 
-- `:name`
 - `:status :error`
 - `:message`, the runtime error text
 

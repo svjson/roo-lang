@@ -114,6 +114,15 @@
    :status :error
    :message message})
 
+(defun elapsed-ms-since [start-ms]
+  (let [elapsed-ms (- (epoch-ms) start-ms)]
+    (if (< elapsed-ms 0)
+      0
+      elapsed-ms)))
+
+(defun with-elapsed-ms [result start-ms]
+  (assoc result :elapsed-ms (elapsed-ms-since start-ms)))
+
 (defun record-failure! [message]
   (let [failure {:message message}]
     (append! current-failures failure)
@@ -121,12 +130,15 @@
 
 (defun run-test [test]
   (set! [current-failures] [])
-  (let [body-result (run-test-body (:body test))]
-    (if (and (not (nil? body-result)) (errored? body-result))
-      (error-result (:name test) (:message body-result))
-      (if (= 0 (count current-failures))
-        (pass-result (:name test))
-        (fail-result (:name test) current-failures)))))
+  (let [start-ms (epoch-ms)
+        body-result (run-test-body (:body test))]
+    (with-elapsed-ms
+      (if (and (not (nil? body-result)) (errored? body-result))
+        (error-result (:name test) (:message body-result))
+        (if (= 0 (count current-failures))
+          (pass-result (:name test))
+          (fail-result (:name test) current-failures)))
+      start-ms)))
 
 (defun passed? [result]
   (= (:status result) :pass))

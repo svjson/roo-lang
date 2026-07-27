@@ -1,9 +1,11 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include <roo/io/dir_root_file_system.h>
 #include <roo/runtime.h>
+#include <roo/runtime/dict.h>
 
 #include <gtest/gtest.h>
 #include <proof/native.h>
@@ -37,6 +39,85 @@ namespace
   {
     return Roo::Package::Application::source_string_literal(value);
   }
+
+  bool elapsed_ms_key(const Roo::sptr_val& value)
+  {
+    return value && value->type == Roo::Value::Type::KEYWORD && value->str() == "elapsed-ms";
+  }
+
+  Roo::sptr_val without_elapsed_ms(const Roo::sptr_val& value)
+  {
+    if (!value)
+    {
+      return value;
+    }
+
+    if (value->type == Roo::Value::Type::VECTOR)
+    {
+      Roo::sptr_val_v elements;
+      for (const auto& element : value->elements())
+      {
+        elements.push_back(without_elapsed_ms(element));
+      }
+      return Roo::Value::vector(elements);
+    }
+
+    if (value->type == Roo::Value::Type::LIST)
+    {
+      Roo::sptr_val_v elements;
+      for (const auto& element : value->elements())
+      {
+        elements.push_back(without_elapsed_ms(element));
+      }
+      return Roo::Value::list(elements);
+    }
+
+    if (value->type == Roo::Value::Type::MAP)
+    {
+      Roo::sptr_val_v elements;
+      const auto& map_elements = value->elements();
+      for (size_t i = 0; i < map_elements.size(); i += 2)
+      {
+        if (elapsed_ms_key(map_elements[i]))
+        {
+          continue;
+        }
+        elements.push_back(map_elements[i]);
+        if (i + 1 < map_elements.size())
+        {
+          elements.push_back(without_elapsed_ms(map_elements[i + 1]));
+        }
+      }
+      return Roo::Value::map(elements);
+    }
+
+    return value;
+  }
+
+  std::string without_elapsed_ms_string(const Roo::sptr_val& value)
+  {
+    return without_elapsed_ms(value)->to_string();
+  }
+
+  void expect_elapsed_ms(const Roo::sptr_val& result)
+  {
+    auto [found, elapsed] =
+      Roo::Dict::find_property(result, Roo::Value::keyword("elapsed-ms"));
+    ASSERT_TRUE(found);
+    ASSERT_NE(elapsed, nullptr);
+    ASSERT_EQ(elapsed->type, Roo::Value::Type::NUMBER);
+    EXPECT_GE(elapsed->num().get_double(), 0);
+  }
+
+  void expect_elapsed_ms_for_results(const Roo::sptr_val& results)
+  {
+    ASSERT_NE(results, nullptr);
+    ASSERT_EQ(results->type, Roo::Value::Type::VECTOR);
+    for (const auto& result : results->elements())
+    {
+      expect_elapsed_ms(result);
+    }
+  }
 } // namespace
 
 TEST(ProofPackage, registers_and_runs_tests_from_load_path)
@@ -55,9 +136,10 @@ TEST(ProofPackage, registers_and_runs_tests_from_load_path)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name addition :status :pass} {:name should-alias :status :pass} "
             "{:name assert-alias :status :pass}]");
+  expect_elapsed_ms_for_results(results);
 }
 
 TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
@@ -81,9 +163,10 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
   auto results = runtime.eval("(run)");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name first-stream-marker :status :pass} "
             "{:name second-stream-marker :status :pass}]");
+  expect_elapsed_ms_for_results(results);
 
   const auto first_body = output.find("first-body\n");
   const auto first_result = output.find("  PASS first-stream-marker\n");
@@ -94,6 +177,36 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
   ASSERT_NE(second_body, std::string::npos);
   EXPECT_LT(first_body, first_result);
   EXPECT_LT(first_result, second_body);
+}
+
+TEST(ProofPackage, records_elapsed_ms_for_each_test_result)
+{
+  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-elapsed-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (deftest passing-test
+      (is true))
+    (deftest failing-test
+      (is false))
+    (deftest error-test
+      (/ 1 0))
+  )");
+
+  auto results = runtime.eval("(run)");
+
+  EXPECT_EQ(without_elapsed_ms_string(results),
+            "[{:name passing-test :status :pass} "
+            "{:name failing-test :status :fail "
+            ":message \"Expected truthy expression: false.\" "
+            ":failures [{:message \"Expected truthy expression: false.\"}]} "
+            "{:name error-test :status :error :message \"Division by zero\"}]");
+  expect_elapsed_ms_for_results(results);
 }
 
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
@@ -115,7 +228,8 @@ TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(), "[{:name dynamic-addition :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name dynamic-addition :status :pass}]");
+  expect_elapsed_ms_for_results(results);
 }
 
 TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
@@ -145,7 +259,9 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
   auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
                               " :config {:test-roots [\"test\"]}})");
 
-  EXPECT_EQ(results->to_string(), "[{:name fixture-loads-once :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results),
+            "[{:name fixture-loads-once :status :pass}]");
+  expect_elapsed_ms_for_results(results);
 }
 
 TEST(ProofPackage, runner_normalizes_windows_style_display_paths)
@@ -185,8 +301,9 @@ TEST(ProofPackage, run_selected_filters_registered_tests_by_name)
 
   auto results = runtime.eval(R"((run-selected {:filter "*checkout*"}))");
 
-  EXPECT_EQ(results->to_string(),
-            "[{:name checkout-total :status :pass} {:name checkout-discount :status :pass}]");
+  EXPECT_EQ(
+    without_elapsed_ms_string(results),
+    "[{:name checkout-total :status :pass} {:name checkout-discount :status :pass}]");
 }
 
 TEST(ProofPackage, run_selected_filters_registered_tests_by_namespace)
@@ -223,10 +340,16 @@ TEST(ProofPackage, run_selected_filters_registered_tests_by_namespace)
   auto qualified_name_results =
     runtime.eval(R"((proof.core/run-selected {:filter "app.checkout/*discount"}))");
 
-  EXPECT_EQ(exact_results->to_string(),
-            "[{:name completes-order :status :pass} {:name applies-discount :status :pass}]");
-  EXPECT_EQ(subtree_results->to_string(), "[{:name applies-discount :status :pass}]");
-  EXPECT_EQ(qualified_name_results->to_string(), "[{:name applies-discount :status :pass}]");
+  EXPECT_EQ(
+    without_elapsed_ms_string(exact_results),
+    "[{:name completes-order :status :pass} {:name applies-discount :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(subtree_results),
+            "[{:name applies-discount :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(qualified_name_results),
+            "[{:name applies-discount :status :pass}]");
+  expect_elapsed_ms_for_results(exact_results);
+  expect_elapsed_ms_for_results(subtree_results);
+  expect_elapsed_ms_for_results(qualified_name_results);
 }
 
 TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
@@ -260,7 +383,7 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
                               " :config {:test-roots [\"test\"] "
                               ":namespace \"app.checkout-test\"}})");
 
-  EXPECT_EQ(results->to_string(), "[{:name checkout-total :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-total :status :pass}]");
   EXPECT_EQ(runtime.eval("app.admin-test/loaded?")->to_string(), "true");
 }
 
@@ -298,7 +421,7 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
                               ":reporter :tree}})");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name checkout-total :status :pass} "
             "{:name checkout-discount :status :fail :message \"Expected 5, got 4.\" "
             ":failures [{:message \"Expected 5, got 4.\"}]} "
@@ -350,7 +473,7 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
                               "\"--reporter\" \"tree\"]})");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(results->to_string(), "[{:name checkout-discount :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-discount :status :pass}]");
   EXPECT_NE(output.find("spec/app/checkout-test.roo\n"
                         "└── PASS - checkout-discount\n"),
             std::string::npos);
@@ -380,7 +503,7 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
                               ":args [\"--help\"]})");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(results->to_string(), "nil");
+  EXPECT_EQ(without_elapsed_ms_string(results), "nil");
   EXPECT_NE(output.find("Usage: roo proof [options]\n"), std::string::npos);
   EXPECT_NE(output.find("--reporter simple|tree"), std::string::npos);
   EXPECT_EQ(output.find("should-not-run"), std::string::npos);
@@ -409,7 +532,7 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
     {"--reporter=tree", "--filter", "discovered-proof"});
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(results->to_string(), "[{:name discovered-proof :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name discovered-proof :status :pass}]");
   EXPECT_NE(output.find("test/smoke/discovered.roo\n"
                         "└── PASS - discovered-proof\n"),
             std::string::npos);
@@ -459,7 +582,7 @@ TEST(ProofPackage, returns_failure_results)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name bad-math :status :fail :message \"Expected 5, got 4.\" "
             ":failures [{:message \"Expected 5, got 4.\"}]}]");
 }
@@ -482,7 +605,7 @@ TEST(ProofPackage, records_failed_assertions_before_later_passing_expressions)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name hidden-failure :status :fail :message \"Expected 1, got 2.\" "
             ":failures [{:message \"Expected 1, got 2.\"}]}]");
 }
@@ -507,7 +630,7 @@ TEST(ProofPackage, wrapped_assertion_abort_marks_test_failed_and_continues)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name assertion-through-apply :status :fail "
             ":message \"Expected 1, got 2.\" "
             ":failures [{:message \"Expected 1, got 2.\"}]} "
@@ -535,15 +658,14 @@ TEST(ProofPackage, runtime_error_marks_test_error_and_continues)
   auto results = runtime.eval("(run)");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name division-error :status :error :message \"Division by zero\"} "
             "{:name after-error :status :pass}]");
   EXPECT_NE(output.find("  ERROR division-error\n"
                         "    - Division by zero\n"),
             std::string::npos);
   EXPECT_NE(output.find("  PASS after-error\n"), std::string::npos);
-  EXPECT_NE(output.find("proof: 1 passed, 0 failed, 1 errored, 2 total"),
-            std::string::npos);
+  EXPECT_NE(output.find("proof: 1 passed, 0 failed, 1 errored, 2 total"), std::string::npos);
 }
 
 TEST(ProofPackage, expect_records_failures_and_continues)
@@ -564,7 +686,7 @@ TEST(ProofPackage, expect_records_failures_and_continues)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(),
+  EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name multiple-expectations :status :fail "
             ":message \"Expected 1, got 2.\" "
             ":failures [{:message \"Expected 1, got 2.\"} "
@@ -596,7 +718,7 @@ TEST(ProofPackage, ScenarioFormsPassResultsBetweenPhases)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name scenario :status :pass}]");
 }
 
 TEST(ProofPackage, ScenarioThenCanOmitGivenResult)
@@ -621,7 +743,7 @@ TEST(ProofPackage, ScenarioThenCanOmitGivenResult)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name scenario :status :pass}]");
 }
 
 TEST(ProofPackage, ScenarioWhenAndThenSupportEmptyArgVectors)
@@ -646,7 +768,7 @@ TEST(ProofPackage, ScenarioWhenAndThenSupportEmptyArgVectors)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(), "[{:name scenario :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name scenario :status :pass}]");
 }
 
 TEST(ProofPackage, ScenarioFormsExecuteSurroundingAndInterspersedForms)
@@ -680,7 +802,7 @@ TEST(ProofPackage, ScenarioFormsExecuteSurroundingAndInterspersedForms)
 
   auto results = runtime.eval("(run)");
 
-  EXPECT_EQ(results->to_string(), "[{:name scenario-order :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name scenario-order :status :pass}]");
   EXPECT_EQ(runtime.eval("events")->to_string(),
             "[:before :given :after-given :when :after-when :then :after]");
 }
