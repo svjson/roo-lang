@@ -13,7 +13,7 @@ namespace Roo
   EXEC_BODY(EpochMsFunction, exec_epoch_ms)
   {
     auto now = std::chrono::system_clock::now();
-    long ms = duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    long long ms = duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     return Roo::Value::number(ms);
   }
 } // namespace Roo
