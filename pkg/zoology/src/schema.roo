@@ -8,17 +8,11 @@
     schema))
 
 (defun schema-definitions [schema]
-  (or (:definitions (or schema {})) {}))
-
-(defun ref-seen? [seen-refs ref-id]
-  (contains? (or seen-refs []) ref-id))
-
-(defun ref-overrides [schema]
-  (dissoc (or schema {}) :ref))
+  (get schema :definitions {}))
 
 (defun merge-schema-nodes [base extension]
-  (let [fields (merge (or (:fields base) {})
-                      (or (:fields extension) {}))
+  (let [fields (merge (:fields base)
+                      (:fields extension))
         merged (merge base (dissoc extension :fields))]
     (if (empty? fields)
       merged
@@ -32,7 +26,7 @@
     (resolve-schema-node schema base-node seen-refs)))
 
 (defun resolve-variants [schema variants seen-refs]
-  (reduce-kv (or variants {})
+  (reduce-kv variants
              {}
              (fn [resolved variant-key variant-schema]
                (assoc resolved
@@ -42,7 +36,7 @@
                                            seen-refs)))))
 
 (defun resolve-fields [schema fields seen-refs]
-  (reduce-kv (or fields {})
+  (reduce-kv fields
              {}
              (fn [resolved field-id field-schema]
                (assoc resolved
@@ -85,12 +79,12 @@
           definition (get (schema-definitions schema) ref-id)
           next-seen-refs (concat (or seen-refs []) [ref-id])]
       (if (or (nil? definition)
-              (ref-seen? seen-refs ref-id))
+              (contains? seen-refs ref-id))
         schema-node
         (assoc (merge (resolve-schema-node schema
                                            definition
                                            next-seen-refs)
-                      (ref-overrides schema-node))
+                      (dissoc schema-node :ref))
                core/schema-ref-key
                ref-id)))
 
@@ -143,7 +137,7 @@
   (let [root (resolved-root-schema schema)]
     (cond
       (= (:type root) :object)
-      (or (:fields root) {})
+      (get root :fields {})
 
       (= (:type root) :union)
       (union-fields schema root)
@@ -161,7 +155,7 @@
   (keys (schema-fields schema)))
 
 (defun union-fields [schema union-schema]
-  (reduce-kv (or (:variants union-schema) {})
+  (reduce-kv (get union-schema :variants {})
              (schema-fields (schema-document-with-root
                              schema
                              (:base union-schema)))
@@ -174,14 +168,14 @@
   (core/path-value value (:discriminator union-schema)))
 
 (defun union-variant-schema [union-schema value]
-  (get (or (:variants union-schema) {})
+  (get (:variants union-schema)
        (union-discriminator-value union-schema value)))
 
 (defun active-schema-fields [schema value]
   (let [root (resolved-root-schema schema)]
     (cond
       (= (:type root) :object)
-      (or (:fields root) {})
+      (get root :fields {})
 
       (= (:type root) :union)
       (let [base-fields (schema-fields

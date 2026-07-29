@@ -20,13 +20,13 @@
       :default [path])))
 
 (defun field-value [value field-id field-schema]
-  (get-in (or value {}) (field-path field-id field-schema)))
+  (get-in value (field-path field-id field-schema)))
 
 (defun path-value [value path]
   (cond
     (nil? path) value
-    (= (type-of path) "vector") (get-in (or value {}) path)
-    :default (get (or value {}) path)))
+    (= (type-of path) "vector") (get-in value path)
+    :default (get value path)))
 
 (defun path-present-at? [value path index]
   (cond

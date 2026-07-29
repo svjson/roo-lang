@@ -1,25 +1,17 @@
 (ns zoology.valid-values
   (:require [zoology.core :as core]))
 
-(defun valid-values-map [valid-values]
-  (if (= (type-of valid-values) "map")
-    valid-values
-    {}))
-
-(defun source-field-value [value source]
-  (core/path-value value (or (:field source)
-                             (:path source))))
-
 (defun valid-values-source-items [context value source]
   (cond
     (= (type-of source) "vector")
-    (or (get-in (or context {}) source) [])
+    (or (get-in context source) [])
 
     (= (type-of source) "map")
-    (let [source-key (source-field-value value source)
-          source-path (get (or (:sources source) {}) source-key)]
+    (let [source-key (core/path-value value (or (:field source)
+                                                (:path source)))
+          source-path (get (:sources source) source-key)]
       (if source-path
-        (or (get-in (or context {}) source-path) [])
+        (or (get-in context source-path) [])
         []))
 
     :default []))
@@ -35,13 +27,12 @@
     (= (type-of valid-values) "map")
     (if (contains? valid-values :from)
       (valid-values-source-items context value (:from valid-values))
-      (or (:values valid-values) []))
+      (get valid-values :values []))
 
     :default []))
 
 (defun valid-value-item-value [item valid-values]
-  (let [spec (valid-values-map valid-values)
-        value-path (:value-path spec)]
+  (let [value-path (:value-path valid-values)]
     (cond
       value-path
       (get-in item value-path)
@@ -52,13 +43,6 @@
         (:id item))
 
       :default item)))
-
-(defun valid-value-items-for-value [context field-schema value]
-  (let [valid-values (:valid-values field-schema)]
-    (valid-values-items context valid-values value)))
-
-(defun valid-value-items [context field-schema]
-  (valid-value-items-for-value context field-schema nil))
 
 (defun valid-value-values [context field-schema value]
   (let [valid-values (:valid-values field-schema)]

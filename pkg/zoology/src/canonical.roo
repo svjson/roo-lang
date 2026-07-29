@@ -62,11 +62,11 @@
                 path
                 (canonical-value
                  (schema/schema-document-with-root schema field-schema)
-                 (get-in (or value {}) path)))
+                 (get-in value path)))
       value)))
 
 (defun canonical-fields [schema fields value]
-  (reduce-kv (or fields {})
+  (reduce-kv fields
              value
              (fn [result field-id field-schema]
                (canonical-field schema result field-id field-schema))))

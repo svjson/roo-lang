@@ -12,7 +12,10 @@
                             :name "Dawnkeep Stables"}]}}]
     (is (= [{:id :place/dawnkeep-stables
              :name "Dawnkeep Stables"}]
-           (valid-values/valid-value-items context field-schema)))
+           (valid-values/valid-values-items
+            context
+            (:valid-values field-schema)
+            nil)))
     (is (= [:place/dawnkeep-stables]
            (valid-values/valid-value-values context field-schema nil)))))
 
@@ -29,9 +32,9 @@
                             :name "Blackmere"}]}]
     (is (= [{:value :blackmere
              :name "Blackmere"}]
-           (valid-values/valid-value-items-for-value
+           (valid-values/valid-values-items
             context
-            field-schema
+            (:valid-values field-schema)
             {:source :terrain})))
     (is (= [:blackmere]
            (valid-values/valid-value-values
