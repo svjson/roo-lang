@@ -1,0 +1,127 @@
+(ns zoology.schema-test
+  (:require proof.core
+            [zoology.core :as core]
+            [zoology.schema :as schema]))
+
+(deftest schema-resolves-object-definition-extensions
+  (let [schema-doc {:definitions
+                    {:base-rule
+                     {:type :object
+                      :fields {:type {:type :keyword}
+                               :id {:type :keyword}}}
+                     :point-rule
+                     {:extends :base-rule
+                      :fields {:point {:type :number}}}}
+                    :schema {:ref :point-rule}}]
+    (is (= [:type :id :point]
+           (schema/schema-field-ids schema-doc)))))
+
+(deftest schema-resolves-named-field-definition-references
+  (let [schema-doc {:definitions
+                    {:stable-role
+                     {:type :keyword
+                      :valid-values [:role/stable-lad
+                                     :role/stable-master]}}
+                    :schema
+                    {:field/role {:ref :stable-role
+                                  :required true}}}]
+    (is (= {:type :keyword
+            :valid-values [:role/stable-lad
+                           :role/stable-master]
+            :required true
+            :zoology/ref :stable-role}
+           (schema/resolved-field-schema schema-doc :field/role)))))
+
+(deftest schema-resolves-nested-definition-references
+  (let [schema-doc {:definitions
+                    {:place-relation
+                     {:type :object
+                      :fields {:relation {:type :keyword}
+                               :place-id {:ref :place-id}}}
+                     :place-id
+                     {:type :keyword
+                      :valid-values
+                      {:from [:vocabularies :places]
+                       :value-path [:id]
+                       :label-path [:label]}}}
+                    :schema
+                    {:type :array
+                     :items {:ref :place-relation}}}]
+    (is (= {:type :array
+            :items {:type :object
+                    :fields {:relation {:type :keyword}
+                             :place-id
+                             {:type :keyword
+                              :valid-values
+                              {:from [:vocabularies :places]
+                               :value-path [:id]
+                               :label-path [:label]}
+                              :zoology/ref :place-id}}
+                    :zoology/ref :place-relation}}
+           (schema/resolved-root-schema schema-doc)))))
+
+(deftest prepared-schema-preserves-schema-behavior
+  (let [schema-doc {:definitions
+                    {:base {:type :object
+                            :fields {:type {:type :keyword
+                                            :valid-values
+                                            {:values [:simple :detailed]}}}}
+                     :simple {:extends :base
+                              :fields {:name {:type :text}}}
+                     :detailed {:extends :base
+                                :fields {:name {:type :text}
+                                         :note {:type :text}}}}
+                    :schema {:type :union
+                             :discriminator :type
+                             :base {:ref :base}
+                             :variants {:simple {:ref :simple}
+                                        :detailed {:ref :detailed}}}}
+        prepared (schema/prepare-schema schema-doc)
+        value {:type :detailed
+               :name "Name"
+               :note "Note"}]
+    (is (= (schema/resolved-root-schema schema-doc)
+           (schema/resolved-root-schema prepared)))
+    (is (= (schema/resolved-field-schema schema-doc :name)
+           (schema/resolved-field-schema prepared :name)))
+    (is (= (schema/active-schema-field-ids schema-doc value)
+           (schema/active-schema-field-ids prepared value)))
+    (is (schema/field-visible? prepared :note value))))
+
+(deftest prepared-schema-leaves-reentrant-references-unresolved
+  (let [schema-doc {:definitions
+                    {:node {:type :object
+                            :fields {:name {:type :text}
+                                     :children {:type :array
+                                                :items {:ref :node}}}}}
+                    :schema {:ref :node}}
+        prepared (schema/prepare-schema schema-doc)]
+    (is (= true (core/prepared-schema? prepared)))
+    (is (= {:type :object
+            :fields {:name {:type :text}
+                     :children {:type :array
+                                :items {:ref :node}}}
+            :zoology/ref :node}
+           (schema/resolved-root-schema prepared)))))
+
+(deftest prepared-schema-supports-shorthand-type-field
+  (let [schema-doc {:definitions
+                    {:rule-type {:type :keyword
+                                 :valid-values
+                                 [:preferred-position :edge]}}
+                    :schema {:type {:ref :rule-type}
+                             :name {:type :text}}}
+        prepared (schema/prepare-schema schema-doc)]
+    (is (= {:type :keyword
+            :valid-values [:preferred-position :edge]
+            :zoology/ref :rule-type}
+           (schema/resolved-field-schema prepared :type)))
+    (is (= [:type :name]
+           (schema/schema-field-ids prepared)))))
+
+(deftest schema-field-ids-use-object-root-fields
+  (let [schema-doc {:schema {:type :object
+                             :fields {:relation {:type :keyword}
+                                      :place-id {:type :keyword}}}}]
+    (is (= [:relation :place-id]
+           (schema/schema-field-ids schema-doc)))))

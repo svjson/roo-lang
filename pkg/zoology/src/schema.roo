@@ -1,0 +1,227 @@
+(ns zoology.schema
+  (:require [zoology.core :as core]))
+
+(defun schema-root [schema]
+  (if (and (= (type-of schema) "map")
+           (contains? schema :schema))
+    (:schema schema)
+    schema))
+
+(defun schema-definitions [schema]
+  (or (:definitions (or schema {})) {}))
+
+(defun ref-seen? [seen-refs ref-id]
+  (contains? (or seen-refs []) ref-id))
+
+(defun ref-overrides [schema]
+  (dissoc (or schema {}) :ref))
+
+(defun merge-schema-nodes [base extension]
+  (let [fields (merge (or (:fields base) {})
+                      (or (:fields extension) {}))
+        merged (merge base (dissoc extension :fields))]
+    (if (empty? fields)
+      merged
+      (assoc merged :fields fields))))
+
+(defun extension-base-schema [schema schema-node seen-refs]
+  (let [extension (:extends schema-node)
+        base-node (if (keyword? extension)
+                    {:ref extension}
+                    extension)]
+    (resolve-schema-node schema base-node seen-refs)))
+
+(defun resolve-variants [schema variants seen-refs]
+  (reduce-kv (or variants {})
+             {}
+             (fn [resolved variant-key variant-schema]
+               (assoc resolved
+                      variant-key
+                      (resolve-schema-node schema
+                                           variant-schema
+                                           seen-refs)))))
+
+(defun resolve-fields [schema fields seen-refs]
+  (reduce-kv (or fields {})
+             {}
+             (fn [resolved field-id field-schema]
+               (assoc resolved
+                      field-id
+                      (resolve-schema-node schema
+                                           field-schema
+                                           seen-refs)))))
+
+(defun resolve-nested-schema [schema resolved seen-refs]
+  (cond
+    (not (= (type-of resolved) "map"))
+    resolved
+
+    (= (:type resolved) :object)
+    (assoc resolved
+           :fields
+           (resolve-fields schema (:fields resolved) seen-refs))
+
+    (= (:type resolved) :array)
+    (assoc resolved
+           :items
+           (resolve-schema-node schema (:items resolved) seen-refs))
+
+    (= (:type resolved) :union)
+    (assoc resolved
+           :base
+           (resolve-schema-node schema (:base resolved) seen-refs)
+           :variants
+           (resolve-variants schema (:variants resolved) seen-refs))
+
+    :default resolved))
+
+(defun resolve-schema-node [schema schema-node seen-refs]
+  (cond
+    (not (= (type-of schema-node) "map"))
+    schema-node
+
+    (contains? schema-node :ref)
+    (let [ref-id (:ref schema-node)
+          definition (get (schema-definitions schema) ref-id)
+          next-seen-refs (concat (or seen-refs []) [ref-id])]
+      (if (or (nil? definition)
+              (ref-seen? seen-refs ref-id))
+        schema-node
+        (assoc (merge (resolve-schema-node schema
+                                           definition
+                                           next-seen-refs)
+                      (ref-overrides schema-node))
+               core/schema-ref-key
+               ref-id)))
+
+    (contains? schema-node :extends)
+    (resolve-nested-schema
+     schema
+     (merge-schema-nodes
+      (extension-base-schema schema schema-node seen-refs)
+      (dissoc schema-node :extends))
+     seen-refs)
+
+    :default
+    (resolve-nested-schema schema schema-node seen-refs)))
+
+(defun resolve-schema [schema schema-node]
+  (resolve-schema-node schema schema-node []))
+
+(defun resolved-root-schema [schema]
+  (if (core/prepared-schema? schema)
+    (schema-root schema)
+    (resolve-schema schema (schema-root schema))))
+
+(defun root-field-map? [root]
+  (and (= (type-of root) "map")
+       (not (keyword? (:type root)))
+       (not (keyword? (:ref root)))
+       (not (keyword? (:extends root)))
+       (not (contains? root :schema))))
+
+(defun prepare-root-schema [schema]
+  (let [root (resolved-root-schema schema)]
+    (if (root-field-map? root)
+      (resolve-fields schema root [])
+      root)))
+
+(defun prepare-schema [schema]
+  (if (or (nil? schema)
+          (core/prepared-schema? schema))
+    schema
+    (let [root (prepare-root-schema schema)]
+      (if (and (empty? (schema-definitions schema))
+               (root-field-map? root))
+        root
+        (assoc {:definitions (schema-definitions schema)
+                :schema root}
+               core/prepared-schema-key
+               true)))))
+
+(defun schema-fields [schema]
+  (let [root (resolved-root-schema schema)]
+    (cond
+      (= (:type root) :object)
+      (or (:fields root) {})
+
+      (= (:type root) :union)
+      (union-fields schema root)
+
+      :default
+      (or root {}))))
+
+(defun resolved-field-schema [schema field-id]
+  (let [field-schema (get (schema-fields schema) field-id)]
+    (if (core/prepared-schema? schema)
+      field-schema
+      (resolve-schema schema field-schema))))
+
+(defun schema-field-ids [schema]
+  (keys (schema-fields schema)))
+
+(defun union-fields [schema union-schema]
+  (reduce-kv (or (:variants union-schema) {})
+             (schema-fields (schema-document-with-root
+                             schema
+                             (:base union-schema)))
+             (fn [fields variant-key variant-schema]
+               (merge fields
+                      (schema-fields
+                       (schema-document-with-root schema variant-schema))))))
+
+(defun union-discriminator-value [union-schema value]
+  (core/path-value value (:discriminator union-schema)))
+
+(defun union-variant-schema [union-schema value]
+  (get (or (:variants union-schema) {})
+       (union-discriminator-value union-schema value)))
+
+(defun active-schema-fields [schema value]
+  (let [root (resolved-root-schema schema)]
+    (cond
+      (= (:type root) :object)
+      (or (:fields root) {})
+
+      (= (:type root) :union)
+      (let [base-fields (schema-fields
+                         (schema-document-with-root schema (:base root)))
+            variant (union-variant-schema root value)]
+        (if variant
+          (merge base-fields
+                 (schema-fields
+                  (schema-document-with-root schema variant)))
+          base-fields))
+
+      :default
+      (schema-fields schema))))
+
+(defun active-schema-field-ids [schema value]
+  (keys (active-schema-fields schema value)))
+
+(defun field-visible? [schema field-id value]
+  (contains? (active-schema-fields schema value) field-id))
+
+(defun dynamic-field-visibility? [schema]
+  (= (:type (resolved-root-schema schema)) :union))
+
+(defun field-visibility-value [schema value]
+  (let [root (resolved-root-schema schema)]
+    (if (= (:type root) :union)
+      (union-discriminator-value root value)
+      nil)))
+
+(defun schema-document-with-root [schema root]
+  (cond
+    (core/prepared-schema? schema)
+    (assoc {:definitions (schema-definitions schema)
+            :schema root}
+           core/prepared-schema-key
+           true)
+
+    (empty? (schema-definitions schema))
+    root
+
+    :default
+    {:definitions (schema-definitions schema)
+     :schema root}))

@@ -1,0 +1,90 @@
+(ns zoology.valid-values
+  (:require [zoology.core :as core]))
+
+(defun valid-values-map [valid-values]
+  (if (= (type-of valid-values) "map")
+    valid-values
+    {}))
+
+(defun source-field-value [value source]
+  (core/path-value value (or (:field source)
+                             (:path source))))
+
+(defun valid-values-source-items [context value source]
+  (cond
+    (= (type-of source) "vector")
+    (or (get-in (or context {}) source) [])
+
+    (= (type-of source) "map")
+    (let [source-key (source-field-value value source)
+          source-path (get (or (:sources source) {}) source-key)]
+      (if source-path
+        (or (get-in (or context {}) source-path) [])
+        []))
+
+    :default []))
+
+(defun valid-values-items [context valid-values value]
+  (cond
+    (nil? valid-values)
+    []
+
+    (= (type-of valid-values) "vector")
+    valid-values
+
+    (= (type-of valid-values) "map")
+    (if (contains? valid-values :from)
+      (valid-values-source-items context value (:from valid-values))
+      (or (:values valid-values) []))
+
+    :default []))
+
+(defun option-value [item valid-values]
+  (let [spec (valid-values-map valid-values)
+        value-path (:value-path spec)]
+    (cond
+      value-path
+      (get-in item value-path)
+
+      (= (type-of item) "map")
+      (if (contains? item :value)
+        (:value item)
+        (:id item))
+
+      :default item)))
+
+(defun option-label [item valid-values value]
+  (let [spec (valid-values-map valid-values)
+        label-path (:label-path spec)]
+    (cond
+      label-path
+      (str (get-in item label-path))
+
+      (= (type-of item) "map")
+      (str (or (:label item)
+               (:name item)
+               (:id item)
+               (:value item)
+               value))
+
+      :default
+      (core/keyword-label value))))
+
+(defun valid-value-option [valid-values item]
+  (let [value (option-value item valid-values)]
+    {:value value
+     :label (option-label item valid-values value)}))
+
+(defun valid-value-options-for-value [context field-schema value]
+  (let [valid-values (:valid-values field-schema)]
+    (map (valid-values-items context valid-values value)
+         (fn [item]
+           (valid-value-option valid-values item)))))
+
+(defun valid-value-options [context field-schema]
+  (valid-value-options-for-value context field-schema nil))
+
+(defun valid-value-values [context field-schema value]
+  (map (valid-value-options-for-value context field-schema value)
+       (fn [option]
+         (:value option))))

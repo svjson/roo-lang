@@ -1,0 +1,25 @@
+(ns zoology.canonical-test
+  (:require proof.core
+            [zoology.canonical :as canonical]))
+
+(deftest canonical-value-discards-invalid-number-text
+  (is (= {:count nil
+          :weight nil
+          :blank nil}
+         (canonical/canonical-value
+          {:type :object
+           :fields {:count {:type :integer}
+                    :weight {:type :number}
+                    :blank {:type :number}}}
+          {:count "12.5"
+           :weight "--1"
+           :blank ""}))))
+
+(deftest canonical-value-supports-shorthand-field-map-schemas
+  (is (= {:id :terrain/forest
+          :count 12}
+         (canonical/canonical-value
+          {:id {:type :keyword}
+           :count {:type :integer}}
+          {:id "terrain/forest"
+           :count "12"}))))

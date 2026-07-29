@@ -2,4 +2,5 @@
  :version "0.1.0"
  :description "Generic schema resolution, canonicalization, and validation for Roo data."
  :dependencies []
- :load-roots ["src"]}
+ :load-roots ["src"]
+ :namespace-roots {zoology "src"}}

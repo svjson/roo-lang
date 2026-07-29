@@ -1,0 +1,50 @@
+(ns zoology.core)
+
+(def prepared-schema-key :zoology/prepared?)
+(def schema-ref-key :zoology/ref)
+
+(defun prepared-schema? [schema]
+  (and (= (type-of schema) "map")
+       (= true (get schema prepared-schema-key))))
+
+(defun blank-value? [value]
+  (or (nil? value)
+      (and (= (type-of value) "string")
+           (= (count value) 0))))
+
+(defun field-path [field-id field-schema]
+  (let [path (:path field-schema)]
+    (cond
+      (nil? path) [field-id]
+      (= (type-of path) "vector") path
+      :default [path])))
+
+(defun field-value [value field-id field-schema]
+  (get-in (or value {}) (field-path field-id field-schema)))
+
+(defun path-value [value path]
+  (cond
+    (nil? path) value
+    (= (type-of path) "vector") (get-in (or value {}) path)
+    :default (get (or value {}) path)))
+
+(defun path-present-at? [value path index]
+  (cond
+    (>= index (count (or path []))) true
+
+    (and (= (type-of value) "map")
+         (contains? value (nth path index)))
+    (path-present-at? (get value (nth path index))
+                      path
+                      (inc index))
+
+    :default false))
+
+(defun path-present? [value path]
+  (path-present-at? value path 0))
+
+(defun keyword-label [value]
+  (let [text (str value)]
+    (if (= ":" (substr text 0 1))
+      (substr text 1)
+      text)))
