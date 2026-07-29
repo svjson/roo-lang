@@ -42,8 +42,7 @@
                      {:type :keyword
                       :valid-values
                       {:from [:vocabularies :places]
-                       :value-path [:id]
-                       :label-path [:label]}}}
+                       :value-path [:id]}}}
                     :schema
                     {:type :array
                      :items {:ref :place-relation}}}]
@@ -54,8 +53,7 @@
                              {:type :keyword
                               :valid-values
                               {:from [:vocabularies :places]
-                               :value-path [:id]
-                               :label-path [:label]}
+                               :value-path [:id]}
                               :zoology/ref :place-id}}
                     :zoology/ref :place-relation}}
            (schema/resolved-root-schema schema-doc)))))

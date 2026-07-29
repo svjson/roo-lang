@@ -52,13 +52,12 @@
   (let [schema {:field/place {:type :keyword
                               :valid-values
                               {:from [:vocabularies :places]
-                               :value-path [:id]
-                               :label-path [:label]}}}
+                               :value-path [:id]}}}
         context {:vocabularies
                  {:places [{:id :place/dawnkeep-stables
-                            :label "Dawnkeep Stables"}
+                            :name "Dawnkeep Stables"}
                            {:id :place/dawnkeep-smithy
-                            :label "Dawnkeep Smithy"}]}}
+                            :name "Dawnkeep Smithy"}]}}
         valid-result (validation/validate-with-context
                       schema
                       {:field/place :place/dawnkeep-stables}

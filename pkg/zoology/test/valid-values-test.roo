@@ -2,34 +2,39 @@
   (:require proof.core
             [zoology.valid-values :as valid-values]))
 
-(deftest valid-value-options-resolve-labels-and-values
+(deftest valid-value-items-resolve-context-backed-entries
   (let [field-schema {:type :keyword
                       :valid-values
                       {:from [:vocabularies :places]
-                       :value-path [:id]
-                       :label-path [:label]}}
+                       :value-path [:id]}}
         context {:vocabularies
                  {:places [{:id :place/dawnkeep-stables
-                            :label "Dawnkeep Stables"}]}}]
-    (is (= [{:value :place/dawnkeep-stables
-             :label "Dawnkeep Stables"}]
-           (valid-values/valid-value-options context field-schema)))))
+                            :name "Dawnkeep Stables"}]}}]
+    (is (= [{:id :place/dawnkeep-stables
+             :name "Dawnkeep Stables"}]
+           (valid-values/valid-value-items context field-schema)))
+    (is (= [:place/dawnkeep-stables]
+           (valid-values/valid-value-values context field-schema nil)))))
 
-(deftest valid-value-options-can-depend-on-sibling-field-values
+(deftest valid-value-items-can-depend-on-sibling-field-values
   (let [field-schema {:type :keyword
                       :valid-values
                       {:from {:field [:source]
                               :sources {:landmarks [:landmarks]
                                         :terrain [:terrain]}}
-                       :value-path [:value]
-                       :label-path [:label]}}
+                       :value-path [:value]}}
         context {:landmarks [{:value :dawnkeep
-                              :label "Dawnkeep"}]
+                              :name "Dawnkeep"}]
                  :terrain [{:value :blackmere
-                            :label "Blackmere"}]}]
+                            :name "Blackmere"}]}]
     (is (= [{:value :blackmere
-             :label "Blackmere"}]
-           (valid-values/valid-value-options-for-value
+             :name "Blackmere"}]
+           (valid-values/valid-value-items-for-value
+            context
+            field-schema
+            {:source :terrain})))
+    (is (= [:blackmere]
+           (valid-values/valid-value-values
             context
             field-schema
             {:source :terrain})))))

@@ -39,7 +39,7 @@
 
     :default []))
 
-(defun option-value [item valid-values]
+(defun valid-value-item-value [item valid-values]
   (let [spec (valid-values-map valid-values)
         value-path (:value-path spec)]
     (cond
@@ -53,38 +53,15 @@
 
       :default item)))
 
-(defun option-label [item valid-values value]
-  (let [spec (valid-values-map valid-values)
-        label-path (:label-path spec)]
-    (cond
-      label-path
-      (str (get-in item label-path))
+(defun valid-value-items-for-value [context field-schema value]
+  (let [valid-values (:valid-values field-schema)]
+    (valid-values-items context valid-values value)))
 
-      (= (type-of item) "map")
-      (str (or (:label item)
-               (:name item)
-               (:id item)
-               (:value item)
-               value))
+(defun valid-value-items [context field-schema]
+  (valid-value-items-for-value context field-schema nil))
 
-      :default
-      (core/keyword-label value))))
-
-(defun valid-value-option [valid-values item]
-  (let [value (option-value item valid-values)]
-    {:value value
-     :label (option-label item valid-values value)}))
-
-(defun valid-value-options-for-value [context field-schema value]
+(defun valid-value-values [context field-schema value]
   (let [valid-values (:valid-values field-schema)]
     (map (valid-values-items context valid-values value)
          (fn [item]
-           (valid-value-option valid-values item)))))
-
-(defun valid-value-options [context field-schema]
-  (valid-value-options-for-value context field-schema nil))
-
-(defun valid-value-values [context field-schema value]
-  (map (valid-value-options-for-value context field-schema value)
-       (fn [option]
-         (:value option))))
+           (valid-value-item-value item valid-values)))))
