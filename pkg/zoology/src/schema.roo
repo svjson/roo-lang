@@ -1,5 +1,35 @@
-(ns zoology.schema
-  (:require [zoology.core :as core]))
+(ns zoology.schema)
+
+(defun field-path [field-id field-schema]
+  (let [path (:path field-schema)]
+    (cond
+      (nil? path) [field-id]
+      (sequential? path) path
+      :default [path])))
+
+(defun field-value [value field-id field-schema]
+  (get-in value (field-path field-id field-schema)))
+
+(defun path-value [value path]
+  (cond
+    (nil? path) value
+    (sequential? path) (get-in value path)
+    :default (get value path)))
+
+(defun path-present-at? [value path index]
+  (cond
+    (>= index (count (or path []))) true
+
+    (and (map? value)
+         (contains? value (nth path index)))
+    (path-present-at? (get value (nth path index))
+                      path
+                      (inc index))
+
+    :default false))
+
+(defun path-present? [value path]
+  (path-present-at? value path 0))
 
 (defun schema-root [schema]
   (if (and (map? schema)
@@ -165,7 +195,7 @@
                        (schema-document-with-root schema variant-schema))))))
 
 (defun union-discriminator-value [union-schema value]
-  (core/path-value value (:discriminator union-schema)))
+  (path-value value (:discriminator union-schema)))
 
 (defun union-variant-schema [union-schema value]
   (get (:variants union-schema)

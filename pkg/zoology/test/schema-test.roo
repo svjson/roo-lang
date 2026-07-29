@@ -2,6 +2,37 @@
   (:require proof.core
             [zoology.schema :as schema]))
 
+(deftest field-path-resolves-field-storage-path
+  (is (= [:field/name]
+         (schema/field-path :field/name {})))
+  (is (= [:profile :city]
+         (schema/field-path :field/city {:path [:profile :city]})))
+  (is (= [:city]
+         (schema/field-path :field/city {:path :city}))))
+
+(deftest field-value-uses-field-path
+  (is (= "London"
+         (schema/field-value {:profile {:city "London"}}
+                             :field/city
+                             {:path [:profile :city]}))))
+
+(deftest path-value-resolves-map-paths
+  (is (= {:profile {:city "London"}}
+         (schema/path-value {:profile {:city "London"}} nil)))
+  (is (= "London"
+         (schema/path-value {:profile {:city "London"}}
+                            [:profile :city])))
+  (is (= "London"
+         (schema/path-value {:city "London"} :city))))
+
+(deftest path-present-distinguishes-present-nil-from-missing
+  (is (= true
+         (schema/path-present? {:profile {:city nil}}
+                               [:profile :city])))
+  (is (= false
+         (schema/path-present? {:profile {}}
+                               [:profile :city]))))
+
 (deftest schema-resolves-object-definition-extensions
   (let [schema-doc {:definitions
                     {:base-rule

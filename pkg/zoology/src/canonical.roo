@@ -1,6 +1,5 @@
 (ns zoology.canonical
-  (:require [zoology.core :as core]
-            [zoology.schema :as schema]))
+  (:require [zoology.schema :as schema]))
 
 (defun text-contains-at? [text needle index]
   (cond
@@ -62,8 +61,8 @@
     nil))
 
 (defun canonical-field [schema value field-id field-schema]
-  (let [path (core/field-path field-id field-schema)]
-    (if (core/path-present? value path)
+  (let [path (schema/field-path field-id field-schema)]
+    (if (schema/path-present? value path)
       (assoc-in value
                 path
                 (canonical-value

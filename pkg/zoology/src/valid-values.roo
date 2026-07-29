@@ -1,5 +1,5 @@
 (ns zoology.valid-values
-  (:require [zoology.core :as core]))
+  (:require [zoology.schema :as schema]))
 
 (defun valid-values-source-items [context value source]
   (cond
@@ -7,8 +7,8 @@
     (or (get-in context source) [])
 
     (map? source)
-    (let [source-key (core/path-value value (or (:field source)
-                                                (:path source)))
+    (let [source-key (schema/path-value value (or (:field source)
+                                                  (:path source)))
           source-path (get (:sources source) source-key)]
       (if source-path
         (or (get-in context source-path) [])
