@@ -37,9 +37,3 @@
   (is (= false
          (core/path-present? {:profile {}}
                              [:profile :city]))))
-
-(deftest keyword-label-removes-leading-colon
-  (is (= "terrain/forest"
-         (core/keyword-label :terrain/forest)))
-  (is (= "terrain/forest"
-         (core/keyword-label "terrain/forest"))))

@@ -14,6 +14,12 @@
 (defun text-value [value]
   (if (nil? value) "" (str value)))
 
+(defun keyword-input-text [value]
+  (let [text (text-value value)]
+    (if (= ":" (substr text 0 1))
+      (substr text 1)
+      text)))
+
 (defun canonical-keyword [value]
   (cond
     (nil? value)
@@ -23,7 +29,7 @@
     value
 
     :default
-    (let [text (core/keyword-label value)]
+    (let [text (keyword-input-text value)]
       (if (core/blank-value? text)
         nil
         (keyword text)))))
