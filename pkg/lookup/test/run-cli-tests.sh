@@ -40,7 +40,7 @@ fi
 assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
-       lookup index [--out <file>] <package-dir>
+       lookup index [-x extractor]... [-o <file>] <package-dir>
        lookup thing-at <package-dir> <file> <line> <column>" \
   "$HELP_OUTPUT"
 
@@ -61,6 +61,37 @@ case "$INDEX_OUTPUT" in
     printf '%s\n' "unexpected lookup index output:" >&2
     printf '%s\n' "$INDEX_OUTPUT" >&2
     fail "lookup index output"
+    ;;
+esac
+
+if ! FORMS_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index -x forms "$LOOKUP_PACKAGE"); then
+  fail "lookup index -x forms command failed"
+fi
+case "$FORMS_OUTPUT" in
+  *":format :roo/source-forms"*":package {:name \"lookup\""*":sources ["*) ;;
+  *)
+    printf '%s\n' "unexpected lookup forms index output:" >&2
+    printf '%s\n' "$FORMS_OUTPUT" >&2
+    fail "lookup index -x forms output"
+    ;;
+esac
+
+OUT_FILE="/tmp/lookup-index-output-$$.edn"
+rm -f "$OUT_FILE"
+if ! "$ROO" "$LOOKUP_PACKAGE" index -o "$OUT_FILE" "$LOOKUP_PACKAGE"; then
+  fail "lookup index -o command failed"
+fi
+if [ ! -s "$OUT_FILE" ]; then
+  fail "lookup index -o did not write output"
+fi
+OUT_CONTENT=$(cat "$OUT_FILE")
+rm -f "$OUT_FILE"
+case "$OUT_CONTENT" in
+  *":format :roo/symbol-index"*":package {:name \"lookup\""*) ;;
+  *)
+    printf '%s\n' "unexpected lookup index -o file output:" >&2
+    printf '%s\n' "$OUT_CONTENT" >&2
+    fail "lookup index -o output"
     ;;
 esac
 

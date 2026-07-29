@@ -1,5 +1,17 @@
-(ns lookup.symbols
-  (:require [lookup.docs :as docs]))
+(ns lookup.symbols)
+
+(defun empty-doc []
+  {:summary nil
+   :body nil
+   :format :plain
+   :params {}
+   :returns nil
+   :examples []
+   :see []})
+
+(defun empty-return []
+  {:type nil
+   :doc nil})
 
 (defun list-form? [form]
   (= "list" (type-of form)))
@@ -26,7 +38,7 @@
     (if (nil? entry)
       nil
       {:name (ns-entry-name entry)
-       :doc (docs/empty-doc)
+       :doc (empty-doc)
        :source (:source entry)})))
 
 (defun source-namespace-name [source]
@@ -94,7 +106,7 @@
                      :doc (:doc param)
                      :optional? (:optional? param)
                      :rest? (:rest? param)}))
-     :returns (docs/empty-return)
+     :returns (empty-return)
      :arity (signature-arity params)}))
 
 (defun qualified-name [namespace name]
@@ -112,7 +124,7 @@
    :status :stable
    :source source
    :doc-source nil
-   :doc (docs/empty-doc)})
+   :doc (empty-doc)})
 
 (defun def-symbol-entry [package namespace entry]
   (let [form (:form entry)

@@ -1,46 +1,45 @@
-(ns lookup.core-test
+(ns lookup.index-test
   (:require proof.core
-            [lookup.core :as core]
-            [lookup.native :as native]))
+            [lookup.index :as index]
+            [lookup.native :as native]
+            [lookup.source :as source]
+            [lookup.thing-at :as thing-at]))
 
 (deftest identifies-roo-source-files
-  (is (core/source-file? "src/core.roo"))
-  (is (= false (core/source-file? "package.edn"))))
+  (is (source/source-file? "src/index.roo"))
+  (is (= false (source/source-file? "package.edn"))))
 
 (deftest builds-source-form-index
-  (let [index (core/source-form-index "..")
-        sources (:sources index)
+  (let [source-index (index/source-form-index "..")
+        sources (:sources source-index)
         paths (map sources (fn [source] (:path source)))
-        source (find-first sources
-                           (fn [source]
-                             (= "../src/core.roo" (:path source))))
-        first-form (nth (:forms source) 0)]
-    (is (= :roo/source-forms (:format index)))
-    (is (= 1 (:version index)))
-    (is (= "lookup" (:name (:package index))))
-    (is (= "0.1.0" (:version (:package index))))
-    (is (= 8 (count sources)))
+        index-source (find-first sources
+                                 (fn [source]
+                                   (= "../src/index.roo" (:path source))))
+        first-form (nth (:forms index-source) 0)]
+    (is (= :roo/source-forms (:format source-index)))
+    (is (= 1 (:version source-index)))
+    (is (= "lookup" (:name (:package source-index))))
+    (is (= "0.1.0" (:version (:package source-index))))
+    (is (= 5 (count sources)))
     (is (= ["../src/cli.roo"
-            "../src/core.roo"
-            "../src/docs.roo"
             "../src/index.roo"
-            "../src/package.roo"
             "../src/source.roo"
             "../src/symbols.roo"
             "../src/thing-at.roo"]
            paths))
-    (is (= "../src/core.roo" (:path source)))
+    (is (= "../src/index.roo" (:path index-source)))
     (is (= "ns" (str (head (:form first-form)))))
-    (is (= "lookup.core" (str (nth (:form first-form) 1))))))
+    (is (= "lookup.index" (str (nth (:form first-form) 1))))))
 
 (deftest builds-symbol-index-v1
-  (let [index (core/symbol-index "..")
-        sources (:sources index)
-        namespaces (:namespaces index)
-        symbols (:symbols index)
+  (let [symbol-index (index/symbol-index "..")
+        sources (:sources symbol-index)
+        namespaces (:namespaces symbol-index)
+        symbols (:symbols symbol-index)
         version-symbol (find-first symbols
                                    (fn [symbol]
-                                     (= "lookup.core/version"
+                                     (= "lookup.cli/version"
                                         (:qualified-name symbol))))
         symbol-index-symbol (find-first symbols
                                         (fn [symbol]
@@ -51,11 +50,11 @@
                                      (= "lookup.cli/command"
                                         (:qualified-name symbol))))
         symbol-index-signature (nth (:signatures symbol-index-symbol) 0)]
-    (is (= :roo/symbol-index (:format index)))
-    (is (= 1 (:version index)))
-    (is (= "lookup" (:name (:package index))))
+    (is (= :roo/symbol-index (:format symbol-index)))
+    (is (= 1 (:version symbol-index)))
+    (is (= "lookup" (:name (:package symbol-index))))
     (is (contains? sources {:path "../src/cli.roo"}))
-    (is (contains? sources {:path "../src/core.roo"}))
+    (is (contains? sources {:path "../src/index.roo"}))
     (is (not (nil? (find-first namespaces
                                (fn [namespace]
                                  (= "lookup.cli" (:name namespace)))))))
@@ -64,7 +63,7 @@
                                  (= "lookup.index" (:name namespace)))))))
     (is (not (nil? (find-first namespaces
                                (fn [namespace]
-                                 (= "lookup.core" (:name namespace)))))))
+                                 (= "lookup.source" (:name namespace)))))))
     (is (= :var (:kind version-symbol)))
     (is (= :source (:origin version-symbol)))
     (is (= :public (:visibility version-symbol)))
@@ -115,7 +114,7 @@
 
 (deftest resolves-thing-at-local-let-binding
   (let [source "(ns sample.core)\n(let [command-value 1]\n  command-value)\n"
-        result (core/thing-at "." "src/sample.roo" "3" "3" source)
+        result (thing-at/thing-at "." "src/sample.roo" "3" "3" source)
         thing (:thing result)
         resolution (:resolution thing)
         source-location (:source resolution)]
@@ -132,7 +131,7 @@
 
 (deftest resolves-thing-at-function-parameter
   (let [source "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n"
-        result (core/thing-at "." "src/sample.roo" "3" "3" source)
+        result (thing-at/thing-at "." "src/sample.roo" "3" "3" source)
         thing (:thing result)
         resolution (:resolution thing)
         source-location (:source resolution)]

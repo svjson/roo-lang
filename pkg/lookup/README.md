@@ -28,6 +28,21 @@ From the repository root:
 ./build/roo pkg/lookup index pkg/lookup
 ```
 
+`index` defaults to the symbol extractor. Select specific extractors with
+repeated `-x` options:
+
+```sh
+./build/roo pkg/lookup index -x symbols pkg/lookup
+./build/roo pkg/lookup index -x forms pkg/lookup
+./build/roo pkg/lookup index -x forms -x symbols pkg/lookup
+```
+
+Write the generated EDN to a file with `-o`:
+
+```sh
+./build/roo pkg/lookup index -x symbols -o build/lookup.edn pkg/lookup
+```
+
 Ask for position-aware information about a buffer by passing the current
 source on standard input:
 
@@ -50,8 +65,9 @@ Then run:
 
 ## Current Status
 
-`lookup` currently provides a symbol index and a position-aware `thing-at`
-query for editor tooling.  The native reader bridge is:
+`lookup` currently provides a source-form index, a symbol index, selectable
+index extraction, file output, and a position-aware `thing-at` query for editor
+tooling. The native reader bridge is:
 
 ```roo
 (lookup.native/read-file-forms! path)

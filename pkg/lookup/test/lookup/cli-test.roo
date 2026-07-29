@@ -4,14 +4,14 @@
 
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
-          "       lookup index [--out <file>] <package-dir>"
+          "       lookup index [-x extractor]... [-o <file>] <package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
 (deftest reports-help-lines
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
-          "       lookup index [--out <file>] <package-dir>"
+          "       lookup index [-x extractor]... [-o <file>] <package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          (cli/help-lines))))
 
@@ -28,6 +28,35 @@
 
 (deftest resolves-index-command
   (is (= :index (cli/command ["index" "pkg/lookup"]))))
+
+(deftest parses-default-index-options
+  (is (= {:extractors [:symbols]
+          :out nil
+          :package-dir "pkg/lookup"
+          :errors []}
+         (cli/parse-index-args ["pkg/lookup"]))))
+
+(deftest parses-repeated-index-extractors
+  (is (= {:extractors [:forms :symbols]
+          :out nil
+          :package-dir "pkg/lookup"
+          :errors []}
+         (cli/parse-index-args ["-x" "forms" "-x" "symbols" "pkg/lookup"]))))
+
+(deftest parses-index-output-file
+  (is (= {:extractors [:symbols]
+          :out "build/lookup.edn"
+          :package-dir "pkg/lookup"
+          :errors []}
+         (cli/parse-index-args ["-o" "build/lookup.edn" "pkg/lookup"]))))
+
+(deftest reports-index-option-errors
+  (let [missing-extractor (cli/parse-index-args ["-x"])
+        unknown-option (cli/parse-index-args ["--wat" "pkg/lookup"])
+        extra-arg (cli/parse-index-args ["pkg/lookup" "extra"])]
+    (is (contains? (:errors missing-extractor) "Missing extractor after -x"))
+    (is (contains? (:errors unknown-option) "Unknown index option: --wat"))
+    (is (contains? (:errors extra-arg) "Unexpected index argument: extra"))))
 
 (deftest resolves-thing-at-command
   (is (= :thing-at (cli/command ["thing-at" "pkg/lookup" "src/sample.roo" "1" "1"]))))

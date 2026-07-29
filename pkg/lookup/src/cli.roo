@@ -1,17 +1,23 @@
 (ns lookup.cli
-  (:require [lookup.core :as lookup]))
+  (:require [roo.io :as io]
+            [lookup.index :as index]
+            [lookup.thing-at :as thing-at]))
 
 (def usage-lines
   ["Usage: lookup [--help|--version]"
-   "       lookup index [--out <file>] <package-dir>"
+   "       lookup index [-x extractor]... [-o <file>] <package-dir>"
    "       lookup thing-at <package-dir> <file> <line> <column>"])
+
+(def index-extractors [:forms :symbols])
+
+(def version "0.1.0")
 
 (defun help-lines []
   (concat ["lookup: build Roo symbol index artifacts"]
           usage-lines))
 
 (defun version-text []
-  (str "lookup " lookup/version))
+  (str "lookup " version))
 
 (defun command [args]
   (let [first-arg (nth args 0)]
@@ -45,11 +51,78 @@
 (defun print-version! []
   (prn (version-text)))
 
+(defun parse-index-args-step [args options]
+  (let [arg (head args)]
+    (cond
+
+      (nil? arg)
+      options
+
+      (= arg "-x")
+      (let [extractor (nth args 1)]
+        (if (nil? extractor)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing extractor after -x"]))
+          (let [extractor-key (keyword extractor)]
+            (parse-index-args-step
+              (tail (tail args))
+              (if (contains? index-extractors extractor-key)
+                (assoc options :extractors (concat (:extractors options)
+                                                   [extractor-key]))
+                (assoc options :errors (concat (:errors options)
+                                               [(str "Unknown index extractor: "
+                                                     extractor)])))))))
+
+      (or (= arg "-o")
+          (= arg "--out"))
+      (let [out (nth args 1)]
+        (if (nil? out)
+          (assoc options :errors (concat (:errors options)
+                                         [(str "Missing file after " arg)]))
+          (parse-index-args-step (tail (tail args))
+                                 (assoc options :out out))))
+
+      (= "-" (substr arg 0 1))
+      (parse-index-args-step (tail args)
+                             (assoc options
+                                    :errors
+                                    (concat (:errors options)
+                                            [(str "Unknown index option: " arg)])))
+
+      (nil? (:package-dir options))
+      (parse-index-args-step (tail args)
+                             (assoc options :package-dir arg))
+
+      true
+      (parse-index-args-step (tail args)
+                             (assoc options
+                                    :errors
+                                    (concat (:errors options)
+                                            [(str "Unexpected index argument: "
+                                                  arg)]))))))
+
+(defun parse-index-args [args]
+  (let [options (parse-index-args-step args
+                                       {:extractors []
+                                        :out nil
+                                        :package-dir nil
+                                        :errors []})]
+    (if (= 0 (count (:extractors options)))
+      (assoc options :extractors [:symbols])
+      options)))
+
 (defun print-index! [args]
-  (let [package-dir (nth args 1)]
-    (if (nil? package-dir)
-      (print-usage!)
-      (prn (lookup/symbol-index package-dir)))))
+  (let [options (parse-index-args (tail args))]
+    (if (or (not (= 0 (count (:errors options))))
+            (nil? (:package-dir options)))
+      (do
+        (map (:errors options) prn)
+        (print-usage!))
+      (let [value (index/index-with-extractors (:package-dir options)
+                                               (:extractors options))]
+        (if (nil? (:out options))
+          (prn value)
+          (io/spit! (:out options) (str value "\n")))))))
 
 (defun print-thing-at! [args]
   (let [package-dir (nth args 1)
@@ -61,11 +134,11 @@
             (nil? line)
             (nil? column))
       (print-usage!)
-      (prn (lookup/thing-at package-dir
-                            file
-                            line
-                            column
-                            (lookup/read-stdin!))))))
+      (prn (thing-at/thing-at package-dir
+                              file
+                              line
+                              column
+                              (thing-at/read-stdin!))))))
 
 (defun main [args]
   (let [command-name (command args)]
