@@ -53,6 +53,7 @@ namespace Roo
     lang_symbols.emplace("->", ThreadFirstForm::make());
     lang_symbols.emplace("abs", AbsFunction::make());
     lang_symbols.emplace("and", AndForm::make());
+    lang_symbols.emplace("any?", AnyFunction::make());
     lang_symbols.emplace("append!", AppendBangFunction::make());
     lang_symbols.emplace("apply", ApplyFunction::make());
     lang_symbols.emplace("assoc", AssocFunction::make());
@@ -172,7 +173,6 @@ namespace Roo
     lang_symbols.emplace("sequential?", SequentialPFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());
-    lang_symbols.emplace("some?", SomeFunction::make());
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());

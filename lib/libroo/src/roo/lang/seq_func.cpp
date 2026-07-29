@@ -12,6 +12,28 @@
 
 namespace Roo
 {
+  /** AnyFunction - any? */
+  FUNC_IMPL(AnyFunction,
+            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
+                 EXEC_DISPATCH(&AnyFunction::exec_any))))
+
+  EXEC_BODY(AnyFunction, exec_any)
+  {
+    sptr_val_v val_arg = {nullptr};
+    auto& fn = args.back()->exec();
+    sptr_val_v elements = Roo::get_children(*args[0]);
+    for (auto& element : elements)
+    {
+      val_arg[0] = element;
+      sptr_val result = fn.execute(ctx, val_arg);
+      if (Roo::is_truthy(*result))
+      {
+        return Constant::BOOL_TRUE;
+      }
+    }
+    return Constant::BOOL_FALSE;
+  }
+
   /* FilterFunction */
   FUNC_IMPL(FilterFunction,
             MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
@@ -438,28 +460,6 @@ namespace Roo
     }
 
     return Constant::NIL;
-  }
-
-  /** SomeFunction - some? */
-  FUNC_IMPL(SomeFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
-                 EXEC_DISPATCH(&SomeFunction::exec_some))))
-
-  EXEC_BODY(SomeFunction, exec_some)
-  {
-    sptr_val_v val_arg = {nullptr};
-    auto& fn = args.back()->exec();
-    sptr_val_v elements = Roo::get_children(*args[0]);
-    for (auto& element : elements)
-    {
-      val_arg[0] = element;
-      sptr_val result = fn.execute(ctx, val_arg);
-      if (Roo::is_truthy(*result))
-      {
-        return Constant::BOOL_TRUE;
-      }
-    }
-    return Constant::BOOL_FALSE;
   }
 
   /* SortFunction - sort */

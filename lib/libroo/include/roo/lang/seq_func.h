@@ -7,6 +7,26 @@
 namespace Roo
 {
   /*!
+   * @brief Tests if at least one element in a seq satisfies a predicate
+   * function.
+   *
+   * Usage:
+   * @code
+   * (any? [1 2 3 4] odd?)
+   * => true
+   *
+   * (any? [2 4] odd?)
+   * => false
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The seq to test                                                  |
+   * | 1     | The predicate function.                                          |
+   */
+  FUNC(AnyFunction, any)
+
+  /*!
    * @brief Keep only certain elements of a Seq by applying a function/executable
    * to each element.
    *
@@ -226,26 +246,6 @@ namespace Roo
    * | 1     | The partial map pattern to match                                 |
    */
   FUNC(SeqMatchFunction, match)
-
-  /*!
-   * @brief Tests if at least one element in a seq satisfies a predicate
-   * function.
-   *
-   * Usage:
-   * @code
-   * (some? [1 2 3 4] odd?)
-   * => true
-   *
-   * (some? [2 4] odd?)
-   * => false
-   * @endcode
-   *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq to test                                                  |
-   * | 1     | The predicate function.                                          |
-   */
-  FUNC(SomeFunction, some)
 
   /*!
    * @brief Sorts a sequence according to a predicate function.
