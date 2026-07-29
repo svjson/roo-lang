@@ -131,4 +131,13 @@ namespace Roo
     return Roo::is_truthy(*args[0]) ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
+  /** SomePFunction - some? */
+  FUNC_IMPL(SomePFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&SomePFunction::exec_is_some))))
+
+  EXEC_BODY(SomePFunction, exec_is_some)
+  {
+    return args[0]->type != Value::Type::NIL ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+  }
+
 } // namespace Roo

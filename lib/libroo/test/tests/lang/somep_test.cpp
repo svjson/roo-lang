@@ -1,90 +1,83 @@
 
-#include <vector>
-
-#include <roo/adapter.h>
-
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
 
-using SomeFunction = RooTest::RuntimeTestFixture;
+using SomePFunction = RooTest::RuntimeTestFixture;
 /*
  * ======================================================================
- * SomeFunction - (some? seq pred)
- * Returns true if at least one element satisfies the predicate.
+ * SomePFunction - (some? value)
+ * Returns true if value is not nil, false if nil.
  * ======================================================================
  */
 
-TEST_F(SomeFunction, returns_true_when_at_least_one_element_matches)
+TEST_F(SomePFunction, returns_false_for_nil)
 {
   // Given
-  auto result = runtime.eval("(some? [2 4 6] even?)");
-
-  // Then
-  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
-}
-
-TEST_F(SomeFunction, returns_true_when_first_element_matches)
-{
-  // Given
-  auto result = runtime.eval("(some? [2 1 3 5] even?)");
-
-  // Then
-  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
-}
-
-TEST_F(SomeFunction, returns_true_when_last_element_matches)
-{
-  // Given
-  auto result = runtime.eval("(some? [1 3 5 4] even?)");
-
-  // Then
-  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
-}
-
-TEST_F(SomeFunction, returns_false_when_no_element_matches)
-{
-  // Given
-  auto result = runtime.eval("(some? [1 3 5 7] even?)");
+  auto result = runtime.eval("(some? nil)");
 
   // Then
   EXPECT_EQ(*result, *Roo::Constant::BOOL_FALSE);
 }
 
-TEST_F(SomeFunction, returns_false_for_empty_sequence)
+TEST_F(SomePFunction, returns_true_for_string)
 {
   // Given
-  auto result = runtime.eval("(some? [] even?)");
+  auto result = runtime.eval(R"((some? "hello"))");
 
   // Then
-  EXPECT_EQ(*result, *Roo::Constant::BOOL_FALSE);
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
 }
 
-TEST_F(SomeFunction, works_with_custom_predicate)
+TEST_F(SomePFunction, returns_true_for_number)
 {
   // Given
-  auto found = runtime.eval(R"((some? ["hi" "hey" "hello"] (fn [s] (= 3 (count s)))))");
-  auto not_found = runtime.eval(R"((some? ["hi" "hello"] (fn [s] (= 3 (count s)))))");
+  auto result = runtime.eval("(some? 0)");
 
   // Then
-  EXPECT_EQ(*found, *Roo::Constant::BOOL_TRUE);
-  EXPECT_EQ(*not_found, *Roo::Constant::BOOL_FALSE);
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
 }
 
-TEST_F(SomeFunction, searches_string_as_char_sequence)
+TEST_F(SomePFunction, returns_true_for_false)
 {
-  EXPECT_EQ(*runtime.eval(R"((some? "abc" (fn [c] (= c 'b'))))"), *Roo::Constant::BOOL_TRUE);
+  // Given
+  auto result = runtime.eval("(some? false)");
+
+  // Then
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
 }
 
-TEST_F(SomeFunction, searches_map_as_interleaved_sequence)
+TEST_F(SomePFunction, returns_true_for_empty_string)
 {
-  EXPECT_EQ(*runtime.eval("(some? {:a 1 :b 2} keyword?)"), *Roo::Constant::BOOL_TRUE);
+  // Given
+  auto result = runtime.eval(R"((some? ""))");
+
+  // Then
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
 }
 
-TEST_F(SomeFunction, searches_native_vector_adapter_as_sequence)
+TEST_F(SomePFunction, returns_true_for_empty_vector)
 {
-  std::vector<int> values = {1, 2, 3};
-  runtime.get_current_namespace().store("values",
-                                        Roo::NativeStdVectorAdapter<int>::make_ref(values));
+  // Given
+  auto result = runtime.eval("(some? [])");
 
-  EXPECT_EQ(*runtime.eval("(some? values even?)"), *Roo::Constant::BOOL_TRUE);
+  // Then
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
+}
+
+TEST_F(SomePFunction, returns_true_for_keyword)
+{
+  // Given
+  auto result = runtime.eval("(some? :nil)");
+
+  // Then
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
+}
+
+TEST_F(SomePFunction, returns_true_for_map)
+{
+  // Given
+  auto result = runtime.eval("(some? {:key \"value\"})");
+
+  // Then
+  EXPECT_EQ(*result, *Roo::Constant::BOOL_TRUE);
 }

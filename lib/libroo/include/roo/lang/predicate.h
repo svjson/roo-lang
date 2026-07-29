@@ -242,6 +242,22 @@ namespace Roo
    */
   FUNC(NotFunction, not)
 
+  /*!
+   * @brief Tests if a value is not nil. The complement of nil?.
+   *
+   * Usage:
+   * @code
+   * (some? "hello")
+   * => true
+   *
+   * (some? nil)
+   * => false
+   * @endcode
+   *
+   * Param 0: The value to test
+   */
+  FUNC(SomePFunction, is_some)
+
 } // namespace Roo
 
 #endif /* ROO__LANG__PREDICATE_H */
