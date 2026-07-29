@@ -3,6 +3,7 @@
  :description "Roo symbol index generator."
  :dependencies []
  :load-roots ["src"]
+ :namespace-roots {lookup "src"}
  :native-libraries [{:name "lookup-native"
                      :version "0.1.0"
                      :path "native"

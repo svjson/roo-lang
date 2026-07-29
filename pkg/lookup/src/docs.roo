@@ -1,0 +1,14 @@
+(ns lookup.docs)
+
+(defun empty-doc []
+  {:summary nil
+   :body nil
+   :format :plain
+   :params {}
+   :returns nil
+   :examples []
+   :see []})
+
+(defun empty-return []
+  {:type nil
+   :doc nil})

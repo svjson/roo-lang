@@ -1,0 +1,8 @@
+(ns lookup.thing-at
+  (:require [lookup.native :as native]))
+
+(defun read-stdin! []
+  (native/read-stdin!))
+
+(defun thing-at [package-dir file line column source]
+  (native/thing-at! package-dir file line column source))

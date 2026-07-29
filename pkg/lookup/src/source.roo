@@ -1,0 +1,36 @@
+(ns lookup.source
+  (:require [roo.io :as io]
+            [roo.string :as string]
+            [lookup.native :as native]))
+
+(defun source-file? [path]
+  (= ".roo" (io/extension path)))
+
+(defun source-files-in [root]
+  (if (io/directory? root)
+    (let [entries (io/list-directory! root)
+          files (map (filter entries
+                             (fn [entry]
+                               (and (= (:type entry) :file)
+                                    (source-file? (:path entry)))))
+                     :path)
+          directories (filter entries (fn [entry] (= (:type entry) :directory)))]
+      (concat files
+              (flatten
+                (map directories
+                     (fn [entry]
+                       (source-files-in (:path entry)))))))
+    []))
+
+(defun normalized-path [path]
+  (string/replace (str path) "\\" "/"))
+
+(defun normalized-source-location [source]
+  (assoc source :path (normalized-path (:path source))))
+
+(defun source-form-entry [entry]
+  (assoc entry :source (normalized-source-location (:source entry))))
+
+(defun source-entry [path]
+  {:path (normalized-path path)
+   :forms (map (native/read-file-forms! path) source-form-entry)})

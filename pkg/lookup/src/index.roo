@@ -1,0 +1,36 @@
+(ns lookup.index
+  (:require [roo.io :as io]
+            [lookup.package :as package]
+            [lookup.source :as source]
+            [lookup.symbols :as symbols]))
+
+(defun package-source-files [package-dir manifest]
+  (sort
+    (flatten
+      (map (package/package-load-roots manifest)
+           (fn [root]
+             (source/source-files-in (io/join-path package-dir (str root))))))
+    <))
+
+(defun source-form-index [package-dir]
+  (let [manifest (package/read-manifest! package-dir)
+        files (package-source-files package-dir manifest)]
+    {:format :roo/source-forms
+     :version 1
+     :package (package/package-info manifest)
+     :sources (map files source/source-entry)}))
+
+(defun symbol-index [package-dir]
+  (let [source-index (source-form-index package-dir)
+        package-name (:name (:package source-index))
+        sources (:sources source-index)]
+    {:format :roo/symbol-index
+     :version 1
+     :package (:package source-index)
+     :sources (map sources (fn [source] {:path (:path source)}))
+     :namespaces (filter (map sources symbols/source-namespace-entry)
+                         (fn [entry] (not (nil? entry))))
+     :symbols (flatten
+                (map sources
+                     (fn [source]
+                       (symbols/source-symbols package-name source))))}))
