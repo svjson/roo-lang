@@ -108,6 +108,7 @@ namespace Roo
     lang_symbols.emplace("for", ForForm::make());
     lang_symbols.emplace("for-indexed", ForIndexedForm::make());
     lang_symbols.emplace("float", FloatFunction::make());
+    lang_symbols.emplace("floor", FloorFunction::make());
     lang_symbols.emplace("get", GetFunction::make());
     lang_symbols.emplace("get-in", GetInFunction::make());
     lang_symbols.emplace("head", HeadFunction::make());
@@ -163,6 +164,7 @@ namespace Roo
     lang_symbols.emplace("resolve", ResolveFunction::make());
     lang_symbols.emplace("reverse", ReverseFunction::make());
     lang_symbols.emplace("rnd", RndFunction::make());
+    lang_symbols.emplace("round", RoundFunction::make());
     lang_symbols.emplace("select-keys", SelectKeysFunction::make());
     lang_symbols.emplace("seq?", SeqPFunction::make());
     lang_symbols.emplace("seqable?", SeqablePFunction::make());
