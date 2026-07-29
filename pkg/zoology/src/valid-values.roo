@@ -3,10 +3,10 @@
 
 (defun valid-values-source-items [context value source]
   (cond
-    (= (type-of source) "vector")
+    (sequential? source)
     (or (get-in context source) [])
 
-    (= (type-of source) "map")
+    (map? source)
     (let [source-key (core/path-value value (or (:field source)
                                                 (:path source)))
           source-path (get (:sources source) source-key)]
@@ -21,10 +21,10 @@
     (nil? valid-values)
     []
 
-    (= (type-of valid-values) "vector")
+    (sequential? valid-values)
     valid-values
 
-    (= (type-of valid-values) "map")
+    (map? valid-values)
     (if (contains? valid-values :from)
       (valid-values-source-items context value (:from valid-values))
       (get valid-values :values []))
@@ -37,7 +37,7 @@
       value-path
       (get-in item value-path)
 
-      (= (type-of item) "map")
+      (map? item)
       (if (contains? item :value)
         (:value item)
         (:id item))

@@ -30,7 +30,7 @@
 
     :default
     (let [text (keyword-input-text value)]
-      (if (core/blank-value? text)
+      (if (blank? text)
         nil
         (keyword text)))))
 
@@ -42,10 +42,10 @@
     (number? value)
     value
 
-    (= (type-of value) "string")
+    (string? value)
     (let [text (text-value value)]
       (cond
-        (core/blank-value? text)
+        (blank? text)
         nil
 
         integer?
@@ -78,12 +78,12 @@
                (canonical-field schema result field-id field-schema))))
 
 (defun canonical-object [schema value]
-  (if (= (type-of value) "map")
+  (if (map? value)
     (canonical-fields schema (schema/active-schema-fields schema value) value)
     value))
 
 (defun canonical-union [schema root value]
-  (if (= (type-of value) "map")
+  (if (map? value)
     (let [base-value
           (canonical-value (schema/schema-document-with-root schema (:base root))
                            value)]

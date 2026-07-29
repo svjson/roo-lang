@@ -1,22 +1,10 @@
 (ns zoology.core)
 
-(def prepared-schema-key :zoology/prepared?)
-(def schema-ref-key :zoology/ref)
-
-(defun prepared-schema? [schema]
-  (and (= (type-of schema) "map")
-       (= true (get schema prepared-schema-key))))
-
-(defun blank-value? [value]
-  (or (nil? value)
-      (and (= (type-of value) "string")
-           (= (count value) 0))))
-
 (defun field-path [field-id field-schema]
   (let [path (:path field-schema)]
     (cond
       (nil? path) [field-id]
-      (= (type-of path) "vector") path
+      (sequential? path) path
       :default [path])))
 
 (defun field-value [value field-id field-schema]
@@ -25,14 +13,14 @@
 (defun path-value [value path]
   (cond
     (nil? path) value
-    (= (type-of path) "vector") (get-in value path)
+    (sequential? path) (get-in value path)
     :default (get value path)))
 
 (defun path-present-at? [value path index]
   (cond
     (>= index (count (or path []))) true
 
-    (and (= (type-of value) "map")
+    (and (map? value)
          (contains? value (nth path index)))
     (path-present-at? (get value (nth path index))
                       path

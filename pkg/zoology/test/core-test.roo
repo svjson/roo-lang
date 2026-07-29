@@ -2,11 +2,6 @@
   (:require proof.core
             [zoology.core :as core]))
 
-(deftest blank-value-recognizes-nil-and-empty-text
-  (is (= true (core/blank-value? nil)))
-  (is (= true (core/blank-value? "")))
-  (is (= false (core/blank-value? "Ada"))))
-
 (deftest field-path-resolves-field-storage-path
   (is (= [:field/name]
          (core/field-path :field/name {})))

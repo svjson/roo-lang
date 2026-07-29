@@ -10,7 +10,9 @@
 
 (defun required-error [value field-schema]
   (when (and (= (:required field-schema) true)
-             (core/blank-value? value))
+             (or (nil? value)
+                 (and (string? value)
+                      (blank? value))))
     {:rule :required}))
 
 (defun min-error [value field-schema]
@@ -35,7 +37,9 @@
   (let [valid-values (:valid-values field-schema)
         allowed (valid-values/valid-value-values context field-schema parent-value)]
     (when (and valid-values
-               (not (core/blank-value? value))
+               (not (or (nil? value)
+                        (and (string? value)
+                             (blank? value))))
                (not (contains? allowed value)))
       {:rule :valid-values
        :allowed allowed
@@ -43,7 +47,9 @@
 
 (defun object-field-error [schema context value field-schema]
   (when (and (= (:type field-schema) :object)
-             (not (core/blank-value? value)))
+             (not (or (nil? value)
+                      (and (string? value)
+                           (blank? value)))))
     (let [errors (validation-errors-with-context
                   (schema/schema-document-with-root schema field-schema)
                   value
@@ -52,14 +58,9 @@
         {:rule :object
          :errors errors}))))
 
-(defun array-indexes [items]
-  (if (empty? (or items []))
-    []
-    (range 0 (dec (count items)))))
-
 (defun array-item-errors [schema context value field-schema]
   (let [item-schema (schema/schema-document-with-root schema (:items field-schema))]
-    (reduce (array-indexes value)
+    (reduce (if (empty? value) [] (range 0 (dec (count value))))
             {}
             (fn [errors index]
               (let [item-errors (validation-errors-with-context
@@ -72,7 +73,9 @@
 
 (defun array-value-error [schema context value field-schema]
   (when (and (= (:type field-schema) :array)
-             (not (core/blank-value? value)))
+             (not (or (nil? value)
+                      (and (string? value)
+                           (blank? value)))))
     (let [errors (array-item-errors schema context value field-schema)]
       (when (not (empty? (keys errors)))
         {:rule :array

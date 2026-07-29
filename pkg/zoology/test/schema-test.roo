@@ -1,6 +1,5 @@
 (ns zoology.schema-test
   (:require proof.core
-            [zoology.core :as core]
             [zoology.schema :as schema]))
 
 (deftest schema-resolves-object-definition-extensions
@@ -94,7 +93,7 @@
                                                 :items {:ref :node}}}}}
                     :schema {:ref :node}}
         prepared (schema/prepare-schema schema-doc)]
-    (is (= true (core/prepared-schema? prepared)))
+    (is (:zoology/prepared? prepared))
     (is (= {:type :object
             :fields {:name {:type :text}
                      :children {:type :array

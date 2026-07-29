@@ -2,7 +2,7 @@
   (:require [zoology.core :as core]))
 
 (defun schema-root [schema]
-  (if (and (= (type-of schema) "map")
+  (if (and (map? schema)
            (contains? schema :schema))
     (:schema schema)
     schema))
@@ -47,7 +47,7 @@
 
 (defun resolve-nested-schema [schema resolved seen-refs]
   (cond
-    (not (= (type-of resolved) "map"))
+    (not (map? resolved))
     resolved
 
     (= (:type resolved) :object)
@@ -71,7 +71,7 @@
 
 (defun resolve-schema-node [schema schema-node seen-refs]
   (cond
-    (not (= (type-of schema-node) "map"))
+    (not (map? schema-node))
     schema-node
 
     (contains? schema-node :ref)
@@ -85,7 +85,7 @@
                                            definition
                                            next-seen-refs)
                       (dissoc schema-node :ref))
-               core/schema-ref-key
+               :zoology/ref
                ref-id)))
 
     (contains? schema-node :extends)
@@ -103,12 +103,12 @@
   (resolve-schema-node schema schema-node []))
 
 (defun resolved-root-schema [schema]
-  (if (core/prepared-schema? schema)
+  (if (:zoology/prepared? schema)
     (schema-root schema)
     (resolve-schema schema (schema-root schema))))
 
 (defun root-field-map? [root]
-  (and (= (type-of root) "map")
+  (and (map? root)
        (not (keyword? (:type root)))
        (not (keyword? (:ref root)))
        (not (keyword? (:extends root)))
@@ -122,7 +122,7 @@
 
 (defun prepare-schema [schema]
   (if (or (nil? schema)
-          (core/prepared-schema? schema))
+          (:zoology/prepared? schema))
     schema
     (let [root (prepare-root-schema schema)]
       (if (and (empty? (schema-definitions schema))
@@ -130,7 +130,7 @@
         root
         (assoc {:definitions (schema-definitions schema)
                 :schema root}
-               core/prepared-schema-key
+               :zoology/prepared?
                true)))))
 
 (defun schema-fields [schema]
@@ -147,7 +147,7 @@
 
 (defun resolved-field-schema [schema field-id]
   (let [field-schema (get (schema-fields schema) field-id)]
-    (if (core/prepared-schema? schema)
+    (if (:zoology/prepared? schema)
       field-schema
       (resolve-schema schema field-schema))))
 
@@ -207,10 +207,10 @@
 
 (defun schema-document-with-root [schema root]
   (cond
-    (core/prepared-schema? schema)
+    (:zoology/prepared? schema)
     (assoc {:definitions (schema-definitions schema)
             :schema root}
-           core/prepared-schema-key
+           :zoology/prepared?
            true)
 
     (empty? (schema-definitions schema))
