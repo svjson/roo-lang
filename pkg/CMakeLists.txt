@@ -16,6 +16,7 @@ add_subdirectory(lookup)
 add_subdirectory(spool)
 add_subdirectory(workbook)
 add_subdirectory(footsteps)
+add_subdirectory(zoology)
 
 function(roo_add_stage_package_target package_name)
   set(options)
@@ -75,6 +76,7 @@ roo_add_stage_package_target(proofread NATIVE_TARGET proofread_native)
 roo_add_stage_package_target(loom)
 roo_add_stage_package_target(workbook)
 roo_add_stage_package_target(footsteps)
+roo_add_stage_package_target(zoology)
 
 add_custom_target(stage_native_packages
   DEPENDS
@@ -84,6 +86,7 @@ add_custom_target(stage_native_packages
     stage_loom_package
     stage_workbook_package
     stage_footsteps_package
+    stage_zoology_package
 )
 
 if(TARGET testproof)

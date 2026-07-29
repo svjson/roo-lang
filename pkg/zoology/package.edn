@@ -1,0 +1,5 @@
+{:name zoology
+ :version "0.1.0"
+ :description "Generic schema resolution, canonicalization, and validation for Roo data."
+ :dependencies []
+ :load-roots ["src"]}
