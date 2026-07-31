@@ -1,5 +1,6 @@
 (ns loom.common.dependency-graph
   (:require [roo.io :as io]
+            [roo.string :as string]
             [loom.common.manifest :as manifest]
             [loom.common.repository :as repository]))
 
@@ -14,13 +15,8 @@
       (substr text 1)
       text)))
 
-(defun starts-with? [text prefix]
-  (if (< (count text) (count prefix))
-    false
-    (= prefix (substr text 0 (count prefix)))))
-
 (defun file-path [text]
-  (if (starts-with? text "file:")
+  (if (string/starts-with? text "file:")
     (substr text (count "file:"))
     nil))
 
