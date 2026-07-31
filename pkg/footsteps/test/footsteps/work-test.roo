@@ -1,0 +1,175 @@
+(ns footsteps.work-test
+  (:require proof.core
+            [footsteps.progress :as progress]
+            [footsteps.work :as work]))
+
+(defun complete-with [key value]
+  (fn [ctx]
+    {:data (assoc (:data ctx) key value)}))
+
+(deftest advances-named-steps-from-start-queue
+  (let [work-value (work/make
+                    {:id :work/test
+                     :label "Testing"
+                     :data {}
+                     :steps {:first {:label "First"
+                                     :run (complete-with :first true)}
+                             :second {:label "Second"
+                                      :run (complete-with :second true)}}
+                     :start [:first :second]})
+        first (work/advance work-value)
+        second (work/advance (:work first))]
+    (is (= {:first true
+            :second true}
+           (-> second :work :data)))
+    (is (= true
+           (work/complete? (:work second))))))
+
+(deftest nested-progress-report-is-projected-into-current-step-scope
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {}
+                     :steps {:world-map {:label "World map"
+                                         :weight 50
+                                         :run (fn [_ctx]
+                                                {:complete? false
+                                                 :progress
+                                                 {:progress-value 25
+                                                  :progress-max 100
+                                                  :label "Building roads"
+                                                  :step-id :roads}})}
+                             :backend {:label "Backend"
+                                       :weight 50
+                                       :run (complete-with :backend true)}}
+                     :start [:world-map :backend]})
+        advanced (work/advance work-value)
+        progress (progress/value (:work advanced))]
+    (is (= 12.500000
+           (:progress-value progress)))
+    (is (= "Building roads"
+           (:label progress)))
+    (is (= :roads
+           (:step-id progress)))))
+
+(deftest nested-progress-report-cannot-reduce-visible-progress
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {:count 0}
+                     :steps {:nested {:label "Nested"
+                                      :weight 50
+                                      :run (fn [ctx]
+                                             (let [count (or (-> ctx
+                                                                 :data
+                                                                 :count)
+                                                             0)
+                                                   next-count (inc count)
+                                                   nested-value
+                                                   (if (= 0 count) 80 20)]
+                                               {:complete? false
+                                                :data (assoc (:data ctx)
+                                                             :count
+                                                             next-count)
+                                                :progress
+                                                {:progress-value nested-value
+                                                 :progress-max 100
+                                                 :label "Nested report"}}))}
+                             :tail {:label "Tail"
+                                    :weight 50
+                                    :run (complete-with :tail true)}}
+                     :start [:nested :tail]})
+        first (work/advance work-value)
+        first-value (:progress-value (progress/value (:work first)))
+        second (work/advance (:work first))
+        second-value (:progress-value (progress/value (:work second)))]
+    (is (= true
+           (>= second-value first-value)))))
+
+(defun delegated-child-work [data]
+  (work/make
+   {:id :child/work
+    :label "Child"
+    :progress-max 4
+    :data data
+    :steps {:tick {:label "Tick"
+                   :run (fn [ctx]
+                          {:data (update (:data ctx) :count inc)})}}
+    :start [:tick :tick :tick :tick]}))
+
+(deftest delegated-work-advances-inside-current-step-scope
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {:count 0}
+                     :steps {:parent {:label "Parent"
+                                      :weight 50
+                                      :run (fn [ctx]
+                                             {:delegate
+                                              (delegated-child-work
+                                               (:data ctx))})}
+                             :tail {:label "Tail"
+                                    :weight 50
+                                    :run (complete-with :tail true)}}
+                     :start [:parent :tail]})
+        started (work/advance work-value)
+        first-child-step (work/advance (:work started))
+        progress (progress/value (:work first-child-step))]
+    (is (= 12.500000
+           (:progress-value progress)))
+    (is (= "Tick"
+           (:label progress)))
+    (is (= {:count 1}
+           (-> first-child-step :work :data)))))
+
+(deftest delegated-work-completes-parent-step
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {:count 0}
+                     :steps {:parent {:label "Parent"
+                                      :weight 50
+                                      :run (fn [ctx]
+                                             {:delegate
+                                              (delegated-child-work
+                                               (:data ctx))})}
+                             :tail {:label "Tail"
+                                    :weight 50
+                                    :run (complete-with :tail true)}}
+                     :start [:parent :tail]})
+        result (work/run work-value {:min-duration-ms 1
+                                     :max-steps 10
+                                     :clock (fn [] 0)})]
+    (is (= true
+           (work/complete? (:work result))))
+    (is (= {:count 4
+            :tail true}
+           (-> result :work :data)))))
+
+(deftest run-respects-injected-time-budget
+  (let [ticks {:values [0 1 2 3 4 5 6 7 8 9 10]
+               :index 0}
+        clock (fn []
+                (let [index (:index ticks)
+                      value (nth (:values ticks) index)]
+                  (assoc! ticks :index (min (+ index 1)
+                                            (- (count (:values ticks)) 1)))
+                  value))
+        work-value (work/make
+                    {:id :work/test
+                     :data {:count 0}
+                     :steps {:tick {:label "Tick"
+                                    :run (fn [ctx]
+                                           {:data (update (:data ctx)
+                                                         :count
+                                                         inc)})}}
+                     :start [:tick :tick :tick :tick]})
+        result (work/run work-value
+                         {:clock clock
+                          :min-duration-ms 2
+                          :max-duration-ms 3
+                          :max-steps 10})]
+    (is (= 2
+           (:steps-run result)))
+    (is (= {:count 2}
+           (-> result :work :data)))))

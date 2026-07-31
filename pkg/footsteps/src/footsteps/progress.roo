@@ -1,0 +1,89 @@
+(ns footsteps.progress
+  (:require [footsteps.scope :as scope]))
+
+(defun clamp [min-value max-value value]
+  (max min-value (min max-value value)))
+
+(defun report [candidate]
+  (if (and (map? candidate)
+           (some? (:progress-value candidate))
+           (some? (:progress-max candidate)))
+    {:progress-value (or (:progress-value candidate) 0)
+     :progress-max (max 1 (or (:progress-max candidate) 1))
+     :label (:label candidate)
+     :step-id (:step-id candidate)
+     :scope-id (:scope-id candidate)
+     :scope-progress-value (:scope-progress-value candidate)
+     :scope-progress-max (:scope-progress-max candidate)}
+    (value candidate)))
+
+(defun ratio [progress-report]
+  (let [progress-report (report progress-report)]
+    (clamp 0 1 (/ (or (:progress-value progress-report) 0)
+                  (max 1 (or (:progress-max progress-report) 1))))))
+
+(defun project [scope-spec progress-report]
+  (let [progress-report (report progress-report)
+        progress-scope (scope/make
+                        (or (:scope-id scope-spec)
+                            (:id scope-spec)
+                            (:step-id scope-spec))
+                        (or (:start scope-spec) 0)
+                        (or (:end scope-spec)
+                            (:progress-max scope-spec)
+                            scope/default-progress-max))
+        progress-max (max 1 (or (:progress-max scope-spec)
+                                (:end progress-scope)))
+        value (clamp (or (:minimum-progress-value scope-spec)
+                         (:start progress-scope))
+                     progress-max
+                     (+ (:start progress-scope)
+                        (* (scope/size progress-scope)
+                           (ratio progress-report))))]
+    {:progress-value value
+     :progress-max progress-max
+     :label (or (:label progress-report)
+                (:label scope-spec))
+     :step-id (or (:step-id progress-report)
+                  (:step-id scope-spec)
+                  (:id progress-scope))
+     :scope-id (:id progress-scope)
+     :scope-progress-value (- value (:start progress-scope))
+     :scope-progress-max (scope/size progress-scope)}))
+
+(defun projected-value [step]
+  (if-let [progress-report (:progress step)]
+    (+ (-> step :scope :start)
+       (* (scope/size (:scope step))
+          (ratio progress-report)))
+    (-> step :scope :start)))
+
+(defun raw-value [work]
+  (cond
+    (= :footsteps.status/complete (:status work)) (:progress-max work)
+    (:current work) (projected-value (:current work))
+    (not (empty? (:queue work))) (-> work :queue head :scope :start)
+    :default (:progress-max work)))
+
+(defun value [work]
+  (let [raw (raw-value work)
+        highest (or (:highest-progress work) 0)
+        progress-value (clamp highest (:progress-max work) raw)
+        instance (or (:current work)
+                     (head (:queue work)))
+        progress-scope (:scope instance)]
+    {:progress-value progress-value
+     :progress-max (:progress-max work)
+     :label (or (-> instance :progress :label)
+                (:label instance)
+                (:label work))
+     :step-id (or (-> instance :progress :step-id)
+                  (:id instance)
+                  (:id work))
+     :scope-id (:id progress-scope)
+     :scope-progress-value (if progress-scope
+                             (- progress-value (:start progress-scope))
+                             progress-value)
+     :scope-progress-max (if progress-scope
+                           (scope/size progress-scope)
+                           (:progress-max work))}))

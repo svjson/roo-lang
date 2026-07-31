@@ -1,0 +1,16 @@
+(ns footsteps.estimate)
+
+(defun value* [candidate ctx]
+  (cond
+    (fn? candidate) (candidate ctx)
+    (nil? candidate) nil
+    :default candidate))
+
+(defun value [candidate ctx]
+  (if (map? candidate)
+    (or (value* (:estimate candidate) ctx)
+        (value* (:estimated-duration-ms candidate) ctx)
+        (value* (:progress-estimate candidate) ctx)
+        (:progress-max candidate)
+        1)
+    (value* candidate ctx)))

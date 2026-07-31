@@ -1,0 +1,11 @@
+(ns footsteps.scope)
+
+(def default-progress-max 1000)
+
+(defun make [id start end]
+  {:id id
+   :start start
+   :end end})
+
+(defun size [scope]
+  (max 0 (- (:end scope) (:start scope))))

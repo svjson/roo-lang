@@ -1,0 +1,18 @@
+(ns footsteps.estimate-test
+  (:require proof.core
+            [footsteps.estimate :as estimate]))
+
+(deftest value-uses-literal-estimate
+  (is (= 12
+         (estimate/value {:estimate 12} {}))))
+
+(deftest value-uses-estimate-function
+  (is (= 7
+         (estimate/value
+          {:estimate (fn [ctx]
+                       (:size ctx))}
+          {:size 7}))))
+
+(deftest value-falls-back-to-progress-max
+  (is (= 4
+         (estimate/value {:progress-max 4} {}))))

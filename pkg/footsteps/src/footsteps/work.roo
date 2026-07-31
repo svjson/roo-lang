@@ -1,0 +1,187 @@
+(ns footsteps.work
+  (:require [footsteps.progress :as progress]
+            [footsteps.queue :as queue]
+            [footsteps.scope :as scope]))
+
+(def default-work-slice-limit 1000)
+
+(defun make [spec]
+  (let [progress-max (or (:progress-max spec) scope/default-progress-max)
+        root-scope (scope/make (:id spec) 0 progress-max)
+        work (assoc spec
+                    :progress-max progress-max
+                    :queue []
+                    :completed []
+                    :current nil
+                    :status :footsteps.status/running
+                    :highest-progress 0
+                    :result nil)]
+    (assoc work
+           :queue
+           (queue/allocate-instances work (:start spec) root-scope))))
+
+(defun complete? [work]
+  (= :footsteps.status/complete (:status work)))
+
+(defun start-current [work]
+  (if (:current work)
+    work
+    (if-let [next (head (:queue work))]
+      (assoc work
+             :current (assoc next :started? true)
+             :queue (tail (:queue work)))
+      (assoc work
+             :status :footsteps.status/complete
+             :highest-progress (:progress-max work)))))
+
+(defun with-delegated-work [step child-work]
+  (assoc step
+         :delegate child-work
+         :progress (progress/value child-work)))
+
+(defun completed-if-drained [work]
+  (if (and (nil? (:current work))
+           (empty? (:queue work)))
+    (assoc work
+           :status :footsteps.status/complete
+           :result (:data work)
+           :highest-progress (:progress-max work))
+    work))
+
+(defun finish-current [work step result]
+  (let [next-work (assoc work
+                         :data (or (:data result) (:data work))
+                         :current nil
+                         :completed (concat (:completed work)
+                                            [(assoc step :complete? true)])
+                         :highest-progress
+                         (max (or (:highest-progress work) 0)
+                              (-> step :scope :end)))]
+    (completed-if-drained
+     (queue/append-work next-work step result))))
+
+(defun complete-current [work result]
+  (assoc work
+         :data (or (:data result) (:data work))
+         :result (or (:result result) (:data result) (:data work))
+         :status :footsteps.status/complete
+         :current nil
+         :queue []
+         :highest-progress (:progress-max work)))
+
+(defun continue-delegated-work [work step child-work]
+  (let [advanced (advance child-work)
+        next-child-work (:work advanced)
+        next-step (with-delegated-work step next-child-work)
+        result {:data (:data next-child-work)
+                :result (:result next-child-work)
+                :metadata (:metadata advanced)}]
+    (if (complete? next-child-work)
+      {:work (finish-current work next-step result)
+       :metadata (:metadata advanced)}
+      {:work (assoc work
+                    :data (:data next-child-work)
+                    :current next-step
+                    :highest-progress
+                    (max (or (:highest-progress work) 0)
+                         (progress/projected-value next-step)))
+       :metadata (:metadata advanced)})))
+
+(defun apply-delegated-work [work step child-work]
+  (let [next-step (with-delegated-work step child-work)]
+    (if (complete? child-work)
+      (finish-current work
+                      next-step
+                      {:data (:data child-work)
+                       :result (:result child-work)})
+      (assoc work
+             :data (:data child-work)
+             :current next-step
+             :highest-progress
+             (max (or (:highest-progress work) 0)
+                  (progress/projected-value next-step))))))
+
+(defun apply-step-result [work step result]
+  (let [result (or result {})]
+    (if (:complete-work? result)
+      (complete-current work result)
+      (if-let [child-work (or (:delegate result)
+                              (:child-work result))]
+        (apply-delegated-work work step child-work)
+        (if (= false (:complete? result))
+          (let [next-current (merge step
+                                    (:work result)
+                                    (if-let [progress-report (:progress result)]
+                                      {:progress
+                                       (progress/report progress-report)}
+                                      {}))]
+            (assoc work
+                   :data (or (:data result) (:data work))
+                   :current next-current
+                   :highest-progress
+                   (max (or (:highest-progress work) 0)
+                        (progress/projected-value next-current))))
+          (finish-current work step result))))))
+
+(defun advance [work]
+  (let [work (start-current work)]
+    (if (complete? work)
+      {:work work
+       :complete? true
+       :result (:result work)
+       :progress (progress/value work)}
+      (let [step (:current work)]
+        (if-let [child-work (:delegate step)]
+          (let [delegated (continue-delegated-work work step child-work)
+                next-work (:work delegated)]
+            {:work next-work
+             :complete? (complete? next-work)
+             :result (:result next-work)
+             :progress (progress/value next-work)
+             :metadata (:metadata delegated)})
+          (let [step-result ((:run step)
+                             {:work work
+                              :data (:data work)
+                              :step step
+                              :entry-data (:entry-data step)})
+                next-work (apply-step-result work step step-result)]
+            {:work next-work
+             :complete? (complete? next-work)
+             :result (:result next-work)
+             :progress (progress/value next-work)
+             :metadata (:metadata step-result)}))))))
+
+(defun budget-available? [started now advanced-any? opts]
+  (let [min-ms (or (:min-duration-ms opts) 0)
+        max-ms (:max-duration-ms opts)]
+    (and (or (not advanced-any?)
+             (< (- now started) min-ms)
+             (and max-ms (< (- now started) max-ms)))
+         (or (nil? max-ms)
+             (< (- now started) max-ms)))))
+
+(defun run [work opts]
+  (let [clock (or (:clock opts)
+                  (fn []
+                    (epoch-ms)))
+        started (clock)
+        current work
+        advanced-any? false
+        count 0
+        limit (or (:max-steps opts) default-work-slice-limit)
+        last-result {:work work
+                     :complete? (complete? work)
+                     :result (:result work)
+                     :progress (progress/value work)}]
+    (while (and (not (complete? current))
+                (< count limit)
+                (budget-available? started (clock) advanced-any? opts))
+      (let [advanced (advance current)]
+        (set! [current] (:work advanced))
+        (set! [last-result] advanced)
+        (set! [advanced-any?] true)
+        (set! [count] (+ count 1))))
+    (assoc last-result
+           :work current
+           :steps-run count
+           :progress (progress/value current))))

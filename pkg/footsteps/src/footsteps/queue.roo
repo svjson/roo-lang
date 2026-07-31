@@ -1,0 +1,116 @@
+(ns footsteps.queue
+  (:require [footsteps.estimate :as estimate]
+            [footsteps.scope :as scope]))
+
+(def append-strategy
+  {:within-current-scope :footsteps.append/within-current-scope
+   :after-current :footsteps.append/after-current
+   :hidden :footsteps.append/hidden})
+
+(defun step-weight [work entry step]
+  (let [weight (:weight step)]
+    (cond
+      (nil? weight) 1
+      (= :inherit weight) (estimate/value step
+                                          {:work work
+                                           :data (:data work)
+                                           :entry entry
+                                           :entry-data (:data entry)
+                                           :step step})
+      :default weight)))
+
+(defun instance [work entry instance-scope]
+  (let [key (get entry :step (get entry :id entry))
+        config (get (:steps work) key)]
+    (merge config
+           {:step key
+            :id (get entry :id (get entry :step entry))
+            :scope instance-scope
+            :entry-data (:data entry)
+            :started? false
+            :complete? false})))
+
+(defun total-weight [work entries]
+  (let [sum 0]
+    (for [entry (or entries [])]
+      (let [config (get (:steps work)
+                        (get entry :step (get entry :id entry)))]
+        (set! [sum] (+ sum (step-weight work entry config)))))
+    (if (> sum 0) sum 1)))
+
+(defun allocate-instances [work entries parent-scope]
+  (let [entries (or entries [])
+        entry-count (count entries)
+        total (total-weight work entries)
+        cursor (:start parent-scope)
+        width (scope/size parent-scope)
+        index 0
+        result []]
+    (for [entry entries]
+      (let [config (get (:steps work)
+                        (get entry :step (get entry :id entry)))
+            fraction (/ (step-weight work entry config) total)
+            next-cursor (if (= (inc index) entry-count)
+                          (:end parent-scope)
+                          (+ cursor (* width fraction)))
+            child-scope (scope/make
+                         (get entry :id (get entry :step entry))
+                         cursor
+                         next-cursor)]
+        (append! result (instance work entry child-scope))
+        (set! [cursor] next-cursor)
+        (set! [index] (inc index))))
+    result))
+
+(defun append-after-current [work step entries]
+  (let [start (max (:highest-progress work)
+                   (if (empty? (or (:completed work) []))
+                     0
+                     (-> work :completed last :scope :end))
+                   (-> step :scope :end))
+        end (:progress-max work)
+        parent-scope (scope/make :footsteps.scope/appended start end)
+        remaining (concat entries
+                          (map (or (:queue work) [])
+                               (fn [instance]
+                                 {:step (:step instance)
+                                  :id (:id instance)
+                                  :data (:entry-data instance)})))
+        queue (allocate-instances work remaining parent-scope)]
+    (assoc work :queue queue)))
+
+(defun append-within-current-scope [work step entries]
+  (let [appended (allocate-instances work entries (:scope step))]
+    (assoc work :queue (concat appended (:queue work)))))
+
+(defun append-hidden [work entries]
+  (let [current (:current work)
+        hidden-scope (scope/make :footsteps.scope/hidden
+                                 (-> current :scope :start)
+                                 (-> current :scope :start))
+        appended (map (or entries [])
+                      (fn [entry]
+                        (instance work entry hidden-scope)))]
+    (assoc work :queue (concat appended (:queue work)))))
+
+(defun append-work [work step result]
+  (let [append (:append result)
+        entries (cond
+                  (nil? append) []
+                  (= "vector" (type-of append)) append
+                  :default [append])]
+    (if (empty? entries)
+      work
+      (let [strategy (or (:append-strategy result)
+                         (:append-strategy step)
+                         (:default-append-strategy work)
+                         (:within-current-scope append-strategy))]
+        (cond
+          (= (:after-current append-strategy) strategy)
+          (append-after-current work step entries)
+
+          (= (:hidden append-strategy) strategy)
+          (append-hidden work entries)
+
+          :default
+          (append-within-current-scope work step entries))))))

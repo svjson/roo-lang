@@ -1,28 +1,25 @@
 (ns footsteps
-  (:require [footsteps.core :as core]))
+  (:require [footsteps.estimate :as estimate-api]
+            [footsteps.progress :as progress-api]
+            [footsteps.queue :as queue-api]
+            [footsteps.work :as work-api]))
 
-(def append-strategy core/append-strategy)
+(def append-strategy queue-api/append-strategy)
 
-(defun make [spec]
-  (core/make spec))
+(def make work-api/make)
 
-(defun advance [work]
-  (core/advance work))
+(def advance work-api/advance)
 
 (defun run [work & opts &rest]
-  (core/run work (or opts {})))
+  (work-api/run work (or opts {})))
 
-(defun complete? [work]
-  (core/complete? work))
+(def complete? work-api/complete?)
 
-(defun progress [work]
-  (core/progress work))
+(def progress progress-api/value)
 
-(defun progress-report [value]
-  (core/progress-report value))
+(def progress-report progress-api/report)
 
-(defun project-progress [scope report]
-  (core/project-progress scope report))
+(def project-progress progress-api/project)
 
 (defun estimate [value & ctx &rest]
-  (core/estimate value (or ctx {})))
+  (estimate-api/value value (or ctx {})))

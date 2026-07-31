@@ -1,0 +1,170 @@
+(ns footsteps.queue-test
+  (:require proof.core
+            [footsteps.progress :as progress]
+            [footsteps.queue :as queue]
+            [footsteps.work :as work]))
+
+(defun complete-with [key value]
+  (fn [ctx]
+    {:data (assoc (:data ctx) key value)}))
+
+(deftest allocates-step-scopes-from-weights
+  (let [work {:id :work/test
+              :progress-max 100
+              :data {}
+              :steps {:small {:label "Small"
+                              :weight 1}
+                      :large {:label "Large"
+                              :weight 3}}}
+        instances (queue/allocate-instances
+                   work
+                   [:small :large]
+                   {:id :work/test
+                    :start 0
+                    :end 100})]
+    (is (= [{:id :small
+             :start 0
+             :end 25.000000}
+            {:id :large
+             :start 25.000000
+             :end 100}]
+           (map instances
+                (fn [instance]
+                  (:scope instance)))))))
+
+(deftest allocation-handles-duplicate-step-entries
+  (let [work {:id :work/test
+              :progress-max 4
+              :data {}
+              :steps {:tick {:label "Tick"}}}
+        instances (queue/allocate-instances
+                   work
+                   [:tick :tick :tick :tick]
+                   {:id :work/test
+                    :start 0
+                    :end 4})]
+    (is (= [1.000000 2.000000 3.000000 4]
+           (map instances
+                (fn [instance]
+                  (-> instance :scope :end)))))))
+
+(deftest inherited-step-weight-uses-step-estimate
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {}
+                     :steps {:small {:label "Small"
+                                     :weight 1
+                                     :run (complete-with :small true)}
+                             :large {:label "Large"
+                                     :weight :inherit
+                                     :estimate 3
+                                     :run (complete-with :large true)}}
+                     :start [:small :large]})
+        first (work/advance work-value)
+        progress (progress/value (:work first))]
+    (is (= 25
+           (:progress-value progress)))
+    (is (= "Large"
+           (:label progress)))))
+
+(deftest inherited-step-weight-can-use-estimate-function
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {:large-weight 3}
+                     :steps {:small {:label "Small"
+                                     :weight 1
+                                     :run (complete-with :small true)}
+                             :large {:label "Large"
+                                     :weight :inherit
+                                     :estimate (fn [ctx]
+                                                 (-> ctx
+                                                     :data
+                                                     :large-weight))
+                                     :run (complete-with :large true)}}
+                     :start [:small :large]})
+        first (work/advance work-value)
+        progress (progress/value (:work first))]
+    (is (= 25
+           (:progress-value progress)))))
+
+(deftest appended-child-work-stays-inside-current-scope
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {}
+                     :steps {:parent {:label "Parent"
+                                      :weight 50
+                                      :run (fn [_ctx]
+                                             {:append [:child-a
+                                                       :child-b]})}
+                             :tail {:label "Tail"
+                                    :weight 50
+                                    :run (complete-with :tail true)}
+                             :child-a {:label "Child A"
+                                       :run (complete-with :a true)}
+                             :child-b {:label "Child B"
+                                       :run (complete-with :b true)}}
+                     :start [:parent :tail]})
+        parent (work/advance work-value)
+        child-a (work/advance (:work parent))
+        progress-a (progress/value (:work child-a))
+        child-b (work/advance (:work child-a))
+        progress-b (progress/value (:work child-b))]
+    (is (= 50
+           (:progress-value (progress/value (:work parent)))))
+    (is (= 50
+           (:progress-value progress-a)))
+    (is (= 50
+           (:progress-value progress-b)))
+    (is (= {:a true
+            :b true}
+           (select-keys (-> child-b :work :data) [:a :b])))))
+
+(deftest progress-never-moves-backward-when-children-are-appended
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {}
+                     :steps {:parent {:label "Parent"
+                                      :weight 50
+                                      :run (fn [_ctx]
+                                             {:append [:child]})}
+                             :tail {:label "Tail"
+                                    :weight 50
+                                    :run (complete-with :tail true)}
+                             :child {:label "Child"
+                                     :run (complete-with :child true)}}
+                     :start [:parent :tail]})
+        after-parent (work/advance work-value)
+        parent-progress (:progress-value (progress/value (:work after-parent)))
+        after-child (work/advance (:work after-parent))
+        child-progress (:progress-value (progress/value (:work after-child)))]
+    (is (= true
+           (>= child-progress parent-progress)))))
+
+(deftest append-after-current-uses-remaining-global-progress
+  (let [work-value (work/make
+                    {:id :work/test
+                     :progress-max 100
+                     :data {}
+                     :steps {:parent {:label "Parent"
+                                      :weight 50
+                                      :append-strategy
+                                      (-> queue/append-strategy :after-current)
+                                      :run (fn [_ctx]
+                                             {:append [:extra]})}
+                             :tail {:label "Tail"
+                                    :weight 50
+                                    :run (complete-with :tail true)}
+                             :extra {:label "Extra"
+                                     :weight 50
+                                     :run (complete-with :extra true)}}
+                     :start [:parent :tail]})
+        after-parent (work/advance work-value)
+        after-extra (work/advance (:work after-parent))]
+    (is (= "Extra"
+           (:label (progress/value (:work after-parent)))))
+    (is (= 75
+           (:progress-value (progress/value (:work after-extra)))))))

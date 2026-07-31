@@ -1,0 +1,73 @@
+(ns footsteps.progress-test
+  (:require proof.core
+            [footsteps.progress :as progress]))
+
+(deftest projected-progress-value-maps-child-report-into-step-scope
+  (let [value (progress/projected-value
+               {:scope {:start 10
+                        :end 30}
+                :progress {:progress-value 25
+                           :progress-max 100}})]
+    (is (= 15
+           value))))
+
+(deftest value-cannot-move-backward
+  (let [progress (progress/value
+                  {:id :work/test
+                   :progress-max 100
+                   :highest-progress 40
+                   :current {:id :step/slow
+                             :label "Slow"
+                             :scope {:id :step/slow
+                                     :start 0
+                                     :end 50}
+                             :progress {:progress-value 20
+                                        :progress-max 100
+                                        :label "Nested report"}}})]
+    (is (= 40
+           (:progress-value progress)))
+    (is (= "Nested report"
+           (:label progress)))))
+
+(deftest project-maps-child-report-into-explicit-scope
+  (let [progress (progress/project
+                  {:id :setup/step
+                   :start 2
+                   :end 3
+                   :progress-max 10
+                   :label "Setup step"}
+                  {:progress-value 2
+                   :progress-max 4
+                   :label "Child work"
+                   :step-id :child/work})]
+    (is (= 2.500000
+           (:progress-value progress)))
+    (is (= 10
+           (:progress-max progress)))
+    (is (= "Child work"
+           (:label progress)))
+    (is (= :child/work
+           (:step-id progress)))
+    (is (= :setup/step
+           (:scope-id progress)))
+    (is (= 0.500000
+           (:scope-progress-value progress)))
+    (is (= 1
+           (:scope-progress-max progress)))))
+
+(deftest project-uses-scope-label-and-step-when-child-omits-them
+  (let [progress (progress/project
+                  {:id :setup/step
+                   :step-id :setup/step
+                   :start 0
+                   :end 5
+                   :progress-max 10
+                   :label "Setup step"}
+                  {:progress-value 1
+                   :progress-max 5})]
+    (is (= 1
+           (:progress-value progress)))
+    (is (= "Setup step"
+           (:label progress)))
+    (is (= :setup/step
+           (:step-id progress)))))
