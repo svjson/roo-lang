@@ -1,0 +1,199 @@
+(ns lookup.native-docs
+  (:require [lookup.docstrings :as docstrings]
+            [roo.string :as string]))
+
+(defun strip-suffix [text suffix]
+  (if (string/ends-with? text suffix)
+    (substr text 0 (- (count text) (count suffix)))
+    text))
+
+(defun strip-cpp-comment-line [line]
+  (let [trimmed (trim line)
+        without-open (cond
+                       (string/starts-with? trimmed "/**")
+                       (substr trimmed 3 (count trimmed))
+
+                       (string/starts-with? trimmed "/*!")
+                       (substr trimmed 3 (count trimmed))
+
+                       (string/starts-with? trimmed "/*")
+                       (substr trimmed 2 (count trimmed))
+
+                       true
+                       trimmed)
+        without-close (strip-suffix (trim without-open) "*/")
+        clean (trim without-close)]
+    (trim
+      (if (string/starts-with? clean "*")
+        (substr clean 1 (count clean))
+        clean))))
+
+(defun cpp-comment-lines [text]
+  (map (docstrings/split-lines text) strip-cpp-comment-line))
+
+(defun join-lines [separator lines]
+  (if (= 0 (count lines))
+    nil
+    (apply join (concat [separator] lines))))
+
+(defun cpp-doc-directive? [line]
+  (string/starts-with? (trim line) "@"))
+
+(defun cpp-doc-usage-line? [line]
+  (= "Usage:" (trim line)))
+
+(defun cpp-doc-table-line? [line]
+  (string/starts-with? (trim line) "|"))
+
+(defun cpp-doc-body-line? [line]
+  (not (or (cpp-doc-directive? line)
+           (cpp-doc-usage-line? line)
+           (cpp-doc-table-line? line))))
+
+(defun cpp-doc-brief-text [line]
+  (let [trimmed (trim line)]
+    (if (string/starts-with? trimmed "@brief")
+      (trim (substr trimmed 6 (count trimmed)))
+      nil)))
+
+(defun cpp-doc-code-format [state]
+  (or (:code-format state) :roo))
+
+(defun cpp-doc-start-code [state line]
+  (let [trimmed (trim line)
+        format-name (trim (substr trimmed 5 (count trimmed)))]
+    (assoc state
+           :section :code
+           :code-format (if (blank? format-name) :roo (keyword format-name))
+           :code-lines [])))
+
+(defun cpp-doc-finish-code [state]
+  (assoc state
+         :section nil
+         :examples (concat (:examples state)
+                           [{:format (cpp-doc-code-format state)
+                             :source (join-lines "\n" (:code-lines state))}])
+         :code-format nil
+         :code-lines []))
+
+(defun cpp-doc-arg-row [line]
+  (let [trimmed (trim line)]
+    (if (not (cpp-doc-table-line? trimmed))
+      nil
+      (let [content (strip-suffix (substr trimmed 1 (count trimmed)) "|")
+            separator (find-index content (fn [ch] (= "|" (str ch))))]
+        (if (nil? separator)
+          nil
+          (let [arg (trim (substr content 0 separator))
+                doc (trim (substr content (+ separator 1) (count content)))]
+            (if (or (blank? arg)
+                    (= "Arg #" arg)
+                    (string/starts-with? arg "---"))
+              nil
+              {:key arg
+               :doc {:type nil :doc doc}})))))))
+
+(defun cpp-doc-return-text [line]
+  (let [trimmed (trim line)]
+    (cond
+      (string/starts-with? trimmed "@returns")
+      (trim (substr trimmed 8 (count trimmed)))
+
+      (string/starts-with? trimmed "@return")
+      (trim (substr trimmed 7 (count trimmed)))
+
+      true
+      nil)))
+
+(defun cpp-doc-step [state line]
+  (let [trimmed (trim line)]
+    (cond
+
+      (= :code (:section state))
+      (if (= "@endcode" trimmed)
+        (cpp-doc-finish-code state)
+        (assoc state
+               :code-lines
+               (concat (:code-lines state) [trimmed])))
+
+      (string/starts-with? trimmed "@code")
+      (cpp-doc-start-code state trimmed)
+
+      (not (nil? (cpp-doc-brief-text trimmed)))
+      (assoc state
+             :summary
+             (concat (:summary state) [(cpp-doc-brief-text trimmed)])
+             :brief? true)
+
+      (and (:brief? state)
+           (not (blank? trimmed))
+           (cpp-doc-body-line? trimmed))
+      (assoc state
+             :summary
+             (concat (:summary state) [trimmed]))
+
+      (:brief? state)
+      (cpp-doc-step (assoc state :brief? false) line)
+
+      (not (nil? (cpp-doc-return-text trimmed)))
+      (assoc state
+             :returns
+             (concat (:returns state) [(cpp-doc-return-text trimmed)]))
+
+      (not (nil? (cpp-doc-arg-row trimmed)))
+      (let [row (cpp-doc-arg-row trimmed)]
+        (assoc state
+               :params
+               (assoc (:params state) (:key row) (:doc row))))
+
+      (cpp-doc-body-line? trimmed)
+      (assoc state
+             :body
+             (concat (:body state) [line]))
+
+      true
+      state)))
+
+(defun from-cpp-comment
+  "Parse an existing Roo native C++ header comment into documentation data."
+  [text]
+  (let [state (reduce (cpp-comment-lines text)
+                      {:summary []
+                       :body []
+                       :params {}
+                       :returns []
+                       :examples []
+                       :section nil
+                       :code-format nil
+                       :code-lines []
+                       :brief? false}
+                      cpp-doc-step)]
+    {:summary (join-lines " " (:summary state))
+     :body (docstrings/paragraph-text (docstrings/paragraphs (:body state)))
+     :format :markdown
+     :params (:params state)
+     :returns (if (= 0 (count (:returns state)))
+                nil
+                {:type nil
+                 :doc (docstrings/paragraph-text
+                        (docstrings/paragraphs (:returns state)))})
+     :examples (:examples state)
+     :see []
+     :since nil
+     :deprecated nil}))
+
+(defun native-identity-from-cpp-comment
+  "Parse a native implementation identity comment.
+
+  The accepted idiom is:
+  `ClassName - roo.namespace/exported-symbol`."
+  [text]
+  (let [lines (filter (cpp-comment-lines text) (fn [line] (not (blank? line))))
+        line (head lines)
+        separator (if (nil? line)
+                    nil
+                    (find-index line (fn [ch] (= "-" (str ch)))))]
+    (if (nil? separator)
+      nil
+      {:native-class (trim (substr line 0 separator))
+       :qualified-name (trim (substr line (+ separator 1) (count line)))})))

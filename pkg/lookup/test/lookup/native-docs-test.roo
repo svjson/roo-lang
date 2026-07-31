@@ -1,0 +1,69 @@
+(ns lookup.native-docs-test
+  (:require proof.core
+            [lookup.native-docs :as native-docs]))
+
+(deftest parses-cpp-native-header-comment
+  (let [doc (native-docs/from-cpp-comment
+              "/*!
+               * @brief Read the complete contents of a text file as a string.
+               *
+               * Usage:
+               * @code
+               * (roo.io/slurp! \"notes.txt\") => \"file contents\"
+               * @endcode
+               *
+               * | Arg # | Description                   |
+               * |-------|-------------------------------|
+               * | 0     | The path of the file to read. |
+               */")]
+    (is (= "Read the complete contents of a text file as a string."
+           (:summary doc)))
+    (is (= nil (:body doc)))
+    (is (= :markdown (:format doc)))
+    (is (= {:type nil :doc "The path of the file to read."}
+           (get (:params doc) "0")))
+    (is (= [{:format :roo
+             :source "(roo.io/slurp! \"notes.txt\") => \"file contents\""}]
+           (:examples doc)))))
+
+(deftest parses-cpp-native-header-comment-body-and-continuation
+  (let [doc (native-docs/from-cpp-comment
+              "/**
+               * @brief Shifts an integer value right by one bit, or by the given
+               * number of bits.
+               *
+               * `>>` is the signed/arithmetic right shift operator. Negative values
+               * keep their sign through the shift.
+               *
+               * Usage:
+               * @code
+               * (>> 8)
+               * => 4
+               * @endcode
+               *
+               * | Arg # | Description                                                 |
+               * |-------|-------------------------------------------------------------|
+               * | 0     | Integer value to shift.                                     |
+               * | 1     | Optional integer number of bits to shift by. Defaults to 1. |
+               */")]
+    (is (= "Shifts an integer value right by one bit, or by the given number of bits."
+           (:summary doc)))
+    (is (= "`>>` is the signed/arithmetic right shift operator. Negative values\nkeep their sign through the shift."
+           (:body doc)))
+    (is (= {:type nil :doc "Integer value to shift."}
+           (get (:params doc) "0")))
+    (is (= {:type nil
+            :doc "Optional integer number of bits to shift by. Defaults to 1."}
+           (get (:params doc) "1")))
+    (is (= [{:format :roo
+             :source "(>> 8)\n=> 4"}]
+           (:examples doc)))))
+
+(deftest parses-cpp-native-identity-comment
+  (is (= {:native-class "SlurpBangFunction"
+          :qualified-name "roo.io/slurp!"}
+         (native-docs/native-identity-from-cpp-comment
+           "/** SlurpBangFunction - roo.io/slurp! */")))
+  (is (= nil
+         (native-docs/native-identity-from-cpp-comment
+           "/* just a note */"))))
