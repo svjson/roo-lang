@@ -16,6 +16,11 @@ namespace Roo
 
   EXEC_BODY(ApplyFunction, exec_apply)
   {
+    if (args[0]->type == Value::Type::NIL)
+    {
+      throw InvocationException("Cannot apply nil.");
+    }
+
     auto& fn = args[0]->exec();
     sptr_val_v fn_args = Roo::get_children(*args.back());
     return fn.execute(ctx, fn_args);

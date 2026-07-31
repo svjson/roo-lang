@@ -2,6 +2,7 @@
 #include <vector>
 
 #include <roo/adapter.h>
+#include <roo/exception.h>
 
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
@@ -43,4 +44,14 @@ TEST_F(ApplyFunction, applies_native_vector_adapter_as_sequence)
                                         Roo::NativeStdVectorAdapter<int>::make_ref(values));
 
   EXPECT_EQ(runtime.eval("(apply + values)")->to_string(), "6");
+}
+
+TEST_F(ApplyFunction, nil_callee_is_rejected_by_apply)
+{
+  EXPECT_THROW(runtime.eval("(apply nil [1 2])"), Roo::InvocationException);
+}
+
+TEST_F(ApplyFunction, non_callable_callee_is_rejected_by_signature)
+{
+  EXPECT_THROW(runtime.eval("(apply 42 [1 2])"), Roo::InvocationException);
 }
