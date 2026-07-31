@@ -4,7 +4,7 @@
             [footsteps.scope :as scope]))
 
 (def default-work-slice-limit
-  "Default maximum number of steps `run` may advance in one call."
+  "Default maximum number of steps `slice` may advance in one call."
   1000)
 
 (defun make
@@ -34,7 +34,7 @@
   "Return whether a work value has completed.
 
   Args:
-  - `work`: Work value returned by `make`, `advance`, or `run`.
+  - `work`: Work value returned by `make`, `advance`, `slice`, or `run`.
 
   Returns:
   `true` when the work status is complete; otherwise `false`."
@@ -145,7 +145,7 @@
   "Advance a work value by one observable step.
 
   Args:
-  - `work`: Work value returned by `make` or a previous `advance`/`run`.
+  - `work`: Work value returned by `make` or a previous `advance`/`slice`/`run`.
 
   Returns:
   A result map containing `:work`, `:complete?`, `:result`, `:progress`, and
@@ -178,32 +178,28 @@
              :progress (progress/value next-work)
              :metadata (:metadata step-result)}))))))
 
-(defun budget-available? [started now advanced-any? opts]
-  (let [min-ms (or (:min-duration-ms opts) 0)
-        max-ms (:max-duration-ms opts)]
-    (and (or (not advanced-any?)
-             (< (- now started) min-ms)
-             (and max-ms (< (- now started) max-ms)))
-         (or (nil? max-ms)
-             (< (- now started) max-ms)))))
-
-(defun run
-  "Advance work repeatedly inside a time and step budget.
+(defun slice
+  "Advance work for one cooperative time slice.
 
   Args:
-  - `work`: Work value returned by `make` or a previous `advance`/`run`.
-  - `opts`: Options map. Supports `:clock`, `:min-duration-ms`, `:max-duration-ms`, and `:max-steps`.
+  - `work`: Work value returned by `make` or a previous `advance`/`slice`/`run`.
+  - `opts`: Options map. Supports `:clock`, `:target-duration-ms`, legacy `:min-duration-ms`, `:max-duration-ms`, and `:max-steps`.
 
   Returns:
-  A result map like `advance`, plus `:steps-run` for this slice."
+  A result map like `advance`, plus `:steps-run`, `:elapsed-ms`, and `:stop-reason`."
   [work opts]
   (let [clock (or (:clock opts)
                   (fn []
                     (epoch-ms)))
+        target-ms (max 0
+                       (or (:target-duration-ms opts)
+                           (:min-duration-ms opts)
+                           0))
+        max-ms (:max-duration-ms opts)
         started (clock)
         current work
-        advanced-any? false
         count 0
+        elapsed 0
         limit (or (:max-steps opts) default-work-slice-limit)
         last-result {:work work
                      :complete? (complete? work)
@@ -211,13 +207,37 @@
                      :progress (progress/value work)}]
     (while (and (not (complete? current))
                 (< count limit)
-                (budget-available? started (clock) advanced-any? opts))
+                (or (= count 0)
+                    (and (< elapsed target-ms)
+                         (or (nil? max-ms)
+                             (< elapsed max-ms)))))
       (let [advanced (advance current)]
         (set! [current] (:work advanced))
         (set! [last-result] advanced)
-        (set! [advanced-any?] true)
-        (set! [count] (+ count 1))))
+        (set! [count] (+ count 1))
+        (set! [elapsed] (- (clock) started))))
     (assoc last-result
            :work current
            :steps-run count
+           :elapsed-ms elapsed
+           :stop-reason (cond
+                          (complete? current) :footsteps.slice/complete
+                          (>= count limit) :footsteps.slice/max-steps
+                          (and max-ms
+                               (>= elapsed max-ms))
+                          :footsteps.slice/max-duration
+                          (>= elapsed target-ms) :footsteps.slice/target-duration
+                          :default :footsteps.slice/yielded)
            :progress (progress/value current))))
+
+(defun run
+  "Advance work repeatedly inside a time and step budget.
+
+  Args:
+  - `work`: Work value returned by `make` or a previous `advance`/`slice`/`run`.
+  - `opts`: Options map. Supports `:clock`, `:min-duration-ms`, `:target-duration-ms`, `:max-duration-ms`, and `:max-steps`.
+
+  Returns:
+  A result map like `slice`, including `:steps-run`, `:elapsed-ms`, and `:stop-reason`."
+  [work opts]
+  (slice work opts))

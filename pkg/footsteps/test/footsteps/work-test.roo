@@ -173,3 +173,65 @@
            (:steps-run result)))
     (is (= {:count 2}
            (-> result :work :data)))))
+
+(defun clock-with-values [values]
+  (let [state {:values values
+               :index 0}]
+    (fn []
+      (let [index (:index state)
+            value (nth (:values state) index)]
+        (assoc! state :index (min (+ index 1)
+                                  (- (count (:values state)) 1)))
+        value))))
+
+(defun counted-work [count]
+  (work/make
+   {:id :work/test
+    :data {:count 0}
+    :steps {:tick {:label "Tick"
+                   :run (fn [ctx]
+                          {:data (update (:data ctx)
+                                         :count
+                                         inc)})}}
+    :start (map (range 0 count)
+                (fn [_index]
+                  :tick))}))
+
+(deftest slice-runs-until-target-duration-is-reached
+  (let [result (work/slice
+                (counted-work 10)
+                {:clock (clock-with-values [0 10 20 30 40])
+                 :target-duration-ms 25
+                 :max-duration-ms 40})]
+    (is (= 3
+           (:steps-run result)))
+    (is (= 30
+           (:elapsed-ms result)))
+    (is (= :footsteps.slice/target-duration
+           (:stop-reason result)))
+    (is (= {:count 3}
+           (-> result :work :data)))))
+
+(deftest slice-stops-at-max-duration
+  (let [result (work/slice
+                (counted-work 10)
+                {:clock (clock-with-values [0 30 60])
+                 :target-duration-ms 50
+                 :max-duration-ms 25})]
+    (is (= 1
+           (:steps-run result)))
+    (is (= 30
+           (:elapsed-ms result)))
+    (is (= :footsteps.slice/max-duration
+           (:stop-reason result)))))
+
+(deftest slice-stops-at-max-steps
+  (let [result (work/slice
+                (counted-work 10)
+                {:clock (fn [] 0)
+                 :target-duration-ms 25
+                 :max-steps 2})]
+    (is (= 2
+           (:steps-run result)))
+    (is (= :footsteps.slice/max-steps
+           (:stop-reason result)))))

@@ -29,22 +29,34 @@
   "Advance a work value by one observable step.
 
   Args:
-  - `work`: Work value returned by `make` or a previous `advance`/`run`.
+  - `work`: Work value returned by `make` or a previous `advance`/`slice`/`run`.
 
   Returns:
   A result map containing `:work`, `:complete?`, `:result`, `:progress`, and
   optional `:metadata` from the step."
   work-api/advance)
 
+(defun slice
+  "Advance work for one cooperative time slice.
+
+  Args:
+  - `work`: Work value returned by `make` or a previous `advance`/`slice`/`run`.
+  - `opts`: Optional map. Supports `:clock`, `:target-duration-ms`, legacy `:min-duration-ms`, `:max-duration-ms`, and `:max-steps`.
+
+  Returns:
+  A result map like `advance`, plus `:steps-run`, `:elapsed-ms`, and `:stop-reason`."
+  [work & opts &rest]
+  (work-api/slice work (or opts {})))
+
 (defun run
   "Advance work repeatedly inside a time and step budget.
 
   Args:
-  - `work`: Work value returned by `make` or a previous `advance`/`run`.
-  - `opts`: Optional map. Supports `:clock`, `:min-duration-ms`, `:max-duration-ms`, and `:max-steps`.
+  - `work`: Work value returned by `make` or a previous `advance`/`slice`/`run`.
+  - `opts`: Optional map. Supports `:clock`, `:min-duration-ms`, `:target-duration-ms`, `:max-duration-ms`, and `:max-steps`.
 
   Returns:
-  A result map like `advance`, plus `:steps-run` for this slice."
+  A result map like `slice`, including `:steps-run`, `:elapsed-ms`, and `:stop-reason`."
   [work & opts &rest]
   (work-api/run work (or opts {})))
 
@@ -52,7 +64,7 @@
   "Return whether a work value has completed.
 
   Args:
-  - `work`: Work value returned by `make`, `advance`, or `run`.
+  - `work`: Work value returned by `make`, `advance`, `slice`, or `run`.
 
   Returns:
   `true` when the work status is complete; otherwise `false`."
@@ -62,7 +74,7 @@
   "Return the current progress report for a work value.
 
   Args:
-  - `work`: Work value returned by `make`, `advance`, or `run`.
+  - `work`: Work value returned by `make`, `advance`, `slice`, or `run`.
 
   Returns:
   A progress report with `:progress-value`, `:progress-max`, labels, step ids,
