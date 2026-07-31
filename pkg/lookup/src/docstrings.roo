@@ -1,0 +1,186 @@
+(ns lookup.docstrings
+  (:require [roo.string :as string]))
+
+(defun empty []
+  {:summary nil
+   :body nil
+   :format :plain
+   :params {}
+   :returns nil
+   :examples []
+   :see []
+   :since nil
+   :deprecated nil})
+
+(defun split-lines [text]
+  (let [state (reduce text
+                      {:lines [] :line ""}
+                      (fn [state ch]
+                        (if (= "\n" (str ch))
+                          {:lines (concat (:lines state) [(:line state)])
+                           :line ""}
+                          (assoc state :line (str (:line state) ch)))))]
+    (concat (:lines state) [(:line state)])))
+
+(defun finish-paragraph [state]
+  (if (blank? (:line state))
+    state
+    {:paragraphs (concat (:paragraphs state) [(trim (:line state))])
+     :line ""}))
+
+(defun paragraphs [lines]
+  (-> lines
+      (reduce {:paragraphs [] :line ""}
+              (fn [state line]
+                (if (blank? line)
+                  (finish-paragraph state)
+                  (assoc state
+                         :line
+                         (if (blank? (:line state))
+                           (trim line)
+                           (str (:line state) "\n" (trim line)))))))
+      finish-paragraph
+      :paragraphs))
+
+(defun paragraph-text [paragraphs]
+  (if (= 0 (count paragraphs))
+    nil
+    (apply join (concat ["\n\n"] paragraphs))))
+
+(defun strip-backticks [text]
+  (let [value (trim text)]
+    (if (and (string/starts-with? value "`")
+             (string/ends-with? value "`")
+             (> (count value) 1))
+      (substr value 1 (- (count value) 2))
+      value)))
+
+(defun section [line]
+  (case (trim line)
+    "Args:" :args
+    "Returns:" :returns
+    "Examples:" :examples
+    "See Also:" :see
+    "Since:" :since
+    "Deprecated:" :deprecated
+    :default nil))
+
+(defun arg-line [state line]
+  (let [trimmed (trim line)
+        colon (find-index trimmed (fn [ch] (= ":" (str ch))))]
+    (if (and (string/starts-with? trimmed "- ")
+             (not (nil? colon)))
+      (let [name (strip-backticks (substr trimmed 2 (- colon 2)))
+            doc (trim (substr trimmed (+ colon 1)))]
+        (assoc state
+               :params
+               (assoc (:params state) name {:type nil :doc doc})))
+      state)))
+
+(defun see-line [state line]
+  (let [trimmed (trim line)]
+    (if (blank? trimmed)
+      state
+      (assoc state
+             :see
+             (concat (:see state)
+                     [(strip-backticks
+                        (if (string/starts-with? trimmed "- ")
+                          (substr trimmed 2)
+                          trimmed))])))))
+
+(defun single-line-section [state key line]
+  (if (blank? line)
+    state
+    (assoc state
+           key
+           (if (nil? (get state key))
+             (trim line)
+             (str (get state key) " " (trim line))))))
+
+(defun example-line [state line]
+  (let [trimmed (trim line)]
+    (cond
+
+      (and (nil? (:fence state))
+           (string/starts-with? trimmed "```"))
+      (assoc state
+             :fence
+             {:format (let [language (trim (substr trimmed 3))]
+                        (if (blank? language)
+                          :text
+                          (keyword language)))
+              :lines []})
+
+      (and (not (nil? (:fence state)))
+           (string/starts-with? trimmed "```"))
+      (assoc state
+             :examples
+             (concat (:examples state)
+                     [{:format (:format (:fence state))
+                       :source (apply join
+                                      (concat ["\n"] (:lines (:fence state))))}])
+             :fence nil)
+
+      (not (nil? (:fence state)))
+      (assoc state
+             :fence
+             (assoc (:fence state)
+                    :lines
+                    (concat (:lines (:fence state)) [(trim line)])))
+
+      true
+      state)))
+
+(defun step [state line]
+  (if-let [section (section line)]
+    (assoc state :section section)
+    (case (:section state)
+      :args
+      (arg-line state line)
+
+      :returns
+      (if (blank? line)
+        state
+        (assoc state :returns (concat (:returns state) [line])))
+
+      :examples
+      (example-line state line)
+
+      :see
+      (see-line state line)
+
+      :since
+      (single-line-section state :since line)
+
+      :deprecated
+      (single-line-section state :deprecated line)
+
+      :default
+      (assoc state :prose (concat (:prose state) [line])))))
+
+(defun from-string [text]
+  (let [state (reduce (split-lines text)
+                      {:section nil
+                       :prose []
+                       :params {}
+                       :returns []
+                       :examples []
+                       :see []
+                       :since nil
+                       :deprecated nil
+                       :fence nil}
+                      step)
+        prose (paragraphs (:prose state))]
+    {:summary (head prose)
+     :body (paragraph-text (tail prose))
+     :format :markdown
+     :params (:params state)
+     :returns (if (= 0 (count (:returns state)))
+                nil
+                {:type nil
+                 :doc (paragraph-text (paragraphs (:returns state)))})
+     :examples (:examples state)
+     :see (:see state)
+     :since (:since state)
+     :deprecated (:deprecated state)}))

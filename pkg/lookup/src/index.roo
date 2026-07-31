@@ -18,8 +18,7 @@
      :version 1
      :package (:package source-index)
      :sources (map sources (fn [source] {:path (:path source)}))
-     :namespaces (filter (map sources symbols/source-namespace-entry)
-                         (fn [entry] (not (nil? entry))))
+     :namespaces (keep sources symbols/source-namespace-entry)
      :symbols (flatten
                 (map sources
                      (fn [source]

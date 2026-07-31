@@ -1,0 +1,32 @@
+(ns sample.docs)
+
+(def answer
+  "The answer used by examples.
+
+  Since:
+  0.1.0"
+  42)
+
+(defun greet
+  "Build a greeting for `name`.
+
+  Uses a friendly default format.
+
+  Args:
+  - `name`: Person to greet.
+  - `title`: Optional title.
+
+  Returns:
+  A greeting string.
+
+  Examples:
+  ```roo
+  (greet \"Ada\" \"Dr.\")
+  ```
+
+  See Also:
+  - `str`"
+  [name & title]
+  (if title
+    (str title " " name)
+    (str "Hello " name)))

@@ -41,7 +41,10 @@ assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
        lookup index [-x extractor]... [-o <file>] <package-dir>
-       lookup thing-at <package-dir> <file> <line> <column>" \
+       lookup thing-at <package-dir> <file> <line> <column>
+
+Extractors: forms, symbols
+Default: symbols, including Roo docstrings when present" \
   "$HELP_OUTPUT"
 
 if ! VERSION_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" --version); then

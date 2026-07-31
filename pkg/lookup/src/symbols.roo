@@ -1,59 +1,27 @@
-(ns lookup.symbols)
-
-(defun empty-doc []
-  {:summary nil
-   :body nil
-   :format :plain
-   :params {}
-   :returns nil
-   :examples []
-   :see []})
-
-(defun empty-return []
-  {:type nil
-   :doc nil})
-
-(defun list-form? [form]
-  (= "list" (type-of form)))
-
-(defun symbol-name [symbol]
-  (str symbol))
+(ns lookup.symbols
+  (:require [lookup.docstrings :as docstrings]
+            [roo.string :as string]))
 
 (defun form-head-name [form]
-  (if (list-form? form)
-    (symbol-name (head form))
+  (if (= "list" (type-of form))
+    (str (head form))
     nil))
 
-(defun form-named? [form name]
-  (= name (form-head-name form)))
-
-(defun ns-entry? [entry]
-  (form-named? (:form entry) "ns"))
-
-(defun ns-entry-name [entry]
-  (symbol-name (nth (:form entry) 1)))
-
 (defun source-namespace-entry [source]
-  (let [entry (find-first (:forms source) ns-entry?)]
+  (let [entry (find-first (:forms source)
+                          (fn [entry]
+                            (= "ns" (form-head-name (:form entry)))))]
     (if (nil? entry)
       nil
-      {:name (ns-entry-name entry)
-       :doc (empty-doc)
+      {:name (str (nth (:form entry) 1))
+       :doc (docstrings/empty)
        :source (:source entry)})))
 
 (defun source-namespace-name [source]
-  (let [entry (source-namespace-entry source)]
-    (if (nil? entry)
-      "user"
-      (:name entry))))
-
-(defun starts-with? [text prefix]
-  (if (< (count text) (count prefix))
-    false
-    (= prefix (substr text 0 (count prefix)))))
+  (or (:name (source-namespace-entry source)) "user"))
 
 (defun rest-param-name? [name]
-  (and (starts-with? name "&")
+  (and (string/starts-with? name "&")
        (not (= name "&"))))
 
 (defun clean-param-name [name]
@@ -62,7 +30,7 @@
     name))
 
 (defun param-info-step [state raw-param]
-  (let [display-name (symbol-name raw-param)
+  (let [display-name (str raw-param)
         rest? (rest-param-name? display-name)]
     (if (= display-name "&")
       {:optional? true
@@ -80,7 +48,7 @@
   (:params (reduce raw-params {:optional? false :params []} param-info-step)))
 
 (defun signature-display [name raw-params]
-  (let [param-names (map raw-params symbol-name)
+  (let [param-names (map raw-params str)
         params-display (apply join (concat [" "] param-names))]
     (if (= 0 (count param-names))
       (str "(" name ")")
@@ -106,38 +74,73 @@
                      :doc (:doc param)
                      :optional? (:optional? param)
                      :rest? (:rest? param)}))
-     :returns (empty-return)
+     :returns {:type nil
+               :doc nil}
      :arity (signature-arity params)}))
 
-(defun qualified-name [namespace name]
-  (str namespace "/" name))
+(defun function-signature-with-doc [name raw-params doc]
+  (let [signature (function-signature name raw-params)
+        param-docs (:params doc)
+        return-doc (:returns doc)]
+    (assoc signature
+           :params
+           (map (:params signature)
+                (fn [param]
+                  (if-let [param-doc (get param-docs (:name param))]
+                    (assoc param
+                           :type (:type param-doc)
+                           :doc (:doc param-doc))
+                    param)))
+           :returns
+           (if (nil? return-doc)
+             (:returns signature)
+             return-doc))))
 
 (defun base-symbol-entry [package namespace name kind source]
-  {:id (qualified-name namespace name)
-   :name name
-   :qualified-name (qualified-name namespace name)
-   :namespace namespace
-   :package package
-   :kind kind
-   :origin :source
-   :visibility :public
-   :status :stable
-   :source source
-   :doc-source nil
-   :doc (empty-doc)})
+  (let [qualified-name (str namespace "/" name)]
+    {:id qualified-name
+     :name name
+     :qualified-name qualified-name
+     :namespace namespace
+     :package package
+     :kind kind
+     :origin :source
+     :visibility :public
+     :status :stable
+     :source source
+     :doc-source nil
+     :doc (docstrings/empty)}))
 
 (defun def-symbol-entry [package namespace entry]
   (let [form (:form entry)
-        name (symbol-name (nth form 1))]
+        name (str (nth form 1))
+        docstring (if (string? (nth form 2)) (nth form 2) nil)
+        doc (if (nil? docstring)
+              (docstrings/empty)
+              (docstrings/from-string docstring))]
     (merge (base-symbol-entry package namespace name :var (:source entry))
-           {:signatures []})))
+           {:doc doc
+            :doc-source (if (nil? docstring)
+                          nil
+                          {:kind :roo-docstring
+                           :source (:source entry)})
+            :signatures []})))
 
 (defun defun-symbol-entry [package namespace entry]
   (let [form (:form entry)
-        name (symbol-name (nth form 1))
-        params (nth form 2)]
+        name (str (nth form 1))
+        docstring (if (string? (nth form 2)) (nth form 2) nil)
+        params (if (nil? docstring) (nth form 2) (nth form 3))
+        doc (if (nil? docstring)
+              (docstrings/empty)
+              (docstrings/from-string docstring))]
     (merge (base-symbol-entry package namespace name :function (:source entry))
-           {:signatures [(function-signature name params)]})))
+           {:doc doc
+            :doc-source (if (nil? docstring)
+                          nil
+                          {:kind :roo-docstring
+                           :source (:source entry)})
+            :signatures [(function-signature-with-doc name params doc)]})))
 
 (defun symbol-entry [package namespace entry]
   (let [form (:form entry)
@@ -155,9 +158,6 @@
 
 (defun source-symbols [package source]
   (let [namespace (source-namespace-name source)]
-    (filter
-      (map (:forms source)
-           (fn [entry]
-             (symbol-entry package namespace entry)))
-      (fn [entry]
-        (not (nil? entry))))))
+    (keep (:forms source)
+          (fn [entry]
+            (symbol-entry package namespace entry)))))

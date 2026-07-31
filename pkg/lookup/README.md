@@ -43,6 +43,65 @@ Write the generated EDN to a file with `-o`:
 ./build/roo pkg/lookup index -x symbols -o build/lookup.edn pkg/lookup
 ```
 
+## Roo Docstrings
+
+`lookup` reads Roo docstrings from `def` and `defun` forms. A docstring is a
+string literal inside the defining form:
+
+````roo
+(def answer
+  "The answer used by examples.
+
+  Since:
+  0.1.0"
+  42)
+
+(defun greet
+  "Build a greeting for `name`.
+
+  Uses a friendly default format.
+
+  Args:
+  - `name`: Person to greet.
+
+  Returns:
+  A greeting string.
+
+  Examples:
+  ```roo
+  (greet \"Ada\")
+  ```
+
+  See Also:
+  - `str`"
+  [name]
+  (str "Hello " name))
+````
+
+The first prose paragraph becomes `:summary`. Later prose paragraphs before a
+section heading become `:body`. Inline backticks are preserved in summary and
+body text so documentation renderers can treat them as Markdown.
+
+Recognized section headings are:
+
+- `Args:`
+- `Returns:`
+- `Examples:`
+- `See Also:`
+- `Since:`
+- `Deprecated:`
+
+Argument lines use bullets of the form `- name: description`. The argument
+name may be wrapped in backticks in the docstring. Argument docs are copied
+into both the symbol doc map and the matching function signature parameter.
+`Returns:` records return documentation, fenced `Examples:` blocks are emitted
+as Roo examples, and `See Also:` bullets are emitted as symbol names without
+backticks.
+
+For now, `:doc-source` points at the source range of the defining form. The
+native reader does not yet expose separate source metadata for child string
+literals.
+
 Ask for position-aware information about a buffer by passing the current
 source on standard input:
 

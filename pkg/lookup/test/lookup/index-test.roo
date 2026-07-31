@@ -3,7 +3,7 @@
             [lookup.index :as index]
             [lookup.native :as native]
             [lookup.source :as source]
-            [lookup.thing-at :as thing-at]))
+            [lookup.symbols :as symbols]))
 
 (deftest identifies-roo-source-files
   (is (source/source-file? "src/index.roo"))
@@ -23,10 +23,10 @@
     (is (= "0.1.0" (:version (:package source-index))))
     (is (= 5 (count sources)))
     (is (= ["../src/cli.roo"
+            "../src/docstrings.roo"
             "../src/index.roo"
             "../src/source.roo"
-            "../src/symbols.roo"
-            "../src/thing-at.roo"]
+            "../src/symbols.roo"]
            paths))
     (is (= "../src/index.roo" (:path index-source)))
     (is (= "ns" (str (head (:form first-form)))))
@@ -58,6 +58,9 @@
     (is (not (nil? (find-first namespaces
                                (fn [namespace]
                                  (= "lookup.cli" (:name namespace)))))))
+    (is (not (nil? (find-first namespaces
+                               (fn [namespace]
+                                 (= "lookup.docstrings" (:name namespace)))))))
     (is (not (nil? (find-first namespaces
                                (fn [namespace]
                                  (= "lookup.index" (:name namespace)))))))
@@ -112,9 +115,47 @@
     (is (= 3 (:line def-source)))
     (is (= 5 (:line defun-source)))))
 
+(deftest extracts-docstrings-from-def-and-defun
+  (let [source {:path "assets/docstrings-sample.roo"
+                :forms (native/read-file-forms! "assets/docstrings-sample.roo")}
+        entries (symbols/source-symbols "sample" source)
+        answer (find-first entries
+                           (fn [symbol]
+                             (= "sample.docs/answer" (:qualified-name symbol))))
+        greet (find-first entries
+                          (fn [symbol]
+                            (= "sample.docs/greet" (:qualified-name symbol))))
+        greet-doc (:doc greet)
+        greet-signature (nth (:signatures greet) 0)]
+    (is (= "The answer used by examples." (:summary (:doc answer))))
+    (is (= "0.1.0" (:since (:doc answer))))
+    (is (= :roo-docstring (:kind (:doc-source answer))))
+    (is (= "Build a greeting for `name`." (:summary greet-doc)))
+    (is (= "Uses a friendly default format." (:body greet-doc)))
+    (is (= "Person to greet." (:doc (get (:params greet-doc) "name"))))
+    (is (= "Optional title." (:doc (get (:params greet-doc) "title"))))
+    (is (= {:type nil :doc "A greeting string."} (:returns greet-doc)))
+    (is (= [{:format :roo :source "(greet \"Ada\" \"Dr.\")"}]
+           (:examples greet-doc)))
+    (is (= ["str"] (:see greet-doc)))
+    (is (= "(greet name & title)" (:display greet-signature)))
+    (is (= [{:name "name"
+             :type nil
+             :doc "Person to greet."
+             :optional? false
+             :rest? false}
+            {:name "title"
+             :type nil
+             :doc "Optional title."
+             :optional? true
+             :rest? false}]
+           (:params greet-signature)))
+    (is (= {:type nil :doc "A greeting string."}
+           (:returns greet-signature)))))
+
 (deftest resolves-thing-at-local-let-binding
   (let [source "(ns sample.core)\n(let [command-value 1]\n  command-value)\n"
-        result (thing-at/thing-at "." "src/sample.roo" "3" "3" source)
+        result (native/thing-at! "." "src/sample.roo" "3" "3" source)
         thing (:thing result)
         resolution (:resolution thing)
         source-location (:source resolution)]
@@ -131,7 +172,7 @@
 
 (deftest resolves-thing-at-function-parameter
   (let [source "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n"
-        result (thing-at/thing-at "." "src/sample.roo" "3" "3" source)
+        result (native/thing-at! "." "src/sample.roo" "3" "3" source)
         thing (:thing result)
         resolution (:resolution thing)
         source-location (:source resolution)]

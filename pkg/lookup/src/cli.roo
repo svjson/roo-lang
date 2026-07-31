@@ -1,7 +1,7 @@
 (ns lookup.cli
   (:require [roo.io :as io]
             [lookup.index :as index]
-            [lookup.thing-at :as thing-at]))
+            [lookup.native :as native]))
 
 (def usage-lines
   ["Usage: lookup [--help|--version]"
@@ -14,7 +14,10 @@
 
 (defun help-lines []
   (concat ["lookup: build Roo symbol index artifacts"]
-          usage-lines))
+          usage-lines
+          [""
+           "Extractors: forms, symbols"
+           "Default: symbols, including Roo docstrings when present"]))
 
 (defun version-text []
   (str "lookup " version))
@@ -134,11 +137,11 @@
             (nil? line)
             (nil? column))
       (print-usage!)
-      (prn (thing-at/thing-at package-dir
-                              file
-                              line
-                              column
-                              (thing-at/read-stdin!))))))
+      (prn (native/thing-at! package-dir
+                             file
+                             line
+                             column
+                             (native/read-stdin!))))))
 
 (defun main [args]
   (let [command-name (command args)]
