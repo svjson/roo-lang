@@ -6,10 +6,26 @@
 (defun manifest-path [package-dir]
   (io/join-path package-dir "package.edn"))
 
-(defun read-manifest! [package-dir]
+(defun read-manifest!
+  "Read a package manifest from a package directory.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+
+  Returns:
+  The parsed package manifest map."
+  [package-dir]
   (io/slurp-edn! (manifest-path package-dir)))
 
-(defun package-info [manifest]
+(defun package-info
+  "Build package metadata for lookup indexes.
+
+  Args:
+  - `manifest`: Parsed package manifest map.
+
+  Returns:
+  A map with package `:name`, `:version`, and `:description`."
+  [manifest]
   {:name (str (:name manifest))
    :version (:version manifest)
    :description (:description manifest)})
@@ -19,7 +35,15 @@
     ["src"]
     (:load-roots manifest)))
 
-(defun source-file? [path]
+(defun source-file?
+  "Test whether a path names a Roo source file.
+
+  Args:
+  - `path`: File path to inspect.
+
+  Returns:
+  `true` when the path extension is `.roo`; otherwise `false`."
+  [path]
   (= ".roo" (io/extension path)))
 
 (defun source-files-in [root]
@@ -47,11 +71,28 @@
 (defun source-form-entry [entry]
   (assoc entry :source (normalized-source-location (:source entry))))
 
-(defun source-entry [path]
+(defun source-entry
+  "Read one source file into a source-form index entry.
+
+  Args:
+  - `path`: Roo source file path.
+
+  Returns:
+  A map containing normalized `:path` and parsed top-level `:forms`."
+  [path]
   {:path (normalized-path path)
    :forms (map (reader/read-file-forms! path) source-form-entry)})
 
-(defun package-source-files [package-dir manifest]
+(defun package-source-files
+  "Find all Roo source files declared by a package manifest.
+
+  Args:
+  - `package-dir`: Package root containing the source roots.
+  - `manifest`: Parsed package manifest map.
+
+  Returns:
+  A sorted vector of source file paths."
+  [package-dir manifest]
   (sort
     (flatten
       (map (package-load-roots manifest)

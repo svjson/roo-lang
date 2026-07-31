@@ -1,7 +1,12 @@
 (ns lookup.docstrings
   (:require [roo.string :as string]))
 
-(defun empty []
+(defun empty
+  "Build an empty lookup documentation map.
+
+  Returns:
+  A documentation map with plain format and no extracted content."
+  []
   {:summary nil
    :body nil
    :format :plain
@@ -159,7 +164,16 @@
       :default
       (assoc state :prose (concat (:prose state) [line])))))
 
-(defun from-string [text]
+(defun from-string
+  "Parse a Roo docstring into lookup documentation data.
+
+  Args:
+  - `text`: Docstring text from a `def` or `defun` form.
+
+  Returns:
+  A documentation map with summary, body, params, returns, examples, see-also,
+  since, and deprecated fields."
+  [text]
   (let [state (reduce (split-lines text)
                       {:section nil
                        :prose []

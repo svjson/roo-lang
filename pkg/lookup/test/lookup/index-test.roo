@@ -72,23 +72,26 @@
     (is (= :source (:origin version-symbol)))
     (is (= :public (:visibility version-symbol)))
     (is (= [] (:signatures version-symbol)))
+    (is (= "Lookup command version." (:summary (:doc version-symbol))))
     (is (= :function (:kind symbol-index-symbol)))
+    (is (= "Build a symbol index for a package."
+           (:summary (:doc symbol-index-symbol))))
     (is (= "(symbol-index package-dir)" (:display symbol-index-signature)))
     (is (= [{:name "args"
              :type nil
-             :doc nil
+             :doc "Command line argument vector."
              :optional? false
              :rest? false}]
            (:params (nth (:signatures command-symbol) 0))))
     (is (= [{:name "package-dir"
              :type nil
-             :doc nil
+             :doc "Package root containing `package.edn`."
              :optional? false
              :rest? false}]
            (:params symbol-index-signature)))
     (is (= {:min 1 :max 1 :variadic false}
            (:arity symbol-index-signature)))
-    (is (= :plain (:format (:doc symbol-index-symbol))))
+    (is (= :markdown (:format (:doc symbol-index-symbol))))
     (is (= "../src/index.roo"
            (:path (:source symbol-index-symbol))))))
 

@@ -5,25 +5,48 @@
             [lookup.reader :as reader]))
 
 (def usage-lines
+  "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
    "       lookup index [-x extractor]... [-o <file>] <package-dir>"
    "       lookup thing-at <package-dir> <file> <line> <column>"])
 
-(def index-extractors [:forms :symbols])
+(def index-extractors
+  "Extractor names accepted by `lookup index -x`."
+  [:forms :symbols])
 
-(def version "0.1.0")
+(def version
+  "Lookup command version."
+  "0.1.0")
 
-(defun help-lines []
+(defun help-lines
+  "Build the full help text for the lookup command.
+
+  Returns:
+  A vector of lines for `lookup --help`."
+  []
   (concat ["lookup: build Roo symbol index artifacts"]
           usage-lines
           [""
            "Extractors: forms, symbols"
            "Default: symbols, including Roo docstrings when present"]))
 
-(defun version-text []
+(defun version-text
+  "Build the lookup version output.
+
+  Returns:
+  Version text printed by `lookup --version`."
+  []
   (str "lookup " version))
 
-(defun command [args]
+(defun command
+  "Resolve CLI arguments to a lookup command.
+
+  Args:
+  - `args`: Command line argument vector.
+
+  Returns:
+  One of `:help`, `:version`, `:index`, `:thing-at`, or `:usage`."
+  [args]
   (let [first-arg (nth args 0)]
     (cond
 
@@ -105,7 +128,15 @@
                                             [(str "Unexpected index argument: "
                                                   arg)]))))))
 
-(defun parse-index-args [args]
+(defun parse-index-args
+  "Parse arguments for the `lookup index` command.
+
+  Args:
+  - `args`: Arguments after the `index` command name.
+
+  Returns:
+  An options map with `:extractors`, `:out`, `:package-dir`, and `:errors`."
+  [args]
   (let [options (parse-index-args-step args
                                        {:extractors []
                                         :out nil
@@ -144,7 +175,15 @@
                                column
                                (reader/read-stdin!))))))
 
-(defun main [args]
+(defun main
+  "Run the lookup command line entry point.
+
+  Args:
+  - `args`: Command line argument vector.
+
+  Returns:
+  The result of printing or writing the selected lookup command output."
+  [args]
   (let [command-name (command args)]
     (cond
 

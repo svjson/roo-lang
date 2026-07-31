@@ -2,7 +2,16 @@
   (:require [lookup.source :as source]
             [lookup.symbols :as symbols]))
 
-(defun source-form-index [package-dir]
+(defun source-form-index
+  "Build a source-form index for a package.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+
+  Returns:
+  A `:roo/source-forms` index map with package metadata and parsed top-level
+  forms."
+  [package-dir]
   (let [manifest (source/read-manifest! package-dir)
         files (source/package-source-files package-dir manifest)]
     {:format :roo/source-forms
@@ -10,7 +19,19 @@
      :package (source/package-info manifest)
      :sources (map files source/source-entry)}))
 
-(defun symbol-index [package-dir]
+(defun symbol-index
+  "Build a symbol index for a package.
+
+  The symbol index includes namespace entries, top-level `def` and `defun`
+  symbols, function signatures, source locations, and Roo docstrings when
+  present.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+
+  Returns:
+  A `:roo/symbol-index` map for editor lookup and documentation generation."
+  [package-dir]
   (let [source-index (source-form-index package-dir)
         package-name (:name (:package source-index))
         sources (:sources source-index)]
@@ -24,7 +45,16 @@
                      (fn [source]
                        (symbols/source-symbols package-name source))))}))
 
-(defun index-with-extractors [package-dir extractors]
+(defun index-with-extractors
+  "Build an index using the requested extractors.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+  - `extractors`: Vector containing `:forms`, `:symbols`, or both.
+
+  Returns:
+  A source-form index, a symbol index, or a combined `:roo/index` map."
+  [package-dir extractors]
   (let [forms? (contains? extractors :forms)
         symbols? (contains? extractors :symbols)]
     (cond

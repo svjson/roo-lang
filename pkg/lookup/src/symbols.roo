@@ -7,7 +7,15 @@
     (str (head form))
     nil))
 
-(defun source-namespace-entry [source]
+(defun source-namespace-entry
+  "Extract a namespace entry from a source-form index entry.
+
+  Args:
+  - `source`: Source-form index entry with parsed top-level forms.
+
+  Returns:
+  A namespace map when the source contains an `ns` form; otherwise `nil`."
+  [source]
   (let [entry (find-first (:forms source)
                           (fn [entry]
                             (= "ns" (form-head-name (:form entry)))))]
@@ -64,7 +72,16 @@
      :max (if variadic? nil (count params))
      :variadic variadic?}))
 
-(defun function-signature [name raw-params]
+(defun function-signature
+  "Build lookup signature data for a Roo function.
+
+  Args:
+  - `name`: Function name.
+  - `raw-params`: Roo parameter vector from a `defun` form.
+
+  Returns:
+  A signature map with display text, parameters, return placeholder, and arity."
+  [name raw-params]
   (let [params (params-info raw-params)]
     {:display (signature-display name raw-params)
      :params (map params
@@ -156,7 +173,16 @@
       true
       nil)))
 
-(defun source-symbols [package source]
+(defun source-symbols
+  "Extract top-level symbols from a source-form index entry.
+
+  Args:
+  - `package`: Package name used for symbol index entries.
+  - `source`: Source-form index entry with parsed top-level forms.
+
+  Returns:
+  A vector of lookup symbol entries for supported top-level forms."
+  [package source]
   (let [namespace (source-namespace-name source)]
     (keep (:forms source)
           (fn [entry]
