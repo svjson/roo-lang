@@ -1,7 +1,8 @@
 (ns lookup.cli
   (:require [roo.io :as io]
             [lookup.index :as index]
-            [lookup.native :as native]))
+            [lookup.analysis :as analysis]
+            [lookup.reader :as reader]))
 
 (def usage-lines
   ["Usage: lookup [--help|--version]"
@@ -137,11 +138,11 @@
             (nil? line)
             (nil? column))
       (print-usage!)
-      (prn (native/thing-at! package-dir
-                             file
-                             line
-                             column
-                             (native/read-stdin!))))))
+      (prn (analysis/thing-at! package-dir
+                               file
+                               line
+                               column
+                               (reader/read-stdin!))))))
 
 (defun main [args]
   (let [command-name (command args)]

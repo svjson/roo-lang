@@ -1,7 +1,7 @@
 (ns lookup.source
   (:require [roo.io :as io]
             [roo.string :as string]
-            [lookup.native :as native]))
+            [lookup.reader :as reader]))
 
 (defun manifest-path [package-dir]
   (io/join-path package-dir "package.edn"))
@@ -49,7 +49,7 @@
 
 (defun source-entry [path]
   {:path (normalized-path path)
-   :forms (map (native/read-file-forms! path) source-form-entry)})
+   :forms (map (reader/read-file-forms! path) source-form-entry)})
 
 (defun package-source-files [package-dir manifest]
   (sort

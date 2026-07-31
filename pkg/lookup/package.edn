@@ -7,5 +7,6 @@
  :native-libraries [{:name "lookup-native"
                      :version "0.1.0"
                      :path "native"
-                     :namespaces [lookup.native]}]
+                     :namespaces [lookup.analysis
+                                  lookup.reader]}]
  :main lookup.cli/main}

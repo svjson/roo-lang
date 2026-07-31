@@ -99,7 +99,7 @@ as Roo examples, and `See Also:` bullets are emitted as symbol names without
 backticks.
 
 For now, `:doc-source` points at the source range of the defining form. The
-native reader does not yet expose separate source metadata for child string
+source reader does not yet expose separate source metadata for child string
 literals.
 
 Ask for position-aware information about a buffer by passing the current
@@ -126,10 +126,10 @@ Then run:
 
 `lookup` currently provides a source-form index, a symbol index, selectable
 index extraction, file output, and a position-aware `thing-at` query for editor
-tooling. The native reader bridge is:
+tooling. The source reader bridge is:
 
 ```roo
-(lookup.native/read-file-forms! path)
+(lookup.reader/read-file-forms! path)
 ```
 
 The bridge reads one Roo source file and returns top-level forms as ordinary

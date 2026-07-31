@@ -628,20 +628,28 @@ namespace Roo::Lookup
     };
   } // namespace
 
-  std::unique_ptr<Namespace> make_native_namespace()
+  std::unique_ptr<Namespace> make_analysis_namespace()
   {
-    auto ns = std::make_unique<Namespace>("lookup.native");
+    auto ns = std::make_unique<Namespace>("lookup.analysis");
+    ns->set_origin(Namespace::Origin::native());
+    ns->store("thing-at!", ThingAtFunction::make());
+    return ns;
+  }
+
+  std::unique_ptr<Namespace> make_reader_namespace()
+  {
+    auto ns = std::make_unique<Namespace>("lookup.reader");
     ns->set_origin(Namespace::Origin::native());
     ns->store("read-file-forms!", ReadFileFormsFunction::make());
     ns->store("read-stdin!", ReadStdinFunction::make());
-    ns->store("thing-at!", ThingAtFunction::make());
     return ns;
   }
 
   std::vector<std::unique_ptr<Namespace>> make_native_namespaces()
   {
     std::vector<std::unique_ptr<Namespace>> namespaces;
-    namespaces.push_back(make_native_namespace());
+    namespaces.push_back(make_analysis_namespace());
+    namespaces.push_back(make_reader_namespace());
     return namespaces;
   }
 } // namespace Roo::Lookup
@@ -650,8 +658,15 @@ namespace
 {
   int load_lookup_native(const RooNativeHostV1* host)
   {
-    auto ns = Roo::Lookup::make_native_namespace();
-    return host->register_namespace(host->user, ns.release());
+    for (auto& ns : Roo::Lookup::make_native_namespaces())
+    {
+      int result = host->register_namespace(host->user, ns.release());
+      if (result != 0)
+      {
+        return result;
+      }
+    }
+    return 0;
   }
 
   void unload_lookup_native() {}

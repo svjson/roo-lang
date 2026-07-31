@@ -1,7 +1,8 @@
 (ns lookup.index-test
   (:require proof.core
+            [lookup.analysis :as analysis]
             [lookup.index :as index]
-            [lookup.native :as native]
+            [lookup.reader :as reader]
             [lookup.source :as source]
             [lookup.symbols :as symbols]))
 
@@ -92,7 +93,7 @@
            (:path (:source symbol-index-symbol))))))
 
 (deftest reads-top-level-forms-with-source-locations
-  (let [forms (native/read-file-forms! "assets/read-forms-sample.roo")
+  (let [forms (reader/read-file-forms! "assets/read-forms-sample.roo")
         ns-entry (nth forms 0)
         def-entry (nth forms 1)
         defun-entry (nth forms 2)
@@ -117,7 +118,7 @@
 
 (deftest extracts-docstrings-from-def-and-defun
   (let [source {:path "assets/docstrings-sample.roo"
-                :forms (native/read-file-forms! "assets/docstrings-sample.roo")}
+                :forms (reader/read-file-forms! "assets/docstrings-sample.roo")}
         entries (symbols/source-symbols "sample" source)
         answer (find-first entries
                            (fn [symbol]
@@ -155,7 +156,7 @@
 
 (deftest resolves-thing-at-local-let-binding
   (let [source "(ns sample.core)\n(let [command-value 1]\n  command-value)\n"
-        result (native/thing-at! "." "src/sample.roo" "3" "3" source)
+        result (analysis/thing-at! "." "src/sample.roo" "3" "3" source)
         thing (:thing result)
         resolution (:resolution thing)
         source-location (:source resolution)]
@@ -172,7 +173,7 @@
 
 (deftest resolves-thing-at-function-parameter
   (let [source "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n"
-        result (native/thing-at! "." "src/sample.roo" "3" "3" source)
+        result (analysis/thing-at! "." "src/sample.roo" "3" "3" source)
         thing (:thing result)
         resolution (:resolution thing)
         source-location (:source resolution)]
