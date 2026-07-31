@@ -1,5 +1,6 @@
 (ns proofread.core
-  (:require [proofread.native :as native]))
+  (:require [proofread.native :as native]
+            [roo.string :as string]))
 
 (def version "0.1.0")
 
@@ -12,11 +13,6 @@
 
 (defun print-version []
   (prn (str "proofread " version)))
-
-(defun starts-with? [text prefix]
-  (if (< (count text) (count prefix))
-    false
-    (= prefix (substr text 0 (count prefix)))))
 
 (defun report-ok [checked-count]
   (prn (str "proofread: " checked-count " file"
@@ -36,7 +32,7 @@
           (print-help)
           (if (= first-arg "--version")
             (print-version)
-            (if (starts-with? first-arg "--")
+            (if (string/starts-with? first-arg "--")
               (do
                 (usage)
                 (native/fail! (str "Unknown option: " first-arg)))
