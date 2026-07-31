@@ -22,7 +22,7 @@
         second (footsteps/advance (:work first))]
     (is (= {:first true
             :second true}
-           (footsteps/data (:work second))))
+           (-> second :work :data)))
     (is (= true
            (footsteps/complete? (:work second))))))
 
@@ -44,6 +44,45 @@
            (:progress-value progress)))
     (is (= "Large"
            (:label progress)))))
+
+(deftest inherited-step-weight-uses-step-estimate
+  (let [work (footsteps/make
+              {:id :work/test
+               :progress-max 100
+               :data {}
+               :steps {:small {:label "Small"
+                               :weight 1
+                               :run (complete-with :small true)}
+                       :large {:label "Large"
+                               :weight :inherit
+                               :estimate 3
+                               :run (complete-with :large true)}}
+               :start [:small :large]})
+        first (footsteps/advance work)
+        progress (footsteps/progress (:work first))]
+    (is (= 25
+           (:progress-value progress)))
+    (is (= "Large"
+           (:label progress)))))
+
+(deftest inherited-step-weight-can-use-estimate-function
+  (let [work (footsteps/make
+              {:id :work/test
+               :progress-max 100
+               :data {:large-weight 3}
+               :steps {:small {:label "Small"
+                               :weight 1
+                               :run (complete-with :small true)}
+                       :large {:label "Large"
+                               :weight :inherit
+                               :estimate (fn [ctx]
+                                           (-> ctx :data :large-weight))
+                               :run (complete-with :large true)}}
+               :start [:small :large]})
+        first (footsteps/advance work)
+        progress (footsteps/progress (:work first))]
+    (is (= 25
+           (:progress-value progress)))))
 
 (deftest appended-child-work-stays-inside-current-scope
   (let [work (footsteps/make
@@ -75,7 +114,7 @@
            (:progress-value progress-b)))
     (is (= {:a true
             :b true}
-           (select-keys (footsteps/data (:work child-b)) [:a :b])))))
+           (select-keys (-> child-b :work :data) [:a :b])))))
 
 (deftest progress-never-moves-backward-when-children-are-appended
   (let [work (footsteps/make
@@ -181,6 +220,64 @@
     (is (= true
            (>= second-value first-value)))))
 
+(defun delegated-child-work [data]
+  (footsteps/make
+   {:id :child/work
+    :label "Child"
+    :progress-max 4
+    :data data
+    :steps {:tick {:label "Tick"
+                   :run (fn [ctx]
+                          {:data (update (:data ctx) :count inc)})}}
+    :start [:tick :tick :tick :tick]}))
+
+(deftest delegated-work-advances-inside-current-step-scope
+  (let [work (footsteps/make
+              {:id :work/test
+               :progress-max 100
+               :data {:count 0}
+               :steps {:parent {:label "Parent"
+                                :weight 50
+                                :run (fn [ctx]
+                                       {:delegate
+                                        (delegated-child-work (:data ctx))})}
+                       :tail {:label "Tail"
+                              :weight 50
+                              :run (complete-with :tail true)}}
+               :start [:parent :tail]})
+        started (footsteps/advance work)
+        first-child-step (footsteps/advance (:work started))
+        progress (footsteps/progress (:work first-child-step))]
+    (is (= 12.500000
+           (:progress-value progress)))
+    (is (= "Tick"
+           (:label progress)))
+    (is (= {:count 1}
+           (-> first-child-step :work :data)))))
+
+(deftest delegated-work-completes-parent-step
+  (let [work (footsteps/make
+              {:id :work/test
+               :progress-max 100
+               :data {:count 0}
+               :steps {:parent {:label "Parent"
+                                :weight 50
+                                :run (fn [ctx]
+                                       {:delegate
+                                        (delegated-child-work (:data ctx))})}
+                       :tail {:label "Tail"
+                              :weight 50
+                              :run (complete-with :tail true)}}
+               :start [:parent :tail]})
+        result (footsteps/run work {:min-duration-ms 1
+                                    :max-steps 10
+                                    :clock (fn [] 0)})]
+    (is (= true
+           (footsteps/complete? (:work result))))
+    (is (= {:count 4
+            :tail true}
+           (-> result :work :data)))))
+
 (deftest project-progress-maps-child-report-into-explicit-scope
   (let [progress (footsteps/project-progress
                   {:id :setup/step
@@ -248,4 +345,4 @@
     (is (= 2
            (:steps-run result)))
     (is (= {:count 2}
-           (footsteps/data (:work result))))))
+           (-> result :work :data)))))

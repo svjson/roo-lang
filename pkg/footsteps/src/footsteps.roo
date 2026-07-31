@@ -24,8 +24,5 @@
 (defun project-progress [scope report]
   (core/project-progress scope report))
 
-(defun data [work]
-  (core/data work))
-
-(defun result [work]
-  (core/result work))
+(defun estimate [value & ctx &rest]
+  (core/estimate value (or ctx {})))
