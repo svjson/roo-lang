@@ -4,7 +4,15 @@
 (defun clamp [min-value max-value value]
   (max min-value (min max-value value)))
 
-(defun report [candidate]
+(defun report
+  "Normalize a progress report candidate.
+
+  Args:
+  - `candidate`: Existing progress report or work value.
+
+  Returns:
+  A progress report map with progress values, labels, ids, and scope fields."
+  [candidate]
   (if (and (map? candidate)
            (some? (:progress-value candidate))
            (some? (:progress-max candidate)))
@@ -17,12 +25,29 @@
      :scope-progress-max (:scope-progress-max candidate)}
     (value candidate)))
 
-(defun ratio [progress-report]
+(defun ratio
+  "Return a clamped progress ratio for a report.
+
+  Args:
+  - `progress-report`: Progress report or work value.
+
+  Returns:
+  A number from `0` to `1`."
+  [progress-report]
   (let [progress-report (report progress-report)]
     (clamp 0 1 (/ (or (:progress-value progress-report) 0)
                   (max 1 (or (:progress-max progress-report) 1))))))
 
-(defun project [scope-spec progress-report]
+(defun project
+  "Project child progress into a parent progress scope.
+
+  Args:
+  - `scope-spec`: Target scope with `:start`, `:end`, and optional `:progress-max`, label, and id fields.
+  - `progress-report`: Child progress report or work value.
+
+  Returns:
+  A progress report in the parent progress coordinate space."
+  [scope-spec progress-report]
   (let [progress-report (report progress-report)
         progress-scope (scope/make
                         (or (:scope-id scope-spec)
@@ -51,7 +76,15 @@
      :scope-progress-value (- value (:start progress-scope))
      :scope-progress-max (scope/size progress-scope)}))
 
-(defun projected-value [step]
+(defun projected-value
+  "Return the global progress value represented by a step.
+
+  Args:
+  - `step`: Step instance with a `:scope` and optional nested `:progress`.
+
+  Returns:
+  The step scope start, or nested progress projected through the step scope."
+  [step]
   (if-let [progress-report (:progress step)]
     (+ (-> step :scope :start)
        (* (scope/size (:scope step))
@@ -65,7 +98,15 @@
     (not (empty? (:queue work))) (-> work :queue head :scope :start)
     :default (:progress-max work)))
 
-(defun value [work]
+(defun value
+  "Return the current progress report for a work value.
+
+  Args:
+  - `work`: Work value from `footsteps.work`.
+
+  Returns:
+  A monotonic progress report for the current step or queued step."
+  [work]
   (let [raw (raw-value work)
         highest (or (:highest-progress work) 0)
         progress-value (clamp highest (:progress-max work) raw)

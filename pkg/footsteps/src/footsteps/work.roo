@@ -3,9 +3,19 @@
             [footsteps.queue :as queue]
             [footsteps.scope :as scope]))
 
-(def default-work-slice-limit 1000)
+(def default-work-slice-limit
+  "Default maximum number of steps `run` may advance in one call."
+  1000)
 
-(defun make [spec]
+(defun make
+  "Create a footsteps work value from a work specification.
+
+  Args:
+  - `spec`: Work specification containing `:id`, `:data`, `:steps`, and `:start`. Optional `:progress-max` controls the progress scale.
+
+  Returns:
+  A runnable work map with queued step instances and progress state."
+  [spec]
   (let [progress-max (or (:progress-max spec) scope/default-progress-max)
         root-scope (scope/make (:id spec) 0 progress-max)
         work (assoc spec
@@ -20,7 +30,15 @@
            :queue
            (queue/allocate-instances work (:start spec) root-scope))))
 
-(defun complete? [work]
+(defun complete?
+  "Return whether a work value has completed.
+
+  Args:
+  - `work`: Work value returned by `make`, `advance`, or `run`.
+
+  Returns:
+  `true` when the work status is complete; otherwise `false`."
+  [work]
   (= :footsteps.status/complete (:status work)))
 
 (defun start-current [work]
@@ -123,7 +141,16 @@
                         (progress/projected-value next-current))))
           (finish-current work step result))))))
 
-(defun advance [work]
+(defun advance
+  "Advance a work value by one observable step.
+
+  Args:
+  - `work`: Work value returned by `make` or a previous `advance`/`run`.
+
+  Returns:
+  A result map containing `:work`, `:complete?`, `:result`, `:progress`, and
+  optional `:metadata` from the step."
+  [work]
   (let [work (start-current work)]
     (if (complete? work)
       {:work work
@@ -160,7 +187,16 @@
          (or (nil? max-ms)
              (< (- now started) max-ms)))))
 
-(defun run [work opts]
+(defun run
+  "Advance work repeatedly inside a time and step budget.
+
+  Args:
+  - `work`: Work value returned by `make` or a previous `advance`/`run`.
+  - `opts`: Options map. Supports `:clock`, `:min-duration-ms`, `:max-duration-ms`, and `:max-steps`.
+
+  Returns:
+  A result map like `advance`, plus `:steps-run` for this slice."
+  [work opts]
   (let [clock (or (:clock opts)
                   (fn []
                     (epoch-ms)))

@@ -4,22 +4,100 @@
             [footsteps.queue :as queue-api]
             [footsteps.work :as work-api]))
 
-(def append-strategy queue-api/append-strategy)
+(def append-strategy
+  "Append strategy keywords accepted by work step results.
 
-(def make work-api/make)
+  A step can choose one of these values with `:append-strategy` when it returns
+  `:append`, or a work spec can set `:default-append-strategy`.
 
-(def advance work-api/advance)
+  Returns:
+  A map with `:within-current-scope`, `:after-current`, and `:hidden`
+  strategy keywords."
+  queue-api/append-strategy)
 
-(defun run [work & opts &rest]
+(def make
+  "Create a footsteps work value from a work specification.
+
+  Args:
+  - `spec`: Work specification containing `:id`, `:data`, `:steps`, and `:start`. Optional `:progress-max` controls the progress scale.
+
+  Returns:
+  A runnable work map with queued step instances and progress state."
+  work-api/make)
+
+(def advance
+  "Advance a work value by one observable step.
+
+  Args:
+  - `work`: Work value returned by `make` or a previous `advance`/`run`.
+
+  Returns:
+  A result map containing `:work`, `:complete?`, `:result`, `:progress`, and
+  optional `:metadata` from the step."
+  work-api/advance)
+
+(defun run
+  "Advance work repeatedly inside a time and step budget.
+
+  Args:
+  - `work`: Work value returned by `make` or a previous `advance`/`run`.
+  - `opts`: Optional map. Supports `:clock`, `:min-duration-ms`, `:max-duration-ms`, and `:max-steps`.
+
+  Returns:
+  A result map like `advance`, plus `:steps-run` for this slice."
+  [work & opts &rest]
   (work-api/run work (or opts {})))
 
-(def complete? work-api/complete?)
+(def complete?
+  "Return whether a work value has completed.
 
-(def progress progress-api/value)
+  Args:
+  - `work`: Work value returned by `make`, `advance`, or `run`.
 
-(def progress-report progress-api/report)
+  Returns:
+  `true` when the work status is complete; otherwise `false`."
+  work-api/complete?)
 
-(def project-progress progress-api/project)
+(def progress
+  "Return the current progress report for a work value.
 
-(defun estimate [value & ctx &rest]
+  Args:
+  - `work`: Work value returned by `make`, `advance`, or `run`.
+
+  Returns:
+  A progress report with `:progress-value`, `:progress-max`, labels, step ids,
+  and scope-local progress fields."
+  progress-api/value)
+
+(def progress-report
+  "Normalize a progress report candidate.
+
+  Args:
+  - `value`: Existing progress report or work value.
+
+  Returns:
+  A progress report map suitable for projection into another scope."
+  progress-api/report)
+
+(def project-progress
+  "Project child progress into a parent progress scope.
+
+  Args:
+  - `scope`: Map describing the target scope with `:start`, `:end`, and optional label/id fields.
+  - `report`: Child progress report or work value to project.
+
+  Returns:
+  A progress report in the parent progress coordinate space."
+  progress-api/project)
+
+(defun estimate
+  "Resolve a progress estimate value.
+
+  Args:
+  - `value`: Literal estimate, function estimate, or step map containing `:estimate`, `:estimated-duration-ms`, `:progress-estimate`, or `:progress-max`.
+  - `ctx`: Optional context map passed to estimate functions.
+
+  Returns:
+  The resolved estimate value."
+  [value & ctx &rest]
   (estimate-api/value value (or ctx {})))

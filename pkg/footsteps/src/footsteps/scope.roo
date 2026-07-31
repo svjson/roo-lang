@@ -1,11 +1,31 @@
 (ns footsteps.scope)
 
-(def default-progress-max 1000)
+(def default-progress-max
+  "Default progress scale used when a work spec omits `:progress-max`."
+  1000)
 
-(defun make [id start end]
+(defun make
+  "Create a progress scope.
+
+  Args:
+  - `id`: Scope identifier.
+  - `start`: Inclusive start value in parent progress space.
+  - `end`: End value in parent progress space.
+
+  Returns:
+  A scope map with `:id`, `:start`, and `:end`."
+  [id start end]
   {:id id
    :start start
    :end end})
 
-(defun size [scope]
+(defun size
+  "Return the non-negative size of a progress scope.
+
+  Args:
+  - `scope`: Scope map with `:start` and `:end`.
+
+  Returns:
+  `:end - :start`, clamped to zero."
+  [scope]
   (max 0 (- (:end scope) (:start scope))))
