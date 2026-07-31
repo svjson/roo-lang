@@ -67,3 +67,54 @@
   (is (= nil
          (native-docs/native-identity-from-cpp-comment
            "/* just a note */"))))
+
+(deftest locates-package-native-source-files
+  (is (= ["assets/native-package/native/include/sample.h"
+          "assets/native-package/native/src/sample.cpp"]
+         (native-docs/package-native-source-files "assets/native-package"))))
+
+(deftest extracts-native-doc-comment-entries-from-source
+  (let [entries (native-docs/source-native-comment-entries!
+                  "assets/native-package/native/include/sample.h")
+        entry (find-first entries
+                          (fn [entry]
+                            (= :native-doc-comment (:kind entry))))
+        doc (:doc entry)]
+    (is (= 1 (count entries)))
+    (is (= "SampleReadFunction" (:native-class entry)))
+    (is (= :function (:native-kind entry)))
+    (is (= "Read fixture data from a path." (:summary doc)))
+    (is (= "The fixture keeps this as a separate paragraph." (:body doc)))
+    (is (= {:type nil :doc "Path to read."}
+           (get (:params doc) "0")))
+    (is (= [{:format :roo
+             :source "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}]
+           (:examples doc)))
+    (is (= {:path "assets/native-package/native/include/sample.h"
+            :line 6
+            :column 1}
+           (:source entry)))
+    (is (= {:path "assets/native-package/native/include/sample.h"
+            :line 21
+            :column 1}
+           (:declaration-source entry)))))
+
+(deftest extracts-native-identity-comment-entries-from-source
+  (let [entries (native-docs/source-native-comment-entries!
+                  "assets/native-package/native/src/sample.cpp")
+        entry (find-first entries
+                          (fn [entry]
+                            (= :native-identity-comment (:kind entry))))]
+    (is (= 1 (count entries)))
+    (is (= "SampleReadFunction" (:native-class entry)))
+    (is (= "sample.native/read!" (:qualified-name entry)))
+    (is (= {:path "assets/native-package/native/src/sample.cpp"
+            :line 5
+            :column 1}
+           (:source entry)))))
+
+(deftest extracts-package-native-comment-entries
+  (let [entries (native-docs/package-native-comment-entries! "assets/native-package")
+        kinds (map entries :kind)]
+    (is (= 2 (count entries)))
+    (is (= [:native-doc-comment :native-identity-comment] kinds))))

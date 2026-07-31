@@ -1,0 +1,7 @@
+{:name native-fixture
+ :version "0.1.0"
+ :description "Native documentation extraction fixture."
+ :native-libraries [{:name "native-fixture"
+                     :version "0.1.0"
+                     :path "native"
+                     :namespaces [sample.native]}]}
