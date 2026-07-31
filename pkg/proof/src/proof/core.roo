@@ -1,6 +1,7 @@
 (ns proof.core
   (:require proof.syntax
-            [proof.reporter :as reporter]))
+            [proof.reporter :as reporter]
+            [roo.string :as string]))
 
 (def tests [])
 (def current-failures [])
@@ -38,14 +39,9 @@
                (annotate-test metadata-by-namespace test))))
   tests)
 
-(defun starts-with? [text prefix]
-  (if (< (count text) (count prefix))
-    false
-    (= prefix (substr text 0 (count prefix)))))
-
 (defun sub-namespace? [parent namespace]
   (and (not (nil? namespace))
-       (starts-with? namespace (str parent "."))))
+       (string/starts-with? namespace (str parent "."))))
 
 (defun qualified-test-name [test]
   (str (if-let [ns (:namespace test)]

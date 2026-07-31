@@ -35,12 +35,12 @@
 
 (defun flag-value [arg flag]
   (let [prefix (str flag "=")]
-    (if (proof.core/starts-with? arg prefix)
+    (if (string/starts-with? arg prefix)
       (substr arg (count prefix))
       nil)))
 
 (defun cli-keyword [value]
-  (if (proof.core/starts-with? value ":")
+  (if (string/starts-with? value ":")
     (keyword (substr value 1))
     (keyword value)))
 
@@ -54,7 +54,7 @@
 
 (defun next-value? [args index]
   (and (< (+ index 1) (count args))
-       (not (proof.core/starts-with? (nth args (+ index 1)) "--"))))
+       (not (string/starts-with? (nth args (+ index 1)) "--"))))
 
 (defun parse-proof-args-from [args index config roots]
   (if (= index (count args))
@@ -241,7 +241,7 @@
       (let [normalized-root (trim-trailing-slash (normalized-path package-root))
             normalized-file (normalized-path path)
             prefix (str normalized-root "/")]
-        (if (proof.core/starts-with? normalized-file prefix)
+        (if (string/starts-with? normalized-file prefix)
           (substr normalized-file (count prefix))
           normalized-file)))))
 
