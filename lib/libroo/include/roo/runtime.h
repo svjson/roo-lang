@@ -32,11 +32,6 @@ namespace Roo
   class Runtime
   {
    private:
-    /*!
-     * @brief The Roo language namespace, containing all language built-in
-     * functions and identifiers
-     */
-    Namespace lang;
     FileSystem* fs;
     bool file_system_access = false;
     Reader sexp_reader;
@@ -44,6 +39,9 @@ namespace Roo
     SourceMap source_map;
     RandomState random_state;
 
+    /*!
+     * @brief Runtime namespaces, including the implicit Roo language namespace.
+     */
     std::map<const std::string, Namespace> namespaces;
 
     Namespace* current_namespace = nullptr;
@@ -317,6 +315,9 @@ namespace Roo
      * namespace on demand before the caller checks for its existence.
      */
     void ensure_namespace_loaded(const std::string& ns_name);
+
+    Namespace& language_namespace();
+    const Namespace& language_namespace() const;
 
     /*!
      * @brief Import another namespace into the current namespace, making all

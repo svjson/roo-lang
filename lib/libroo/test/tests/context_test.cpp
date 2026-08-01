@@ -22,11 +22,17 @@ TEST_F(Context, lang_lookup)
   auto def = ctx.lookup(*Roo::Value::symbol("def"));
   auto defun = ctx.lookup("defun");
   auto include = ctx.lookup(*Roo::Value::symbol("include"));
+  auto qualified_plus = ctx.lookup("roo/+");
 
   // Then
+  ASSERT_NE(runtime.ns("roo"), nullptr);
+  EXPECT_EQ(runtime.ns("roo")->get_type(), Roo::Namespace::Type::LANG);
+  EXPECT_EQ(ctx.lang().get_name(), "roo");
   EXPECT_EQ(def->type, Roo::Value::Type::FUNCTION);
   EXPECT_EQ(defun->type, Roo::Value::Type::FUNCTION);
   EXPECT_EQ(include->type, Roo::Value::Type::FUNCTION);
+  EXPECT_EQ(qualified_plus->type, Roo::Value::Type::FUNCTION);
+  EXPECT_EQ(*runtime.eval("(roo/+ 20 22)"), *Roo::Value::number(42));
 }
 
 TEST_F(Context, scope_lookup)

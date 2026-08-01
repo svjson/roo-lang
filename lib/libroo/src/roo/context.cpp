@@ -193,7 +193,7 @@ namespace Roo
 
   Namespace& Context::lang()
   {
-    return runtime.lang;
+    return runtime.language_namespace();
   }
 
   void Context::seed_random(int seed)

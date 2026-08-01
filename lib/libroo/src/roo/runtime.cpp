@@ -76,11 +76,14 @@ namespace Roo
   }
 
   Runtime::Runtime(FileSystem* fs, std::unique_ptr<NamespaceSource> namespace_source)
-    : lang(make_language_namespace())
-    , fs(fs ? fs : &null_file_system())
+    : fs(fs ? fs : &null_file_system())
     , file_system_access(fs != nullptr)
     , random_state(make_random_state())
   {
+    Namespace language = make_language_namespace();
+    const std::string language_name = language.get_name();
+    namespaces.emplace(language_name, std::move(language));
+
     Namespace io = make_io_namespace();
     namespaces.emplace(io.get_name(), std::move(io));
     Namespace string = make_string_namespace();
@@ -131,6 +134,16 @@ namespace Roo
     {
       namespace_loader->load(*this, ns_name);
     }
+  }
+
+  Namespace& Runtime::language_namespace()
+  {
+    return namespaces.at("roo");
+  }
+
+  const Namespace& Runtime::language_namespace() const
+  {
+    return namespaces.at("roo");
   }
 
   Runtime::Runtime(Namespace& ns)
@@ -530,7 +543,7 @@ namespace Roo
       return nullptr;
     }
 
-    if (const sptr_val* lang_obj = lang.find(identifier.get_identifier()))
+    if (const sptr_val* lang_obj = language_namespace().find(identifier.get_identifier()))
     {
       return lang_obj;
     }
@@ -564,9 +577,9 @@ namespace Roo
     {
       return *current_namespace;
     }
-    else if (lang.has(identifier))
+    else if (language_namespace().has(identifier))
     {
-      return lang;
+      return language_namespace();
     }
 
     throw IdentifierException("Unknown identifier: " + identifier);

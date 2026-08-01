@@ -109,7 +109,7 @@ namespace Roo
 
   Namespace Namespace::make_lang(std::map<std::string, sptr_val> lang_symbols)
   {
-    return Namespace(Type::LANG, "", lang_symbols);
+    return Namespace(Type::LANG, "roo", std::move(lang_symbols));
   }
 
   Namespace Namespace::make_lang(const std::string& name,
