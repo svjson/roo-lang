@@ -40,12 +40,12 @@ fi
 assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
-       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]
+       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]
        lookup thing-at <package-dir> <file> <line> <column>
 
-Extractors: forms, symbols
-Default: symbols, including Roo docstrings when present
-Native source roots add C/C++ doc comments to the symbol index" \
+Extractors: forms, symbols, native
+Default: symbols for packages, native for roots
+Roots are scanned by applicable extractors; excludes skip paths and subtrees" \
   "$HELP_OUTPUT"
 
 if ! VERSION_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" --version); then
@@ -99,15 +99,22 @@ case "$OUT_CONTENT" in
     ;;
 esac
 
-if ! NATIVE_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index --native-source-root "$LOOKUP_PACKAGE"/test/assets/native-root-only); then
-  fail "lookup index --native-source-root command failed"
+if ! NATIVE_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index --root "$LOOKUP_PACKAGE"/test/assets --exclude "$LOOKUP_PACKAGE"/test/assets/native-package); then
+  fail "lookup index --root command failed"
 fi
 case "$NATIVE_ROOT_OUTPUT" in
-  *":origin {:kind :native-source-roots"*":qualified-name \"extra.native/read!\""*":summary \"Read data from an external native source root.\""*) ;;
+  *":origin {:kind :roots"*":excludes ["*":qualified-name \"extra.native/read!\""*":summary \"Read data from an external native source root.\""*) ;;
   *)
-    printf '%s\n' "unexpected lookup index --native-source-root output:" >&2
+    printf '%s\n' "unexpected lookup index --root output:" >&2
     printf '%s\n' "$NATIVE_ROOT_OUTPUT" >&2
-    fail "lookup index --native-source-root output"
+    fail "lookup index --root output"
+    ;;
+esac
+case "$NATIVE_ROOT_OUTPUT" in
+  *"sample.native/read!"*)
+    printf '%s\n' "excluded native source appeared in lookup index --root output:" >&2
+    printf '%s\n' "$NATIVE_ROOT_OUTPUT" >&2
+    fail "lookup index --root exclude output"
     ;;
 esac
 

@@ -115,10 +115,18 @@
 
 (deftest extracts-native-comment-entries-from-generic-source-root
   (let [entries (native-docs/native-source-root-comment-entries!
-                  ["assets/native-package/native"])
+                  ["assets/native-package/native"]
+                  [])
         kinds (map entries :kind)]
     (is (= 2 (count entries)))
     (is (= [:native-doc-comment :native-identity-comment] kinds))))
+
+(deftest excludes-native-source-root-subtrees
+  (is (= ["assets/native-root-only/include/extra.h"
+          "assets/native-root-only/src/extra.cpp"]
+         (native-docs/native-source-root-files
+           "assets"
+           ["assets/native-package"]))))
 
 (deftest extracts-package-native-comment-entries
   (let [entries (native-docs/package-native-comment-entries! "assets/native-package")
@@ -129,7 +137,8 @@
 (deftest builds-native-symbol-entries-from-generic-source-root
   (let [symbols (native-docs/native-source-root-symbol-entries!
                   "native-fixture"
-                  ["assets/native-package/native"])
+                  ["assets/native-package/native"]
+                  [])
         symbol (head symbols)]
     (is (= 1 (count symbols)))
     (is (= "sample.native/read!" (:qualified-name symbol)))

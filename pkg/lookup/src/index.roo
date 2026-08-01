@@ -20,19 +20,9 @@
      :package (source/package-info manifest)
      :sources (map files source/source-entry)}))
 
-(defun symbol-index-with-native-source-roots
-  "Build a symbol index for a package.
-
-  The symbol index includes namespace entries, top-level `def` and `defun`
-  symbols, function signatures, source locations, and Roo docstrings when
-  present.
-
-  Args:
-  - `package-dir`: Package root containing `package.edn`.
-
-  Returns:
-  A `:roo/symbol-index` map for editor lookup and documentation generation."
-  [package-dir native-source-roots]
+(defun symbol-index-with-roots
+  "Build a package symbol index, optionally enriched with generic roots."
+  [package-dir roots excludes]
   (let [source-index (source-form-index package-dir)
         package-name (:name (:package source-index))
         sources (:sources source-index)]
@@ -49,7 +39,8 @@
                 (native-docs/package-native-symbol-entries! package-dir package-name)
                 (native-docs/native-source-root-symbol-entries!
                   package-name
-                  native-source-roots))}))
+                  roots
+                  excludes))}))
 
 (defun symbol-index
   "Build a symbol index for a package.
@@ -64,25 +55,34 @@
   Returns:
   A `:roo/symbol-index` map for editor lookup and documentation generation."
   [package-dir]
-  (symbol-index-with-native-source-roots package-dir []))
+  (symbol-index-with-roots package-dir [] []))
 
 
-(defun native-source-root-index
-  "Build a native-only symbol index from C/C++ source roots."
-  [native-source-roots]
-  (let [roots (map native-source-roots source/normalized-path)
+(defun root-index
+  "Build a symbol index from generic roots."
+  [roots excludes extractors]
+  (let [normalized-roots (map roots source/normalized-path)
+        normalized-excludes (map excludes source/normalized-path)
         native-files (sort
                        (flatten
-                         (map native-source-roots
-                              native-docs/native-source-root-files))
+                         (map roots
+                              (fn [root]
+                                (native-docs/native-source-root-files
+                                  root
+                                  excludes))))
                        <)
-        native-symbols (native-docs/native-source-root-symbol-entries!
-                         nil
-                         native-source-roots)]
+        native-symbols (if (contains? extractors :native)
+                         (native-docs/native-source-root-symbol-entries!
+                           nil
+                           roots
+                           excludes)
+                         [])]
     {:format :roo/symbol-index
      :version 1
-     :origin {:kind :native-source-roots
-              :roots roots}
+     :origin {:kind :roots
+              :roots normalized-roots
+              :excludes normalized-excludes
+              :extractors extractors}
      :sources (map native-files (fn [path] {:path path}))
      :namespaces []
      :symbols native-symbols}))
@@ -92,19 +92,22 @@
   [options]
   (let [package-dir (:package-dir options)
         extractors (:extractors options)
-        native-source-roots (:native-source-roots options)
+        roots (:roots options)
+        excludes (:excludes options)
         forms? (contains? extractors :forms)
-        symbols? (contains? extractors :symbols)]
+        symbols? (contains? extractors :symbols)
+        native? (contains? extractors :native)]
     (cond
 
+      (and native? (not symbols?) (not forms?))
+      (root-index roots excludes extractors)
+
       (nil? package-dir)
-      (native-source-root-index native-source-roots)
+      (root-index roots excludes extractors)
 
       (and forms? symbols?)
       (let [forms-index (source-form-index package-dir)
-            symbols-index (symbol-index-with-native-source-roots
-                            package-dir
-                            native-source-roots)]
+            symbols-index (symbol-index-with-roots package-dir roots excludes)]
         {:format :roo/index
          :version 1
          :package (:package symbols-index)
@@ -115,10 +118,10 @@
       (source-form-index package-dir)
 
       symbols?
-      (symbol-index-with-native-source-roots package-dir native-source-roots)
+      (symbol-index-with-roots package-dir roots excludes)
 
       true
-      (symbol-index-with-native-source-roots package-dir native-source-roots))))
+      (symbol-index-with-roots package-dir roots excludes))))
 
 (defun index-with-extractors
   "Build an index using the requested extractors.

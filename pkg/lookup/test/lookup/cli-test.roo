@@ -4,19 +4,19 @@
 
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
-          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]"
+          "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
 (deftest reports-help-lines
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
-          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]"
+          "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
           "       lookup thing-at <package-dir> <file> <line> <column>"
           ""
-          "Extractors: forms, symbols"
-          "Default: symbols, including Roo docstrings when present"
-          "Native source roots add C/C++ doc comments to the symbol index"]
+          "Extractors: forms, symbols, native"
+          "Default: symbols for packages, native for roots"
+          "Roots are scanned by applicable extractors; excludes skip paths and subtrees"]
          (cli/help-lines))))
 
 (deftest reports-version-text
@@ -37,7 +37,8 @@
   (is (= {:extractors [:symbols]
           :out nil
           :package-dir "pkg/lookup"
-          :native-source-roots []
+          :roots []
+          :excludes []
           :errors []}
          (cli/parse-index-args ["pkg/lookup"]))))
 
@@ -45,53 +46,72 @@
   (is (= {:extractors [:forms :symbols]
           :out nil
           :package-dir "pkg/lookup"
-          :native-source-roots []
+          :roots []
+          :excludes []
           :errors []}
          (cli/parse-index-args ["-x" "forms" "-x" "symbols" "pkg/lookup"]))))
 
-(deftest parses-index-native-source-root
+(deftest parses-index-roots-and-excludes
   (is (= {:extractors [:symbols]
           :out nil
           :package-dir "pkg/lookup"
-          :native-source-roots ["lib/libroo/include" "lib/libroo/src"]
+          :roots ["lib/libroo/include" "lib/libroo/src"]
+          :excludes ["lib/libroo/test"]
           :errors []}
-         (cli/parse-index-args ["--native-source-root" "lib/libroo/include"
-                                "--native-source-root" "lib/libroo/src"
+         (cli/parse-index-args ["--root" "lib/libroo/include"
+                                "--root" "lib/libroo/src"
+                                "--exclude" "lib/libroo/test"
                                 "pkg/lookup"]))))
 
 (deftest parses-native-only-index-options
-  (is (= {:extractors [:symbols]
+  (is (= {:extractors [:native]
           :out nil
           :package-dir nil
-          :native-source-roots ["lib/libroo/include"]
+          :roots ["lib/libroo/include"]
+          :excludes []
           :errors []}
-         (cli/parse-index-args ["--native-source-root" "lib/libroo/include"]))))
+         (cli/parse-index-args ["--root" "lib/libroo/include"]))))
+
+(deftest parses-explicit-native-index-options
+  (is (= {:extractors [:native]
+          :out nil
+          :package-dir nil
+          :roots ["lib/libroo/include"]
+          :excludes ["lib/libroo/test"]
+          :errors []}
+         (cli/parse-index-args ["-x" "native"
+                                "--root" "lib/libroo/include"
+                                "--exclude" "lib/libroo/test"]))))
 
 (deftest parses-index-output-file
   (is (= {:extractors [:symbols]
           :out "build/lookup.edn"
           :package-dir "pkg/lookup"
-          :native-source-roots []
+          :roots []
+          :excludes []
           :errors []}
          (cli/parse-index-args ["-o" "build/lookup.edn" "pkg/lookup"]))))
 
 (deftest reports-index-option-errors
   (let [missing-extractor (cli/parse-index-args ["-x"])
-        missing-native-root (cli/parse-index-args ["--native-source-root"])
+        missing-root (cli/parse-index-args ["--root"])
+        missing-exclude (cli/parse-index-args ["--exclude"])
         unknown-option (cli/parse-index-args ["--wat" "pkg/lookup"])
         missing-input (cli/parse-index-args [])
         native-forms (cli/parse-index-args ["-x" "forms"
-                                            "--native-source-root"
+                                            "--root"
                                             "lib/libroo/include"])
+        native-without-root (cli/parse-index-args ["-x" "native" "pkg/lookup"])
         extra-arg (cli/parse-index-args ["pkg/lookup" "extra"])]
     (is (contains? (:errors missing-extractor) "Missing extractor after -x"))
-    (is (contains? (:errors missing-native-root)
-                   "Missing directory after --native-source-root"))
+    (is (contains? (:errors missing-root) "Missing directory after --root"))
+    (is (contains? (:errors missing-exclude) "Missing path after --exclude"))
     (is (contains? (:errors unknown-option) "Unknown index option: --wat"))
-    (is (contains? (:errors missing-input)
-                   "Missing package directory or native source root"))
+    (is (contains? (:errors missing-input) "Missing package directory or root"))
     (is (contains? (:errors native-forms)
                    "Package directory required for forms extractor"))
+    (is (contains? (:errors native-without-root)
+                   "Root required for native extractor"))
     (is (contains? (:errors extra-arg) "Unexpected index argument: extra"))))
 
 (deftest resolves-thing-at-command

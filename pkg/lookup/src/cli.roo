@@ -7,12 +7,12 @@
 (def usage-lines
   "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
-   "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]"
+   "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
    "       lookup thing-at <package-dir> <file> <line> <column>"])
 
 (def index-extractors
   "Extractor names accepted by `lookup index -x`."
-  [:forms :symbols])
+  [:forms :symbols :native])
 
 (def version
   "Lookup command version."
@@ -27,9 +27,9 @@
   (concat ["lookup: build Roo symbol index artifacts"]
           usage-lines
           [""
-           "Extractors: forms, symbols"
-           "Default: symbols, including Roo docstrings when present"
-           "Native source roots add C/C++ doc comments to the symbol index"]))
+           "Extractors: forms, symbols, native"
+           "Default: symbols for packages, native for roots"
+           "Roots are scanned by applicable extractors; excludes skip paths and subtrees"]))
 
 (defun version-text
   "Build the lookup version output.
@@ -101,16 +101,25 @@
                                                [(str "Unknown index extractor: "
                                                      extractor)])))))))
 
-      (= arg "--native-source-root")
+      (= arg "--root")
       (let [root (nth args 1)]
         (if (nil? root)
           (assoc options :errors (concat (:errors options)
-                                         ["Missing directory after --native-source-root"]))
+                                         ["Missing directory after --root"]))
           (parse-index-args-step (tail (tail args))
                                  (assoc options
-                                        :native-source-roots
-                                        (concat (:native-source-roots options)
-                                                [root])))))
+                                        :roots
+                                        (concat (:roots options) [root])))))
+
+      (= arg "--exclude")
+      (let [path (nth args 1)]
+        (if (nil? path)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing path after --exclude"]))
+          (parse-index-args-step (tail (tail args))
+                                 (assoc options
+                                        :excludes
+                                        (concat (:excludes options) [path])))))
 
       (or (= arg "-o")
           (= arg "--out"))
@@ -147,36 +156,47 @@
   - `args`: Arguments after the `index` command name.
 
   Returns:
-  An options map with `:extractors`, `:out`, `:package-dir`, `:native-source-roots`, and `:errors`."
+  An options map with `:extractors`, `:out`, `:package-dir`, `:roots`,
+  `:excludes`, and `:errors`."
   [args]
   (let [options (parse-index-args-step args
                                        {:extractors []
                                         :out nil
                                         :package-dir nil
-                                        :native-source-roots []
-                                        :errors []})]
-    (let [with-default-extractors (if (= 0 (count (:extractors options)))
-                                  (assoc options :extractors [:symbols])
+                                        :roots []
+                                        :excludes []
+                                        :errors []})
+        has-package? (not (nil? (:package-dir options)))
+        has-roots? (not (= 0 (count (:roots options))))
+        with-default-extractors (if (= 0 (count (:extractors options)))
+                                  (assoc options
+                                         :extractors
+                                         (if has-package? [:symbols] [:native]))
                                   options)
-          forms? (contains? (:extractors with-default-extractors) :forms)
-          has-package? (not (nil? (:package-dir with-default-extractors)))
-          has-native-roots? (not (= 0 (count (:native-source-roots with-default-extractors))))]
-      (cond
+        forms? (contains? (:extractors with-default-extractors) :forms)
+        native? (contains? (:extractors with-default-extractors) :native)]
+    (cond
 
-        (and forms? (not has-package?))
-        (assoc with-default-extractors
-               :errors
-               (concat (:errors with-default-extractors)
-                       ["Package directory required for forms extractor"]))
+      (and (not has-package?) (not has-roots?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Missing package directory or root"]))
 
-        (and (not has-package?) (not has-native-roots?))
-        (assoc with-default-extractors
-               :errors
-               (concat (:errors with-default-extractors)
-                       ["Missing package directory or native source root"]))
+      (and forms? (not has-package?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Package directory required for forms extractor"]))
 
-        true
-        with-default-extractors))))
+      (and native? (not has-roots?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Root required for native extractor"]))
+
+      true
+      with-default-extractors)))
 
 (defun print-index! [args]
   (let [options (parse-index-args (tail args))]

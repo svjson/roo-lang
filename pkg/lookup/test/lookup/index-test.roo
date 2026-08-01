@@ -189,13 +189,15 @@
     (is (= 2 (:line source-location)))
     (is (= 16 (:column source-location)))))
 
-(deftest builds-native-only-symbol-index-from-generic-source-root
-  (let [symbol-index (index/native-source-root-index ["assets/native-root-only"])
+(deftest builds-native-only-symbol-index-from-generic-root
+  (let [symbol-index (index/root-index ["assets/native-root-only"] [] [:native])
         symbols (:symbols symbol-index)
         native-symbol (head symbols)]
     (is (= :roo/symbol-index (:format symbol-index)))
-    (is (= {:kind :native-source-roots
-            :roots ["assets/native-root-only"]}
+    (is (= {:kind :roots
+            :roots ["assets/native-root-only"]
+            :excludes []
+            :extractors [:native]}
            (:origin symbol-index)))
     (is (= nil (:package symbol-index)))
     (is (= [{:path "assets/native-root-only/include/extra.h"}
@@ -206,10 +208,23 @@
     (is (= "Read data from an external native source root."
            (:summary (:doc native-symbol))))))
 
-(deftest builds-symbol-index-with-generic-native-source-root
-  (let [symbol-index (index/symbol-index-with-native-source-roots
+(deftest builds-native-only-symbol-index-with-excludes
+  (let [symbol-index (index/root-index ["assets"] ["assets/native-package"] [:native])
+        symbols (:symbols symbol-index)
+        native-symbol (head symbols)]
+    (is (= {:kind :roots
+            :roots ["assets"]
+            :excludes ["assets/native-package"]
+            :extractors [:native]}
+           (:origin symbol-index)))
+    (is (= 1 (count symbols)))
+    (is (= "extra.native/read!" (:id native-symbol)))))
+
+(deftest builds-symbol-index-with-generic-root
+  (let [symbol-index (index/symbol-index-with-roots
                       "assets/native-package"
-                      ["assets/native-root-only"])
+                      ["assets/native-root-only"]
+                      [])
         symbols (:symbols symbol-index)
         native-symbol (find-first symbols
                                   (fn [symbol]

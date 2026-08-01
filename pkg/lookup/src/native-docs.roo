@@ -204,21 +204,48 @@
   (contains? [".c" ".cc" ".cpp" ".cxx" ".h" ".hh" ".hpp" ".hxx"]
              (io/extension path)))
 
-(defun native-source-files-in [root]
-  (if (io/directory? root)
+(defun excluded-path? [path excludes]
+  (let [normalized-path (source/normalized-path path)]
+    (not (nil?
+           (find-first excludes
+                       (fn [exclude]
+                         (let [normalized-exclude (source/normalized-path exclude)]
+                           (or (= normalized-path normalized-exclude)
+                               (string/starts-with?
+                                 normalized-path
+                                 (str normalized-exclude "/"))))))))))
+
+(defun native-source-files-in-excluding [root excludes]
+  (cond
+
+    (excluded-path? root excludes)
+    []
+
+    (io/directory? root)
     (let [entries (io/list-directory! root)
           files (map (filter entries
                              (fn [entry]
                                (and (= (:type entry) :file)
-                                    (native-source-file? (:path entry)))))
+                                    (native-source-file? (:path entry))
+                                    (not (excluded-path? (:path entry) excludes)))))
                      :path)
-          directories (filter entries (fn [entry] (= (:type entry) :directory)))]
+          directories (filter entries
+                              (fn [entry]
+                                (and (= (:type entry) :directory)
+                                     (not (excluded-path? (:path entry)
+                                                          excludes)))))]
       (concat files
               (flatten
                 (map directories
                      (fn [entry]
-                       (native-source-files-in (:path entry)))))))
+                       (native-source-files-in-excluding (:path entry)
+                                                         excludes))))))
+
+    true
     []))
+
+(defun native-source-files-in [root]
+  (native-source-files-in-excluding root []))
 
 (defun native-library-source-root [package-dir native-library]
   (io/join-path package-dir (:path native-library)))
@@ -386,16 +413,18 @@
 
 (defun native-source-root-files
   "Find C++ source and header files under a generic source root."
-  [root]
-  (sort (map (native-source-files-in root) source/normalized-path) <))
+  [root excludes]
+  (sort (map (native-source-files-in-excluding root excludes)
+             source/normalized-path)
+        <))
 
 (defun native-source-root-comment-entries!
   "Extract native documentation comment entries from generic C++ source roots."
-  [roots]
+  [roots excludes]
   (flatten
     (map roots
          (fn [root]
-           (map (native-source-root-files root)
+           (map (native-source-root-files root excludes)
                 source-native-comment-entries!)))))
 
 (defun native-doc-entry-for-class [entries native-class]
@@ -511,6 +540,6 @@
   (native-symbol-entries package (package-native-comment-entries! package-dir)))
 
 (defun native-source-root-symbol-entries!
-  "Build native symbol entries for a package from generic C++ source roots."
-  [package roots]
-  (native-symbol-entries package (native-source-root-comment-entries! roots)))
+  "Build native symbol entries from generic C++ source roots."
+  [package roots excludes]
+  (native-symbol-entries package (native-source-root-comment-entries! roots excludes)))
