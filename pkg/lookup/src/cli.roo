@@ -185,19 +185,9 @@
   The result of printing or writing the selected lookup command output."
   [args]
   (let [command-name (command args)]
-    (cond
-
-      (= command-name :help)
-      (print-help!)
-
-      (= command-name :version)
-      (print-version!)
-
-      (= command-name :index)
-      (print-index! args)
-
-      (= command-name :thing-at)
-      (print-thing-at! args)
-
-      true
-      (print-usage!))))
+    (case (command args)
+      :help (print-help!)
+      :version (print-version!)
+      :index (print-index! args)
+      :thing-at (print-thing-at! args)
+      :default (print-usage!))))

@@ -118,3 +118,33 @@
         kinds (map entries :kind)]
     (is (= 2 (count entries)))
     (is (= [:native-doc-comment :native-identity-comment] kinds))))
+
+(deftest builds-native-symbol-entries
+  (let [entries (native-docs/package-native-comment-entries! "assets/native-package")
+        symbols (native-docs/native-symbol-entries "native-fixture" entries)
+        symbol (head symbols)
+        signature (head (:signatures symbol))]
+    (is (= 1 (count symbols)))
+    (is (= "sample.native/read!" (:qualified-name symbol)))
+    (is (= "read!" (:name symbol)))
+    (is (= "sample.native" (:namespace symbol)))
+    (is (= "native-fixture" (:package symbol)))
+    (is (= :function (:kind symbol)))
+    (is (= :native (:origin symbol)))
+    (is (= "Read fixture data from a path." (:summary (:doc symbol))))
+    (is (= {:kind :native-cpp-comment
+            :source {:path "assets/native-package/native/include/sample.h"
+                     :line 6
+                     :column 1}}
+           (:doc-source symbol)))
+    (is (= {:path "assets/native-package/native/src/sample.cpp"
+            :line 5
+            :column 1}
+           (:source symbol)))
+    (is (= "(read! arg0)" (:display signature)))
+    (is (= [{:name "arg0"
+             :type nil
+             :doc "Path to read."
+             :optional? false
+             :rest? false}]
+           (:params signature)))))

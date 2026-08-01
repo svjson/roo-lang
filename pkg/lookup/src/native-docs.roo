@@ -383,3 +383,113 @@
   (flatten
     (map (package-native-source-files package-dir)
          source-native-comment-entries!)))
+
+(defun native-doc-entry-for-class [entries native-class]
+  (find-first entries
+              (fn [entry]
+                (and (= :native-doc-comment (:kind entry))
+                     (= native-class (:native-class entry))))))
+
+(defun qualified-symbol-separator [qualified-name]
+  (find-index qualified-name (fn [ch] (= "/" (str ch)))))
+
+(defun qualified-symbol-namespace [qualified-name]
+  (if-let [separator (qualified-symbol-separator qualified-name)]
+    (substr qualified-name 0 separator)
+    nil))
+
+(defun qualified-symbol-name [qualified-name]
+  (if-let [separator (qualified-symbol-separator qualified-name)]
+    (substr qualified-name (+ separator 1) (count qualified-name))
+    qualified-name))
+
+(defun native-symbol-kind [native-doc-entry]
+  (case (:native-kind native-doc-entry)
+    :special-form :special-form
+    :default :function))
+
+(defun native-param-variadic? [key]
+  (string/ends-with? key "..."))
+
+(defun native-param-name [key]
+  (if (native-param-variadic? key)
+    "args"
+    (str "arg" key)))
+
+(defun native-signature-params [doc]
+  (let [param-docs (:params doc)]
+    (map (sort (keys param-docs) <)
+         (fn [key]
+           (let [rest? (native-param-variadic? key)
+                 param-doc (get param-docs key)]
+             {:name (native-param-name key)
+              :type (:type param-doc)
+              :doc (:doc param-doc)
+              :optional? rest?
+              :rest? rest?})))))
+
+(defun native-signature-display [name params]
+  (let [param-names (map params :name)
+        params-display (join-lines " " param-names)]
+    (if (nil? params-display)
+      (str "(" name ")")
+      (str "(" name " " params-display ")"))))
+
+(defun native-signature-arity [params]
+  (let [variadic? (not (nil? (find-first params (fn [param] (:rest? param)))))
+        required-params (filter params
+                                (fn [param]
+                                  (and (not (:optional? param))
+                                       (not (:rest? param)))))]
+    {:min (count required-params)
+     :max (if variadic? nil (count params))
+     :variadic variadic?}))
+
+(defun native-signature [name doc]
+  (let [params (native-signature-params doc)]
+    {:display (native-signature-display name params)
+     :params params
+     :returns (or (:returns doc)
+                  {:type nil
+                   :doc nil})
+     :arity (native-signature-arity params)}))
+
+(defun native-symbol-entry [package entries identity-entry]
+  (let [qualified-name (:qualified-name identity-entry)
+        namespace (qualified-symbol-namespace qualified-name)
+        name (qualified-symbol-name qualified-name)
+        doc-entry (native-doc-entry-for-class entries (:native-class identity-entry))
+        doc (if (nil? doc-entry)
+              (docstrings/empty)
+              (:doc doc-entry))]
+    (if (nil? namespace)
+      nil
+      {:id qualified-name
+       :name name
+       :qualified-name qualified-name
+       :namespace namespace
+       :package package
+       :kind (native-symbol-kind doc-entry)
+       :origin :native
+       :visibility :public
+       :status :stable
+       :source (:source identity-entry)
+       :declaration-source (:declaration-source doc-entry)
+       :doc-source (if (nil? doc-entry)
+                     nil
+                     {:kind :native-cpp-comment
+                      :source (:source doc-entry)})
+       :doc doc
+       :signatures [(native-signature name doc)]})))
+
+(defun native-symbol-entries [package entries]
+  (keep entries
+        (fn [entry]
+          (if (= :native-identity-comment (:kind entry))
+            (native-symbol-entry package entries entry)
+            nil))))
+
+(defun package-native-symbol-entries!
+  "Build native symbol entries for a package from extracted C++ comments."
+  [package-dir package]
+  (native-symbol-entries package (package-native-comment-entries! package-dir)))

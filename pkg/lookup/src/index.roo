@@ -1,5 +1,6 @@
 (ns lookup.index
-  (:require [lookup.source :as source]
+  (:require [lookup.native-docs :as native-docs]
+            [lookup.source :as source]
             [lookup.symbols :as symbols]))
 
 (defun source-form-index
@@ -40,10 +41,12 @@
      :package (:package source-index)
      :sources (map sources (fn [source] {:path (:path source)}))
      :namespaces (keep sources symbols/source-namespace-entry)
-     :symbols (flatten
-                (map sources
-                     (fn [source]
-                       (symbols/source-symbols package-name source))))}))
+     :symbols (concat
+                (flatten
+                  (map sources
+                       (fn [source]
+                         (symbols/source-symbols package-name source))))
+                (native-docs/package-native-symbol-entries! package-dir package-name))}))
 
 (defun index-with-extractors
   "Build an index using the requested extractors.
