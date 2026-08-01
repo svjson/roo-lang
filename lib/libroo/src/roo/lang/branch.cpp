@@ -130,6 +130,45 @@ namespace Roo
     return Constant::NIL;
   }
 
+  /* UnlessForm - unless */
+  SPECIAL_FORM_IMPL(UnlessForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&UnlessForm::execnode_unless))))
+
+  SFORM_LOWER_IMPL(UnlessForm)
+  {
+    sptr_ast_node_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2)
+    {
+      throw RooException("unless: No condition given: " + ast_node->to_string());
+    }
+
+    uptr_exec_node_v exec_nodes;
+    exec_nodes.reserve(elements.size() - 1);
+    for (size_t i = 1; i < elements.size(); i++)
+    {
+      exec_nodes.push_back(lower_expr(ctx, elements[i]));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, sptr_val_v{}, std::move(exec_nodes)));
+  }
+  EXECNODE_BODY(UnlessForm, execnode_unless)
+  {
+    sptr_val result = Constant::NIL;
+
+    if (!Roo::is_truthy(*exec(ctx, *snode.exec_nodes[0])))
+    {
+      for (size_t i = 1; i < snode.exec_nodes.size(); i++)
+      {
+        result = exec(ctx, *snode.exec_nodes[i]);
+      }
+    }
+
+    return result;
+  }
+
   /* WhenForm - when */
   SPECIAL_FORM_IMPL(WhenForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),

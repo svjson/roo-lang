@@ -62,6 +62,28 @@ namespace Roo
 
   /*!
    * @brief Optionally execute forms if conditional expression evaluates
+   * to a falsy value.
+   *
+   * Complement of `when`. If multiple forms are provided after the
+   * conditional, they are evaluated as if implicitly wrapped in a
+   * (do form1 form2 ...) form.
+   *
+   * Usage:
+   * @code
+   * (unless condition
+   *   (prn "It's false!"))
+   * @endcode
+   *
+   * | Arg # | Description                                                |
+   * |-------|------------------------------------------------------------|
+   * | 0     | A conditional form - anything that can be considered truthy or falsy |
+   * | 1...  | Any number of forms to be evaluated if the conditional evaluates to a falsy
+   * value |
+   */
+  SPECIAL_FORM_DECL(UnlessForm, unless)
+
+  /*!
+   * @brief Optionally execute forms if conditional expression evaluates
    * to a truthy value.
    *
    * If multiple forms are provided after the conditional, they are evaluated as
