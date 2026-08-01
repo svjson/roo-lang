@@ -7,6 +7,23 @@
 namespace Roo
 {
   /*!
+   * @brief Appends one or more elements to a vector, returning a new vector.
+   *
+   * Usage:
+   * @code
+   * (append [1 2 3] 4)     => [1 2 3 4]
+   * (append [] :a)         => [:a]
+   * (append [1 2] 3 4 5)   => [1 2 3 4 5]
+   * @endcode
+   *
+   * | Arg #  | Description                              |
+   * |--------|------------------------------------------|
+   * | 0      | The vector to append to (nil = empty)    |
+   * | 1...   | Elements to append                       |
+   */
+  FUNC(AppendFunction, append)
+
+  /*!
    * @brief Appends elements to the back of a seq, modifying the
    * seq.
    *

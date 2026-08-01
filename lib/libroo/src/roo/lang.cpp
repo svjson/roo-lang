@@ -57,6 +57,7 @@ namespace Roo
     lang_symbols.emplace("abs", AbsFunction::make());
     lang_symbols.emplace("and", AndForm::make());
     lang_symbols.emplace("any?", AnyFunction::make());
+    lang_symbols.emplace("append", AppendFunction::make());
     lang_symbols.emplace("append!", AppendBangFunction::make());
     lang_symbols.emplace("apply", ApplyFunction::make());
     lang_symbols.emplace("assoc", AssocFunction::make());

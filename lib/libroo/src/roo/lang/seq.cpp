@@ -33,6 +33,28 @@ namespace Roo
 
   } // namespace
 
+  /** AppendFunction - roo/append */
+  FUNC_IMPL(AppendFunction,
+            SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&AppendFunction::exec_append))))
+
+  EXEC_BODY(AppendFunction, exec_append)
+  {
+    sptr_val_v result;
+
+    if (args[0]->type != Value::Type::NIL)
+    {
+      for_each_child(*args[0], [&](const sptr_val& element) { result.push_back(element); });
+    }
+
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      result.push_back(args[i]);
+    }
+
+    return Value::vector(std::move(result));
+  }
+
   /** AppendBangFunction - roo/append! */
   FUNC_IMPL(AppendBangFunction,
             SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
