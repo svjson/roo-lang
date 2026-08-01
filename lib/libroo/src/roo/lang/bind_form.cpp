@@ -12,7 +12,7 @@
 
 namespace Roo
 {
-  /** LetForm - let */
+  /** LetForm - roo/let */
   SPECIAL_FORM_IMPL(LetForm,
                     SIG((FN_ARGS((&Type::VECTOR, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
@@ -73,7 +73,7 @@ namespace Roo
     return result;
   }
 
-  /* IfLetForm - if-let */
+  /** IfLetForm - roo/if-let */
   SPECIAL_FORM_IMPL(IfLetForm,
                     SIG((FN_ARGS((&Type::VECTOR, &Eval::REPEAT_LAZY_BIND_SYM_VAL),
                                  (&Type::ANY, NO_EVAL),
@@ -147,7 +147,7 @@ namespace Roo
     return result;
   }
 
-  /** WhenLetForm - when-let */
+  /** WhenLetForm - roo/when-let */
   SPECIAL_FORM_IMPL(WhenLetForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&WhenLetForm::execnode_when_let))))

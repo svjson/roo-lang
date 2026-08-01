@@ -59,7 +59,7 @@ namespace Roo
     }
   } // namespace
 
-  /* AssocFunction - assoc */
+  /** AssocFunction - roo/assoc */
   FUNC_IMPL(AssocFunction,
             MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&AssocFunction::exec_assoc)),
@@ -120,7 +120,7 @@ namespace Roo
     return Value::vector(std::move(new_content));
   }
 
-  /* AssocBangFunction - assoc! */
+  /** AssocBangFunction - roo/assoc! */
   FUNC_IMPL(AssocBangFunction,
             MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                        EXEC_DISPATCH(&AssocBangFunction::exec_assoc_bang)),
@@ -159,7 +159,7 @@ namespace Roo
     return args[0];
   }
 
-  /* AssocInFunction - assoc-in */
+  /** AssocInFunction - roo/assoc-in */
   FUNC_IMPL(AssocInFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&AssocInFunction::exec_assoc_in))))
@@ -195,7 +195,7 @@ namespace Roo
     return result;
   }
 
-  /* AssocInBangFunction - assoc-in! */
+  /** AssocInBangFunction - roo/assoc-in! */
   FUNC_IMPL(AssocInBangFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::VECTOR), (&Type::ANY)),
                  EXEC_DISPATCH(&AssocInBangFunction::exec_assoc_in_bang))))
@@ -221,7 +221,7 @@ namespace Roo
     return args[0];
   }
 
-  /* UpdateFunction - update */
+  /** UpdateFunction - roo/update */
   FUNC_IMPL(
     UpdateFunction,
     MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
@@ -253,7 +253,7 @@ namespace Roo
     return result;
   }
 
-  /* UpdateBangFunction - update! */
+  /** UpdateBangFunction - roo/update! */
   FUNC_IMPL(
     UpdateBangFunction,
     MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
@@ -282,7 +282,7 @@ namespace Roo
     return args[0];
   }
 
-  /* UpdateInFunction - update-in */
+  /** UpdateInFunction - roo/update-in */
   FUNC_IMPL(
     UpdateInFunction,
     MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
@@ -326,7 +326,7 @@ namespace Roo
     return result;
   }
 
-  /* UpdateInBangFunction - update-in! */
+  /** UpdateInBangFunction - roo/update-in! */
   FUNC_IMPL(
     UpdateInBangFunction,
     MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
@@ -376,7 +376,7 @@ namespace Roo
     return args[0];
   }
 
-  /** GetFunction - get */
+  /** GetFunction - roo/get */
   FUNC_IMPL(GetFunction,
             MULTI_SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
                        EXEC_DISPATCH(&GetFunction::exec_get)),
@@ -390,7 +390,7 @@ namespace Roo
     return found ? value : Constant::NIL;
   }
 
-  /** GetInFunction - get-in */
+  /** GetInFunction - roo/get-in */
   FUNC_IMPL(GetInFunction,
             MULTI_SIG((FN_ARGS((&Type::ANY), (&Type::VECTOR)),
                        EXEC_DISPATCH(&GetInFunction::exec_get)),
@@ -404,7 +404,7 @@ namespace Roo
     return found ? value : Constant::NIL;
   }
 
-  /** DissocFunction - dissoc */
+  /** DissocFunction - roo/dissoc */
   FUNC_IMPL(DissocFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&DissocFunction::exec_dissoc))))
@@ -441,7 +441,7 @@ namespace Roo
     return Value::map(new_map_elements);
   }
 
-  /** DissocInFunction - dissoc-in */
+  /** DissocInFunction - roo/dissoc-in */
   FUNC_IMPL(DissocInFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&DissocInFunction::exec_dissoc_in))))
@@ -472,7 +472,7 @@ namespace Roo
     return result;
   }
 
-  /* DissocBangFunction - dissoc! */
+  /** DissocBangFunction - roo/dissoc! */
   FUNC_IMPL(DissocBangFunction,
             SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
                  EXEC_DISPATCH(&DissocBangFunction::exec_dissoc_bang))))
@@ -487,7 +487,7 @@ namespace Roo
     return Dict::remove_property(args[0], args[1]);
   }
 
-  /* DissocInBangFunction - dissoc-in! */
+  /** DissocInBangFunction - roo/dissoc-in! */
   FUNC_IMPL(DissocInBangFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::VECTOR)),
                  EXEC_DISPATCH(&DissocInBangFunction::exec_dissoc_in_bang))))
@@ -543,7 +543,7 @@ namespace Roo
     return Dict::remove_property(target, dissoc_path.back());
   }
 
-  /** KeysFunction - keys */
+  /** KeysFunction - roo/keys */
   FUNC_IMPL(KeysFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&KeysFunction::exec_keys))))
 
@@ -552,7 +552,7 @@ namespace Roo
     return Value::vector(Dict::map_sptr_keys(args[0]));
   }
 
-  /** MergeFunction - merge */
+  /** MergeFunction - roo/merge */
   FUNC_IMPL(MergeFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&VARARG, &Type::COMPLEX)),
                  EXEC_DISPATCH(&MergeFunction::exec_merge))))
@@ -588,7 +588,7 @@ namespace Roo
     return Value::map(std::move(new_content));
   }
 
-  /* ReduceKeyValueFunction - reduce-kv */
+  /** ReduceKeyValueFunction - roo/reduce-kv */
   FUNC_IMPL(ReduceKeyValueFunction,
             SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC)),
                  EXEC_DISPATCH(&ReduceKeyValueFunction::exec_reduce_kv))))
@@ -612,7 +612,7 @@ namespace Roo
     return result;
   }
 
-  /** SelectKeysFunction - select-keys */
+  /** SelectKeysFunction - roo/select-keys */
   FUNC_IMPL(SelectKeysFunction,
             SIG((FN_ARGS((&Type::ANY), (&Type::SEQ)),
                  EXEC_DISPATCH(&SelectKeysFunction::exec_select_keys))))

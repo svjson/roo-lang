@@ -70,7 +70,7 @@ namespace Roo
     }
   } // namespace
 
-  /** EqualsPFunction - = */
+  /** EqualsPFunction - roo/= */
   FUNC_IMPL(EqualsPFunction,
             SIG((FN_ARGS((&Roo::Type::ANY), (&Roo::Type::ANY)),
                  EXEC_DISPATCH(&EqualsPFunction::exec_equals))))
@@ -80,7 +80,7 @@ namespace Roo
     return *args[0] == *args[1] ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** PlusFunction - + */
+  /** PlusFunction - roo/+ */
   FUNC_IMPL(PlusFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)), EXEC_DISPATCH(&PlusFunction::exec_plus))))
 
@@ -101,7 +101,7 @@ namespace Roo
     return Value::number(result);
   }
 
-  /** MinusFunction - - */
+  /** MinusFunction - roo/- */
   FUNC_IMPL(MinusFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&MinusFunction::exec_subtract))))
@@ -128,7 +128,7 @@ namespace Roo
     return Value::number(result);
   }
 
-  /** DivideFunction - / */
+  /** DivideFunction - roo// */
   FUNC_IMPL(DivideFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&DivideFunction::exec_divide))))
@@ -161,7 +161,7 @@ namespace Roo
     return Value::number(result);
   }
 
-  /** MultiplyFunction - * */
+  // MultiplyFunction - roo/*
   FUNC_IMPL(MultiplyFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&MultiplyFunction::exec_multiply))));
@@ -189,7 +189,7 @@ namespace Roo
     return Value::number(result);
   }
 
-  /** ShiftLeftFunction - << */
+  /** ShiftLeftFunction - roo/<< */
   FUNC_IMPL(ShiftLeftFunction,
             std::make_unique<Signature>(FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                         EXEC_DISPATCH(&ShiftLeftFunction::exec_shift_left),
@@ -202,7 +202,7 @@ namespace Roo
     return Value::number(from_bits(value << shift_bits(args, "<<")));
   }
 
-  /** ShiftRightFunction - >> */
+  /** ShiftRightFunction - roo/>> */
   FUNC_IMPL(ShiftRightFunction,
             std::make_unique<Signature>(FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                                         EXEC_DISPATCH(&ShiftRightFunction::exec_shift_right),
@@ -216,7 +216,7 @@ namespace Roo
       static_cast<long long>(arithmetic_right_shift(value, shift_bits(args, ">>"))));
   }
 
-  /** LogicalShiftLeftFunction - <<< */
+  /** LogicalShiftLeftFunction - roo/<<< */
   FUNC_IMPL(LogicalShiftLeftFunction,
             std::make_unique<Signature>(
               FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
@@ -230,7 +230,7 @@ namespace Roo
     return Value::number(from_bits(value << shift_bits(args, "<<<")));
   }
 
-  /** LogicalShiftRightFunction - >>> */
+  /** LogicalShiftRightFunction - roo/>>> */
   FUNC_IMPL(LogicalShiftRightFunction,
             std::make_unique<Signature>(
               FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
@@ -244,7 +244,7 @@ namespace Roo
     return Value::number(from_bits(value >> shift_bits(args, ">>>")));
   }
 
-  /** BitAndFunction - bit-and */
+  /** BitAndFunction - roo/bit-and */
   FUNC_IMPL(BitAndFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&BitAndFunction::exec_bit_and))))
@@ -264,7 +264,7 @@ namespace Roo
     return Value::number(from_bits(result));
   }
 
-  /** BitOrFunction - bit-or */
+  /** BitOrFunction - roo/bit-or */
   FUNC_IMPL(BitOrFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&BitOrFunction::exec_bit_or))))
@@ -284,7 +284,7 @@ namespace Roo
     return Value::number(from_bits(result));
   }
 
-  /** BitXorFunction - bit-xor */
+  /** BitXorFunction - roo/bit-xor */
   FUNC_IMPL(BitXorFunction,
             SIG((FN_ARGS((VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&BitXorFunction::exec_bit_xor))))
@@ -304,7 +304,7 @@ namespace Roo
     return Value::number(from_bits(result));
   }
 
-  /** BitNotFunction - bit-not */
+  /** BitNotFunction - roo/bit-not */
   FUNC_IMPL(BitNotFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&BitNotFunction::exec_bit_not))))
 
@@ -314,7 +314,7 @@ namespace Roo
       from_bits(~static_cast<std::uint64_t>(integer_arg(args[0], "bit-not"))));
   }
 
-  /** ModulusFunction - mod */
+  /** ModulusFunction - roo/mod */
   FUNC_IMPL(ModulusFunction,
             SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                  EXEC_DISPATCH(&ModulusFunction::exec_modulus))))
@@ -324,7 +324,7 @@ namespace Roo
     return Value::number(args[0]->i64() % args[1]->i64());
   }
 
-  /* LessThanFunction */
+  /** LessThanFunction - roo/< */
   FUNC_IMPL(LessThanFunction,
             MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                        EXEC_DISPATCH(&LessThanFunction::exec_lt_num)),
@@ -356,7 +356,7 @@ namespace Roo
     return args[0]->str() < args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /* LessThanOrEqualsFunction */
+  /** LessThanOrEqualsFunction - roo/<= */
   FUNC_IMPL(LessThanOrEqualsFunction,
             MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                        EXEC_DISPATCH(&LessThanOrEqualsFunction::exec_lte_num)),
@@ -387,7 +387,7 @@ namespace Roo
     return args[0]->str() <= args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /* GreaterThanFunction */
+  /** GreaterThanFunction - roo/> */
   FUNC_IMPL(GreaterThanFunction,
             MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                        EXEC_DISPATCH(&GreaterThanFunction::exec_gt_num)),
@@ -418,7 +418,7 @@ namespace Roo
     return args[0]->str() > args[1]->str() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /* GreaterThanOrEqualsFunction */
+  /** GreaterThanOrEqualsFunction - roo/>= */
   FUNC_IMPL(GreaterThanOrEqualsFunction,
             MULTI_SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                        EXEC_DISPATCH(&GreaterThanOrEqualsFunction::exec_gte_num)),

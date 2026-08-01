@@ -76,6 +76,20 @@ namespace Roo
    */
   SPECIAL_FORM_DECL(ForIndexedForm, for_indexed)
 
+  /*!
+   * @brief Repeatedly evaluate body forms while a condition remains truthy.
+   *
+   * Usage:
+   * @code
+   * (while condition
+   *   body...)
+   * @endcode
+   *
+   * | Arg # | Description                                                |
+   * |-------|------------------------------------------------------------|
+   * | 0     | Conditional form tested before each iteration              |
+   * | 1...  | Body forms evaluated while the condition is truthy         |
+   */
   SPECIAL_FORM_DECL(WhileForm, while)
 
 } // namespace Roo

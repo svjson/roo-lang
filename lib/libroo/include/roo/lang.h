@@ -9,6 +9,12 @@
 namespace Roo
 {
 
+  /*!
+   * @brief Create the immutable native roo language namespace.
+   *
+   * This namespace contains the built-in functions and special forms that are
+   * implicitly available to Roo programs.
+   */
   Namespace make_language_namespace();
 
 } // namespace Roo

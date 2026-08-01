@@ -54,7 +54,7 @@ namespace Roo
     }
   } // namespace
 
-  /* AbsFunction - abs */
+  /** AbsFunction - roo/abs */
   FUNC_IMPL(AbsFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&AbsFunction::exec_abs))))
 
@@ -69,7 +69,7 @@ namespace Roo
       std::abs(std::get<const Value::Number>(args[0]->value).get_float()));
   }
 
-  /* CeilFunction - ceil */
+  /** CeilFunction - roo/ceil */
   FUNC_IMPL(CeilFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CeilFunction::exec_ceil))))
 
@@ -84,7 +84,7 @@ namespace Roo
     return rounded_number(num, std::ceil);
   }
 
-  /* FloorFunction - floor */
+  /** FloorFunction - roo/floor */
   FUNC_IMPL(FloorFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&FloorFunction::exec_floor))))
 
@@ -99,7 +99,7 @@ namespace Roo
     return rounded_number(num, std::floor);
   }
 
-  /* RoundFunction - round */
+  /** RoundFunction - roo/round */
   FUNC_IMPL(RoundFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&RoundFunction::exec_round))))
 
@@ -114,7 +114,7 @@ namespace Roo
     return rounded_number(num, std::round);
   }
 
-  /* SinFunction - sin */
+  /** SinFunction - roo/sin */
   FUNC_IMPL(SinFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SinFunction::exec_sin))))
 
@@ -124,7 +124,7 @@ namespace Roo
       std::sin(std::get<const Value::Number>(args[0]->value).get_float()));
   }
 
-  /* CosFunction - cos */
+  /** CosFunction - roo/cos */
   FUNC_IMPL(CosFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&CosFunction::exec_cos))))
 
@@ -134,7 +134,7 @@ namespace Roo
       std::cos(std::get<const Value::Number>(args[0]->value).get_float()));
   }
 
-  /* PowFunction - pow */
+  /** PowFunction - roo/pow */
   FUNC_IMPL(PowFunction,
             SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
                  EXEC_DISPATCH(&PowFunction::exec_pow))))
@@ -151,7 +151,7 @@ namespace Roo
     return Value::number(std::pow(base.get_float(), exponent.get_float()));
   }
 
-  /* SqrtFunction - sqrt */
+  /** SqrtFunction - roo/sqrt */
   FUNC_IMPL(SqrtFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&SqrtFunction::exec_sqrt))))
 

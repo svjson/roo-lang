@@ -33,7 +33,7 @@ namespace Roo
 
   } // namespace
 
-  /* AppendBangFunction - append_bang */
+  /** AppendBangFunction - roo/append! */
   FUNC_IMPL(AppendBangFunction,
             SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&AppendBangFunction::exec_append_bang))))
@@ -56,7 +56,7 @@ namespace Roo
     return args[0];
   }
 
-  /* ConcatFunction - concat */
+  /** ConcatFunction - roo/concat */
   FUNC_IMPL(ConcatFunction,
             SIG((FN_ARGS((&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&ConcatFunction::exec_concat))))
@@ -92,7 +92,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /* ConcatBangFunction - concat */
+  /** ConcatBangFunction - roo/concat! */
   FUNC_IMPL(ConcatBangFunction,
             SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&ConcatBangFunction::exec_concat_bang))))
@@ -126,9 +126,7 @@ namespace Roo
     return args[0];
   }
 
-  /**
-   * ContainsPFunction - contains?
-   */
+  /** ContainsPFunction - roo/contains? */
   FUNC_IMPL(ContainsPFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY)),
                  EXEC_DISPATCH(&ContainsPFunction::exec_contains))))
@@ -156,9 +154,7 @@ namespace Roo
              : Constant::BOOL_FALSE;
   }
 
-  /**
-   * ContainsAnyPFunction - contains-any?
-   */
+  /** ContainsAnyPFunction - roo/contains-any? */
   FUNC_IMPL(ContainsAnyPFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&ContainsAnyPFunction::exec_contains_any))))
@@ -212,9 +208,7 @@ namespace Roo
     return Constant::BOOL_FALSE;
   }
 
-  /**
-   * ContainsAllPFunction - contains-all?
-   */
+  /** ContainsAllPFunction - roo/contains-all? */
   FUNC_IMPL(ContainsAllPFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&ContainsAllPFunction::exec_contains_all))))
@@ -275,7 +269,7 @@ namespace Roo
     return Constant::BOOL_TRUE;
   }
 
-  /** CountFunction - count */
+  /** CountFunction - roo/count */
   FUNC_IMPL(CountFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&CountFunction::exec_count))));
 
@@ -284,7 +278,7 @@ namespace Roo
     return Value::number((int)Roo::count(*args[0]));
   }
 
-  /** NthFunction - nth */
+  /** NthFunction - roo/nth */
   FUNC_IMPL(NthFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::NUMBER)),
                  EXEC_DISPATCH(&NthFunction::exec_nth))))
@@ -311,7 +305,7 @@ namespace Roo
     return Roo::get_child(*args.front(), static_cast<size_t>(n));
   }
 
-  /** PartitionFunction - partition */
+  /** PartitionFunction - roo/partition */
   FUNC_IMPL(PartitionFunction,
             SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&PartitionFunction::exec_partition))))
@@ -340,7 +334,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** HeadFunction */
+  /** HeadFunction - roo/head */
   FUNC_IMPL(HeadFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&HeadFunction::exec_head))))
 
@@ -350,7 +344,7 @@ namespace Roo
     return Roo::get_child(*args[0], 0);
   }
 
-  /** LastFunction */
+  /** LastFunction - roo/last */
   FUNC_IMPL(LastFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&LastFunction::exec_last))))
 
@@ -360,7 +354,7 @@ namespace Roo
     return Roo::peek_child(*args[0]);
   }
 
-  /** RandNth - rand-nth */
+  /** RandNthFunction - roo/rand-nth */
   FUNC_IMPL(RandNthFunction,
             SIG((FN_ARGS((&Roo::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&RandNthFunction::exec_rand_nth))))
@@ -385,7 +379,7 @@ namespace Roo
     return elements[ctx.random_int(0, static_cast<int>(elements.size()))];
   }
 
-  /** RangeFunction - range */
+  /** RangeFunction - roo/range */
   FUNC_IMPL(RangeFunction,
             MULTI_SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&RangeFunction::exec_range)),
                       (FN_ARGS((&Type::NUMBER), (&Type::NUMBER)),
@@ -407,7 +401,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** RemoveNthFunction - remove-nth! */
+  /** RemoveNthFunction - roo/remove-nth */
   FUNC_IMPL(RemoveNthFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::NUMBER)),
                  EXEC_DISPATCH(&RemoveNthFunction::exec_remove_nth))))
@@ -437,7 +431,7 @@ namespace Roo
     return Value::vector(std::move(new_seq));
   }
 
-  /** RemoveNthBangFunction - remove-nth! */
+  /** RemoveNthBangFunction - roo/remove-nth! */
   FUNC_IMPL(RemoveNthBangFunction,
             SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER)),
                  EXEC_DISPATCH(&RemoveNthBangFunction::exec_remove_nth_bang))))
@@ -478,9 +472,7 @@ namespace Roo
     return to_delete;
   }
 
-  /*
-   * RepeatFunction - repeat
-   */
+  /** RepeatFunction - roo/repeat */
   FUNC_IMPL(RepeatFunction,
             SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&RepeatFunction::exec_repeat))))
@@ -501,7 +493,7 @@ namespace Roo
     return Value::vector(std::move(vector));
   }
 
-  /** ReverseFunction - reverse */
+  /** ReverseFunction - roo/reverse */
   FUNC_IMPL(ReverseFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&ReverseFunction::exec_reverse))))
@@ -525,7 +517,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** TailFunction - tail */
+  /** TailFunction - roo/tail */
   FUNC_IMPL(TailFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&TailFunction::exec_tail))))
 
@@ -559,7 +551,7 @@ namespace Roo
     return Value::vector(std::move(tail));
   }
 
-  /* FlattenFunction - flatten */
+  /** FlattenFunction - roo/flatten */
   FUNC_IMPL(FlattenFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&FlattenFunction::exec_flatten))))
@@ -589,9 +581,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /*
-   * TakeFunction - take
-   */
+  /** TakeFunction - roo/take */
   FUNC_IMPL(TakeFunction,
             SIG((FN_ARGS((&Type::NUMBER), (&Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&TakeFunction::exec_take))))
@@ -624,7 +614,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** VectorFunction - vector */
+  /** VectorFunction - roo/vector */
   FUNC_IMPL(VectorFunction,
             SIG((FN_ARGS((&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&VectorFunction::exec_vector))))

@@ -15,6 +15,7 @@
 namespace Roo
 {
   /** DoTimes - dotimes */
+  /** DoTimesForm - roo/dotimes */
   SPECIAL_FORM_IMPL(DoTimesForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoTimesForm::execnode_dotimes))))
@@ -104,7 +105,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /* ForForm - for */
+  /** ForForm - roo/for */
   SPECIAL_FORM_IMPL(ForForm,
                     SIG((FN_ARGS((&Type::SEQ, &Eval::BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
@@ -187,7 +188,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /* DoseqForm - doseq */
+  /** DoseqForm - roo/doseq */
   SPECIAL_FORM_IMPL(DoseqForm,
                     SIG((FN_ARGS((&Type::SEQ, &Eval::BIND_SYM_VAL),
                                  (VARARG, &Type::ANY, NO_EVAL)),
@@ -264,7 +265,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** ForIndexedForm - for-indexed */
+  /** ForIndexedForm - roo/for-indexed */
   SPECIAL_FORM_IMPL(ForIndexedForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&ForIndexedForm::execnode_for_indexed))))
@@ -358,7 +359,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** WhileForm - while */
+  /** WhileForm - roo/while */
   SPECIAL_FORM_IMPL(WhileForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&WhileForm::execnode_while))))

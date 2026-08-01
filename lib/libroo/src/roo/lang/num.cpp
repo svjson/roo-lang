@@ -76,7 +76,7 @@ namespace Roo
     }
   } // namespace
 
-  /** EvenPFunction - even? */
+  /** EvenPFunction - roo/even? */
   FUNC_IMPL(EvenPFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&EvenPFunction::exec_even))))
 
@@ -87,7 +87,7 @@ namespace Roo
              : Constant::BOOL_FALSE;
   }
 
-  /** IncFunction - inc */
+  /** IncFunction - roo/inc */
   FUNC_IMPL(IncFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&IncFunction::exec_inc))))
 
@@ -102,7 +102,7 @@ namespace Roo
                          Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
 
-  /** DecFunction - dec */
+  /** DecFunction - roo/dec */
   FUNC_IMPL(DecFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&DecFunction::exec_dec))))
 
@@ -117,7 +117,7 @@ namespace Roo
                          Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
 
-  /** IntFunction - int */
+  /** IntFunction - roo/int */
   FUNC_IMPL(IntFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&IntFunction::exec_to_int))))
 
@@ -156,7 +156,7 @@ namespace Roo
     throw RooException("Cannot convert " + obj->to_string() + " to integer.");
   }
 
-  /** FloatFunction - float */
+  /** FloatFunction - roo/float */
   FUNC_IMPL(FloatFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&FloatFunction::exec_to_float))))
 
@@ -213,7 +213,7 @@ namespace Roo
     throw RooException("Cannot convert " + obj->to_string() + " to float.");
   }
 
-  /** MaxFunction - max */
+  /** MaxFunction - roo/max */
   FUNC_IMPL(MaxFunction,
             SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&MaxFunction::exec_max))))
@@ -246,7 +246,7 @@ namespace Roo
     return args[result_index];
   }
 
-  /** MinFunction - min */
+  /** MinFunction - roo/min */
   FUNC_IMPL(MinFunction,
             SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&MinFunction::exec_min))))
@@ -279,7 +279,7 @@ namespace Roo
     return args[result_index];
   }
 
-  /** NumberPFunction - number? */
+  /** NumberPFunction - roo/number? */
   FUNC_IMPL(NumberPFunction,
             SIG((FN_ARGS((&Roo::Type::ANY)), EXEC_DISPATCH(&NumberPFunction::exec_num))))
 
@@ -288,7 +288,7 @@ namespace Roo
     return args[0]->type == Value::Type::NUMBER ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** OddPFunction - odd? */
+  /** OddPFunction - roo/odd? */
   FUNC_IMPL(OddPFunction,
             SIG((FN_ARGS((&Roo::Type::NUMBER)), EXEC_DISPATCH(&OddPFunction::exec_odd))))
 
@@ -299,6 +299,7 @@ namespace Roo
              : Constant::BOOL_FALSE;
   }
 
+  /** ZeroPFunction - roo/zero? */
   FUNC_IMPL(ZeroPFunction,
             SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),
                  EXEC_DISPATCH(&ZeroPFunction::exec_zero))))

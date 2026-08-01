@@ -14,7 +14,7 @@
 
 namespace Roo
 {
-  /* DefForm */
+  /** DefForm - roo/def */
   SPECIAL_FORM_IMPL(DefForm,
                     MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA), (&Type::ANY)),
                                EXEC_DISPATCH(&DefForm::execnode_def)),
@@ -63,9 +63,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /**
-   * DoForm - do
-   */
+  /** DoForm - roo/do */
   SPECIAL_FORM_IMPL(DoForm,
                     SIG((FN_ARGS((&VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&DoForm::execnode_do))))
@@ -94,7 +92,7 @@ namespace Roo
     return ret;
   }
 
-  /** EvalFunction - eval */
+  /** EvalFunction - roo/eval */
   FUNC_IMPL(EvalFunction,
             MULTI_SIG((FN_ARGS((&Roo::Type::STRING)),
                        EXEC_DISPATCH(&EvalFunction::exec_eval_string)),
@@ -111,7 +109,7 @@ namespace Roo
     return ctx.eval(to_AST(*args[0]));
   }
 
-  /** IncludeFunction - include */
+  /** IncludeFunction - roo/include */
   FUNC_IMPL(IncludeFunction,
             SIG((FN_ARGS((&Roo::Type::STRING)),
                  EXEC_DISPATCH(&IncludeFunction::exec_include))))
@@ -122,7 +120,7 @@ namespace Roo
     return args[0];
   }
 
-  /** AndForm - and */
+  /** AndForm - roo/and */
   SPECIAL_FORM_IMPL(AndForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&AndForm::execnode_and))))
@@ -156,7 +154,7 @@ namespace Roo
     return val;
   }
 
-  /** KeywordFunction - keyword */
+  /** KeywordFunction - roo/keyword */
   FUNC_IMPL(KeywordFunction,
             SIG((FN_ARGS((&Type::STRING_OR_SYMBOL)),
                  EXEC_DISPATCH(&KeywordFunction::exec_keyword))))
@@ -166,7 +164,7 @@ namespace Roo
     return Value::keyword(args[0]->str());
   }
 
-  /** KeywordPFunction - keyword? */
+  /** KeywordPFunction - roo/keyword? */
   FUNC_IMPL(KeywordPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&KeywordPFunction::exec_keyword))))
 
@@ -176,7 +174,7 @@ namespace Roo
                                                  : Constant::BOOL_FALSE;
   }
 
-  /* NsMacro */
+  /** NsForm - roo/ns */
   SPECIAL_FORM_IMPL(NsForm,
                     MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA)),
                                EXEC_DISPATCH(&NsForm::execnode_ns)),
@@ -285,7 +283,7 @@ namespace Roo
     throw RooException("Invocation of namespace");
   }
 
-  /** NameFunction - name */
+  /** NameFunction - roo/name */
   FUNC_IMPL(NameFunction,
             SIG((FN_ARGS((&Type::QUALIFIABLE)), EXEC_DISPATCH(&NameFunction::exec_name))))
 
@@ -295,7 +293,7 @@ namespace Roo
     return Value::string(args[0]->qual().second);
   }
 
-  /** OrForm - or */
+  /** OrForm - roo/or */
   SPECIAL_FORM_IMPL(OrForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&OrForm::execnode_or))))
@@ -329,7 +327,7 @@ namespace Roo
     return val;
   }
 
-  /** PrnFunction - prn */
+  /** PrnFunction - roo/prn */
   FUNC_IMPL(PrnFunction,
             SIG((FN_ARGS((&VARARG, &Type::ANY)), EXEC_DISPATCH(&PrnFunction::exec_prn))))
 
@@ -345,7 +343,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** TypeOfFunction - type-of */
+  /** TypeOfFunction - roo/type-of */
   FUNC_IMPL(TypeOfFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&TypeOfFunction::exec_type_of))))
 
@@ -354,7 +352,7 @@ namespace Roo
     return Value::string(std::string(type_string(*args[0])));
   }
 
-  /** ResolveFunction - resolve */
+  /** ResolveFunction - roo/resolve */
   FUNC_IMPL(ResolveFunction,
             MULTI_SIG((FN_ARGS((&Roo::Type::QUOTED_SYMBOL)),
                        EXEC_DISPATCH(&ResolveFunction::exec_resolve)),
@@ -367,7 +365,7 @@ namespace Roo
     return ctx.lookup(args[0]->str());
   }
 
-  /** RandomSeedBangFunction - random-seed! */
+  /** RandomSeedBangFunction - roo/random-seed! */
   FUNC_IMPL(RandomSeedBangFunction,
             SIG((FN_ARGS((&Roo::Type::NUMBER)),
                  EXEC_DISPATCH(&RandomSeedBangFunction::exec_random_seed_bang))))
@@ -379,7 +377,7 @@ namespace Roo
     return Value::number(seed);
   }
 
-  /** RndFunction - rnd */
+  /** RndFunction - roo/rnd */
   FUNC_IMPL(RndFunction,
             MULTI_SIG((FN_ARGS((&Roo::Type::NUMBER)), EXEC_DISPATCH(&RndFunction::exec_rnd)),
                       (FN_ARGS((&Roo::Type::NUMBER), (&Roo::Type::NUMBER)),
@@ -400,7 +398,7 @@ namespace Roo
     return Value::number(ctx.random_int(min, max));
   }
 
-  /** WithRandomSeedForm - with-random-seed */
+  /** WithRandomSeedForm - roo/with-random-seed */
   SPECIAL_FORM_IMPL(WithRandomSeedForm,
                     SIG((FN_ARGS((&Roo::Type::NUMBER), (&VARARG, &Roo::Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&WithRandomSeedForm::execnode_with_random_seed))))
@@ -453,7 +451,7 @@ namespace Roo
     return result;
   }
 
-  /** SetBangForm - set! */
+  /** SetBangForm - roo/set! */
   SPECIAL_FORM_IMPL(SetBangForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (&Roo::Type::ANY)),
                          EXEC_DISPATCH(&SetBangForm::execnode_set))))
@@ -503,7 +501,7 @@ namespace Roo
     return value;
   }
 
-  /** QualifierFunction - namespace */
+  /** QualifierFunction - roo/qualifier */
   FUNC_IMPL(QualifierFunction,
             SIG((FN_ARGS((&Type::QUALIFIABLE)),
                  EXEC_DISPATCH(&QualifierFunction::exec_qualifier))))
@@ -515,7 +513,7 @@ namespace Roo
     return qualifier.empty() ? Constant::NIL : Value::string(qualifier);
   }
 
-  /** StringPFunction - keyword? */
+  /** StringPFunction - roo/string? */
   FUNC_IMPL(StringPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&StringPFunction::exec_stringp))))
 

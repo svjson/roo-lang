@@ -7,7 +7,7 @@
 
 namespace Roo
 {
-  /** CaseForm - case */
+  /** CaseForm - roo/case */
   SPECIAL_FORM_IMPL(CaseForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&CaseForm::execnode_case))))
@@ -49,7 +49,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** CondForm - cond */
+  /** CondForm - roo/cond */
   SPECIAL_FORM_IMPL(CondForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&CondForm::execnode_cond))))
@@ -87,7 +87,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** IfForm - if */
+  /** IfForm - roo/if */
   SPECIAL_FORM_IMPL(IfForm,
                     MULTI_SIG((FN_ARGS((&Roo::Type::ANY), (&Roo::Type::ANY, NO_EVAL)),
                                EXEC_DISPATCH(&IfForm::execnode_if)),
@@ -130,7 +130,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /* UnlessForm - unless */
+  /** UnlessForm - roo/unless */
   SPECIAL_FORM_IMPL(UnlessForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&UnlessForm::execnode_unless))))
@@ -169,7 +169,7 @@ namespace Roo
     return result;
   }
 
-  /* WhenForm - when */
+  /** WhenForm - roo/when */
   SPECIAL_FORM_IMPL(WhenForm,
                     SIG((FN_ARGS((&Type::ANY, NO_EVAL), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&WhenForm::execnode_when))))

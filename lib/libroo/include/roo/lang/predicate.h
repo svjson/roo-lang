@@ -117,6 +117,14 @@ namespace Roo
    */
   FUNC(NotEmptyPFunction, not_emptyp)
 
+  /*!
+   * @brief Test whether two values are not equal.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Left hand side value.                                            |
+   * | 1     | Right hand side value.                                           |
+   */
   FUNC(NotEqualsFunction, not_equals)
 
   /*!

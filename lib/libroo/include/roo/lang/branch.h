@@ -58,6 +58,22 @@ namespace Roo
    */
   SPECIAL_FORM_DECL(CondForm, cond)
 
+  /*!
+   * @brief Conditionally evaluate one of two forms.
+   *
+   * Usage:
+   * @code
+   * (if condition
+   *   :then
+   *   :else)
+   * @endcode
+   *
+   * | Arg # | Description                                                |
+   * |-------|------------------------------------------------------------|
+   * | 0     | Conditional form tested for truthiness                     |
+   * | 1     | Form evaluated when the condition is truthy                |
+   * | 2     | Optional form evaluated when the condition is falsy        |
+   */
   SPECIAL_FORM_DECL(IfForm, if)
 
   /*!

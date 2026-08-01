@@ -12,6 +12,16 @@ namespace Roo
    */
   SPECIAL_FORM_DECL(CommentForm, comment);
 
+  /*!
+   * @brief Thread a value through a sequence of forms as their first argument.
+   *
+   * Usage:
+   * @code
+   * (-> value
+   *     (first-call)
+   *     (second-call))
+   * @endcode
+   */
   SPECIAL_FORM_DECL(ThreadFirstForm, thread_first)
 } // namespace Roo
 

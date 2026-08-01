@@ -11,7 +11,7 @@
 
 namespace Roo
 {
-  /** CommentForm - comment */
+  /** CommentForm - roo/comment */
   SPECIAL_FORM_IMPL(CommentForm,
                     SIG((FN_ARGS((VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&CommentForm::execnode_comment))))
@@ -24,7 +24,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** ThreadFirstForm - -> */
+  /** ThreadFirstForm - roo/-> */
   SPECIAL_FORM_IMPL(ThreadFirstForm,
                     SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&ThreadFirstForm::execnode_thread_first))))

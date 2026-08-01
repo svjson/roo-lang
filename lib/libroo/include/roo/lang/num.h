@@ -56,10 +56,40 @@ namespace Roo
    */
   FUNC(IncFunction, inc)
 
+  /*!
+   * @brief Convert a numeric value to an integer.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Numeric value to convert.                                        |
+   */
   FUNC(IntFunction, to_int)
+
+  /*!
+   * @brief Convert a numeric value to a floating point number.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Numeric value to convert.                                        |
+   */
   FUNC(FloatFunction, to_float)
 
+  /*!
+   * @brief Return the smallest numeric argument.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0...  | Numbers to compare.                                              |
+   */
   FUNC(MinFunction, min)
+
+  /*!
+   * @brief Return the largest numeric argument.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0...  | Numbers to compare.                                              |
+   */
   FUNC(MaxFunction, max)
 
   /**

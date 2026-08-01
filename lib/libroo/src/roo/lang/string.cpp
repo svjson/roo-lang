@@ -247,9 +247,7 @@ namespace Roo
     }
   } // namespace
 
-  /**
-   * StrFunction - str
-   */
+  /** StrFunction - roo/str */
   FUNC_IMPL(StrFunction,
             SIG((FN_ARGS((VARARG, &Type::ANY)), EXEC_DISPATCH(&StrFunction::exec_str))))
 
@@ -285,7 +283,7 @@ namespace Roo
     return Value::string(result);
   }
 
-  /** PrettyStrFunction - pretty-str */
+  /** PrettyStrFunction - roo/pretty-str */
   FUNC_IMPL(PrettyStrFunction,
             MULTI_SIG((FN_ARGS((&Type::ANY)),
                        EXEC_DISPATCH(&PrettyStrFunction::exec_pretty_str)),
@@ -299,7 +297,7 @@ namespace Roo
     return Value::string(args[0]->to_pretty_string(indent_width));
   }
 
-  /** JoinFunction - join */
+  /** JoinFunction - roo/join */
   FUNC_IMPL(JoinFunction,
             SIG((FN_ARGS((VARARG, &Type::STRING)), EXEC_DISPATCH(&JoinFunction::exec_join))))
 
@@ -319,7 +317,7 @@ namespace Roo
     return Value::string(result);
   }
 
-  /** SubstrFunction - substr */
+  /** SubstrFunction - roo/substr */
   FUNC_IMPL(SubstrFunction,
             MULTI_SIG((FN_ARGS((&Type::STRING), (&Type::NUMBER)),
                        EXEC_DISPATCH(&SubstrFunction::exec_substr)),
@@ -351,7 +349,7 @@ namespace Roo
       str.substr(static_cast<size_t>(start), static_cast<size_t>(length)));
   }
 
-  /** TrimFunction - trim */
+  /** TrimFunction - roo/trim */
   FUNC_IMPL(TrimFunction,
             SIG((FN_ARGS((&Type::STRING)), EXEC_DISPATCH(&TrimFunction::exec_trim))))
 
@@ -360,7 +358,7 @@ namespace Roo
     return Value::string(trim_copy(args[0]->str()));
   }
 
-  /** BlankPFunction - blank? */
+  /** BlankPFunction - roo/blank? */
   FUNC_IMPL(BlankPFunction,
             MULTI_SIG((FN_ARGS((&Type::STRING)),
                        EXEC_DISPATCH(&BlankPFunction::exec_blank_p)),
@@ -376,7 +374,7 @@ namespace Roo
     return trim_copy(args[0]->str()).empty() ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** UpperCaseFunction - upper-case */
+  /** UpperCaseFunction - roo/upper-case */
   FUNC_IMPL(UpperCaseFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&UpperCaseFunction::exec_upper_case))))
 
@@ -388,7 +386,7 @@ namespace Roo
     return Value::string(str);
   }
 
-  /** LowerCaseFunction - lower-case */
+  /** LowerCaseFunction - roo/lower-case */
   FUNC_IMPL(LowerCaseFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&LowerCaseFunction::exec_lower_case))))
 
@@ -400,7 +398,7 @@ namespace Roo
     return Value::string(str);
   }
 
-  /** CapitalizeFunction - capitalize */
+  /** CapitalizeFunction - roo/capitalize */
   FUNC_IMPL(CapitalizeFunction,
             MULTI_SIG((FN_ARGS((&Type::STRING)),
                        EXEC_DISPATCH(&CapitalizeFunction::exec_capitalize_all)),
@@ -430,7 +428,7 @@ namespace Roo
     return Value::string(capitalize_words(args[0]->str(), start, end));
   }
 
-  /** CapitalizeFirstFunction - capitalize-first */
+  /** CapitalizeFirstFunction - roo/capitalize-first */
   FUNC_IMPL(CapitalizeFirstFunction,
             SIG((FN_ARGS((&Type::STRING)),
                  EXEC_DISPATCH(&CapitalizeFirstFunction::exec_capitalize_first))))
@@ -440,7 +438,7 @@ namespace Roo
     return Value::string(capitalize_words(args[0]->str(), 0, 0));
   }
 
-  /** KebabCaseFunction - kebab-case */
+  /** KebabCaseFunction - roo/kebab-case */
   FUNC_IMPL(KebabCaseFunction,
             SIG((FN_ARGS((&Type::STRING)),
                  EXEC_DISPATCH(&KebabCaseFunction::exec_kebab_case))))
@@ -450,7 +448,7 @@ namespace Roo
     return Value::string(join_words(case_words(args[0]->str()), "-"));
   }
 
-  /** PascalCaseFunction - pascal-case */
+  /** PascalCaseFunction - roo/pascal-case */
   FUNC_IMPL(PascalCaseFunction,
             SIG((FN_ARGS((&Type::STRING)),
                  EXEC_DISPATCH(&PascalCaseFunction::exec_pascal_case))))
@@ -460,7 +458,7 @@ namespace Roo
     return Value::string(pascal_case(case_words(args[0]->str())));
   }
 
-  /** CamelCaseFunction - camel-case */
+  /** CamelCaseFunction - roo/camel-case */
   FUNC_IMPL(CamelCaseFunction,
             SIG((FN_ARGS((&Type::STRING)),
                  EXEC_DISPATCH(&CamelCaseFunction::exec_camel_case))))

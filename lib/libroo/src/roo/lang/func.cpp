@@ -9,7 +9,7 @@
 
 namespace Roo
 {
-  /** ApplyFunction - apply */
+  /** ApplyFunction - roo/apply */
   FUNC_IMPL(ApplyFunction,
             SIG((FN_ARGS((&Roo::Type::EXEC), (&Roo::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&ApplyFunction::exec_apply))))
@@ -26,7 +26,7 @@ namespace Roo
     return fn.execute(ctx, fn_args);
   }
 
-  /** DefunForm - defun */
+  /** DefunForm - roo/defun */
   SPECIAL_FORM_IMPL(DefunForm,
                     MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA),
                                        (&Type::VECTOR, DATA),
@@ -92,7 +92,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** FnForm - fn */
+  /** FnForm - roo/fn */
   SPECIAL_FORM_IMPL(FnForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
                          EXEC_DISPATCH(&FnForm::execnode_decl))))

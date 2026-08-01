@@ -33,6 +33,9 @@
 
 namespace Roo
 {
+  /*!
+   * @brief Create the immutable native roo language namespace.
+   */
   Namespace make_language_namespace()
   {
     std::map<std::string, sptr_val> lang_symbols;

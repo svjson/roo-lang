@@ -51,11 +51,59 @@ namespace Roo
    */
   FUNC(CeilFunction, ceil)
 
+  /*!
+   * @brief Return the cosine of a number.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Angle in radians.                                                |
+   */
   FUNC(CosFunction, cos);
+
+  /*!
+   * @brief Round a number down to the nearest integer.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to round down.                                        |
+   */
   FUNC(FloorFunction, floor)
+
+  /*!
+   * @brief Raise a number to the power of another number.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Base number.                                                     |
+   * | 1     | Exponent number.                                                 |
+   */
   FUNC(PowFunction, pow);
+
+  /*!
+   * @brief Round a number to the nearest integer.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number to round.                                             |
+   */
   FUNC(RoundFunction, round)
+
+  /*!
+   * @brief Return the sine of a number.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Angle in radians.                                                |
+   */
   FUNC(SinFunction, sin);
+
+  /*!
+   * @brief Return the square root of a number.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | The number whose square root is returned.                        |
+   */
   FUNC(SqrtFunction, sqrt);
 
 } // namespace Roo

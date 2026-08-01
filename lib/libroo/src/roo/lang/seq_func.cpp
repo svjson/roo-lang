@@ -12,7 +12,7 @@
 
 namespace Roo
 {
-  /** AnyFunction - any? */
+  /** AnyFunction - roo/any? */
   FUNC_IMPL(AnyFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                  EXEC_DISPATCH(&AnyFunction::exec_any))))
@@ -34,7 +34,7 @@ namespace Roo
     return Constant::BOOL_FALSE;
   }
 
-  /* FilterFunction */
+  /** FilterFunction - roo/filter */
   FUNC_IMPL(FilterFunction,
             MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&FilterFunction::exec_filter)),
@@ -78,7 +78,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** FindFirstFunction - find-first */
+  /** FindFirstFunction - roo/find-first */
   FUNC_IMPL(FindFirstFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&FindFirstFunction::exec_find_first))))
@@ -104,7 +104,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** FindIndexFunction - find-index */
+  /** FindIndexFunction - roo/find-index */
   FUNC_IMPL(FindIndexFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&FindIndexFunction::exec_find_index))))
@@ -131,7 +131,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /** IndexOfFunction - index-of */
+  /** IndexOfFunction - roo/index-of */
   FUNC_IMPL(IndexOfFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY)),
                  EXEC_DISPATCH(&IndexOfFunction::exec_index_of))))
@@ -152,7 +152,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /* KeepFunction - keep */
+  /** KeepFunction - roo/keep */
   FUNC_IMPL(KeepFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                  EXEC_DISPATCH(&KeepFunction::exec_keep))))
@@ -175,7 +175,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** MapFunction - map */
+  /** MapFunction - roo/map */
   FUNC_IMPL(MapFunction,
             SIG((FN_ARGS((&VARARG, &Type::SEQ_OR_STRING), (&Type::EXEC)),
                  EXEC_DISPATCH(&MapFunction::exec_map))))
@@ -258,7 +258,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** ReduceFunction - reduce */
+  /** ReduceFunction - roo/reduce */
   FUNC_IMPL(ReduceFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY), (&Type::FUNCTION)),
                  EXEC_DISPATCH(&ReduceFunction::exec_reduce))))
@@ -285,7 +285,7 @@ namespace Roo
     return result;
   }
 
-  /** RemoveFunction - remove */
+  /** RemoveFunction - roo/remove */
   FUNC_IMPL(RemoveFunction,
             MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&RemoveFunction::exec_remove)),
@@ -325,7 +325,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /** RemoveBangFunction - remove! */
+  /** RemoveBangFunction - roo/remove! */
   FUNC_IMPL(RemoveBangFunction,
             SIG((FN_ARGS((&Type::EXEC), (&Type::STRICT_SEQ)),
                  EXEC_DISPATCH(&RemoveBangFunction::exec_remove_bang))))
@@ -374,7 +374,7 @@ namespace Roo
     return args.back();
   }
 
-  /* RemoveFirstFunction - remove-first */
+  /** RemoveFirstFunction - roo/remove-first */
   FUNC_IMPL(RemoveFirstFunction,
             MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&RemoveFirstFunction::exec_remove_first)),
@@ -419,7 +419,7 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
-  /* SeqMatchFunction */
+  /** SeqMatchFunction - roo/seq-match */
   FUNC_IMPL(SeqMatchFunction,
             SIG((FN_ARGS((&Roo::Type::SEQ), (&Roo::Type::MAP)),
                  EXEC_DISPATCH(&SeqMatchFunction::exec_match))))
@@ -462,7 +462,7 @@ namespace Roo
     return Constant::NIL;
   }
 
-  /* SortFunction - sort */
+  /** SortFunction - roo/sort */
   FUNC_IMPL(SortFunction,
             MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&SortFunction::exec_sort)),

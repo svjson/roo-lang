@@ -84,6 +84,13 @@ namespace Roo
    */
   FUNC(ContainsAllPFunction, contains_all)
 
+  /*!
+   * @brief Return the number of elements in a sequence or map.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Collection to count.                                             |
+   */
   FUNC(CountFunction, count)
 
   /*!
@@ -124,6 +131,14 @@ namespace Roo
    */
   FUNC(LastFunction, last);
 
+  /*!
+   * @brief Return the element at an index in a sequence.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Sequence to read from.                                           |
+   * | 1     | Zero-based index to retrieve.                                    |
+   */
   FUNC(NthFunction, nth);
 
   /*! @brief Partition a sequence into an vector of equally sized vectors.
@@ -242,6 +257,13 @@ namespace Roo
    */
   FUNC(ReverseFunction, reverse)
 
+  /*!
+   * @brief Return a sequence without its first element.
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Sequence to read from.                                           |
+   */
   FUNC(TailFunction, tail)
 
   /*!

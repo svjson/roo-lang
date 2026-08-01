@@ -7,7 +7,7 @@
 
 namespace Roo
 {
-  /** EpochMsFunction - epoch-ms */
+  /** EpochMsFunction - roo/epoch-ms */
   FUNC_IMPL(EpochMsFunction, SIG((NO_ARGS, EXEC_DISPATCH(&EpochMsFunction::exec_epoch_ms))));
 
   EXEC_BODY(EpochMsFunction, exec_epoch_ms)

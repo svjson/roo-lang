@@ -7,7 +7,7 @@
 
 namespace Roo
 {
-  /** BetweenPredicateFunction - between? */
+  /** BetweenPredicateFunction - roo/between? */
   FUNC_IMPL(BetweenPredicateFunction,
             SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
                  EXEC_DISPATCH(&BetweenPredicateFunction::exec_between))))
@@ -21,7 +21,7 @@ namespace Roo
     return num > min && num < max ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** EmptyPFunction - empty? */
+  /** EmptyPFunction - roo/empty? */
   FUNC_IMPL(EmptyPFunction,
             SIG((FN_ARGS((&Roo::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&EmptyPFunction::exec_emptyp))))
@@ -31,7 +31,7 @@ namespace Roo
     return Roo::count(*args[0]) == 0 ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** CallablePFunction - callable? */
+  /** CallablePFunction - roo/callable? */
   FUNC_IMPL(CallablePFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&CallablePFunction::exec_callable))))
 
@@ -42,7 +42,7 @@ namespace Roo
              : Constant::BOOL_FALSE;
   }
 
-  /** FnPFunction - fn? */
+  /** FnPFunction - roo/fn? */
   FUNC_IMPL(FnPFunction, SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&FnPFunction::exec_fn))))
 
   EXEC_BODY(FnPFunction, exec_fn)
@@ -51,7 +51,7 @@ namespace Roo
                                                   : Constant::BOOL_FALSE;
   }
 
-  /** NotEmptyPFunction */
+  /** NotEmptyPFunction - roo/not-empty? */
   FUNC_IMPL(NotEmptyPFunction,
             SIG((FN_ARGS((&Roo::Type::SEQ_OR_STRING)),
                  EXEC_DISPATCH(&NotEmptyPFunction::exec_not_emptyp))))
@@ -61,7 +61,7 @@ namespace Roo
     return Roo::count(*args[0]) == 0 ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
-  /** NotEqualsFunction - not= */
+  /** NotEqualsFunction - roo/not= */
   FUNC_IMPL(NotEqualsFunction,
             SIG((FN_ARGS((&Type::ANY), (&Type::ANY)),
                  EXEC_DISPATCH(&NotEqualsFunction::exec_not_equals))))
@@ -71,7 +71,7 @@ namespace Roo
     return *args[0] == *args[1] ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
-  /** MapPFunction - map? */
+  /** MapPFunction - roo/map? */
   FUNC_IMPL(MapPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&MapPFunction::exec_map))))
 
@@ -80,7 +80,7 @@ namespace Roo
     return args[0]->type == Value::Type::MAP ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** SeqPFunction - seq? */
+  /** SeqPFunction - roo/seq? */
   FUNC_IMPL(SeqPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&SeqPFunction::exec_seq))))
 
@@ -90,7 +90,7 @@ namespace Roo
     return Type::SEQ.is_type_of(*args[0]) ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** SequentialPFunction - sequential? */
+  /** SequentialPFunction - roo/sequential? */
   FUNC_IMPL(SequentialPFunction,
             SIG((FN_ARGS((&Type::ANY)),
                  EXEC_DISPATCH(&SequentialPFunction::exec_sequential))))
@@ -102,7 +102,7 @@ namespace Roo
                                                  : Constant::BOOL_FALSE;
   }
 
-  /** SeqablePFunction - seqable? */
+  /** SeqablePFunction - roo/seqable? */
   FUNC_IMPL(SeqablePFunction,
             SIG((FN_ARGS((&Type::ANY)),
                  EXEC_DISPATCH(&SeqablePFunction::exec_seqable))))
@@ -114,7 +114,7 @@ namespace Roo
                                                     : Constant::BOOL_FALSE;
   }
 
-  /** NilPFunction - nil? */
+  /** NilPFunction - roo/nil? */
   FUNC_IMPL(NilPFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NilPFunction::exec_is_nil))))
 
@@ -123,7 +123,7 @@ namespace Roo
     return args[0]->type == Value::Type::NIL ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
   }
 
-  /** NotFunction - not */
+  /** NotFunction - roo/not */
   FUNC_IMPL(NotFunction, SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NotFunction::exec_not))))
 
   EXEC_BODY(NotFunction, exec_not)
@@ -131,7 +131,7 @@ namespace Roo
     return Roo::is_truthy(*args[0]) ? Constant::BOOL_FALSE : Constant::BOOL_TRUE;
   }
 
-  /** SomePFunction - some? */
+  /** SomePFunction - roo/some? */
   FUNC_IMPL(SomePFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&SomePFunction::exec_is_some))))
 

@@ -10,6 +10,9 @@
 
 namespace Roo
 {
+  /*!
+   * @brief Create the immutable native roo.io namespace.
+   */
   Namespace make_io_namespace()
   {
     std::map<std::string, sptr_val> symbols;

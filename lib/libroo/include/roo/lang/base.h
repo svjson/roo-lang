@@ -125,6 +125,15 @@ namespace Roo
    */
   FUNC(NameFunction, name)
 
+  /*!
+   * @brief Declare the namespace of the current source file.
+   *
+   * Usage:
+   * @code
+   * (ns sample.core)
+   * (ns sample.core (:require [roo.string :as string]))
+   * @endcode
+   */
   SPECIAL_FORM_DECL(NsForm, ns);
 
   /*!
@@ -187,6 +196,19 @@ namespace Roo
    */
   FUNC(RandomSeedBangFunction, random_seed_bang)
 
+  /*!
+   * @brief Return a random integer in the range from zero to the given upper bound.
+   *
+   * Usage:
+   * @code
+   * (rnd 10)
+   * => 4
+   * @endcode
+   *
+   * | Arg # | Description                                                      |
+   * |-------|------------------------------------------------------------------|
+   * | 0     | Exclusive upper bound for the generated integer.                 |
+   */
   FUNC(RndFunction, rnd)
 
   /*!
