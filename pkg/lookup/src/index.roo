@@ -20,7 +20,7 @@
      :package (source/package-info manifest)
      :sources (map files source/source-entry)}))
 
-(defun symbol-index
+(defun symbol-index-with-native-source-roots
   "Build a symbol index for a package.
 
   The symbol index includes namespace entries, top-level `def` and `defun`
@@ -32,7 +32,7 @@
 
   Returns:
   A `:roo/symbol-index` map for editor lookup and documentation generation."
-  [package-dir]
+  [package-dir native-source-roots]
   (let [source-index (source-form-index package-dir)
         package-name (:name (:package source-index))
         sources (:sources source-index)]
@@ -46,7 +46,55 @@
                   (map sources
                        (fn [source]
                          (symbols/source-symbols package-name source))))
-                (native-docs/package-native-symbol-entries! package-dir package-name))}))
+                (native-docs/package-native-symbol-entries! package-dir package-name)
+                (native-docs/native-source-root-symbol-entries!
+                  package-name
+                  native-source-roots))}))
+
+(defun symbol-index
+  "Build a symbol index for a package.
+
+  The symbol index includes namespace entries, top-level `def` and `defun`
+  symbols, function signatures, source locations, Roo docstrings, and package
+  native documentation when present.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+
+  Returns:
+  A `:roo/symbol-index` map for editor lookup and documentation generation."
+  [package-dir]
+  (symbol-index-with-native-source-roots package-dir []))
+
+(defun index-with-options
+  "Build an index using parsed CLI options."
+  [options]
+  (let [package-dir (:package-dir options)
+        extractors (:extractors options)
+        native-source-roots (:native-source-roots options)
+        forms? (contains? extractors :forms)
+        symbols? (contains? extractors :symbols)]
+    (cond
+
+      (and forms? symbols?)
+      (let [forms-index (source-form-index package-dir)
+            symbols-index (symbol-index-with-native-source-roots
+                            package-dir
+                            native-source-roots)]
+        {:format :roo/index
+         :version 1
+         :package (:package symbols-index)
+         :forms forms-index
+         :symbols symbols-index})
+
+      forms?
+      (source-form-index package-dir)
+
+      symbols?
+      (symbol-index-with-native-source-roots package-dir native-source-roots)
+
+      true
+      (symbol-index-with-native-source-roots package-dir native-source-roots))))
 
 (defun index-with-extractors
   "Build an index using the requested extractors.

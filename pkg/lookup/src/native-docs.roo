@@ -384,6 +384,20 @@
     (map (package-native-source-files package-dir)
          source-native-comment-entries!)))
 
+(defun native-source-root-files
+  "Find C++ source and header files under a generic source root."
+  [root]
+  (sort (map (native-source-files-in root) source/normalized-path) <))
+
+(defun native-source-root-comment-entries!
+  "Extract native documentation comment entries from generic C++ source roots."
+  [roots]
+  (flatten
+    (map roots
+         (fn [root]
+           (map (native-source-root-files root)
+                source-native-comment-entries!)))))
+
 (defun native-doc-entry-for-class [entries native-class]
   (find-first entries
               (fn [entry]
@@ -493,3 +507,8 @@
   "Build native symbol entries for a package from extracted C++ comments."
   [package-dir package]
   (native-symbol-entries package (package-native-comment-entries! package-dir)))
+
+(defun native-source-root-symbol-entries!
+  "Build native symbol entries for a package from generic C++ source roots."
+  [package roots]
+  (native-symbol-entries package (native-source-root-comment-entries! roots)))

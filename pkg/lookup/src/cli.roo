@@ -7,7 +7,7 @@
 (def usage-lines
   "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
-   "       lookup index [-x extractor]... [-o <file>] <package-dir>"
+   "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>"
    "       lookup thing-at <package-dir> <file> <line> <column>"])
 
 (def index-extractors
@@ -28,7 +28,8 @@
           usage-lines
           [""
            "Extractors: forms, symbols"
-           "Default: symbols, including Roo docstrings when present"]))
+           "Default: symbols, including Roo docstrings when present"
+           "Native source roots add C/C++ doc comments to the symbol index"]))
 
 (defun version-text
   "Build the lookup version output.
@@ -100,6 +101,17 @@
                                                [(str "Unknown index extractor: "
                                                      extractor)])))))))
 
+      (= arg "--native-source-root")
+      (let [root (nth args 1)]
+        (if (nil? root)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing directory after --native-source-root"]))
+          (parse-index-args-step (tail (tail args))
+                                 (assoc options
+                                        :native-source-roots
+                                        (concat (:native-source-roots options)
+                                                [root])))))
+
       (or (= arg "-o")
           (= arg "--out"))
       (let [out (nth args 1)]
@@ -141,6 +153,7 @@
                                        {:extractors []
                                         :out nil
                                         :package-dir nil
+                                        :native-source-roots []
                                         :errors []})]
     (if (= 0 (count (:extractors options)))
       (assoc options :extractors [:symbols])
@@ -153,8 +166,7 @@
       (do
         (map (:errors options) prn)
         (print-usage!))
-      (let [value (index/index-with-extractors (:package-dir options)
-                                               (:extractors options))]
+      (let [value (index/index-with-options options)]
         (if (nil? (:out options))
           (prn value)
           (io/spit! (:out options) (str value "\n")))))))

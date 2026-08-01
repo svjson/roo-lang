@@ -189,6 +189,20 @@
     (is (= 2 (:line source-location)))
     (is (= 16 (:column source-location)))))
 
+(deftest builds-symbol-index-with-generic-native-source-root
+  (let [symbol-index (index/symbol-index-with-native-source-roots
+                      "assets/native-package"
+                      ["assets/native-root-only"])
+        symbols (:symbols symbol-index)
+        native-symbol (find-first symbols
+                                  (fn [symbol]
+                                    (= "extra.native/read!"
+                                       (:qualified-name symbol))))]
+    (is (= :roo/symbol-index (:format symbol-index)))
+    (is (= "extra.native/read!" (:id native-symbol)))
+    (is (= "Read data from an external native source root."
+           (:summary (:doc native-symbol))))))
+
 (deftest builds-native-symbols-in-symbol-index
   (let [symbol-index (index/symbol-index "assets/native-package")
         symbols (:symbols symbol-index)

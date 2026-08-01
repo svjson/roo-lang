@@ -113,11 +113,28 @@
             :column 1}
            (:source entry)))))
 
+(deftest extracts-native-comment-entries-from-generic-source-root
+  (let [entries (native-docs/native-source-root-comment-entries!
+                  ["assets/native-package/native"])
+        kinds (map entries :kind)]
+    (is (= 2 (count entries)))
+    (is (= [:native-doc-comment :native-identity-comment] kinds))))
+
 (deftest extracts-package-native-comment-entries
   (let [entries (native-docs/package-native-comment-entries! "assets/native-package")
         kinds (map entries :kind)]
     (is (= 2 (count entries)))
     (is (= [:native-doc-comment :native-identity-comment] kinds))))
+
+(deftest builds-native-symbol-entries-from-generic-source-root
+  (let [symbols (native-docs/native-source-root-symbol-entries!
+                  "native-fixture"
+                  ["assets/native-package/native"])
+        symbol (head symbols)]
+    (is (= 1 (count symbols)))
+    (is (= "sample.native/read!" (:qualified-name symbol)))
+    (is (= "Read fixture data from a path."
+           (:summary (:doc symbol))))))
 
 (deftest builds-native-symbol-entries
   (let [entries (native-docs/package-native-comment-entries! "assets/native-package")

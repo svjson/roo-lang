@@ -4,18 +4,19 @@
 
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
-          "       lookup index [-x extractor]... [-o <file>] <package-dir>"
+          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
 (deftest reports-help-lines
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
-          "       lookup index [-x extractor]... [-o <file>] <package-dir>"
+          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"
           ""
           "Extractors: forms, symbols"
-          "Default: symbols, including Roo docstrings when present"]
+          "Default: symbols, including Roo docstrings when present"
+          "Native source roots add C/C++ doc comments to the symbol index"]
          (cli/help-lines))))
 
 (deftest reports-version-text
@@ -36,6 +37,7 @@
   (is (= {:extractors [:symbols]
           :out nil
           :package-dir "pkg/lookup"
+          :native-source-roots []
           :errors []}
          (cli/parse-index-args ["pkg/lookup"]))))
 
@@ -43,21 +45,36 @@
   (is (= {:extractors [:forms :symbols]
           :out nil
           :package-dir "pkg/lookup"
+          :native-source-roots []
           :errors []}
          (cli/parse-index-args ["-x" "forms" "-x" "symbols" "pkg/lookup"]))))
+
+(deftest parses-index-native-source-root
+  (is (= {:extractors [:symbols]
+          :out nil
+          :package-dir "pkg/lookup"
+          :native-source-roots ["lib/libroo/include" "lib/libroo/src"]
+          :errors []}
+         (cli/parse-index-args ["--native-source-root" "lib/libroo/include"
+                                "--native-source-root" "lib/libroo/src"
+                                "pkg/lookup"]))))
 
 (deftest parses-index-output-file
   (is (= {:extractors [:symbols]
           :out "build/lookup.edn"
           :package-dir "pkg/lookup"
+          :native-source-roots []
           :errors []}
          (cli/parse-index-args ["-o" "build/lookup.edn" "pkg/lookup"]))))
 
 (deftest reports-index-option-errors
   (let [missing-extractor (cli/parse-index-args ["-x"])
+        missing-native-root (cli/parse-index-args ["--native-source-root"])
         unknown-option (cli/parse-index-args ["--wat" "pkg/lookup"])
         extra-arg (cli/parse-index-args ["pkg/lookup" "extra"])]
     (is (contains? (:errors missing-extractor) "Missing extractor after -x"))
+    (is (contains? (:errors missing-native-root)
+                   "Missing directory after --native-source-root"))
     (is (contains? (:errors unknown-option) "Unknown index option: --wat"))
     (is (contains? (:errors extra-arg) "Unexpected index argument: extra"))))
 
