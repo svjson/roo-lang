@@ -4,6 +4,7 @@ set(roo_SOURCES
   src/roo/adapter.cpp
   src/roo/bind.cpp
   src/roo/context.cpp
+  src/roo/data/string_literal.cpp
   src/roo/io/dir_root_file_system.cpp
   src/roo/io/file_system.cpp
   src/roo/io/file_system_namespace_source.cpp

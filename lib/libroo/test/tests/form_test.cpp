@@ -284,6 +284,13 @@ TEST(String, equality)
   EXPECT_NE(str3, symbol);
 }
 
+TEST(String, to_string_escapes_edn_string_content)
+{
+  Roo::AST::String str("quoted \"value\" with \\ slash\nand\ttab");
+
+  EXPECT_EQ(str.to_string(), R"("quoted \"value\" with \\ slash\nand\ttab")");
+}
+
 TEST(List, equality)
 {
   // Given

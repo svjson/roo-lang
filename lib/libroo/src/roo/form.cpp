@@ -13,6 +13,7 @@
 #include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
 #include <roo/runtime/value.h>
+#include <roo/data/string_literal.h>
 #include <roo/type.h>
 
 namespace Roo::AST
@@ -239,7 +240,7 @@ namespace Roo::AST
 
   std::string String::to_string(int) const
   {
-    return "\"" + value + "\"";
+    return Roo::escaped_string_literal(value);
   }
 
   unsigned int String::size() const

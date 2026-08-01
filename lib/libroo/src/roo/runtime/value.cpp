@@ -13,6 +13,7 @@
 #include <roo/host/object.h>
 #include <roo/impl.h>
 #include <roo/runtime/pool.h>
+#include <roo/data/string_literal.h>
 
 namespace Roo
 {
@@ -701,7 +702,7 @@ namespace Roo
       r += "]";
       break;
     case Value::Type::STRING:
-      r += "\"" + std::get<std::string>(value) + "\"";
+      r += Roo::escaped_string_literal(std::get<std::string>(value));
       break;
     case Value::Type::SYMBOL:
       r += std::get<std::string>(value);

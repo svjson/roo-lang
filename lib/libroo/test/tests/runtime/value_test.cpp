@@ -15,6 +15,14 @@ TEST(Value_keyword, equals)
   EXPECT_FALSE(*value == *kind);
 }
 
+TEST(Value_string, to_string_escapes_edn_string_content)
+{
+  auto map = Roo::Value::map({Roo::Value::keyword("example"),
+                              Roo::Value::string("=> \"source text\"\nnext")});
+
+  EXPECT_EQ(map->to_string(), R"({:example "=> \"source text\"\nnext"})");
+}
+
 TEST(ValueFactory, root_namespace_forwards_to_value_factories)
 {
   EXPECT_EQ(*Roo::boolean(true), *Roo::Value::boolean(true));
