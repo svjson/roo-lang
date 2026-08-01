@@ -33,6 +33,18 @@
 (defun cpp-comment-lines [text]
   (map (docstrings/split-lines text) strip-cpp-comment-line))
 
+(defun cpp-line-comment-text [line]
+  (let [trimmed (trim line)]
+    (cond
+      (string/starts-with? trimmed "///")
+      (trim (substr trimmed 3 (count trimmed)))
+
+      (string/starts-with? trimmed "//")
+      (trim (substr trimmed 2 (count trimmed)))
+
+      true
+      nil)))
+
 (defun join-lines [separator lines]
   (if (= 0 (count lines))
     nil
@@ -327,6 +339,13 @@
            identity)
     nil))
 
+(defun native-line-identity-entry [path line-entry]
+  (when-let [text (cpp-line-comment-text (:text line-entry))
+             identity (native-identity-from-cpp-comment text)]
+    (merge {:kind :native-identity-comment
+            :source (source-location path (:line line-entry))}
+           identity)))
+
 (defun native-doc-entry [path comment declaration]
   (let [line (:text declaration)]
     {:kind :native-doc-comment
@@ -368,6 +387,13 @@
 
       (not (nil? (:comment state)))
       (append-comment-line state line-entry)
+
+      (not (nil? (native-line-identity-entry (:path state) line-entry)))
+      (assoc state
+             :pending-comment nil
+             :entries (concat (:entries state)
+                              [(native-line-identity-entry (:path state)
+                                                           line-entry)]))
 
       (block-comment-start? line)
       (start-comment state line-entry)

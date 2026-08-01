@@ -64,9 +64,27 @@
           :qualified-name "roo.io/slurp!"}
          (native-docs/native-identity-from-cpp-comment
            "/** SlurpBangFunction - roo.io/slurp! */")))
+  (is (= {:native-class "PlusFunction"
+          :qualified-name "roo/+"}
+         (native-docs/native-identity-from-cpp-comment
+           "/** PlusFunction - roo/+ */")))
+  (is (= {:native-class "MultiplyFunction"
+          :qualified-name "roo/*"}
+         (native-docs/native-identity-from-cpp-comment
+           "/** MultiplyFunction - roo/* */")))
   (is (= nil
          (native-docs/native-identity-from-cpp-comment
            "/* just a note */"))))
+
+(deftest extracts-line-native-identity-comment
+  (let [entries (native-docs/source-native-comment-entries
+                  "operator.cpp"
+                  "// MultiplyFunction - roo/*\nFUNC_IMPL(MultiplyFunction, nil)")]
+    (is (= [{:kind :native-identity-comment
+             :source {:path "operator.cpp" :line 1 :column 1}
+             :native-class "MultiplyFunction"
+             :qualified-name "roo/*"}]
+           entries))))
 
 (deftest locates-package-native-source-files
   (is (= ["assets/native-package/native/include/sample.h"
