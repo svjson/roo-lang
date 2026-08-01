@@ -4,14 +4,14 @@
 
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
-          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>"
+          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
 (deftest reports-help-lines
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
-          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>"
+          "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]"
           "       lookup thing-at <package-dir> <file> <line> <column>"
           ""
           "Extractors: forms, symbols"
@@ -59,6 +59,14 @@
                                 "--native-source-root" "lib/libroo/src"
                                 "pkg/lookup"]))))
 
+(deftest parses-native-only-index-options
+  (is (= {:extractors [:symbols]
+          :out nil
+          :package-dir nil
+          :native-source-roots ["lib/libroo/include"]
+          :errors []}
+         (cli/parse-index-args ["--native-source-root" "lib/libroo/include"]))))
+
 (deftest parses-index-output-file
   (is (= {:extractors [:symbols]
           :out "build/lookup.edn"
@@ -71,11 +79,19 @@
   (let [missing-extractor (cli/parse-index-args ["-x"])
         missing-native-root (cli/parse-index-args ["--native-source-root"])
         unknown-option (cli/parse-index-args ["--wat" "pkg/lookup"])
+        missing-input (cli/parse-index-args [])
+        native-forms (cli/parse-index-args ["-x" "forms"
+                                            "--native-source-root"
+                                            "lib/libroo/include"])
         extra-arg (cli/parse-index-args ["pkg/lookup" "extra"])]
     (is (contains? (:errors missing-extractor) "Missing extractor after -x"))
     (is (contains? (:errors missing-native-root)
                    "Missing directory after --native-source-root"))
     (is (contains? (:errors unknown-option) "Unknown index option: --wat"))
+    (is (contains? (:errors missing-input)
+                   "Missing package directory or native source root"))
+    (is (contains? (:errors native-forms)
+                   "Package directory required for forms extractor"))
     (is (contains? (:errors extra-arg) "Unexpected index argument: extra"))))
 
 (deftest resolves-thing-at-command

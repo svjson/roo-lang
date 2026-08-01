@@ -7,7 +7,7 @@
 (def usage-lines
   "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
-   "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>"
+   "       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]"
    "       lookup thing-at <package-dir> <file> <line> <column>"])
 
 (def index-extractors
@@ -147,7 +147,7 @@
   - `args`: Arguments after the `index` command name.
 
   Returns:
-  An options map with `:extractors`, `:out`, `:package-dir`, and `:errors`."
+  An options map with `:extractors`, `:out`, `:package-dir`, `:native-source-roots`, and `:errors`."
   [args]
   (let [options (parse-index-args-step args
                                        {:extractors []
@@ -155,14 +155,32 @@
                                         :package-dir nil
                                         :native-source-roots []
                                         :errors []})]
-    (if (= 0 (count (:extractors options)))
-      (assoc options :extractors [:symbols])
-      options)))
+    (let [with-default-extractors (if (= 0 (count (:extractors options)))
+                                  (assoc options :extractors [:symbols])
+                                  options)
+          forms? (contains? (:extractors with-default-extractors) :forms)
+          has-package? (not (nil? (:package-dir with-default-extractors)))
+          has-native-roots? (not (= 0 (count (:native-source-roots with-default-extractors))))]
+      (cond
+
+        (and forms? (not has-package?))
+        (assoc with-default-extractors
+               :errors
+               (concat (:errors with-default-extractors)
+                       ["Package directory required for forms extractor"]))
+
+        (and (not has-package?) (not has-native-roots?))
+        (assoc with-default-extractors
+               :errors
+               (concat (:errors with-default-extractors)
+                       ["Missing package directory or native source root"]))
+
+        true
+        with-default-extractors))))
 
 (defun print-index! [args]
   (let [options (parse-index-args (tail args))]
-    (if (or (not (= 0 (count (:errors options))))
-            (nil? (:package-dir options)))
+    (if (not (= 0 (count (:errors options))))
       (do
         (map (:errors options) prn)
         (print-usage!))

@@ -66,6 +66,27 @@
   [package-dir]
   (symbol-index-with-native-source-roots package-dir []))
 
+
+(defun native-source-root-index
+  "Build a native-only symbol index from C/C++ source roots."
+  [native-source-roots]
+  (let [roots (map native-source-roots source/normalized-path)
+        native-files (sort
+                       (flatten
+                         (map native-source-roots
+                              native-docs/native-source-root-files))
+                       <)
+        native-symbols (native-docs/native-source-root-symbol-entries!
+                         nil
+                         native-source-roots)]
+    {:format :roo/symbol-index
+     :version 1
+     :origin {:kind :native-source-roots
+              :roots roots}
+     :sources (map native-files (fn [path] {:path path}))
+     :namespaces []
+     :symbols native-symbols}))
+
 (defun index-with-options
   "Build an index using parsed CLI options."
   [options]
@@ -75,6 +96,9 @@
         forms? (contains? extractors :forms)
         symbols? (contains? extractors :symbols)]
     (cond
+
+      (nil? package-dir)
+      (native-source-root-index native-source-roots)
 
       (and forms? symbols?)
       (let [forms-index (source-form-index package-dir)

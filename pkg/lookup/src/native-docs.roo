@@ -478,11 +478,10 @@
               (:doc doc-entry))]
     (if (nil? namespace)
       nil
-      {:id qualified-name
-       :name name
+      (let [entry {:id qualified-name
+                   :name name
        :qualified-name qualified-name
        :namespace namespace
-       :package package
        :kind (native-symbol-kind doc-entry)
        :origin :native
        :visibility :public
@@ -494,7 +493,10 @@
                      {:kind :native-cpp-comment
                       :source (:source doc-entry)})
        :doc doc
-       :signatures [(native-signature name doc)]})))
+       :signatures [(native-signature name doc)]}]
+        (if (nil? package)
+          entry
+          (assoc entry :package package))))))
 
 (defun native-symbol-entries [package entries]
   (keep entries

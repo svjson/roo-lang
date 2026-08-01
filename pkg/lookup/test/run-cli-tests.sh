@@ -40,7 +40,7 @@ fi
 assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
-       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] <package-dir>
+       lookup index [-x extractor]... [--native-source-root <dir>]... [-o <file>] [<package-dir>]
        lookup thing-at <package-dir> <file> <line> <column>
 
 Extractors: forms, symbols
@@ -99,11 +99,11 @@ case "$OUT_CONTENT" in
     ;;
 esac
 
-if ! NATIVE_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index --native-source-root "$LOOKUP_PACKAGE"/test/assets/native-root-only "$LOOKUP_PACKAGE"/test/assets/native-package); then
+if ! NATIVE_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index --native-source-root "$LOOKUP_PACKAGE"/test/assets/native-root-only); then
   fail "lookup index --native-source-root command failed"
 fi
 case "$NATIVE_ROOT_OUTPUT" in
-  *":qualified-name \"extra.native/read!\""*":summary \"Read data from an external native source root.\""*) ;;
+  *":origin {:kind :native-source-roots"*":qualified-name \"extra.native/read!\""*":summary \"Read data from an external native source root.\""*) ;;
   *)
     printf '%s\n' "unexpected lookup index --native-source-root output:" >&2
     printf '%s\n' "$NATIVE_ROOT_OUTPUT" >&2
