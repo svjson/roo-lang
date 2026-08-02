@@ -10,8 +10,9 @@ ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_IND
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-workbook install-footsteps release test test\:all test\:support test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
+SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
 PROOF_TEST_BINARY := pkg/proof/test/testproof
@@ -24,6 +25,7 @@ LOOKUP_NATIVE_LIBRARY := liblookup-native.so
 PROOFREAD_NATIVE_LIBRARY := libproofread-native.so
 PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
+  SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport.exe
   TEST_BINARY := lib/libroo/test/testroo.exe
   PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage.exe
   PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
@@ -59,6 +61,9 @@ endif
 RELINK_ARTIFACTS := \
 	$(CURDIR)/build/roo \
 	$(CURDIR)/build/rooc \
+	$(CURDIR)/build/lib/libroo-support/libroo-support.a \
+	$(CURDIR)/build/lib/libroo-support/libroo-support.so \
+	$(CURDIR)/build/lib/libroo-support/test/testsupport \
 	$(CURDIR)/build/lib/libroo/libroo.a \
 	$(CURDIR)/build/lib/libroo/libroo.so \
 	$(CURDIR)/build/lib/libroo/test/testroo \
@@ -178,10 +183,14 @@ install-footsteps: build
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
 
-test: test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc
+test: test\:support test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc
 test: test\:cli
 
-test\:all: test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:server
+test\:all: test\:support test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:server
+
+test\:support: build
+	cmake --build build --target testsupport
+	./build/$(SUPPORT_TEST_BINARY) $(GTEST_FILTER_ARG)
 
 test\:lang: build
 	cmake --build build --target testroo

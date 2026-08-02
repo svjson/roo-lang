@@ -45,6 +45,7 @@ if (MSVC)
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /W4")
 endif()
 
+add_subdirectory(lib/libroo-support)
 add_subdirectory(lib/libroo)
 add_subdirectory(lib/libroo-package)
 add_subdirectory(lib/libroo-server)
@@ -86,14 +87,14 @@ add_executable(rooc_cli
 
 set_target_properties(roo_cli PROPERTIES
   OUTPUT_NAME roo
-  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-support_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "${ROO_BIN_INSTALL_RPATH}"
 )
 
 set_target_properties(rooc_cli PROPERTIES
   OUTPUT_NAME rooc
-  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-support_shared>;$<TARGET_FILE_DIR:roo-package_shared>"
   BUILD_RPATH_USE_LINK_PATH OFF
   INSTALL_RPATH "${ROO_BIN_INSTALL_RPATH}"
 )
@@ -114,11 +115,13 @@ target_link_libraries(rooc_cli
 
 roo_copy_runtime_dlls(roo_cli
   roo_shared
+  roo-support_shared
   roo-package_shared
 )
 
 roo_copy_runtime_dlls(rooc_cli
   roo_shared
+  roo-support_shared
   roo-package_shared
 )
 
