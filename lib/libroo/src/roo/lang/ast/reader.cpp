@@ -175,7 +175,14 @@ namespace Roo
   EXEC_BODY(AstSlurpBangFunction, exec_slurp)
   {
     const std::string path = args[0]->str();
-    return read_source_forms(ctx.file_system().read(path), path, "roo.ast/slurp!");
+    try
+    {
+      return read_source_forms(ctx.file_system().read(path), path, "roo.ast/slurp!");
+    }
+    catch (const std::exception& e)
+    {
+      throw RooException("Could not read: '" + path + "': " + e.what());
+    }
   }
 
   /** AstReadStringFunction - roo.ast/read-string */
