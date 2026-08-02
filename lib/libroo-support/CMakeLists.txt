@@ -92,6 +92,6 @@ install(EXPORT roo-supportTargets
   DESTINATION lib/cmake/roo-support
 )
 
-install(FILES /cmake/roo-supportConfig.cmake
+install(FILES ${ROO_ROOT_DIR}/cmake/roo-supportConfig.cmake
   DESTINATION lib/cmake/roo-support
 )
