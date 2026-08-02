@@ -1,0 +1,13 @@
+(ns proofread.direct-conditions-use-if-let)
+
+(def empty-else
+  (let [item (find-item)]
+    (if item
+      (:name item)
+      nil)))
+
+(def explicit-else
+  (let [item (find-item)]
+    (if item
+      (:name item)
+      :missing)))

@@ -53,6 +53,11 @@ Implemented style warnings:
 - `redundant-do`: reports unnecessary `do` forms, including single-expression
   wrappers and `do` forms that wrap a whole body where multiple expressions are
   already allowed.
+- `use-when`: reports `if` forms with no meaningful else branch.
+- `use-unless`: reports `if` forms with an empty then branch.
+- `use-if-let`: reports `let` plus `if` forms that can be written as `if-let`.
+- `use-when-let`: reports `let` plus `when` forms that can be written as
+  `when-let`.
 
 ## Commands
 

@@ -1,0 +1,24 @@
+(ns proofread.direct-conditions-non-candidates)
+
+(def real-else
+  (if ready?
+    (save!)
+    (skip!)))
+
+(def different-if-condition
+  (let [item (find-item)]
+    (if ready?
+      item
+      :missing)))
+
+(def different-when-condition
+  (let [item (find-item)]
+    (when ready?
+      (save! item))))
+
+(def multiple-bindings
+  (let [item (find-item)
+        ready? (ready? item)]
+    (if item
+      item
+      :missing)))

@@ -1,0 +1,49 @@
+(ns proofread.rules.direct-conditions-test
+  (:require proof.core
+            [proofread.rules.direct-conditions :as direct-conditions]
+            [roo.ast :as ast]))
+
+(defun diagnostics
+  "Run the direct-conditions rule set against a fixture source file.
+
+  Args:
+  - `path`: Fixture source path.
+
+  Returns:
+  A vector of diagnostic maps."
+  [path]
+  (flatten
+    (map (ast/slurp! path) direct-conditions/check)))
+
+(defun diagnostic-summary
+  "Return rule and source line pairs for a fixture source file.
+
+  Args:
+  - `path`: Fixture source path.
+
+  Returns:
+  A vector of `[rule line]` pairs."
+  [path]
+  (map (diagnostics path)
+       (fn [diagnostic]
+         [(:rule diagnostic) (:line (:source diagnostic))])))
+
+(deftest reports-use-when-for-empty-else-branches
+  (is (= [[:use-when 4] [:use-when 9]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-when.roo"))))
+
+(deftest reports-use-unless-for-empty-then-branches
+  (is (= [[:use-unless 4]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-unless.roo"))))
+
+(deftest reports-use-if-let-for-let-wrapped-if-forms
+  (is (= [[:use-if-let 4] [:use-if-let 10]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-if-let.roo"))))
+
+(deftest reports-use-when-let-for-let-wrapped-when-forms
+  (is (= [[:use-when-let 4]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-when-let.roo"))))
+
+(deftest ignores-direct-condition-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/direct-conditions/non-candidates.roo"))))

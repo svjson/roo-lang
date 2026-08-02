@@ -1,0 +1,10 @@
+(ns proofread.direct-conditions-use-when)
+
+(def explicit-empty-else
+  (if ready?
+    (save!)
+    nil))
+
+(def implicit-empty-else
+  (if ready?
+    (save!)))
