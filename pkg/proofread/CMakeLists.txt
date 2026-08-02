@@ -44,4 +44,10 @@ if(ROO_BUILD_TESTS)
             ${PROOFREAD_TEST_PACKAGE}
             ${PROOFREAD_TEST_ASSETS}/style/redundant-do.roo
   )
+  set_tests_properties(
+    proofread-cli-allows-style-warnings
+    PROPERTIES
+      PASS_REGULAR_EXPRESSION "redundant-do.roo:7:3: warning redundant-do: Redundant do form"
+      FAIL_REGULAR_EXPRESSION "redundant-do.roo:92:5: warning redundant-do"
+  )
 endif()

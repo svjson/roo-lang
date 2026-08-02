@@ -13,16 +13,3 @@
   (when (= type :list)
     (when-let [form (:form (head children))]
       (str form))))
-
-(defun nodes
-  "Return `node` and every nested child node.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  A flat vector of AST node maps in parent-before-children order."
-  [node]
-  (concat [node]
-          (flatten
-            (map (:children node) nodes))))

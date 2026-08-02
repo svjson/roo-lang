@@ -32,7 +32,7 @@ proofread: 2 files ok
 Style warnings include the source location, severity, rule name, and message:
 
 ```text
-src/app.roo:12:3: warning redundant-do: Redundant do form with a single expression
+src/app.roo:12:3: warning redundant-do: Redundant do form
 ```
 
 Warnings are informational and do not make the command fail.
@@ -44,7 +44,9 @@ the error and exits with a non-zero status.
 
 Implemented style warnings:
 
-- `redundant-do`: reports `(do expr)` forms that wrap a single expression.
+- `redundant-do`: reports unnecessary `do` forms, including single-expression
+  wrappers and `do` forms that wrap a whole body where multiple expressions are
+  already allowed.
 
 ## Commands
 
