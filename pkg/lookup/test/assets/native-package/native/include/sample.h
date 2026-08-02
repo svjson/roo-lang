@@ -14,9 +14,9 @@ namespace Sample
    * => "contents"
    * @endcode
    *
-   * | Arg # | Description |
-   * |-------|-------------|
-   * | 0     | Path to read. |
+   * | Arg # | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | Path to read.                                                      |
    */
   FUNC(SampleReadFunction, read)
 } // namespace Sample

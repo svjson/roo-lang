@@ -12,9 +12,9 @@
                * (roo.io/slurp! \"notes.txt\") => \"file contents\"
                * @endcode
                *
-               * | Arg # | Description                   |
-               * |-------|-------------------------------|
-               * | 0     | The path of the file to read. |
+               * | Arg # | Description                                                        |
+               * | ----- | ------------------------------------------------------------------ |
+               * | 0     | The path of the file to read.                                      |
                */")]
     (is (= "Read the complete contents of a text file as a string."
            (:summary doc)))
@@ -41,10 +41,10 @@
                * => 4
                * @endcode
                *
-               * | Arg # | Description                                                 |
-               * |-------|-------------------------------------------------------------|
-               * | 0     | Integer value to shift.                                     |
-               * | 1     | Optional integer number of bits to shift by. Defaults to 1. |
+               * | Arg # | Description                                                        |
+               * | ----- | ------------------------------------------------------------------ |
+               * | 0     | Integer value to shift.                                            |
+               * | 1     | Optional integer number of bits to shift by. Defaults to 1.        |
                */")]
     (is (= "Shifts an integer value right by one bit, or by the given number of bits."
            (:summary doc)))
@@ -58,6 +58,45 @@
     (is (= [{:format :roo
              :source "(>> 8)\n=> 4"}]
            (:examples doc)))))
+
+(deftest parses-cpp-native-header-comment-with-spaced-table-separator
+  (let [doc (native-docs/from-cpp-comment
+              "/**
+               * @brief Read a path.
+               *
+               * | Arg   | Description                                                        |
+               * | ----- | ------------------------------------------------------------------ |
+               * | path  | Path to read from.                                                 |
+               * |       | a fixture.                                                        |
+               */")]
+    (is (= {:type nil :doc "Path to read from. a fixture."}
+           (get (:params doc) "path")))))
+
+(deftest builds-native-signature-with-named-cpp-arguments
+  (let [doc (native-docs/from-cpp-comment
+              "/**
+               * @brief Collect values from a path.
+               *
+               * | Arg       | Description                                                        |
+               * | --------- | ------------------------------------------------------------------ |
+               * | path      | Path to read.                                                      |
+               * | values... | Additional values.                                                 |
+               */")
+        signature (native-docs/native-signature "collect" doc)]
+    (is (= "(collect path values)" (:display signature)))
+    (is (= [{:name "path"
+             :type nil
+             :doc "Path to read."
+             :optional? false
+             :rest? false}
+            {:name "values"
+             :type nil
+             :doc "Additional values."
+             :optional? true
+             :rest? true}]
+           (:params signature)))
+    (is (= {:min 1 :max nil :variadic true}
+           (:arity signature)))))
 
 (deftest parses-cpp-native-identity-comment
   (is (= {:native-class "SlurpBangFunction"
@@ -104,7 +143,7 @@
     (is (= "Read fixture data from a path." (:summary doc)))
     (is (= "The fixture keeps this as a separate paragraph." (:body doc)))
     (is (= {:type nil :doc "Path to read."}
-           (get (:params doc) "0")))
+           (get (:params doc) "path")))
     (is (= [{:format :roo
              :source "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}]
            (:examples doc)))
@@ -185,8 +224,8 @@
             :line 5
             :column 1}
            (:source symbol)))
-    (is (= "(read! arg0)" (:display signature)))
-    (is (= [{:name "arg0"
+    (is (= "(read! path)" (:display signature)))
+    (is (= [{:name "path"
              :type nil
              :doc "Path to read."
              :optional? false

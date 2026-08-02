@@ -100,10 +100,18 @@
           nil
           (let [arg (trim (substr content 0 separator))
                 doc (trim (substr content (+ separator 1) (count content)))]
-            (if (or (blank? arg)
-                    (= "Arg #" arg)
-                    (string/starts-with? arg "---"))
+            (cond
+              (or (contains? ["Arg #" "Arg" "Param" "Parameter" "Name"] arg)
+                  (string/starts-with? arg "---"))
               nil
+
+              (blank? arg)
+              (if (blank? doc)
+                nil
+                {:continuation? true
+                 :doc doc})
+
+              true
               {:key arg
                :doc {:type nil :doc doc}})))))))
 
@@ -118,6 +126,11 @@
 
       true
       nil)))
+
+(defun cpp-doc-append-param-doc [param-doc doc]
+  (assoc param-doc
+         :doc
+         (trim (str (or (:doc param-doc) "") " " doc))))
 
 (defun cpp-doc-step [state line]
   (let [trimmed (trim line)]
@@ -155,10 +168,26 @@
              (concat (:returns state) [(cpp-doc-return-text trimmed)]))
 
       (not (nil? (cpp-doc-arg-row trimmed)))
-      (let [row (cpp-doc-arg-row trimmed)]
-        (assoc state
-               :params
-               (assoc (:params state) (:key row) (:doc row))))
+      (let [row (cpp-doc-arg-row trimmed)
+            key (:key row)]
+        (if (:continuation? row)
+          (if-let [last-key (:last-param-key state)]
+            (assoc state
+                   :params
+                   (assoc (:params state)
+                          last-key
+                          (cpp-doc-append-param-doc
+                            (get (:params state) last-key)
+                            (:doc row))))
+            state)
+          (assoc state
+                 :params
+                 (assoc (:params state) key (:doc row))
+                 :param-order
+                 (if (contains? (:param-order state) key)
+                   (:param-order state)
+                   (concat (:param-order state) [key]))
+                 :last-param-key key)))
 
       (cpp-doc-body-line? trimmed)
       (assoc state
@@ -169,12 +198,18 @@
       state)))
 
 (defun from-cpp-comment
-  "Parse an existing Roo native C++ header comment into documentation data."
+  "Parse an existing Roo native C++ header comment into documentation data.
+
+  Argument table rows may use numeric keys such as `0` and `1`, or named
+  keys such as `path` and `contents`. Numeric keys are rendered as fallback
+  names like `arg0`; named keys are rendered as-is."
   [text]
   (let [state (reduce (cpp-comment-lines text)
                       {:summary []
                        :body []
                        :params {}
+                       :param-order []
+                       :last-param-key nil
                        :returns []
                        :examples []
                        :section nil
@@ -186,6 +221,7 @@
      :body (docstrings/paragraph-text (docstrings/paragraphs (:body state)))
      :format :markdown
      :params (:params state)
+     :param-order (:param-order state)
      :returns (if (= 0 (count (:returns state)))
                 nil
                 {:type nil
@@ -480,14 +516,42 @@
 (defun native-param-variadic? [key]
   (string/ends-with? key "..."))
 
-(defun native-param-name [key]
+(defun native-param-key-base [key]
   (if (native-param-variadic? key)
-    "args"
-    (str "arg" key)))
+    (strip-suffix key "...")
+    key))
+
+(defun native-param-digit? [ch]
+  (contains? ["0" "1" "2" "3" "4" "5" "6" "7" "8" "9"]
+             (str ch)))
+
+(defun native-param-numbered? [key]
+  (let [base (native-param-key-base key)]
+    (and (not (blank? base))
+         (nil? (find-first base
+                           (fn [ch]
+                             (not (native-param-digit? ch))))))))
+
+(defun native-param-name [key]
+  (let [base (native-param-key-base key)
+        numbered? (native-param-numbered? key)]
+    (cond
+      (blank? base)
+      "args"
+
+      (and numbered? (native-param-variadic? key))
+      "args"
+
+      numbered?
+      (str "arg" base)
+
+      true
+      base)))
 
 (defun native-signature-params [doc]
-  (let [param-docs (:params doc)]
-    (map (sort (keys param-docs) <)
+  (let [param-docs (:params doc)
+        param-keys (or (:param-order doc) (sort (keys param-docs) <))]
+    (map param-keys
          (fn [key]
            (let [rest? (native-param-variadic? key)
                  param-doc (get param-docs key)]
@@ -530,7 +594,8 @@
         doc-entry (native-doc-entry-for-class entries (:native-class identity-entry))
         doc (if (nil? doc-entry)
               (docstrings/empty)
-              (:doc doc-entry))]
+              (:doc doc-entry))
+        public-doc (dissoc doc :param-order)]
     (if (nil? namespace)
       nil
       (let [entry {:id qualified-name
@@ -547,7 +612,7 @@
                      nil
                      {:kind :native-cpp-comment
                       :source (:source doc-entry)})
-       :doc doc
+       :doc public-doc
        :signatures [(native-signature name doc)]}]
         (if (nil? package)
           entry

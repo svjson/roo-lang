@@ -249,5 +249,5 @@
     (is (= :native (:origin native-symbol)))
     (is (= "Read fixture data from a path."
            (:summary (:doc native-symbol))))
-    (is (= "(read! arg0)" (:display signature)))
+    (is (= "(read! path)" (:display signature)))
     (is (= "Path to read." (:doc (head (:params signature)))))))
