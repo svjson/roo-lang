@@ -30,10 +30,10 @@ namespace Roo
    * => "{\n  :name \"Roo\"\n  :ok true\n}"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value to format.                                             |
-   * | 1     | Optional map with :indent number.                                |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | value   | The value to format.                                               |
+   * | options | Optional map with :indent number.                                  |
    */
   FUNC(PrettyStrFunction, pretty_str)
 
@@ -120,10 +120,10 @@ namespace Roo
    * => "a brown Fox Ate A bug today"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | String to capitalize.                                            |
-   * | 1     | Optional word count, or `[start end]` inclusive word range.      |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | text     | String to capitalize.                                              |
+   * | selector | Optional word count, or `[start end]` inclusive word range.        |
    */
   FUNC(CapitalizeFunction, capitalize_all, capitalize_count, capitalize_range)
 
@@ -138,9 +138,9 @@ namespace Roo
    * (capitalize-first "string of words") => "String of words"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | String to capitalize.                                            |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | text  | String to capitalize.                                              |
    */
   FUNC(CapitalizeFirstFunction, capitalize_first)
 
@@ -158,9 +158,9 @@ namespace Roo
    * (kebab-case "player_ship_state") => "player-ship-state"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | String to convert.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | text  | String to convert.                                                 |
    */
   FUNC(KebabCaseFunction, kebab_case)
 
@@ -179,9 +179,9 @@ namespace Roo
    * (pascal-case "player_ship_state") => "PlayerShipState"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | String to convert.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | text  | String to convert.                                                 |
    */
   FUNC(PascalCaseFunction, pascal_case)
 
@@ -200,9 +200,9 @@ namespace Roo
    * (camel-case "player_ship_state") => "playerShipState"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | String to convert.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | text  | String to convert.                                                 |
    */
   FUNC(CamelCaseFunction, camel_case)
 

@@ -15,10 +15,10 @@ namespace Roo
    * => 6
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The function to invoke                                           |
-   * | 1     | The seq of arguments                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | f     | The function to invoke                                             |
+   * | args  | The seq of arguments                                               |
    */
   FUNC(ApplyFunction, apply)
 
@@ -40,11 +40,11 @@ namespace Roo
    * (fn [arg1 arg2] body...)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | An vector of argument declarations. Each declaration can be a     |
-   * |       | symbol or a destructuring form.                                  |
-   * | 1...  | One or more forms that make up the body of the function.         |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | params  | An vector of argument declarations. Each declaration can be a      |
+   * |         | symbol or a destructuring form.                                    |
+   * | body... | One or more forms that make up the body of the function.           |
    */
   SPECIAL_FORM_DECL(FnForm, decl)
 

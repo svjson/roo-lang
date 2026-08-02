@@ -13,9 +13,9 @@ namespace Roo
    * (roo.io/slurp! "notes.txt") => "file contents"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path of the file to read.                                    |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path of the file to read.                                      |
    */
   FUNC(SlurpBangFunction, slurp)
 
@@ -28,10 +28,10 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path of the file to write.                                   |
-   * | 1     | The text contents to write to the file.                          |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | path     | The path of the file to write.                                     |
+   * | contents | The text contents to write to the file.                            |
    */
   FUNC(SpitBangFunction, spit)
 
@@ -44,10 +44,10 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source file path.                                            |
-   * | 1     | The destination file path.                                       |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | source | The source file path.                                              |
+   * | dest   | The destination file path.                                         |
    */
   FUNC(CopyFileBangFunction, copy_file)
 
@@ -60,9 +60,9 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The file or directory tree path to remove.                       |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The file or directory tree path to remove.                         |
    */
   FUNC(RemoveTreeBangFunction, remove_tree)
 
@@ -75,10 +75,10 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source path the link points to.                              |
-   * | 1     | The symbolic link path to create.                                |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | The source path the link points to.                                |
+   * | link   | The symbolic link path to create.                                  |
    */
   FUNC(SymlinkBangFunction, symlink)
 
@@ -90,9 +90,9 @@ namespace Roo
    * (roo.io/symlink? "repo/pkg/name/0.1.0") => true
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to inspect.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to inspect.                                               |
    */
   FUNC(SymlinkPFunction, symlink_p)
 
@@ -104,9 +104,9 @@ namespace Roo
    * (roo.io/read-link! "repo/pkg/name/0.1.0") => "/path/to/package"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The symbolic link path to inspect.                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | link  | The symbolic link path to inspect.                                 |
    */
   FUNC(ReadLinkBangFunction, read_link)
 
@@ -119,9 +119,9 @@ namespace Roo
    * => {:name "Roo" :ok true}
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path of the EDN file to read.                                |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path of the EDN file to read.                                  |
    */
   FUNC(SlurpEdnBangFunction, slurp_edn)
 
@@ -137,11 +137,11 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path of the EDN file to write.                               |
-   * | 1     | The value to serialize with to_string().                         |
-   * | 2     | Optional map with :pretty? boolean and :indent number.           |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | path    | The path of the EDN file to write.                                 |
+   * | value   | The value to serialize with to_string().                           |
+   * | options | Optional map with :pretty? boolean and :indent number.             |
    */
   FUNC(SpitEdnBangFunction, spit_edn)
 } // namespace Roo

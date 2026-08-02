@@ -17,10 +17,10 @@ namespace Roo
    * (dotimes [n 10] (perform-task n))
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | A binding form or number of iterations                           |
-   * | 1...  | Body consisting of one or more forms to be executed.             |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | binding | A binding form or number of iterations                             |
+   * | body... | Body consisting of one or more forms to be executed.               |
    */
   SPECIAL_FORM_DECL(DoTimesForm, dotimes);
 
@@ -34,10 +34,10 @@ namespace Roo
    * (for [num [1 2 3 4]] (* 2 num)) => [2 4 6 8]
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Binding form, [<var-name> <seq>]                                 |
-   * | 0     | Form body to execute                                             |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | binding | Binding form, [<var-name> <seq>]                                   |
+   * | body    | Form body to execute                                               |
    */
   SPECIAL_FORM_DECL(ForForm, for)
 
@@ -51,10 +51,10 @@ namespace Roo
    * (doseq [num [1 2 3 4]] (prn num)) => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Binding form, [<var-name> <seq>]                                 |
-   * | 1...  | Form body to execute                                             |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | binding | Binding form, [<var-name> <seq>]                                   |
+   * | body... | Form body to execute                                               |
    */
   SPECIAL_FORM_DECL(DoseqForm, doseq)
 
@@ -69,10 +69,10 @@ namespace Roo
    *   (* index num) => [0 2 6 12])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Binding form, [<index-var-name> <var-name> <seq>]                |
-   * | 1     | Form body to execute                                             |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | binding | Binding form, [<index-var-name> <var-name> <seq>]                  |
+   * | body    | Form body to execute                                               |
    */
   SPECIAL_FORM_DECL(ForIndexedForm, for_indexed)
 
@@ -85,10 +85,10 @@ namespace Roo
    *   body...)
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | Conditional form tested before each iteration              |
-   * | 1...  | Body forms evaluated while the condition is truthy         |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | condition | Conditional form tested before each iteration                      |
+   * | body...   | Body forms evaluated while the condition is truthy                 |
    */
   SPECIAL_FORM_DECL(WhileForm, while)
 

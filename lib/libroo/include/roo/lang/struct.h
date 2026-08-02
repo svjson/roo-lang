@@ -20,13 +20,13 @@ namespace Roo
    * (assoc my-map :key1 value1 :key2 value2)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The object to create a copy of                                   |
-   * | 1     | The key whose value to set or substitute                         |
-   * | 2     | The value to associate with the key                              |
-   * | 3..n  | Optional repetions of #1 and #2, Keyword/value arguments, passed as  |
-   * |       | complete pairs                                                   |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The object to create a copy of                                     |
+   * | key      | The key whose value to set or substitute                           |
+   * | value    | The value to associate with the key                                |
+   * | pairs... | Optional repetitions of key and value arguments, passed as         |
+   * |          | complete pairs                                                     |
    */
   FUNC(AssocFunction, assoc, assoc_seq)
 
@@ -38,11 +38,11 @@ namespace Roo
    * (assoc! my-map key value)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map/object to mutate                                         |
-   * | 1     | The key to set                                                   |
-   * | 2     | The value to associate with the key                              |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | The map/object to mutate                                           |
+   * | key    | The key to set                                                     |
+   * | value  | The value to associate with the key                                |
    */
   FUNC(AssocBangFunction, assoc_bang, assoc_seq_bang)
 
@@ -56,12 +56,12 @@ namespace Roo
    * (assoc-in my-nested-map [:key1] value1 [:key2 :nested-key] value2)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map or map-like from which to produce a modified copy        |
-   * | 1     | The path to the nested key to set                                |
-   * | 2     | The value to associate with the last key of the key path         |
-   * | 3..n  | (Optional) repetitions of Arg #1 and #2                          |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map or map-like from which to produce a modified copy          |
+   * | path     | The path to the nested key to set                                  |
+   * | value    | The value to associate with the last key of the key path           |
+   * | pairs... | (Optional) repetitions of path and value                           |
    */
   FUNC(AssocInFunction, assoc_in)
 
@@ -74,11 +74,11 @@ namespace Roo
    * (assoc-in! my-nested-map [:key :nested-key] new-value)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map to mutate                                                |
-   * | 1     | The path to the nested key to set                                |
-   * | 2     | The value to associate with the last key of the key path         |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | The map to mutate                                                  |
+   * | path   | The path to the nested key to set                                  |
+   * | value  | The value to associate with the last key of the key path           |
    */
   FUNC(AssocInBangFunction, assoc_in_bang)
 
@@ -94,12 +94,12 @@ namespace Roo
    * (update my-vec 1 [* 10])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map/object or sequence to create a modified copy of          |
-   * | 1     | The key or index to update                                       |
-   * | 2     | The updater spec, executable or sequence of executable + args    |
-   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map/object or sequence to create a modified copy of            |
+   * | key      | The key or index to update                                         |
+   * | updater  | The updater spec, executable or sequence of executable + args      |
+   * | pairs... | Optional repetitions of key and updater                            |
    */
   FUNC(UpdateFunction, update)
 
@@ -114,12 +114,12 @@ namespace Roo
    * (update! my-vec 1 [* 10])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map/object or sequence to mutate                             |
-   * | 1     | The key or index to update                                       |
-   * | 2     | The updater spec, executable or sequence of executable + args    |
-   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map/object or sequence to mutate                               |
+   * | key      | The key or index to update                                         |
+   * | updater  | The updater spec, executable or sequence of executable + args      |
+   * | pairs... | Optional repetitions of key and updater                            |
    */
   FUNC(UpdateBangFunction, update_bang)
 
@@ -135,12 +135,12 @@ namespace Roo
    * (update-in my-map [:nested :count] [* 10])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map/object or sequence to create a modified copy of          |
-   * | 1     | The path to the value to update                                  |
-   * | 2     | The updater spec, executable or sequence of executable + args    |
-   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map/object or sequence to create a modified copy of            |
+   * | path     | The path to the value to update                                    |
+   * | updater  | The updater spec, executable or sequence of executable + args      |
+   * | pairs... | Optional repetitions of key and updater                            |
    */
   FUNC(UpdateInFunction, update_in)
 
@@ -155,12 +155,12 @@ namespace Roo
    * (update-in! my-map [:nested :count] [* 10])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map/object or sequence to mutate                             |
-   * | 1     | The path to the value to update                                  |
-   * | 2     | The updater spec, executable or sequence of executable + args    |
-   * | 3..n  | Optional repetitions of Arg #1 and #2                            |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map/object or sequence to mutate                               |
+   * | path     | The path to the value to update                                    |
+   * | updater  | The updater spec, executable or sequence of executable + args      |
+   * | pairs... | Optional repetitions of key and updater                            |
    */
   FUNC(UpdateInBangFunction, update_in_bang)
 
@@ -174,11 +174,11 @@ namespace Roo
    * => 1
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map or complex object                                        |
-   * | 1     | The property value, usually a key.                               |
-   * | 2     | Optional default value to return when the property is missing.    |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | target  | The map or complex object                                          |
+   * | key     | The property value, usually a key.                                 |
+   * | default | Optional default value to return when the property is missing.     |
    */
   FUNC(GetFunction, get);
 
@@ -192,11 +192,11 @@ namespace Roo
    * => 1
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map or complex object                                        |
-   * | 1     | The property path as vector.                                     |
-   * | 2     | Optional default value to return when the path is missing.        |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | target  | The map or complex object                                          |
+   * | path    | The property path as vector.                                       |
+   * | default | Optional default value to return when the path is missing.         |
    */
   FUNC(GetInFunction, get);
 
@@ -223,10 +223,10 @@ namespace Roo
    * (dissoc-in my-nested-map [:key1] [:key2 :nested-key])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map or map-like from which to produce a modified copy        |
-   * | 1..n  | One or more paths to nested keys to remove                       |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map or map-like from which to produce a modified copy          |
+   * | paths... | One or more paths to nested keys to remove                         |
    */
   FUNC(DissocInFunction, dissoc_in)
 
@@ -293,12 +293,12 @@ namespace Roo
    * => {:total 3}
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The map to reduce                                                |
-   * | 1     | The initial value of result                                      |
-   * | 2     | A function to apply for each key-value pair, taking the key and  |
-   * |       | the value for each pair in the map accumulated result            |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | map   | The map to reduce                                                  |
+   * | init  | The initial value of result                                        |
+   * | f     | A function to apply for each key-value pair, taking the key and    |
+   * |       | the value for each pair in the map accumulated result              |
    */
   FUNC(ReduceKeyValueFunction, reduce_kv)
 

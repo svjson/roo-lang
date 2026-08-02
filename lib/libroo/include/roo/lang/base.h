@@ -93,9 +93,9 @@ namespace Roo
    * (keyword 'a-symbol) => :a-symbol
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The string or symbol to convert to a keyword.                    |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The string or symbol to convert to a keyword.                      |
    */
   FUNC(KeywordFunction, keyword);
 
@@ -108,9 +108,9 @@ namespace Roo
    * (keyword? :thing) => true
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value whose type to query.                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose type to query.                                     |
    */
   FUNC(KeywordPFunction, keyword);
 
@@ -205,9 +205,9 @@ namespace Roo
    * => 4
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Exclusive upper bound for the generated integer.                 |
+   * | Arg         | Description                                                        |
+   * | ----------- | ------------------------------------------------------------------ |
+   * | upper-bound | Exclusive upper bound for the generated integer.                   |
    */
   FUNC(RndFunction, rnd)
 
@@ -249,9 +249,9 @@ namespace Roo
    * (keyword? :thing) => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value whose type to query.                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose type to query.                                     |
    */
   FUNC(StringPFunction, stringp);
 

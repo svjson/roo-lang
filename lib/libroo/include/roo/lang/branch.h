@@ -23,12 +23,12 @@ namespace Roo
    *   :default "x is not 10 or 20")
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value to match                                               |
-   * | 1     | A value of expression to match against Arg #0                    |
-   * | 2     | An expression that will be evaluated if Param 1 matches Arg #0   |
-   * | 3...  | Repetitions of 1-2                                               |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | value      | The value to match                                                 |
+   * | match      | A value or expression to match against value                       |
+   * | result     | An expression evaluated if match equals value                      |
+   * | clauses... | Repetitions of match and result                                    |
    */
   SPECIAL_FORM_DECL(CaseForm, case)
 
@@ -50,11 +50,11 @@ namespace Roo
    * In the example above, :else is a truthy value and can therefore be used
    * as a last catch-all condition.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | A conditional form                                               |
-   * | 1     | An expression that will, conditionally, be evaluated             |
-   * | 2...  | Repetitions of Params 0-1                                        |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | condition  | A conditional form                                                 |
+   * | result     | An expression that will, conditionally, be evaluated               |
+   * | clauses... | Repetitions of condition and result                                |
    */
   SPECIAL_FORM_DECL(CondForm, cond)
 
@@ -68,11 +68,11 @@ namespace Roo
    *   :else)
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | Conditional form tested for truthiness                     |
-   * | 1     | Form evaluated when the condition is truthy                |
-   * | 2     | Optional form evaluated when the condition is falsy        |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | condition | Conditional form tested for truthiness                             |
+   * | then      | Form evaluated when the condition is truthy                        |
+   * | else      | Optional form evaluated when the condition is falsy                |
    */
   SPECIAL_FORM_DECL(IfForm, if)
 
@@ -90,11 +90,11 @@ namespace Roo
    *   (prn "It's false!"))
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | A conditional form - anything that can be considered truthy or falsy |
-   * | 1...  | Any number of forms to be evaluated if the conditional evaluates to a falsy
-   * value |
+   * | Arg       | Description                                                          |
+   * | --------- | -------------------------------------------------------------------- |
+   * | condition | A conditional form - anything that can be considered truthy or falsy |
+   * | body...   | Any number of forms to be evaluated if the conditional evaluates to  |
+   * |           | a falsy value                                                        |
    */
   SPECIAL_FORM_DECL(UnlessForm, unless)
 
@@ -118,11 +118,11 @@ namespace Roo
    *   (my-fun))
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | A conditional form - anything that can be considered truthy or falsy |
-   * | 1...  | Any number of forms to be evaluated if the conditional evaluates to a truthy
-   * value |
+   * | Arg       | Description                                                          |
+   * | --------- | -------------------------------------------------------------------- |
+   * | condition | A conditional form - anything that can be considered truthy or falsy |
+   * | body...   | Any number of forms to be evaluated if the conditional evaluates to  |
+   * |           | a truthy value                                                       |
    */
   SPECIAL_FORM_DECL(WhenForm, when)
 

@@ -18,10 +18,10 @@ namespace Roo
    * => true
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Left hand side value.                                            |
-   * | 1     | Right hand side value.                                           |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side value.                                              |
+   * | right | Right hand side value.                                             |
    */
   FUNC(EqualsPFunction, equals)
 
@@ -34,9 +34,9 @@ namespace Roo
    * => 6
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | The numbers to add together. Must be at least one argument.      |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | The numbers to add together. Must be at least one argument.        |
    */
   FUNC(PlusFunction, plus)
 
@@ -50,9 +50,9 @@ namespace Roo
    * => 3
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | The numbers to subtract. Must be at least one argument.          |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | The numbers to subtract. Must be at least one argument.            |
    */
   FUNC(MinusFunction, subtract)
 
@@ -66,9 +66,9 @@ namespace Roo
    * => 4
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | The numbers to divide. Must be at least one argument.            |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | The numbers to divide. Must be at least one argument.              |
    */
   FUNC(DivideFunction, divide)
 
@@ -82,9 +82,9 @@ namespace Roo
    * => 4
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | The numbers to divide. Must be at least one argument.            |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | The numbers to divide. Must be at least one argument.              |
    */
   FUNC(ModulusFunction, modulus)
 
@@ -98,9 +98,9 @@ namespace Roo
    * => 80
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | The numbers to multiply. Must be at least one argument.          |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | The numbers to multiply. Must be at least one argument.            |
    */
   FUNC(MultiplyFunction, multiply)
 
@@ -120,10 +120,10 @@ namespace Roo
    * => 32
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Integer value to shift.                                          |
-   * | 1     | Optional integer number of bits to shift by. Defaults to 1.      |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Integer value to shift.                                            |
+   * | bits  | Optional integer number of bits to shift by. Defaults to 1.        |
    */
   FUNC(ShiftLeftFunction, shift_left)
 
@@ -144,10 +144,10 @@ namespace Roo
    * => 1
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Integer value to shift.                                          |
-   * | 1     | Optional integer number of bits to shift by. Defaults to 1.      |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Integer value to shift.                                            |
+   * | bits  | Optional integer number of bits to shift by. Defaults to 1.        |
    */
   FUNC(ShiftRightFunction, shift_right)
 
@@ -169,10 +169,10 @@ namespace Roo
    * => 32
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Integer bit pattern to shift.                                    |
-   * | 1     | Optional integer number of bits to shift by. Defaults to 1.      |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Integer bit pattern to shift.                                      |
+   * | bits  | Optional integer number of bits to shift by. Defaults to 1.        |
    */
   FUNC(LogicalShiftLeftFunction, logical_shift_left)
 
@@ -193,10 +193,10 @@ namespace Roo
    * => 9223372036854775807
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Integer bit pattern to shift.                                    |
-   * | 1     | Optional integer number of bits to shift by. Defaults to 1.      |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Integer bit pattern to shift.                                      |
+   * | bits  | Optional integer number of bits to shift by. Defaults to 1.        |
    */
   FUNC(LogicalShiftRightFunction, logical_shift_right)
 
@@ -216,9 +216,9 @@ namespace Roo
    * => 3
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | Integer values to combine. Must be at least one argument.        |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Integer values to combine. Must be at least one argument.          |
    */
   FUNC(BitAndFunction, bit_and)
 
@@ -238,9 +238,9 @@ namespace Roo
    * => 13
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | Integer values to combine. Must be at least one argument.        |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Integer values to combine. Must be at least one argument.          |
    */
   FUNC(BitOrFunction, bit_or)
 
@@ -260,9 +260,9 @@ namespace Roo
    * => 5
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | Integer values to combine. Must be at least one argument.        |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Integer values to combine. Must be at least one argument.          |
    */
   FUNC(BitXorFunction, bit_xor)
 
@@ -282,9 +282,9 @@ namespace Roo
    * => -11
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Integer value to complement.                                     |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Integer value to complement.                                       |
    */
   FUNC(BitNotFunction, bit_not)
 

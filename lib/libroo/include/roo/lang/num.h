@@ -17,9 +17,9 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The number to decrement                                          |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | number | The number to decrement                                            |
    */
   FUNC(DecFunction, dec)
 
@@ -32,9 +32,9 @@ namespace Roo
    * => true
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The number to test for evenness                                  |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | number | The number to test for evenness                                    |
    */
   FUNC(EvenPFunction, even)
 
@@ -50,45 +50,45 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The number to increment                                          |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | number | The number to increment                                            |
    */
   FUNC(IncFunction, inc)
 
   /*!
    * @brief Convert a numeric value to an integer.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Numeric value to convert.                                        |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Numeric value to convert.                                          |
    */
   FUNC(IntFunction, to_int)
 
   /*!
    * @brief Convert a numeric value to a floating point number.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Numeric value to convert.                                        |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Numeric value to convert.                                          |
    */
   FUNC(FloatFunction, to_float)
 
   /*!
    * @brief Return the smallest numeric argument.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | Numbers to compare.                                              |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | Numbers to compare.                                                |
    */
   FUNC(MinFunction, min)
 
   /*!
    * @brief Return the largest numeric argument.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | Numbers to compare.                                              |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | Numbers to compare.                                                |
    */
   FUNC(MaxFunction, max)
 
@@ -105,9 +105,9 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value to test for being a number                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value to test for being a number                               |
    */
   FUNC(NumberPFunction, num)
 
@@ -120,9 +120,9 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The number to test for oddness                                   |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | number | The number to test for oddness                                     |
    */
   FUNC(OddPFunction, odd)
 
@@ -141,10 +141,10 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0...  | The numbers to test for equality with zero. Must be at least one |
-   * |       | argument.                                                        |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | numbers... | The numbers to test for equality with zero. Must be at least one   |
+   * |            | argument.                                                          |
    */
   FUNC(ZeroPFunction, zero)
 } // namespace Roo

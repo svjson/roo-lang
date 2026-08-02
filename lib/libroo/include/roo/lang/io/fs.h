@@ -22,11 +22,11 @@ namespace Roo
    * (roo.io/list-directory! "assets" {:hidden? true :filter ["*.edn" ".*"]})
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The directory path to list.                                      |
-   * | 1     | Optional map with :files?, :directories?, :hidden?, :dotfiles?,  |
-   * |       | and :filter options. :filter is a string or vector of strings.   |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | path    | The directory path to list.                                        |
+   * | options | Optional map with :files?, :directories?, :hidden?, :dotfiles?,    |
+   * |         | and :filter options. :filter is a string or vector of strings.     |
    */
   FUNC(ListDirectoryBangFunction, list_directory, list_directory_with_options)
 
@@ -39,9 +39,9 @@ namespace Roo
    * (roo.io/exists? "missing.edn") => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to query.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to query.                                                 |
    */
   FUNC(ExistsPFunction, exists_p)
 
@@ -54,9 +54,9 @@ namespace Roo
    * (roo.io/file? "assets") => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to query.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to query.                                                 |
    */
   FUNC(FilePFunction, file_p)
 
@@ -69,9 +69,9 @@ namespace Roo
    * (roo.io/directory? "assets/config.edn") => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to query.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to query.                                                 |
    */
   FUNC(DirectoryPFunction, directory_p)
 
@@ -90,9 +90,9 @@ namespace Roo
    * => {:exists? false :type nil :size nil :modified-ms nil}
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to inspect.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to inspect.                                               |
    */
   FUNC(StatBangFunction, stat)
 
@@ -105,9 +105,9 @@ namespace Roo
    * => "/project/assets/config.edn"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to resolve.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to resolve.                                               |
    */
   FUNC(AbsolutePathBangFunction, absolute_path)
 

@@ -15,10 +15,10 @@ namespace Roo
    * (let [name "Cheech" age 54] body...)
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | Vector containing a variable name and variable value pairs |
-   * | 1...  | Body forms to execute with the temporary bindings          |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | bindings | Vector containing a variable name and variable value pairs         |
+   * | body...  | Body forms to execute with the temporary bindings                  |
    */
   SPECIAL_FORM_DECL(LetForm, let)
 
@@ -32,11 +32,11 @@ namespace Roo
    *   :missing)
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | Vector containing variable name and variable value pairs   |
-   * | 1     | Form to evaluate when all bound values are truthy          |
-   * | 2     | Optional form to evaluate otherwise                        |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | bindings | Vector containing variable name and variable value pairs           |
+   * | then     | Form to evaluate when all bound values are truthy                  |
+   * | else     | Optional form to evaluate otherwise                                |
    */
   SPECIAL_FORM_DECL(IfLetForm, if_let)
 
@@ -50,10 +50,10 @@ namespace Roo
    * (when-let [var value] body...)
    * @endcode
    *
-   * | Arg # | Description                                                |
-   * |-------|------------------------------------------------------------|
-   * | 0     | Vector containing variable name and variable value pairs   |
-   * | 1...  | Body forms to execute with the temporary bindings          |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | bindings | Vector containing variable name and variable value pairs           |
+   * | body...  | Body forms to execute with the temporary bindings                  |
    */
   SPECIAL_FORM_DECL(WhenLetForm, when_let)
 

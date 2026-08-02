@@ -16,10 +16,10 @@ namespace Roo
    * (append [1 2] 3 4 5)   => [1 2 3 4 5]
    * @endcode
    *
-   * | Arg #  | Description                              |
-   * |--------|------------------------------------------|
-   * | 0      | The vector to append to (nil = empty)    |
-   * | 1...   | Elements to append                       |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | vector    | The vector to append to (nil = empty)                              |
+   * | values... | Elements to append                                                 |
    */
   FUNC(AppendFunction, append)
 
@@ -32,10 +32,10 @@ namespace Roo
    * (append! v 3 4 5)   ; v is now [... 3 4 5]
    * @endcode
    *
-   * | Arg #  | Description                              |
-   * |--------|------------------------------------------|
-   * | 0      | The vector to mutate                     |
-   * | 1...   | Elements to append                       |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | vector    | The vector to mutate                                               |
+   * | values... | Elements to append                                                 |
    */
   FUNC(AppendBangFunction, append_bang)
 
@@ -47,7 +47,7 @@ namespace Roo
    * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
    *        (concat 1 2 [3 4]) => [1 2 3 4]
    *
-   * Param 0... - The sequences to splice together
+   * Param sequences... - The sequences to splice together
    */
   FUNC(ConcatFunction, concat)
 
@@ -59,7 +59,7 @@ namespace Roo
    * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
    *        (concat! [1] 2 [3 4]) => [1 2 3 4]
    *
-   * Param 0... - The sequences to splice together
+   * Param sequences... - The sequences to splice together
    */
   FUNC(ConcatBangFunction, concat_bang)
 
@@ -71,10 +71,10 @@ namespace Roo
    * (contains? my-vector "a value")
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The Seq to test                                                  |
-   * | 1     | The value to test for                                            |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | collection | The Seq to test                                                    |
+   * | value      | The value to test for                                              |
    */
   FUNC(ContainsPFunction, contains)
 
@@ -86,10 +86,10 @@ namespace Roo
    * (contains-any? [1 2 3] [0 3])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The Seq to test                                                  |
-   * | 1     | The Seq of values to test for                                    |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | collection | The Seq to test                                                    |
+   * | values     | The Seq of values to test for                                      |
    */
   FUNC(ContainsAnyPFunction, contains_any)
 
@@ -101,19 +101,19 @@ namespace Roo
    * (contains-all? [1 2 3] [1 3])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The Seq to test                                                  |
-   * | 1     | The Seq of values to test for                                    |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | collection | The Seq to test                                                    |
+   * | values     | The Seq of values to test for                                      |
    */
   FUNC(ContainsAllPFunction, contains_all)
 
   /*!
    * @brief Return the number of elements in a sequence or map.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Collection to count.                                             |
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | collection | Collection to count.                                               |
    */
   FUNC(CountFunction, count)
 
@@ -134,9 +134,9 @@ namespace Roo
    * (head []) => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to retrieve the head element from                   |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | The sequence to retrieve the head element from                     |
    */
   FUNC(HeadFunction, head)
 
@@ -149,19 +149,19 @@ namespace Roo
    * (last []) => nil
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to retrieve the last element from                   |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | The sequence to retrieve the last element from                     |
    */
   FUNC(LastFunction, last);
 
   /*!
    * @brief Return the element at an index in a sequence.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Sequence to read from.                                           |
-   * | 1     | Zero-based index to retrieve.                                    |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | Sequence to read from.                                             |
+   * | index    | Zero-based index to retrieve.                                      |
    */
   FUNC(NthFunction, nth);
 
@@ -187,9 +187,9 @@ namespace Roo
    * (rand-nth [0 1 2 3 4])
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The sequence to retrieve a random element from.                  |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | The sequence to retrieve a random element from.                    |
    */
   FUNC(RandNthFunction, rand_nth)
 
@@ -212,12 +212,12 @@ namespace Roo
    * => [-2 -1 0 1 2]
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The start number, inclusive. If only one argument is provided,   |
-   * |       | this is treated as the end number, and the start number is       |
-   * |       | assumed to be 0.                                                 |
-   * | 1     | The end number, exclusive. (Optional)                            |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | start | The start number, inclusive. If only one argument is provided,     |
+   * |       | this is treated as the end number, and the start number is         |
+   * |       | assumed to be 0.                                                   |
+   * | end   | The end number, exclusive. (Optional)                              |
    */
   FUNC(RangeFunction, range)
 
@@ -232,10 +232,10 @@ namespace Roo
    * => [1 3]
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq to copy                                                  |
-   * | 1     | The index of the element to omit                                 |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | The seq to copy                                                    |
+   * | index    | The index of the element to omit                                   |
    */
   FUNC(RemoveNthFunction, remove_nth)
 
@@ -250,10 +250,10 @@ namespace Roo
    * => [1 3]
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq to mutate                                                |
-   * | 1     | The index of the element to remove                               |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | The seq to mutate                                                  |
+   * | index    | The index of the element to remove                                 |
    */
   FUNC(RemoveNthBangFunction, remove_nth_bang)
 
@@ -284,9 +284,9 @@ namespace Roo
   /*!
    * @brief Return a sequence without its first element.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Sequence to read from.                                           |
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | sequence | Sequence to read from.                                             |
    */
   FUNC(TailFunction, tail)
 

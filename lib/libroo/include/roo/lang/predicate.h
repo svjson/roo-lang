@@ -19,11 +19,11 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     |Value to test                                                     |
-   * | 1     |Lower bounds, exclusive                                           |
-   * | 2     |Upper bounds, inclusive                                           |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Value to test                                                      |
+   * | lower | Lower bounds, exclusive                                            |
+   * | upper | Upper bounds, inclusive                                            |
    */
   FUNC(BetweenPredicateFunction, between);
 
@@ -48,9 +48,9 @@ namespace Roo
    * => false)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq or string to test                                        |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The seq or string to test                                          |
    */
   FUNC(EmptyPFunction, emptyp)
 
@@ -111,19 +111,19 @@ namespace Roo
    * => true)
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The seq or string to test                                        |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The seq or string to test                                          |
    */
   FUNC(NotEmptyPFunction, not_emptyp)
 
   /*!
    * @brief Test whether two values are not equal.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | Left hand side value.                                            |
-   * | 1     | Right hand side value.                                           |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side value.                                              |
+   * | right | Right hand side value.                                             |
    */
   FUNC(NotEqualsFunction, not_equals)
 
@@ -139,9 +139,9 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value whose type to query.                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose type to query.                                     |
    */
   FUNC(MapPFunction, map)
 
@@ -164,9 +164,9 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value whose type to query.                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose type to query.                                     |
    */
   FUNC(SeqPFunction, seq)
 
@@ -188,9 +188,9 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value whose type to query.                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose type to query.                                     |
    */
   FUNC(SequentialPFunction, sequential)
 
@@ -211,9 +211,9 @@ namespace Roo
    * => true
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The value whose type to query.                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose type to query.                                     |
    */
   FUNC(SeqablePFunction, seqable)
 
@@ -226,7 +226,7 @@ namespace Roo
    * => true
    * @endcode
    *
-   * Param 0: The expression, value or identifier to test
+   * Param value: The expression, value or identifier to test
    */
   FUNC(NilPFunction, is_nil)
 
@@ -262,7 +262,7 @@ namespace Roo
    * => false
    * @endcode
    *
-   * Param 0: The value to test
+   * Param value: The value to test
    */
   FUNC(SomePFunction, is_some)
 

@@ -14,10 +14,10 @@ namespace Roo
    * => "assets/config.edn"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The base path.                                                   |
-   * | 1     | The child path segment.                                          |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | base  | The base path.                                                     |
+   * | child | The child path segment.                                            |
    */
   FUNC(JoinPathFunction, join_path)
 
@@ -29,9 +29,9 @@ namespace Roo
    * (roo.io/parent-path "assets/config.edn") => "assets"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to inspect.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to inspect.                                               |
    */
   FUNC(ParentPathFunction, parent_path)
 
@@ -43,9 +43,9 @@ namespace Roo
    * (roo.io/basename "assets/config.edn") => "config.edn"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to inspect.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to inspect.                                               |
    */
   FUNC(BasenameFunction, basename)
 
@@ -57,9 +57,9 @@ namespace Roo
    * (roo.io/dirname "assets/config.edn") => "assets"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to inspect.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to inspect.                                               |
    */
   FUNC(DirnameFunction, dirname)
 
@@ -71,9 +71,9 @@ namespace Roo
    * (roo.io/extension "assets/config.edn") => ".edn"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path to inspect.                                             |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | The path to inspect.                                               |
    */
   FUNC(ExtensionFunction, extension)
 } // namespace Roo

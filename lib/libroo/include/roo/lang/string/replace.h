@@ -14,11 +14,11 @@ namespace Roo
    * => "Enchanted Club"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source string.                                               |
-   * | 1     | The literal substring to replace.                                |
-   * | 2     | The replacement string.                                          |
+   * | Arg         | Description                                                        |
+   * | ----------- | ------------------------------------------------------------------ |
+   * | source      | The source string.                                                 |
+   * | match       | The literal substring to replace.                                  |
+   * | replacement | The replacement string.                                            |
    */
   FUNC(StringReplaceFunction, replace)
 
@@ -31,11 +31,11 @@ namespace Roo
    * => "Enchanted Normal"
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source string.                                               |
-   * | 1     | The literal substring to replace.                                |
-   * | 2     | The replacement string.                                          |
+   * | Arg         | Description                                                        |
+   * | ----------- | ------------------------------------------------------------------ |
+   * | source      | The source string.                                                 |
+   * | match       | The literal substring to replace.                                  |
+   * | replacement | The replacement string.                                            |
    */
   FUNC(StringReplaceFirstFunction, replace_first)
 } // namespace Roo

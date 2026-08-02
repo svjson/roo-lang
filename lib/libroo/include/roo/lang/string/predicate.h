@@ -14,10 +14,10 @@ namespace Roo
    * (roo.string/ends-with? "abcdef" "bcd") => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source string.                                               |
-   * | 1     | The suffix to match.                                             |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | source | The source string.                                                 |
+   * | suffix | The suffix to match.                                               |
    */
   FUNC(StringEndsWithPFunction, ends_with_p)
 
@@ -30,10 +30,10 @@ namespace Roo
    * (roo.string/starts-with? "abcdef" "bcd") => false
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source string.                                               |
-   * | 1     | The prefix to match.                                             |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | source | The source string.                                                 |
+   * | prefix | The prefix to match.                                               |
    */
   FUNC(StringStartsWithPFunction, starts_with_p)
 } // namespace Roo
