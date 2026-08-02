@@ -7,7 +7,7 @@
   - `node`: A `roo.ast` node map.
 
   Returns:
-  The string form of the first child when `node` is a non-empty list; otherwise
+  The string form of the symbol head when `node` is a named list; otherwise
   `nil`."
   [node]
   (when (and (map? node)

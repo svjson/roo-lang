@@ -51,3 +51,7 @@
 (deftest does-not-report-required-value-do-forms
   (is (= []
          (diagnostics "assets/rules/redundant-do/required-value-do.roo"))))
+
+(deftest ignores-dynamic-call-heads
+  (is (= []
+         (diagnostics "assets/rules/redundant-do/dynamic-call-head.roo"))))
