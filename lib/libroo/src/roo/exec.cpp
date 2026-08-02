@@ -706,7 +706,8 @@ namespace Roo
                                                 Context& ctx,
                                                 const Namespace* home_ns,
                                                 AST::ASTNode& arg_vector,
-                                                sptr_ast_node_v& body)
+                                                sptr_ast_node_v& body,
+                                                const LowerContext* parent_lctx)
   {
     std::vector<Argument> arg_types;
     std::vector<std::unique_ptr<LexicalBinding>> arg_bindings;
@@ -761,6 +762,10 @@ namespace Roo
     node_body.reserve(body.size());
     LowerContext lctx{&ctx};
     lctx.push({});
+    if (parent_lctx)
+    {
+      lctx.copy_lexical_bindings_from(*parent_lctx);
+    }
     for (auto& arg_binding : arg_bindings)
     {
       lctx.add_lexical_binding(*arg_binding);

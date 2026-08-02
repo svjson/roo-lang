@@ -122,7 +122,8 @@ namespace Roo
                                                          *ctx.ctx,
                                                          ctx.ctx->get_current_namespace(),
                                                          *arg_vec,
-                                                         body);
+                                                         body,
+                                                         &ctx);
     sptr_val fn = Value::executable(func);
 
     return std::make_unique<ExecNode>(LambdaNode(func));

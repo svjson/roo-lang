@@ -416,7 +416,8 @@ namespace Roo
                                                 Context& ctx,
                                                 const Namespace* home_ns,
                                                 AST::ASTNode& arg_vector,
-                                                sptr_ast_node_v& body);
+                                                sptr_ast_node_v& body,
+                                                const LowerContext* parent_lctx = nullptr);
 
   std::shared_ptr<UserFunction> create_function(const Namespace* home_ns,
                                                 sptr_val_v& param_form,

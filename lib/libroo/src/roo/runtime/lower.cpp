@@ -63,6 +63,16 @@ namespace Roo
     frames.push_back(frame);
   }
 
+  void LowerContext::copy_lexical_bindings_from(const LowerContext& other)
+  {
+    for (auto& frame : other.frames)
+    {
+      frames.back().lexical_bindings.insert(frames.back().lexical_bindings.end(),
+                                            frame.lexical_bindings.begin(),
+                                            frame.lexical_bindings.end());
+    }
+  }
+
   void LowerContext::add_lexical_binding(const LexicalBinding& binding)
   {
     binding.append_bound_symbols(frames.back().lexical_bindings);

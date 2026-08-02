@@ -40,6 +40,7 @@ namespace Roo
 
     void push(const LCtxFrame& frame);
     void push_literal_mode();
+    void copy_lexical_bindings_from(const LowerContext& other);
     void add_lexical_binding(const LexicalBinding& binding);
     void add_lexical_binding(const RestBinding& binding);
     void pop();
