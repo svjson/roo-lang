@@ -51,15 +51,20 @@ if(ROO_BUILD_TESTS)
   set_tests_properties(proofread_cli_rejects_invalid_file PROPERTIES WILL_FAIL TRUE)
 
   add_test(
-    NAME proofread-cli-allows-style-warnings
+    NAME proofread_cli_allows_style_warnings
     COMMAND $<TARGET_FILE:roo_cli>
             ${PROOFREAD_TEST_PACKAGE}
             ${PROOFREAD_TEST_ASSETS}/style/redundant-do.roo
   )
+
+  add_test(
+    NAME proofread_rule_tests
+    COMMAND $<TARGET_FILE:roo_cli> proof
+  )
   set_tests_properties(
-    proofread-cli-allows-style-warnings
+    proofread_rule_tests
     PROPERTIES
-      PASS_REGULAR_EXPRESSION "redundant-do.roo:7:3: warning redundant-do: Redundant do form"
-      FAIL_REGULAR_EXPRESSION "redundant-do.roo:92:5: warning redundant-do"
+      WORKING_DIRECTORY "${PROOFREAD_TEST_PACKAGE}/test"
+      PASS_REGULAR_EXPRESSION "proof: 6 passed, 0 failed, 6 total"
   )
 endif()

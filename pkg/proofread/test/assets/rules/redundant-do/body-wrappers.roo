@@ -1,0 +1,36 @@
+(ns proofread.redundant-do-body-wrappers)
+
+(defun function-body []
+  (do
+    (prn "first")
+    (prn "second")))
+
+(def wrapped-lambda
+  (fn []
+    (do
+      (prn "first")
+      (prn "second"))))
+
+(def let-body
+  (let [value 42]
+    (do
+      (prn value)
+      value)))
+
+(def when-body
+  (when true
+    (do
+      (prn "first")
+      (prn "second"))))
+
+(def unless-body
+  (unless false
+    (do
+      (prn "first")
+      (prn "second"))))
+
+(def when-let-body
+  (when-let [value 42]
+    (do
+      (prn value)
+      value)))

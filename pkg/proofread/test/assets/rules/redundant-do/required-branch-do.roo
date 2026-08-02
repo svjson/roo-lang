@@ -1,0 +1,37 @@
+(ns proofread.required-branch-do)
+
+(def if-value
+  (if true
+    (do
+      (prn "then")
+      :then)
+    (do
+      (prn "else")
+      :else)))
+
+(def if-let-value
+  (if-let [value 42]
+    (do
+      (prn value)
+      value)
+    (do
+      (prn :missing)
+      nil)))
+
+(def case-value
+  (case :a
+    :a (do
+         (prn :a)
+         :a)
+    :default (do
+               (prn :default)
+               :default)))
+
+(def cond-value
+  (cond
+    true (do
+           (prn true)
+           true)
+    false (do
+            (prn false)
+            false)))

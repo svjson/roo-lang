@@ -1,0 +1,53 @@
+(ns proofread.rules.redundant-do-test
+  (:require proof.core
+            [proofread.rules.redundant-do :as redundant-do]
+            [roo.ast :as ast]))
+
+(defun diagnostics
+  "Run the redundant-do rule against a fixture source file.
+
+  Args:
+  - `path`: Fixture source path.
+
+  Returns:
+  A vector of diagnostic maps."
+  [path]
+  (flatten
+    (map (ast/slurp! path) redundant-do/check)))
+
+(defun diagnostic-lines
+  "Return diagnostic source lines for a fixture source file.
+
+  Args:
+  - `path`: Fixture source path.
+
+  Returns:
+  A vector of diagnostic line numbers."
+  [path]
+  (map (diagnostics path)
+       (fn [diagnostic]
+         (:line (:source diagnostic)))))
+
+(deftest reports-single-expression-do-forms
+  (is (= [4]
+         (diagnostic-lines "assets/rules/redundant-do/single-expression.roo"))))
+
+(deftest reports-do-forms-that-wrap-implicit-bodies
+  (is (= [4 10 16 22 28 34]
+         (diagnostic-lines "assets/rules/redundant-do/body-wrappers.roo"))))
+
+(deftest reports-do-forms-that-wrap-loop-bodies
+  (is (= [5 11 17 23 29 35]
+         (diagnostic-lines "assets/rules/redundant-do/loop-body-wrappers.roo"))))
+
+(deftest reports-nested-do-body-wrappers
+  (is (= [4 5]
+         (diagnostic-lines "assets/rules/redundant-do/nested-do.roo"))))
+
+(deftest does-not-report-required-branch-do-forms
+  (is (= []
+         (diagnostics "assets/rules/redundant-do/required-branch-do.roo"))))
+
+(deftest does-not-report-required-value-do-forms
+  (is (= []
+         (diagnostics "assets/rules/redundant-do/required-value-do.roo"))))

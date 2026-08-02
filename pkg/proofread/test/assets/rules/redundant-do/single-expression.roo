@@ -1,0 +1,4 @@
+(ns proofread.redundant-do-single-expression)
+
+(def value
+  (do 42))

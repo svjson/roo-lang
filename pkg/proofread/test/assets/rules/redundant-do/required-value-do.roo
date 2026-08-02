@@ -1,0 +1,6 @@
+(ns proofread.required-value-do)
+
+(def value
+  (do
+    (prn "value")
+    42))

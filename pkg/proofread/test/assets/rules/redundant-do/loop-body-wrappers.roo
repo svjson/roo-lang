@@ -1,0 +1,37 @@
+(ns proofread.redundant-do-loop-body-wrappers)
+
+(def dotimes-body
+  (dotimes [index 2]
+    (do
+      (prn index)
+      index)))
+
+(def for-body
+  (for [value [1 2]]
+    (do
+      (prn value)
+      value)))
+
+(def doseq-body
+  (doseq [value [1 2]]
+    (do
+      (prn value)
+      value)))
+
+(def for-indexed-body
+  (for-indexed [index value [1 2]]
+    (do
+      (prn index value)
+      value)))
+
+(def while-body
+  (while false
+    (do
+      (prn "first")
+      (prn "second"))))
+
+(def seeded-body
+  (with-random-seed 1
+    (do
+      (prn "first")
+      (prn "second"))))

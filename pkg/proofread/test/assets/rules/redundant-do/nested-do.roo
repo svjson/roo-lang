@@ -1,0 +1,7 @@
+(ns proofread.redundant-do-nested-do)
+
+(def nested-do
+  (do
+    (do
+      (prn "first")
+      (prn "second"))))
