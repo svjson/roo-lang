@@ -5,11 +5,12 @@ NATIVE_PACKAGE_STAGE := $(CURDIR)/build/native-package-stage/pkg
 ROO_LANG_INDEX_VERSION ?= $(shell cat $(CURDIR)/VERSION)
 ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/roo-symbols.edn
+ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
@@ -150,6 +151,10 @@ build-roo-lang-index: build-lookup
 install-lookup: build-lookup
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(PREFIX)/bin/$(LOOKUP_BINARY)
+
+install-roo-lang-index: build-roo-lang-index
+	cmake -E make_directory $(ROO_LANG_INDEX_INSTALL_DIR)
+	cmake -E copy_if_different $(ROO_LANG_INDEX_PATH) $(ROO_LANG_INDEX_INSTALL_DIR)/roo-symbols.edn
 
 build-proofread: build stage-native-packages
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-install --name proofread
