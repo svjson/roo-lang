@@ -1,0 +1,4 @@
+(ns app)
+
+(defun value []
+  42)

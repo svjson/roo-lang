@@ -44,6 +44,19 @@ namespace Roo::Proofread
       return extension == ".roo" || extension == ".edn";
     }
 
+    bool ignored_directory(const std::filesystem::path& path)
+    {
+      const std::string name = path.filename().string();
+      return name.empty() || name[0] == '.' || name == "build" ||
+             name.rfind("build-", 0) == 0 || name == "dist";
+    }
+
+    bool package_root(const std::filesystem::path& path)
+    {
+      std::error_code ec;
+      return std::filesystem::is_regular_file(path / "package.edn", ec);
+    }
+
     void append_file(std::vector<std::filesystem::path>& files,
                      std::set<std::string>& seen,
                      std::filesystem::path path)
@@ -54,6 +67,9 @@ namespace Roo::Proofread
         files.push_back(path);
       }
     }
+
+    void append_package_files(std::vector<std::filesystem::path>& files,
+                              const std::filesystem::path& root);
 
 #ifdef _WIN32
     std::string windows_error_message(DWORD error)
@@ -178,7 +194,19 @@ namespace Roo::Proofread
       while (entry != end)
       {
         const std::filesystem::path path = entry->path();
-        if (std::filesystem::is_regular_file(path, ec))
+        if (std::filesystem::is_directory(path, ec))
+        {
+          if (ignored_directory(path))
+          {
+            entry.disable_recursion_pending();
+          }
+          else if (package_root(path))
+          {
+            append_package_files(files, path);
+            entry.disable_recursion_pending();
+          }
+        }
+        else if (std::filesystem::is_regular_file(path, ec))
         {
           if (proofread_file(path))
           {
@@ -204,6 +232,26 @@ namespace Roo::Proofread
                 [](const auto& lhs, const auto& rhs)
                 { return lhs.generic_string() < rhs.generic_string(); });
       return files;
+    }
+
+    void append_package_files(std::vector<std::filesystem::path>& files,
+                              const std::filesystem::path& root)
+    {
+      std::error_code ec;
+      const std::filesystem::path manifest = root / "package.edn";
+      if (std::filesystem::is_regular_file(manifest, ec))
+      {
+        files.push_back(manifest.lexically_normal());
+      }
+
+      const std::filesystem::path src = root / "src";
+      if (std::filesystem::is_directory(src, ec))
+      {
+        for (const auto& file : directory_files(src))
+        {
+          files.push_back(file);
+        }
+      }
     }
 
     std::string read_file(const std::filesystem::path& path)
@@ -276,7 +324,16 @@ namespace Roo::Proofread
             std::error_code ec;
             if (std::filesystem::is_directory(path, ec))
             {
-              for (const auto& file : directory_files(path))
+              std::vector<std::filesystem::path> files_to_append;
+              if (package_root(path))
+              {
+                append_package_files(files_to_append, path);
+              }
+              else
+              {
+                files_to_append = directory_files(path);
+              }
+              for (const auto& file : files_to_append)
               {
                 append_file(files, seen, file);
               }
