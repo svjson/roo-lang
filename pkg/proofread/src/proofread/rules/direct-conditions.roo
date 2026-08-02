@@ -9,9 +9,10 @@
 
   Returns:
   The symbol name string, or `nil` when `node` is not a symbol."
-  [{:keys [type form]}]
-  (when (= type :symbol)
-    (str form)))
+  [node]
+  (when (and (map? node)
+             (= (:type node) :symbol))
+    (str (:form node))))
 
 (defun nil-node?
   "Test whether an AST node is the symbol `nil`.
@@ -153,13 +154,15 @@
   Returns:
   A vector of diagnostic maps."
   [parent node]
-  (concat
-    (when-let [node-diagnostic (direct-condition-diagnostic parent node)]
-      [node-diagnostic])
-    (flatten
-      (map (:children node)
-           (fn [child]
-             (check-node node child))))))
+  (if (map? node)
+    (concat
+      (when-let [node-diagnostic (direct-condition-diagnostic parent node)]
+        [node-diagnostic])
+      (flatten
+        (map (:children node)
+             (fn [child]
+               (check-node node child)))))
+    []))
 
 (defun check
   "Find direct-condition diagnostics beneath one AST root.

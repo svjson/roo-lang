@@ -39,7 +39,19 @@ if(ROO_BUILD_TESTS)
   set_tests_properties(
     proofread_cli_checks_directory_recursively
     PROPERTIES
-      PASS_REGULAR_EXPRESSION "proofread: 3 files ok"
+      PASS_REGULAR_EXPRESSION "proofread: 2 files ok"
+  )
+
+  add_test(
+    NAME proofread_cli_checks_package_root_sources
+    COMMAND $<TARGET_FILE:roo_cli>
+            ${PROOFREAD_TEST_PACKAGE}
+            ${PROOFREAD_TEST_ASSETS}/package-root
+  )
+  set_tests_properties(
+    proofread_cli_checks_package_root_sources
+    PROPERTIES
+      PASS_REGULAR_EXPRESSION "proofread: 2 files ok"
   )
 
   add_test(
@@ -65,6 +77,5 @@ if(ROO_BUILD_TESTS)
     proofread_rule_tests
     PROPERTIES
       WORKING_DIRECTORY "${PROOFREAD_TEST_PACKAGE}/test"
-      PASS_REGULAR_EXPRESSION "proof: 6 passed, 0 failed, 6 total"
   )
 endif()

@@ -22,3 +22,9 @@
     (if item
       item
       :missing)))
+
+(def dynamic-call-head
+  ((:run step)
+   {:work work
+    :data (:data work)
+    :step step}))
