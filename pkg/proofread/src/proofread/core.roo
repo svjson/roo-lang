@@ -1,37 +1,86 @@
 (ns proofread.core
   (:require [proofread.native :as native]
+            [proofread.style :as style]
             [roo.string :as string]))
 
-(def version "0.1.0")
+(def version
+  "Proofread command version."
+  "0.1.0")
 
-(defun usage []
+(defun usage
+  "Print the short proofread usage line.
+
+  Returns:
+  `nil`."
+  []
   (prn "Usage: proofread [--help|--version] <file|pattern>..."))
 
-(defun print-help []
+(defun print-help
+  "Print proofread help text.
+
+  Returns:
+  `nil`."
+  []
   (prn "proofread: check that Roo and EDN files parse")
   (usage))
 
-(defun print-version []
+(defun print-version
+  "Print the proofread version line.
+
+  Returns:
+  `nil`."
+  []
   (prn (str "proofread " version)))
 
-(defun report-ok [checked-count]
+(defun report-ok
+  "Print the successful parse-check summary.
+
+  Args:
+  - `checked-count`: Number of files that parsed successfully.
+
+  Returns:
+  `checked-count`."
+  [checked-count]
   (prn (str "proofread: " checked-count " file"
-            (if (= checked-count 1) "" "s")
+            (case checked-count
+              1 ""
+              :default "s")
             " ok"))
   checked-count)
 
-(defun help-option? [arg]
-  (contains? ["--help" "-h"] arg))
+(defun check!
+  "Run proofread checks for CLI file and pattern arguments.
 
-(defun main [args]
-  (let [first-arg (nth args 0)]
+  Args:
+  - `args`: Command line file paths and shell-style patterns.
+
+  Returns:
+  The number of successfully parsed files."
+  [args]
+  (let [files (native/files! args)
+        checked-count (native/check-files! files)]
+    (style/print-diagnostics!
+      (flatten
+        (map files style/check-file)))
+    (report-ok checked-count)))
+
+(defun main
+  "Run the proofread command line entry point.
+
+  Args:
+  - `args`: Command line arguments.
+
+  Returns:
+  `nil` for help/version commands or the successful parse-check count."
+  [args]
+  (let [first-arg (head args)]
     (cond
       (nil? first-arg)
       (do
         (usage)
         (native/fail! "No files or patterns provided."))
 
-      (help-option? first-arg)
+      (contains? ["--help" "-h"] first-arg)
       (print-help)
 
       (= first-arg "--version")
@@ -43,4 +92,4 @@
         (native/fail! (str "Unknown option: " first-arg)))
 
       true
-      (report-ok (native/check! args)))))
+      (check! args))))

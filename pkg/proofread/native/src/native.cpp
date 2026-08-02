@@ -199,6 +199,85 @@ namespace Roo::Proofread
       return values;
     }
 
+    std::vector<std::filesystem::path> collect_files(
+      const std::vector<std::string>& patterns,
+      std::vector<std::string>& errors)
+    {
+      std::vector<std::filesystem::path> files;
+      std::set<std::string> seen;
+
+      for (const auto& pattern : patterns)
+      {
+        try
+        {
+          for (auto path : expand_pattern(pattern))
+          {
+            path = path.lexically_normal();
+            if (seen.insert(path.string()).second)
+            {
+              files.push_back(path);
+            }
+          }
+        }
+        catch (const std::exception& e)
+        {
+          errors.push_back(e.what());
+        }
+      }
+
+      if (files.empty() && errors.empty())
+      {
+        errors.push_back("No files matched.");
+      }
+
+      return files;
+    }
+
+    size_t check_files(const std::vector<std::filesystem::path>& files,
+                       std::vector<std::string>& errors)
+    {
+      SourceMap source_map;
+      size_t checked_count = 0;
+      for (const auto& file : files)
+      {
+        try
+        {
+          check_file(file, source_map);
+          checked_count++;
+        }
+        catch (const std::exception& e)
+        {
+          errors.push_back(file.string() + ": " + e.what());
+        }
+      }
+      return checked_count;
+    }
+
+    void fail_with_errors(const std::vector<std::string>& errors)
+    {
+      if (errors.empty())
+      {
+        return;
+      }
+
+      for (const auto& error : errors)
+      {
+        std::cerr << error << "\n";
+      }
+      throw RooException("proofread: checks failed");
+    }
+
+    sptr_val file_vector(const std::vector<std::filesystem::path>& files)
+    {
+      sptr_val_v values;
+      values.reserve(files.size());
+      for (const auto& file : files)
+      {
+        values.push_back(Value::string(file.string()));
+      }
+      return Value::vector(std::move(values));
+    }
+
     class FailFunction : public Function
     {
      public:
@@ -226,58 +305,60 @@ namespace Roo::Proofread
       sptr_val exec_check(Context&, sptr_val_v& args)
       {
         const std::vector<std::string> patterns = string_args(args[0]);
-        std::vector<std::filesystem::path> files;
-        std::set<std::string> seen;
         std::vector<std::string> errors;
+        const std::vector<std::filesystem::path> files = collect_files(patterns, errors);
+        const size_t checked_count = check_files(files, errors);
+        fail_with_errors(errors);
+        return Value::number(static_cast<int>(checked_count));
+      }
+    };
 
-        for (const auto& pattern : patterns)
+    class FilesFunction : public Function
+    {
+     public:
+      FilesFunction()
+        : Function(
+            SIG((FN_ARGS((&Type::VECTOR)), EXEC_DISPATCH(&FilesFunction::exec_files))))
+      {
+      }
+
+      static sptr_val make() { return Value::executable(std::make_shared<FilesFunction>()); }
+
+      sptr_val exec_files(Context&, sptr_val_v& args)
+      {
+        std::vector<std::string> errors;
+        std::vector<std::filesystem::path> files =
+          collect_files(string_args(args[0]), errors);
+        fail_with_errors(errors);
+        return file_vector(files);
+      }
+    };
+
+    class CheckFilesFunction : public Function
+    {
+     public:
+      CheckFilesFunction()
+        : Function(SIG((FN_ARGS((&Type::VECTOR)),
+                        EXEC_DISPATCH(&CheckFilesFunction::exec_check_files))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<CheckFilesFunction>());
+      }
+
+      sptr_val exec_check_files(Context&, sptr_val_v& args)
+      {
+        std::vector<std::filesystem::path> files;
+        for (const auto& file : string_args(args[0]))
         {
-          try
-          {
-            for (auto path : expand_pattern(pattern))
-            {
-              path = path.lexically_normal();
-              if (seen.insert(path.string()).second)
-              {
-                files.push_back(path);
-              }
-            }
-          }
-          catch (const std::exception& e)
-          {
-            errors.push_back(e.what());
-          }
+          files.emplace_back(file);
         }
 
-        SourceMap source_map;
-        size_t checked_count = 0;
-        for (const auto& file : files)
-        {
-          try
-          {
-            check_file(file, source_map);
-            checked_count++;
-          }
-          catch (const std::exception& e)
-          {
-            errors.push_back(file.string() + ": " + e.what());
-          }
-        }
-
-        if (checked_count == 0 && errors.empty())
-        {
-          errors.push_back("No files matched.");
-        }
-
-        if (!errors.empty())
-        {
-          for (const auto& error : errors)
-          {
-            std::cerr << error << "\n";
-          }
-          throw RooException("proofread: checks failed");
-        }
-
+        std::vector<std::string> errors;
+        const size_t checked_count = check_files(files, errors);
+        fail_with_errors(errors);
         return Value::number(static_cast<int>(checked_count));
       }
     };
@@ -288,7 +369,9 @@ namespace Roo::Proofread
     auto ns = std::make_unique<Namespace>("proofread.native");
     ns->set_origin(Namespace::Origin::native());
     ns->store("check!", CheckFunction::make());
+    ns->store("check-files!", CheckFilesFunction::make());
     ns->store("fail!", FailFunction::make());
+    ns->store("files!", FilesFunction::make());
     return ns;
   }
 

@@ -37,4 +37,11 @@ if(ROO_BUILD_TESTS)
             ${PROOFREAD_TEST_ASSETS}/invalid/broken.roo
   )
   set_tests_properties(proofread_cli_rejects_invalid_file PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
+    NAME proofread-cli-allows-style-warnings
+    COMMAND $<TARGET_FILE:roo_cli>
+            ${PROOFREAD_TEST_PACKAGE}
+            ${PROOFREAD_TEST_ASSETS}/style/redundant-do.roo
+  )
 endif()

@@ -1,0 +1,56 @@
+(ns proofread.style
+  (:require [proofread.rules.redundant-do :as redundant-do]
+            [roo.ast :as ast]
+            [roo.io :as io]))
+
+(defun check-file
+  "Run Roo style checks for one source file.
+
+  Args:
+  - `file`: Path to a checked input file.
+
+  Returns:
+  A vector of diagnostic maps. Non-`.roo` files return an empty vector because
+  style rules apply only to Roo source, not EDN data."
+  [file]
+  (case (io/extension file)
+    ".roo"
+    (flatten
+      (map (ast/slurp! file) redundant-do/check))
+
+    :default
+    []))
+
+(defun diagnostic-line
+  "Format one diagnostic for CLI output.
+
+  Args:
+  - `diagnostic`: A diagnostic map from a style rule.
+
+  Returns:
+  A single warning line containing source, severity, rule, and message."
+  [diagnostic]
+  (str (:path (:source diagnostic))
+       ":"
+       (:line (:source diagnostic))
+       ":"
+       (:column (:source diagnostic))
+       ": "
+       (name (:severity diagnostic))
+       " "
+       (name (:rule diagnostic))
+       ": "
+       (:message diagnostic)))
+
+(defun print-diagnostics!
+  "Print all style diagnostics.
+
+  Args:
+  - `diagnostics`: A vector of diagnostic maps.
+
+  Returns:
+  The diagnostics vector."
+  [diagnostics]
+  (map diagnostics (fn [diagnostic]
+                     (prn (diagnostic-line diagnostic))))
+  diagnostics)
