@@ -20,20 +20,27 @@
             " ok"))
   checked-count)
 
+(defun help-option? [arg]
+  (contains? ["--help" "-h"] arg))
+
 (defun main [args]
-  (let [first-arg (if (= 0 (count args)) nil (nth args 0))]
-    (if (nil? first-arg)
+  (let [first-arg (nth args 0)]
+    (cond
+      (nil? first-arg)
       (do
         (usage)
         (native/fail! "No files or patterns provided."))
-      (if (= first-arg "--help")
-        (print-help)
-        (if (= first-arg "-h")
-          (print-help)
-          (if (= first-arg "--version")
-            (print-version)
-            (if (string/starts-with? first-arg "--")
-              (do
-                (usage)
-                (native/fail! (str "Unknown option: " first-arg)))
-              (report-ok (native/check! args)))))))))
+
+      (help-option? first-arg)
+      (print-help)
+
+      (= first-arg "--version")
+      (print-version)
+
+      (string/starts-with? first-arg "--")
+      (do
+        (usage)
+        (native/fail! (str "Unknown option: " first-arg)))
+
+      true
+      (report-ok (native/check! args)))))
