@@ -88,6 +88,74 @@
                     :zoology/ref :place-relation}}
            (schema/resolved-root-schema schema-doc)))))
 
+(deftest schema-narrows-union-variants-at-reference-use-site
+  (let [schema-doc {:definitions
+                    {:rule-base
+                     {:type :object
+                      :fields {:type {:type :keyword
+                                      :valid-values
+                                      {:values [:edge
+                                                :inside-area
+                                                :distance-range]}}
+                               :id {:type :keyword}}}
+                     :edge-rule
+                     {:extends :rule-base
+                      :fields {:target {:type :keyword}}}
+                     :inside-area-rule
+                     {:extends :rule-base
+                      :fields {:area {:type :keyword}}}
+                     :distance-range-rule
+                     {:extends :rule-base
+                      :fields {:distance {:type :number}}}
+                     :placement-rule
+                     {:type :union
+                      :discriminator :type
+                      :base {:ref :rule-base}
+                      :variants {:edge {:ref :edge-rule}
+                                 :inside-area {:ref :inside-area-rule}
+                                 :distance-range
+                                 {:ref :distance-range-rule}}}}
+                    :schema
+                    {:type :array
+                     :items {:ref :placement-rule
+                             :variants [:edge :inside-area]}}}
+        only-schema-doc (assoc-in schema-doc
+                                  [:schema :items :variants]
+                                  {:only [:inside-area
+                                          :distance-range]})
+        except-schema-doc (assoc-in schema-doc
+                                    [:schema :items :variants]
+                                    {:except [:distance-range]})
+        root (schema/resolved-root-schema schema-doc)
+        item-schema (:items root)
+        item-document (schema/schema-document-with-root schema-doc item-schema)
+        only-item-schema (:items (schema/resolved-root-schema
+                                  only-schema-doc))
+        except-item-schema (:items (schema/resolved-root-schema
+                                    except-schema-doc))]
+    (is (= [:edge :inside-area]
+           (keys (:variants item-schema))))
+    (is (= {:values [:edge :inside-area]}
+           (get-in item-schema [:base :fields :type :valid-values])))
+    (is (= {:values [:edge :inside-area]}
+           (get-in item-schema
+                   [:variants :edge :fields :type :valid-values])))
+    (is (= [:type :id :target]
+           (schema/active-schema-field-ids item-document
+                                           {:type :edge})))
+    (is (= [:type :id]
+           (schema/active-schema-field-ids item-document
+                                           {:type :distance-range})))
+    (is (= [:inside-area :distance-range]
+           (keys (:variants only-item-schema))))
+    (is (= {:values [:inside-area :distance-range]}
+           (get-in only-item-schema [:base :fields :type :valid-values])))
+    (is (= [:edge :inside-area]
+           (keys (:variants except-item-schema))))
+    (is (= {:values [:edge :inside-area]}
+           (get-in except-item-schema
+                   [:base :fields :type :valid-values])))))
+
 (deftest prepared-schema-preserves-schema-behavior
   (let [schema-doc {:definitions
                     {:base {:type :object

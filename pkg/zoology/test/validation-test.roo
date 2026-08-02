@@ -118,6 +118,57 @@
                      schema-doc
                      {:type :unknown}))))))
 
+(deftest validation-rejects-union-variants-outside-reference-use-site
+  (let [schema-doc {:definitions
+                    {:rule-base
+                     {:type :object
+                      :fields {:type {:type :keyword
+                                      :required true
+                                      :valid-values
+                                      {:values [:edge
+                                                :inside-area
+                                                :distance-range]}}}}
+                     :edge-rule
+                     {:extends :rule-base
+                      :fields {:target {:type :keyword
+                                        :required true}}}
+                     :inside-area-rule
+                     {:extends :rule-base
+                      :fields {:area {:type :keyword
+                                      :required true}}}
+                     :distance-range-rule
+                     {:extends :rule-base
+                      :fields {:distance {:type :number
+                                          :required true}}}
+                     :placement-rule
+                     {:type :union
+                      :discriminator :type
+                      :base {:ref :rule-base}
+                      :variants {:edge {:ref :edge-rule}
+                                 :inside-area {:ref :inside-area-rule}
+                                 :distance-range
+                                 {:ref :distance-range-rule}}}}
+                    :schema
+                    {:type :array
+                     :items {:ref :placement-rule
+                             :variants {:except [:distance-range]}}}}
+        valid-result (validation/validate
+                      schema-doc
+                      [{:type :edge
+                        :target :forest-border}])
+        invalid-result (validation/validate
+                        schema-doc
+                        [{:type :distance-range
+                          :distance 3}])]
+    (is (= true (:valid? valid-result)))
+    (is (= false (:valid? invalid-result)))
+    (is (= {:value
+            [{:rule :array
+              :errors {0 {:type [{:rule :valid-values
+                                  :allowed [:edge :inside-area]
+                                  :actual :distance-range}]}}}]}
+           (:errors invalid-result)))))
+
 (deftest validate-resolves-field-definition-references
   (let [schema-doc {:definitions
                     {:stable-role

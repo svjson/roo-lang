@@ -75,6 +75,77 @@
                                            field-schema
                                            seen-refs)))))
 
+(defun selected-union-variant-ids [variants selector]
+  (cond
+    (sequential? selector)
+    selector
+
+    (and (map? selector)
+         (contains? selector :only))
+    (or (:only selector) [])
+
+    (and (map? selector)
+         (contains? selector :except))
+    (filter (keys variants)
+            (fn [variant-id]
+              (not (contains? (or (:except selector) []) variant-id))))
+
+    :default nil))
+
+(defun discriminator-field-id [fields discriminator]
+  (let [discriminator-path (if (sequential? discriminator)
+                             discriminator
+                             [discriminator])]
+    (reduce-kv (or fields {})
+               nil
+               (fn [matched field-id field-schema]
+                 (or matched
+                     (when (= discriminator-path
+                              (field-path field-id field-schema))
+                       field-id))))))
+
+(defun schema-node-with-discriminator-values
+  [schema-node discriminator variant-ids]
+  (let [field-id (discriminator-field-id (:fields schema-node)
+                                         discriminator)]
+    (if field-id
+      (assoc-in schema-node
+                [:fields field-id :valid-values]
+                {:values variant-ids})
+      schema-node)))
+
+(defun narrow-union-schema [union-schema variant-ids]
+  (if (and (= (:type union-schema) :union)
+           (not (nil? variant-ids)))
+    (let [variants (reduce variant-ids
+                           {}
+                           (fn [selected variant-id]
+                             (if (contains? (:variants union-schema)
+                                            variant-id)
+                               (assoc selected
+                                      variant-id
+                                      (get (:variants union-schema)
+                                           variant-id))
+                               selected)))
+          discriminator-values (keys variants)]
+      (assoc union-schema
+             :base
+             (schema-node-with-discriminator-values
+              (:base union-schema)
+              (:discriminator union-schema)
+              discriminator-values)
+             :variants
+             (reduce-kv variants
+                        {}
+                        (fn [result variant-id variant-schema]
+                          (assoc result
+                                 variant-id
+                                 (schema-node-with-discriminator-values
+                                  variant-schema
+                                  (:discriminator union-schema)
+                                  discriminator-values))))))
+    union-schema))
+
 (defun resolve-nested-schema [schema resolved seen-refs]
   (cond
     (not (map? resolved))
@@ -111,12 +182,19 @@
       (if (or (nil? definition)
               (contains? seen-refs ref-id))
         schema-node
-        (assoc (merge (resolve-schema-node schema
-                                           definition
-                                           next-seen-refs)
-                      (dissoc schema-node :ref))
-               :zoology/ref
-               ref-id)))
+        (let [resolved-definition (resolve-schema-node schema
+                                                       definition
+                                                       next-seen-refs)
+              variant-ids (when (= (:type resolved-definition) :union)
+                            (selected-union-variant-ids
+                             (:variants resolved-definition)
+                             (:variants schema-node)))]
+          (assoc (merge (narrow-union-schema resolved-definition variant-ids)
+                        (if (nil? variant-ids)
+                          (dissoc schema-node :ref)
+                          (dissoc schema-node :ref :variants)))
+                 :zoology/ref
+                 ref-id))))
 
     (contains? schema-node :extends)
     (resolve-nested-schema
