@@ -6,7 +6,7 @@ ci-help:
 
 include Makefile
 
-.PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-test-support ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-workbook ci-test-footsteps ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-proofread
+.PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-audit-roo-lang-index ci-test-support ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-workbook ci-test-footsteps ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-proofread
 
 ci-build-libroo: configure
 	cmake --build build --target roo_static roo_shared
@@ -34,6 +34,8 @@ ci-build-proof:
 
 ci-build-proofread:
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-build --name proofread
+
+ci-audit-roo-lang-index: audit-roo-lang-index
 
 ci-test-support:
 	cmake --build build --target testsupport

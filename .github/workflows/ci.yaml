@@ -882,3 +882,79 @@ jobs:
 
       - name: Build Proofread binary
         run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/proofread --build-dir build/proofread-build --name proofread
+
+  audit-roo-lang-index:
+    name: Audit roo-lang index ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+      - test-lookup-cli
+      - build-package-binaries
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      ROO_CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+      ROO_CMAKE_C_COMPILER: ${{ matrix.c_compiler }}
+      ROO_CMAKE_CXX_COMPILER: ${{ matrix.cxx_compiler }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Build Lookup binary
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/lookup --build-dir build/lookup-audit --name lookup
+
+      - name: Build Roo language index
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          index_dir="$GITHUB_WORKSPACE/build/indexes/roo-lang/$version"
+          cmake -E make_directory "$index_dir"
+          "$GITHUB_WORKSPACE/build/lookup-audit/build/lookup${{ runner.os == 'Windows' && '.exe' || '' }}" index \
+            --root lib/libroo/include/roo/lang \
+            --root lib/libroo/src/roo/lang \
+            -o "$index_dir/roo-symbols.edn"
+
+      - name: Audit Roo language index
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          index_path="$GITHUB_WORKSPACE/build/indexes/roo-lang/$version/roo-symbols.edn"
+          "$GITHUB_WORKSPACE/build/lookup-audit/build/lookup${{ runner.os == 'Windows' && '.exe' || '' }}" audit \
+            --output-format text \
+            --require-summary \
+            --require-param-docs \
+            --require-signatures \
+            --allow-zero-arity roo.io/current-directory! \
+            --allow-zero-arity roo.io/home-directory! \
+            --allow-zero-arity roo/epoch-ms \
+            --fail-on warning \
+            "$index_path"

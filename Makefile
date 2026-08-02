@@ -6,11 +6,20 @@ ROO_LANG_INDEX_VERSION ?= $(shell cat $(CURDIR)/VERSION)
 ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/roo-symbols.edn
 ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
+ROO_LANG_INDEX_AUDIT_FLAGS := \
+	--output-format text \
+	--require-summary \
+	--require-param-docs \
+	--require-signatures \
+	--allow-zero-arity roo.io/current-directory! \
+	--allow-zero-arity roo.io/home-directory! \
+	--allow-zero-arity roo/epoch-ms \
+	--fail-on warning
 
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-workbook install-footsteps release test test\:all test\:support test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-workbook install-footsteps release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
@@ -146,18 +155,22 @@ install-proof: build-proof
 	cmake -E copy_if_different $(NATIVE_PACKAGE_STAGE)/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
 	$(call SET_PACKAGE_NATIVE_RPATH,$(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY))
 
-build-lookup: build stage-native-packages
+build-lookup: configure
+	cmake --build build --target rooc_cli stage_native_packages
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup
 
 build-roo-lang-index: build-lookup
 	cmake -E make_directory $(ROO_LANG_INDEX_DIR)
 	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang -o $(ROO_LANG_INDEX_PATH)
 
+audit-roo-lang-index: build-roo-lang-index
+	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) audit $(ROO_LANG_INDEX_AUDIT_FLAGS) $(ROO_LANG_INDEX_PATH)
+
 install-lookup: build-lookup
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(PREFIX)/bin/$(LOOKUP_BINARY)
 
-install-roo-lang-index: build-roo-lang-index
+install-roo-lang-index: audit-roo-lang-index
 	cmake -E make_directory $(ROO_LANG_INDEX_INSTALL_DIR)
 	cmake -E copy_if_different $(ROO_LANG_INDEX_PATH) $(ROO_LANG_INDEX_INSTALL_DIR)/roo-symbols.edn
 
@@ -183,10 +196,10 @@ install-footsteps: build
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
 
-test: test\:support test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc
+test: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:rooc
 test: test\:cli
 
-test\:all: test\:support test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:server
+test\:all: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:rooc test\:cli test\:server
 
 test\:support: build
 	cmake --build build --target testsupport
@@ -204,6 +217,11 @@ test\:proof: build
 	cmake --build build --target testproof
 	./build/$(PROOF_TEST_BINARY) $(GTEST_FILTER_ARG)
 	cd $(NATIVE_PACKAGE_STAGE)/proof/test && $(CURDIR)/build/roo proof
+
+test\:proofread: configure
+	cmake --build build --target roo_cli
+	cmake --build build --target stage_native_packages
+	cd $(NATIVE_PACKAGE_STAGE)/proofread/test && $(CURDIR)/build/roo proof
 
 test\:workbook: build stage-native-packages
 	cd $(NATIVE_PACKAGE_STAGE)/workbook/test && $(CURDIR)/build/roo proof
