@@ -7,13 +7,13 @@
 #include <limits>
 #include <string>
 
+#include <roo/data/string_literal.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/form.h>
 #include <roo/host/object.h>
 #include <roo/impl.h>
 #include <roo/runtime/pool.h>
-#include <roo/data/string_literal.h>
 
 namespace Roo
 {
@@ -1157,9 +1157,12 @@ namespace Roo
     case Value::Type::STRING:
     case Value::Type::VECTOR:
     case Value::Type::MAP:
+    case Value::Type::LIST:
       return true;
     case Value::Type::NIL:
       return false;
+    case Value::Type::ANY:
+      throw RooException("is_truthy: ANY is not a value");
     default:
       throw RooException("is_truthy: Unsupported value type: #" +
                          std::to_string(static_cast<int>(val.type)));
