@@ -529,26 +529,26 @@ namespace Roo
     AST::Symbol identifier(identifier_s);
     if (identifier.is_qualified())
     {
+      if (const sptr_val* result = current_namespace->find(identifier.to_string()))
+      {
+        return result;
+      }
+
       Namespace* _ns = ns(identifier.get_qualifier());
       if (_ns)
       {
         return _ns->find(identifier.get_identifier());
       }
 
-      if (const sptr_val* result = current_namespace->find(identifier.to_string()))
-      {
-        return result;
-      }
-
       return nullptr;
     }
 
-    if (const sptr_val* lang_obj = language_namespace().find(identifier.get_identifier()))
+    if (const sptr_val* value = current_namespace->find(identifier.get_identifier()))
     {
-      return lang_obj;
+      return value;
     }
 
-    return current_namespace->find(identifier.get_identifier());
+    return language_namespace().find(identifier.get_identifier());
   }
 
   const sptr_val& Runtime::lookup(const Value& identifier)

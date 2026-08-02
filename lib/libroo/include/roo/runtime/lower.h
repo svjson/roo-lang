@@ -3,12 +3,16 @@
 #define ROO__LOWER_H
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include <roo/export.h>
 #include <roo/runtime/node.h>
 
 namespace Roo
 {
+  class RestBinding;
+
   extern ROO_API int lowered_expressions;
   extern ROO_API int lowered_literals;
   extern ROO_API int lower_time_exec_resolutions;
@@ -18,8 +22,12 @@ namespace Roo
 
   struct LCtxFrame
   {
+    LCtxFrame() = default;
+    LCtxFrame(bool allow_lookup, bool literal_mode = false);
+
     bool allow_lookup = false;
     bool literal_mode = false;
+    std::vector<std::string> lexical_bindings;
   };
 
   struct LowerContext
@@ -28,9 +36,12 @@ namespace Roo
     std::vector<LCtxFrame> frames = {{false}};
     bool is_allow_lookup() const;
     bool is_literal_mode() const;
+    bool is_lexically_bound(const std::string& identifier) const;
 
     void push(const LCtxFrame& frame);
     void push_literal_mode();
+    void add_lexical_binding(const LexicalBinding& binding);
+    void add_lexical_binding(const RestBinding& binding);
     void pop();
   };
 

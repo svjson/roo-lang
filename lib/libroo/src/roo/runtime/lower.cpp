@@ -1,6 +1,9 @@
 
 #include "roo/runtime/lower.h"
 
+#include <algorithm>
+
+#include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
@@ -21,6 +24,12 @@ namespace Roo
    */
   int deprecated_special_form_invocations = 0;
 
+  LCtxFrame::LCtxFrame(bool allow_lookup, bool literal_mode)
+    : allow_lookup(allow_lookup)
+    , literal_mode(literal_mode)
+  {
+  }
+
   bool LowerContext::is_allow_lookup() const
   {
     return frames.back().allow_lookup;
@@ -31,6 +40,19 @@ namespace Roo
     return frames.back().literal_mode;
   }
 
+  bool LowerContext::is_lexically_bound(const std::string& identifier) const
+  {
+    for (auto frame = frames.rbegin(); frame != frames.rend(); ++frame)
+    {
+      auto& bindings = frame->lexical_bindings;
+      if (std::find(bindings.begin(), bindings.end(), identifier) != bindings.end())
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   void LowerContext::push_literal_mode()
   {
     frames.push_back({false, true});
@@ -39,6 +61,16 @@ namespace Roo
   void LowerContext::push(const LCtxFrame& frame)
   {
     frames.push_back(frame);
+  }
+
+  void LowerContext::add_lexical_binding(const LexicalBinding& binding)
+  {
+    binding.append_bound_symbols(frames.back().lexical_bindings);
+  }
+
+  void LowerContext::add_lexical_binding(const RestBinding& binding)
+  {
+    binding.append_bound_symbols(frames.back().lexical_bindings);
   }
 
   void LowerContext::pop()
@@ -108,26 +140,29 @@ namespace Roo
         try
         {
           const AST::Symbol& symbol = obj->as<AST::Symbol>();
-          const sptr_val* found =
-            symbol.is_qualified()
-              ? ctx.ctx->find(symbol.to_string())
-              : ctx.ctx->get_current_namespace()->find(symbol.get_identifier());
-          if (found)
+          const std::string symbol_name = symbol.to_string();
+          if (!ctx.is_lexically_bound(symbol_name))
           {
-            static_val = *found;
+            const sptr_val* found =
+              symbol.is_qualified()
+                ? ctx.ctx->find(symbol_name)
+                : ctx.ctx->get_current_namespace()->find(symbol.get_identifier());
+            if (found)
+            {
+              static_val = *found;
+            }
+            if (!static_val)
+            {
+              if (const sptr_val* found = ctx.ctx->lang().find(symbol.get_identifier()))
+              {
+                static_val = *found;
+              }
+            }
           }
         }
         catch (const IdentifierException&)
         {
           static_val = nullptr;
-        }
-        if (!static_val)
-        {
-          if (const sptr_val* found =
-                ctx.ctx->lang().find(obj->as<AST::Symbol>().get_identifier()))
-          {
-            static_val = *found;
-          }
         }
         if (static_val)
         {

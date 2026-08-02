@@ -1,6 +1,9 @@
 #ifndef ROO_BIND__H
 #define ROO_BIND__H
 
+#include <string>
+#include <vector>
+
 #include <roo/runtime/node.h>
 
 namespace Roo
@@ -33,6 +36,7 @@ namespace Roo
     virtual ~LexicalBinding() = default;
 
     virtual void apply(Scope& scope, const sptr_val& value) const = 0;
+    virtual void append_bound_symbols(std::vector<std::string>& symbols) const = 0;
 
     static std::unique_ptr<LexicalBinding> create(LiteralNode& pattern);
     static std::unique_ptr<LexicalBinding> create(sptr_val& pattern);
@@ -49,6 +53,7 @@ namespace Roo
     SymbolBinding(const SymbolBinding& other);
 
     void apply(Scope& scope, const sptr_val& value_expr) const override;
+    void append_bound_symbols(std::vector<std::string>& symbols) const override;
 
     std::unique_ptr<LexicalBinding> clone() const override;
   };
@@ -63,6 +68,7 @@ namespace Roo
     MapDestructureBinding(const MapDestructureBinding& other);
 
     void apply(Scope& scope, const sptr_val& value_expr) const override;
+    void append_bound_symbols(std::vector<std::string>& symbols) const override;
 
     std::unique_ptr<LexicalBinding> clone() const override;
   };
@@ -76,6 +82,7 @@ namespace Roo
     VectorDestructureBinding(const VectorDestructureBinding& other);
 
     void apply(Scope& scope, const sptr_val& value_expr) const override;
+    void append_bound_symbols(std::vector<std::string>& symbols) const override;
 
     std::unique_ptr<LexicalBinding> clone() const override;
   };
@@ -96,6 +103,7 @@ namespace Roo
     RestBinding(const RestBinding& other);
 
     void apply(Scope& scope, const sptr_val_v& values) const;
+    void append_bound_symbols(std::vector<std::string>& symbols) const;
 
     std::unique_ptr<RestBinding> clone() const;
   };

@@ -70,6 +70,11 @@ namespace Roo
     scope.store(symbol, value_expr);
   }
 
+  void SymbolBinding::append_bound_symbols(std::vector<std::string>& symbols) const
+  {
+    symbols.push_back(symbol);
+  }
+
   std::unique_ptr<LexicalBinding> SymbolBinding::clone() const
   {
     return std::make_unique<SymbolBinding>(symbol);
@@ -145,6 +150,19 @@ namespace Roo
     }
   }
 
+  void MapDestructureBinding::append_bound_symbols(std::vector<std::string>& symbols) const
+  {
+    for (auto& binding : bindings)
+    {
+      std::get<1>(binding)->append_bound_symbols(symbols);
+    }
+
+    if (map_symbol)
+    {
+      map_symbol->append_bound_symbols(symbols);
+    }
+  }
+
   std::unique_ptr<LexicalBinding> MapDestructureBinding::clone() const
   {
     return std::make_unique<MapDestructureBinding>(*this);
@@ -186,6 +204,15 @@ namespace Roo
     }
   }
 
+  void VectorDestructureBinding::append_bound_symbols(
+    std::vector<std::string>& symbols) const
+  {
+    for (auto& binding : bindings)
+    {
+      binding->append_bound_symbols(symbols);
+    }
+  }
+
   std::unique_ptr<LexicalBinding> VectorDestructureBinding::clone() const
   {
     return std::make_unique<VectorDestructureBinding>(*this);
@@ -205,6 +232,11 @@ namespace Roo
   void RestBinding::apply(Scope& scope, const sptr_val_v& values) const
   {
     scope.store(symbol, Value::vector(values));
+  }
+
+  void RestBinding::append_bound_symbols(std::vector<std::string>& symbols) const
+  {
+    symbols.push_back(symbol);
   }
 
   std::unique_ptr<RestBinding> RestBinding::clone() const

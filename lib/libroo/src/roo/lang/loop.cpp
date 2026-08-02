@@ -51,10 +51,16 @@ namespace Roo
     exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
 
+    ctx.push({});
+    for (auto& binding : bindings)
+    {
+      ctx.add_lexical_binding(*binding.first);
+    }
     for (size_t i = 2; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
@@ -138,10 +144,16 @@ namespace Roo
     exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
 
+    ctx.push({});
+    for (auto& binding : bindings)
+    {
+      ctx.add_lexical_binding(*binding.first);
+    }
     for (size_t i = 2; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
@@ -221,10 +233,16 @@ namespace Roo
     exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
 
+    ctx.push({});
+    for (auto& binding : bindings)
+    {
+      ctx.add_lexical_binding(*binding.first);
+    }
     for (size_t i = 2; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
@@ -302,10 +320,16 @@ namespace Roo
     exec_nodes.reserve(elements.size() - 1);
     exec_nodes.push_back(lower_expr(ctx, bind_form.back()));
 
+    ctx.push({});
+    for (auto& binding : bindings)
+    {
+      ctx.add_lexical_binding(*binding.first);
+    }
     for (size_t i = 2; i < elements.size(); i++)
     {
       exec_nodes.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));

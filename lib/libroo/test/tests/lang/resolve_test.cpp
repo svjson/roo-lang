@@ -16,6 +16,72 @@ TEST_F(ResolveFunction, resolve)
   ASSERT_EQ(&result->exec(), &rt_lookup_result->exec());
 }
 
+TEST_F(ResolveFunction, runtime_lookup_falls_back_to_builtin_when_symbol_is_not_bound)
+{
+  runtime.eval("(ns my-app.clean-runtime-lookup)");
+
+  auto append = runtime.lookup("append");
+  Roo::sptr_val_v args = {runtime.eval("[1]"), Roo::Value::number(2)};
+  auto result = append->exec().execute(ctx, args);
+
+  EXPECT_EQ(result->to_string(), "[1 2]");
+}
+
+TEST_F(ResolveFunction, context_lookup_falls_back_to_builtin_when_symbol_is_not_bound)
+{
+  runtime.eval("(ns my-app.clean-context-lookup)");
+
+  auto append = ctx.lookup("append");
+  Roo::sptr_val_v args = {runtime.eval("[1]"), Roo::Value::number(2)};
+  auto result = append->exec().execute(ctx, args);
+
+  EXPECT_EQ(result->to_string(), "[1 2]");
+}
+
+TEST_F(ResolveFunction, bare_symbol_falls_back_to_builtin_when_symbol_is_not_bound)
+{
+  auto result = runtime.eval(R"(
+  (ns my-app.clean-symbol-lookup)
+
+  (def f append)
+  (f [1] 2)
+                )");
+
+  EXPECT_EQ(result->to_string(), "[1 2]");
+}
+
+TEST_F(ResolveFunction, runtime_lookup_prefers_local_function_over_builtin)
+{
+  runtime.eval(R"(
+  (ns my-app.runtime-lookup-shadow)
+
+  (defun append [items item]
+    :local-append)
+                )");
+
+  auto append = runtime.lookup("append");
+  Roo::sptr_val_v args = {runtime.eval("[1]"), Roo::Value::number(2)};
+  auto result = append->exec().execute(ctx, args);
+
+  EXPECT_EQ(result->to_string(), ":local-append");
+}
+
+TEST_F(ResolveFunction, context_lookup_prefers_local_function_over_builtin)
+{
+  runtime.eval(R"(
+  (ns my-app.context-lookup-shadow)
+
+  (defun append [items item]
+    :local-append)
+                )");
+
+  auto append = ctx.lookup("append");
+  Roo::sptr_val_v args = {runtime.eval("[1]"), Roo::Value::number(2)};
+  auto result = append->exec().execute(ctx, args);
+
+  EXPECT_EQ(result->to_string(), ":local-append");
+}
+
 TEST_F(ResolveFunction, nil_resolves_to_nil)
 {
   // Given

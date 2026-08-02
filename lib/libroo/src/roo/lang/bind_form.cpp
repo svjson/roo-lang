@@ -30,12 +30,14 @@ namespace Roo
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(bind_forms.size() / 2);
 
+    ctx.push({});
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
       auto sym_node = lower_literal(bind_forms[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        lower_expr(ctx, bind_forms[i + 1])));
+      ctx.add_lexical_binding(*bindings.back().first);
     }
 
     uptr_exec_node_v body;
@@ -44,6 +46,7 @@ namespace Roo
     {
       body.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(body)));
@@ -97,12 +100,14 @@ namespace Roo
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(bind_forms.size() / 2);
 
+    ctx.push({});
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
       auto sym_node = lower_literal(bind_forms[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        lower_expr(ctx, bind_forms[i + 1])));
+      ctx.add_lexical_binding(*bindings.back().first);
     }
 
     uptr_exec_node_v body;
@@ -111,6 +116,7 @@ namespace Roo
     {
       body.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(body)));
@@ -168,12 +174,14 @@ namespace Roo
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(bind_forms.size() / 2);
 
+    ctx.push({});
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
       auto sym_node = lower_literal(bind_forms[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        lower_expr(ctx, bind_forms[i + 1])));
+      ctx.add_lexical_binding(*bindings.back().first);
     }
 
     uptr_exec_node_v body;
@@ -182,6 +190,7 @@ namespace Roo
     {
       body.push_back(lower_expr(ctx, elements[i]));
     }
+    ctx.pop();
 
     return std::make_unique<ExecNode>(
       SpecialFormNode(this, std::move(bindings), std::move(body)));

@@ -760,11 +760,21 @@ namespace Roo
     uptr_exec_node_v node_body;
     node_body.reserve(body.size());
     LowerContext lctx{&ctx};
+    lctx.push({});
+    for (auto& arg_binding : arg_bindings)
+    {
+      lctx.add_lexical_binding(*arg_binding);
+    }
+    if (rest_binding)
+    {
+      lctx.add_lexical_binding(*rest_binding);
+    }
     for (auto& node : body)
     {
       uptr_exec_node unode = lower_expr(lctx, node);
       node_body.push_back(std::move(unode));
     }
+    lctx.pop();
 
     return std::make_shared<UserFunction>(name,
                                           home_ns->get_name(),
