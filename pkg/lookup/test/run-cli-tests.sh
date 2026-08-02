@@ -41,7 +41,7 @@ assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
        lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]
-       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>
+       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>
        lookup thing-at <package-dir> <file> <line> <column>
 
 Extractors: forms, symbols, native
@@ -145,6 +145,25 @@ case "$AUDIT_ERROR" in
     printf '%s\n' "unexpected lookup audit error:" >&2
     printf '%s\n' "$AUDIT_ERROR" >&2
     fail "lookup audit failure message"
+    ;;
+esac
+
+AUDIT_FILE="/tmp/lookup-audit-input-$$.edn"
+printf '%s\n' '{:format :roo/symbol-index :version 1 :symbols [{:id "sample/missing" :qualified-name "sample/missing" :kind :function :doc {:summary nil} :signatures [{:display "(missing value)" :params [{:name "value" :doc nil}]}]}]}' > "$AUDIT_FILE"
+if ! AUDIT_TEXT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit -o text --require-summary --require-param-docs --require-signatures "$AUDIT_FILE"); then
+  rm -f "$AUDIT_FILE"
+  fail "lookup audit text command failed"
+fi
+rm -f "$AUDIT_FILE"
+case "$AUDIT_TEXT_OUTPUT" in
+  *"lookup audit: 2 diagnostics"*\
+*"warning missing-doc-summary sample/missing: Missing documentation summary."*\
+*"warning missing-param-doc sample/missing: Missing parameter documentation. [(missing value), param: value]"*\
+*"lookup audit: passed"*) ;;
+  *)
+    printf '%s\n' "unexpected lookup audit text output:" >&2
+    printf '%s\n' "$AUDIT_TEXT_OUTPUT" >&2
+    fail "lookup audit text output"
     ;;
 esac
 

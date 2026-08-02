@@ -11,7 +11,7 @@
   "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
    "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
-   "       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
+   "       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
    "       lookup thing-at <package-dir> <file> <line> <column>"])
 
 (def index-extractors
@@ -21,6 +21,10 @@
 (def audit-fail-levels
   "Failure thresholds accepted by `lookup audit --fail-on`."
   [:warning :error])
+
+(def audit-output-formats
+  "Output formats accepted by `lookup audit --output-format`."
+  [:edn :text])
 
 (def version
   "Lookup command version."
@@ -228,6 +232,21 @@
       (parse-audit-args-step (tail args)
                              (assoc options :require-signatures? true))
 
+      (or (= arg "-o")
+          (= arg "--output-format"))
+      (let [format (nth args 1)]
+        (if (nil? format)
+          (assoc options :errors (concat (:errors options)
+                                         [(str "Missing format after " arg)]))
+          (let [format-key (keyword format)]
+            (parse-audit-args-step
+              (tail (tail args))
+              (if (contains? audit-output-formats format-key)
+                (assoc options :format format-key)
+                (assoc options :errors (concat (:errors options)
+                                               [(str "Unknown audit output format: "
+                                                     format)])))))))
+
       (= arg "--allow-zero-arity")
       (let [symbol (nth args 1)]
         (if (nil? symbol)
@@ -300,7 +319,7 @@
 
   Returns:
   An audit options map with `:input`, requirement toggles, source roots,
-  excludes, `:allow-zero-arity`, `:fail-on`, and `:errors`."
+  excludes, `:allow-zero-arity`, `:format`, `:fail-on`, and `:errors`."
   [args]
   (let [options (parse-audit-args-step args
                                        {:input nil
@@ -310,6 +329,7 @@
                                         :allow-zero-arity []
                                         :roots []
                                         :excludes []
+                                        :format :edn
                                         :fail-on nil
                                         :errors []})]
     (if (nil? (:input options))
@@ -342,6 +362,56 @@
       true
       (system/fail! (str "lookup audit input does not exist: " input)))))
 
+(defun audit-diagnostic-extra [diagnostic]
+  (cond
+
+    (and (not (nil? (:signature diagnostic)))
+         (not (nil? (:param diagnostic))))
+    (str " [" (:signature diagnostic) ", param: " (:param diagnostic) "]")
+
+    (not (nil? (:signature diagnostic)))
+    (str " [" (:signature diagnostic) "]")
+
+    (not (nil? (:param diagnostic)))
+    (str " [param: " (:param diagnostic) "]")
+
+    true
+    ""))
+
+(defun audit-diagnostic-line [diagnostic]
+  (str (name (:severity diagnostic))
+       " "
+       (name (:kind diagnostic))
+       " "
+       (:symbol diagnostic)
+       ": "
+       (:message diagnostic)
+       (audit-diagnostic-extra diagnostic)))
+
+(defun audit-diagnostic-count-line [diagnostic-count]
+  (str "lookup audit: "
+       diagnostic-count
+       " "
+       (case diagnostic-count
+         1 "diagnostic"
+         :default "diagnostics")))
+
+(defun audit-text-lines [result]
+  (let [diagnostics (:diagnostics result)
+        diagnostic-count (count diagnostics)]
+    (if (= 0 diagnostic-count)
+      ["lookup audit: no diagnostics"]
+      (concat [(audit-diagnostic-count-line diagnostic-count)]
+              (map diagnostics audit-diagnostic-line)
+              [(if (:failed? result)
+                 "lookup audit: failed"
+                 "lookup audit: passed")]))))
+
+(defun print-audit-result! [result format]
+  (case format
+    :text (print-lines! (audit-text-lines result))
+    :default (prn result)))
+
 (defun print-index! [args]
   (let [options (parse-index-args (tail args))]
     (if (not (= 0 (count (:errors options))))
@@ -361,7 +431,7 @@
         (print-usage!))
       (let [result (audit/symbol-index (audit-index! options)
                                        options)]
-        (prn result)
+        (print-audit-result! result (:format options))
         (if (:failed? result)
           (system/fail! "lookup audit failed")
           result)))))

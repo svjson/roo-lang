@@ -5,7 +5,7 @@
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
           "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
-          "       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
+          "       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
@@ -13,7 +13,7 @@
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
           "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
-          "       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
+          "       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"
           ""
           "Extractors: forms, symbols, native"
@@ -127,9 +127,12 @@
           :allow-zero-arity ["roo/epoch-ms" "roo.io/current-directory!"]
           :roots ["lib/libroo/include"]
           :excludes ["lib/libroo/test"]
+          :format :text
           :fail-on :warning
           :errors []}
          (cli/parse-audit-args ["--require-summary"
+                                "--output-format"
+                                "text"
                                 "--require-param-docs"
                                 "--require-signatures"
                                 "--allow-zero-arity"
@@ -149,6 +152,9 @@
         missing-zero-arity (cli/parse-audit-args ["--allow-zero-arity"])
         missing-root (cli/parse-audit-args ["--root"])
         missing-exclude (cli/parse-audit-args ["--exclude"])
+        missing-format (cli/parse-audit-args ["--output-format"])
+        missing-short-format (cli/parse-audit-args ["-o"])
+        unknown-format (cli/parse-audit-args ["--output-format" "json" "index.edn"])
         missing-fail-on (cli/parse-audit-args ["--fail-on"])
         unknown-fail-on (cli/parse-audit-args ["--fail-on" "notice" "index.edn"])
         unknown-option (cli/parse-audit-args ["--wat" "index.edn"])
@@ -158,11 +164,38 @@
                    "Missing symbol after --allow-zero-arity"))
     (is (contains? (:errors missing-root) "Missing directory after --root"))
     (is (contains? (:errors missing-exclude) "Missing path after --exclude"))
+    (is (contains? (:errors missing-format)
+                   "Missing format after --output-format"))
+    (is (contains? (:errors missing-short-format) "Missing format after -o"))
+    (is (contains? (:errors unknown-format)
+                   "Unknown audit output format: json"))
     (is (contains? (:errors missing-fail-on) "Missing level after --fail-on"))
     (is (contains? (:errors unknown-fail-on)
                    "Unknown audit failure level: notice"))
     (is (contains? (:errors unknown-option) "Unknown audit option: --wat"))
     (is (contains? (:errors extra-arg) "Unexpected audit argument: extra"))))
+
+(deftest formats-audit-text-output
+  (is (= ["lookup audit: 2 diagnostics"
+          "warning missing-doc-summary sample/missing: Missing documentation summary."
+          "warning missing-param-doc sample/missing: Missing parameter documentation. [(missing value), param: value]"
+          "lookup audit: failed"]
+         (cli/audit-text-lines
+           {:diagnostics [{:severity :warning
+                           :kind :missing-doc-summary
+                           :symbol "sample/missing"
+                           :message "Missing documentation summary."}
+                          {:severity :warning
+                           :kind :missing-param-doc
+                           :symbol "sample/missing"
+                           :message "Missing parameter documentation."
+                           :signature "(missing value)"
+                           :param "value"}]
+            :failed? true}))))
+
+(deftest formats-empty-audit-text-output
+  (is (= ["lookup audit: no diagnostics"]
+         (cli/audit-text-lines {:diagnostics [] :failed? false}))))
 
 (deftest resolves-thing-at-command
   (is (= :thing-at (cli/command ["thing-at" "pkg/lookup" "src/sample.roo" "1" "1"]))))
