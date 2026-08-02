@@ -125,6 +125,39 @@ TEST(PackageManifest, parses_dependency_map_with_versions_and_paths)
   EXPECT_EQ(manifest.dependencies[3].path, "/opt/roo/ui");
 }
 
+TEST(PackageManifest, parses_runtime_constraints)
+{
+  auto manifest = Roo::Package::parse_manifest(
+    R"({:name app
+        :version "0.1.0"
+        :runtimes {:roo ">=0.1.0-alpha.1 <0.2.0"}
+        :dependencies []
+        :load-roots ["src"]})",
+    "app/package.edn");
+
+  ASSERT_EQ(manifest.runtimes.size(), 1u);
+  EXPECT_EQ(manifest.runtimes.at("roo"), ">=0.1.0-alpha.1 <0.2.0");
+}
+
+TEST(PackageManifest, rejects_invalid_runtime_metadata)
+{
+  EXPECT_THROW(Roo::Package::parse_manifest(
+                 R"({:name app
+                     :runtimes [roo "0.1.0"]
+                     :dependencies []
+                     :load-roots ["src"]})",
+                 "app/package.edn"),
+               Roo::RooException);
+
+  EXPECT_THROW(Roo::Package::parse_manifest(
+                 R"({:name app
+                     :runtimes {:roo ">=0.1"}
+                     :dependencies []
+                     :load-roots ["src"]})",
+                 "app/package.edn"),
+               Roo::RooException);
+}
+
 TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
 {
   auto manifest = Roo::Package::parse_manifest(proof_manifest, "proof/package.edn");
@@ -137,6 +170,8 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.packages[0].name, "proof");
   EXPECT_EQ(plan.packages[0].package_root, "/repo/pkg/proof");
   EXPECT_EQ(plan.packages[0].load_roots, std::vector<std::string>{"/repo/pkg/proof/src"});
+  EXPECT_TRUE(plan.packages[0].runtimes.empty());
+  EXPECT_TRUE(plan.runtimes.empty());
   EXPECT_EQ(plan.packages[0].config.at("proof"), "{:test-roots [\"test\"]}");
   EXPECT_EQ(plan.packages[0].tools.at("run"), "proof.runner/run");
   EXPECT_EQ(plan.load_paths, std::vector<std::string>{"/repo/pkg/proof/src"});
@@ -153,6 +188,23 @@ TEST(PackageManifest, builds_load_plan_from_manifest_and_package_root)
   EXPECT_EQ(plan.run, "proof");
 }
 
+TEST(PackageManifest, build_load_plan_propagates_runtime_constraints)
+{
+  auto manifest = Roo::Package::parse_manifest(
+    R"({:name app
+        :version "0.1.0"
+        :runtimes {:roo ">=0.1.0 <0.2.0"}
+        :dependencies []
+        :load-roots ["src"]})",
+    "app/package.edn");
+
+  auto plan = Roo::Package::build_load_plan(manifest, "/repo/app");
+
+  ASSERT_EQ(plan.packages.size(), 1u);
+  EXPECT_EQ(plan.runtimes.at("roo"), ">=0.1.0 <0.2.0");
+  EXPECT_EQ(plan.packages[0].runtimes.at("roo"), ">=0.1.0 <0.2.0");
+}
+
 TEST(PackageManifest, merges_extra_load_paths_before_resolved_package_paths)
 {
   auto manifest = Roo::Package::parse_manifest(proof_manifest, "proof/package.edn");
@@ -166,6 +218,32 @@ TEST(PackageManifest, rejects_non_map_manifest)
 {
   EXPECT_THROW(Roo::Package::parse_manifest("[proof]", "bad/package.edn"),
                Roo::RooException);
+}
+
+TEST(PackageManifest, resolve_load_plan_preserves_package_runtime_constraints)
+{
+  MemoryFileSystem fs;
+  fs.add("/repo/pkg/app/package.edn",
+         R"({:name app
+             :runtimes {:roo ">=0.1.0 <0.2.0"}
+             :dependencies [util]
+             :load-roots ["src"]})");
+  fs.add("/repo/pkg/util/package.edn",
+         R"({:name util
+             :runtimes {:roo ">=0.1.0-alpha.1"}
+             :dependencies []
+             :load-roots ["src"]})");
+
+  auto plan = Roo::Package::resolve_load_plan(fs,
+                                              "/repo/pkg/app",
+                                              Roo::Package::ResolveOptions{{"/repo/pkg"}});
+
+  ASSERT_EQ(plan.packages.size(), 2u);
+  EXPECT_EQ(plan.packages[0].name, "util");
+  EXPECT_EQ(plan.packages[0].runtimes.at("roo"), ">=0.1.0-alpha.1");
+  EXPECT_EQ(plan.packages[1].name, "app");
+  EXPECT_EQ(plan.packages[1].runtimes.at("roo"), ">=0.1.0 <0.2.0");
+  EXPECT_EQ(plan.runtimes.at("roo"), ">=0.1.0 <0.2.0");
 }
 
 TEST(PackageManifest, resolves_pure_roo_dependencies_from_search_roots)

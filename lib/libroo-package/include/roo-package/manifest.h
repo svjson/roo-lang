@@ -39,6 +39,7 @@ namespace Roo::Package
     std::string description;
     std::vector<Dependency> dependencies;
     std::vector<std::string> load_roots;
+    std::map<std::string, std::string> runtimes;
     std::vector<Roo::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;
@@ -56,6 +57,7 @@ namespace Roo::Package
     std::string version;
     std::string package_root;
     std::vector<std::string> load_roots;
+    std::map<std::string, std::string> runtimes;
     std::map<std::string, std::string> config;
     std::map<std::string, std::string> tools;
   };
@@ -66,6 +68,7 @@ namespace Roo::Package
     std::vector<std::string> package_roots;
     std::vector<PackageInfo> packages;
     std::vector<std::string> load_paths;
+    std::map<std::string, std::string> runtimes;
     std::vector<Roo::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
     std::vector<NativeLibrary> native_libraries;

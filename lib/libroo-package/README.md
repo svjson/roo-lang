@@ -22,6 +22,7 @@ A package is a directory containing `package.edn`:
  :description "Example package."
  :dependencies {utility "file:../utility"
                 example-runner "file:../example-runner"}
+ :runtimes {:roo ">=0.1.0-alpha.1 <0.2.0"}
  :load-roots ["src"]
  :autoloads [example.bootstrap]
  :config {example-runner {:mode :fast}}
@@ -36,6 +37,7 @@ Current fields:
 - `:version` is the package version string.
 - `:description` is optional descriptive text.
 - `:dependencies` maps dependency names to local package locations or metadata.
+- `:runtimes` maps runtime names to supported semantic version constraints.
 - `:load-roots` lists package-relative Roo source roots.
 - `:namespace-roots` maps namespace prefixes to one package-relative source
   root or a vector of package-relative source roots.

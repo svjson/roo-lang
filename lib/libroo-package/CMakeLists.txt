@@ -27,6 +27,10 @@ if (NOT TARGET Roo::roo_shared)
   find_package(roo REQUIRED)
 endif()
 
+if (NOT TARGET Roo::support_shared)
+  find_package(roo-support REQUIRED)
+endif()
+
 set(roo-package_SOURCES
   src/lib/manifest.cpp
   src/lib/native_loader.cpp
@@ -49,6 +53,13 @@ if (TARGET Roo::roo_shared)
   get_target_property(_roo_include_dirs Roo::roo_shared INTERFACE_INCLUDE_DIRECTORIES)
   if (_roo_include_dirs)
     target_include_directories(roo-package_objects PRIVATE ${_roo_include_dirs})
+  endif()
+endif()
+
+if (TARGET Roo::support_shared)
+  get_target_property(_roo_support_include_dirs Roo::support_shared INTERFACE_INCLUDE_DIRECTORIES)
+  if (_roo_support_include_dirs)
+    target_include_directories(roo-package_objects PRIVATE ${_roo_support_include_dirs})
   endif()
 endif()
 
@@ -91,12 +102,16 @@ set_target_properties(roo-package_shared PROPERTIES
 )
 
 target_link_libraries(roo-package_static
-  PUBLIC Roo::roo_static
+  PUBLIC
+    Roo::roo_static
+    Roo::support_static
   PRIVATE ${CMAKE_DL_LIBS}
 )
 
 target_link_libraries(roo-package_shared
-  PUBLIC Roo::roo_shared
+  PUBLIC
+    Roo::roo_shared
+    Roo::support_shared
   PRIVATE ${CMAKE_DL_LIBS}
 )
 

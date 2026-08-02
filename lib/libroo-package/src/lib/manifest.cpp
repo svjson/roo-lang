@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -16,6 +17,7 @@
 #include <roo/runtime.h>
 
 #include <roo-package/manifest.h>
+#include <roo-support/version.h>
 
 namespace Roo::Package
 {
@@ -164,6 +166,45 @@ namespace Roo::Package
       {
         result[atom_string(children[i], "tools", source_name)] =
           atom_string(children[i + 1], "tools", source_name);
+      }
+      return result;
+    }
+
+    std::map<std::string, std::string> runtime_map(const Roo::sptr_ast_node& node,
+                                                   const std::string& source_name)
+    {
+      if (node->get_type() != Form::MAP)
+      {
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': field :runtimes expected map, got " +
+                           node->to_string());
+      }
+
+      std::map<std::string, std::string> result;
+      auto& children = node->get_children();
+      if (children.size() % 2 != 0)
+      {
+        throw RooException("Invalid package manifest '" + source_name +
+                           "': runtimes map has an uneven number of forms.");
+      }
+
+      for (size_t i = 0; i < children.size(); i += 2)
+      {
+        const std::string name = atom_string(children[i], "runtimes", source_name);
+        const std::string constraint =
+          atom_string(children[i + 1], "runtimes", source_name);
+        try
+        {
+          (void)Roo::Support::parse_version_constraint(constraint);
+        }
+        catch (const std::exception& error)
+        {
+          throw RooException("Invalid package manifest '" + source_name +
+                             "': runtime '" + name +
+                             "' has invalid version constraint '" + constraint +
+                             "': " + error.what());
+        }
+        result[name] = constraint;
       }
       return result;
     }
@@ -621,6 +662,7 @@ namespace Roo::Package
         append_unique(plan.load_paths, resolved_root);
         package_info.load_roots.push_back(resolved_root);
       }
+      package_info.runtimes = manifest.runtimes;
       package_info.config = manifest.config;
       package_info.tools = manifest.tools;
       plan.packages.push_back(package_info);
@@ -658,6 +700,10 @@ namespace Roo::Package
       for (const auto& entry_point : manifest.entry_points)
       {
         append_unique(plan.entry_points, entry_point);
+      }
+      if (package_root == plan.package_root)
+      {
+        plan.runtimes = manifest.runtimes;
       }
       if (package_root == plan.package_root && !manifest.main.empty())
       {
@@ -744,6 +790,10 @@ namespace Roo::Package
     {
       manifest.dependencies = dependency_list(fields.at("dependencies"), source_name);
     }
+    if (fields.count("runtimes"))
+    {
+      manifest.runtimes = runtime_map(fields.at("runtimes"), source_name);
+    }
     if (fields.count("load-roots"))
     {
       manifest.load_roots =
@@ -824,8 +874,10 @@ namespace Roo::Package
     package_info.name = manifest.name;
     package_info.version = manifest.version;
     package_info.package_root = normalized_package_root;
+    package_info.runtimes = manifest.runtimes;
     package_info.config = manifest.config;
     package_info.tools = manifest.tools;
+    plan.runtimes = manifest.runtimes;
     plan.native_namespaces = manifest.native_namespaces;
     plan.namespace_roots = manifest.namespace_roots;
     plan.native_libraries = manifest.native_libraries;

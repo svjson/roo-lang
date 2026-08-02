@@ -24,11 +24,18 @@ namespace Roo
   FUNC(AppendFunction, append)
 
   /*!
-   * @brief Appends elements to the back of a seq, modifying the
-   * seq.
+   * @brief Appends one or more elements to the back of a vector, modifying it in place.
    *
-   * Usage: (append! seq 3)
-   *        (append! seq 3 4)
+   * Usage:
+   * @code
+   * (append! v 4)       ; v is now [... 4]
+   * (append! v 3 4 5)   ; v is now [... 3 4 5]
+   * @endcode
+   *
+   * | Arg #  | Description                              |
+   * |--------|------------------------------------------|
+   * | 0      | The vector to mutate                     |
+   * | 1...   | Elements to append                       |
    */
   FUNC(AppendBangFunction, append_bang)
 
