@@ -27,8 +27,12 @@ if (NOT TARGET Roo::roo_shared)
   find_package(roo REQUIRED)
 endif()
 
-if (NOT TARGET Roo::support_shared)
-  find_package(roo-support REQUIRED)
+if (NOT TARGET roo-support_objects)
+  if (EXISTS "${ROO_ROOT_DIR}/lib/libroo-support/CMakeLists.txt")
+    add_subdirectory("${ROO_ROOT_DIR}/lib/libroo-support" "${CMAKE_CURRENT_BINARY_DIR}/../libroo-support")
+  else()
+    message(FATAL_ERROR "roo-package requires roo-support_objects from the Roo source tree")
+  endif()
 endif()
 
 set(roo-package_SOURCES
@@ -56,8 +60,8 @@ if (TARGET Roo::roo_shared)
   endif()
 endif()
 
-if (TARGET Roo::support_shared)
-  get_target_property(_roo_support_include_dirs Roo::support_shared INTERFACE_INCLUDE_DIRECTORIES)
+if (TARGET roo-support_objects)
+  get_target_property(_roo_support_include_dirs roo-support_objects INTERFACE_INCLUDE_DIRECTORIES)
   if (_roo_support_include_dirs)
     target_include_directories(roo-package_objects PRIVATE ${_roo_support_include_dirs})
   endif()
@@ -65,8 +69,14 @@ endif()
 
 set_target_properties(roo-package_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-add_library(roo-package_static STATIC $<TARGET_OBJECTS:roo-package_objects>)
-add_library(roo-package_shared SHARED $<TARGET_OBJECTS:roo-package_objects>)
+add_library(roo-package_static STATIC
+  $<TARGET_OBJECTS:roo-package_objects>
+  $<TARGET_OBJECTS:roo-support_objects>
+)
+add_library(roo-package_shared SHARED
+  $<TARGET_OBJECTS:roo-package_objects>
+  $<TARGET_OBJECTS:roo-support_objects>
+)
 
 foreach(target roo-package_static roo-package_shared)
   set_target_properties(${target} PROPERTIES
@@ -104,14 +114,12 @@ set_target_properties(roo-package_shared PROPERTIES
 target_link_libraries(roo-package_static
   PUBLIC
     Roo::roo_static
-    Roo::support_static
   PRIVATE ${CMAKE_DL_LIBS}
 )
 
 target_link_libraries(roo-package_shared
   PUBLIC
     Roo::roo_shared
-    Roo::support_shared
   PRIVATE ${CMAKE_DL_LIBS}
 )
 

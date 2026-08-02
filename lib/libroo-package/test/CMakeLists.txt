@@ -25,7 +25,7 @@ add_executable(testpackage ${ROO_PACKAGE_TEST_SOURCES})
 add_dependencies(testpackage roo-package-test-native)
 
 set_target_properties(testpackage PROPERTIES
-  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-support_shared>;$<TARGET_FILE_DIR:roo-package_shared>;$<TARGET_FILE_DIR:roo-package-test-native>"
+  BUILD_RPATH "$<TARGET_FILE_DIR:roo_shared>;$<TARGET_FILE_DIR:roo-package_shared>;$<TARGET_FILE_DIR:roo-package-test-native>"
   BUILD_RPATH_USE_LINK_PATH OFF
 )
 
@@ -38,7 +38,6 @@ target_link_libraries(testpackage
 
 roo_copy_runtime_dlls(testpackage
   roo_shared
-  roo-support_shared
   roo-package_shared
   roo-package-test-native
 )

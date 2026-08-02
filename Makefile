@@ -62,7 +62,7 @@ RELINK_ARTIFACTS := \
 	$(CURDIR)/build/roo \
 	$(CURDIR)/build/rooc \
 	$(CURDIR)/build/lib/libroo-support/libroo-support.a \
-	$(CURDIR)/build/lib/libroo-support/libroo-support.so \
+	$(CURDIR)/build/lib/libroo-support/libroo-support.so* \
 	$(CURDIR)/build/lib/libroo-support/test/testsupport \
 	$(CURDIR)/build/lib/libroo/libroo.a \
 	$(CURDIR)/build/lib/libroo/libroo.so \

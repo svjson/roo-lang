@@ -29,69 +29,11 @@ set(roo-support_SOURCES
 
 add_library(roo-support_objects OBJECT ${roo-support_SOURCES})
 target_include_directories(roo-support_objects
-  PRIVATE
+  PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 set_target_properties(roo-support_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-add_library(roo-support_static STATIC $<TARGET_OBJECTS:roo-support_objects>)
-add_library(roo-support_shared SHARED $<TARGET_OBJECTS:roo-support_objects>)
-
-foreach(target roo-support_static roo-support_shared)
-  set_target_properties(${target} PROPERTIES
-    OUTPUT_NAME roo-support
-    POSITION_INDEPENDENT_CODE ON
-  )
-
-  target_include_directories(${target}
-    PUBLIC
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include>
-  )
-endforeach()
-
-set_target_properties(roo-support_static PROPERTIES
-  EXPORT_NAME support_static
-)
-
-if(WIN32)
-  set_target_properties(roo-support_static PROPERTIES
-    ARCHIVE_OUTPUT_NAME roo-support-static
-  )
-  set_target_properties(roo-support_shared PROPERTIES
-    WINDOWS_EXPORT_ALL_SYMBOLS ON
-  )
-endif()
-
-set_target_properties(roo-support_shared PROPERTIES
-  EXPORT_NAME support_shared
-  VERSION ${PROJECT_VERSION}
-  SOVERSION ${ROO_ABI_VERSION}
-  INSTALL_RPATH "${ROO_LIB_INSTALL_RPATH}"
-)
-
-add_library(Roo::support_static ALIAS roo-support_static)
-add_library(Roo::support_shared ALIAS roo-support_shared)
-
 if(ROO_BUILD_TESTS)
   add_subdirectory(test)
 endif()
-
-install(TARGETS roo-support_static roo-support_shared
-  EXPORT roo-supportTargets
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-install(DIRECTORY include/ DESTINATION include)
-
-install(EXPORT roo-supportTargets
-  FILE roo-supportTargets.cmake
-  NAMESPACE Roo::
-  DESTINATION lib/cmake/roo-support
-)
-
-install(FILES ${ROO_ROOT_DIR}/cmake/roo-supportConfig.cmake
-  DESTINATION lib/cmake/roo-support
-)
