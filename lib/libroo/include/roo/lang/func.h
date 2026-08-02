@@ -7,6 +7,24 @@
 namespace Roo
 {
   /*!
+   * @brief Returns its argument unchanged.
+   *
+   * Usage:
+   * @code
+   * (identity 42)
+   * => 42
+   *
+   * (map [:a :b :c] identity)
+   * => [:a :b :c]
+   * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | x     | Any value                                                          |
+   */
+  FUNC(IdentityFunction, identity)
+
+  /*!
    * @brief Apply a function or executable form to a seq of arguments.
    *
    * Usage:

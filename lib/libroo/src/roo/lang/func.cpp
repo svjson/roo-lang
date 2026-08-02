@@ -9,6 +9,16 @@
 
 namespace Roo
 {
+  /** IdentityFunction - roo/identity */
+  FUNC_IMPL(IdentityFunction,
+            SIG((FN_ARGS((&Roo::Type::ANY)),
+                 EXEC_DISPATCH(&IdentityFunction::exec_identity))))
+
+  EXEC_BODY(IdentityFunction, exec_identity)
+  {
+    return args[0];
+  }
+
   /** ApplyFunction - roo/apply */
   FUNC_IMPL(ApplyFunction,
             SIG((FN_ARGS((&Roo::Type::EXEC), (&Roo::Type::SEQ_OR_STRING)),

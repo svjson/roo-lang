@@ -88,6 +88,30 @@ namespace Roo
   FUNC(FindIndexFunction, find_index)
 
   /*!
+   * @brief Maps a function over a sequence and flattens the results one level
+   * into a single sequence.
+   *
+   * Elements of the mapped result that are sequences are flattened; non-sequence
+   * values are included directly. Argument order is flexible: collection first
+   * or function first.
+   *
+   * Usage:
+   * @code
+   * (flat-map [1 2 3] (fn [n] [n (* n 10)]))
+   * => [1 10 2 20 3 30]
+   *
+   * (flat-map [[1 2] 3 [4 5]] identity)
+   * => [1 2 3 4 5]
+   * @endcode
+   *
+   * | Arg        | Description                                                        |
+   * | ---------- | ------------------------------------------------------------------ |
+   * | collection | The seq to transform                                               |
+   * | f          | A function; seq results are flattened, scalars are kept as-is      |
+   */
+  FUNC(FlatMapFunction, flat_map)
+
+  /*!
    * @brief Returns the index of the first element in a seq equal to a value,
    * or nil if no match is found.
    *

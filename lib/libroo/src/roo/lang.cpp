@@ -118,6 +118,7 @@ namespace Roo
     lang_symbols.emplace("get", GetFunction::make());
     lang_symbols.emplace("get-in", GetInFunction::make());
     lang_symbols.emplace("head", HeadFunction::make());
+    lang_symbols.emplace("identity", IdentityFunction::make());
     lang_symbols.emplace("if", IfForm::make());
     lang_symbols.emplace("if-let", IfLetForm::make());
     lang_symbols.emplace("inc", IncFunction::make());
