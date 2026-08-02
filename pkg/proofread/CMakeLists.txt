@@ -31,6 +31,18 @@ if(ROO_BUILD_TESTS)
   )
 
   add_test(
+    NAME proofread_cli_checks_directory_recursively
+    COMMAND $<TARGET_FILE:roo_cli>
+            ${PROOFREAD_TEST_PACKAGE}
+            ${PROOFREAD_TEST_ASSETS}/directory
+  )
+  set_tests_properties(
+    proofread_cli_checks_directory_recursively
+    PROPERTIES
+      PASS_REGULAR_EXPRESSION "proofread: 3 files ok"
+  )
+
+  add_test(
     NAME proofread_cli_rejects_invalid_file
     COMMAND $<TARGET_FILE:roo_cli>
             ${PROOFREAD_TEST_PACKAGE}

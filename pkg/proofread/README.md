@@ -19,6 +19,12 @@ Check files matched by a shell-style pattern:
 proofread 'src/*.roo'
 ```
 
+Check all Roo and EDN files under a directory:
+
+```sh
+proofread src
+```
+
 Quote patterns when you want `proofread` to expand them instead of your shell.
 
 ## Output
@@ -84,7 +90,8 @@ This installs the `proofread` command under the configured installation prefix.
 
 - Style warnings do not affect the exit status.
 - Style check configuration is not implemented yet.
-- Recursive `**` glob behavior is not implemented yet.
+- Recursive `**` glob behavior is not implemented yet. Pass a directory to
+  check a tree recursively.
 - Parse diagnostics currently use the Roo reader's existing error messages.
 
 ## License

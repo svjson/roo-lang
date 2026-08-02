@@ -38,6 +38,23 @@ namespace Roo::Proofread
       return pattern.find_first_of("*?[") != std::string::npos;
     }
 
+    bool proofread_file(const std::filesystem::path& path)
+    {
+      const auto extension = path.extension();
+      return extension == ".roo" || extension == ".edn";
+    }
+
+    void append_file(std::vector<std::filesystem::path>& files,
+                     std::set<std::string>& seen,
+                     std::filesystem::path path)
+    {
+      path = path.lexically_normal();
+      if (seen.insert(path.string()).second)
+      {
+        files.push_back(path);
+      }
+    }
+
 #ifdef _WIN32
     std::string windows_error_message(DWORD error)
     {
@@ -146,6 +163,49 @@ namespace Roo::Proofread
       return paths;
     }
 
+    std::vector<std::filesystem::path> directory_files(const std::filesystem::path& root)
+    {
+      std::error_code ec;
+      std::vector<std::filesystem::path> files;
+      std::filesystem::recursive_directory_iterator entry(root, ec);
+      if (ec)
+      {
+        throw std::runtime_error("Could not inspect directory: " + root.string() + ": " +
+                                 ec.message());
+      }
+
+      const std::filesystem::recursive_directory_iterator end;
+      while (entry != end)
+      {
+        const std::filesystem::path path = entry->path();
+        if (std::filesystem::is_regular_file(path, ec))
+        {
+          if (proofread_file(path))
+          {
+            files.push_back(path.lexically_normal());
+          }
+        }
+        else if (ec)
+        {
+          throw std::runtime_error("Could not inspect file: " + path.string() + ": " +
+                                   ec.message());
+        }
+
+        entry.increment(ec);
+        if (ec)
+        {
+          throw std::runtime_error("Could not inspect directory: " + root.string() + ": " +
+                                   ec.message());
+        }
+      }
+
+      std::sort(files.begin(),
+                files.end(),
+                [](const auto& lhs, const auto& rhs)
+                { return lhs.generic_string() < rhs.generic_string(); });
+      return files;
+    }
+
     std::string read_file(const std::filesystem::path& path)
     {
       errno = 0;
@@ -213,9 +273,22 @@ namespace Roo::Proofread
           for (auto path : expand_pattern(pattern))
           {
             path = path.lexically_normal();
-            if (seen.insert(path.string()).second)
+            std::error_code ec;
+            if (std::filesystem::is_directory(path, ec))
             {
-              files.push_back(path);
+              for (const auto& file : directory_files(path))
+              {
+                append_file(files, seen, file);
+              }
+            }
+            else if (ec)
+            {
+              throw std::runtime_error("Could not inspect file: " + path.string() + ": " +
+                                       ec.message());
+            }
+            else
+            {
+              append_file(files, seen, path);
             }
           }
         }

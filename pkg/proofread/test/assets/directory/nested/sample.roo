@@ -1,0 +1,3 @@
+(ns proofread.directory-nested)
+
+(def nested-value 84)

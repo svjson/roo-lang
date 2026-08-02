@@ -1,0 +1,3 @@
+(ns proofread.directory-root)
+
+(def root-value 42)
