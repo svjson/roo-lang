@@ -108,6 +108,7 @@ namespace Roo
     lang_symbols.emplace("filter", FilterFunction::make());
     lang_symbols.emplace("find-first", FindFirstFunction::make());
     lang_symbols.emplace("find-index", FindIndexFunction::make());
+    lang_symbols.emplace("flat-map", FlatMapFunction::make());
     lang_symbols.emplace("fn", FnForm::make());
     lang_symbols.emplace("fn?", FnPFunction::make());
     lang_symbols.emplace("for", ForForm::make());

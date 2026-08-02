@@ -131,6 +131,64 @@ namespace Roo
     return Constant::NIL;
   }
 
+  /** FlatMapFunction - roo/flat-map */
+  FUNC_IMPL(FlatMapFunction,
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
+                       EXEC_DISPATCH(&FlatMapFunction::exec_flat_map)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&FlatMapFunction::exec_flat_map))))
+
+  EXEC_BODY(FlatMapFunction, exec_flat_map)
+  {
+    Roo::sptr_val original;
+    Roo::sptr_val fn;
+    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
+    {
+      original = args[0];
+      fn = args[1];
+    }
+    else
+    {
+      original = args[1];
+      fn = args[0];
+    }
+
+    // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
+    bool is_kw = fn->type == Value::Type::KEYWORD;
+    Executable* map_fn = is_kw ? nullptr : &fn->exec();
+
+    sptr_val_v result;
+    sptr_val_v elements = Roo::get_children(*original);
+    sptr_val_v map_args{nullptr};
+    for (auto& element : elements)
+    {
+      sptr_val mapped;
+      if (is_kw)
+      {
+        mapped = Dict::get_property(element, fn);
+      }
+      else
+      {
+        map_args[0] = element;
+        mapped = map_fn->execute(ctx, map_args);
+      }
+
+      if (Type::SEQ_OR_STRING.is_type_of(*mapped))
+      {
+        for (auto& child : Roo::get_children(*mapped))
+        {
+          result.push_back(child);
+        }
+      }
+      else
+      {
+        result.push_back(mapped);
+      }
+    }
+
+    return Value::vector(std::move(result));
+  }
+
   /** IndexOfFunction - roo/index-of */
   FUNC_IMPL(IndexOfFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY)),
