@@ -2,11 +2,14 @@ BUILD_TYPE ?= Release
 FILTER ?=
 GTEST_FILTER_ARG := $(if $(FILTER),--gtest_filter=$(FILTER),)
 NATIVE_PACKAGE_STAGE := $(CURDIR)/build/native-package-stage/pkg
+ROO_LANG_INDEX_VERSION ?= $(shell cat $(CURDIR)/VERSION)
+ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
+ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/roo-symbols.edn
 
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-proofread install-loom install-proof install-lookup install-proofread install-workbook install-footsteps release test test\:all test\:lang test\:package test\:proof test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 TEST_BINARY := lib/libroo/test/testroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
@@ -139,6 +142,10 @@ install-proof: build-proof
 
 build-lookup: build stage-native-packages
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/lookup --build-dir $(CURDIR)/build/lookup-install --name lookup
+
+build-roo-lang-index: build-lookup
+	cmake -E make_directory $(ROO_LANG_INDEX_DIR)
+	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang -o $(ROO_LANG_INDEX_PATH)
 
 install-lookup: build-lookup
 	cmake -E make_directory $(PREFIX)/bin
