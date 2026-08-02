@@ -5,6 +5,7 @@
 (deftest reports-usage-lines
   (is (= ["Usage: lookup [--help|--version]"
           "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
+          "       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"]
          cli/usage-lines)))
 
@@ -12,6 +13,7 @@
   (is (= ["lookup: build Roo symbol index artifacts"
           "Usage: lookup [--help|--version]"
           "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
+          "       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
           "       lookup thing-at <package-dir> <file> <line> <column>"
           ""
           "Extractors: forms, symbols, native"
@@ -32,6 +34,9 @@
 
 (deftest resolves-index-command
   (is (= :index (cli/command ["index" "pkg/lookup"]))))
+
+(deftest resolves-audit-command
+  (is (= :audit (cli/command ["audit" "build/index.edn"]))))
 
 (deftest parses-default-index-options
   (is (= {:extractors [:symbols]
@@ -113,6 +118,51 @@
     (is (contains? (:errors native-without-root)
                    "Root required for native extractor"))
     (is (contains? (:errors extra-arg) "Unexpected index argument: extra"))))
+
+(deftest parses-audit-options
+  (is (= {:input "build/index.edn"
+          :require-summary? true
+          :require-param-docs? true
+          :require-signatures? true
+          :allow-zero-arity ["roo/epoch-ms" "roo.io/current-directory!"]
+          :roots ["lib/libroo/include"]
+          :excludes ["lib/libroo/test"]
+          :fail-on :warning
+          :errors []}
+         (cli/parse-audit-args ["--require-summary"
+                                "--require-param-docs"
+                                "--require-signatures"
+                                "--allow-zero-arity"
+                                "roo/epoch-ms"
+                                "--allow-zero-arity"
+                                "roo.io/current-directory!"
+                                "--root"
+                                "lib/libroo/include"
+                                "--exclude"
+                                "lib/libroo/test"
+                                "--fail-on"
+                                "warning"
+                                "build/index.edn"]))))
+
+(deftest reports-audit-option-errors
+  (let [missing-input (cli/parse-audit-args [])
+        missing-zero-arity (cli/parse-audit-args ["--allow-zero-arity"])
+        missing-root (cli/parse-audit-args ["--root"])
+        missing-exclude (cli/parse-audit-args ["--exclude"])
+        missing-fail-on (cli/parse-audit-args ["--fail-on"])
+        unknown-fail-on (cli/parse-audit-args ["--fail-on" "notice" "index.edn"])
+        unknown-option (cli/parse-audit-args ["--wat" "index.edn"])
+        extra-arg (cli/parse-audit-args ["index.edn" "extra"])]
+    (is (contains? (:errors missing-input) "Missing audit input"))
+    (is (contains? (:errors missing-zero-arity)
+                   "Missing symbol after --allow-zero-arity"))
+    (is (contains? (:errors missing-root) "Missing directory after --root"))
+    (is (contains? (:errors missing-exclude) "Missing path after --exclude"))
+    (is (contains? (:errors missing-fail-on) "Missing level after --fail-on"))
+    (is (contains? (:errors unknown-fail-on)
+                   "Unknown audit failure level: notice"))
+    (is (contains? (:errors unknown-option) "Unknown audit option: --wat"))
+    (is (contains? (:errors extra-arg) "Unexpected audit argument: extra"))))
 
 (deftest resolves-thing-at-command
   (is (= :thing-at (cli/command ["thing-at" "pkg/lookup" "src/sample.roo" "1" "1"]))))

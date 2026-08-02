@@ -41,6 +41,7 @@ assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
        lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]
+       lookup audit [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>
        lookup thing-at <package-dir> <file> <line> <column>
 
 Extractors: forms, symbols, native
@@ -115,6 +116,47 @@ case "$NATIVE_ROOT_OUTPUT" in
     printf '%s\n' "excluded native source appeared in lookup index --root output:" >&2
     printf '%s\n' "$NATIVE_ROOT_OUTPUT" >&2
     fail "lookup index --root exclude output"
+    ;;
+esac
+
+printf '%s\n' "==> Testing lookup audit"
+AUDIT_FILE="/tmp/lookup-audit-input-$$.edn"
+AUDIT_ERROR_FILE="/tmp/lookup-audit-error-$$.txt"
+printf '%s\n' '{:format :roo/symbol-index :version 1 :symbols [{:id "sample/missing" :qualified-name "sample/missing" :kind :function :doc {:summary nil} :signatures [{:display "(missing value)" :params [{:name "value" :doc nil}]}]}]}' > "$AUDIT_FILE"
+if AUDIT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit --require-summary --require-param-docs --require-signatures --fail-on warning "$AUDIT_FILE" 2>"$AUDIT_ERROR_FILE"); then
+  rm -f "$AUDIT_FILE"
+  rm -f "$AUDIT_ERROR_FILE"
+  fail "lookup audit command did not fail"
+fi
+rm -f "$AUDIT_FILE"
+AUDIT_ERROR=$(cat "$AUDIT_ERROR_FILE")
+rm -f "$AUDIT_ERROR_FILE"
+case "$AUDIT_OUTPUT" in
+  *":format :roo/lookup-audit"*":kind :missing-doc-summary"*":kind :missing-param-doc"*":failed? true"*) ;;
+  *)
+    printf '%s\n' "unexpected lookup audit output:" >&2
+    printf '%s\n' "$AUDIT_OUTPUT" >&2
+    fail "lookup audit output"
+    ;;
+esac
+case "$AUDIT_ERROR" in
+  *"lookup audit failed"*) ;;
+  *)
+    printf '%s\n' "unexpected lookup audit error:" >&2
+    printf '%s\n' "$AUDIT_ERROR" >&2
+    fail "lookup audit failure message"
+    ;;
+esac
+
+if ! AUDIT_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit --require-summary --require-param-docs --require-signatures "$LOOKUP_PACKAGE"/test/assets --exclude "$LOOKUP_PACKAGE"/test/assets/native-package); then
+  fail "lookup audit source-root command failed"
+fi
+case "$AUDIT_ROOT_OUTPUT" in
+  *":format :roo/lookup-audit"*":diagnostics []"*":failed? false"*) ;;
+  *)
+    printf '%s\n' "unexpected lookup audit source-root output:" >&2
+    printf '%s\n' "$AUDIT_ROOT_OUTPUT" >&2
+    fail "lookup audit source-root output"
     ;;
 esac
 

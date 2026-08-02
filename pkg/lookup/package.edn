@@ -8,5 +8,6 @@
                      :version "0.1.0"
                      :path "native"
                      :namespaces [lookup.analysis
-                                  lookup.reader]}]
+                                  lookup.reader
+                                  lookup.system]}]
  :main lookup.cli/main}

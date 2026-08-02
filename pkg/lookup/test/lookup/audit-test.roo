@@ -1,0 +1,79 @@
+(ns lookup.audit-test
+  (:require proof.core
+            [lookup.audit :as audit]))
+
+(def documented-function
+  {:id "sample/greet"
+   :name "greet"
+   :qualified-name "sample/greet"
+   :kind :function
+   :doc {:summary "Build a greeting."}
+   :signatures [{:display "(greet name)"
+                 :params [{:name "name"
+                           :doc "Person to greet."}]}]})
+
+(deftest returns-empty-diagnostics-by-default
+  (is (= {:format :roo/lookup-audit
+          :version 1
+          :diagnostics []
+          :failed? false}
+         (audit/symbol-index {:symbols [documented-function]} {}))))
+
+(deftest reports-missing-summary-when-required
+  (let [result (audit/symbol-index
+                 {:symbols [(assoc documented-function
+                                    :doc {:summary nil})]}
+                 {:require-summary? true})
+        diagnostic (head (:diagnostics result))]
+    (is (= false (:failed? result)))
+    (is (= :missing-doc-summary (:kind diagnostic)))
+    (is (= :warning (:severity diagnostic)))
+    (is (= "sample/greet" (:symbol diagnostic)))))
+
+(deftest reports-missing-signatures-when-required
+  (let [result (audit/symbol-index
+                 {:symbols [(assoc documented-function :signatures [])]}
+                 {:require-signatures? true})
+        diagnostic (head (:diagnostics result))]
+    (is (= :missing-signatures (:kind diagnostic)))
+    (is (= "sample/greet" (:symbol diagnostic)))))
+
+(deftest reports-zero-arity-signatures-when-not-allowed
+  (let [result (audit/symbol-index
+                 {:symbols [(assoc documented-function
+                                    :signatures [{:display "(greet)"
+                                                  :params []}])]}
+                 {:require-signatures? true})
+        diagnostic (head (:diagnostics result))]
+    (is (= :zero-arity-signature (:kind diagnostic)))
+    (is (= "(greet)" (:signature diagnostic)))))
+
+(deftest allows-declared-zero-arity-signatures
+  (let [result (audit/symbol-index
+                 {:symbols [(assoc documented-function
+                                    :id "sample/now"
+                                    :qualified-name "sample/now"
+                                    :signatures [{:display "(now)"
+                                                  :params []}])]}
+                 {:require-signatures? true
+                  :allow-zero-arity ["sample/now"]})]
+    (is (= [] (:diagnostics result)))))
+
+(deftest reports-missing-parameter-docs-when-required
+  (let [result (audit/symbol-index
+                 {:symbols [(assoc documented-function
+                                    :signatures [{:display "(greet name)"
+                                                  :params [{:name "name"
+                                                            :doc nil}]}])]}
+                 {:require-param-docs? true})
+        diagnostic (head (:diagnostics result))]
+    (is (= :missing-param-doc (:kind diagnostic)))
+    (is (= "name" (:param diagnostic)))))
+
+(deftest marks-audit-failed-at-threshold
+  (let [result (audit/symbol-index
+                 {:symbols [(assoc documented-function
+                                    :doc {:summary nil})]}
+                 {:require-summary? true
+                  :fail-on :warning})]
+    (is (= true (:failed? result)))))

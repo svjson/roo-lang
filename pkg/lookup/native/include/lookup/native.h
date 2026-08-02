@@ -12,6 +12,7 @@ namespace Roo::Lookup
   LOOKUP_NATIVE_API std::unique_ptr<Namespace> make_analysis_namespace();
   LOOKUP_NATIVE_API std::vector<std::unique_ptr<Namespace>> make_native_namespaces();
   LOOKUP_NATIVE_API std::unique_ptr<Namespace> make_reader_namespace();
+  LOOKUP_NATIVE_API std::unique_ptr<Namespace> make_system_namespace();
 } // namespace Roo::Lookup
 
 #endif

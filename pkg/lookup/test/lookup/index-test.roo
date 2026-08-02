@@ -22,8 +22,9 @@
     (is (= 1 (:version source-index)))
     (is (= "lookup" (:name (:package source-index))))
     (is (= "0.1.0" (:version (:package source-index))))
-    (is (= 6 (count sources)))
-    (is (= ["../src/cli.roo"
+    (is (= 7 (count sources)))
+    (is (= ["../src/audit.roo"
+            "../src/cli.roo"
             "../src/docstrings.roo"
             "../src/index.roo"
             "../src/native-docs.roo"

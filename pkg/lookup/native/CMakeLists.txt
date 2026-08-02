@@ -3,6 +3,7 @@ add_library(lookup_native SHARED
   src/native.cpp
   src/reader.cpp
   src/source_values.cpp
+  src/system.cpp
 )
 
 set_target_properties(lookup_native PROPERTIES

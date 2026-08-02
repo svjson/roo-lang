@@ -11,6 +11,7 @@ namespace Roo::Lookup
     std::vector<std::unique_ptr<Namespace>> namespaces;
     namespaces.push_back(make_analysis_namespace());
     namespaces.push_back(make_reader_namespace());
+    namespaces.push_back(make_system_namespace());
     return namespaces;
   }
 } // namespace Roo::Lookup
