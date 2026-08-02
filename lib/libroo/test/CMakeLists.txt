@@ -23,6 +23,12 @@ target_link_libraries(testroo
   roo_shared
 )
 
+if(COMMAND target_precompile_headers AND NOT DEFINED ENV{TESTS_USE_IWYU})
+  target_precompile_headers(testroo
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests/precompiled.h"
+  )
+endif()
+
 roo_copy_runtime_dlls(testroo
   roo_shared
 )
