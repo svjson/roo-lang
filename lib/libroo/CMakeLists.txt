@@ -26,6 +26,8 @@ set(roo_SOURCES
   src/roo/host/type.cpp
   src/roo/impl.cpp
   src/roo/lang.cpp
+  src/roo/lang/ast/ast_namespace.cpp
+  src/roo/lang/ast/reader.cpp
   src/roo/lang/base.cpp
   src/roo/lang/bind_form.cpp
   src/roo/lang/branch.cpp
