@@ -65,6 +65,7 @@ jobs:
 
       - name: Run validation tests
         run: |
+          make -f Makefile.ci ci-test-support
           make -f Makefile.ci ci-test-lang
           make -f Makefile.ci ci-test-package
           make -f Makefile.ci ci-test-server

@@ -139,6 +139,44 @@ jobs:
           cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testroo
           ./build/lib/libroo/test/testroo${{ runner.os == 'Windows' && '.exe' || '' }} --skip-benchmarks
 
+  test-libroo-support:
+    name: Test libroo-support ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-libroo
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download core build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-libroo-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack core build tree
+        run: cmake -E tar xzf "artifacts/build-libroo-${{ matrix.platform }}.tar.gz"
+
+      - name: Build and run support tests
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testsupport
+          ./build/lib/libroo-support/test/testsupport${{ runner.os == 'Windows' && '.exe' || '' }}
+
   build-libroo-package:
     name: Build libroo-package ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}

@@ -50,6 +50,7 @@ cmake --build "$build_dir" --config "$config" --parallel "$jobs" \
     roo_cli \
     rooc_cli \
     stage_native_packages \
+    testsupport \
     testroo \
     testpackage \
     testserver \
@@ -58,6 +59,7 @@ cmake --build "$build_dir" --config "$config" --parallel "$jobs" \
 
 roo=$(find_built_executable roo)
 rooc=$(find_built_executable rooc)
+testsupport=$(find_built_executable testsupport)
 testroo=$(find_built_executable testroo)
 testpackage=$(find_built_executable testpackage)
 testserver=$(find_built_executable testserver)
@@ -66,6 +68,7 @@ testrooc=$(find_built_executable testrooc)
 stage_root="$build_dir/native-package-stage/pkg"
 
 printf '%s\n' "==> Running C++ test suites"
+"$testsupport"
 "$testroo" --skip-benchmarks
 "$testpackage"
 "$testserver"
