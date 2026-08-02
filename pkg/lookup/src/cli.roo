@@ -1,30 +1,16 @@
 (ns lookup.cli
-  (:require [roo.io :as io]
-            [lookup.audit :as audit]
-            [lookup.index :as index]
-            [lookup.analysis :as analysis]
+  (:require [lookup.analysis :as analysis]
+            [lookup.command.audit :as audit-command]
+            [lookup.command.index :as index-command]
             [lookup.reader :as reader]
-            [lookup.source :as source]
             [lookup.system :as system]))
 
 (def usage-lines
   "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
-   "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]"
-   "       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>"
+   index-command/usage-line
+   audit-command/usage-line
    "       lookup thing-at <package-dir> <file> <line> <column>"])
-
-(def index-extractors
-  "Extractor names accepted by `lookup index -x`."
-  [:forms :symbols :native])
-
-(def audit-fail-levels
-  "Failure thresholds accepted by `lookup audit --fail-on`."
-  [:warning :error])
-
-(def audit-output-formats
-  "Output formats accepted by `lookup audit --output-format`."
-  [:edn :text])
 
 (def version
   "Lookup command version."
@@ -94,347 +80,29 @@
 (defun print-version! []
   (prn (version-text)))
 
-(defun parse-index-args-step [args options]
-  (let [arg (head args)]
-    (cond
+(defun print-errors-and-usage! [errors]
+  (map errors prn)
+  (print-usage!))
 
-      (nil? arg)
-      options
-
-      (= arg "-x")
-      (let [extractor (nth args 1)]
-        (if (nil? extractor)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing extractor after -x"]))
-          (let [extractor-key (keyword extractor)]
-            (parse-index-args-step
-              (tail (tail args))
-              (if (contains? index-extractors extractor-key)
-                (assoc options :extractors (concat (:extractors options)
-                                                   [extractor-key]))
-                (assoc options :errors (concat (:errors options)
-                                               [(str "Unknown index extractor: "
-                                                     extractor)])))))))
-
-      (= arg "--root")
-      (let [root (nth args 1)]
-        (if (nil? root)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing directory after --root"]))
-          (parse-index-args-step (tail (tail args))
-                                 (assoc options
-                                        :roots
-                                        (concat (:roots options) [root])))))
-
-      (= arg "--exclude")
-      (let [path (nth args 1)]
-        (if (nil? path)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing path after --exclude"]))
-          (parse-index-args-step (tail (tail args))
-                                 (assoc options
-                                        :excludes
-                                        (concat (:excludes options) [path])))))
-
-      (or (= arg "-o")
-          (= arg "--out"))
-      (let [out (nth args 1)]
-        (if (nil? out)
-          (assoc options :errors (concat (:errors options)
-                                         [(str "Missing file after " arg)]))
-          (parse-index-args-step (tail (tail args))
-                                 (assoc options :out out))))
-
-      (= "-" (substr arg 0 1))
-      (parse-index-args-step (tail args)
-                             (assoc options
-                                    :errors
-                                    (concat (:errors options)
-                                            [(str "Unknown index option: " arg)])))
-
-      (nil? (:package-dir options))
-      (parse-index-args-step (tail args)
-                             (assoc options :package-dir arg))
-
-      true
-      (parse-index-args-step (tail args)
-                             (assoc options
-                                    :errors
-                                    (concat (:errors options)
-                                            [(str "Unexpected index argument: "
-                                                  arg)]))))))
-
-(defun parse-index-args
-  "Parse arguments for the `lookup index` command.
-
-  Args:
-  - `args`: Arguments after the `index` command name.
-
-  Returns:
-  An options map with `:extractors`, `:out`, `:package-dir`, `:roots`,
-  `:excludes`, and `:errors`."
-  [args]
-  (let [options (parse-index-args-step args
-                                       {:extractors []
-                                        :out nil
-                                        :package-dir nil
-                                        :roots []
-                                        :excludes []
-                                        :errors []})
-        has-package? (not (nil? (:package-dir options)))
-        has-roots? (not (= 0 (count (:roots options))))
-        with-default-extractors (if (= 0 (count (:extractors options)))
-                                  (assoc options
-                                         :extractors
-                                         (if has-package? [:symbols] [:native]))
-                                  options)
-        forms? (contains? (:extractors with-default-extractors) :forms)
-        native? (contains? (:extractors with-default-extractors) :native)]
-    (cond
-
-      (and (not has-package?) (not has-roots?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Missing package directory or root"]))
-
-      (and forms? (not has-package?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Package directory required for forms extractor"]))
-
-      (and native? (not has-roots?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Root required for native extractor"]))
-
-      true
-      with-default-extractors)))
-
-(defun parse-audit-args-step [args options]
-  (let [arg (head args)]
-    (cond
-
-      (nil? arg)
-      options
-
-      (= arg "--require-summary")
-      (parse-audit-args-step (tail args)
-                             (assoc options :require-summary? true))
-
-      (= arg "--require-param-docs")
-      (parse-audit-args-step (tail args)
-                             (assoc options :require-param-docs? true))
-
-      (= arg "--require-signatures")
-      (parse-audit-args-step (tail args)
-                             (assoc options :require-signatures? true))
-
-      (or (= arg "-o")
-          (= arg "--output-format"))
-      (let [format (nth args 1)]
-        (if (nil? format)
-          (assoc options :errors (concat (:errors options)
-                                         [(str "Missing format after " arg)]))
-          (let [format-key (keyword format)]
-            (parse-audit-args-step
-              (tail (tail args))
-              (if (contains? audit-output-formats format-key)
-                (assoc options :format format-key)
-                (assoc options :errors (concat (:errors options)
-                                               [(str "Unknown audit output format: "
-                                                     format)])))))))
-
-      (= arg "--allow-zero-arity")
-      (let [symbol (nth args 1)]
-        (if (nil? symbol)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing symbol after --allow-zero-arity"]))
-          (parse-audit-args-step
-            (tail (tail args))
-            (assoc options
-                   :allow-zero-arity
-                   (concat (:allow-zero-arity options) [symbol])))))
-
-      (= arg "--root")
-      (let [root (nth args 1)]
-        (if (nil? root)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing directory after --root"]))
-          (parse-audit-args-step (tail (tail args))
-                                 (assoc options
-                                        :roots
-                                        (concat (:roots options) [root])))))
-
-      (= arg "--exclude")
-      (let [path (nth args 1)]
-        (if (nil? path)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing path after --exclude"]))
-          (parse-audit-args-step (tail (tail args))
-                                 (assoc options
-                                        :excludes
-                                        (concat (:excludes options) [path])))))
-
-      (= arg "--fail-on")
-      (let [level (nth args 1)]
-        (if (nil? level)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing level after --fail-on"]))
-          (let [level-key (keyword level)]
-            (parse-audit-args-step
-              (tail (tail args))
-              (if (contains? audit-fail-levels level-key)
-                (assoc options :fail-on level-key)
-                (assoc options :errors (concat (:errors options)
-                                               [(str "Unknown audit failure level: "
-                                                     level)])))))))
-
-      (= "-" (substr arg 0 1))
-      (parse-audit-args-step (tail args)
-                             (assoc options
-                                    :errors
-                                    (concat (:errors options)
-                                            [(str "Unknown audit option: " arg)])))
-
-      (nil? (:input options))
-      (parse-audit-args-step (tail args)
-                             (assoc options :input arg))
-
-      true
-      (parse-audit-args-step (tail args)
-                             (assoc options
-                                    :errors
-                                    (concat (:errors options)
-                                            [(str "Unexpected audit argument: "
-                                                  arg)]))))))
-
-(defun parse-audit-args
-  "Parse arguments for the `lookup audit` command.
-
-  Args:
-  - `args`: Arguments after the `audit` command name.
-
-  Returns:
-  An audit options map with `:input`, requirement toggles, source roots,
-  excludes, `:allow-zero-arity`, `:format`, `:fail-on`, and `:errors`."
-  [args]
-  (let [options (parse-audit-args-step args
-                                       {:input nil
-                                        :require-summary? false
-                                        :require-param-docs? false
-                                        :require-signatures? false
-                                        :allow-zero-arity []
-                                        :roots []
-                                        :excludes []
-                                        :format :edn
-                                        :fail-on nil
-                                        :errors []})]
-    (if (nil? (:input options))
-      (assoc options
-             :errors
-             (concat (:errors options) ["Missing audit input"]))
-      options)))
-
-(defun audit-index! [options]
-  (let [input (:input options)]
-    (cond
-
-      (io/file? input)
-      (io/slurp-edn! input)
-
-      (and (io/directory? input)
-           (io/exists? (source/manifest-path input)))
-      (index/index-with-options {:extractors [:symbols]
-                                 :out nil
-                                 :package-dir input
-                                 :roots (:roots options)
-                                 :excludes (:excludes options)
-                                 :errors []})
-
-      (io/directory? input)
-      (index/root-index (concat [input] (:roots options))
-                        (:excludes options)
-                        [:native])
-
-      true
-      (system/fail! (str "lookup audit input does not exist: " input)))))
-
-(defun audit-diagnostic-extra [diagnostic]
-  (cond
-
-    (and (not (nil? (:signature diagnostic)))
-         (not (nil? (:param diagnostic))))
-    (str " [" (:signature diagnostic) ", param: " (:param diagnostic) "]")
-
-    (not (nil? (:signature diagnostic)))
-    (str " [" (:signature diagnostic) "]")
-
-    (not (nil? (:param diagnostic)))
-    (str " [param: " (:param diagnostic) "]")
-
-    true
-    ""))
-
-(defun audit-diagnostic-line [diagnostic]
-  (str (name (:severity diagnostic))
-       " "
-       (name (:kind diagnostic))
-       " "
-       (:symbol diagnostic)
-       ": "
-       (:message diagnostic)
-       (audit-diagnostic-extra diagnostic)))
-
-(defun audit-diagnostic-count-line [diagnostic-count]
-  (str "lookup audit: "
-       diagnostic-count
-       " "
-       (case diagnostic-count
-         1 "diagnostic"
-         :default "diagnostics")))
-
-(defun audit-text-lines [result]
-  (let [diagnostics (:diagnostics result)
-        diagnostic-count (count diagnostics)]
-    (if (= 0 diagnostic-count)
-      ["lookup audit: no diagnostics"]
-      (concat [(audit-diagnostic-count-line diagnostic-count)]
-              (map diagnostics audit-diagnostic-line)
-              [(if (:failed? result)
-                 "lookup audit: failed"
-                 "lookup audit: passed")]))))
-
-(defun print-audit-result! [result format]
-  (case format
-    :text (print-lines! (audit-text-lines result))
-    :default (prn result)))
+(defun print-command-result! [result]
+  (let [errors (or (:errors result) [])]
+    (if (not (= 0 (count errors)))
+      (print-errors-and-usage! errors)
+      (case (:format result)
+        :text (print-lines! (:output result))
+        :default (if (not (nil? (:value result)))
+                   (prn (:value result))
+                   nil)))))
 
 (defun print-index! [args]
-  (let [options (parse-index-args (tail args))]
-    (if (not (= 0 (count (:errors options))))
-      (do
-        (map (:errors options) prn)
-        (print-usage!))
-      (let [value (index/index-with-options options)]
-        (if (nil? (:out options))
-          (prn value)
-          (io/spit! (:out options) (str value "\n")))))))
+  (print-command-result! (index-command/run! (tail args))))
 
 (defun print-audit! [args]
-  (let [options (parse-audit-args (tail args))]
-    (if (not (= 0 (count (:errors options))))
-      (do
-        (map (:errors options) prn)
-        (print-usage!))
-      (let [result (audit/symbol-index (audit-index! options)
-                                       options)]
-        (print-audit-result! result (:format options))
-        (if (:failed? result)
-          (system/fail! "lookup audit failed")
-          result)))))
+  (let [result (audit-command/run! (tail args))]
+    (print-command-result! result)
+    (if (:failed? result)
+      (system/fail! "lookup audit failed")
+      result)))
 
 (defun print-thing-at! [args]
   (let [package-dir (nth args 1)
@@ -461,11 +129,10 @@
   Returns:
   The result of printing or writing the selected lookup command output."
   [args]
-  (let [command-name (command args)]
-    (case (command args)
-      :help (print-help!)
-      :version (print-version!)
-      :index (print-index! args)
-      :audit (print-audit! args)
-      :thing-at (print-thing-at! args)
-      :default (print-usage!))))
+  (case (command args)
+    :help (print-help!)
+    :version (print-version!)
+    :index (print-index! args)
+    :audit (print-audit! args)
+    :thing-at (print-thing-at! args)
+    :default (print-usage!)))

@@ -1,0 +1,145 @@
+(ns lookup.command.index
+  (:require [roo.io :as io]
+            [lookup.index :as index]))
+
+(def usage-line
+  "Usage line for the `lookup index` command."
+  "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]")
+
+(defun parse-args-step [args options]
+  (let [arg (head args)]
+    (cond
+
+      (nil? arg)
+      options
+
+      (= arg "-x")
+      (let [extractor (nth args 1)]
+        (if (nil? extractor)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing extractor after -x"]))
+          (let [extractor-key (keyword extractor)]
+            (parse-args-step
+              (tail (tail args))
+              (if (contains? [:forms :symbols :native] extractor-key)
+                (assoc options :extractors (concat (:extractors options)
+                                                   [extractor-key]))
+                (assoc options :errors (concat (:errors options)
+                                               [(str "Unknown index extractor: "
+                                                     extractor)])))))))
+
+      (= arg "--root")
+      (let [root (nth args 1)]
+        (if (nil? root)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing directory after --root"]))
+          (parse-args-step (tail (tail args))
+                           (assoc options
+                                  :roots
+                                  (concat (:roots options) [root])))))
+
+      (= arg "--exclude")
+      (let [path (nth args 1)]
+        (if (nil? path)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing path after --exclude"]))
+          (parse-args-step (tail (tail args))
+                           (assoc options
+                                  :excludes
+                                  (concat (:excludes options) [path])))))
+
+      (or (= arg "-o")
+          (= arg "--out"))
+      (let [out (nth args 1)]
+        (if (nil? out)
+          (assoc options :errors (concat (:errors options)
+                                         [(str "Missing file after " arg)]))
+          (parse-args-step (tail (tail args))
+                           (assoc options :out out))))
+
+      (= "-" (substr arg 0 1))
+      (parse-args-step (tail args)
+                       (assoc options
+                              :errors
+                              (concat (:errors options)
+                                      [(str "Unknown index option: " arg)])))
+
+      (nil? (:package-dir options))
+      (parse-args-step (tail args)
+                       (assoc options :package-dir arg))
+
+      true
+      (parse-args-step (tail args)
+                       (assoc options
+                              :errors
+                              (concat (:errors options)
+                                      [(str "Unexpected index argument: "
+                                            arg)]))))))
+
+(defun parse-args
+  "Parse arguments for the `lookup index` command.
+
+  Args:
+  - `args`: Arguments after the `index` command name.
+
+  Returns:
+  An options map with `:extractors`, `:out`, `:package-dir`, `:roots`,
+  `:excludes`, and `:errors`."
+  [args]
+  (let [options (parse-args-step args
+                                 {:extractors []
+                                  :out nil
+                                  :package-dir nil
+                                  :roots []
+                                  :excludes []
+                                  :errors []})
+        has-package? (not (nil? (:package-dir options)))
+        has-roots? (not (= 0 (count (:roots options))))
+        with-default-extractors (if (= 0 (count (:extractors options)))
+                                  (assoc options
+                                         :extractors
+                                         (if has-package? [:symbols] [:native]))
+                                  options)
+        forms? (contains? (:extractors with-default-extractors) :forms)
+        native? (contains? (:extractors with-default-extractors) :native)]
+    (cond
+
+      (and (not has-package?) (not has-roots?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Missing package directory or root"]))
+
+      (and forms? (not has-package?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Package directory required for forms extractor"]))
+
+      (and native? (not has-roots?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Root required for native extractor"]))
+
+      true
+      with-default-extractors)))
+
+(defun run! [args]
+  "Run the `lookup index` command.
+
+  Args:
+  - `args`: Arguments after the `index` command name.
+
+  Returns:
+  A map containing either `:errors` or the generated `:value`."
+  [args]
+  (let [options (parse-args args)]
+    (if (not (= 0 (count (:errors options))))
+      {:errors (:errors options)}
+      (let [value (index/index-with-options options)]
+        (if (nil? (:out options))
+          {:value value}
+          (do
+            (io/spit! (:out options) (str value "\n"))
+            {:value nil}))))))

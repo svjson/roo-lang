@@ -1,0 +1,81 @@
+(ns lookup.command.audit-test
+  (:require proof.core
+            [lookup.command.audit :as audit-command]))
+
+(deftest parses-audit-options
+  (is (= {:input "build/index.edn"
+          :require-summary? true
+          :require-param-docs? true
+          :require-signatures? true
+          :allow-zero-arity ["roo/epoch-ms" "roo.io/current-directory!"]
+          :roots ["lib/libroo/include"]
+          :excludes ["lib/libroo/test"]
+          :format :text
+          :fail-on :warning
+          :errors []}
+         (audit-command/parse-args ["--require-summary"
+                                    "--output-format"
+                                    "text"
+                                    "--require-param-docs"
+                                    "--require-signatures"
+                                    "--allow-zero-arity"
+                                    "roo/epoch-ms"
+                                    "--allow-zero-arity"
+                                    "roo.io/current-directory!"
+                                    "--root"
+                                    "lib/libroo/include"
+                                    "--exclude"
+                                    "lib/libroo/test"
+                                    "--fail-on"
+                                    "warning"
+                                    "build/index.edn"]))))
+
+(deftest reports-audit-option-errors
+  (let [missing-input (audit-command/parse-args [])
+        missing-zero-arity (audit-command/parse-args ["--allow-zero-arity"])
+        missing-root (audit-command/parse-args ["--root"])
+        missing-exclude (audit-command/parse-args ["--exclude"])
+        missing-format (audit-command/parse-args ["--output-format"])
+        missing-short-format (audit-command/parse-args ["-o"])
+        unknown-format (audit-command/parse-args ["--output-format" "json" "index.edn"])
+        missing-fail-on (audit-command/parse-args ["--fail-on"])
+        unknown-fail-on (audit-command/parse-args ["--fail-on" "notice" "index.edn"])
+        unknown-option (audit-command/parse-args ["--wat" "index.edn"])
+        extra-arg (audit-command/parse-args ["index.edn" "extra"])]
+    (is (contains? (:errors missing-input) "Missing audit input"))
+    (is (contains? (:errors missing-zero-arity)
+                   "Missing symbol after --allow-zero-arity"))
+    (is (contains? (:errors missing-root) "Missing directory after --root"))
+    (is (contains? (:errors missing-exclude) "Missing path after --exclude"))
+    (is (contains? (:errors missing-format)
+                   "Missing format after --output-format"))
+    (is (contains? (:errors missing-short-format) "Missing format after -o"))
+    (is (contains? (:errors unknown-format)
+                   "Unknown audit output format: json"))
+    (is (contains? (:errors missing-fail-on) "Missing level after --fail-on"))
+    (is (contains? (:errors unknown-fail-on)
+                   "Unknown audit failure level: notice"))
+    (is (contains? (:errors unknown-option) "Unknown audit option: --wat"))
+    (is (contains? (:errors extra-arg) "Unexpected audit argument: extra"))))
+
+(deftest formats-audit-text-output
+  (is (= ["lookup audit: 2 diagnostics"
+          "warning missing-doc-summary sample/missing: Missing documentation summary."
+          "warning missing-param-doc sample/missing: Missing parameter documentation. [(missing value), param: value]"
+          "lookup audit: failed"]
+         (audit-command/text-lines
+           {:diagnostics [{:severity :warning
+                           :kind :missing-doc-summary
+                           :symbol "sample/missing"
+                           :message "Missing documentation summary."}
+                          {:severity :warning
+                           :kind :missing-param-doc
+                           :symbol "sample/missing"
+                           :message "Missing parameter documentation."
+                           :signature "(missing value)"
+                           :param "value"}]
+            :failed? true}))))
+
+(deftest formats-empty-audit-text-output
+  (is (= ["lookup audit: no diagnostics"]
+         (audit-command/text-lines {:diagnostics [] :failed? false}))))
