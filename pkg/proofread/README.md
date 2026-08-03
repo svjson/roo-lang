@@ -55,6 +55,26 @@ Select the reporter explicitly with `--reporter`:
 proofread --reporter simple src
 ```
 
+Group warnings with `--group-by`. Criteria are applied in order, so
+`rule,namespace` groups first by rule and then by namespace:
+
+```sh
+proofread --group-by rule,namespace src
+```
+
+Supported grouping criteria:
+
+- `rule`
+- `namespace`
+- `file`
+- `package`
+
+Repeat `--group-by` to build the same cascade incrementally:
+
+```sh
+proofread --group-by package --group-by rule src
+```
+
 ## Style Warnings
 
 Supported style warnings:

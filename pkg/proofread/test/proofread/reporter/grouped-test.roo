@@ -1,0 +1,61 @@
+(ns proofread.reporter.grouped-test
+  (:require proof.core
+            [proofread.reporter.common :as common]
+            [proofread.reporter.grouped :as grouped]))
+
+(def first-diagnostic
+  {:rule :redundant-do
+   :severity :warning
+   :namespace "sample.one"
+   :package "sample"
+   :file "src/one.roo"
+   :source {:path "src/one.roo"
+            :line 4
+            :column 3}
+   :message "Redundant do form"})
+
+(def second-diagnostic
+  {:rule :use-when
+   :severity :warning
+   :namespace "sample.one"
+   :package "sample"
+   :file "src/one.roo"
+   :source {:path "src/one.roo"
+            :line 8
+            :column 3}
+   :message "Use when"})
+
+(def third-diagnostic
+  {:rule :redundant-do
+   :severity :warning
+   :namespace "sample.two"
+   :package "sample"
+   :file "src/two.roo"
+   :source {:path "src/two.roo"
+            :line 12
+            :column 5}
+   :message "Redundant do form"})
+
+(deftest groups-by-rule-then-namespace
+  (is (= [(common/group-line :rule "redundant-do")
+          (str "  " (common/group-line :namespace "sample.one"))
+          (str "    " (common/diagnostic-line first-diagnostic))
+          (str "  " (common/group-line :namespace "sample.two"))
+          (str "    " (common/diagnostic-line third-diagnostic))
+          (common/group-line :rule "use-when")
+          (str "  " (common/group-line :namespace "sample.one"))
+          (str "    " (common/diagnostic-line second-diagnostic))]
+         (grouped/lines [first-diagnostic second-diagnostic third-diagnostic]
+                        [:rule :namespace]))))
+
+(deftest groups-by-namespace-then-rule
+  (is (= [(common/group-line :namespace "sample.one")
+          (str "  " (common/group-line :rule "redundant-do"))
+          (str "    " (common/diagnostic-line first-diagnostic))
+          (str "  " (common/group-line :rule "use-when"))
+          (str "    " (common/diagnostic-line second-diagnostic))
+          (common/group-line :namespace "sample.two")
+          (str "  " (common/group-line :rule "redundant-do"))
+          (str "    " (common/diagnostic-line third-diagnostic))]
+         (grouped/lines [first-diagnostic second-diagnostic third-diagnostic]
+                        [:namespace :rule]))))

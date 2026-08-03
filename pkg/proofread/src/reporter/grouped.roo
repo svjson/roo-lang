@@ -1,0 +1,160 @@
+(ns proofread.reporter.grouped
+  (:require [proofread.reporter.common :as rc]))
+
+(def indent-width
+  "Number of spaces used for each grouped reporter nesting level."
+  2)
+
+(defun indent
+  "Return indentation for a grouped reporter nesting level.
+
+  Args:
+  - `level`: Zero-based group nesting level.
+
+  Returns:
+  A string containing the indentation spaces for `level`."
+  [level]
+  (apply join (concat [""]
+                      (repeat (* indent-width level) " "))))
+
+(defun group-value
+  "Return the grouping value for a diagnostic.
+
+  Args:
+  - `criterion`: Grouping criterion keyword.
+  - `diagnostic`: Diagnostic map.
+
+  Returns:
+  A string value suitable for a group heading."
+  [criterion diagnostic]
+  (case criterion
+    :rule (name (:rule diagnostic))
+    :namespace (or (:namespace diagnostic) "user")
+    :file (or (:file diagnostic) (:path (:source diagnostic)))
+    :package (or (:package diagnostic) "<no package>")
+    :default "<unknown>"))
+
+(defun append-group-value
+  "Append a diagnostic group value when it has not been seen.
+
+  Args:
+  - `values`: Existing group values in display order.
+  - `criterion`: Grouping criterion keyword.
+  - `diagnostic`: Diagnostic map.
+
+  Returns:
+  `values` with the diagnostic value appended when new."
+  [values criterion diagnostic]
+  (let [value (group-value criterion diagnostic)]
+    (if (contains? values value)
+      values
+      (append! values value))))
+
+(defun group-values
+  "Return distinct grouping values for diagnostics.
+
+  Args:
+  - `diagnostics`: Diagnostic maps.
+  - `criterion`: Grouping criterion keyword.
+
+  Returns:
+  Distinct group values in first-seen order."
+  [diagnostics criterion]
+  (reduce diagnostics
+          []
+          (fn [values diagnostic]
+            (append-group-value values criterion diagnostic))))
+
+(defun grouped-diagnostics
+  "Return diagnostics matching one group value.
+
+  Args:
+  - `diagnostics`: Diagnostic maps.
+  - `criterion`: Grouping criterion keyword.
+  - `value`: Group value to match.
+
+  Returns:
+  A vector of matching diagnostics."
+  [diagnostics criterion value]
+  (filter diagnostics
+          (fn [diagnostic]
+            (= value (group-value criterion diagnostic)))))
+
+(defun lines-at-level
+  "Return grouped reporter lines for one nesting level.
+
+  Args:
+  - `diagnostics`: Diagnostic maps.
+  - `groups`: Remaining grouping criteria.
+  - `level`: Current group nesting level.
+
+  Returns:
+  A vector of formatted output lines."
+  [diagnostics groups level]
+  (if (empty? groups)
+    (map diagnostics
+         (fn [diagnostic]
+           (str (indent level) (rc/diagnostic-line diagnostic))))
+    (let [criterion (head groups)]
+      (flat-map (group-values diagnostics criterion)
+                (fn [value]
+                  (concat [(str (indent level) (rc/group-line criterion value))]
+                          (lines-at-level (grouped-diagnostics diagnostics
+                                                               criterion
+                                                               value)
+                                          (tail groups)
+                                          (+ level 1))))))))
+
+(defun lines
+  "Return grouped reporter diagnostic lines.
+
+  Args:
+  - `diagnostics`: Diagnostic maps.
+  - `groups`: Grouping criteria, in nesting order.
+
+  Returns:
+  A vector of formatted output lines."
+  [diagnostics groups]
+  (lines-at-level diagnostics groups 0))
+
+(defun report-file!
+  "Collect diagnostics for grouped output.
+
+  Args:
+  - `state`: Reporter state map.
+  - `file-result`: Map containing `:diagnostics` for a checked file.
+
+  Returns:
+  Updated reporter state."
+  [state file-result]
+  (assoc state :diagnostics (concat (:diagnostics state)
+                                    (:diagnostics file-result))))
+
+(defun report-summary!
+  "Print grouped diagnostics and the final proofread summary.
+
+  Args:
+  - `state`: Reporter state map.
+  - `summary`: Map containing `:files`, `:warnings`, and `:errors` counts.
+
+  Returns:
+  `summary`."
+  [state summary]
+  (map (lines (:diagnostics state) (:groups state)) prn)
+  (rc/print-summary! summary))
+
+(defun make
+  "Create a grouped proofread reporter.
+
+  Args:
+  - `files`: Files selected for the proofread run.
+  - `groups`: Grouping criteria, in nesting order.
+
+  Returns:
+  A reporter map that buffers diagnostics and prints grouped output before the
+  final summary."
+  [files groups]
+  {:state {:diagnostics []
+           :groups groups}
+   :report-file! report-file!
+   :report-summary! report-summary!})

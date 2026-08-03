@@ -20,7 +20,7 @@
   Returns:
   `nil`."
   []
-  (prn "proofread: check that Roo and EDN files parse")
+  (prn "proofread: check Roo source and EDN files")
   (usage!))
 
 (defun print-version!

@@ -1,0 +1,9 @@
+(ns proofread.source-test
+  (:require proof.core
+            [proofread.source :as source]))
+
+(deftest annotates-diagnostics-with-source-context
+  (let [diagnostic (head (source/diagnostics "assets/style/redundant-do.roo"))]
+    (is (= "assets/style/redundant-do.roo" (:file diagnostic)))
+    (is (= "proofread.style-sample" (:namespace diagnostic)))
+    (is (= "proofread-tests" (:package diagnostic)))))

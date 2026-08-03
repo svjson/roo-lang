@@ -5,23 +5,52 @@
 (deftest parses-reporter-option
   (is (= {:files ["src"]
           :reporter :simple
+          :groups []
           :errors []}
          (check-command/parse-args ["--reporter" "simple" "src"])))
   (is (= {:files ["src"]
           :reporter :simple
+          :groups []
           :errors []}
          (check-command/parse-args ["src" "--reporter" "simple"]))))
+
+(deftest parses-group-options
+  (is (= {:files ["src"]
+          :reporter :simple
+          :groups [:rule :namespace]
+          :errors []}
+         (check-command/parse-args ["--group-by" "rule,namespace" "src"])))
+  (is (= {:files ["src"]
+          :reporter :simple
+          :groups [:namespace :rule]
+          :errors []}
+         (check-command/parse-args ["--group-by" "namespace"
+                                    "--group-by" "rule"
+                                    "src"]))))
 
 (deftest reports-invalid-check-arguments
   (is (= {:files []
           :reporter :simple
+          :groups []
           :errors ["No files or patterns provided."]}
          (check-command/parse-args [])))
   (is (= {:files ["src"]
           :reporter :simple
+          :groups []
           :errors ["Missing reporter after --reporter"]}
          (check-command/parse-args ["src" "--reporter"])))
   (is (= {:files ["src"]
           :reporter :simple
+          :groups []
           :errors ["Unknown reporter: tree"]}
-         (check-command/parse-args ["--reporter" "tree" "src"]))))
+         (check-command/parse-args ["--reporter" "tree" "src"])))
+  (is (= {:files ["src"]
+          :reporter :simple
+          :groups []
+          :errors ["Missing group criteria after --group-by"]}
+         (check-command/parse-args ["src" "--group-by"])))
+  (is (= {:files ["src"]
+          :reporter :simple
+          :groups [:rule]
+          :errors ["Unknown group criterion: unknown"]}
+         (check-command/parse-args ["--group-by" "rule,unknown" "src"]))))

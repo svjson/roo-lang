@@ -30,6 +30,14 @@
   "Styles used for successful summary output."
   [:bold :green])
 
+(def group-criterion-styles
+  "Styles used for grouped reporter criterion labels."
+  [:dim])
+
+(def group-value-styles
+  "Styles used for grouped reporter values."
+  [:bold])
+
 (defun severity-styles
   "Return styles for a diagnostic severity.
 
@@ -95,6 +103,19 @@
        (soot/paint location-separator-styles ":")
        (soot/paint location-position-styles (:column source))
        ":"))
+
+(defun group-line
+  "Format one grouped reporter heading.
+
+  Args:
+  - `criterion`: Grouping criterion keyword.
+  - `value`: Group value.
+
+  Returns:
+  A styled group heading string."
+  [criterion value]
+  (str (soot/paint group-criterion-styles (str (name criterion) ": "))
+       (soot/paint group-value-styles value)))
 
 (defun diagnostic-line
   "Format one styled diagnostic for CLI output.

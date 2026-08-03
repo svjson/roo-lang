@@ -1,0 +1,85 @@
+(ns proofread.source
+  (:require [proofread.forms :as forms]
+            [proofread.rules :as rules]
+            [roo.ast :as ast]
+            [roo.io :as io]))
+
+(defun namespace-name
+  "Return the namespace declared by parsed Roo source roots.
+
+  Args:
+  - `roots`: Top-level `roo.ast` nodes.
+
+  Returns:
+  The declared namespace name, or `user` when no namespace form is present."
+  [roots]
+  (if-let [namespace-node (find-first roots
+                                      (fn [root]
+                                        (= "ns" (forms/head-name root))))]
+    (or (forms/symbol-name (nth (:children namespace-node) 1)) "user")
+    "user"))
+
+(defun package-root
+  "Find the nearest package root at or above a directory.
+
+  Args:
+  - `dir`: Absolute or relative directory path.
+
+  Returns:
+  The nearest directory containing `package.edn`, or `nil` when none exists."
+  [dir]
+  (cond
+    (empty? dir)
+    nil
+
+    (io/exists? (io/join-path dir "package.edn"))
+    dir
+
+    true
+    (let [parent (io/dirname dir)]
+      (unless (= parent dir)
+        (package-root parent)))))
+
+(defun package-name
+  "Return the package name for a source file.
+
+  Args:
+  - `file`: Source file path.
+
+  Returns:
+  The nearest enclosing package name, or `nil` when the file is outside a Roo
+  package."
+  [file]
+  (when-let [root (package-root (io/dirname (io/absolute-path! file)))]
+    (str (:name (io/slurp-edn! (io/join-path root "package.edn"))))))
+
+(defun context
+  "Build file-level context for reporter grouping.
+
+  Args:
+  - `file`: Checked source file path.
+  - `roots`: Top-level `roo.ast` nodes for the file.
+
+  Returns:
+  A map containing file, namespace, and package metadata."
+  [file roots]
+  {:file file
+   :namespace (namespace-name roots)
+   :package (package-name file)})
+
+(defun diagnostics
+  "Run proofread rules and attach source context for reporter grouping.
+
+  Args:
+  - `file`: Checked input file path.
+
+  Returns:
+  A vector of diagnostic maps. Non-Roo files return an empty vector."
+  [file]
+  (case (io/extension file)
+    ".roo" (let [roots (ast/slurp! file)
+                 source-context (context file roots)]
+             (map (rules/check roots)
+                  (fn [diagnostic]
+                    (merge source-context diagnostic))))
+    :default []))

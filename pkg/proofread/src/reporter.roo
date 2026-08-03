@@ -1,5 +1,6 @@
 (ns proofread.reporter
-  (:require [proofread.reporter.simple :as simple]))
+  (:require [proofread.reporter.grouped :as grouped]
+            [proofread.reporter.simple :as simple]))
 
 (defun known?
   "Test whether a reporter name is supported.
@@ -24,9 +25,11 @@
   Returns:
   A reporter map containing state and callback functions."
   [options files]
-  (case (get options :reporter :simple)
-    :simple (simple/make files)
-    :default (simple/make files)))
+  (if (not-empty? (:groups options))
+    (grouped/make files (:groups options))
+    (case (get options :reporter :simple)
+      :simple (simple/make files)
+      :default (simple/make files))))
 
 (defun report-file!
   "Report one checked file.

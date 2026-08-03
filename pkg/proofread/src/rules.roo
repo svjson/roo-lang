@@ -1,0 +1,23 @@
+(ns proofread.rules
+  (:require [proofread.rules.direct-conditions :as direct-conditions]
+            [proofread.rules.higher-order :as higher-order]
+            [proofread.rules.names :as names]
+            [proofread.rules.redundant-do :as redundant-do]
+            [proofread.rules.simple-expressions :as simple-expressions]))
+
+(defun check
+  "Run all enabled proofread rules for parsed source roots.
+
+  Args:
+  - `roots`: Top-level `roo.ast` nodes.
+
+  Returns:
+  A vector of diagnostic maps from all enabled rules."
+  [roots]
+  (flat-map roots
+            (fn [root]
+              (concat (direct-conditions/check root)
+                      (higher-order/check root)
+                      (simple-expressions/check root)
+                      (names/check root)
+                      (redundant-do/check root)))))

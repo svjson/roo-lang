@@ -1,12 +1,75 @@
 (ns proofread.command.check
   (:require [proofread.native :as native]
             [proofread.reporter :as reporter]
-            [proofread.style :as style]
+            [proofread.source :as source]
             [roo.string :as string]))
 
 (def usage-line
   "Usage line for the proofread check command."
-  "Usage: proofread [--help|--version] [--reporter simple] <file|pattern>...")
+  "Usage: proofread [--help|--version] [--reporter simple] [--group-by rule,namespace,file,package] <file|pattern>...")
+
+(defun split-groups
+  "Split a comma-separated group option.
+
+  Args:
+  - `text`: Group option text.
+
+  Returns:
+  A vector of trimmed group names."
+  [text]
+  (if-let [separator (find-index text
+                                 (fn [ch]
+                                   (= "," (str ch))))]
+    (concat [(trim (substr text 0 separator))]
+            (split-groups (substr text (+ separator 1) (count text))))
+    [(trim text)]))
+
+(defun group-criterion
+  "Return a group criterion keyword for CLI text.
+
+  Args:
+  - `text`: CLI criterion name.
+
+  Returns:
+  A group criterion keyword, or `nil` when unknown."
+  [text]
+  (case text
+    "rule" :rule
+    "namespace" :namespace
+    "file" :file
+    "package" :package
+    :default nil))
+
+(defun parse-group-step
+  "Parse one group criterion into an accumulated result.
+
+  Args:
+  - `result`: Accumulated parse result.
+  - `text`: CLI criterion name.
+
+  Returns:
+  Updated parse result containing `:groups` and `:errors`."
+  [result text]
+  (if (blank? text)
+    result
+    (if-let [criterion (group-criterion text)]
+      (assoc result :groups (append! (:groups result) criterion))
+      (assoc result :errors (append! (:errors result)
+                                     (str "Unknown group criterion: " text))))))
+
+(defun parse-groups
+  "Parse a CLI group option.
+
+  Args:
+  - `text`: Group option text, possibly comma-separated.
+
+  Returns:
+  A map containing parsed `:groups` and `:errors`."
+  [text]
+  (reduce (split-groups text)
+          {:groups []
+           :errors []}
+          parse-group-step))
 
 (defun parse-args-step
   "Parse proofread check arguments.
@@ -16,7 +79,7 @@
   - `options`: Accumulated options map.
 
   Returns:
-  An options map containing `:files`, `:reporter`, and `:errors`."
+  An options map containing `:files`, `:reporter`, `:groups`, and `:errors`."
   [args options]
   (let [arg (head args)]
     (cond
@@ -44,6 +107,20 @@
                                           [(str "Unknown reporter: "
                                                 reporter-name)])))))
 
+      (= arg "--group-by")
+      (let [group-text (nth args 1)]
+        (if (nil? group-text)
+          (assoc options
+                 :errors
+                 (concat (:errors options) ["Missing group criteria after --group-by"]))
+          (let [result (parse-groups group-text)]
+            (parse-args-step (tail (tail args))
+                             (assoc options
+                                    :groups (concat (:groups options)
+                                                    (:groups result))
+                                    :errors (concat (:errors options)
+                                                    (:errors result)))))))
+
       (string/starts-with? arg "--")
       (parse-args-step (tail args)
                        (assoc options
@@ -64,11 +141,12 @@
   - `args`: Command line file paths, shell-style patterns, and check options.
 
   Returns:
-  An options map containing `:files`, `:reporter`, and `:errors`."
+  An options map containing `:files`, `:reporter`, `:groups`, and `:errors`."
   [args]
   (let [options (parse-args-step args
                                  {:files []
                                   :reporter :simple
+                                  :groups []
                                   :errors []})]
     (if (empty? (:files options))
       (assoc options
@@ -101,7 +179,7 @@
                                  (let [check-result (native/check-files-result! [file])
                                        file-errors (:errors check-result)
                                        diagnostics (case file-errors
-                                                     0 (style/check-file file)
+                                                     0 (source/diagnostics file)
                                                      :default [])
                                        file-result {:file file
                                                     :checked (:checked check-result)
