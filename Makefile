@@ -10,7 +10,7 @@ ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_IND
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread build-boodle install-loom install-proof install-lookup install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
@@ -20,6 +20,7 @@ ROOC_TEST_BINARY := bin/rooc/test/testrooc
 SERVER_TEST_BINARY := lib/libroo-server/test/testserver
 LOOM_BINARY := loom
 LOOKUP_BINARY := lookup
+BOODLE_BINARY := boodle
 PROOF_NATIVE_LIBRARY := libproof-native.so
 LOOKUP_NATIVE_LIBRARY := liblookup-native.so
 PROOFREAD_NATIVE_LIBRARY := libproofread-native.so
@@ -33,6 +34,7 @@ ifeq ($(OS),Windows_NT)
   SERVER_TEST_BINARY := lib/libroo-server/test/testserver.exe
   LOOM_BINARY := loom.exe
   LOOKUP_BINARY := lookup.exe
+  BOODLE_BINARY := boodle.exe
   PROOF_NATIVE_LIBRARY := proof-native.dll
   LOOKUP_NATIVE_LIBRARY := lookup-native.dll
   PROOFREAD_NATIVE_LIBRARY := proofread-native.dll
@@ -173,7 +175,12 @@ install-proofread: build-proofread
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/proofread-install/build/$(PROOFREAD_BINARY) $(PREFIX)/bin/$(PROOFREAD_BINARY)
 
-install-boodle: build
+build-boodle: build stage-native-packages
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/boodle --build-dir $(CURDIR)/build/boodle-install --name boodle
+
+install-boodle: build-boodle
+	cmake -E make_directory $(PREFIX)/bin
+	cmake -E copy_if_different $(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) $(PREFIX)/bin/$(BOODLE_BINARY)
 	cmake -E make_directory $(PREFIX)/share/roo/pkg/boodle/src
 	cmake -E copy_directory $(CURDIR)/pkg/boodle/src $(PREFIX)/share/roo/pkg/boodle/src
 	cmake -E copy_if_different $(CURDIR)/pkg/boodle/package.edn $(PREFIX)/share/roo/pkg/boodle/package.edn
@@ -270,7 +277,7 @@ test\:rooc: build stage-native-packages
 	cmake --build build --target testrooc
 	./build/$(ROOC_TEST_BINARY) $(GTEST_FILTER_ARG)
 
-test\:cli: test\:roo-cli test\:loom-cli test\:lookup-cli
+test\:cli: test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli
 
 test\:roo-cli: build stage-native-packages
 	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
@@ -280,6 +287,9 @@ test\:loom-cli: build stage-native-packages
 
 test\:lookup-cli: build stage-native-packages
 	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
+
+test\:boodle-cli: build stage-native-packages
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/boodle/test/run-cli-tests.sh $(CURDIR)
 
 test\:benchmark: build
 	cmake --build build --target testroo

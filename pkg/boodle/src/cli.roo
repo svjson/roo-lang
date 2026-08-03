@@ -1,0 +1,103 @@
+(ns boodle.cli
+  (:require [boodle.command.generate :as generate-command]))
+
+(def version
+  "Boodle command version."
+  "0.1.0")
+
+(def usage-lines
+  "Command usage lines printed by `boodle --help` and parse errors."
+  ["Usage: boodle [--help|--version]"
+   generate-command/usage-line])
+
+(defun help-lines
+  "Return the full Boodle help text.
+
+  Returns:
+  Help lines for `boodle --help`."
+  []
+  (concat ["boodle: generate reference documentation"]
+          usage-lines
+          [""
+           "Formats: github-pages"]))
+
+(defun print-lines! [lines]
+  "Print LINES to standard output.
+
+  Args:
+  - `lines`: Text lines to print.
+
+  Returns:
+  The printed lines."
+  [lines]
+  (map lines prn))
+
+(defun print-usage! []
+  "Print Boodle usage lines.
+
+  Returns:
+  The printed usage lines."
+  []
+  (print-lines! usage-lines))
+
+(defun print-help! []
+  "Print Boodle help text.
+
+  Returns:
+  The printed help lines."
+  []
+  (print-lines! (help-lines)))
+
+(defun print-version! []
+  "Print Boodle version text.
+
+  Returns:
+  `nil`."
+  []
+  (prn (str "boodle " version)))
+
+(defun print-command-result! [result]
+  "Print a command result.
+
+  Args:
+  - `result`: Result map from a `boodle.command.*` namespace.
+
+  Returns:
+  The command result."
+  [result]
+  (let [errors (or (:errors result) [])]
+    (if (not-empty? errors)
+      (do
+        (print-lines! errors)
+        (print-usage!))
+      (case (:format result)
+        :text (print-lines! (:output result))
+        :default (when-let [value (:value result)]
+                   (prn value))))))
+
+(defun main
+  "Run the Boodle command line entry point.
+
+  Args:
+  - `args`: Command line argument vector.
+
+  Returns:
+  The result of printing or writing the selected Boodle command output."
+  [args]
+  (let [raw-arg (head args)
+        first-arg (str raw-arg)]
+    (cond
+      (nil? raw-arg)
+      (print-help!)
+
+      (contains? ["--help" "-h"] first-arg)
+      (print-help!)
+
+      (= first-arg "--version")
+      (print-version!)
+
+      (= first-arg "generate")
+      (print-command-result! (generate-command/run! (tail args)))
+
+      true
+      (print-usage!))))

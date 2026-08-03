@@ -16,6 +16,19 @@
     (str (:name package) " " (:version package))
     (:name package)))
 
+(defun front-matter
+  "Return Jekyll front matter for TITLE.
+
+  Args:
+  - `title`: Page title.
+
+  Returns:
+  YAML front matter that marks a Markdown file for Jekyll processing."
+  [title]
+  (str "---\n"
+       "title: " title "\n"
+       "---\n\n"))
+
 (defun signature-params
   "Return a Markdown parameter table for SIGNATURE when it has parameters.
 
@@ -78,7 +91,7 @@
                (map (:packages (:catalog page))
                     (fn [package]
                       [(md/link (package-title package)
-                                (reference/package-path package))
+                                (str "packages/" (:id package) "/"))
                        (:summary package)])))]))
 
 (defun package-document
@@ -100,7 +113,9 @@
                          (map (:namespaces package)
                               (fn [namespace]
                                 [(md/link (:name namespace)
-                                          (reference/namespace-path package namespace))
+                                          (str "namespaces/"
+                                               (:name namespace)
+                                               ".html"))
                                  (count (:entries namespace))])))]))))
 
 (defun namespace-document
@@ -134,6 +149,32 @@
     :package (package-document page)
     :namespace (namespace-document page)))
 
+(defun page-title
+  "Return the HTML page title for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Title text for Jekyll front matter."
+  [page]
+  (case (:kind page)
+    :index "Reference"
+    :package (package-title (:package page))
+    :namespace (:name (:namespace page))))
+
+(defun render-page
+  "Render PAGE as Jekyll-processable Markdown.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Markdown source with YAML front matter."
+  [page]
+  (str (front-matter (page-title page))
+       (markdown/render-block (page-document page))))
+
 (defun files
   "Render CATALOG as GitHub Pages Markdown files.
 
@@ -143,7 +184,9 @@
   Returns:
   File maps with `:path` and Markdown `:content`."
   [catalog]
-  (map (reference/pages catalog)
-       (fn [page]
-         {:path (:path page)
-          :content (markdown/render-block (page-document page))})))
+  (concat [{:path "_config.yml"
+            :content "title: Reference\nmarkdown: kramdown\n"}]
+          (map (reference/pages catalog)
+               (fn [page]
+                 {:path (:path page)
+                  :content (render-page page)}))))

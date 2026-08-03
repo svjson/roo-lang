@@ -870,6 +870,51 @@ jobs:
       - name: Run lookup CLI tests
         run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/lookup/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
 
+  test-boodle-cli:
+    name: Test boodle CLI ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run boodle CLI tests
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/boodle/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+
   test-proofread:
     name: Test proofread ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
@@ -966,6 +1011,9 @@ jobs:
 
       - name: Build Lookup binary
         run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/lookup --build-dir build/lookup-build --name lookup
+
+      - name: Build Boodle binary
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/boodle --build-dir build/boodle-build --name boodle
 
       - name: Build Proof binary
         run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/proof --build-dir build/proof-build --name proof

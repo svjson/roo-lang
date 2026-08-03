@@ -1,0 +1,130 @@
+(ns boodle.command.generate
+  (:require [boodle.format.github-pages :as github-pages]
+            [boodle.format.lookup :as lookup]
+            [boodle.output.files :as files]
+            [roo.io :as io]))
+
+(def usage-line
+  "Usage line for the `boodle generate` command."
+  "       boodle generate [-f|--format github-pages] -o|--out <dir> <index-file>...")
+
+(defun parse-args-step
+  "Parse Boodle generate arguments.
+
+  Args:
+  - `args`: Remaining command arguments.
+  - `options`: Accumulated options map.
+
+  Returns:
+  Updated options map."
+  [args options]
+  (let [arg (head args)]
+    (cond
+
+      (nil? arg)
+      options
+
+      (or (= arg "-f")
+          (= arg "--format"))
+      (let [format (nth args 1)]
+        (cond
+          (nil? format)
+          (assoc options :errors (append (:errors options)
+                                         (str "Missing format after " arg)))
+
+          (= format "github-pages")
+          (parse-args-step (tail (tail args))
+                           (assoc options :format :github-pages))
+
+          true
+          (parse-args-step (tail (tail args))
+                           (assoc options
+                                  :errors
+                                  (append (:errors options)
+                                          (str "Unknown output format: "
+                                               format))))))
+
+      (or (= arg "-o")
+          (= arg "--out"))
+      (let [out (nth args 1)]
+        (if (nil? out)
+          (assoc options :errors (append (:errors options)
+                                         (str "Missing directory after " arg)))
+          (parse-args-step (tail (tail args))
+                           (assoc options :out out))))
+
+      (= "-" (substr arg 0 1))
+      (parse-args-step (tail args)
+                       (assoc options
+                              :errors
+                              (append (:errors options)
+                                      (str "Unknown generate option: " arg))))
+
+      true
+      (parse-args-step (tail args)
+                       (assoc options
+                              :indexes
+                              (append (:indexes options) arg))))))
+
+(defun parse-args
+  "Parse arguments for the `boodle generate` command.
+
+  Args:
+  - `args`: Arguments after the `generate` command name.
+
+  Returns:
+  An options map containing `:format`, `:out`, `:indexes`, and `:errors`."
+  [args]
+  (let [options (parse-args-step args
+                                 {:format :github-pages
+                                  :out nil
+                                  :indexes []
+                                  :errors []})
+        options (if (nil? (:out options))
+                  (assoc options :errors (append (:errors options)
+                                                 "Missing output directory"))
+                  options)]
+    (if (empty? (:indexes options))
+      (assoc options :errors (append (:errors options)
+                                     "Missing lookup index file"))
+      options)))
+
+(defun read-catalog
+  "Read lookup indexes into a Boodle catalog.
+
+  Args:
+  - `paths`: Lookup index EDN file paths.
+
+  Returns:
+  A Boodle catalog map."
+  [paths]
+  (lookup/catalog (map paths io/slurp-edn!)))
+
+(defun generated-files
+  "Return documentation files for OPTIONS.
+
+  Args:
+  - `options`: Parsed generate options.
+
+  Returns:
+  File maps for the selected output format."
+  [options]
+  (case (:format options)
+    :github-pages (github-pages/files (read-catalog (:indexes options)))))
+
+(defun run!
+  "Run the `boodle generate` command.
+
+  Args:
+  - `args`: Arguments after the `generate` command name.
+
+  Returns:
+  A result map containing parse errors or generated output details."
+  [args]
+  (let [options (parse-args args)]
+    (if (not-empty? (:errors options))
+      {:errors (:errors options)}
+      (let [written (files/write! (:out options) (generated-files options))]
+        {:format :text
+         :output [(str "boodle: wrote " (count written) " files to " (:out options))]
+         :files written}))))

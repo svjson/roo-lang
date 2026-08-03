@@ -6,7 +6,7 @@ ci-help:
 
 include Makefile
 
-.PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-audit-roo-lang-index ci-test-support ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-boodle ci-test-moordown ci-test-workbook ci-test-footsteps ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-proofread
+.PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-build-boodle ci-audit-roo-lang-index ci-test-support ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-boodle ci-test-moordown ci-test-workbook ci-test-footsteps ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-boodle-cli ci-test-proofread
 
 ci-build-libroo: configure
 	cmake --build build --target roo_static roo_shared
@@ -34,6 +34,9 @@ ci-build-proof:
 
 ci-build-proofread:
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-build --name proofread
+
+ci-build-boodle:
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/boodle --build-dir $(CURDIR)/build/boodle-build --name boodle
 
 ci-audit-roo-lang-index: audit-roo-lang-index
 
@@ -81,6 +84,9 @@ ci-test-loom-cli:
 
 ci-test-lookup-cli:
 	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/lookup/test/run-cli-tests.sh $(CURDIR)
+
+ci-test-boodle-cli:
+	ROO_PACKAGE_STAGE_ROOT=$(NATIVE_PACKAGE_STAGE) sh $(CURDIR)/pkg/boodle/test/run-cli-tests.sh $(CURDIR)
 
 ci-test-proofread:
 	ctest --test-dir build -R proofread --output-on-failure

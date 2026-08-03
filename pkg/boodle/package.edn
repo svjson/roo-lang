@@ -3,4 +3,5 @@
  :description "Reference documentation catalog tooling for Roo."
  :dependencies {moordown "0.1.0"}
  :load-roots ["src"]
- :namespace-roots {boodle "src"}}
+ :namespace-roots {boodle "src"}
+ :main boodle.cli/main}

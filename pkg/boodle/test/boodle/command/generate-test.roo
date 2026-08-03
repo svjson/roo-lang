@@ -1,0 +1,61 @@
+(ns boodle.command.generate-test
+  (:require proof.core
+            [boodle.command.generate :as generate]
+            [roo.io :as io]))
+
+(def lookup-index
+  "Lookup index fixture used by Boodle generate command tests."
+  {:format :roo/symbol-index
+   :version 1
+   :package {:name "roo"
+             :version "0.1.0"
+             :description "Roo standard library."}
+   :namespaces [{:name "roo"
+                 :doc {:summary "Implicit runtime namespace."}}]
+   :symbols [{:id "roo/+"
+              :name "+"
+              :qualified-name "roo/+"
+              :namespace "roo"
+              :kind :function
+              :origin :native
+              :doc {:summary "Add numbers."}
+              :signatures [{:display "(+ numbers...)"
+                            :params [{:name "numbers..."
+                                      :doc "Numbers to add."}]
+                            :returns {:doc "The sum."}}]}]})
+
+(deftest parses-generate-options
+  (is (= {:format :github-pages
+          :out "build/docs"
+          :indexes ["roo.edn" "zoology.edn"]
+          :errors []}
+         (generate/parse-args ["--format" "github-pages"
+                               "--out" "build/docs"
+                               "roo.edn"
+                               "zoology.edn"]))))
+
+(deftest reports-generate-argument-errors
+  (is (= {:format :github-pages
+          :out nil
+          :indexes []
+          :errors ["Unknown output format: html"
+                   "Missing output directory"
+                   "Missing lookup index file"]}
+         (generate/parse-args ["--format" "html"]))))
+
+(deftest generates-github-pages-files
+  (let [root "boodle-generate-test"
+        index-file (io/join-path root "roo.edn")
+        output-dir (io/join-path root "docs")]
+    (when (io/exists? root)
+      (io/remove-tree! root))
+    (io/spit-edn! index-file lookup-index)
+    (let [result (generate/run! ["--out" output-dir index-file])]
+      (is (= :text (:format result)))
+      (is (= ["boodle: wrote 4 files to boodle-generate-test/docs"]
+             (:output result)))
+      (is (= "---\ntitle: r"
+             (substr (io/slurp! (io/join-path output-dir "packages/roo/index.md"))
+                     0
+                     12))))
+    (io/remove-tree! root)))
