@@ -69,7 +69,7 @@
   Returns:
   A sequence of normalized row vectors."
   [rows column-count]
-  (map (or rows [])
+  (map rows
        (fn [row]
          (normalized-row row column-count))))
 
@@ -222,6 +222,6 @@
   Returns:
   Markdown text with blank lines between blocks and one trailing newline."
   [blocks]
-  (if (empty? (or blocks []))
+  (if (empty? blocks)
     ""
     (str (apply join (concat ["\n\n"] (map blocks render-block))) "\n")))
