@@ -17,7 +17,7 @@
   (get (locale-messages catalog locale) key))
 
 (defun translated? [catalog locale key]
-  (not (nil? (message catalog locale key))))
+  (some? (message catalog locale key)))
 
 (defun fallback-message [catalog key]
   (message catalog (default-locale catalog) key))
