@@ -1,0 +1,69 @@
+(ns proofread.rules.higher-order
+  (:require [proofread.forms :as forms]))
+
+(defun map-form?
+  "Test whether an AST node is a single-sequence `map` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(map sequence mapper)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "map" (forms/head-name node))
+       (= 3 (count children))))
+
+(defun flat-map-candidate?
+  "Test whether an AST node can use `flat-map`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(flatten (map sequence mapper))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "flatten" (forms/head-name node))
+       (= 2 (count children))
+       (map-form? (nth children 1))))
+
+(defun diagnostic
+  "Build a higher-order diagnostic for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A diagnostic map."
+  [node]
+  {:rule :use-flat-map
+   :severity :warning
+   :source (:source node)
+   :message "Use flat-map"})
+
+(defun check-node
+  "Find higher-order diagnostics beneath one AST node.
+
+  Args:
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [node]
+  (if (map? node)
+    (concat
+      (if (flat-map-candidate? node)
+        [(diagnostic node)]
+        [])
+      (flat-map (:children node) check-node))
+    []))
+
+(defun check
+  "Find higher-order diagnostics beneath one AST root.
+
+  Args:
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [root]
+  (check-node root))

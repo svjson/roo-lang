@@ -1,0 +1,11 @@
+(ns proofread.higher-order-use-flat-map)
+
+(def mapped-items
+  (flatten
+    (map items expand-item)))
+
+(def mapped-inline
+  (flatten
+    (map items
+         (fn [item]
+           [item (:id item)]))))

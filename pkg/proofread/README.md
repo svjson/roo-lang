@@ -48,7 +48,7 @@ the error and exits with a non-zero status.
 
 ## Style Warnings
 
-Implemented style warnings:
+Supported style warnings:
 
 - `redundant-do`: reports unnecessary `do` forms, including single-expression
   wrappers and `do` forms that wrap a whole body where multiple expressions are
@@ -69,6 +69,8 @@ Implemented style warnings:
 - `kebab-case-name`: reports symbol identifiers containing underscores.
 - `redundant-map-check`: reports redundant `map?` guards before keyword lookup
   comparisons.
+- `use-flat-map`: reports `(flatten (map seq f))` forms that can be
+  written as `flat-map`.
 
 ## Commands
 

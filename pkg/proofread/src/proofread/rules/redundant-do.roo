@@ -71,17 +71,18 @@
   Returns:
   A vector of diagnostic maps."
   [parent node]
-  (when (map? node)
+  (if (map? node)
     (concat
-      (when (redundant-do? parent node)
+      (if (redundant-do? parent node)
         [{:rule :redundant-do
           :severity :warning
           :source (:source node)
-          :message "Redundant do form"}])
-      (flatten
-        (map (:children node)
-             (fn [child]
-               (check-node node child)))))))
+          :message "Redundant do form"}]
+        [])
+      (flat-map (:children node)
+                (fn [child]
+                  (check-node node child))))
+    []))
 
 (defun check
   "Find redundant `do` forms beneath one AST root.

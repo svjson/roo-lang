@@ -1,0 +1,14 @@
+(ns proofread.higher-order-non-candidates)
+
+(def already-flat-map
+  (flat-map items expand-item))
+
+(def plain-map
+  (map items expand-item))
+
+(def plain-flatten
+  (flatten nested-items))
+
+(def multi-sequence-map
+  (flatten
+    (map left-items right-items combine-items)))

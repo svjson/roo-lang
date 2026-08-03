@@ -1,0 +1,21 @@
+(ns proofread.rules.higher-order-test
+  (:require proof.core
+            [proofread.rules.higher-order :as higher-order]
+            [roo.ast :as ast]))
+
+(defun diagnostics [path]
+  (flatten
+    (map (ast/slurp! path) higher-order/check)))
+
+(defun diagnostic-lines [path]
+  (map (diagnostics path)
+       (fn [diagnostic]
+         (:line (:source diagnostic)))))
+
+(deftest reports-flat-map-candidates
+  (is (= [4 8]
+         (diagnostic-lines "assets/rules/higher-order/use-flat-map.roo"))))
+
+(deftest ignores-higher-order-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/higher-order/non-candidates.roo"))))

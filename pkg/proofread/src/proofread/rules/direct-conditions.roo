@@ -143,12 +143,12 @@
   [parent node]
   (if (map? node)
     (concat
-      (when-let [node-diagnostic (direct-condition-diagnostic parent node)]
-        [node-diagnostic])
-      (flatten
-        (map (:children node)
-             (fn [child]
-               (check-node node child)))))
+      (if-let [node-diagnostic (direct-condition-diagnostic parent node)]
+        [node-diagnostic]
+        [])
+      (flat-map (:children node)
+                (fn [child]
+                  (check-node node child))))
     []))
 
 (defun check

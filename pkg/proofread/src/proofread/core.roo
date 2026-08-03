@@ -60,8 +60,7 @@
   (let [files (native/files! args)
         checked-count (native/check-files! files)]
     (style/print-diagnostics!
-      (flatten
-        (map files style/check-file)))
+      (flat-map files style/check-file))
     (report-ok checked-count)))
 
 (defun main

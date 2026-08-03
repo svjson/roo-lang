@@ -232,12 +232,13 @@
   Returns:
   A vector of diagnostic maps."
   [node]
-  (when (map? node)
+  (if (map? node)
     (concat
-      (when-let [node-diagnostic (simple-expression-diagnostic node)]
-        [node-diagnostic])
-      (flatten
-        (map (:children node) check-node)))))
+      (if-let [node-diagnostic (simple-expression-diagnostic node)]
+        [node-diagnostic]
+        [])
+      (flat-map (:children node) check-node))
+    []))
 
 (defun check
   "Find simple-expression diagnostics beneath one AST root.

@@ -49,12 +49,13 @@
   Returns:
   A vector of diagnostic maps."
   [node]
-  (when (map? node)
+  (if (map? node)
     (concat
-      (when (non-kebab-name? node)
-        [(diagnostic node)])
-      (flatten
-        (map (:children node) check-node)))))
+      (if (non-kebab-name? node)
+        [(diagnostic node)]
+        [])
+      (flat-map (:children node) check-node))
+    []))
 
 (defun check
   "Find name diagnostics beneath one AST root.

@@ -1,5 +1,6 @@
 (ns proofread.style
   (:require [proofread.rules.direct-conditions :as direct-conditions]
+            [proofread.rules.higher-order :as higher-order]
             [proofread.rules.names :as names]
             [proofread.rules.redundant-do :as redundant-do]
             [proofread.rules.simple-expressions :as simple-expressions]
@@ -18,13 +19,13 @@
   [file]
   (case (io/extension file)
     ".roo"
-    (flatten
-      (map (ast/slurp! file)
-           (fn [root]
-             (concat (direct-conditions/check root)
-                     (simple-expressions/check root)
-                     (names/check root)
-                     (redundant-do/check root)))))
+    (flat-map (ast/slurp! file)
+              (fn [root]
+                (concat (direct-conditions/check root)
+                        (higher-order/check root)
+                        (simple-expressions/check root)
+                        (names/check root)
+                        (redundant-do/check root))))
 
     :default
     []))
