@@ -20,11 +20,10 @@
   (prn "       loom deps <package-dir> [--repo <dir>] [--flat] [--show-repeated]"))
 
 (defun option? [arg]
-  (if (nil? arg)
-    false
-    (if (empty? arg)
-      false
-      (= "-" (str (head arg))))))
+  (cond
+    (nil? arg) false
+    (empty? arg) false
+    :default (= "-" (str (head arg)))))
 
 (defun init-package-dir [argv]
   (let [first-arg (args/arg-at argv 1)]
