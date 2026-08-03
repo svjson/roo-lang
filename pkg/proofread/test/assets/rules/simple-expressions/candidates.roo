@@ -78,3 +78,13 @@
 (def sub-namespace?
   (and (some? namespace)
        (string/starts-with? namespace (str parent "."))))
+
+(def feature-enabled?
+  (any? features
+        (fn [candidate]
+          (= feature candidate))))
+
+(def feature-enabled-reversed?
+  (any? features
+        (fn [candidate]
+          (= candidate feature))))

@@ -68,3 +68,13 @@
 (def non-string-guard
   (and (some? namespace)
        (contains? namespaces namespace)))
+
+(def projected-membership
+  (any? features
+        (fn [candidate]
+          (= feature (:id candidate)))))
+
+(def real-predicate-search
+  (any? features
+        (fn [candidate]
+          (enabled? feature candidate))))

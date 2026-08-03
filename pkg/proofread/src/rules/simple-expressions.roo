@@ -243,6 +243,77 @@
   (and (= "index-of" (forms/head-name node))
        (= 3 (count children))))
 
+(defun fn-single-param-name
+  "Return the parameter name from a one-argument `fn`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The parameter name for `(fn [name] body)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (and (= "fn" (forms/head-name node))
+             (= 3 (count children)))
+    (let [params (nth children 1)]
+      (when (and (= (:type params) :vector)
+                 (= 1 (count (:children params))))
+        (forms/symbol-name (head (:children params)))))))
+
+(defun direct-symbol?
+  "Test whether an AST node is a direct symbol reference.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `name`: Expected symbol name.
+
+  Returns:
+  `true` when `node` is the symbol `name`, otherwise `false`."
+  [node name]
+  (= name (forms/symbol-name node)))
+
+(defun equality-against-param?
+  "Test whether an equality compares directly against a parameter.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `param-name`: Parameter name string.
+
+  Returns:
+  `true` for `(= value param-name)` or `(= param-name value)`, otherwise
+  `false`."
+  [{:keys [children] :as node} param-name]
+  (and (= "=" (forms/head-name node))
+       (= 3 (count children))
+       (or (and (direct-symbol? (nth children 1) param-name)
+                (not (direct-symbol? (nth children 2) param-name)))
+           (and (not (direct-symbol? (nth children 1) param-name))
+                (direct-symbol? (nth children 2) param-name)))))
+
+(defun equality-membership-predicate?
+  "Test whether an inline predicate is a simple membership equality.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(fn [candidate] (= value candidate))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (when-let [param-name (fn-single-param-name node)]
+    (equality-against-param? (nth children 2) param-name)))
+
+(defun any-equality-membership?
+  "Test whether `any?` performs a simple equality membership scan.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(any? values (fn [value] (= needle value)))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "any?" (forms/head-name node))
+       (= 3 (count children))
+       (equality-membership-predicate? (nth children 2))))
+
 (defun presence-check?
   "Test whether an AST node checks value nil-ness.
 
@@ -650,6 +721,9 @@
     (diagnostic node :use-nil? "Use nil?")
 
     (throwaway-index-of? parent node)
+    (diagnostic node :use-contains? "Use contains?")
+
+    (any-equality-membership? node)
     (diagnostic node :use-contains? "Use contains?")
 
     (throwaway-find-index? parent node)

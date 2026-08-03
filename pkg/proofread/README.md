@@ -105,8 +105,8 @@ Supported style warnings:
 - `use-some?`: reports negated `nil?` checks that can be written as `some?`.
 - `use-any?`: reports `find-index` and `find-first` calls used only as
   presence checks, which can usually be written as `any?`.
-- `use-contains?`: reports `index-of` calls used only as presence checks,
-  which can usually be written as `contains?`.
+- `use-contains?`: reports `index-of` presence checks and `any?` equality
+  membership scans that can usually be written as `contains?`.
 - `redundant-some?`: reports `some?` checks around non-predicate symbols and
   keyword lookups in predicate positions.
 - `use-string?`: reports `some?` checks that guard string operations and can
