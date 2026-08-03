@@ -132,11 +132,11 @@
     (cond
 
       (= :code (:section state))
-      (if (= "@endcode" trimmed)
-        (cpp-doc-finish-code state)
-        (assoc state
-               :code-lines
-               (concat (:code-lines state) [trimmed])))
+      (case trimmed
+        "@endcode" (cpp-doc-finish-code state)
+        :default (assoc state
+                        :code-lines
+                        (concat (:code-lines state) [trimmed])))
 
       (string/starts-with? trimmed "@code")
       (cpp-doc-start-code state trimmed)
@@ -473,8 +473,8 @@
   [roots excludes]
   (flat-map roots
             (fn [root]
-              (map (native-source-root-files root excludes)
-                   source-native-comment-entries!))))
+              (flat-map (native-source-root-files root excludes)
+                        source-native-comment-entries!))))
 
 (defun native-doc-entry-for-class [entries native-class]
   (find-first entries

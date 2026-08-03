@@ -38,17 +38,17 @@
 (defun param-info-step [state raw-param]
   (let [display-name (str raw-param)
         rest? (rest-param-name? display-name)]
-    (if (= display-name "&")
-      {:optional? true
-       :params (:params state)}
-      {:optional? (:optional? state)
-       :params (concat (:params state)
-                       [{:name (clean-param-name display-name)
-                         :display display-name
-                         :type nil
-                         :doc nil
-                         :optional? (or (:optional? state) rest?)
-                         :rest? rest?}])})))
+    (case display-name
+      "&" {:optional? true
+           :params (:params state)}
+      :default {:optional? (:optional? state)
+                :params (concat (:params state)
+                                [{:name (clean-param-name display-name)
+                                  :display display-name
+                                  :type nil
+                                  :doc nil
+                                  :optional? (or (:optional? state) rest?)
+                                  :rest? rest?}])})))
 
 (defun params-info [raw-params]
   (:params (reduce raw-params {:optional? false :params []} param-info-step)))

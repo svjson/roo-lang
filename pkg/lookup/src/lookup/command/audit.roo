@@ -195,13 +195,13 @@
 (defun text-lines [result]
   (let [diagnostics (:diagnostics result)
         diagnostic-count (count diagnostics)]
-    (if (= 0 diagnostic-count)
-      ["lookup audit: no diagnostics"]
-      (concat [(diagnostic-count-line diagnostic-count)]
-              (map diagnostics diagnostic-line)
-              [(if (:failed? result)
-                 "lookup audit: failed"
-                 "lookup audit: passed")]))))
+    (case diagnostic-count
+      0 ["lookup audit: no diagnostics"]
+      :default (concat [(diagnostic-count-line diagnostic-count)]
+                       (map diagnostics diagnostic-line)
+                       [(if (:failed? result)
+                          "lookup audit: failed"
+                          "lookup audit: passed")]))))
 
 (defun format-result [result format]
   (case format

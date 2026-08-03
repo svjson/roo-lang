@@ -21,10 +21,12 @@
   (let [state (reduce text
                       {:lines [] :line ""}
                       (fn [state ch]
-                        (if (= "\n" (str ch))
-                          {:lines (concat (:lines state) [(:line state)])
-                           :line ""}
-                          (assoc state :line (str (:line state) ch)))))]
+                        (case (str ch)
+                          "\n" {:lines (concat (:lines state) [(:line state)])
+                                :line ""}
+                          :default (assoc state
+                                          :line
+                                          (str (:line state) ch)))))]
     (concat (:lines state) [(:line state)])))
 
 (defun finish-paragraph [state]
