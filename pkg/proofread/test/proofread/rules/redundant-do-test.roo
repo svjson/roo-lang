@@ -4,25 +4,11 @@
             [roo.ast :as ast]))
 
 (defun diagnostics
-  "Run the redundant-do rule against a fixture source file.
-
-  Args:
-  - `path`: Fixture source path.
-
-  Returns:
-  A vector of diagnostic maps."
   [path]
   (flatten
     (map (ast/slurp! path) redundant-do/check)))
 
 (defun diagnostic-lines
-  "Return diagnostic source lines for a fixture source file.
-
-  Args:
-  - `path`: Fixture source path.
-
-  Returns:
-  A vector of diagnostic line numbers."
   [path]
   (map (diagnostics path)
        (fn [diagnostic]

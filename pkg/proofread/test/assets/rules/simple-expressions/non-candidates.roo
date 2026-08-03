@@ -1,0 +1,19 @@
+(ns proofread.simple-expressions-non-candidates)
+
+(def second-item
+  (nth items 1))
+
+(def one-item
+  (= 1 (count items)))
+
+(def enough-items
+  (> (count items) 1))
+
+(def blank-text
+  (not (blank? text)))
+
+(def different-values
+  (not= left right))
+
+(def missing-value
+  (nil? value))

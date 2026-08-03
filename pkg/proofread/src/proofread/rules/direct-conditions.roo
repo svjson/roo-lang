@@ -1,19 +1,6 @@
 (ns proofread.rules.direct-conditions
   (:require [proofread.forms :as forms]))
 
-(defun symbol-name
-  "Return the symbol name for an AST node.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  The symbol name string, or `nil` when `node` is not a symbol."
-  [node]
-  (when (and (map? node)
-             (= (:type node) :symbol))
-    (str (:form node))))
-
 (defun nil-node?
   "Test whether an AST node is the symbol `nil`.
 
@@ -23,7 +10,7 @@
   Returns:
   `true` for the `nil` symbol, otherwise `false`."
   [node]
-  (= "nil" (symbol-name node)))
+  (= "nil" (forms/symbol-name node)))
 
 (defun diagnostic
   "Build a direct-condition diagnostic for an AST node.
@@ -54,7 +41,7 @@
   (when (= "let" (forms/head-name node))
     (when-let [bindings (:children (nth children 1))]
       (when (= 2 (count bindings))
-        (symbol-name (head bindings))))))
+        (forms/symbol-name (head bindings))))))
 
 (defun sole-let-body-form
   "Return the sole body form for a single-body `let`.
@@ -82,7 +69,7 @@
   (when-let [binding-name (single-binding-symbol node)
              body (sole-let-body-form node)]
     (and (= "if" (forms/head-name body))
-         (= binding-name (symbol-name (nth (:children body) 1))))))
+         (= binding-name (forms/symbol-name (nth (:children body) 1))))))
 
 (defun let-when-candidate?
   "Test whether a `let` form should be `when-let`.
@@ -96,7 +83,7 @@
   (when-let [binding-name (single-binding-symbol node)
              body (sole-let-body-form node)]
     (and (= "when" (forms/head-name body))
-         (= binding-name (symbol-name (nth (:children body) 1))))))
+         (= binding-name (forms/symbol-name (nth (:children body) 1))))))
 
 (defun let-condition-child?
   "Test whether `node` is the condition form inside a direct-condition `let`.

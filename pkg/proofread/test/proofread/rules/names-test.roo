@@ -1,0 +1,23 @@
+(ns proofread.rules.names-test
+  (:require proof.core
+            [proofread.rules.names :as names]
+            [roo.ast :as ast]))
+
+(defun diagnostics
+  [path]
+  (flatten
+    (map (ast/slurp! path) names/check)))
+
+(defun diagnostic-lines
+  [path]
+  (map (diagnostics path)
+       (fn [diagnostic]
+         (:line (:source diagnostic)))))
+
+(deftest reports-underscore-identifiers
+  (is (= [3 6 11]
+         (diagnostic-lines "assets/rules/names/candidates.roo"))))
+
+(deftest ignores-kebab-case-identifiers
+  (is (= []
+         (diagnostics "assets/rules/names/non-candidates.roo"))))

@@ -1,5 +1,18 @@
 (ns proofread.forms)
 
+(defun symbol-name
+  "Return the symbol name for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The symbol name string, or `nil` when `node` is not a symbol."
+  [node]
+  (when (and (map? node)
+             (= (:type node) :symbol))
+    (str (:form node))))
+
 (defun head-name
   "Return the list head name for an AST node.
 
@@ -12,6 +25,4 @@
   [node]
   (when (and (map? node)
              (= (:type node) :list))
-    (let [first-child (head (:children node))]
-      (when (= (:type first-child) :symbol)
-        (str (:form first-child))))))
+    (symbol-name (head (:children node)))))

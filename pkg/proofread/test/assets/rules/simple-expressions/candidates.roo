@@ -1,0 +1,28 @@
+(ns proofread.simple-expressions-candidates)
+
+(def first-item
+  (nth items 0))
+
+(def empty-a
+  (= 0 (count items)))
+
+(def empty-b
+  (= (count items) 0))
+
+(def not-empty-a
+  (< 0 (count items)))
+
+(def not-empty-b
+  (> (count items) 0))
+
+(def not-empty-c
+  (not (empty? items)))
+
+(def different-values
+  (not (= left right)))
+
+(def nil-a
+  (= nil value))
+
+(def nil-b
+  (= value nil))

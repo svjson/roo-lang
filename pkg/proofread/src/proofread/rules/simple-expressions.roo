@@ -1,0 +1,188 @@
+(ns proofread.rules.simple-expressions
+  (:require [proofread.forms :as forms]))
+
+(defun zero-node?
+  "Test whether an AST node is the number `0`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for the numeric literal `0`, otherwise `false`."
+  [node]
+  (and (map? node)
+       (= (:type node) :number)
+       (= (:form node) 0)))
+
+(defun nil-node?
+  "Test whether an AST node is the symbol `nil`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for the `nil` symbol, otherwise `false`."
+  [node]
+  (= "nil" (forms/symbol-name node)))
+
+(defun count-form?
+  "Test whether an AST node is a `(count value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for two-child `count` calls, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "count" (forms/head-name node))
+       (= 2 (count children))))
+
+(defun empty-count-comparison?
+  "Test whether an AST node compares a count to zero.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(= 0 (count value))` and `(= (count value) 0)`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (= "=" (forms/head-name node))
+       (= 3 (count children))
+       (or (and (zero-node? (nth children 1))
+                (count-form? (nth children 2)))
+           (and (count-form? (nth children 1))
+                (zero-node? (nth children 2))))))
+
+(defun not-empty-count-comparison?
+  "Test whether an AST node compares a count as greater than zero.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(< 0 (count value))` and `(> (count value) 0)`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (= 3 (count children))
+       (or (and (= "<" (forms/head-name node))
+                (zero-node? (nth children 1))
+                (count-form? (nth children 2)))
+           (and (= ">" (forms/head-name node))
+                (count-form? (nth children 1))
+                (zero-node? (nth children 2))))))
+
+(defun not-empty-negation?
+  "Test whether an AST node negates an `empty?` call.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(not (empty? value))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "not" (forms/head-name node))
+       (= 2 (count children))
+       (= "empty?" (forms/head-name (nth children 1)))))
+
+(defun not-equals-negation?
+  "Test whether an AST node negates an equality call.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(not (= left right))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "not" (forms/head-name node))
+       (= 2 (count children))
+       (= "=" (forms/head-name (nth children 1)))))
+
+(defun nil-comparison?
+  "Test whether an AST node compares a value to `nil`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(= nil value)` and `(= value nil)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "=" (forms/head-name node))
+       (= 3 (count children))
+       (or (nil-node? (nth children 1))
+           (nil-node? (nth children 2)))))
+
+(defun diagnostic
+  "Build a simple-expression diagnostic for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `rule`: Diagnostic rule keyword.
+  - `message`: Diagnostic message.
+
+  Returns:
+  A diagnostic map."
+  [node rule message]
+  {:rule rule
+   :severity :warning
+   :source (:source node)
+   :message message})
+
+(defun simple-expression-diagnostic
+  "Return the simple-expression diagnostic for an AST node.
+
+  Args:
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map, or `nil` when the node does not match a rule."
+  [{:keys [children] :as node}]
+  (cond
+    (and (= "nth" (forms/head-name node))
+         (= 3 (count children))
+         (zero-node? (nth children 2)))
+    (diagnostic node :use-head "Use head")
+
+    (empty-count-comparison? node)
+    (diagnostic node :use-empty? "Use empty?")
+
+    (or (not-empty-count-comparison? node)
+        (not-empty-negation? node))
+    (diagnostic node :use-not-empty? "Use not-empty?")
+
+    (not-equals-negation? node)
+    (diagnostic node :use-not= "Use not=")
+
+    (nil-comparison? node)
+    (diagnostic node :use-nil? "Use nil?")
+
+    true
+    nil))
+
+(defun check-node
+  "Find simple-expression diagnostics beneath one AST node.
+
+  Args:
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [node]
+  (when (map? node)
+    (concat
+      (when-let [node-diagnostic (simple-expression-diagnostic node)]
+        [node-diagnostic])
+      (flatten
+        (map (:children node) check-node)))))
+
+(defun check
+  "Find simple-expression diagnostics beneath one AST root.
+
+  Args:
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [root]
+  (check-node root))
+

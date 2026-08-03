@@ -1,6 +1,8 @@
 (ns proofread.style
   (:require [proofread.rules.direct-conditions :as direct-conditions]
+            [proofread.rules.names :as names]
             [proofread.rules.redundant-do :as redundant-do]
+            [proofread.rules.simple-expressions :as simple-expressions]
             [roo.ast :as ast]
             [roo.io :as io]))
 
@@ -20,6 +22,8 @@
       (map (ast/slurp! file)
            (fn [root]
              (concat (direct-conditions/check root)
+                     (simple-expressions/check root)
+                     (names/check root)
                      (redundant-do/check root)))))
 
     :default

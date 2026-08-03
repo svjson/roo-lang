@@ -1,0 +1,31 @@
+(ns proofread.rules.simple-expressions-test
+  (:require proof.core
+            [proofread.rules.simple-expressions :as simple-expressions]
+            [roo.ast :as ast]))
+
+(defun diagnostics
+  [path]
+  (flatten
+    (map (ast/slurp! path) simple-expressions/check)))
+
+(defun diagnostic-summary
+  [path]
+  (map (diagnostics path)
+       (fn [diagnostic]
+         [(:rule diagnostic) (:line (:source diagnostic))])))
+
+(deftest reports-simple-expression-rewrites
+  (is (= [[:use-head 4]
+          [:use-empty? 7]
+          [:use-empty? 10]
+          [:use-not-empty? 13]
+          [:use-not-empty? 16]
+          [:use-not-empty? 19]
+          [:use-not= 22]
+          [:use-nil? 25]
+          [:use-nil? 28]]
+         (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
+
+(deftest ignores-simple-expression-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/simple-expressions/non-candidates.roo"))))

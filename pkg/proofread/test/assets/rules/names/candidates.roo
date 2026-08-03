@@ -1,0 +1,11 @@
+(ns proofread.names-candidates)
+
+(def bad_value
+  42)
+
+(defun bad_function
+  [value]
+  value)
+
+(def namespaced
+  other.ns/bad_symbol)

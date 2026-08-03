@@ -58,6 +58,15 @@ Implemented style warnings:
 - `use-if-let`: reports `let` plus `if` forms that can be written as `if-let`.
 - `use-when-let`: reports `let` plus `when` forms that can be written as
   `when-let`.
+- `use-head`: reports `(nth value 0)` forms that can be written as `head`.
+- `use-empty?`: reports count comparisons to zero that can be written as
+  `empty?`.
+- `use-not-empty?`: reports positive count checks and negated `empty?` calls
+  that can be written as `not-empty?`.
+- `use-not=`: reports negated equality checks that can be written as `not=`.
+- `use-nil?`: reports equality checks against `nil` that can be written as
+  `nil?`.
+- `kebab-case-name`: reports symbol identifiers containing underscores.
 
 ## Commands
 

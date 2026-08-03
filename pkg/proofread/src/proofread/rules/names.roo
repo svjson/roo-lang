@@ -1,0 +1,68 @@
+(ns proofread.rules.names
+  (:require [proofread.forms :as forms]))
+
+(defun contains-underscore?
+  "Test whether a name contains an underscore.
+
+  Args:
+  - `name`: Symbol name string.
+
+  Returns:
+  `true` when `name` contains `_`, otherwise `false`."
+  [name]
+  (not (nil? (find-index name (fn [ch] (= "_" (str ch)))))))
+
+(defun non-kebab-name?
+  "Test whether an identifier should use kebab-case.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for symbol names containing `_`, except the conventional `_`
+  placeholder."
+  [node]
+  (when-let [name (forms/symbol-name node)]
+    (and (not= "_" name)
+         (contains-underscore? name))))
+
+(defun diagnostic
+  "Build a name diagnostic for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A diagnostic map."
+  [node]
+  {:rule :kebab-case-name
+   :severity :warning
+   :source (:source node)
+   :message "Use kebab-case names"})
+
+(defun check-node
+  "Find name diagnostics beneath one AST node.
+
+  Args:
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [node]
+  (when (map? node)
+    (concat
+      (when (non-kebab-name? node)
+        [(diagnostic node)])
+      (flatten
+        (map (:children node) check-node)))))
+
+(defun check
+  "Find name diagnostics beneath one AST root.
+
+  Args:
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [root]
+  (check-node root))

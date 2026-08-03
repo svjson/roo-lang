@@ -1,0 +1,11 @@
+(ns proofread.names-non-candidates)
+
+(def good-value
+  42)
+
+(defun good-function
+  [_ value]
+  value)
+
+(def namespaced
+  other.ns/good-symbol)
