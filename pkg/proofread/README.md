@@ -107,6 +107,8 @@ Supported style warnings:
   written as `flat-map`.
 - `use-keep`: reports `map` forms with inline functions whose single body form
   is `when` or `unless` and can be written as `keep`.
+- `use-select-keys`: reports map literals that copy three or more matching keys
+  from the same source map and can be written as `select-keys`.
 
 ## Commands
 

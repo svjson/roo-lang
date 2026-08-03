@@ -173,6 +173,55 @@
                          (fn [child]
                            (lookup-comparison? child target-name))))))))
 
+(defun select-keys-entry-target
+  "Return the source symbol name for a select-keys map entry.
+
+  Args:
+  - `key-node`: Map key node.
+  - `value-node`: Map value node.
+
+  Returns:
+  The lookup target symbol name for `:key (:key target)`, otherwise `nil`."
+  [key-node value-node]
+  (when (= (:type key-node) :keyword)
+    (let [value-children (:children value-node)]
+      (when (and (= (:type value-node) :list)
+                 (= 2 (count value-children))
+                 (= (:form key-node) (:form (head value-children))))
+        (forms/symbol-name (nth value-children 1))))))
+
+(defun select-keys-target
+  "Return the shared source symbol for select-keys candidate entries.
+
+  Args:
+  - `children`: Map child nodes.
+  - `index`: Current key index.
+  - `target-name`: Previously seen source symbol name, or `nil`.
+
+  Returns:
+  The shared source symbol name when all entries match, otherwise `nil`."
+  [children index target-name]
+  (if (>= index (count children))
+    target-name
+    (when-let [entry-target (select-keys-entry-target (nth children index)
+                                                      (nth children (+ index 1)))]
+      (when (or (nil? target-name)
+                (= target-name entry-target))
+        (select-keys-target children (+ index 2) entry-target)))))
+
+(defun select-keys-candidate?
+  "Test whether a map literal should be `select-keys`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for map literals such as `{:a (:a value) :b (:b value) :c (:c value)}`."
+  [{:keys [children] :as node}]
+  (and (= (:type node) :map)
+       (< 5 (count children))
+       (select-keys-target children 0 nil)))
+
 (defun cond-test-child?
   "Test whether a node is a condition child in a `cond` form.
 
@@ -263,6 +312,9 @@
 
     (redundant-map-check? node)
     (diagnostic node :redundant-map-check "Remove redundant map? check")
+
+    (select-keys-candidate? node)
+    (diagnostic node :use-select-keys "Use select-keys")
 
     true
     nil))

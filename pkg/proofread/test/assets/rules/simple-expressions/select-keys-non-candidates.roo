@@ -1,0 +1,25 @@
+(ns proofread.simple-expressions-select-keys-non-candidates)
+
+(def too-few-keys
+  {:name (:name user)
+   :age (:age user)})
+
+(def different-source
+  {:name (:name user)
+   :age (:age profile)
+   :email (:email user)})
+
+(def different-key
+  {:name (:display-name user)
+   :age (:age user)
+   :email (:email user)})
+
+(def default-value
+  {:name (:name user)
+   :age (or (:age user) 0)
+   :email (:email user)})
+
+(def computed-source
+  {:name (:name (:user context))
+   :age (:age (:user context))
+   :email (:email (:user context))})

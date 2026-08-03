@@ -34,3 +34,12 @@
           [:redundant-map-check 9]
           [:redundant-map-check 13]]
          (diagnostic-summary "assets/rules/simple-expressions/redundant-map-check.roo"))))
+
+(deftest reports-select-keys-candidates
+  (is (= [[:use-select-keys 4]
+          [:use-select-keys 9]]
+         (diagnostic-summary "assets/rules/simple-expressions/use-select-keys.roo"))))
+
+(deftest ignores-select-keys-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/simple-expressions/select-keys-non-candidates.roo"))))

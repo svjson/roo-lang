@@ -1,0 +1,11 @@
+(ns proofread.simple-expressions-use-select-keys)
+
+(def user-summary
+  {:name (:name user)
+   :age (:age user)
+   :email (:email user)})
+
+(def event-summary
+  {:event/id (:event/id event)
+   :event/type (:event/type event)
+   :event/source (:event/source event)})
