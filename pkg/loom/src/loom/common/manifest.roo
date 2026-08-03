@@ -7,11 +7,11 @@
 
 (defun atom? [value]
   (let [kind (type-of value)]
-    (if (= kind "string")
-      true
-      (if (= kind "symbol")
-        true
-        (= kind "keyword")))))
+    (case kind
+      "string" true
+      "symbol" true
+      "keyword" true
+      :default false)))
 
 (defun package-name [manifest]
   (str (:name manifest)))
@@ -46,20 +46,20 @@
   (let [roots (:load-roots manifest)]
     (if (nil? roots)
         (append! errors "missing required field :load-roots")
-      (if (= "vector" (type-of roots))
-        (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
-          (unless (empty? invalid-roots)
-            (append! errors ":load-roots must contain only strings, symbols, or keywords")))
-        (append! errors ":load-roots must be a vector")))))
+      (case (type-of roots)
+        "vector" (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
+                   (unless (empty? invalid-roots)
+                     (append! errors ":load-roots must contain only strings, symbols, or keywords")))
+        :default (append! errors ":load-roots must be a vector")))))
 
 (defun validation-errors [manifest]
   (let [errors []]
-    (if (= "map" (type-of manifest))
-      (do
-        (add-required-atom-error! errors manifest :name ":name")
-        (add-required-atom-error! errors manifest :version ":version")
-        (add-load-roots-error! errors manifest))
-      (append! errors "package.edn must contain a map"))
+    (case (type-of manifest)
+      "map" (do
+              (add-required-atom-error! errors manifest :name ":name")
+              (add-required-atom-error! errors manifest :version ":version")
+              (add-load-roots-error! errors manifest))
+      :default (append! errors "package.edn must contain a map"))
     errors))
 
 (defun report-errors! [manifest-path errors]

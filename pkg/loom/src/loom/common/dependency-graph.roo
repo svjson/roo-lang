@@ -46,32 +46,32 @@
 
 (defun dependency-spec [dependency-name dependency-value]
   (let [name (normalize-name dependency-name)]
-    (if (= "map" (type-of dependency-value))
-      (dependency-spec-from-map name dependency-value)
-      (dependency-spec-from-atom name dependency-value))))
+    (case (type-of dependency-value)
+      "map" (dependency-spec-from-map name dependency-value)
+      :default (dependency-spec-from-atom name dependency-value))))
 
 (defun dependency-specs [package-manifest]
   (let [dependencies (:dependencies package-manifest)]
     (if (nil? dependencies)
       []
-      (if (= "map" (type-of dependencies))
-        (sort
-          (reduce-kv dependencies
-                     []
-                     (fn [result dependency-name dependency-version]
-                       (concat result
-                               [(dependency-spec dependency-name dependency-version)])))
-          (fn [a b] (< (:id a) (:id b))))
-        (if (= "vector" (type-of dependencies))
-          (sort
-            (map dependencies
-                 (fn [dependency-name]
-                   {:name (normalize-name dependency-name)
-                    :version nil
-                    :path nil
-                    :id (normalize-name dependency-name)}))
-            (fn [a b] (< (:id a) (:id b))))
-          [])))))
+      (case (type-of dependencies)
+        "map" (sort
+                (reduce-kv dependencies
+                           []
+                           (fn [result dependency-name dependency-version]
+                             (concat result
+                                     [(dependency-spec dependency-name
+                                                       dependency-version)])))
+                (fn [a b] (< (:id a) (:id b))))
+        "vector" (sort
+                   (map dependencies
+                        (fn [dependency-name]
+                          {:name (normalize-name dependency-name)
+                           :version nil
+                           :path nil
+                           :id (normalize-name dependency-name)}))
+                   (fn [a b] (< (:id a) (:id b))))
+        :default []))))
 
 (defun package-id [name version]
   (if (nil? version)
