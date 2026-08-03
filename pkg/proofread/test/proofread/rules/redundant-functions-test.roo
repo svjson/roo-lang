@@ -1,0 +1,24 @@
+(ns proofread.rules.redundant-functions-test
+  (:require proof.core
+            [proofread.rules.redundant-functions :as redundant-functions]
+            [roo.ast :as ast]))
+
+(defun diagnostics
+  [path]
+  (flat-map (ast/slurp! path) redundant-functions/check))
+
+(defun diagnostic-summary
+  [path]
+  (map (diagnostics path)
+       (fn [diagnostic]
+         [(:rule diagnostic) (:line (:source diagnostic))])))
+
+(deftest reports-redundant-functions
+  (is (= [[:redundant-function 3]
+          [:redundant-function 8]
+          [:redundant-function 12]]
+         (diagnostic-summary "assets/rules/redundant-functions/candidates.roo"))))
+
+(deftest ignores-redundant-function-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/redundant-functions/non-candidates.roo"))))

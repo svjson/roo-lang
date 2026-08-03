@@ -1,0 +1,14 @@
+(ns proofread.redundant-functions-candidates)
+
+(defun contains-underscore?
+  "Test whether a name contains an underscore."
+  [name]
+  (contains? name '_'))
+
+(defun keyword-named?
+  [key]
+  (= key :name))
+
+(defun object-kind
+  [object]
+  (:kind object))

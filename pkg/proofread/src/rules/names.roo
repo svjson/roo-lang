@@ -1,17 +1,6 @@
 (ns proofread.rules.names
   (:require [proofread.forms :as forms]))
 
-(defun contains-underscore?
-  "Test whether a name contains an underscore.
-
-  Args:
-  - `name`: Symbol name string.
-
-  Returns:
-  `true` when `name` contains `_`, otherwise `false`."
-  [name]
-  (contains? name '_'))
-
 (defun non-kebab-name?
   "Test whether an identifier should use kebab-case.
 
@@ -24,7 +13,7 @@
   [node]
   (when-let [name (forms/symbol-name node)]
     (and (not= "_" name)
-         (contains-underscore? name))))
+         (contains? name '_'))))
 
 (defun diagnostic
   "Build a name diagnostic for an AST node.

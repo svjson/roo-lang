@@ -3,6 +3,7 @@
             [proofread.rules.higher-order :as higher-order]
             [proofread.rules.names :as names]
             [proofread.rules.redundant-do :as redundant-do]
+            [proofread.rules.redundant-functions :as redundant-functions]
             [proofread.rules.simple-expressions :as simple-expressions]))
 
 (defun check
@@ -20,4 +21,5 @@
                       (higher-order/check root)
                       (simple-expressions/check root)
                       (names/check root)
+                      (redundant-functions/check root)
                       (redundant-do/check root)))))

@@ -1,0 +1,30 @@
+(ns proofread.redundant-functions-non-candidates)
+
+(defun known?
+  [value]
+  (registered? value))
+
+(defun selected?
+  [reporter]
+  (case reporter
+    :simple true
+    :default false))
+
+(defun contains-normalized?
+  [name]
+  (contains? (normalize name) '_'))
+
+(defun recursive?
+  [value]
+  (recursive? value))
+
+(defun total
+  [left right]
+  (+ left right))
+
+(defun defaulted-value
+  [value]
+  (or value :default))
+
+(defun default-separator []
+  '-')
