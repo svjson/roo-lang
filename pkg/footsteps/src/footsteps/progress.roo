@@ -95,7 +95,7 @@
   (cond
     (= :footsteps.status/complete (:status work)) (:progress-max work)
     (:current work) (projected-value (:current work))
-    (not (empty? (:queue work))) (-> work :queue head :scope :start)
+    (not-empty? (:queue work)) (-> work :queue head :scope :start)
     :default (:progress-max work)))
 
 (defun value
