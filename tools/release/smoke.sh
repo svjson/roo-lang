@@ -197,7 +197,7 @@ cat > "$footsteps_pkg/src/footsteps_smoke/app.roo" <<'EOF'
                               :run (fn [_ctx] {:data {:ok true}})}}
                :start [:done]})
         advanced (footsteps/advance work)]
-    (prn (if (= true (:ok (footsteps/data (:work advanced))))
+    (prn (if (= true (:ok (-> advanced :work :data)))
            "footsteps-smoke-ok"
            "footsteps-smoke-fail"))))
 EOF
