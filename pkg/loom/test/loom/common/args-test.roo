@@ -1,29 +1,30 @@
 (ns loom.common.args-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.common.args :as args]))
 
 (deftest finds-arguments-by-index
-  (given
+  (s/given
     ["install" "pkg/loom"])
 
-  (when [index-argv]
+  (s/when [index-argv]
     {:index-command (args/arg-at index-argv 0)
      :missing-index-arg (args/arg-at index-argv 3)})
 
-  (then [{:keys [index-command missing-index-arg]}]
+  (s/then [{:keys [index-command missing-index-arg]}]
     (is (= "install" index-command))
     (is (nil? missing-index-arg))))
 
 (deftest finds-options-and-flags-from-offset
-  (given
+  (s/given
     ["install" "pkg/loom" "--repo" "build/repo" "--force"])
 
-  (when [options-argv]
+  (s/when [options-argv]
     {:option-repo (args/option-from options-argv 2 "--repo" "default-repo")
      :force-option? (args/flag-from? options-argv 2 "--force")
      :dry-run-option? (args/flag-from? options-argv 2 "--dry-run")})
 
-  (then [{:keys [option-repo force-option? dry-run-option?]}]
+  (s/then [{:keys [option-repo force-option? dry-run-option?]}]
     (is (= "build/repo" option-repo))
     (is force-option?)
     (is (= false dry-run-option?))))

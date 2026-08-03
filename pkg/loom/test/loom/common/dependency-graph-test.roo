@@ -1,12 +1,13 @@
 (ns loom.common.dependency-graph-test
   (:require proof.core
+            [proof.syntax :as s]
             [roo.io :as io]
             [loom.command.install :as install]
             [loom.common.dependency-graph :as graph]
             [loom.test-support :as support]))
 
 (deftest resolves-transitive-local-dependencies
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph")
           graph-leaf-dir
           (support/fresh-package! "loom-proof-graph-leaf"
@@ -22,7 +23,7 @@
       {:repo-root repo-root
        :graph-app-dir graph-app-dir}))
 
-  (when [{:keys [repo-root graph-app-dir]}]
+  (s/when [{:keys [repo-root graph-app-dir]}]
     (let [resolved-graph (graph/root-node! graph-app-dir repo-root)
           middle-node (nth (:dependencies resolved-graph) 0)
           leaf-node (nth (:dependencies middle-node) 0)]
@@ -30,25 +31,25 @@
        :middle-node middle-node
        :leaf-node leaf-node}))
 
-  (then [{:keys [resolved-graph middle-node leaf-node]}]
+  (s/then [{:keys [resolved-graph middle-node leaf-node]}]
     (is (= "app@0.1.0" (:id resolved-graph)))
     (is (= "middle@1.0.0" (:id middle-node)))
     (is (= "leaf@1.0.0" (:id leaf-node)))
     (is (graph/complete? resolved-graph))))
 
 (deftest reports-missing-local-dependencies
-  (given
+  (s/given
     {:repo-root (support/fresh-repo! "loom-proof-dependency-graph-missing")
      :missing-app-dir (support/fresh-package! "loom-proof-graph-missing-app"
                                               "{:name app :version \"0.1.0\" :dependencies {missing \"9.9.9\"} :load-roots [\"src\"]}")})
 
-  (when [{:keys [repo-root missing-app-dir]}]
+  (s/when [{:keys [repo-root missing-app-dir]}]
     (let [missing-graph (graph/root-node! missing-app-dir repo-root)
           missing-node (nth (:dependencies missing-graph) 0)]
       {:missing-graph missing-graph
        :missing-node missing-node}))
 
-  (then [{:keys [missing-graph missing-node]}]
+  (s/then [{:keys [missing-graph missing-node]}]
     (is (= "missing@9.9.9" (:id missing-node)))
     (is (:missing? missing-node))
     (is (= ["missing@9.9.9"] (graph/collect-missing-package-ids missing-graph)))
@@ -69,7 +70,7 @@
          (graph/dependency-path-root "/repo/app" {:path "C:\\tmp\\pkg"}))))
 
 (deftest resolves-file-path-dependencies-relative-to-declaring-package
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph-file")
           file-leaf-dir
           (support/fresh-package! "loom-proof-graph-file/leaf"
@@ -83,7 +84,7 @@
       {:repo-root repo-root
        :file-app-dir file-app-dir}))
 
-  (when [{:keys [repo-root file-app-dir]}]
+  (s/when [{:keys [repo-root file-app-dir]}]
     (let [file-graph (graph/root-node! file-app-dir repo-root)
           file-middle-node (nth (:dependencies file-graph) 0)
           file-leaf-node (nth (:dependencies file-middle-node) 0)]
@@ -91,7 +92,7 @@
        :file-middle-node file-middle-node
        :file-leaf-node file-leaf-node}))
 
-  (then [{:keys [file-graph file-middle-node file-leaf-node]}]
+  (s/then [{:keys [file-graph file-middle-node file-leaf-node]}]
     (is (= "app@0.1.0" (:id file-graph)))
     (is (= "middle@1.0.0" (:id file-middle-node)))
     (is (= "leaf@1.0.0" (:id file-leaf-node)))
@@ -100,7 +101,7 @@
     (is (graph/complete? file-graph))))
 
 (deftest resolves-deep-file-path-dependencies-relative-to-declaring-package
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-dependency-graph-deep-file")
           root (support/build-path "loom-proof-graph-deep-file")
           deep-app-dir (io/join-path root "apps/app")]
@@ -116,13 +117,13 @@
       {:repo-root repo-root
        :deep-app-dir deep-app-dir}))
 
-  (when [{:keys [repo-root deep-app-dir]}]
+  (s/when [{:keys [repo-root deep-app-dir]}]
     (let [deep-file-graph (graph/root-node! deep-app-dir repo-root)
           util-node (nth (:dependencies deep-file-graph) 0)]
       {:deep-file-graph deep-file-graph
        :util-node util-node}))
 
-  (then [{:keys [deep-file-graph util-node]}]
+  (s/then [{:keys [deep-file-graph util-node]}]
     (is (= "app@0.1.0" (:id deep-file-graph)))
     (is (= "util@1.0.0" (:id util-node)))
     (is (= false (:missing? util-node)))

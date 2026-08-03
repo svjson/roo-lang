@@ -1,30 +1,31 @@
 (ns loom.command.info-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.command.info :as info]
             [loom.command.install :as install]
             [loom.test-support :as support]))
 
 (deftest returns-manifest-for-installed-package
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-info")]
       (install/install! (support/loom-package-dir) repo-root true)
       repo-root))
 
-  (when [repo-root]
+  (s/when [repo-root]
     (info/info! repo-root "loom" "0.1.0"))
 
-  (then [installed-manifest]
+  (s/then [installed-manifest]
     (is (= "loom" (str (:name installed-manifest))))
     (is (= "0.1.0" (:version installed-manifest)))
     (is (= "Roo package manager." (:description installed-manifest)))))
 
 (deftest returns-nil-for-missing-package
-  (given
+  (s/given
     {:repo-root (support/fresh-repo! "loom-proof-info-missing")
      :package-name "missing"})
 
-  (when [{:keys [repo-root package-name]}]
+  (s/when [{:keys [repo-root package-name]}]
     (info/info! repo-root package-name "0.1.0"))
 
-  (then [missing-manifest]
+  (s/then [missing-manifest]
     (is (nil? missing-manifest))))

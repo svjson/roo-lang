@@ -1,40 +1,41 @@
 (ns loom.core-test
   (:require proof.core
+            [proof.syntax :as s]
             [roo.io :as io]
             [loom.core :as core]
             [loom.test-support :as support]))
 
 (deftest dispatches-list-command
-  (given
+  (s/given
     ["list" "--repo" (support/fresh-repo! "loom-proof-core-list")])
 
-  (when [list-argv]
+  (s/when [list-argv]
     (core/main list-argv))
 
-  (then [list-result]
+  (s/then [list-result]
     (is (= [] list-result))))
 
 (deftest init-options-do-not-count-as-package-directory
-  (given
+  (s/given
     ["init" "--name" "sample"])
 
-  (when [init-argv]
+  (s/when [init-argv]
     (core/init-package-dir init-argv))
 
-  (then [package-dir]
+  (s/then [package-dir]
     (is (nil? package-dir))))
 
 (deftest dispatches-init-command
-  (given
+  (s/given
     (let [package-dir (support/build-path "loom-proof-core-init")]
       (if (io/exists? package-dir)
         (io/remove-tree! package-dir)
         nil)
       ["init" package-dir "--name" "core-sample"]))
 
-  (when [init-argv]
+  (s/when [init-argv]
     (core/main init-argv))
 
-  (then [manifest-path]
+  (s/then [manifest-path]
     (is (= "{:name core-sample\n :version \"0.1.0\"\n :dependencies []\n :load-roots [\"src\"]}\n"
            (io/slurp! manifest-path)))))

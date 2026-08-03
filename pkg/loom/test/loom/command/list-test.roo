@@ -1,28 +1,29 @@
 (ns loom.command.list-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.command.install :as install]
             [loom.command.list :as list]
             [loom.test-support :as support]))
 
 (deftest lists-installed-packages-as-package-at-version
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-list")]
       (install/install! (support/loom-package-dir) repo-root true)
       (install/install! (support/proof-package-dir) repo-root true)
       repo-root))
 
-  (when [repo-root]
+  (s/when [repo-root]
     (list/installed-package-ids repo-root))
 
-  (then [installed-packages]
+  (s/then [installed-packages]
     (is (= ["loom@0.1.0" "proof@0.1.0"] installed-packages))))
 
 (deftest empty-repository-lists-no-packages
-  (given
+  (s/given
     (support/fresh-repo! "loom-proof-list-empty"))
 
-  (when [repo-root]
+  (s/when [repo-root]
     (list/installed-package-ids repo-root))
 
-  (then [empty-packages]
+  (s/then [empty-packages]
     (is (= [] empty-packages))))

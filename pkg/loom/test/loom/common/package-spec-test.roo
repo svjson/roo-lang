@@ -1,41 +1,42 @@
 (ns loom.common.package-spec-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.common.package-spec :as package-spec]))
 
 (deftest parses-package-at-version-specs
-  (given
+  (s/given
     "loom@0.1.0")
 
-  (when [parser-package-id]
+  (s/when [parser-package-id]
     (package-spec/parse parser-package-id nil))
 
-  (then [parser-at-version-spec]
+  (s/then [parser-at-version-spec]
     (is (= "loom" (:name parser-at-version-spec)))
     (is (= "0.1.0" (:version parser-at-version-spec)))))
 
 (deftest parses-legacy-name-and-version-specs
-  (given
+  (s/given
     "loom")
 
-  (when [parser-package-name]
+  (s/when [parser-package-name]
     (package-spec/parse parser-package-name "0.1.0"))
 
-  (then [parser-legacy-spec]
+  (s/then [parser-legacy-spec]
     (is (= "loom" (:name parser-legacy-spec)))
     (is (= "0.1.0" (:version parser-legacy-spec)))))
 
 (deftest rejects-missing-and-incomplete-specs
-  (given
+  (s/given
     nil)
 
-  (when [missing-package-spec]
+  (s/when [missing-package-spec]
     {:nil-spec (package-spec/parse missing-package-spec nil)
      :missing-version-spec (package-spec/parse "loom" nil)
      :option-version-spec (package-spec/parse "loom" "--repo")
      :empty-name-spec (package-spec/parse "@0.1.0" nil)
      :empty-version-spec (package-spec/parse "loom@" nil)})
 
-  (then [{:keys [nil-spec missing-version-spec option-version-spec empty-name-spec empty-version-spec]}]
+  (s/then [{:keys [nil-spec missing-version-spec option-version-spec empty-name-spec empty-version-spec]}]
     (is (nil? nil-spec))
     (is (nil? missing-version-spec))
     (is (nil? option-version-spec))

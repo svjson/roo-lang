@@ -1,9 +1,10 @@
 (ns loom.command.deps-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.command.deps :as deps]))
 
 (deftest renders-dependency-graph-as-tree
-  (given
+  (s/given
     {:id "app@0.1.0"
      :dependencies [{:id "alpha@1.0.0"
                      :dependencies [{:id "common@1.0.0"
@@ -11,10 +12,10 @@
                     {:id "beta@1.0.0"
                      :dependencies []}]})
 
-  (when [tree-root]
+  (s/when [tree-root]
     (deps/tree-lines tree-root false))
 
-  (then [rendered-tree]
+  (s/then [rendered-tree]
     (is (= ["app@0.1.0"
             "├── alpha@1.0.0"
             "│   └── common@1.0.0"
@@ -22,7 +23,7 @@
            rendered-tree))))
 
 (deftest omits-repeated-marker-by-default
-  (given
+  (s/given
     {:id "app@0.1.0"
      :dependencies [{:id "left@1.0.0"
                      :dependencies [{:id "shared@1.0.0"
@@ -31,10 +32,10 @@
                      :dependencies [{:id "shared@1.0.0"
                                      :dependencies []}]}]})
 
-  (when [default-repeated-root]
+  (s/when [default-repeated-root]
     (deps/tree-lines default-repeated-root false))
 
-  (then [default-repeated-tree]
+  (s/then [default-repeated-tree]
     (is (= ["app@0.1.0"
             "├── left@1.0.0"
             "│   └── shared@1.0.0"
@@ -43,7 +44,7 @@
            default-repeated-tree))))
 
 (deftest shows-repeated-marker-when-requested
-  (given
+  (s/given
     {:id "app@0.1.0"
      :dependencies [{:id "left@1.0.0"
                      :dependencies [{:id "shared@1.0.0"
@@ -52,10 +53,10 @@
                      :dependencies [{:id "shared@1.0.0"
                                      :dependencies []}]}]})
 
-  (when [marked-repeated-root]
+  (s/when [marked-repeated-root]
     (deps/tree-lines marked-repeated-root true))
 
-  (then [marked-repeated-tree]
+  (s/then [marked-repeated-tree]
     (is (= ["app@0.1.0"
             "├── left@1.0.0"
             "│   └── shared@1.0.0"
@@ -64,7 +65,7 @@
            marked-repeated-tree))))
 
 (deftest renders-flat-dependency-list
-  (given
+  (s/given
     {:id "app@0.1.0"
      :dependencies [{:id "beta@1.0.0"
                      :dependencies []}
@@ -72,9 +73,9 @@
                      :dependencies [{:id "common@1.0.0"
                                      :dependencies []}]}]})
 
-  (when [flat-root]
+  (s/when [flat-root]
     (deps/flat-lines flat-root))
 
-  (then [flat-lines]
+  (s/then [flat-lines]
     (is (= ["alpha@1.0.0" "beta@1.0.0" "common@1.0.0"]
            flat-lines))))

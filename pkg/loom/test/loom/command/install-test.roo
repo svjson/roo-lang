@@ -1,19 +1,20 @@
 (ns loom.command.install-test
   (:require proof.core
+            [proof.syntax :as s]
             [roo.io :as io]
             [loom.command.install :as install]
             [loom.common.repository :as repository]
             [loom.test-support :as support]))
 
 (deftest installs-package-manifest-and-source-roots
-  (given
+  (s/given
     {:repo-root (support/fresh-repo! "loom-proof-install")
      :package-dir (support/loom-package-dir)})
 
-  (when [{:keys [repo-root package-dir]}]
+  (s/when [{:keys [repo-root package-dir]}]
     (install/install! package-dir repo-root true))
 
-  (then [install-loom-target-dir {:keys [repo-root]}]
+  (s/then [install-loom-target-dir {:keys [repo-root]}]
     (is (= (repository/package-target-dir repo-root "loom" "0.1.0")
            install-loom-target-dir))
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0" "package.edn")))
@@ -23,14 +24,14 @@
                                             "src/loom/command/install.roo")))))
 
 (deftest installs-native-libraries-when-declared
-  (given
+  (s/given
     {:repo-root (support/fresh-repo! "loom-proof-install-native")
      :package-dir (support/proof-package-dir)})
 
-  (when [{:keys [repo-root package-dir]}]
+  (s/when [{:keys [repo-root package-dir]}]
     (install/install! package-dir repo-root true))
 
-  (then [install-proof-target-dir {:keys [repo-root]}]
+  (s/then [install-proof-target-dir {:keys [repo-root]}]
     (is (= (repository/package-target-dir repo-root "proof" "0.1.0")
            install-proof-target-dir))
     (let [native-dir (support/installed-path repo-root "proof" "0.1.0" "native")]
@@ -38,7 +39,7 @@
       (is (= false (empty? (io/list-directory! native-dir)))))))
 
 (deftest reinstall-removes-previous-package-contents
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-reinstall")
           reinstall-stale-file
           (support/installed-path repo-root "loom" "0.1.0" "stale-file")]
@@ -47,14 +48,14 @@
       {:repo-root repo-root
        :reinstall-stale-file reinstall-stale-file}))
 
-  (when [{:keys [repo-root]}]
+  (s/when [{:keys [repo-root]}]
     (install/install! (support/loom-package-dir) repo-root false))
 
-  (then [install-target-dir {:keys [reinstall-stale-file]}]
+  (s/then [install-target-dir {:keys [reinstall-stale-file]}]
     (is (= false (io/exists? reinstall-stale-file)))))
 
 (deftest install-rejects-missing-manifest
-  (given
+  (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-install-missing-manifest")
           missing-manifest-package-dir
           (support/build-path "loom-proof-package-missing-manifest")]
@@ -64,35 +65,35 @@
       {:repo-root repo-root
        :missing-manifest-package-dir missing-manifest-package-dir}))
 
-  (when [{:keys [repo-root missing-manifest-package-dir]}]
+  (s/when [{:keys [repo-root missing-manifest-package-dir]}]
     (install/install! missing-manifest-package-dir repo-root true))
 
-  (then [missing-manifest-result {:keys [repo-root]}]
+  (s/then [missing-manifest-result {:keys [repo-root]}]
     (is (nil? missing-manifest-result))
     (is (= false (io/exists? repo-root)))))
 
 (deftest install-rejects-manifest-without-required-fields
-  (given
+  (s/given
     {:repo-root (support/fresh-repo! "loom-proof-install-invalid-manifest")
      :package-dir (support/fresh-package! "loom-proof-package-invalid-manifest"
                                           "{:description \"Bad package.\"}")})
 
-  (when [{:keys [repo-root package-dir]}]
+  (s/when [{:keys [repo-root package-dir]}]
     (install/install! package-dir repo-root true))
 
-  (then [invalid-manifest-result {:keys [repo-root]}]
+  (s/then [invalid-manifest-result {:keys [repo-root]}]
     (is (nil? invalid-manifest-result))
     (is (= false (io/exists? repo-root)))))
 
 (deftest install-rejects-manifest-with-invalid-load-roots
-  (given
+  (s/given
     {:repo-root (support/fresh-repo! "loom-proof-install-invalid-load-roots")
      :package-dir (support/fresh-package! "loom-proof-package-invalid-load-roots"
                                           "{:name invalid :version \"0.1.0\" :load-roots \"src\"}")})
 
-  (when [{:keys [repo-root package-dir]}]
+  (s/when [{:keys [repo-root package-dir]}]
     (install/install! package-dir repo-root true))
 
-  (then [invalid-load-roots-result {:keys [repo-root]}]
+  (s/then [invalid-load-roots-result {:keys [repo-root]}]
     (is (nil? invalid-load-roots-result))
     (is (= false (io/exists? repo-root)))))

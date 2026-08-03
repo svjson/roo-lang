@@ -1,56 +1,57 @@
 (ns loom.common.manifest-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.common.manifest :as manifest]))
 
 (deftest accepts-minimal-valid-manifest
-  (given
+  (s/given
     {:name "loom"
      :version "0.1.0"
      :load-roots ["src"]})
 
-  (when [valid-manifest]
+  (s/when [valid-manifest]
     (manifest/validation-errors valid-manifest))
 
-  (then [valid-manifest-errors]
+  (s/then [valid-manifest-errors]
     (is (= [] valid-manifest-errors))))
 
 (deftest reports-required-manifest-fields
-  (given
+  (s/given
     {:description "No identity."})
 
-  (when [missing-required-fields]
+  (s/when [missing-required-fields]
     (manifest/validation-errors missing-required-fields))
 
-  (then [required-field-errors]
+  (s/then [required-field-errors]
     (is (= ["missing required field :name"
             "missing required field :version"
             "missing required field :load-roots"]
            required-field-errors))))
 
 (deftest reports-invalid-manifest-field-types
-  (given
+  (s/given
     {:name ["loom"]
      :version {:major 0}
      :load-roots "src"})
 
-  (when [invalid-field-types]
+  (s/when [invalid-field-types]
     (manifest/validation-errors invalid-field-types))
 
-  (then [invalid-type-errors]
+  (s/then [invalid-type-errors]
     (is (= [":name must be a string, symbol, or keyword"
             ":version must be a string, symbol, or keyword"
             ":load-roots must be a vector"]
            invalid-type-errors))))
 
 (deftest reports-invalid-load-root-values
-  (given
+  (s/given
     {:name "loom"
      :version "0.1.0"
      :load-roots ["src" {:bad true}]})
 
-  (when [invalid-load-roots]
+  (s/when [invalid-load-roots]
     (manifest/validation-errors invalid-load-roots))
 
-  (then [invalid-load-root-errors]
+  (s/then [invalid-load-root-errors]
     (is (= [":load-roots must contain only strings, symbols, or keywords"]
            invalid-load-root-errors))))

@@ -1,11 +1,12 @@
 (ns loom.common.files-test
   (:require proof.core
+            [proof.syntax :as s]
             [roo.io :as io]
             [loom.common.files :as files]
             [loom.test-support :as support]))
 
 (deftest copies-existing-file-paths
-  (given
+  (s/given
     (let [root (support/fresh-repo! "loom-proof-files")
           source (io/join-path root "source/config.edn")
           target (io/join-path root "target/config.edn")]
@@ -13,9 +14,9 @@
       {:source source
        :target target}))
 
-  (when [{:keys [source target]}]
+  (s/when [{:keys [source target]}]
     (files/copy-path-if-present! source target))
 
-  (then [copied-path {:keys [target]}]
+  (s/then [copied-path {:keys [target]}]
     (is (io/exists? target))
     (is (= "{:ok true}" (io/slurp! target)))))

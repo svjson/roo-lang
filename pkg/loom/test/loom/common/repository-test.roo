@@ -1,26 +1,27 @@
 (ns loom.common.repository-test
   (:require proof.core
+            [proof.syntax :as s]
             [loom.common.repository :as repository]))
 
 (deftest package-id-uses-at-version
-  (given
+  (s/given
     {:package-name "loom"
      :version "0.1.0"})
 
-  (when [{:keys [package-name version]}]
+  (s/when [{:keys [package-name version]}]
     (repository/package-id package-name version))
 
-  (then [id]
+  (s/then [id]
     (is (= "loom@0.1.0" id))))
 
 (deftest package-paths-use-local-repository-layout
-  (given
+  (s/given
     "/tmp/roo-pkg")
 
-  (when [repo-root]
+  (s/when [repo-root]
     {:target-dir (repository/package-target-dir repo-root "loom" "0.1.0")
      :manifest-path (repository/package-manifest-path repo-root "loom" "0.1.0")})
 
-  (then [{:keys [target-dir manifest-path]}]
+  (s/then [{:keys [target-dir manifest-path]}]
     (is (= "/tmp/roo-pkg/loom/0.1.0" target-dir))
     (is (= "/tmp/roo-pkg/loom/0.1.0/package.edn" manifest-path))))
