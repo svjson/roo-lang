@@ -1,0 +1,172 @@
+(ns boodle.format.lookup
+  (:require [boodle.model :as model]))
+
+(defun symbol-index
+  "Return the symbol index portion of a lookup index artifact.
+
+  Args:
+  - `index`: A `:roo/symbol-index` map or combined `:roo/index` map.
+
+  Returns:
+  The symbol index map that should be imported into a Boodle catalog."
+  [index]
+  (case (:format index)
+    :roo/index (:symbols index)
+    :default index))
+
+(defun package-id
+  "Return the Boodle package id for a lookup symbol index.
+
+  Args:
+  - `index`: Lookup symbol index.
+
+  Returns:
+  The package name when present, the first symbol package when present, or the
+  first segment of the first symbol namespace for package-less root indexes."
+  [index]
+  (or (:name (:package index))
+      (:package (head (:symbols index)))
+      (if-let [namespace (:namespace (head (:symbols index)))]
+        (if-let [separator (index-of namespace '.')]
+          (substr namespace 0 separator)
+          namespace)
+        nil)
+      "unknown"))
+
+(defun symbol-entry
+  "Convert a lookup symbol entry to a Boodle entry.
+
+  Args:
+  - `symbol`: Lookup symbol map.
+
+  Returns:
+  A `:boodle/entry` map."
+  [symbol]
+  (let [doc (:doc symbol)]
+    (model/entry {:id (:id symbol)
+                  :name (:name symbol)
+                  :qualified-name (:qualified-name symbol)
+                  :namespace (:namespace symbol)
+                  :entry-kind (:kind symbol)
+                  :origin (:origin symbol)
+                  :summary (:summary doc)
+                  :body (:body doc)
+                  :doc doc
+                  :signatures (or (:signatures symbol) [])
+                  :source (:source symbol)
+                  :declaration-source (:declaration-source symbol)})))
+
+(defun append-name
+  "Append NAME to NAMES when NAME has not already been seen.
+
+  Args:
+  - `names`: Existing names.
+  - `name`: Candidate name.
+
+  Returns:
+  `names` with `name` appended once, or unchanged for nil and duplicate names."
+  [names name]
+  (if (or (nil? name) (contains? names name))
+    names
+    (append names name)))
+
+(defun namespace-names
+  "Return sorted namespace names represented by INDEX.
+
+  Args:
+  - `index`: Lookup symbol index.
+
+  Returns:
+  Namespace names from namespace entries and symbols."
+  [index]
+  (sort (reduce (concat (keep (:namespaces index)
+                              (fn [namespace]
+                                (:name namespace)))
+                        (keep (:symbols index)
+                              (fn [symbol]
+                                (:namespace symbol))))
+                []
+                append-name)
+        <))
+
+(defun lookup-namespace
+  "Return lookup namespace metadata by NAME.
+
+  Args:
+  - `index`: Lookup symbol index.
+  - `name`: Namespace name.
+
+  Returns:
+  Matching namespace map, or nil."
+  [index name]
+  (find-first (:namespaces index)
+              (fn [namespace]
+                (= name (:name namespace)))))
+
+(defun entries-in-namespace
+  "Return Boodle entries from INDEX belonging to NAME.
+
+  Args:
+  - `index`: Lookup symbol index.
+  - `name`: Namespace name.
+
+  Returns:
+  Sorted Boodle entry maps."
+  [index name]
+  (sort (keep (:symbols index)
+              (fn [symbol]
+                (when (= name (:namespace symbol))
+                  (symbol-entry symbol))))
+        (fn [left right]
+          (< (:qualified-name left) (:qualified-name right)))))
+
+(defun namespace-entry
+  "Convert one namespace from a lookup index to a Boodle namespace entry.
+
+  Args:
+  - `index`: Lookup symbol index.
+  - `name`: Namespace name.
+
+  Returns:
+  A `:boodle/namespace` map."
+  [index name]
+  (model/namespace {:name name
+                    :summary (:summary (:doc (lookup-namespace index name)))
+                    :entries (entries-in-namespace index name)}))
+
+(defun package-entry
+  "Convert one lookup index to a Boodle package entry.
+
+  Args:
+  - `index`: A lookup symbol index or combined lookup index.
+
+  Returns:
+  A `:boodle/package` map."
+  [index]
+  (let [index (symbol-index index)
+        package (:package index)]
+    (model/package {:id (package-id index)
+                    :name (package-id index)
+                    :version (:version package)
+                    :summary (:description package)
+                    :namespaces (map (namespace-names index)
+                                     (fn [name]
+                                       (namespace-entry index name)))
+                    :entries (sort (map (:symbols index) symbol-entry)
+                                   (fn [left right]
+                                     (< (:qualified-name left)
+                                        (:qualified-name right))))})))
+
+(defun catalog
+  "Convert lookup indexes to a Boodle catalog.
+
+  Args:
+  - `indexes`: Lookup symbol indexes or combined lookup indexes.
+
+  Returns:
+  A `:boodle/catalog` map containing one package entry per input index."
+  [indexes]
+  (model/catalog
+    (sort (map indexes package-entry)
+          (fn [left right]
+            (< (:id left) (:id right))))))

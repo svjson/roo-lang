@@ -549,6 +549,51 @@ jobs:
       - name: Run workbook tests
         run: cd build/native-package-stage/pkg/workbook/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
+  test-boodle:
+    name: Test boodle ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-native-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: native-package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run boodle tests
+        run: cd build/native-package-stage/pkg/boodle/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
   test-moordown:
     name: Test moordown ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}

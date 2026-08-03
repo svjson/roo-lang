@@ -1,0 +1,99 @@
+(ns boodle.format.lookup-test
+  (:require proof.core
+            [boodle.format.lookup :as lookup]))
+
+(def sample-index
+  {:format :roo/symbol-index
+   :version 1
+   :package {:name "zoology"
+             :version "0.1.0"
+             :description "Schema tools."}
+   :sources [{:path "src/schema.roo"}]
+   :namespaces [{:name "zoology.schema"
+                 :doc {:summary "Schema helpers."}}]
+   :symbols [{:id "zoology.schema/resolve"
+              :name "resolve"
+              :qualified-name "zoology.schema/resolve"
+              :namespace "zoology.schema"
+              :package "zoology"
+              :kind :function
+              :origin :source
+              :doc {:summary "Resolve schema references."
+                    :body "Returns a fully resolved schema."}
+              :signatures [{:display "(resolve schema)"}]
+              :source {:path "src/schema.roo" :line 10 :column 1}}]})
+
+(def roo-index
+  {:format :roo/symbol-index
+   :version 1
+   :origin {:kind :roots}
+   :namespaces []
+   :symbols [{:id "roo/+"
+              :name "+"
+              :qualified-name "roo/+"
+              :namespace "roo"
+              :kind :function
+              :origin :native
+              :doc {:summary "Adds numbers."}
+              :signatures [{:display "(+ values...)"}]}]})
+
+(def native-root-index
+  {:format :roo/symbol-index
+   :version 1
+   :origin {:kind :roots}
+   :namespaces []
+   :symbols [{:id "zoology.native/read!"
+              :name "read!"
+              :qualified-name "zoology.native/read!"
+              :namespace "zoology.native"
+              :kind :function
+              :origin :native
+              :doc {:summary "Read native data."}
+              :signatures [{:display "(read! path)"}]}]})
+
+(deftest imports-package-indexes
+  (let [catalog (lookup/catalog [sample-index])
+        package (head (:packages catalog))
+        namespace (head (:namespaces package))
+        entry (head (:entries namespace))]
+    (is (= :boodle/catalog (:kind catalog)))
+    (is (= "zoology" (:id package)))
+    (is (= "0.1.0" (:version package)))
+    (is (= "Schema tools." (:summary package)))
+    (is (= "zoology.schema" (:name namespace)))
+    (is (= "Schema helpers." (:summary namespace)))
+    (is (= "zoology.schema/resolve" (:qualified-name entry)))
+    (is (= :function (:entry-kind entry)))
+    (is (= "Resolve schema references." (:summary entry)))
+    (is (= "Returns a fully resolved schema." (:body entry)))
+    (is (= [{:display "(resolve schema)"}] (:signatures entry)))))
+
+(deftest imports-combined-lookup-indexes
+  (let [catalog (lookup/catalog [{:format :roo/index
+                                  :version 1
+                                  :symbols sample-index}])
+        package (head (:packages catalog))]
+    (is (= "zoology" (:id package)))
+    (is (= 1 (count (:entries package))))))
+
+(deftest imports-roo-language-indexes-as-roo-package
+  (let [package (head (:packages (lookup/catalog [roo-index])))
+        namespace (head (:namespaces package))
+        entry (head (:entries namespace))]
+    (is (= "roo" (:id package)))
+    (is (= "roo" (:name package)))
+    (is (= "roo" (:name namespace)))
+    (is (= "roo/+" (:qualified-name entry)))
+    (is (= :native (:origin entry)))))
+
+(deftest imports-package-less-root-indexes-from-namespace-prefix
+  (let [package (head (:packages (lookup/catalog [native-root-index])))]
+    (is (= "zoology" (:id package)))
+    (is (= "zoology" (:name package)))))
+
+(deftest imports-multiple-packages-in-one-catalog
+  (let [catalog (lookup/catalog [sample-index roo-index])
+        package-ids (map (:packages catalog)
+                         (fn [package]
+                           (:id package)))]
+    (is (= ["roo" "zoology"] package-ids))))

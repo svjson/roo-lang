@@ -1,0 +1,73 @@
+(ns boodle.model)
+
+(defun catalog
+  "Create a documentation catalog.
+
+  Args:
+  - `packages`: Package documentation entries.
+
+  Returns:
+  A `:boodle/catalog` map containing all packages that should appear in one
+  generated documentation output."
+  [packages]
+  {:kind :boodle/catalog
+   :packages packages})
+
+(defun package
+  "Create a package documentation entry.
+
+  Args:
+  - `data`: Map containing `:id`, `:name`, `:version`, `:summary`,
+  `:namespaces`, and `:entries`.
+
+  Returns:
+  A `:boodle/package` map."
+  [data]
+  (merge {:kind :boodle/package
+          :id nil
+          :name nil
+          :version nil
+          :summary nil
+          :namespaces []
+          :entries []}
+         data))
+
+(defun namespace
+  "Create a namespace documentation entry.
+
+  Args:
+  - `data`: Map containing `:name`, `:summary`, and `:entries`.
+
+  Returns:
+  A `:boodle/namespace` map."
+  [data]
+  (merge {:kind :boodle/namespace
+          :name nil
+          :summary nil
+          :entries []}
+         data))
+
+(defun entry
+  "Create a symbol documentation entry.
+
+  Args:
+  - `data`: Map containing symbol identity, documentation, signatures, and
+  source locations.
+
+  Returns:
+  A `:boodle/entry` map."
+  [data]
+  (merge {:kind :boodle/entry
+          :id nil
+          :name nil
+          :qualified-name nil
+          :namespace nil
+          :entry-kind nil
+          :origin nil
+          :summary nil
+          :body nil
+          :doc nil
+          :signatures []
+          :source nil
+          :declaration-source nil}
+         data))

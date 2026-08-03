@@ -12,6 +12,7 @@ add_subdirectory(proof)
 add_subdirectory(i18n)
 add_subdirectory(loom)
 add_subdirectory(proofread)
+add_subdirectory(boodle)
 add_subdirectory(lookup)
 add_subdirectory(moordown)
 add_subdirectory(spool)
@@ -73,6 +74,7 @@ function(roo_add_stage_package_target package_name)
 endfunction()
 
 roo_add_stage_package_target(proof NATIVE_TARGET proof_native)
+roo_add_stage_package_target(boodle)
 roo_add_stage_package_target(lookup NATIVE_TARGET lookup_native)
 roo_add_stage_package_target(proofread NATIVE_TARGET proofread_native)
 roo_add_stage_package_target(loom)
@@ -85,6 +87,7 @@ roo_add_stage_package_target(soot)
 add_custom_target(stage_native_packages
   DEPENDS
     stage_proof_package
+    stage_boodle_package
     stage_lookup_package
     stage_proofread_package
     stage_loom_package
