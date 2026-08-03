@@ -1,0 +1,6 @@
+{:name soot-tests
+ :version "0.1.0"
+ :dependencies {soot "file:.."
+                proof "file:../../proof"}
+ :load-roots ["."]
+ :config {proof {:test-roots ["soot"]}}}

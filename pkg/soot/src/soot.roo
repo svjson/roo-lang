@@ -1,0 +1,58 @@
+(ns soot
+  (:require [soot.core :as core]))
+
+(def known-styles core/known-styles)
+
+(defun custom-style [open close]
+  (core/custom-style open close))
+
+(defun sgr [codes]
+  (core/sgr codes))
+
+(defun paint [styles value & options &rest]
+  (core/paint styles value (or options {})))
+
+(defun print! [styles value & options &rest]
+  (core/print! styles value (or options {})))
+
+(defun bold [value & options &rest] (core/bold value (or options {})))
+(defun dim [value & options &rest] (core/dim value (or options {})))
+(defun italic [value & options &rest] (core/italic value (or options {})))
+(defun underline [value & options &rest] (core/underline value (or options {})))
+(defun inverse [value & options &rest] (core/inverse value (or options {})))
+(defun hidden [value & options &rest] (core/hidden value (or options {})))
+(defun strikethrough [value & options &rest] (core/strikethrough value (or options {})))
+
+(defun black [value & options &rest] (core/black value (or options {})))
+(defun red [value & options &rest] (core/red value (or options {})))
+(defun green [value & options &rest] (core/green value (or options {})))
+(defun yellow [value & options &rest] (core/yellow value (or options {})))
+(defun blue [value & options &rest] (core/blue value (or options {})))
+(defun magenta [value & options &rest] (core/magenta value (or options {})))
+(defun cyan [value & options &rest] (core/cyan value (or options {})))
+(defun white [value & options &rest] (core/white value (or options {})))
+(defun gray [value & options &rest] (core/gray value (or options {})))
+(defun grey [value & options &rest] (core/grey value (or options {})))
+
+(defun bg-black [value & options &rest] (core/bg-black value (or options {})))
+(defun bg-red [value & options &rest] (core/bg-red value (or options {})))
+(defun bg-green [value & options &rest] (core/bg-green value (or options {})))
+(defun bg-yellow [value & options &rest] (core/bg-yellow value (or options {})))
+(defun bg-blue [value & options &rest] (core/bg-blue value (or options {})))
+(defun bg-magenta [value & options &rest] (core/bg-magenta value (or options {})))
+(defun bg-cyan [value & options &rest] (core/bg-cyan value (or options {})))
+(defun bg-white [value & options &rest] (core/bg-white value (or options {})))
+(defun bg-gray [value & options &rest] (core/bg-gray value (or options {})))
+(defun bg-grey [value & options &rest] (core/bg-grey value (or options {})))
+
+(defun fg [index value & options &rest]
+  (core/fg index value (or options {})))
+
+(defun bg [index value & options &rest]
+  (core/bg index value (or options {})))
+
+(defun rgb [red green blue value & options &rest]
+  (core/rgb red green blue value (or options {})))
+
+(defun bg-rgb [red green blue value & options &rest]
+  (core/bg-rgb red green blue value (or options {})))

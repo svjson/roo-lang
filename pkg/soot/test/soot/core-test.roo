@@ -1,0 +1,34 @@
+(ns soot.core-test
+  (:require proof.core
+            [soot :as soot]
+            [soot.core :as soot-core]))
+
+(def esc soot-core/esc)
+
+(deftest named-color-wraps-raw-string
+  (is (= (str esc "[31merror" esc "[39m")
+         (soot/red "error"))))
+
+(deftest paint-composes-styles-with-reversed-close-order
+  (is (= (str esc "[1;31merror" esc "[39;22m")
+         (soot/paint [:bold :red] "error"))))
+
+(deftest paint-accepts-non-string-values
+  (is (= (str esc "[33m:warn" esc "[39m")
+         (soot/yellow :warn))))
+
+(deftest paint-can-be-disabled
+  (is (= "error"
+         (soot/paint [:bold :red] "error" {:enabled? false}))))
+
+(deftest unknown-style-leaves-value-plain
+  (is (= "plain"
+         (soot/paint :not-a-style "plain"))))
+
+(deftest custom-256-color-style
+  (is (= (str esc "[38;5;208mwarning" esc "[39m")
+         (soot/fg 208 "warning"))))
+
+(deftest custom-rgb-background-style
+  (is (= (str esc "[48;2;10;20;30mbox" esc "[49m")
+         (soot/bg-rgb 10 20 30 "box"))))

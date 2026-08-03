@@ -1,0 +1,162 @@
+(ns soot.core)
+
+(def esc "")
+
+(def known-styles
+  {:reset {:open "0" :close "0"}
+   :bold {:open "1" :close "22"}
+   :dim {:open "2" :close "22"}
+   :italic {:open "3" :close "23"}
+   :underline {:open "4" :close "24"}
+   :inverse {:open "7" :close "27"}
+   :hidden {:open "8" :close "28"}
+   :strikethrough {:open "9" :close "29"}
+
+   :black {:open "30" :close "39"}
+   :red {:open "31" :close "39"}
+   :green {:open "32" :close "39"}
+   :yellow {:open "33" :close "39"}
+   :blue {:open "34" :close "39"}
+   :magenta {:open "35" :close "39"}
+   :cyan {:open "36" :close "39"}
+   :white {:open "37" :close "39"}
+   :gray {:open "90" :close "39"}
+   :grey {:open "90" :close "39"}
+
+   :bright-black {:open "90" :close "39"}
+   :bright-red {:open "91" :close "39"}
+   :bright-green {:open "92" :close "39"}
+   :bright-yellow {:open "93" :close "39"}
+   :bright-blue {:open "94" :close "39"}
+   :bright-magenta {:open "95" :close "39"}
+   :bright-cyan {:open "96" :close "39"}
+   :bright-white {:open "97" :close "39"}
+
+   :bg-black {:open "40" :close "49"}
+   :bg-red {:open "41" :close "49"}
+   :bg-green {:open "42" :close "49"}
+   :bg-yellow {:open "43" :close "49"}
+   :bg-blue {:open "44" :close "49"}
+   :bg-magenta {:open "45" :close "49"}
+   :bg-cyan {:open "46" :close "49"}
+   :bg-white {:open "47" :close "49"}
+   :bg-gray {:open "100" :close "49"}
+   :bg-grey {:open "100" :close "49"}
+
+   :bg-bright-black {:open "100" :close "49"}
+   :bg-bright-red {:open "101" :close "49"}
+   :bg-bright-green {:open "102" :close "49"}
+   :bg-bright-yellow {:open "103" :close "49"}
+   :bg-bright-blue {:open "104" :close "49"}
+   :bg-bright-magenta {:open "105" :close "49"}
+   :bg-bright-cyan {:open "106" :close "49"}
+   :bg-bright-white {:open "107" :close "49"}})
+
+(defun custom-style
+  "Create a style map from explicit SGR open and close code strings."
+  [open close]
+  {:open (str open)
+   :close (str close)})
+
+(defun resolve-style [style]
+  (if (map? style)
+    style
+    (get known-styles style nil)))
+
+(defun code-for [style key]
+  (let [resolved (resolve-style style)]
+    (if (nil? resolved)
+      nil
+      (let [code (get resolved key nil)]
+        (if (nil? code)
+          nil
+          (str code))))))
+
+(defun normalize-styles [styles]
+  (if (nil? styles)
+    []
+    (if (sequential? styles)
+      styles
+      [styles])))
+
+(defun sgr
+  "Return an ANSI SGR sequence for one or more code strings."
+  [codes]
+  (let [present (filter codes some?)]
+    (if (empty? present)
+      ""
+      (str esc "[" (apply join (concat [";"] present)) "m"))))
+
+(defun open-sequence [styles]
+  (sgr (keep (normalize-styles styles) (fn [style] (code-for style :open)))))
+
+(defun close-sequence [styles]
+  (sgr (keep (reverse (normalize-styles styles)) (fn [style] (code-for style :close)))))
+
+(defun paint
+  "Apply one style, a vector of styles, or custom style maps to a value.
+
+  Options:
+  - `:enabled? false` returns the value converted with `str` and no ANSI codes."
+  [styles value & options &rest]
+  (let [text (str value)
+        opts (or options {})]
+    (if (= false (get opts :enabled? true))
+      text
+      (let [open (open-sequence styles)
+            close (close-sequence styles)]
+        (if (or (empty? text) (empty? open))
+          text
+          (str open text close))))))
+
+(defun print!
+  "Print a styled value and return the original value."
+  [styles value & options &rest]
+  (prn (paint styles value (or options {})))
+  value)
+
+(defun bold [value & options &rest] (paint :bold value (or options {})))
+(defun dim [value & options &rest] (paint :dim value (or options {})))
+(defun italic [value & options &rest] (paint :italic value (or options {})))
+(defun underline [value & options &rest] (paint :underline value (or options {})))
+(defun inverse [value & options &rest] (paint :inverse value (or options {})))
+(defun hidden [value & options &rest] (paint :hidden value (or options {})))
+(defun strikethrough [value & options &rest] (paint :strikethrough value (or options {})))
+
+(defun black [value & options &rest] (paint :black value (or options {})))
+(defun red [value & options &rest] (paint :red value (or options {})))
+(defun green [value & options &rest] (paint :green value (or options {})))
+(defun yellow [value & options &rest] (paint :yellow value (or options {})))
+(defun blue [value & options &rest] (paint :blue value (or options {})))
+(defun magenta [value & options &rest] (paint :magenta value (or options {})))
+(defun cyan [value & options &rest] (paint :cyan value (or options {})))
+(defun white [value & options &rest] (paint :white value (or options {})))
+(defun gray [value & options &rest] (paint :gray value (or options {})))
+(defun grey [value & options &rest] (paint :grey value (or options {})))
+
+(defun bg-black [value & options &rest] (paint :bg-black value (or options {})))
+(defun bg-red [value & options &rest] (paint :bg-red value (or options {})))
+(defun bg-green [value & options &rest] (paint :bg-green value (or options {})))
+(defun bg-yellow [value & options &rest] (paint :bg-yellow value (or options {})))
+(defun bg-blue [value & options &rest] (paint :bg-blue value (or options {})))
+(defun bg-magenta [value & options &rest] (paint :bg-magenta value (or options {})))
+(defun bg-cyan [value & options &rest] (paint :bg-cyan value (or options {})))
+(defun bg-white [value & options &rest] (paint :bg-white value (or options {})))
+(defun bg-gray [value & options &rest] (paint :bg-gray value (or options {})))
+(defun bg-grey [value & options &rest] (paint :bg-grey value (or options {})))
+
+(defun fg [index value & options &rest]
+  (paint (custom-style (str "38;5;" index) "39") value (or options {})))
+
+(defun bg [index value & options &rest]
+  (paint (custom-style (str "48;5;" index) "49") value (or options {})))
+
+(defun rgb [red green blue value & options &rest]
+  (paint (custom-style (str "38;2;" red ";" green ";" blue) "39")
+         value
+         (or options {})))
+
+(defun bg-rgb [red green blue value & options &rest]
+  (paint (custom-style (str "48;2;" red ";" green ";" blue) "49")
+         value
+         (or options {})))

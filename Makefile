@@ -10,7 +10,7 @@ ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_IND
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-workbook install-footsteps release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-i18n install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
@@ -173,6 +173,18 @@ install-proofread: build-proofread
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/proofread-install/build/$(PROOFREAD_BINARY) $(PREFIX)/bin/$(PROOFREAD_BINARY)
 
+install-i18n: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/i18n/src
+	cmake -E copy_directory $(CURDIR)/pkg/i18n/src $(PREFIX)/share/roo/pkg/i18n/src
+	cmake -E copy_if_different $(CURDIR)/pkg/i18n/package.edn $(PREFIX)/share/roo/pkg/i18n/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/i18n/README.md $(PREFIX)/share/roo/pkg/i18n/README.md
+
+install-spool: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/spool/src
+	cmake -E copy_directory $(CURDIR)/pkg/spool/src $(PREFIX)/share/roo/pkg/spool/src
+	cmake -E copy_if_different $(CURDIR)/pkg/spool/package.edn $(PREFIX)/share/roo/pkg/spool/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/spool/README.md $(PREFIX)/share/roo/pkg/spool/README.md
+
 install-workbook: build
 	cmake -E make_directory $(PREFIX)/share/roo/pkg/workbook/src
 	cmake -E copy_directory $(CURDIR)/pkg/workbook/src $(PREFIX)/share/roo/pkg/workbook/src
@@ -185,13 +197,25 @@ install-footsteps: build
 	cmake -E copy_if_different $(CURDIR)/pkg/footsteps/package.edn $(PREFIX)/share/roo/pkg/footsteps/package.edn
 	cmake -E copy_if_different $(CURDIR)/pkg/footsteps/README.md $(PREFIX)/share/roo/pkg/footsteps/README.md
 
+install-zoology: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/zoology/src
+	cmake -E copy_directory $(CURDIR)/pkg/zoology/src $(PREFIX)/share/roo/pkg/zoology/src
+	cmake -E copy_if_different $(CURDIR)/pkg/zoology/package.edn $(PREFIX)/share/roo/pkg/zoology/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/zoology/README.md $(PREFIX)/share/roo/pkg/zoology/README.md
+
+install-soot: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/soot/src
+	cmake -E copy_directory $(CURDIR)/pkg/soot/src $(PREFIX)/share/roo/pkg/soot/src
+	cmake -E copy_if_different $(CURDIR)/pkg/soot/package.edn $(PREFIX)/share/roo/pkg/soot/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/soot/README.md $(PREFIX)/share/roo/pkg/soot/README.md
+
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
 
-test: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:rooc
+test: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:soot test\:rooc
 test: test\:cli
 
-test\:all: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:rooc test\:cli test\:server
+test\:all: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:server
 
 test\:support: build
 	cmake --build build --target testsupport
@@ -220,6 +244,9 @@ test\:workbook: build stage-native-packages
 
 test\:footsteps: build stage-native-packages
 	cd $(NATIVE_PACKAGE_STAGE)/footsteps/test && $(CURDIR)/build/roo proof
+
+test\:soot: build stage-native-packages
+	cd $(NATIVE_PACKAGE_STAGE)/soot/test && $(CURDIR)/build/roo proof
 
 test\:rooc: build stage-native-packages
 	cmake --build build --target testrooc
