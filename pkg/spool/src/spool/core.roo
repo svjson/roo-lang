@@ -222,11 +222,11 @@
   lines)
 
 (defun report-arguments [report-arg rest]
-  (if (= "map" (type-of report-arg))
-    {:report? default-report?
-     :options report-arg}
-    {:report? (or report-arg default-report?)
-     :options (or (head (or rest [])) {})}))
+  (case (type-of report-arg)
+    "map" {:report? default-report?
+           :options report-arg}
+    :default {:report? (or report-arg default-report?)
+              :options (or (head (or rest [])) {})}))
 
 (defun report! [& report-arg &rest]
   (let [arguments (report-arguments report-arg rest)
