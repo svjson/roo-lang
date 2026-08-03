@@ -1,0 +1,17 @@
+(ns proofread.direct-conditions-use-case-pyramid)
+
+(def status-dispatch
+  (if (= status :ready)
+    (start!)
+    (if (= status :paused)
+      (pause!)
+      (if (= status :stopped)
+        (stop!)
+        (skip!)))))
+
+(def extension-dispatch
+  (if (= ".roo" (io/extension file))
+    (check-roo file)
+    (if (= ".edn" (io/extension file))
+      (check-edn file)
+      [])))

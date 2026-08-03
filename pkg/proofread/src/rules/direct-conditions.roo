@@ -128,6 +128,64 @@
            (and (not (case-literal? (nth children 1)))
                 (case-literal? (nth children 2))))))
 
+(defun equality-dispatch-expression
+  "Return the non-literal expression in an equality dispatch condition.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The comparable form for the dispatch expression, or `nil` when `node` is not
+  a literal equality dispatch."
+  [{:keys [children] :as node}]
+  (when (equality-dispatch? node)
+    (if (case-literal? (nth children 1))
+      (:form (nth children 2))
+      (:form (nth children 1)))))
+
+(defun full-if?
+  "Test whether an AST node is an `if` form with an explicit else branch.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for four-form `if` nodes, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "if" (forms/head-name node))
+       (= 4 (count children))))
+
+(defun if-else
+  "Return the else branch of a full `if` form.
+
+  Args:
+  - `node`: A full `if` node.
+
+  Returns:
+  The else child node."
+  [node]
+  (nth (:children node) 3))
+
+(defun same-case-chain?
+  "Test whether an `if` chain dispatches on one expression.
+
+  Args:
+  - `dispatch-expression`: Comparable dispatch expression form.
+  - `node`: Current `if` node.
+
+  Returns:
+  `true` when each condition compares `dispatch-expression` to a literal and
+  every branch carries a meaningful value."
+  [dispatch-expression {:keys [children] :as node}]
+  (and (full-if? node)
+       (= dispatch-expression
+          (equality-dispatch-expression (nth children 1)))
+       (not (nil-node? (nth children 2)))
+       (let [else (if-else node)]
+         (if (full-if? else)
+           (same-case-chain? dispatch-expression else)
+           (not (nil-node? else))))))
+
 (defun if-case-candidate?
   "Test whether an `if` form should be `case`.
 
@@ -135,14 +193,81 @@
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for four-form `if` expressions using literal equality dispatch,
-  otherwise `false`."
+  `true` for one `if`, or an `if` chain, dispatching on equality against
+  literals for the same expression; otherwise `false`."
   [{:keys [children] :as node}]
-  (and (= "if" (forms/head-name node))
-       (= 4 (count children))
-       (equality-dispatch? (nth children 1))
+  (when (full-if? node)
+    (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
+      (same-case-chain? dispatch-expression node))))
+
+(defun value-if-chain?
+  "Test whether an `if` chain has meaningful branch values.
+
+  Args:
+  - `node`: Current `if` node.
+
+  Returns:
+  `true` when `node` is an `if` chain with non-`nil` branch values."
+  [{:keys [children] :as node}]
+  (and (full-if? node)
        (not (nil-node? (nth children 2)))
-       (not (nil-node? (nth children 3)))))
+       (let [else (if-else node)]
+         (if (full-if? else)
+           (value-if-chain? else)
+           (not (nil-node? else))))))
+
+(defun if-cond-candidate?
+  "Test whether an `if` chain should be `cond`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for nested `if` chains that are not better expressed as `case`,
+  otherwise `false`."
+  [node]
+  (and (full-if? node)
+       (full-if? (if-else node))
+       (not (if-case-candidate? node))
+       (value-if-chain? node)))
+
+(defun else-child?
+  "Test whether `node` is the else branch of `parent`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil`.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is the else child of a full `if` parent."
+  [parent node]
+  (and (full-if? parent)
+       (= node (if-else parent))))
+
+(defun if-chain-candidate?
+  "Test whether `node` is a reportable `if` chain.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `use-case` and `use-cond` chain candidates."
+  [node]
+  (or (if-case-candidate? node)
+      (if-cond-candidate? node)))
+
+(defun nested-if-chain-child?
+  "Test whether `node` is already covered by a parent `if` chain diagnostic.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil`.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` when the parent chain should produce the diagnostic."
+  [parent node]
+  (and (else-child? parent node)
+       (if-chain-candidate? parent)))
 
 (defun direct-condition-diagnostic
   "Return the direct-condition diagnostic for an AST node.
@@ -155,6 +280,9 @@
   A diagnostic map, or `nil` when the node does not match a rule."
   [parent {:keys [children] :as node}]
   (cond
+    (nested-if-chain-child? parent node)
+    nil
+
     (let-if-candidate? node)
     (diagnostic node :use-if-let "Use if-let")
 
@@ -163,6 +291,9 @@
 
     (if-case-candidate? node)
     (diagnostic node :use-case "Use case")
+
+    (if-cond-candidate? node)
+    (diagnostic node :use-cond "Use cond")
 
     (and (= "if" (forms/head-name node))
          (not (let-condition-child? parent node))

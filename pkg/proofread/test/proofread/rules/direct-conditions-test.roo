@@ -35,6 +35,16 @@
           [:use-case 14]]
          (diagnostic-summary "assets/rules/direct-conditions/use-case.roo"))))
 
+(deftest reports-use-case-for-literal-equality-dispatch-pyramids
+  (is (= [[:use-case 4]
+          [:use-case 13]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-case-pyramid.roo"))))
+
+(deftest reports-use-cond-for-if-pyramids
+  (is (= [[:use-cond 4]
+          [:use-cond 11]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-cond.roo"))))
+
 (deftest ignores-direct-condition-non-candidates
   (is (= []
          (diagnostics "assets/rules/direct-conditions/non-candidates.roo"))))

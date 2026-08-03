@@ -1,0 +1,15 @@
+(ns proofread.direct-conditions-use-cond)
+
+(def status-flow
+  (if ready?
+    (start!)
+    (if paused?
+      (pause!)
+      (skip!))))
+
+(def item-count
+  (if (empty? items)
+    :empty
+    (if (> (count items) 10)
+      :many
+      :some)))

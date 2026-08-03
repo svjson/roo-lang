@@ -88,7 +88,10 @@ Supported style warnings:
 - `use-when-let`: reports `let` plus `when` forms that can be written as
   `when-let`.
 - `use-case`: reports `if` forms that dispatch on equality against a literal
-  and can be written as `case`.
+  and `if` chains that dispatch on equality against literals for the same
+  expression, which can be written as `case`.
+- `use-cond`: reports nested predicate `if` chains that can be written as
+  `cond`.
 - `use-head`: reports `(nth value 0)` forms that can be written as `head`.
 - `use-empty?`: reports count comparisons to zero that can be written as
   `empty?`.
