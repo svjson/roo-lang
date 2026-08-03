@@ -109,6 +109,10 @@ Supported style warnings:
   which can usually be written as `contains?`.
 - `redundant-empty-fallback`: reports nil-tolerant sequence calls that
   defensively wrap input in `(or value [])`.
+- `use-get-with-default`: reports `(or (get value key) default)` forms that
+  can be written as `(get value key default)`.
+- `use-keyword-lookup`: reports `(get value :key)` forms that can be written as
+  `(:key value)`.
 - `kebab-case-name`: reports symbol identifiers containing underscores.
 - `redundant-map-check`: reports redundant `map?` guards before keyword lookup
   comparisons.

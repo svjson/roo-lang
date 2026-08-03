@@ -31,7 +31,10 @@
           [:use-contains? 44]
           [:redundant-empty-fallback 47]
           [:redundant-empty-fallback 50]
-          [:redundant-empty-fallback 53]]
+          [:redundant-empty-fallback 53]
+          [:use-keyword-lookup 56]
+          [:use-get-with-default 59]
+          [:use-get-with-default 63]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

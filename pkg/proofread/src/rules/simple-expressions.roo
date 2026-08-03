@@ -248,6 +248,57 @@
   (and (nil-tolerant-seq-call? node)
        (empty-fallback? (nth children 1))))
 
+(defun get-form?
+  "Test whether an AST node is a two-argument `get` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(get value key)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "get" (forms/head-name node))
+       (= 3 (count children))))
+
+(defun defaulted-get-fallback?
+  "Test whether an AST node defaults a `get` with `or`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(or (get value key) default)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "or" (forms/head-name node))
+       (= 3 (count children))
+       (get-form? (nth children 1))))
+
+(defun get-default-child?
+  "Test whether `node` is the `get` child in a defaulted `or` form.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for the `(get value key)` child in `(or (get value key) default)`,
+  otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (and (defaulted-get-fallback? parent)
+       (= node (nth children 1))))
+
+(defun keyword-get?
+  "Test whether an AST node gets a literal keyword key.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(get value :key)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (get-form? node)
+       (= :keyword (:type (nth children 2)))))
+
 (defun map-check?
   "Test whether an AST node is a `(map? value)` form.
 
@@ -456,6 +507,13 @@
 
     (redundant-empty-fallback? node)
     (diagnostic node :redundant-empty-fallback "Remove redundant empty fallback")
+
+    (defaulted-get-fallback? node)
+    (diagnostic node :use-get-with-default "Use get with default")
+
+    (and (keyword-get? node)
+         (not (get-default-child? parent node)))
+    (diagnostic node :use-keyword-lookup "Use keyword lookup")
 
     (redundant-map-check? node)
     (diagnostic node :redundant-map-check "Remove redundant map? check")

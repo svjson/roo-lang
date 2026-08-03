@@ -40,6 +40,15 @@
 (def non-empty-default
   (keep (or (:symbols index) [:default]) symbol-entry))
 
+(def dynamic-get
+  (get values key))
+
+(def explicit-default
+  (get values key default-value))
+
+(def non-get-default
+  (or selected-value default-value))
+
 (def required-map-check
   (and (map? node)
        (= (count node) 2)))

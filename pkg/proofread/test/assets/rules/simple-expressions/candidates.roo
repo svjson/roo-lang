@@ -51,3 +51,14 @@
 
 (def named-symbol
   (find-first (or symbols []) named?))
+
+(def symbol-name
+  (get symbol :name))
+
+(def selected-value
+  (or (get values key)
+      default-value))
+
+(def selected-name
+  (or (get values :name)
+      "Missing"))
