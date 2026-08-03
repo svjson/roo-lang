@@ -116,6 +116,20 @@ jobs:
           ROO_CMAKE_CXX_COMPILER: ${{ matrix.cxx_compiler }}
         run: ROO_RELEASE_JOBS=1 sh tools/release/package.sh
 
+      - name: Verify release archive includes Roo language index
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          archive="$(find dist -maxdepth 1 -type f -name 'roo-*-${{ matrix.platform }}.*' | sed -n '1p')"
+          if [ -z "$archive" ]; then
+            printf '%s\n' "No release archive found for ${{ matrix.platform }}." >&2
+            exit 1
+          fi
+          expected="share/roo/indexes/roo-lang/$version/roo-symbols.edn"
+          if ! cmake -E tar tf "$archive" | grep -F "$expected" >/dev/null; then
+            printf '%s\n' "Release archive is missing $expected" >&2
+            exit 1
+          fi
+
       - name: Rename checksum
         run: cp dist/SHA256SUMS "dist/SHA256SUMS-${{ matrix.platform }}"
 
