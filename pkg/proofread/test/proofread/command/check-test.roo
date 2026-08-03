@@ -1,0 +1,27 @@
+(ns proofread.command.check-test
+  (:require proof.core
+            [proofread.command.check :as check-command]))
+
+(deftest parses-reporter-option
+  (is (= {:files ["src"]
+          :reporter :simple
+          :errors []}
+         (check-command/parse-args ["--reporter" "simple" "src"])))
+  (is (= {:files ["src"]
+          :reporter :simple
+          :errors []}
+         (check-command/parse-args ["src" "--reporter" "simple"]))))
+
+(deftest reports-invalid-check-arguments
+  (is (= {:files []
+          :reporter :simple
+          :errors ["No files or patterns provided."]}
+         (check-command/parse-args [])))
+  (is (= {:files ["src"]
+          :reporter :simple
+          :errors ["Missing reporter after --reporter"]}
+         (check-command/parse-args ["src" "--reporter"])))
+  (is (= {:files ["src"]
+          :reporter :simple
+          :errors ["Unknown reporter: tree"]}
+         (check-command/parse-args ["--reporter" "tree" "src"]))))

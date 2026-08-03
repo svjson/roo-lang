@@ -1,74 +1,123 @@
 (ns proofread.command.check
   (:require [proofread.native :as native]
-            [proofread.style :as style]))
+            [proofread.reporter :as reporter]
+            [proofread.style :as style]
+            [roo.string :as string]))
 
 (def usage-line
   "Usage line for the proofread check command."
-  "Usage: proofread [--help|--version] <file|pattern>...")
+  "Usage: proofread [--help|--version] [--reporter simple] <file|pattern>...")
 
-(defun summary-text
-  "Format a proofread run summary.
-
-  Args:
-  - `summary`: A map containing `:files`, `:warnings`, and `:errors` counts.
-
-  Returns:
-  A single summary line."
-  [{:keys [files warnings errors]}]
-  (str "proofread: " files " file"
-       (case files
-         1 ""
-         :default "s")
-       ", " warnings " warning"
-       (case warnings
-         1 ""
-         :default "s")
-       ", " errors " error"
-       (case errors
-         1 ""
-         :default "s")))
-
-(defun print-summary!
-  "Print a proofread run summary.
+(defun parse-args-step
+  "Parse proofread check arguments.
 
   Args:
-  - `summary`: A map containing `:files`, `:warnings`, and `:errors` counts.
+  - `args`: Remaining command line arguments.
+  - `options`: Accumulated options map.
 
   Returns:
-  `summary`."
-  [summary]
-  (let [text (summary-text summary)
-        separator (apply join (concat [""]
-                                      (repeat (count text) "-")))]
-    (prn separator)
-    (prn text)
-    (prn separator)
-    summary))
+  An options map containing `:files`, `:reporter`, and `:errors`."
+  [args options]
+  (let [arg (head args)]
+    (cond
+
+      (nil? arg)
+      options
+
+      (= arg "--reporter")
+      (let [reporter-name (nth args 1)]
+        (cond
+          (nil? reporter-name)
+          (assoc options
+                 :errors
+                 (concat (:errors options) ["Missing reporter after --reporter"]))
+
+          (reporter/known? (keyword reporter-name))
+          (parse-args-step (tail (tail args))
+                           (assoc options :reporter (keyword reporter-name)))
+
+          true
+          (parse-args-step (tail (tail args))
+                           (assoc options
+                                  :errors
+                                  (concat (:errors options)
+                                          [(str "Unknown reporter: "
+                                                reporter-name)])))))
+
+      (string/starts-with? arg "--")
+      (parse-args-step (tail args)
+                       (assoc options
+                              :errors
+                              (concat (:errors options)
+                                      [(str "Unknown option: " arg)])))
+
+      true
+      (parse-args-step (tail args)
+                       (assoc options
+                              :files
+                              (concat (:files options) [arg]))))))
+
+(defun parse-args
+  "Parse arguments for the proofread check command.
+
+  Args:
+  - `args`: Command line file paths, shell-style patterns, and check options.
+
+  Returns:
+  An options map containing `:files`, `:reporter`, and `:errors`."
+  [args]
+  (let [options (parse-args-step args
+                                 {:files []
+                                  :reporter :simple
+                                  :errors []})]
+    (if (empty? (:files options))
+      (assoc options
+             :errors
+             (concat (:errors options) ["No files or patterns provided."]))
+      options)))
 
 (defun run!
   "Run proofread checks for CLI file and pattern arguments.
 
   Args:
-  - `args`: Command line file paths and shell-style patterns.
+  - `args`: Command line file paths, shell-style patterns, and check options.
 
   Returns:
   A summary map when no errors were found."
   [args]
-  (let [summary (reduce (native/files! args)
-                        {:files 0
-                         :warnings 0
-                         :errors 0}
-                        (fn [{:keys [files warnings errors]} file]
-                          (let [check-result (native/check-files-result! [file])
-                                file-errors (:errors check-result)
-                                diagnostics (case file-errors
-                                              0 (style/check-file file)
-                                              :default [])]
-                            (style/print-diagnostics! diagnostics)
-                            {:files (+ files (:checked check-result) file-errors)
-                             :warnings (+ warnings (count diagnostics))
-                             :errors (+ errors file-errors)})))]
-    (print-summary! summary)
-    (case (:errors summary)
-      0 summary
-      :default (native/fail! "proofread: checks failed"))))
+  (let [options (parse-args args)]
+    (if (not-empty? (:errors options))
+      (do
+        (map (:errors options) prn)
+        (prn usage-line)
+        (native/fail! "proofread: invalid arguments"))
+      (let [files-to-check (native/files! (:files options))
+            run-result (reduce files-to-check
+                               {:summary {:files 0
+                                          :warnings 0
+                                          :errors 0}
+                                :reporter (reporter/make options files-to-check)}
+                               (fn [{:keys [summary reporter]} file]
+                                 (let [check-result (native/check-files-result! [file])
+                                       file-errors (:errors check-result)
+                                       diagnostics (case file-errors
+                                                     0 (style/check-file file)
+                                                     :default [])
+                                       file-result {:file file
+                                                    :checked (:checked check-result)
+                                                    :errors file-errors
+                                                    :diagnostics diagnostics}]
+                                   {:summary {:files (+ (:files summary)
+                                                        (:checked check-result)
+                                                        file-errors)
+                                              :warnings (+ (:warnings summary)
+                                                           (count diagnostics))
+                                              :errors (+ (:errors summary)
+                                                         file-errors)}
+                                    :reporter (reporter/report-file! reporter
+                                                                    file-result)})))
+            summary (:summary run-result)]
+        (reporter/report-summary! (:reporter run-result) summary)
+        (case (:errors summary)
+          0 summary
+          :default (native/fail! "proofread: checks failed"))))))

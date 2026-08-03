@@ -29,37 +29,3 @@
 
     :default
     []))
-
-(defun diagnostic-line
-  "Format one diagnostic for CLI output.
-
-  Args:
-  - `diagnostic`: A diagnostic map from a style rule.
-
-  Returns:
-  A single warning line containing source, severity, rule, and message."
-  [diagnostic]
-  (str (:path (:source diagnostic))
-       ":"
-       (:line (:source diagnostic))
-       ":"
-       (:column (:source diagnostic))
-       ": "
-       (name (:severity diagnostic))
-       " "
-       (name (:rule diagnostic))
-       ": "
-       (:message diagnostic)))
-
-(defun print-diagnostics!
-  "Print all style diagnostics.
-
-  Args:
-  - `diagnostics`: A vector of diagnostic maps.
-
-  Returns:
-  The diagnostics vector."
-  [diagnostics]
-  (map diagnostics (fn [diagnostic]
-                     (prn (diagnostic-line diagnostic))))
-  diagnostics)

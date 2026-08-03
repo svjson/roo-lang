@@ -1,0 +1,55 @@
+(ns proofread.reporter
+  (:require [proofread.reporter.simple :as simple]))
+
+(defun known?
+  "Test whether a reporter name is supported.
+
+  Args:
+  - `reporter`: Reporter keyword.
+
+  Returns:
+  `true` for supported reporter keywords, otherwise `false`."
+  [reporter]
+  (case reporter
+    :simple true
+    :default false))
+
+(defun make
+  "Create a proofread reporter.
+
+  Args:
+  - `options`: Reporter options map. `:reporter` selects the reporter kind.
+  - `files`: Files selected for the proofread run.
+
+  Returns:
+  A reporter map containing state and callback functions."
+  [options files]
+  (case (get options :reporter :simple)
+    :simple (simple/make files)
+    :default (simple/make files)))
+
+(defun report-file!
+  "Report one checked file.
+
+  Args:
+  - `reporter`: Reporter map returned by `make`.
+  - `file-result`: Map containing file path, diagnostics, and error counts.
+
+  Returns:
+  The reporter map with updated reporter state."
+  [reporter file-result]
+  (assoc reporter
+         :state
+         ((:report-file! reporter) (:state reporter) file-result)))
+
+(defun report-summary!
+  "Report the final proofread summary.
+
+  Args:
+  - `reporter`: Reporter map returned by `make`.
+  - `summary`: Map containing `:files`, `:warnings`, and `:errors`.
+
+  Returns:
+  `summary`."
+  [reporter summary]
+  ((:report-summary! reporter) (:state reporter) summary))

@@ -1,7 +1,6 @@
 (ns proofread.cli
   (:require [proofread.command.check :as check-command]
-            [proofread.native :as native]
-            [roo.string :as string]))
+            [proofread.native :as native]))
 
 (def version
   "Proofread command version."
@@ -53,11 +52,6 @@
 
       (= first-arg "--version")
       (print-version!)
-
-      (string/starts-with? first-arg "--")
-      (do
-        (usage!)
-        (native/fail! (str "Unknown option: " first-arg)))
 
       true
       (check-command/run! args))))

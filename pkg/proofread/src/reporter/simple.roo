@@ -1,0 +1,43 @@
+(ns proofread.reporter.simple
+  (:require [proofread.reporter.common :as rc]))
+
+(defun report-file!
+  "Print diagnostics for one checked file.
+
+  Args:
+  - `state`: Reporter state map.
+  - `file-result`: Map containing `:diagnostics` for a checked file.
+
+  Returns:
+  The unchanged reporter state."
+  [state file-result]
+  (map (:diagnostics file-result)
+       (fn [diagnostic]
+         (prn (rc/diagnostic-line diagnostic))))
+  state)
+
+(defun report-summary!
+  "Print the final proofread summary.
+
+  Args:
+  - `state`: Reporter state map.
+  - `summary`: Map containing `:files`, `:warnings`, and `:errors` counts.
+
+  Returns:
+  `summary`."
+  [state summary]
+  (rc/print-summary! summary))
+
+(defun make
+  "Create the default streaming proofread reporter.
+
+  Args:
+  - `files`: Files selected for the proofread run.
+
+  Returns:
+  A reporter map that prints diagnostics as each file is checked and prints the
+  final summary at the end."
+  [files]
+  {:state {}
+   :report-file! report-file!
+   :report-summary! report-summary!})

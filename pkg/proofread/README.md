@@ -29,7 +29,8 @@ Quote patterns when you want `proofread` to expand them instead of your shell.
 
 ## Output
 
-When the run is complete, `proofread` prints a short summary:
+The default `simple` reporter prints style warnings as files are checked. When
+the run is complete, it prints a short summary:
 
 ```text
 ----------------------------------------
@@ -47,6 +48,12 @@ Warnings are counted in the summary but do not make the command fail.
 
 If a file cannot be read, does not match, or fails to parse, `proofread` prints
 the error, includes it in the summary, and exits with a non-zero status.
+
+Select the reporter explicitly with `--reporter`:
+
+```sh
+proofread --reporter simple src
+```
 
 ## Style Warnings
 
