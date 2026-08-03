@@ -107,6 +107,8 @@ Supported style warnings:
   can usually be written as `any?`.
 - `use-contains?`: reports `index-of` calls used only as presence checks,
   which can usually be written as `contains?`.
+- `redundant-empty-fallback`: reports nil-tolerant sequence calls that
+  defensively wrap input in `(or value [])`.
 - `kebab-case-name`: reports symbol identifiers containing underscores.
 - `redundant-map-check`: reports redundant `map?` guards before keyword lookup
   comparisons.

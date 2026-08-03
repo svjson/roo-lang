@@ -42,3 +42,12 @@
 
 (def contains-separator?
   (not (nil? (index-of name '-'))))
+
+(def indexed-symbols
+  (keep (or (:symbols index) []) symbol-entry))
+
+(def visible-items
+  (map (or items []) item-view))
+
+(def named-symbol
+  (find-first (or symbols []) named?))

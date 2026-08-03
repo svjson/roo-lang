@@ -28,7 +28,10 @@
           [:use-any? 38]
           [:use-some? 41]
           [:use-some? 44]
-          [:use-contains? 44]]
+          [:use-contains? 44]
+          [:redundant-empty-fallback 47]
+          [:redundant-empty-fallback 50]
+          [:redundant-empty-fallback 53]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

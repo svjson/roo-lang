@@ -197,6 +197,57 @@
   (and (presence-check? parent)
        (index-of-form? node)))
 
+(defun empty-vector?
+  "Test whether an AST node is an empty vector literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `[]`, otherwise `false`."
+  [node]
+  (and (= :vector (:type node))
+       (empty? (:children node))))
+
+(defun empty-fallback?
+  "Test whether an AST node is an `(or value [])` fallback.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(or value [])`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "or" (forms/head-name node))
+       (= 3 (count children))
+       (empty-vector? (nth children 2))))
+
+(defun nil-tolerant-seq-call?
+  "Test whether a call treats nil input as an empty sequence.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for sequence calls whose first argument can be `nil`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (< 1 (count children))
+       (contains? ["any?" "count" "empty?" "filter" "find-first" "find-index" "flat-map" "keep" "map" "not-empty?" "remove"]
+                  (forms/head-name node))))
+
+(defun redundant-empty-fallback?
+  "Test whether a call defensively falls back to an empty sequence.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for calls like `(keep (or values []) f)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (nil-tolerant-seq-call? node)
+       (empty-fallback? (nth children 1))))
+
 (defun map-check?
   "Test whether an AST node is a `(map? value)` form.
 
@@ -402,6 +453,9 @@
 
     (not-nil-check? node)
     (diagnostic node :use-some? "Use some?")
+
+    (redundant-empty-fallback? node)
+    (diagnostic node :redundant-empty-fallback "Remove redundant empty fallback")
 
     (redundant-map-check? node)
     (diagnostic node :redundant-map-check "Remove redundant map? check")

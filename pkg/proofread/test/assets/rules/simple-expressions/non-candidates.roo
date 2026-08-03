@@ -34,6 +34,12 @@
 (def keep-location
   (index-of name '-'))
 
+(def required-fallback
+  (assoc options :symbols (or (:symbols index) [])))
+
+(def non-empty-default
+  (keep (or (:symbols index) [:default]) symbol-entry))
+
 (def required-map-check
   (and (map? node)
        (= (count node) 2)))
