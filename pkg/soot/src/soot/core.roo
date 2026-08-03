@@ -65,11 +65,9 @@
 
 (defun code-for [style key]
   (let [resolved (resolve-style style)]
-    (if (nil? resolved)
-      nil
+    (unless (nil? resolved)
       (let [code (get resolved key nil)]
-        (if (nil? code)
-          nil
+        (unless (nil? code)
           (str code))))))
 
 (defun normalize-styles [styles]
