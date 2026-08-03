@@ -36,7 +36,8 @@
           [:use-keyword-lookup 56]
           [:use-get-with-default 59]
           [:use-get-with-default 63]
-          [:use-any? 67]]
+          [:use-any? 67]
+          [:redundant-some? 70]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

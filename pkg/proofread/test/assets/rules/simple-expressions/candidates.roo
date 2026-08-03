@@ -65,3 +65,7 @@
 
 (def failing-audit?
   (some? (find-first diagnostics failing?)))
+
+(def print-result-value
+  (when (some? (:value result))
+    (prn (:value result))))

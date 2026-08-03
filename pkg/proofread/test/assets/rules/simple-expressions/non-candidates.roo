@@ -56,3 +56,11 @@
 (def different-target
   (and (map? node)
        (= (:type other) :symbol)))
+
+(def explicit-false-option
+  (when (some? (:enabled? options))
+    (:enabled? options)))
+
+(def explicit-symbol-presence
+  (when (some? value)
+    value))
