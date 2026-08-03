@@ -38,3 +38,11 @@
   (if (= (actual) (expected))
     :same
     :different))
+
+(def repeated-call-condition
+  (when (next-value!)
+    (save! (next-value!))))
+
+(def unrepeated-keyword-condition
+  (when (:value result)
+    (save! result)))

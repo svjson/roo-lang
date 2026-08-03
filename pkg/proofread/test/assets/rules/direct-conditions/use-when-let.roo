@@ -4,3 +4,7 @@
   (let [item (find-item)]
     (when item
       (save! item))))
+
+(def printed-value
+  (when (:value result)
+    (prn (:value result))))

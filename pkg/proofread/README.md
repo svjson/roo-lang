@@ -87,8 +87,8 @@ Supported style warnings:
 - `use-when`: reports `if` forms with no meaningful else branch.
 - `use-unless`: reports `if` forms with an empty then branch.
 - `use-if-let`: reports `let` plus `if` forms that can be written as `if-let`.
-- `use-when-let`: reports `let` plus `when` forms that can be written as
-  `when-let`.
+- `use-when-let`: reports `let` plus `when` forms and repeated keyword lookup
+  conditions that can be written as `when-let`.
 - `use-case`: reports `if` forms that dispatch on equality against a literal
   and `if` chains that dispatch on equality against literals for the same
   expression, which can be written as `case`.

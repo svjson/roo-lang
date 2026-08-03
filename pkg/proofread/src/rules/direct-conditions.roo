@@ -97,6 +97,64 @@
     (and (= "when" (forms/head-name body))
          (= binding-name (forms/symbol-name (nth (:children body) 1))))))
 
+(defun keyword-lookup?
+  "Test whether an AST node is a keyword lookup form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(:key value)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= (:type node) :list)
+       (= 2 (count children))
+       (forms/keyword-name (head children))))
+
+(defun same-form?
+  "Test whether two AST nodes represent the same source form.
+
+  Args:
+  - `left`: A `roo.ast` node map.
+  - `right`: A `roo.ast` node map.
+
+  Returns:
+  `true` when both nodes have the same form value, otherwise `false`."
+  [left right]
+  (= (:form left) (:form right)))
+
+(defun contains-form?
+  "Test whether an AST subtree contains a matching form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target`: A `roo.ast` node map to search for.
+
+  Returns:
+  `true` when `node` or one of its descendants has the same form as `target`,
+  otherwise `false`."
+  [node target]
+  (and (map? node)
+       (or (same-form? node target)
+           (any? (:children node)
+                 (fn [child]
+                   (contains-form? child target))))))
+
+(defun when-repeats-keyword-lookup?
+  "Test whether a `when` form repeats its keyword lookup condition.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(when (:key value) ... (:key value) ...)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "when" (forms/head-name node))
+       (< 2 (count children))
+       (keyword-lookup? (nth children 1))
+       (any? (tail (tail children))
+             (fn [body]
+               (contains-form? body (nth children 1))))))
+
 (defun let-condition-child?
   "Test whether `node` is the condition form inside a direct-condition `let`.
 
@@ -287,6 +345,9 @@
     (diagnostic node :use-if-let "Use if-let")
 
     (let-when-candidate? node)
+    (diagnostic node :use-when-let "Use when-let")
+
+    (when-repeats-keyword-lookup? node)
     (diagnostic node :use-when-let "Use when-let")
 
     (if-case-candidate? node)
