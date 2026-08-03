@@ -38,7 +38,7 @@
 (defun normalize-patches [value patches]
   (let [normalized []
         next-value value]
-    (map (or patches [])
+    (map patches
          (fn [patch]
            (let [normalized-patch (normalize-patch next-value patch)]
              (append! normalized normalized-patch)

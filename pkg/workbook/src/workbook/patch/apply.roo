@@ -12,7 +12,7 @@
 
 (defun reverse-items [items]
   (let [result []
-        index (dec (count (or items [])))]
+        index (dec (count items))]
     (while (>= index 0)
       (append! result (nth items index))
       (set! [index] (dec index)))
