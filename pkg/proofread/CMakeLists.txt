@@ -63,6 +63,14 @@ if(ROO_BUILD_TESTS)
   set_tests_properties(proofread_cli_rejects_invalid_file PROPERTIES WILL_FAIL TRUE)
 
   add_test(
+    NAME proofread_cli_rejects_invalid_directory
+    COMMAND $<TARGET_FILE:roo_cli>
+            ${PROOFREAD_TEST_PACKAGE}
+            ${PROOFREAD_TEST_ASSETS}/invalid
+  )
+  set_tests_properties(proofread_cli_rejects_invalid_directory PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
     NAME proofread_cli_allows_style_warnings
     COMMAND $<TARGET_FILE:roo_cli>
             ${PROOFREAD_TEST_PACKAGE}

@@ -33,6 +33,12 @@ namespace Roo::Proofread
 {
   namespace
   {
+    struct CheckError
+    {
+      std::string path;
+      std::string message;
+    };
+
     bool has_glob_meta(const std::string& pattern)
     {
       return pattern.find_first_of("*?[") != std::string::npos;
@@ -364,7 +370,7 @@ namespace Roo::Proofread
     }
 
     size_t check_files(const std::vector<std::filesystem::path>& files,
-                       std::vector<std::string>& errors)
+                       std::vector<CheckError>& errors)
     {
       SourceMap source_map;
       size_t checked_count = 0;
@@ -377,7 +383,7 @@ namespace Roo::Proofread
         }
         catch (const std::exception& e)
         {
-          errors.push_back(file.string() + ": " + e.what());
+          errors.push_back({file.string(), e.what()});
         }
       }
       return checked_count;
@@ -402,12 +408,44 @@ namespace Roo::Proofread
       throw RooException("proofread: checks failed");
     }
 
-    sptr_val check_result(size_t checked_count, size_t error_count)
+    std::vector<std::string> error_messages(const std::vector<CheckError>& errors)
+    {
+      std::vector<std::string> messages;
+      messages.reserve(errors.size());
+      for (const CheckError& error : errors)
+      {
+        messages.push_back(error.path + ": " + error.message);
+      }
+      return messages;
+    }
+
+    void fail_with_check_errors(const std::vector<CheckError>& errors)
+    {
+      fail_with_errors(error_messages(errors));
+    }
+
+    sptr_val error_details_value(const std::vector<CheckError>& errors)
+    {
+      sptr_val_v values;
+      values.reserve(errors.size());
+      for (const CheckError& error : errors)
+      {
+        values.push_back(Value::map({Value::keyword("path"),
+                                     Value::string(error.path),
+                                     Value::keyword("message"),
+                                     Value::string(error.message)}));
+      }
+      return Value::vector(std::move(values));
+    }
+
+    sptr_val check_result(size_t checked_count, const std::vector<CheckError>& errors)
     {
       return Value::map({Value::keyword("checked"),
                          Value::number(static_cast<int>(checked_count)),
                          Value::keyword("errors"),
-                         Value::number(static_cast<int>(error_count))});
+                         Value::number(static_cast<int>(errors.size())),
+                         Value::keyword("error-details"),
+                         error_details_value(errors)});
     }
 
     sptr_val file_vector(const std::vector<std::filesystem::path>& files)
@@ -448,9 +486,16 @@ namespace Roo::Proofread
       sptr_val exec_check(Context&, sptr_val_v& args)
       {
         const std::vector<std::string> patterns = string_args(args[0]);
-        std::vector<std::string> errors;
-        const std::vector<std::filesystem::path> files = collect_files(patterns, errors);
-        const size_t checked_count = check_files(files, errors);
+        std::vector<std::string> collect_errors;
+        const std::vector<std::filesystem::path> files =
+          collect_files(patterns, collect_errors);
+        std::vector<CheckError> check_errors;
+        const size_t checked_count = check_files(files, check_errors);
+        std::vector<std::string> errors = collect_errors;
+        for (const std::string& message : error_messages(check_errors))
+        {
+          errors.push_back(message);
+        }
         fail_with_errors(errors);
         return Value::number(static_cast<int>(checked_count));
       }
@@ -499,9 +544,9 @@ namespace Roo::Proofread
           files.emplace_back(file);
         }
 
-        std::vector<std::string> errors;
+        std::vector<CheckError> errors;
         const size_t checked_count = check_files(files, errors);
-        fail_with_errors(errors);
+        fail_with_check_errors(errors);
         return Value::number(static_cast<int>(checked_count));
       }
     };
@@ -528,10 +573,9 @@ namespace Roo::Proofread
           files.emplace_back(file);
         }
 
-        std::vector<std::string> errors;
+        std::vector<CheckError> errors;
         const size_t checked_count = check_files(files, errors);
-        print_errors(errors);
-        return check_result(checked_count, errors.size());
+        return check_result(checked_count, errors);
       }
     };
   } // namespace

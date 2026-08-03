@@ -17,6 +17,24 @@
                                       :line 117
                                       :column 28}))))
 
+(deftest formats-file-level-locations
+  (is (= (str "world-map/src/"
+              esc "[1msymbols.roo" esc "[22m"
+              ":")
+         (common/diagnostic-location {:path "world-map/src/symbols.roo"}))))
+
+(deftest styles-error-diagnostics
+  (is (= (str esc "[1msymbols.roo" esc "[22m"
+              ": "
+              esc "[1;31merror" esc "[39;22m"
+              " "
+              esc "[35mparse" esc "[39m"
+              ": Unexpected end of input")
+         (common/diagnostic-line {:source {:path "symbols.roo"}
+                                  :severity :error
+                                  :rule :parse
+                                  :message "Unexpected end of input"}))))
+
 (deftest styles-rule-name-as-magenta
   (is (= (str esc "[1msymbols.roo" esc "[22m"
               esc "[2;90m:" esc "[39;22m"

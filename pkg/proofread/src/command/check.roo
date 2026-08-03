@@ -154,6 +154,35 @@
              (concat (:errors options) ["No files or patterns provided."]))
       options)))
 
+(defun parse-error-diagnostic
+  "Build a diagnostic for a parse or read error.
+
+  Args:
+  - `error`: Error detail map returned by `proofread.native/check-files-result!`.
+
+  Returns:
+  A diagnostic map with `:error` severity."
+  [error]
+  {:rule :parse
+   :severity :error
+   :file (:path error)
+   :source {:path (:path error)}
+   :message (:message error)})
+
+(defun diagnostic-count
+  "Count diagnostics with a given severity.
+
+  Args:
+  - `diagnostics`: Diagnostic maps.
+  - `severity`: Severity keyword to count.
+
+  Returns:
+  The number of matching diagnostics."
+  [diagnostics severity]
+  (count (filter diagnostics
+                 (fn [diagnostic]
+                   (= severity (:severity diagnostic))))))
+
 (defun run!
   "Run proofread checks for CLI file and pattern arguments.
 
@@ -180,7 +209,8 @@
                                        file-errors (:errors check-result)
                                        diagnostics (case file-errors
                                                      0 (source/diagnostics file)
-                                                     :default [])
+                                                     :default (map (:error-details check-result)
+                                                                   parse-error-diagnostic))
                                        file-result {:file file
                                                     :checked (:checked check-result)
                                                     :errors file-errors
@@ -189,9 +219,13 @@
                                                         (:checked check-result)
                                                         file-errors)
                                               :warnings (+ (:warnings summary)
-                                                           (count diagnostics))
+                                                           (diagnostic-count diagnostics
+                                                                             :warning))
                                               :errors (+ (:errors summary)
-                                                         file-errors)}
+                                                         (case file-errors
+                                                           0 (diagnostic-count diagnostics
+                                                                               :error)
+                                                           :default file-errors))}
                                     :reporter (reporter/report-file! reporter
                                                                     file-result)})))
             summary (:summary run-result)]

@@ -91,18 +91,21 @@
   "Format one styled diagnostic source location.
 
   Args:
-  - `source`: Diagnostic source map containing `:path`, `:line`, and `:column`.
+  - `source`: Diagnostic source map containing `:path` and optional `:line` and
+    `:column`.
 
   Returns:
   A styled location string."
   [source]
   (str (location-prefix (:path source))
        (soot/paint filename-styles (io/basename (:path source)))
-       (soot/paint location-separator-styles ":")
-       (soot/paint location-position-styles (:line source))
-       (soot/paint location-separator-styles ":")
-       (soot/paint location-position-styles (:column source))
-       ":"))
+       (if (nil? (:line source))
+         ":"
+         (str (soot/paint location-separator-styles ":")
+              (soot/paint location-position-styles (:line source))
+              (soot/paint location-separator-styles ":")
+              (soot/paint location-position-styles (:column source))
+              ":"))))
 
 (defun group-line
   "Format one grouped reporter heading.

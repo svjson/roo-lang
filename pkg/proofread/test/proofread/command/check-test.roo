@@ -54,3 +54,12 @@
           :groups [:rule]
           :errors ["Unknown group criterion: unknown"]}
          (check-command/parse-args ["--group-by" "rule,unknown" "src"]))))
+
+(deftest builds-parse-error-diagnostics
+  (is (= {:rule :parse
+          :severity :error
+          :file "src/broken.roo"
+          :source {:path "src/broken.roo"}
+          :message "Unexpected end of input"}
+         (check-command/parse-error-diagnostic {:path "src/broken.roo"
+                                                :message "Unexpected end of input"}))))
