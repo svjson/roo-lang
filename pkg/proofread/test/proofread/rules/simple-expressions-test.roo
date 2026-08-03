@@ -22,7 +22,13 @@
           [:use-not-empty? 23]
           [:use-not= 26]
           [:use-nil? 29]
-          [:use-nil? 32]]
+          [:use-nil? 32]
+          [:use-some? 35]
+          [:use-some? 38]
+          [:use-any? 38]
+          [:use-some? 41]
+          [:use-some? 44]
+          [:use-contains? 44]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

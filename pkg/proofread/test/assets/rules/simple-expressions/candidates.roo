@@ -30,3 +30,15 @@
 
 (def nil-b
   (= value nil))
+
+(def present-value
+  (not (nil? value)))
+
+(def contains-underscore?
+  (not (nil? (find-index name (fn [ch] (= "_" (str ch)))))))
+
+(def found-name
+  (not (nil? (find-first names (fn [name] (= name target))))))
+
+(def contains-separator?
+  (not (nil? (index-of name '-'))))

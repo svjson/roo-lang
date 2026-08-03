@@ -28,6 +28,12 @@
 (def missing-value
   (nil? value))
 
+(def keep-index
+  (find-index name (fn [ch] (= "_" (str ch)))))
+
+(def keep-location
+  (index-of name '-'))
+
 (def required-map-check
   (and (map? node)
        (= (count node) 2)))

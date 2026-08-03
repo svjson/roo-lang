@@ -100,6 +100,11 @@ Supported style warnings:
 - `use-not=`: reports negated equality checks that can be written as `not=`.
 - `use-nil?`: reports equality checks against `nil` that can be written as
   `nil?`.
+- `use-some?`: reports negated `nil?` checks that can be written as `some?`.
+- `use-any?`: reports `find-index` calls used only as presence checks, which
+  can usually be written as `any?`.
+- `use-contains?`: reports `index-of` calls used only as presence checks,
+  which can usually be written as `contains?`.
 - `kebab-case-name`: reports symbol identifiers containing underscores.
 - `redundant-map-check`: reports redundant `map?` guards before keyword lookup
   comparisons.

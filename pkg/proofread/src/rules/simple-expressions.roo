@@ -111,6 +111,92 @@
        (or (nil-node? (nth children 1))
            (nil-node? (nth children 2)))))
 
+(defun nil-check?
+  "Test whether an AST node is a `(nil? value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for one-argument `nil?` calls, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "nil?" (forms/head-name node))
+       (= 2 (count children))))
+
+(defun not-nil-check?
+  "Test whether an AST node negates a `nil?` check.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(not (nil? value))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "not" (forms/head-name node))
+       (= 2 (count children))
+       (nil-check? (nth children 1))))
+
+(defun find-index-form?
+  "Test whether an AST node is a `(find-index value predicate)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for three-child `find-index` calls, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "find-index" (forms/head-name node))
+       (= 3 (count children))))
+
+(defun index-of-form?
+  "Test whether an AST node is an `(index-of value needle)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for three-child `index-of` calls, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "index-of" (forms/head-name node))
+       (= 3 (count children))))
+
+(defun presence-check?
+  "Test whether an AST node checks value nil-ness.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `nil?` and `some?` calls, otherwise `false`."
+  [node]
+  (contains? ["nil?" "some?"] (forms/head-name node)))
+
+(defun throwaway-find-index?
+  "Test whether `find-index` is used only as a presence check.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for `find-index` calls beneath presence checks, otherwise `false`."
+  [parent node]
+  (and (presence-check? parent)
+       (find-index-form? node)))
+
+(defun throwaway-index-of?
+  "Test whether `index-of` is used only as a presence check.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for `index-of` calls beneath presence checks, otherwise `false`."
+  [parent node]
+  (and (presence-check? parent)
+       (index-of-form? node)))
+
 (defun map-check?
   "Test whether an AST node is a `(map? value)` form.
 
@@ -168,10 +254,9 @@
   (when (and (= "and" (forms/head-name node))
              (< 1 (count children)))
     (when-let [target-name (map-check? (nth children 1))]
-      (not (nil?
-             (find-first (tail (tail children))
+      (some? (find-first (tail (tail children))
                          (fn [child]
-                           (lookup-comparison? child target-name))))))))
+                           (lookup-comparison? child target-name)))))))
 
 (defun select-keys-entry-target
   "Return the source symbol name for a select-keys map entry.
@@ -233,11 +318,10 @@
   `true` when `node` is in a `cond` test position, otherwise `false`."
   [{:keys [children] :as parent} node]
   (and (= "cond" (forms/head-name parent))
-       (not (nil?
-              (find-first (range 1 (dec (count children)))
+       (some? (find-first (range 1 (dec (count children)))
                           (fn [index]
                             (and (= node (nth children index))
-                                 (odd? index))))))))
+                                 (odd? index)))))))
 
 (defun predicate-position?
   "Test whether an AST node is used in a boolean predicate position.
@@ -309,6 +393,15 @@
 
     (nil-comparison? node)
     (diagnostic node :use-nil? "Use nil?")
+
+    (throwaway-index-of? parent node)
+    (diagnostic node :use-contains? "Use contains?")
+
+    (throwaway-find-index? parent node)
+    (diagnostic node :use-any? "Use any?")
+
+    (not-nil-check? node)
+    (diagnostic node :use-some? "Use some?")
 
     (redundant-map-check? node)
     (diagnostic node :redundant-map-check "Remove redundant map? check")

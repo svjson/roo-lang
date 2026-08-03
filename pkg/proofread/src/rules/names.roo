@@ -10,7 +10,7 @@
   Returns:
   `true` when `name` contains `_`, otherwise `false`."
   [name]
-  (not (nil? (find-index name (fn [ch] (= "_" (str ch)))))))
+  (contains? name '_'))
 
 (defun non-kebab-name?
   "Test whether an identifier should use kebab-case.
