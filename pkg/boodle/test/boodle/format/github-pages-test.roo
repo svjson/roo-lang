@@ -1,0 +1,57 @@
+(ns boodle.format.github-pages-test
+  (:require proof.core
+            [boodle.format.github-pages :as github-pages]
+            [boodle.model :as model]))
+
+(def sample-catalog
+  "Catalog used by GitHub Pages rendering tests."
+  (model/catalog
+    [(model/package
+       {:id "roo"
+        :name "roo"
+        :version "0.1.0"
+        :summary "Roo standard library."
+        :namespaces [(model/namespace
+                       {:name "roo"
+                        :summary "Implicit runtime namespace."
+                        :entries [(model/entry
+                                    {:id "roo/+"
+                                     :name "+"
+                                     :qualified-name "roo/+"
+                                     :namespace "roo"
+                                     :entry-kind :function
+                                     :summary "Add numbers."
+                                     :body "Returns the numeric sum."
+                                     :signatures [{:display "(+ numbers...)"
+                                                   :params [{:name "numbers..."
+                                                             :doc "Numbers to add."}]
+                                                   :returns {:doc "The sum."}}]})]})]})]))
+
+(deftest renders-github-pages-files
+  (is (= [{:path "index.md"
+          :content (str "# Reference\n\n"
+                         "| Package                            | Description           |\n"
+                         "| ---------------------------------- | --------------------- |\n"
+                         "| [roo 0.1.0](packages/roo/index.md) | Roo standard library. |"
+                         "\n")}
+          {:path "packages/roo/index.md"
+           :content (str "# roo 0.1.0\n\n"
+                         "Roo standard library.\n\n"
+                         "| Namespace                             | Symbols |\n"
+                         "| ------------------------------------- | ------- |\n"
+                         "| [roo](packages/roo/namespaces/roo.md) | 1       |"
+                         "\n")}
+          {:path "packages/roo/namespaces/roo.md"
+           :content (str "# roo\n\n"
+                         "Implicit runtime namespace.\n\n"
+                         "### roo/+\n\n"
+                         "Add numbers.\n\n"
+                         "Returns the numeric sum.\n\n"
+                         "```roo\n"
+                         "(+ numbers...)\n"
+                         "```\n\n"
+                         "| Arg        | Description     |\n"
+                         "| ---------- | --------------- |\n"
+                         "| numbers... | Numbers to add. |\n\n"
+                         "Returns: The sum.\n")}]
+         (github-pages/files sample-catalog))))

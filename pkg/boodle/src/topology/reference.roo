@@ -1,0 +1,49 @@
+(ns boodle.topology.reference)
+
+(defun package-path
+  "Return the reference page path for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Relative Markdown path for the package overview page."
+  [package]
+  (str "packages/" (:id package) "/index.md"))
+
+(defun namespace-path
+  "Return the reference page path for NAMESPACE in PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+  - `namespace`: Boodle namespace map.
+
+  Returns:
+  Relative Markdown path for the namespace reference page."
+  [package namespace]
+  (str "packages/" (:id package) "/namespaces/" (:name namespace) ".md"))
+
+(defun pages
+  "Return reference documentation pages for CATALOG.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+
+  Returns:
+  Page maps describing the output topology. The first page is `index.md`,
+  followed by package pages and namespace pages."
+  [catalog]
+  (concat [{:kind :index
+            :path "index.md"
+            :catalog catalog}]
+          (flat-map (:packages catalog)
+                    (fn [package]
+                      (concat [{:kind :package
+                                :path (package-path package)
+                                :package package}]
+                              (map (:namespaces package)
+                                   (fn [namespace]
+                                     {:kind :namespace
+                                      :path (namespace-path package namespace)
+                                      :package package
+                                      :namespace namespace})))))))

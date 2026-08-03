@@ -1,0 +1,31 @@
+(ns boodle.topology.reference-test
+  (:require proof.core
+            [boodle.model :as model]
+            [boodle.topology.reference :as reference]))
+
+(def sample-catalog
+  "Catalog used by reference topology tests."
+  (model/catalog
+    [(model/package
+       {:id "roo"
+        :name "roo"
+        :version "0.1.0"
+        :namespaces [(model/namespace {:name "roo.string"})
+                     (model/namespace {:name "roo.io"})]})]))
+
+(deftest creates-reference-pages
+  (is (= [{:kind :index
+           :path "index.md"
+           :catalog sample-catalog}
+          {:kind :package
+           :path "packages/roo/index.md"
+           :package (head (:packages sample-catalog))}
+          {:kind :namespace
+           :path "packages/roo/namespaces/roo.string.md"
+           :package (head (:packages sample-catalog))
+           :namespace (head (:namespaces (head (:packages sample-catalog))))}
+          {:kind :namespace
+           :path "packages/roo/namespaces/roo.io.md"
+           :package (head (:packages sample-catalog))
+           :namespace (nth (:namespaces (head (:packages sample-catalog))) 1)}]
+         (reference/pages sample-catalog))))

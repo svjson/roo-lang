@@ -1,0 +1,149 @@
+(ns boodle.format.github-pages
+  (:require [boodle.topology.reference :as reference]
+            [moordown.ast :as md]
+            [moordown.render :as markdown]))
+
+(defun package-title
+  "Return the display title for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Package name with version when available."
+  [package]
+  (if (:version package)
+    (str (:name package) " " (:version package))
+    (:name package)))
+
+(defun signature-params
+  "Return a Markdown parameter table for SIGNATURE when it has parameters.
+
+  Args:
+  - `signature`: Lookup-style signature map.
+
+  Returns:
+  A one-element block vector, or an empty vector when no parameters are present."
+  [signature]
+  (if (empty? (:params signature))
+    []
+    [(md/table ["Arg" "Description"]
+               (map (:params signature)
+                    (fn [param]
+                      [(:name param) (:doc param)])))]))
+
+(defun signature-blocks
+  "Return Markdown blocks for SIGNATURE.
+
+  Args:
+  - `signature`: Lookup-style signature map.
+
+  Returns:
+  Blocks containing the rendered call shape, parameter table, and return docs."
+  [signature]
+  (concat [(md/code-block "roo" (:display signature))]
+          (signature-params signature)
+          (if-let [return-doc (:doc (:returns signature))]
+            [(md/paragraph (str "Returns: " return-doc))]
+            [])))
+
+(defun entry-blocks
+  "Return Markdown blocks for ENTRY.
+
+  Args:
+  - `entry`: Boodle entry map.
+
+  Returns:
+  Blocks documenting one symbol."
+  [entry]
+  (concat [(md/heading 3 (:qualified-name entry))]
+          (keep [(:summary entry) (:body entry)]
+                (fn [text]
+                  (when text
+                    (md/paragraph text))))
+          (flat-map (:signatures entry) signature-blocks)))
+
+(defun index-document
+  "Return the GitHub Pages index document for PAGE.
+
+  Args:
+  - `page`: Boodle index page map.
+
+  Returns:
+  A Moordown document."
+  [page]
+  (md/document
+    [(md/heading 1 "Reference")
+     (md/table ["Package" "Description"]
+               (map (:packages (:catalog page))
+                    (fn [package]
+                      [(md/link (package-title package)
+                                (reference/package-path package))
+                       (:summary package)])))]))
+
+(defun package-document
+  "Return the GitHub Pages package document for PAGE.
+
+  Args:
+  - `page`: Boodle package page map.
+
+  Returns:
+  A Moordown document."
+  [page]
+  (let [package (:package page)]
+    (md/document
+      (concat [(md/heading 1 (package-title package))]
+              (if-let [summary (:summary package)]
+                [(md/paragraph summary)]
+                [])
+              [(md/table ["Namespace" "Symbols"]
+                         (map (:namespaces package)
+                              (fn [namespace]
+                                [(md/link (:name namespace)
+                                          (reference/namespace-path package namespace))
+                                 (count (:entries namespace))])))]))))
+
+(defun namespace-document
+  "Return the GitHub Pages namespace document for PAGE.
+
+  Args:
+  - `page`: Boodle namespace page map.
+
+  Returns:
+  A Moordown document."
+  [page]
+  (let [namespace (:namespace page)]
+    (md/document
+      (concat [(md/heading 1 (:name namespace))]
+              (if-let [summary (:summary namespace)]
+                [(md/paragraph summary)]
+                [])
+              (flat-map (:entries namespace) entry-blocks)))))
+
+(defun page-document
+  "Return the Moordown document for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  A Moordown document for GitHub Pages flavored Markdown."
+  [page]
+  (case (:kind page)
+    :index (index-document page)
+    :package (package-document page)
+    :namespace (namespace-document page)))
+
+(defun files
+  "Render CATALOG as GitHub Pages Markdown files.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+
+  Returns:
+  File maps with `:path` and Markdown `:content`."
+  [catalog]
+  (map (reference/pages catalog)
+       (fn [page]
+         {:path (:path page)
+          :content (markdown/render-block (page-document page))})))
