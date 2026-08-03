@@ -15,9 +15,9 @@
 
 (defun keyword-input-text [value]
   (let [text (text-value value)]
-    (if (= ":" (substr text 0 1))
-      (substr text 1)
-      text)))
+    (case (substr text 0 1)
+      ":" (substr text 1)
+      :default text)))
 
 (defun canonical-keyword [value]
   (cond
