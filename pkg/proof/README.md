@@ -100,9 +100,9 @@ registered tests and failures before defining new tests:
 
 ## Scenarios
 
-Syntactic support for the **given/when/then** idiom is provided by `proof.syntax`.
-Require this namespace aliased to avoid collisions with to avoid collision with
-the `when` language form.
+Syntactic support for the **given/when/then** idiom is provided by
+`proof.syntax`. Require this namespace aliased to avoid colliding with the
+`when` language form.
 
 ```roo
 (ns sample.scenario-tests
@@ -146,6 +146,67 @@ If a phase does not need a value, omit it from the argument vector:
 
   (s/then [result]
     (is (= result 5))))
+```
+
+## Fixtures
+
+Require `proof.fixture` with an alias when a test needs a generated value that
+should be reused:
+
+```roo
+(ns sample.fixture-tests
+  (:require proof.core
+            [proof.fixture :as fixture]))
+```
+
+Use `using-cache-fixture` for values that should be generated once and reused
+only within the current proof process:
+
+```roo
+(deftest carries-family-through-social-memory
+  (fixture/using-cache-fixture [data "bootstrap/commonborn"
+                                (fn [] (expensive-bootstrap))]
+    (is (= (:known-people data)
+           (:boot-known-people data)))))
+```
+
+Use `using-persistent-fixture` for values that should be written as EDN and
+reused between proof runs:
+
+```roo
+(deftest generated-world-map-has-main-road
+  (fixture/using-persistent-fixture [world-map "world/default-map.edn"
+                                     (fn [] (generate-world-map))
+                                     {:version 1
+                                      :paths [[:landmarks]
+                                              [:paths]]}]
+    (is (contains? (map (:paths world-map) :id) :dawnkeep-road))))
+```
+
+The fixture binding vector is:
+
+```roo
+[binding key-or-path generator]
+[binding key-or-path generator opts]
+```
+
+Supported options:
+
+- `:paths`, nested paths to retain from a generated value.
+- `:version`, a persistent fixture version. Changing it regenerates the fixture.
+- `:refresh?`, when true, always regenerates a persistent fixture.
+
+Persistent fixtures are stored under `test/fixtures` by default. A package may
+configure another root:
+
+```edn
+{:config {proof {:fixture-root "test/fixtures"}}}
+```
+
+The same setting can be supplied on the command line:
+
+```text
+roo proof --fixture-root test/fixtures
 ```
 
 ## Results

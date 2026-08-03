@@ -6,6 +6,7 @@
 #include <variant>
 #include <vector>
 
+#include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
@@ -347,6 +348,110 @@ namespace Roo::Proof
       sptr_val execnode_phase(Context&, SpecialFormNode&)
       {
         throw InvocationException("Invalid " + form_name + " execution node.");
+      }
+    };
+
+    class FixtureBindingForm : public SpecialForm
+    {
+      std::string form_name;
+      std::string value_function;
+
+     public:
+      FixtureBindingForm(std::string form_name, std::string value_function)
+        : SpecialForm(SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                           EXEC_DISPATCH(&FixtureBindingForm::execnode_fixture))))
+        , form_name(std::move(form_name))
+        , value_function(std::move(value_function))
+      {
+      }
+
+      static sptr_val make(const std::string& form_name, const std::string& value_function)
+      {
+        return Value::executable(
+          std::make_shared<FixtureBindingForm>(form_name, value_function));
+      }
+
+      uptr_exec_node lower_form(LowerContext& ctx, const sptr_ast_node& ast_node) override
+      {
+        auto& elements = ast_node->get_children();
+        if (elements.size() < 3 || elements[1]->get_type() != Form::VECTOR)
+        {
+          throw RooException("Invalid " + form_name + " form: " + ast_node->to_string());
+        }
+
+        auto& bind_forms = elements[1]->get_children();
+        if (bind_forms.size() < 3 || bind_forms.size() > 4)
+        {
+          throw RooException("Invalid " + form_name +
+                             " binding vector, expected [binding key generator] or "
+                             "[binding key generator options]: " +
+                             elements[1]->to_string());
+        }
+
+        uptr_exec_node_v exec_nodes;
+        exec_nodes.reserve(elements.size() + 1);
+        exec_nodes.push_back(lower_expr(ctx, bind_forms[1]));
+        exec_nodes.push_back(lower_expr(ctx, bind_forms[2]));
+        if (bind_forms.size() == 4)
+        {
+          exec_nodes.push_back(lower_expr(ctx, bind_forms[3]));
+        }
+        else
+        {
+          exec_nodes.push_back(lower_literal(AST::NIL));
+        }
+
+        auto bind_node = lower_literal(bind_forms[0]);
+        std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+        bindings.push_back(
+          std::make_pair(LexicalBinding::create(std::get<LiteralNode>(bind_node->data)),
+                         lower_literal(AST::NIL)));
+
+        ctx.push({});
+        ctx.add_lexical_binding(*bindings.back().first);
+        for (size_t i = 2; i < elements.size(); i++)
+        {
+          exec_nodes.push_back(lower_expr(ctx, elements[i]));
+        }
+        ctx.pop();
+
+        return std::make_unique<ExecNode>(
+          SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+      }
+
+      sptr_val execnode_fixture(Context& ctx, SpecialFormNode& snode)
+      {
+        if (snode.bind_forms.size() != 1)
+        {
+          throw InvocationException("Invalid " + form_name + " execution node.");
+        }
+
+        const size_t body_start = 3;
+        if (snode.exec_nodes.size() < body_start)
+        {
+          throw InvocationException("Invalid " + form_name + " execution body.");
+        }
+
+        sptr_val_v fixture_args;
+        fixture_args.reserve(body_start);
+        for (size_t i = 0; i < body_start; i++)
+        {
+          fixture_args.push_back(exec(ctx, *snode.exec_nodes[i]));
+        }
+
+        Scope bind_scope;
+        snode.bind_forms.front().first->apply(bind_scope,
+                                              ctx.call(value_function, fixture_args));
+        ctx.push_context(true, bind_scope);
+
+        sptr_val result = Constant::NIL;
+        for (size_t i = body_start; i < snode.exec_nodes.size(); i++)
+        {
+          result = exec(ctx, *snode.exec_nodes[i]);
+        }
+
+        ctx.pop_context();
+        return result;
       }
     };
 
@@ -707,6 +812,12 @@ namespace Roo::Proof
     ns->store("given", PhaseForm::make("given"));
     ns->store("when", PhaseForm::make("when"));
     ns->store("then", PhaseForm::make("then"));
+    ns->store(
+      "using-cache-fixture",
+      FixtureBindingForm::make("using-cache-fixture", "proof.fixture/cache-fixture-value"));
+    ns->store("using-persistent-fixture",
+              FixtureBindingForm::make("using-persistent-fixture",
+                                       "proof.fixture/persistent-fixture-value"));
     ns->store("run-test-body", RunTestBodyFunction::make());
     ns->store("declared-namespace", DeclaredNamespaceFunction::make());
     return ns;

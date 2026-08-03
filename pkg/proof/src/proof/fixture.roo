@@ -1,0 +1,53 @@
+(ns proof.fixture
+  (:require proof.syntax
+            [proof.fixture.cache :as cache]
+            [proof.fixture.persistent :as persistent]))
+
+(def using-cache-fixture
+  "Binds an in-process cache fixture value for the scope of the body.
+
+  Usage:
+
+  ```roo
+  (fixture/using-cache-fixture [value \"bootstrap/commonborn\" generate]
+    body...)
+  ```
+
+  The binding vector is `[binding key generator]` or
+  `[binding key generator opts]`. `opts` may contain `:paths`."
+  proof.syntax/using-cache-fixture)
+
+(def using-persistent-fixture
+  "Binds a persistent fixture value for the scope of the body.
+
+  Usage:
+
+  ```roo
+  (fixture/using-persistent-fixture [value \"bootstrap/commonborn.edn\" generate]
+    body...)
+  ```
+
+  The binding vector is `[binding relative-path generator]` or
+  `[binding relative-path generator opts]`. `opts` may contain `:version`,
+  `:refresh?`, and `:paths`."
+  proof.syntax/using-persistent-fixture)
+
+(def cache-fixture-value
+  "Returns the value used by `using-cache-fixture`."
+  cache/value)
+
+(def persistent-fixture-value
+  "Returns the value used by `using-persistent-fixture`."
+  persistent/value)
+
+(def clear!
+  "Clears in-process fixture cache state."
+  cache/clear!)
+
+(def configure!
+  "Configures persistent fixture storage."
+  persistent/configure!)
+
+(def fixture-path
+  "Returns the active persistent fixture path for a relative fixture path."
+  persistent/fixture-path)

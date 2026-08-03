@@ -1,0 +1,70 @@
+(ns proof.fixture.persistent
+  (:require [proof.fixture.value :as value]
+            [roo.io :as io]))
+
+(def fixture-root
+  "Root directory for persistent fixture documents."
+  "test/fixtures")
+
+(def fixture-format
+  "EDN format marker for proof persistent fixture documents."
+  :proof.fixture/value-v1)
+
+(defun configure!
+  "Configures persistent fixture storage.
+
+  `config` may contain `:fixture-root`. Returns the active persistent fixture
+  root after applying the configuration."
+  [config]
+  (when-let [root (:fixture-root config)]
+    (set! [fixture-root] root))
+  fixture-root)
+
+(defun fixture-path
+  "Returns the storage path for `relative-path` under the active fixture root."
+  [relative-path]
+  (io/join-path fixture-root relative-path))
+
+(defun fixture-document
+  "Returns the EDN document written for a persistent fixture value."
+  [relative-path fixture-value opts]
+  {:format fixture-format
+   :fixture/path relative-path
+   :version (:version opts)
+   :value fixture-value})
+
+(defun current-document?
+  "Returns true when `document` matches the proof fixture format and version."
+  [document opts]
+  (and (= fixture-format (:format document))
+       (= (:version opts) (:version document))))
+
+(defun write-value!
+  "Writes `fixture-value` to the persistent fixture path and returns it."
+  [relative-path fixture-value opts]
+  (io/spit-edn! (fixture-path relative-path)
+                (fixture-document relative-path fixture-value opts)
+                {:pretty? true})
+  fixture-value)
+
+(defun generated-value!
+  "Generates, projects, writes, and returns a persistent fixture value."
+  [relative-path generate opts]
+  (write-value! relative-path (value/generated generate opts) opts))
+
+(defun value
+  "Returns a persistent fixture value.
+
+  Reads the fixture document when it exists and matches `:version`. Otherwise,
+  calls `generate`, writes the resulting document, and returns the generated
+  value. Set `:refresh? true` in `opts` to force regeneration."
+  [relative-path generate & opts &rest]
+  (let [opts (or opts {})
+        path (fixture-path relative-path)]
+    (if (and (not (:refresh? opts))
+             (io/exists? path))
+      (let [document (io/slurp-edn! path)]
+        (if (current-document? document opts)
+          (:value document)
+          (generated-value! relative-path generate opts)))
+      (generated-value! relative-path generate opts))))

@@ -1,0 +1,71 @@
+(ns proof.fixture-test
+  (:require proof.core
+            [proof.fixture :as fixture]
+            [roo.io :as io]))
+
+(def cache-generation-count 0)
+(def persistent-generation-count 0)
+
+(defun next-cache-value []
+  (set! [cache-generation-count] (inc cache-generation-count))
+  {:calls cache-generation-count})
+
+(defun next-persistent-value []
+  (set! [persistent-generation-count] (inc persistent-generation-count))
+  {:calls persistent-generation-count})
+
+(deftest cache-fixture-binds-and-reuses-generated-value
+  (fixture/clear!)
+  (set! [cache-generation-count] 0)
+  (fixture/using-cache-fixture [first-value "cache/reuse" next-cache-value]
+    (fixture/using-cache-fixture [second-value "cache/reuse" next-cache-value]
+      (is (= 1 cache-generation-count))
+      (is (= {:calls 1} first-value))
+      (is (= first-value second-value)))))
+
+(deftest cache-fixture-can-project-generated-values
+  (fixture/clear!)
+  (fixture/using-cache-fixture [projected "cache/projected"
+                                (fn [] {:stable {:id 1
+                                                 :name "fixture"}
+                                        :noisy {:timestamp 1234}})
+                                {:paths [[:stable :id]]}]
+    (is (= {:stable {:id 1}} projected))))
+
+(deftest persistent-fixture-writes-and-reuses-fixture-document
+  (fixture/clear!)
+  (set! [persistent-generation-count] 0)
+  (let [root "build/proof-fixtures"
+        relative-path "persistent/reuse.edn"]
+    (io/remove-tree! root)
+    (fixture/configure! {:fixture-root root})
+    (fixture/using-persistent-fixture [first-value relative-path
+                                       next-persistent-value
+                                       {:version 1}]
+      (fixture/using-persistent-fixture [second-value relative-path
+                                         next-persistent-value
+                                         {:version 1}]
+        (let [document (io/slurp-edn! (fixture/fixture-path relative-path))]
+          (is (= 1 persistent-generation-count))
+          (is (= {:calls 1} first-value))
+          (is (= first-value second-value))
+          (is (= :proof.fixture/value-v1 (:format document)))
+          (is (= relative-path (:fixture/path document)))
+          (is (= 1 (:version document))))))))
+
+(deftest persistent-fixture-refresh-regenerates-fixture-document
+  (set! [persistent-generation-count] 0)
+  (let [root "build/proof-fixture-refresh"
+        relative-path "persistent/refresh.edn"]
+    (io/remove-tree! root)
+    (fixture/configure! {:fixture-root root})
+    (fixture/using-persistent-fixture [initial-value relative-path
+                                       next-persistent-value
+                                       {:version 1}]
+      (fixture/using-persistent-fixture [refreshed-value relative-path
+                                         next-persistent-value
+                                         {:version 1
+                                          :refresh? true}]
+        (is (= 2 persistent-generation-count))
+        (is (= {:calls 1} initial-value))
+        (is (= {:calls 2} refreshed-value))))))

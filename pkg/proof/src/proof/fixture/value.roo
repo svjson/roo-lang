@@ -1,0 +1,24 @@
+(ns proof.fixture.value)
+
+(defun select-paths
+  "Returns `value` projected to the given nested paths.
+
+  Each path is a vector accepted by `get-in` and `assoc-in`. Missing paths are
+  retained with `nil` values so the projection shape stays stable."
+  [value paths]
+  (reduce paths
+          {}
+          (fn [result path]
+            (assoc-in result path (get-in value path)))))
+
+(defun generated
+  "Calls `generate` and applies optional fixture value projection.
+
+  `opts` may contain `:paths`, a vector of nested paths to retain from the
+  generated value. When `:paths` is omitted, the full generated value is
+  returned."
+  [generate opts]
+  (let [generated-value (generate)]
+    (if-let [paths (:paths opts)]
+      (select-paths generated-value paths)
+      generated-value)))

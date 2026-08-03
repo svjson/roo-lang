@@ -1,5 +1,6 @@
 (ns proof.runner
   (:require proof.core
+            [proof.fixture :as fixture]
             [roo.io :as io]
             [roo.string :as string]))
 
@@ -31,6 +32,7 @@
   (prn "  --include-sub-namespaces           Include child namespaces with --namespace.")
   (prn "  --no-include-sub-namespaces        Exclude child namespaces with --namespace.")
   (prn "  --reporter simple|tree             Select the test reporter.")
+  (prn "  --fixture-root <path>              Set the persistent fixture root.")
   (prn "  --durations                        Print each test duration."))
 
 (defun flag-value [arg flag]
@@ -64,6 +66,7 @@
           reporter (flag-value arg "--reporter")
           filter-pattern (flag-value arg "--filter")
           namespace (flag-value arg "--namespace")
+          fixture-root (flag-value arg "--fixture-root")
           test-root (flag-value arg "--test-root")
           test-roots (flag-value arg "--test-roots")
           durations (flag-value arg "--durations")
@@ -87,6 +90,12 @@
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :namespace namespace)
+                               roots)
+
+        (not (nil? fixture-root))
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config :fixture-root fixture-root)
                                roots)
 
         (not (nil? test-root))
@@ -143,6 +152,12 @@
                                (assoc config :namespace (nth args (+ index 1)))
                                roots)
 
+        (= arg "--fixture-root")
+        (parse-proof-args-from args
+                               (+ index 2)
+                               (assoc config :fixture-root (nth args (+ index 1)))
+                               roots)
+
         (or (= arg "--test-root") (= arg "--test-roots"))
         (parse-proof-args-from args
                                (+ index 2)
@@ -197,8 +212,18 @@
       ["test"]
       roots)))
 
+(defun configured-fixture-root [context]
+  (or (:fixture-root (:config context))
+      "test/fixtures"))
+
 (defun absolute-test-root [context root]
   (io/join-path (:package-root context) root))
+
+(defun absolute-fixture-root [context root]
+  (if (or (nil? (:package-root context))
+          (string/starts-with? root "/"))
+    root
+    (io/join-path (:package-root context) root)))
 
 (defun normalized-path [path]
   (string/replace (str path) "\\" "/"))
@@ -311,5 +336,8 @@
       nil)
     (let [config (configured-proof context)
           run-context (assoc context :config config)]
+      (fixture/configure!
+        {:fixture-root (absolute-fixture-root run-context
+                                             (configured-fixture-root run-context))})
       (load-tests run-context)
       (proof.core/run-selected config))))

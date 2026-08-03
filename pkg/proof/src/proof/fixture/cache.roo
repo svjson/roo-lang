@@ -1,0 +1,28 @@
+(ns proof.fixture.cache
+  (:require [proof.fixture.value :as value]))
+
+(def entries
+  "In-process fixture values keyed by user-supplied fixture key."
+  {})
+
+(defun clear!
+  "Clears all in-process cache fixture values.
+
+  Returns the empty fixture cache."
+  []
+  (set! [entries] {})
+  entries)
+
+(defun value
+  "Returns an in-process cache fixture value.
+
+  `key` identifies the value for the current proof process. `generate` is called
+  only when the key is absent. `opts` may contain `:paths` to retain only stable
+  nested paths from the generated value."
+  [key generate & opts &rest]
+  (let [opts (or opts {})]
+    (if (contains? entries key)
+      (get entries key)
+      (let [generated (value/generated generate opts)]
+        (set! [entries] (assoc entries key generated))
+        generated))))
