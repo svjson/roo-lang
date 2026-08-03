@@ -97,14 +97,14 @@
 
 (defun run-test [test]
   (set! [current-failures] [])
-  (let [start-ms (epoch-ms)
+  (let [test-timing {:start-ms (epoch-ms)}
         body-result (run-test-body (:body test))
         test-result {:name (:name test)
                      :status (cond
                                (= (:status body-result) :error) :error
                                (not-empty? current-failures) :fail
                                true :pass)
-                     :elapsed-ms (max 0 (- (epoch-ms) start-ms))}]
+                     :elapsed-ms (max 0 (- (epoch-ms) (:start-ms test-timing)))}]
     (merge test-result
            (case (:status test-result)
              :fail {:message (:message (head current-failures))
@@ -126,7 +126,7 @@
 
 (defun run-selected [options]
   (let [tests-to-run (selected-tests options)
-        start-ms (epoch-ms)
+        run-timing {:start-ms (epoch-ms)}
         run-state (reduce tests-to-run
                           {:results []
                            :options options
@@ -135,7 +135,7 @@
     (-> run-state
         :results
         reporter/result-summary
-        (assoc :elapsed-ms (max 0 (- (epoch-ms) start-ms)))
+        (assoc :elapsed-ms (max 0 (- (epoch-ms) (:start-ms run-timing))))
         reporter/print!)
     (:results run-state)))
 

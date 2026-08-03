@@ -139,6 +139,16 @@ namespace
     EXPECT_GE(elapsed->num().get_double(), 0);
   }
 
+  long elapsed_ms_value(const Roo::sptr_val& result)
+  {
+    auto [found, elapsed] =
+      Roo::Dict::find_property(result, Roo::Value::keyword("elapsed-ms"));
+    EXPECT_TRUE(found);
+    if (!found || !elapsed) return -1;
+
+    return elapsed->num().get_long();
+  }
+
   void expect_elapsed_ms_for_results(const Roo::sptr_val& results)
   {
     ASSERT_NE(results, nullptr);
@@ -160,6 +170,24 @@ namespace
     const auto timing_end = output.find("ms)", line_start);
     ASSERT_NE(timing_end, std::string::npos) << output;
     EXPECT_LT(timing_end, line_end);
+  }
+
+  long summary_duration_ms(const std::string& output)
+  {
+    const auto summary_start = output.rfind("proof: ");
+    EXPECT_NE(summary_start, std::string::npos) << output;
+    if (summary_start == std::string::npos) return -1;
+
+    const auto timing_start = output.find(" total (", summary_start);
+    EXPECT_NE(timing_start, std::string::npos) << output;
+    if (timing_start == std::string::npos) return -1;
+
+    const auto value_start = timing_start + std::string(" total (").size();
+    const auto value_end = output.find("ms)", value_start);
+    EXPECT_NE(value_end, std::string::npos) << output;
+    if (value_end == std::string::npos) return -1;
+
+    return std::stol(output.substr(value_start, value_end - value_start));
   }
 } // namespace
 
@@ -233,6 +261,46 @@ TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
   expect_duration_output_line(output, "  " + pass_label() + " duration-pass");
   expect_duration_output_line(output, "  " + fail_label() + " duration-fail");
   expect_duration_output_line(output, "  " + error_label() + " duration-error");
+}
+
+TEST(ProofPackage, summary_duration_covers_selected_test_execution)
+{
+  Roo::DirRootFileSystem fs(proof_load_paths());
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"(
+    (ns proof.package-summary-duration-test
+      (:require proof.core))
+  )");
+  runtime.eval("(clear!)");
+  runtime.eval(R"(
+    (def start-ms 0)
+
+    (defun wait-ms [duration]
+      (let [start (epoch-ms)]
+        (while (< (- (epoch-ms) start) duration)
+          nil)))
+
+    (deftest duration-one
+      (set! [start-ms] (- (epoch-ms) 112663))
+      (wait-ms 25)
+      (is true))
+
+    (deftest duration-two
+      (wait-ms 25)
+      (is true))
+  )");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(run-selected {:durations? true})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(without_elapsed_ms_string(results),
+            "[{:name duration-one :status :pass} {:name duration-two :status :pass}]");
+  expect_elapsed_ms_for_results(results);
+  EXPECT_LT(elapsed_ms_value(results->elements()[0]), 10000);
+  EXPECT_GE(summary_duration_ms(output), 50);
+  EXPECT_LT(summary_duration_ms(output), 10000);
 }
 
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
