@@ -106,13 +106,12 @@
 
 (defun schema-node-with-discriminator-values
   [schema-node discriminator variant-ids]
-  (let [field-id (discriminator-field-id (:fields schema-node)
-                                         discriminator)]
-    (if field-id
-      (assoc-in schema-node
-                [:fields field-id :valid-values]
-                {:values variant-ids})
-      schema-node)))
+  (if-let [field-id (discriminator-field-id (:fields schema-node)
+                                            discriminator)]
+    (assoc-in schema-node
+              [:fields field-id :valid-values]
+              {:values variant-ids})
+    schema-node))
 
 (defun narrow-union-schema [union-schema variant-ids]
   (if (and (= (:type union-schema) :union)
@@ -309,9 +308,8 @@
 
 (defun field-visibility-value [schema value]
   (let [root (resolved-root-schema schema)]
-    (if (= (:type root) :union)
-      (union-discriminator-value root value)
-      nil)))
+    (when (= (:type root) :union)
+      (union-discriminator-value root value))))
 
 (defun schema-document-with-root [schema root]
   (cond

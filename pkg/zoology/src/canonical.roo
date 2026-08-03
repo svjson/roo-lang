@@ -29,8 +29,7 @@
 
     :default
     (let [text (keyword-input-text value)]
-      (if (blank? text)
-        nil
+      (unless (blank? text)
         (keyword text)))))
 
 (defun canonical-number [value integer?]
@@ -48,8 +47,7 @@
         nil
 
         integer?
-        (if (text-contains? text ".")
-          nil
+        (unless (text-contains? text ".")
           (int text))
 
         :default

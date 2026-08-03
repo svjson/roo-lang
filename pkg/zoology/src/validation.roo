@@ -53,7 +53,7 @@
                   (schema/schema-document-with-root schema field-schema)
                   value
                   context)]
-      (when (not (empty? (keys errors)))
+      (when (not-empty? (keys errors))
         {:rule :object
          :errors errors}))))
 
@@ -76,7 +76,7 @@
                       (and (string? value)
                            (blank? value)))))
     (let [errors (array-item-errors schema context value field-schema)]
-      (when (not (empty? (keys errors)))
+      (when (not-empty? (keys errors))
         {:rule :array
          :errors errors}))))
 
@@ -109,8 +109,9 @@
 (defun validation-errors-with-context [schema value context]
   (let [root (schema/resolved-root-schema schema)]
     (if (= (:type root) :array)
-      (let [error (array-value-error schema context value root)]
-        (if error {:value [error]} {}))
+      (if-let [error (array-value-error schema context value root)]
+        {:value [error]}
+        {})
       (reduce-kv (schema/active-schema-fields schema value)
                  {}
                  (fn [errors field-id field-schema]
@@ -118,8 +119,11 @@
                                                                    value
                                                                    field-id
                                                                    context)]
-                     (if (empty? field-errors)
+                     (cond
+                       (empty? field-errors)
                        errors
+
+                       true
                        (assoc errors field-id field-errors))))))))
 
 (defun validation-errors [schema value]
