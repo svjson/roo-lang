@@ -56,10 +56,9 @@
                      :path)
           directories (filter entries (fn [entry] (= (:type entry) :directory)))]
       (concat files
-              (flatten
-                (map directories
-                     (fn [entry]
-                       (source-files-in (:path entry)))))))
+              (flat-map directories
+                        (fn [entry]
+                          (source-files-in (:path entry))))))
     []))
 
 (defun normalized-path [path]
@@ -94,8 +93,7 @@
   A sorted vector of source file paths."
   [package-dir manifest]
   (sort
-    (flatten
-      (map (package-load-roots manifest)
-           (fn [root]
-             (source-files-in (io/join-path package-dir (str root))))))
+    (flat-map (package-load-roots manifest)
+              (fn [root]
+                (source-files-in (io/join-path package-dir (str root)))))
     <))

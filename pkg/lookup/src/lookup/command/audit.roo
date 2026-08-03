@@ -218,7 +218,7 @@
   A map containing either `:errors` or the audit result and formatted output."
   [args]
   (let [options (parse-args args)]
-    (if (not (= 0 (count (:errors options))))
+    (if (not-empty? (:errors options))
       {:errors (:errors options)}
       (let [result (audit/symbol-index (audit-index! options)
                                        options)]

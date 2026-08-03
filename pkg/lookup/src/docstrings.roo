@@ -48,8 +48,7 @@
       :paragraphs))
 
 (defun paragraph-text [paragraphs]
-  (if (= 0 (count paragraphs))
-    nil
+  (unless (empty? paragraphs)
     (apply join (concat ["\n\n"] paragraphs))))
 
 (defun strip-backticks [text]
@@ -190,8 +189,7 @@
      :body (paragraph-text (tail prose))
      :format :markdown
      :params (:params state)
-     :returns (if (= 0 (count (:returns state)))
-                nil
+     :returns (unless (empty? (:returns state))
                 {:type nil
                  :doc (paragraph-text (paragraphs (:returns state)))})
      :examples (:examples state)

@@ -94,8 +94,8 @@
                                   :excludes []
                                   :errors []})
         has-package? (not (nil? (:package-dir options)))
-        has-roots? (not (= 0 (count (:roots options))))
-        with-default-extractors (if (= 0 (count (:extractors options)))
+        has-roots? (not-empty? (:roots options))
+        with-default-extractors (if (empty? (:extractors options))
                                   (assoc options
                                          :extractors
                                          (if has-package? [:symbols] [:native]))
@@ -135,7 +135,7 @@
   A map containing either `:errors` or the generated `:value`."
   [args]
   (let [options (parse-args args)]
-    (if (not (= 0 (count (:errors options))))
+    (if (not-empty? (:errors options))
       {:errors (:errors options)}
       (let [value (index/index-with-options options)]
         (if (nil? (:out options))

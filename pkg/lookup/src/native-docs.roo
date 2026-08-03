@@ -46,8 +46,7 @@
       nil)))
 
 (defun join-lines [separator lines]
-  (if (= 0 (count lines))
-    nil
+  (unless (empty? lines)
     (apply join (concat [separator] lines))))
 
 (defun cpp-doc-directive? [line]
@@ -66,9 +65,8 @@
 
 (defun cpp-doc-brief-text [line]
   (let [trimmed (trim line)]
-    (if (string/starts-with? trimmed "@brief")
-      (trim (substr trimmed 6 (count trimmed)))
-      nil)))
+    (when (string/starts-with? trimmed "@brief")
+      (trim (substr trimmed 6 (count trimmed))))))
 
 (defun cpp-doc-code-format [state]
   (or (:code-format state) :roo))
@@ -92,12 +90,10 @@
 
 (defun cpp-doc-arg-row [line]
   (let [trimmed (trim line)]
-    (if (not (cpp-doc-table-line? trimmed))
-      nil
+    (when (cpp-doc-table-line? trimmed)
       (let [content (strip-suffix (substr trimmed 1 (count trimmed)) "|")
             separator (find-index content (fn [ch] (= "|" (str ch))))]
-        (if (nil? separator)
-          nil
+        (unless (nil? separator)
           (let [arg (trim (substr content 0 separator))
                 doc (trim (substr content (+ separator 1) (count content)))]
             (cond
@@ -106,8 +102,7 @@
               nil
 
               (blank? arg)
-              (if (blank? doc)
-                nil
+              (unless (blank? doc)
                 {:continuation? true
                  :doc doc})
 
@@ -222,8 +217,7 @@
      :format :markdown
      :params (:params state)
      :param-order (:param-order state)
-     :returns (if (= 0 (count (:returns state)))
-                nil
+     :returns (unless (empty? (:returns state))
                 {:type nil
                  :doc (docstrings/paragraph-text
                         (docstrings/paragraphs (:returns state)))})
@@ -240,11 +234,9 @@
   [text]
   (let [lines (filter (cpp-comment-lines text) (fn [line] (not (blank? line))))
         line (head lines)
-        separator (if (nil? line)
-                    nil
+        separator (when (not (nil? line))
                     (find-index line (fn [ch] (= "-" (str ch)))))]
-    (if (nil? separator)
-      nil
+    (unless (nil? separator)
       {:native-class (trim (substr line 0 separator))
        :qualified-name (trim (substr line (+ separator 1) (count line)))})))
 
@@ -283,11 +275,10 @@
                                      (not (excluded-path? (:path entry)
                                                           excludes)))))]
       (concat files
-              (flatten
-                (map directories
-                     (fn [entry]
-                       (native-source-files-in-excluding (:path entry)
-                                                         excludes))))))
+              (flat-map directories
+                        (fn [entry]
+                          (native-source-files-in-excluding (:path entry)
+                                                            excludes)))))
 
     true
     []))
@@ -307,10 +298,9 @@
   (let [manifest (source/read-manifest! package-dir)
         native-libraries (or (:native-libraries manifest) [])]
     (sort
-      (map (flatten
-             (map native-libraries
-                  (fn [native-library]
-                    (native-library-source-files package-dir native-library))))
+      (map (flat-map native-libraries
+                     (fn [native-library]
+                       (native-library-source-files package-dir native-library)))
            source/normalized-path)
       <)))
 
@@ -346,10 +336,8 @@
   (not (nil? (native-declaration-kind line))))
 
 (defun native-declaration-class [line]
-  (let [trimmed (trim line)
-        open (find-index trimmed (fn [ch] (= "(" (str ch))))]
-    (if (nil? open)
-      nil
+  (let [trimmed (trim line)]
+    (if-let [open (find-index trimmed (fn [ch] (= "(" (str ch))))]
       (let [tail (substr trimmed (+ open 1) (count trimmed))
             separator (find-index tail
                                   (fn [ch]
@@ -358,7 +346,8 @@
         (trim
           (if (nil? separator)
             tail
-            (substr tail 0 separator)))))))
+            (substr tail 0 separator))))
+      nil)))
 
 (defun source-location [path line]
   {:path (source/normalized-path path)
@@ -469,9 +458,8 @@
 (defun package-native-comment-entries!
   "Extract native documentation comment entries from a package's C++ sources."
   [package-dir]
-  (flatten
-    (map (package-native-source-files package-dir)
-         source-native-comment-entries!)))
+  (flat-map (package-native-source-files package-dir)
+            source-native-comment-entries!))
 
 (defun native-source-root-files
   "Find C++ source and header files under a generic source root."
@@ -483,11 +471,10 @@
 (defun native-source-root-comment-entries!
   "Extract native documentation comment entries from generic C++ source roots."
   [roots excludes]
-  (flatten
-    (map roots
-         (fn [root]
-           (map (native-source-root-files root excludes)
-                source-native-comment-entries!)))))
+  (flat-map roots
+            (fn [root]
+              (map (native-source-root-files root excludes)
+                   source-native-comment-entries!))))
 
 (defun native-doc-entry-for-class [entries native-class]
   (find-first entries
@@ -575,7 +562,7 @@
                                   (and (not (:optional? param))
                                        (not (:rest? param)))))]
     {:min (count required-params)
-     :max (if variadic? nil (count params))
+     :max (unless variadic? (count params))
      :variadic variadic?}))
 
 (defun native-signature [name doc]
@@ -596,24 +583,22 @@
               (docstrings/empty)
               (:doc doc-entry))
         public-doc (dissoc doc :param-order)]
-    (if (nil? namespace)
-      nil
+    (unless (nil? namespace)
       (let [entry {:id qualified-name
                    :name name
-       :qualified-name qualified-name
-       :namespace namespace
-       :kind (native-symbol-kind doc-entry)
-       :origin :native
-       :visibility :public
-       :status :stable
-       :source (:source identity-entry)
-       :declaration-source (:declaration-source doc-entry)
-       :doc-source (if (nil? doc-entry)
-                     nil
-                     {:kind :native-cpp-comment
-                      :source (:source doc-entry)})
-       :doc public-doc
-       :signatures [(native-signature name doc)]}]
+                   :qualified-name qualified-name
+                   :namespace namespace
+                   :kind (native-symbol-kind doc-entry)
+                   :origin :native
+                   :visibility :public
+                   :status :stable
+                   :source (:source identity-entry)
+                   :declaration-source (:declaration-source doc-entry)
+                   :doc-source (unless (nil? doc-entry)
+                                 {:kind :native-cpp-comment
+                                  :source (:source doc-entry)})
+                   :doc public-doc
+                   :signatures [(native-signature name doc)]}]
         (if (nil? package)
           entry
           (assoc entry :package package))))))
@@ -621,9 +606,8 @@
 (defun native-symbol-entries [package entries]
   (keep entries
         (fn [entry]
-          (if (= :native-identity-comment (:kind entry))
-            (native-symbol-entry package entries entry)
-            nil))))
+          (when (= :native-identity-comment (:kind entry))
+            (native-symbol-entry package entries entry)))))
 
 (defun package-native-symbol-entries!
   "Build native symbol entries for a package from extracted C++ comments."

@@ -32,10 +32,9 @@
      :sources (map sources (fn [source] {:path (:path source)}))
      :namespaces (keep sources symbols/source-namespace-entry)
      :symbols (concat
-                (flatten
-                  (map sources
-                       (fn [source]
-                         (symbols/source-symbols package-name source))))
+                (flat-map sources
+                          (fn [source]
+                            (symbols/source-symbols package-name source)))
                 (native-docs/package-native-symbol-entries! package-dir package-name)
                 (native-docs/native-source-root-symbol-entries!
                   package-name
@@ -64,12 +63,11 @@
   (let [normalized-roots (map roots source/normalized-path)
         normalized-excludes (map excludes source/normalized-path)
         native-files (sort
-                       (flatten
-                         (map roots
-                              (fn [root]
-                                (native-docs/native-source-root-files
-                                  root
-                                  excludes))))
+                       (flat-map roots
+                                 (fn [root]
+                                   (native-docs/native-source-root-files
+                                     root
+                                     excludes)))
                        <)
         native-symbols (if (contains? extractors :native)
                          (native-docs/native-source-root-symbol-entries!

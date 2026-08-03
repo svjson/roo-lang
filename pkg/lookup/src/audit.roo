@@ -72,7 +72,7 @@
   (let [params (signature-params signature)]
     (concat
       (if (and (:require-signatures? options)
-               (= 0 (count params))
+               (empty? params)
                (not (zero-arity-allowed? symbol options)))
         [(zero-arity-signature-diagnostic symbol signature)]
         [])
@@ -87,12 +87,11 @@
     []
     (let [symbol-signatures (signatures symbol)]
       (if (and (:require-signatures? options)
-               (= 0 (count symbol-signatures)))
+               (empty? symbol-signatures))
         [(missing-signatures-diagnostic symbol)]
-        (flatten
-          (map symbol-signatures
-               (fn [signature]
-                 (signature-diagnostics symbol signature options))))))))
+        (flat-map symbol-signatures
+                  (fn [signature]
+                    (signature-diagnostics symbol signature options)))))))
 
 (defun symbol-diagnostics [symbol options]
   (concat (summary-diagnostics symbol options)
@@ -127,10 +126,9 @@
   A `:roo/lookup-audit` map with diagnostics."
   [index options]
   (let [effective-options (merge default-options options)
-        diagnostics (flatten
-                      (map (or (:symbols index) [])
-                           (fn [symbol]
-                             (symbol-diagnostics symbol effective-options))))]
+        diagnostics (flat-map (or (:symbols index) [])
+                              (fn [symbol]
+                                (symbol-diagnostics symbol effective-options)))]
     {:format audit-format
      :version audit-version
      :diagnostics diagnostics

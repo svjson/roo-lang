@@ -3,9 +3,8 @@
             [roo.string :as string]))
 
 (defun form-head-name [form]
-  (if (= "list" (type-of form))
-    (str (head form))
-    nil))
+  (when (= "list" (type-of form))
+    (str (head form))))
 
 (defun source-namespace-entry
   "Extract a namespace entry from a source-form index entry.
@@ -19,8 +18,7 @@
   (let [entry (find-first (:forms source)
                           (fn [entry]
                             (= "ns" (form-head-name (:form entry)))))]
-    (if (nil? entry)
-      nil
+    (when (not (nil? entry))
       {:name (str (nth (:form entry) 1))
        :doc (docstrings/empty)
        :source (:source entry)})))
@@ -30,7 +28,7 @@
 
 (defun rest-param-name? [name]
   (and (string/starts-with? name "&")
-       (not (= name "&"))))
+       (not= name "&")))
 
 (defun clean-param-name [name]
   (if (rest-param-name? name)
@@ -58,7 +56,7 @@
 (defun signature-display [name raw-params]
   (let [param-names (map raw-params str)
         params-display (apply join (concat [" "] param-names))]
-    (if (= 0 (count param-names))
+    (if (empty? param-names)
       (str "(" name ")")
       (str "(" name " " params-display ")"))))
 
@@ -69,7 +67,7 @@
                                   (and (not (:optional? param))
                                        (not (:rest? param)))))]
     {:min (count required-params)
-     :max (if variadic? nil (count params))
+     :max (unless variadic? (count params))
      :variadic variadic?}))
 
 (defun function-signature
@@ -131,14 +129,13 @@
 (defun def-symbol-entry [package namespace entry]
   (let [form (:form entry)
         name (str (nth form 1))
-        docstring (if (string? (nth form 2)) (nth form 2) nil)
+        docstring (when (string? (nth form 2)) (nth form 2))
         doc (if (nil? docstring)
               (docstrings/empty)
               (docstrings/from-string docstring))]
     (merge (base-symbol-entry package namespace name :var (:source entry))
            {:doc doc
-            :doc-source (if (nil? docstring)
-                          nil
+            :doc-source (when (not (nil? docstring))
                           {:kind :roo-docstring
                            :source (:source entry)})
             :signatures []})))
@@ -146,15 +143,14 @@
 (defun defun-symbol-entry [package namespace entry]
   (let [form (:form entry)
         name (str (nth form 1))
-        docstring (if (string? (nth form 2)) (nth form 2) nil)
+        docstring (when (string? (nth form 2)) (nth form 2))
         params (if (nil? docstring) (nth form 2) (nth form 3))
         doc (if (nil? docstring)
               (docstrings/empty)
               (docstrings/from-string docstring))]
     (merge (base-symbol-entry package namespace name :function (:source entry))
            {:doc doc
-            :doc-source (if (nil? docstring)
-                          nil
+            :doc-source (when (not (nil? docstring))
                           {:kind :roo-docstring
                            :source (:source entry)})
             :signatures [(function-signature-with-doc name params doc)]})))
