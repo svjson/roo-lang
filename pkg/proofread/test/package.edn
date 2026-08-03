@@ -1,6 +1,7 @@
 {:name proofread-tests
  :version "0.1.0"
  :dependencies {proofread "file:.."
-                proof "file:../../proof"}
+                proof "file:../../proof"
+                soot "file:../../soot"}
  :load-roots ["."]
  :config {proof {:test-roots ["proofread"]}}}

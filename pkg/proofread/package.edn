@@ -1,7 +1,7 @@
 {:name proofread
  :version "0.1.0"
  :description "Roo syntax and style checker."
- :dependencies []
+ :dependencies {soot "file:../soot"}
  :load-roots ["src"]
  :namespace-roots {proofread "src"}
  :native-libraries [{:name "proofread-native"

@@ -1,0 +1,37 @@
+(ns proofread.reporter.common-test
+  (:require proof.core
+            [proofread.reporter.common :as common]
+            [soot.core :as soot-core]))
+
+(def esc soot-core/esc)
+
+(deftest styles-location-segments
+  (is (= (str "world-map/src/"
+              esc "[1msymbols.roo" esc "[22m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m117" esc "[39m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m28" esc "[39m"
+              ":")
+         (common/diagnostic-location {:path "world-map/src/symbols.roo"
+                                      :line 117
+                                      :column 28}))))
+
+(deftest styles-rule-name-as-magenta
+  (is (= (str esc "[1msymbols.roo" esc "[22m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m117" esc "[39m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m28" esc "[39m"
+              ":"
+              " "
+              esc "[1;33mwarning" esc "[39;22m"
+              " "
+              esc "[35mredundant-do" esc "[39m"
+              ": Redundant do form")
+         (common/diagnostic-line {:source {:path "symbols.roo"
+                                           :line 117
+                                           :column 28}
+                                  :severity :warning
+                                  :rule :redundant-do
+                                  :message "Redundant do form"}))))

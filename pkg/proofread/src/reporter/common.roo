@@ -1,25 +1,119 @@
-(ns proofread.reporter.common)
+(ns proofread.reporter.common
+  (:require [roo.io :as io]
+            [soot :as soot]))
+
+(def filename-styles
+  "Styles used for diagnostic source filenames."
+  [:bold])
+
+(def location-separator-styles
+  "Styles used for diagnostic location separators."
+  [:dim :gray])
+
+(def location-position-styles
+  "Styles used for diagnostic line and column numbers."
+  [:cyan])
+
+(def rule-styles
+  "Styles used for diagnostic rule names."
+  [:magenta])
+
+(def warning-styles
+  "Styles used for warning output."
+  [:bold :yellow])
+
+(def error-styles
+  "Styles used for error output."
+  [:bold :red])
+
+(def success-styles
+  "Styles used for successful summary output."
+  [:bold :green])
+
+(defun severity-styles
+  "Return styles for a diagnostic severity.
+
+  Args:
+  - `severity`: Diagnostic severity keyword.
+
+  Returns:
+  A soot style vector."
+  [severity]
+  (case severity
+    :error error-styles
+    :warning warning-styles
+    :default [:bold]))
+
+(defun summary-styles
+  "Return styles for a proofread summary line.
+
+  Args:
+  - `summary`: Map containing `:warnings` and `:errors` counts.
+
+  Returns:
+  A soot style vector."
+  [summary]
+  (cond
+    (< 0 (:errors summary))
+    error-styles
+
+    (< 0 (:warnings summary))
+    warning-styles
+
+    true
+    success-styles))
+
+(defun location-prefix
+  "Return the directory prefix for a diagnostic path.
+
+  Args:
+  - `path`: Diagnostic path.
+
+  Returns:
+  The directory path plus trailing slash, or an empty string when `path` has no
+  directory."
+  [path]
+  (let [dirname (io/dirname path)]
+    (case dirname
+      "" ""
+      "/" "/"
+      :default (str dirname "/"))))
+
+(defun diagnostic-location
+  "Format one styled diagnostic source location.
+
+  Args:
+  - `source`: Diagnostic source map containing `:path`, `:line`, and `:column`.
+
+  Returns:
+  A styled location string."
+  [source]
+  (str (location-prefix (:path source))
+       (soot/paint filename-styles (io/basename (:path source)))
+       (soot/paint location-separator-styles ":")
+       (soot/paint location-position-styles (:line source))
+       (soot/paint location-separator-styles ":")
+       (soot/paint location-position-styles (:column source))
+       ":"))
 
 (defun diagnostic-line
-  "Format one diagnostic for CLI output.
+  "Format one styled diagnostic for CLI output.
 
   Args:
   - `diagnostic`: A diagnostic map from a style rule.
 
   Returns:
-  A single warning line containing source, severity, rule, and message."
+  A single warning line containing styled source, severity, rule, and message."
   [diagnostic]
-  (str (:path (:source diagnostic))
-       ":"
-       (:line (:source diagnostic))
-       ":"
-       (:column (:source diagnostic))
-       ": "
-       (name (:severity diagnostic))
-       " "
-       (name (:rule diagnostic))
-       ": "
-       (:message diagnostic)))
+  (let [source (:source diagnostic)
+        severity (:severity diagnostic)]
+    (str (diagnostic-location source)
+         " "
+         (soot/paint (severity-styles severity) (name severity))
+         " "
+         (soot/paint rule-styles (name (:rule diagnostic)))
+         ": "
+         (:message diagnostic))))
 
 (defun summary-text
   "Format a proofread run summary.
@@ -56,6 +150,6 @@
         separator (apply join (concat [""]
                                       (repeat (count text) "-")))]
     (prn separator)
-    (prn text)
+    (prn (soot/paint (summary-styles summary) text))
     (prn separator)
     summary))
