@@ -12,6 +12,18 @@
   [node]
   (= "nil" (forms/symbol-name node)))
 
+(defun case-literal?
+  "Test whether an AST node is a literal suitable for `case` dispatch.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for string, keyword, number, and character literals, otherwise
+  `false`."
+  [node]
+  (contains? [:string :keyword :number :char] (:type node)))
+
 (defun diagnostic
   "Build a direct-condition diagnostic for an AST node.
 
@@ -99,6 +111,39 @@
        (or (let-if-candidate? parent)
            (let-when-candidate? parent))))
 
+(defun equality-dispatch?
+  "Test whether an AST node compares one expression to one literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for equality forms that can be expressed as `case` dispatch,
+  otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "=" (forms/head-name node))
+       (= 3 (count children))
+       (or (and (case-literal? (nth children 1))
+                (not (case-literal? (nth children 2))))
+           (and (not (case-literal? (nth children 1)))
+                (case-literal? (nth children 2))))))
+
+(defun if-case-candidate?
+  "Test whether an `if` form should be `case`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for four-form `if` expressions using literal equality dispatch,
+  otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "if" (forms/head-name node))
+       (= 4 (count children))
+       (equality-dispatch? (nth children 1))
+       (not (nil-node? (nth children 2)))
+       (not (nil-node? (nth children 3)))))
+
 (defun direct-condition-diagnostic
   "Return the direct-condition diagnostic for an AST node.
 
@@ -115,6 +160,9 @@
 
     (let-when-candidate? node)
     (diagnostic node :use-when-let "Use when-let")
+
+    (if-case-candidate? node)
+    (diagnostic node :use-case "Use case")
 
     (and (= "if" (forms/head-name node))
          (not (let-condition-child? parent node))

@@ -1,0 +1,16 @@
+(ns proofread.direct-conditions-use-case)
+
+(def extension-dispatch
+  (if (= ".roo" (io/extension file))
+    (check-roo file)
+    []))
+
+(def keyword-dispatch
+  (if (= status :ready)
+    (start!)
+    (skip!)))
+
+(def number-dispatch
+  (if (= 0 exit-code)
+    :ok
+    :failed))

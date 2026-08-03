@@ -67,6 +67,8 @@ Supported style warnings:
 - `use-if-let`: reports `let` plus `if` forms that can be written as `if-let`.
 - `use-when-let`: reports `let` plus `when` forms that can be written as
   `when-let`.
+- `use-case`: reports `if` forms that dispatch on equality against a literal
+  and can be written as `case`.
 - `use-head`: reports `(nth value 0)` forms that can be written as `head`.
 - `use-empty?`: reports count comparisons to zero that can be written as
   `empty?`.

@@ -5,8 +5,7 @@
 
 (defun diagnostics
   [path]
-  (flatten
-    (map (ast/slurp! path) direct-conditions/check)))
+  (flat-map (ast/slurp! path) direct-conditions/check))
 
 (defun diagnostic-summary
   [path]
@@ -29,6 +28,12 @@
 (deftest reports-use-when-let-for-let-wrapped-when-forms
   (is (= [[:use-when-let 4]]
          (diagnostic-summary "assets/rules/direct-conditions/use-when-let.roo"))))
+
+(deftest reports-use-case-for-literal-equality-dispatch
+  (is (= [[:use-case 4]
+          [:use-case 9]
+          [:use-case 14]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-case.roo"))))
 
 (deftest ignores-direct-condition-non-candidates
   (is (= []

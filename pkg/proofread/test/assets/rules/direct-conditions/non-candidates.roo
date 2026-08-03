@@ -28,3 +28,13 @@
    {:work work
     :data (:data work)
     :step step}))
+
+(def nil-comparison
+  (if (= value nil)
+    :missing
+    :present))
+
+(def expression-comparison
+  (if (= (actual) (expected))
+    :same
+    :different))
