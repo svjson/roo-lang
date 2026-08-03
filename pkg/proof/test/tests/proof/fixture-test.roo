@@ -5,6 +5,7 @@
 
 (def cache-generation-count 0)
 (def persistent-generation-count 0)
+(def declared-generation-count 0)
 
 (defun next-cache-value []
   (set! [cache-generation-count] (inc cache-generation-count))
@@ -13,6 +14,28 @@
 (defun next-persistent-value []
   (set! [persistent-generation-count] (inc persistent-generation-count))
   {:calls persistent-generation-count})
+
+(defun next-declared-value []
+  (set! [declared-generation-count] (inc declared-generation-count))
+  {:calls declared-generation-count
+   :stable {:id :declared}})
+
+(fixture/deffixture commonborn-bootstrap
+  {}
+  {:known-people {:mother :mara}
+   :boot-known-people {:mother :mara}})
+
+(fixture/deffixture my-fixture
+  {}
+  {:fixture :my-fixture})
+
+(fixture/deffixture hot-dog-salesman-fixture
+  {}
+  {:job :hot-dog-salesman})
+
+(fixture/deffixture declared-cache-fixture
+  {:paths [[:stable :id]]}
+  (next-declared-value))
 
 (deftest cache-fixture-binds-and-reuses-generated-value
   (fixture/clear!)
@@ -69,3 +92,29 @@
         (is (= 2 persistent-generation-count))
         (is (= {:calls 1} initial-value))
         (is (= {:calls 2} refreshed-value))))))
+
+(deftest using-fixtures-binds-declared-fixtures
+  (fixture/clear!)
+  (fixture/using-fixtures [[bootstrap commonborn-bootstrap]
+                           my-fixture
+                           [character hot-dog-salesman-fixture]]
+    (is (= (:known-people bootstrap)
+           (:boot-known-people bootstrap)))
+    (is (= {:fixture :my-fixture} my-fixture))
+    (is (= :hot-dog-salesman (:job character)))))
+
+(deftest deftest-binds-declared-fixtures
+  [[bootstrap commonborn-bootstrap]
+   my-fixture
+   [character hot-dog-salesman-fixture]]
+  (is (= (:known-people bootstrap)
+         (:boot-known-people bootstrap)))
+  (is (= {:fixture :my-fixture} my-fixture))
+  (is (= :hot-dog-salesman (:job character))))
+
+(deftest declared-fixtures-apply-projection-and-cache
+  (fixture/clear!)
+  (set! [declared-generation-count] 0)
+  (fixture/using-fixtures [declared-cache-fixture]
+    (is (= 1 declared-generation-count))
+    (is (= {:stable {:id :declared}} declared-cache-fixture))))

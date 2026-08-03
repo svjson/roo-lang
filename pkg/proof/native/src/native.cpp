@@ -215,6 +215,60 @@ namespace Roo::Proof
       return list_node({symbol_node("apply"), fn, vector_node(args)});
     }
 
+    void append_all(sptr_ast_node_v& target, const sptr_ast_node_v& source)
+    {
+      target.insert(target.end(), source.begin(), source.end());
+    }
+
+    sptr_ast_node fixture_spec_binding(const sptr_ast_node& spec)
+    {
+      if (spec->get_type() == Form::SYMBOL)
+      {
+        return spec;
+      }
+
+      if (spec->get_type() != Form::VECTOR)
+      {
+        throw RooException("Invalid fixture binding spec: " + spec->to_string());
+      }
+
+      auto& children = spec->get_children();
+      if (children.size() < 2 || children.size() > 3)
+      {
+        throw RooException("Invalid fixture binding spec: " + spec->to_string());
+      }
+
+      return children[0];
+    }
+
+    sptr_ast_node fixture_spec_name(const sptr_ast_node& spec)
+    {
+      if (spec->get_type() == Form::SYMBOL)
+      {
+        return spec;
+      }
+
+      return spec->get_children()[1];
+    }
+
+    sptr_ast_node fixture_spec_options(const sptr_ast_node& spec)
+    {
+      if (spec->get_type() == Form::VECTOR && spec->get_children().size() == 3)
+      {
+        return spec->get_children()[2];
+      }
+
+      return AST::NIL;
+    }
+
+    sptr_ast_node using_fixtures_expr(const sptr_ast_node& fixture_specs,
+                                      const sptr_ast_node_v& body)
+    {
+      sptr_ast_node_v children{symbol_node("proof.fixture/using-fixtures"), fixture_specs};
+      append_all(children, body);
+      return list_node(children);
+    }
+
     sptr_val record_failure(Context& ctx, const std::string& message)
     {
       return ctx.call("proof.core/record-failure!", Value::string(message));
@@ -351,6 +405,69 @@ namespace Roo::Proof
       }
     };
 
+    class DeffixtureForm : public SpecialForm
+    {
+     public:
+      DeffixtureForm()
+        : SpecialForm(SIG((FN_ARGS((&Type::SYMBOL, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                           EXEC_DISPATCH(&DeffixtureForm::execnode_deffixture))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<DeffixtureForm>());
+      }
+
+      uptr_exec_node lower_form(LowerContext& ctx, const sptr_ast_node& ast_node) override
+      {
+        auto& elements = ast_node->get_children();
+        if (elements.size() < 4 || elements[1]->get_type() != Form::SYMBOL ||
+            elements[2]->get_type() != Form::MAP)
+        {
+          throw RooException("Invalid deffixture form: " + ast_node->to_string());
+        }
+
+        if (!ctx.ctx)
+        {
+          throw RooException("deffixture requires an active lowering context.");
+        }
+
+        const size_t body_start = 3;
+        sptr_val name = std::get<LiteralNode>(lower_literal(elements[1])->data).value;
+        sptr_val options = std::get<LiteralNode>(lower_literal(elements[2])->data).value;
+
+        sptr_ast_node_v body;
+        body.reserve(elements.size() - body_start);
+        for (size_t i = body_start; i < elements.size(); i++)
+        {
+          body.push_back(elements[i]);
+        }
+
+        auto arg_vec = std::make_shared<AST::Vector>();
+        std::shared_ptr<UserFunction> generate_fn =
+          create_function("fixture:" + name->to_string(),
+                          *ctx.ctx,
+                          ctx.ctx->get_current_namespace(),
+                          *arg_vec,
+                          body);
+
+        return std::make_unique<ExecNode>(
+          SpecialFormNode(this, {name, Value::executable(generate_fn), options}, {}));
+      }
+
+      sptr_val execnode_deffixture(Context& ctx, SpecialFormNode& snode)
+      {
+        if (snode.values.size() != 3)
+        {
+          throw InvocationException("Invalid deffixture execution node.");
+        }
+
+        ctx.call("proof.fixture/register-fixture!", snode.values);
+        return snode.values.front();
+      }
+    };
+
     class FixtureBindingForm : public SpecialForm
     {
       std::string form_name;
@@ -443,6 +560,90 @@ namespace Roo::Proof
         snode.bind_forms.front().first->apply(bind_scope,
                                               ctx.call(value_function, fixture_args));
         ctx.push_context(true, bind_scope);
+
+        sptr_val result = Constant::NIL;
+        for (size_t i = body_start; i < snode.exec_nodes.size(); i++)
+        {
+          result = exec(ctx, *snode.exec_nodes[i]);
+        }
+
+        ctx.pop_context();
+        return result;
+      }
+    };
+
+    class UsingFixturesForm : public SpecialForm
+    {
+     public:
+      UsingFixturesForm()
+        : SpecialForm(SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
+                           EXEC_DISPATCH(&UsingFixturesForm::execnode_using_fixtures))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<UsingFixturesForm>());
+      }
+
+      uptr_exec_node lower_form(LowerContext& ctx, const sptr_ast_node& ast_node) override
+      {
+        auto& elements = ast_node->get_children();
+        if (elements.size() < 3 || elements[1]->get_type() != Form::VECTOR)
+        {
+          throw RooException("Invalid using-fixtures form: " + ast_node->to_string());
+        }
+
+        auto& fixture_specs = elements[1]->get_children();
+        uptr_exec_node_v exec_nodes;
+        exec_nodes.reserve((fixture_specs.size() * 2) + elements.size() - 2);
+
+        std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
+        bindings.reserve(fixture_specs.size());
+
+        ctx.push({});
+        for (auto& spec : fixture_specs)
+        {
+          auto bind_node = lower_literal(fixture_spec_binding(spec));
+          bindings.push_back(
+            std::make_pair(LexicalBinding::create(std::get<LiteralNode>(bind_node->data)),
+                           lower_literal(AST::NIL)));
+          exec_nodes.push_back(lower_literal(fixture_spec_name(spec)));
+          exec_nodes.push_back(lower_expr(ctx, fixture_spec_options(spec)));
+          ctx.add_lexical_binding(*bindings.back().first);
+        }
+
+        for (size_t i = 2; i < elements.size(); i++)
+        {
+          exec_nodes.push_back(lower_expr(ctx, elements[i]));
+        }
+        ctx.pop();
+
+        return std::make_unique<ExecNode>(
+          SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+      }
+
+      sptr_val execnode_using_fixtures(Context& ctx, SpecialFormNode& snode)
+      {
+        const size_t body_start = snode.bind_forms.size() * 2;
+        if (snode.exec_nodes.size() < body_start)
+        {
+          throw InvocationException("Invalid using-fixtures execution node.");
+        }
+
+        Scope bind_scope;
+        ctx.push_context(true, bind_scope);
+
+        for (size_t i = 0; i < snode.bind_forms.size(); i++)
+        {
+          sptr_val_v fixture_args{
+            exec(ctx, *snode.exec_nodes[i * 2]),
+            exec(ctx, *snode.exec_nodes[(i * 2) + 1]),
+          };
+          snode.bind_forms[i].first->apply(
+            ctx.current_scope(),
+            ctx.call("proof.fixture/fixture-value", fixture_args));
+        }
 
         sptr_val result = Constant::NIL;
         for (size_t i = body_start; i < snode.exec_nodes.size(); i++)
@@ -563,11 +764,6 @@ namespace Roo::Proof
         args.push_back(symbol_node(available_symbols[i]));
       }
       return args;
-    }
-
-    void append_all(sptr_ast_node_v& target, const sptr_ast_node_v& source)
-    {
-      target.insert(target.end(), source.begin(), source.end());
     }
 
     sptr_ast_node then_expr(const ScenarioPhase& phase)
@@ -765,14 +961,20 @@ namespace Roo::Proof
 
         sptr_val name = std::get<LiteralNode>(lower_literal(elements[1])->data).value;
         auto arg_vec = std::make_shared<AST::Vector>();
+        const bool has_fixtures = elements[2]->get_type() == Form::VECTOR;
+        const size_t body_start = has_fixtures ? 3 : 2;
 
         sptr_ast_node_v body;
-        body.reserve(elements.size() - 2);
-        for (size_t i = 2; i < elements.size(); i++)
+        body.reserve(elements.size() - body_start);
+        for (size_t i = body_start; i < elements.size(); i++)
         {
           body.push_back(elements[i]);
         }
         body = rewrite_scenario_body(body);
+        if (has_fixtures)
+        {
+          body = {using_fixtures_expr(elements[2], body)};
+        }
 
         std::shared_ptr<UserFunction> body_fn =
           create_function("test:" + name->to_string(),
@@ -812,6 +1014,8 @@ namespace Roo::Proof
     ns->store("given", PhaseForm::make("given"));
     ns->store("when", PhaseForm::make("when"));
     ns->store("then", PhaseForm::make("then"));
+    ns->store("deffixture", DeffixtureForm::make());
+    ns->store("using-fixtures", UsingFixturesForm::make());
     ns->store(
       "using-cache-fixture",
       FixtureBindingForm::make("using-cache-fixture", "proof.fixture/cache-fixture-value"));

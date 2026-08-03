@@ -3,6 +3,42 @@
             [proof.fixture.cache :as cache]
             [proof.fixture.persistent :as persistent]))
 
+(def fixtures
+  "Declared fixtures keyed by fixture symbol."
+  {})
+
+(def deffixture
+  "Declares a named fixture provider.
+
+  Usage:
+
+  ```roo
+  (fixture/deffixture commonborn-bootstrap
+    {:storage :persistent
+     :path \"backend/commonborn-bootstrap.edn\"
+     :version 1}
+    (expensive-bootstrap))
+  ```
+
+  The options map is required. `:storage` may be `:cache` or `:persistent`, and
+  defaults to `:cache`."
+  proof.syntax/deffixture)
+
+(def using-fixtures
+  "Binds declared fixture values for the scope of the body.
+
+  Usage:
+
+  ```roo
+  (fixture/using-fixtures [[bootstrap commonborn-bootstrap]
+                           simple-fixture]
+    body...)
+  ```
+
+  Each fixture spec may be a fixture symbol, `[binding fixture]`, or
+  `[binding fixture opts]`."
+  proof.syntax/using-fixtures)
+
 (def using-cache-fixture
   "Binds an in-process cache fixture value for the scope of the body.
 
@@ -51,3 +87,40 @@
 (def fixture-path
   "Returns the active persistent fixture path for a relative fixture path."
   persistent/fixture-path)
+
+(defun register-fixture!
+  "Registers a named fixture provider.
+
+  `name` is the fixture symbol. `generate` is a zero-argument function.
+  `opts` controls storage and projection behavior. Returns `name`."
+  [name generate opts]
+  (set! [fixtures]
+        (assoc fixtures
+               name
+               (assoc (or opts {})
+                      :name name
+                      :generate generate)))
+  name)
+
+(defun fixture-options
+  "Returns declared fixture options with per-use overrides applied."
+  [name opts]
+  (merge (or (get fixtures name nil) {})
+         (or opts {})))
+
+(defun fixture-value
+  "Returns the value for a declared fixture.
+
+  Per-use `opts` override declaration options. A fixture with `:storage
+  :persistent` is backed by the persistent fixture store; other fixtures use the
+  in-process cache fixture store."
+  [name & opts &rest]
+  (let [opts (fixture-options name opts)
+        generate (:generate opts)
+        storage (get opts :storage :cache)]
+    (cond
+      (= storage :persistent)
+      (persistent/value (or (:path opts) (str name ".edn")) generate opts)
+
+      true
+      (cache/value name generate opts))))

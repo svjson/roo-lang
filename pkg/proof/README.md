@@ -159,42 +159,83 @@ should be reused:
             [proof.fixture :as fixture]))
 ```
 
-Use `using-cache-fixture` for values that should be generated once and reused
-only within the current proof process:
+Use `deffixture` to declare reusable fixture providers:
+
+```roo
+(fixture/deffixture commonborn-bootstrap
+  {:storage :persistent
+   :path "backend/commonborn-bootstrap.edn"
+   :version 1
+   :paths [[:known-people]
+           [:boot-known-people]]}
+  (expensive-bootstrap))
+
+(fixture/deffixture hot-dog-salesman-fixture
+  {}
+  {:job :hot-dog-salesman})
+
+(fixture/deffixture my-fixture
+  {}
+  {:fixture :my-fixture})
+```
+
+Fixture declaration options:
+
+- `:storage`, either `:cache` or `:persistent`. The default is `:cache`.
+- `:path`, the persistent fixture document path.
+- `:version`, a persistent fixture version. Changing it regenerates the fixture.
+- `:refresh?`, when true, always regenerates a persistent fixture.
+- `:paths`, nested paths to retain from a generated value.
+
+Declared fixtures can be bound explicitly with `using-fixtures`:
+
+```roo
+(fixture/using-fixtures [[bootstrap commonborn-bootstrap]
+                         [character hot-dog-salesman-fixture]]
+  (is (= (:known-people bootstrap)
+         (:boot-known-people bootstrap)))
+  (is (= :hot-dog-salesman (:job character))))
+```
+
+`deftest` also accepts an optional fixture vector:
 
 ```roo
 (deftest carries-family-through-social-memory
-  (fixture/using-cache-fixture [data "bootstrap/commonborn"
-                                (fn [] (expensive-bootstrap))]
-    (is (= (:known-people data)
-           (:boot-known-people data)))))
+  [[bootstrap commonborn-bootstrap]
+   my-fixture
+   [character hot-dog-salesman-fixture]]
+  (is (= (:known-people bootstrap)
+         (:boot-known-people bootstrap)))
+  (is (= :hot-dog-salesman (:job character))))
 ```
 
-Use `using-persistent-fixture` for values that should be written as EDN and
-reused between proof runs:
+Each fixture spec may be:
 
 ```roo
-(deftest generated-world-map-has-main-road
-  (fixture/using-persistent-fixture [world-map "world/default-map.edn"
-                                     (fn [] (generate-world-map))
-                                     {:version 1
-                                      :paths [[:landmarks]
-                                              [:paths]]}]
-    (is (contains? (map (:paths world-map) :id) :dawnkeep-road))))
+fixture-name
+[binding fixture-name]
+[binding fixture-name opts]
 ```
 
-The fixture binding vector is:
+Bare `fixture-name` is shorthand for `[fixture-name fixture-name]`. Use the
+vector form when the fixture has a complex name or when the local binding should
+use a shorter alias.
+
+Anonymous fixture forms are also available when a fixture is only used locally:
 
 ```roo
-[binding key-or-path generator]
-[binding key-or-path generator opts]
+(fixture/using-cache-fixture [data "bootstrap/commonborn"
+                              (fn [] (expensive-bootstrap))]
+  body...)
+
+(fixture/using-persistent-fixture [world-map "world/default-map.edn"
+                                   (fn [] (generate-world-map))
+                                   {:version 1
+                                    :refresh? false
+                                    :paths [[:landmarks]
+                                            [:paths]]}]
+  body...)
 ```
-
-Supported options:
-
-- `:paths`, nested paths to retain from a generated value.
-- `:version`, a persistent fixture version. Changing it regenerates the fixture.
-- `:refresh?`, when true, always regenerates a persistent fixture.
 
 Persistent fixtures are stored under `test/fixtures` by default. A package may
 configure another root:
