@@ -95,13 +95,13 @@
                 "<li><a href=\"roo/plus.html\">+</a></li>\n"
                 "</ol>\n"
                 "</nav>\n"
-                "<main class=\"reference-content\" markdown=\"1\">\n\n"
+                "<main class=\"reference-content\" markdown=\"block\">\n\n"
                 "# roo\n\n"
                 "Implicit runtime namespace.\n\n"
                 "| Symbol                 | Summary      |\n"
                 "| ---------------------- | ------------ |\n"
                 "| [roo/+](roo/plus.html) | Add numbers. |"
-                "\n</main>\n"
+                "\n\n</main>\n"
                 "</div>\n")
            (:content namespace-page)))
     (is (= (str "---\n"
@@ -115,7 +115,7 @@
                 "<li><a class=\"active\" href=\"plus.html\">+</a></li>\n"
                 "</ol>\n"
                 "</nav>\n"
-                "<main class=\"reference-content\" markdown=\"1\">\n\n"
+                "<main class=\"reference-content\" markdown=\"block\">\n\n"
                 "# roo/+\n\n"
                 "Add numbers.\n\n"
                 "Returns the numeric sum.\n\n"
@@ -126,6 +126,6 @@
                 "| ---------- | --------------- |\n"
                 "| numbers... | Numbers to add. |\n\n"
                 "Returns: The sum.\n"
-                "</main>\n"
+                "\n</main>\n"
                 "</div>\n")
            (:content symbol-page)))))
