@@ -10,9 +10,9 @@
                  :passed (status-count results :pass)
                  :failed (status-count results :fail)}
         errors (status-count results :error)]
-    (if (= 0 errors)
-      summary
-      (assoc summary :errored errors))))
+    (case errors
+      0 summary
+      :default (assoc summary :errored errors))))
 
 (defun summary-text [summary]
   (str "proof: " (:passed summary) " passed, "

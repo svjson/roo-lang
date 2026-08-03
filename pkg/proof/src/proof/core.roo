@@ -50,16 +50,16 @@
   (if (= pattern-index (count pattern))
     (= text-index (count text))
     (let [pattern-char (str (nth pattern pattern-index))]
-      (if (= "*" pattern-char)
-        (or (wildcard-match-from? pattern (+ pattern-index 1) text text-index)
-            (and (< text-index (count text))
-                 (wildcard-match-from? pattern pattern-index text (+ text-index 1))))
-        (and (< text-index (count text))
-             (= pattern-char (str (nth text text-index)))
-             (wildcard-match-from? pattern
-                                   (+ pattern-index 1)
-                                   text
-                                   (+ text-index 1)))))))
+      (case pattern-char
+        "*" (or (wildcard-match-from? pattern (+ pattern-index 1) text text-index)
+                (and (< text-index (count text))
+                     (wildcard-match-from? pattern pattern-index text (+ text-index 1))))
+        :default (and (< text-index (count text))
+                      (= pattern-char (str (nth text text-index)))
+                      (wildcard-match-from? pattern
+                                            (+ pattern-index 1)
+                                            text
+                                            (+ text-index 1)))))))
 
 (defun wildcard-match? [pattern text]
   (wildcard-match-from? (str pattern) 0 (str text) 0))

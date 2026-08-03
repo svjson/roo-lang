@@ -94,6 +94,41 @@ namespace
     return without_elapsed_ms(value)->to_string();
   }
 
+  std::vector<std::string> proof_load_paths(std::vector<std::string> extra = {})
+  {
+    std::vector<std::string> paths{std::string(PROOF_PACKAGE_DIR) + "/src",
+                                   (std::filesystem::path(PROOF_PACKAGE_DIR).parent_path() /
+                                    "soot/src")
+                                     .string()};
+    paths.insert(paths.end(), extra.begin(), extra.end());
+    return paths;
+  }
+
+  std::string sgr(const std::string& code, const std::string& text, const std::string& close)
+  {
+    return "\033[" + code + "m" + text + "\033[" + close + "m";
+  }
+
+  std::string pass_label()
+  {
+    return sgr("32", "PASS", "39");
+  }
+
+  std::string fail_label()
+  {
+    return sgr("91", "FAIL", "39");
+  }
+
+  std::string error_label()
+  {
+    return sgr("38;5;88", "ERROR", "39");
+  }
+
+  std::string bold_label(const std::string& text)
+  {
+    return sgr("1", text, "22");
+  }
+
   void expect_elapsed_ms(const Roo::sptr_val& result)
   {
     auto [found, elapsed] =
@@ -130,7 +165,7 @@ namespace
 
 TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
 {
-  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
@@ -155,7 +190,7 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
   expect_elapsed_ms_for_results(results);
 
   const auto first_body = output.find("first-body\n");
-  const auto first_result = output.find("  PASS first-stream-marker\n");
+  const auto first_result = output.find("  " + pass_label() + " first-stream-marker\n");
   const auto second_body = output.find("second-body\n");
 
   ASSERT_NE(first_body, std::string::npos);
@@ -167,7 +202,7 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
 
 TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
 {
-  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
@@ -195,9 +230,9 @@ TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
             "{:name duration-error :status :error :message \"Division by zero\"}]");
   expect_elapsed_ms_for_results(results);
-  expect_duration_output_line(output, "  PASS duration-pass");
-  expect_duration_output_line(output, "  FAIL duration-fail");
-  expect_duration_output_line(output, "  ERROR duration-error");
+  expect_duration_output_line(output, "  " + pass_label() + " duration-pass");
+  expect_duration_output_line(output, "  " + fail_label() + " duration-fail");
+  expect_duration_output_line(output, "  " + error_label() + " duration-error");
 }
 
 TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
@@ -240,8 +275,7 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
 (def value 42)
 )");
 
-  Roo::DirRootFileSystem fs(
-    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"((ns proof.runner-package-test
@@ -275,8 +309,7 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
   (is false))
 )");
 
-  Roo::DirRootFileSystem fs(
-    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"((ns proof.runner-filter-test
@@ -311,8 +344,7 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
   (is true))
 )");
 
-  Roo::DirRootFileSystem fs(
-    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"((ns proof.runner-tree-reporter-test
@@ -329,19 +361,19 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
             "{:name checkout-discount :status :fail :message \"Expected 5, got 4.\" "
             ":failures [{:message \"Expected 5, got 4.\"}]} "
             "{:name profile-page :status :pass}]");
-  EXPECT_NE(output.find("test/app/checkout-test.roo\n"
-                        "├── PASS - checkout-total\n"
-                        "└── FAIL - checkout-discount\n"
+  EXPECT_NE(output.find(bold_label("test/app/checkout-test.roo") + "\n" +
+                        "├── " + pass_label() + " - checkout-total\n" +
+                        "└── " + fail_label() + " - checkout-discount\n"
                         "    - Expected 5, got 4.\n"),
             std::string::npos);
-  EXPECT_NE(output.find("test/app/profile-test.roo\n"
-                        "└── PASS - profile-page\n"),
+  EXPECT_NE(output.find(bold_label("test/app/profile-test.roo") + "\n" +
+                        "└── " + pass_label() + " - profile-page\n"),
             std::string::npos);
 }
 
 TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
 {
-  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
@@ -369,10 +401,11 @@ TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
             "{:name duration-error :status :error :message \"Division by zero\"}]");
   expect_elapsed_ms_for_results(results);
-  EXPECT_NE(output.find("proof.package-tree-durations-test\n"), std::string::npos);
-  expect_duration_output_line(output, "├── PASS - duration-pass");
-  expect_duration_output_line(output, "├── FAIL - duration-fail");
-  expect_duration_output_line(output, "└── ERROR - duration-error");
+  EXPECT_NE(output.find(bold_label("proof.package-tree-durations-test") + "\n"),
+            std::string::npos);
+  expect_duration_output_line(output, "├── " + pass_label() + " - duration-pass");
+  expect_duration_output_line(output, "├── " + fail_label() + " - duration-fail");
+  expect_duration_output_line(output, "└── " + error_label() + " - duration-error");
 }
 
 TEST(ProofPackage, runner_merges_cli_args_over_package_config)
@@ -396,8 +429,7 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
   (is false))
 )");
 
-  Roo::DirRootFileSystem fs(
-    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "spec").string()});
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "spec").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"((ns proof.runner-cli-args-test
@@ -415,8 +447,8 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-discount :status :pass}]");
-  EXPECT_NE(output.find("spec/app/checkout-test.roo\n"
-                        "└── PASS - checkout-discount\n"),
+  EXPECT_NE(output.find(bold_label("spec/app/checkout-test.roo") + "\n" +
+                        "└── " + pass_label() + " - checkout-discount\n"),
             std::string::npos);
   EXPECT_EQ(output.find("checkout-discount ("), std::string::npos);
 }
@@ -432,8 +464,7 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
   (is false))
 )");
 
-  Roo::DirRootFileSystem fs(
-    {std::string(PROOF_PACKAGE_DIR) + "/src", (root / "test").string()});
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"((ns proof.runner-help-test
@@ -476,13 +507,13 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name discovered-proof :status :pass}]");
-  EXPECT_NE(output.find("test/smoke/discovered.roo\n"), std::string::npos);
-  expect_duration_output_line(output, "└── PASS - discovered-proof");
+  EXPECT_NE(output.find(bold_label("test/smoke/discovered.roo") + "\n"), std::string::npos);
+  expect_duration_output_line(output, "└── " + pass_label() + " - discovered-proof");
 }
 
 TEST(ProofPackage, runtime_error_marks_test_error_and_continues)
 {
-  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(
@@ -504,16 +535,16 @@ TEST(ProofPackage, runtime_error_marks_test_error_and_continues)
   EXPECT_EQ(without_elapsed_ms_string(results),
             "[{:name division-error :status :error :message \"Division by zero\"} "
             "{:name after-error :status :pass}]");
-  EXPECT_NE(output.find("  ERROR division-error\n"
+  EXPECT_NE(output.find("  " + error_label() + " division-error\n"
                         "    - Division by zero\n"),
             std::string::npos);
-  EXPECT_NE(output.find("  PASS after-error\n"), std::string::npos);
+  EXPECT_NE(output.find("  " + pass_label() + " after-error\n"), std::string::npos);
   EXPECT_NE(output.find("proof: 1 passed, 0 failed, 1 errored, 2 total"), std::string::npos);
 }
 
 TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)
 {
-  Roo::DirRootFileSystem fs({std::string(PROOF_PACKAGE_DIR) + "/src"});
+  Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
 
   runtime.eval(R"(

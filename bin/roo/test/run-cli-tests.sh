@@ -92,7 +92,13 @@ assert_contains "roo proof output includes discovered file" \
   "test/smoke/discovered.roo"
 assert_contains "roo proof output includes tree pass" \
   "$PROOF_OUTPUT" \
-  "└── PASS - discovered-proof"
+  "└──"
+assert_contains "roo proof output includes pass status" \
+  "$PROOF_OUTPUT" \
+  "PASS"
+assert_contains "roo proof output includes test name" \
+  "$PROOF_OUTPUT" \
+  "discovered-proof"
 
 printf '%s\n' "==> Testing roo proof help"
 if ! PROOF_HELP_OUTPUT="$(

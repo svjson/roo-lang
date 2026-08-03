@@ -4,7 +4,7 @@
 (defun report-result [result & options &rest]
   (apply prn
          (concat [" "
-                  (-> result :status name upper-case)
+                  (rc/status-label (:status result))
                   (:name result)]
                  (rc/duration-args options result)))
   (rc/report-result-details result)

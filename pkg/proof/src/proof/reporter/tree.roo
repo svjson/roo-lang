@@ -10,10 +10,10 @@
   (let [file (rc/test-display-file test)
         current-index (+ 1 (get (:indexes state) file 0))]
     (when (not= file (:current-file state))
-      (prn file))
+      (prn (rc/tree-parent-label file)))
     (apply prn
            (concat [(if (= current-index (get (:counts state) file)) "└──" "├──")
-                    (-> result :status name upper-case)
+                    (rc/status-label (:status result))
                     "-"
                     (:name result)]
                    (rc/duration-args options result)))

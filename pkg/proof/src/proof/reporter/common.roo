@@ -1,4 +1,18 @@
-(ns proof.reporter.common)
+(ns proof.reporter.common
+  (:require [soot :as soot]))
+
+(def dark-red (soot/custom-style "38;5;88" "39"))
+
+(defun status-label [status]
+  (let [label (upper-case (name status))]
+    (case status
+      :pass (soot/green label)
+      :fail (soot/paint :bright-red label)
+      :error (soot/paint dark-red label)
+      :default label)))
+
+(defun tree-parent-label [label]
+  (soot/bold label))
 
 (defun report-result-details [result]
   (case (:status result)
