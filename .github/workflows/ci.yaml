@@ -948,13 +948,6 @@ jobs:
         run: |
           version=$(tr -d '[:space:]' < VERSION)
           index_path="$GITHUB_WORKSPACE/build/indexes/roo-lang/$version/roo-symbols.edn"
-          "$GITHUB_WORKSPACE/build/lookup-audit/build/lookup${{ runner.os == 'Windows' && '.exe' || '' }}" audit \
-            --output-format text \
-            --require-summary \
-            --require-param-docs \
-            --require-signatures \
-            --allow-zero-arity roo.io/current-directory! \
-            --allow-zero-arity roo.io/home-directory! \
-            --allow-zero-arity roo/epoch-ms \
-            --fail-on warning \
+          sh scripts/audit-roo-lang-index.sh \
+            "$GITHUB_WORKSPACE/build/lookup-audit/build/lookup${{ runner.os == 'Windows' && '.exe' || '' }}" \
             "$index_path"

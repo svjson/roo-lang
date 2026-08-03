@@ -6,15 +6,6 @@ ROO_LANG_INDEX_VERSION ?= $(shell cat $(CURDIR)/VERSION)
 ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/roo-symbols.edn
 ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
-ROO_LANG_INDEX_AUDIT_FLAGS := \
-	--output-format text \
-	--require-summary \
-	--require-param-docs \
-	--require-signatures \
-	--allow-zero-arity roo.io/current-directory! \
-	--allow-zero-arity roo.io/home-directory! \
-	--allow-zero-arity roo/epoch-ms \
-	--fail-on warning
 
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
@@ -164,7 +155,7 @@ build-roo-lang-index: build-lookup
 	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang -o $(ROO_LANG_INDEX_PATH)
 
 audit-roo-lang-index: build-roo-lang-index
-	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) audit $(ROO_LANG_INDEX_AUDIT_FLAGS) $(ROO_LANG_INDEX_PATH)
+	$(SHELL) $(CURDIR)/scripts/audit-roo-lang-index.sh $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(ROO_LANG_INDEX_PATH)
 
 install-lookup: build-lookup
 	cmake -E make_directory $(PREFIX)/bin
