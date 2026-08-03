@@ -62,3 +62,6 @@
 (def selected-name
   (or (get values :name)
       "Missing"))
+
+(def failing-audit?
+  (some? (find-first diagnostics failing?)))

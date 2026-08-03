@@ -148,6 +148,18 @@
   (and (= "find-index" (forms/head-name node))
        (= 3 (count children))))
 
+(defun find-first-form?
+  "Test whether an AST node is a `(find-first value predicate)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for three-child `find-first` calls, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "find-first" (forms/head-name node))
+       (= 3 (count children))))
+
 (defun index-of-form?
   "Test whether an AST node is an `(index-of value needle)` form.
 
@@ -183,6 +195,19 @@
   [parent node]
   (and (presence-check? parent)
        (find-index-form? node)))
+
+(defun throwaway-find-first?
+  "Test whether `find-first` is used only as a presence check.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for `find-first` calls beneath presence checks, otherwise `false`."
+  [parent node]
+  (and (presence-check? parent)
+       (find-first-form? node)))
 
 (defun throwaway-index-of?
   "Test whether `index-of` is used only as a presence check.
@@ -356,9 +381,9 @@
   (when (and (= "and" (forms/head-name node))
              (< 1 (count children)))
     (when-let [target-name (map-check? (nth children 1))]
-      (some? (find-first (tail (tail children))
-                         (fn [child]
-                           (lookup-comparison? child target-name)))))))
+      (any? (tail (tail children))
+            (fn [child]
+              (lookup-comparison? child target-name))))))
 
 (defun select-keys-entry-target
   "Return the source symbol name for a select-keys map entry.
@@ -420,10 +445,10 @@
   `true` when `node` is in a `cond` test position, otherwise `false`."
   [{:keys [children] :as parent} node]
   (and (= "cond" (forms/head-name parent))
-       (some? (find-first (range 1 (dec (count children)))
-                          (fn [index]
-                            (and (= node (nth children index))
-                                 (odd? index)))))))
+       (any? (range 1 (dec (count children)))
+             (fn [index]
+               (and (= node (nth children index))
+                    (odd? index))))))
 
 (defun predicate-position?
   "Test whether an AST node is used in a boolean predicate position.
@@ -500,6 +525,9 @@
     (diagnostic node :use-contains? "Use contains?")
 
     (throwaway-find-index? parent node)
+    (diagnostic node :use-any? "Use any?")
+
+    (throwaway-find-first? parent node)
     (diagnostic node :use-any? "Use any?")
 
     (not-nil-check? node)

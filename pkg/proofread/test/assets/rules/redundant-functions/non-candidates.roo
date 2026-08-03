@@ -4,6 +4,14 @@
   [value]
   (registered? value))
 
+(defun value
+  [book]
+  (:value book))
+
+(defun path-present?
+  [value path]
+  (path-present-at? value path 0))
+
 (defun selected?
   [reporter]
   (case reporter

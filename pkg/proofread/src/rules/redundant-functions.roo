@@ -1,6 +1,5 @@
 (ns proofread.rules.redundant-functions
-  (:require [proofread.forms :as forms]
-            [roo.string :as string]))
+  (:require [proofread.forms :as forms]))
 
 (defun defun-body-index
   "Return the first body child index for a `defun` form.
@@ -85,35 +84,36 @@
         true
         false))))
 
-(defun keyword-accessor?
-  "Test whether an AST node is a keyword accessor over a parameter.
+(defun redundant-keyword-accessor?
+  "Test whether an AST node redundantly names a keyword accessor.
 
   Args:
+  - `function-name`: Function name string.
   - `param-names`: Function parameter name strings.
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for forms such as `(:kind object)`, otherwise `false`."
-  [param-names {:keys [children] :as node}]
-  (and (= :list (:type node))
-       (= 2 (count children))
-       (= :keyword (:type (head children)))
-       (parameter-node? param-names (nth children 1))))
+  `true` for forms such as `(defun object-kind [object] (:kind object))`,
+  otherwise `false`."
+  [function-name param-names {:keys [children] :as node}]
+  (when (and (= :list (:type node))
+             (= 2 (count children))
+             (= :keyword (:type (head children))))
+    (when-let [param-name (forms/symbol-name (nth children 1))]
+      (and (contains? param-names param-name)
+           (= function-name (str param-name "-" (forms/keyword-name (head children))))))))
 
-(defun predicate-call?
-  "Test whether an AST node is a direct predicate-like call.
+(defun directly-redundant-predicate-call?
+  "Test whether an AST node is a directly redundant predicate call.
 
   Args:
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for direct calls that produce predicate-style results, otherwise
-  `false`."
+  `true` for built-in predicate calls that are usually clearer inline,
+  otherwise `false`."
   [node]
-  (when-let [head-name (forms/head-name node)]
-    (or (= "=" head-name)
-        (= "not=" head-name)
-        (string/ends-with? head-name "?"))))
+  (contains? ["=" "not=" "contains?"] (forms/head-name node)))
 
 (defun specialized-wrapper?
   "Test whether an AST node is a specialized predicate wrapper call.
@@ -123,10 +123,10 @@
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` when `node` is a direct predicate call over parameters and literals,
-  otherwise `false`."
+  `true` when `node` is a direct redundant predicate call over parameters and
+  literals, otherwise `false`."
   [param-names node]
-  (and (predicate-call? node)
+  (and (directly-redundant-predicate-call? node)
        (wrapper-arguments? (:children node) 1 param-names false false)))
 
 (defun redundant-function?
@@ -147,7 +147,7 @@
         (when-let [param-names (plain-param-names params 0 [])]
           (let [body (nth children body-index)]
             (and (not-empty? param-names)
-                 (or (keyword-accessor? param-names body)
+                 (or (redundant-keyword-accessor? function-name param-names body)
                      (and (not= function-name (forms/head-name body))
                           (specialized-wrapper? param-names body))))))))))
 
