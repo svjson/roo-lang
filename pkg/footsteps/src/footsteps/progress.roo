@@ -13,9 +13,8 @@
   Returns:
   A progress report map with progress values, labels, ids, and scope fields."
   [candidate]
-  (if (and (map? candidate)
-           (some? (:progress-value candidate))
-           (some? (:progress-max candidate)))
+  (if (and (:progress-value candidate)
+           (:progress-max candidate))
     {:progress-value (or (:progress-value candidate) 0)
      :progress-max (max 1 (or (:progress-max candidate) 1))
      :label (:label candidate)
