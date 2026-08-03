@@ -71,11 +71,10 @@
           (str code))))))
 
 (defun normalize-styles [styles]
-  (if (nil? styles)
-    []
-    (if (sequential? styles)
-      styles
-      [styles])))
+  (cond
+    (nil? styles) []
+    (sequential? styles) styles
+    :default [styles]))
 
 (defun sgr
   "Return an ANSI SGR sequence for one or more code strings."
