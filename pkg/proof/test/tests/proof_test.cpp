@@ -518,14 +518,15 @@ TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)
 
   runtime.eval(R"(
     (ns proof.package-scenario-arg-test
-      (:require proof.core))
+      (:require proof.core
+                [proof.syntax :as s]))
   )");
   runtime.eval("(clear!)");
 
   EXPECT_THROW(runtime.eval(R"(
     (deftest invalid-scenario-args
-      (given 4)
-      (when [value extra]
+      (s/given 4)
+      (s/when [value extra]
         value))
   )"),
                std::exception);

@@ -1,5 +1,6 @@
 (ns proof.core-test
-  (:require proof.core))
+  (:require proof.core
+            [proof.syntax :as s]))
 
 (defun assert-result [result expected-name expected-status]
   (is (= expected-name (str (:name result))))
@@ -124,12 +125,12 @@
 (deftest scenario-forms-pass-results-between-phases
   (clear!)
   (deftest scenario
-    (given
+    (s/given
       {:value 4
        :step 1})
-    (when [{:keys [value step]}]
+    (s/when [{:keys [value step]}]
       (+ value step))
-    (then [result {:keys [value step]}]
+    (s/then [result {:keys [value step]}]
       (should (= result 5))
       (should (= value 4))
       (should (= step 1))))
@@ -140,11 +141,11 @@
 (deftest scenario-then-can-omit-given-result
   (clear!)
   (deftest scenario
-    (given
+    (s/given
       4)
-    (when [value]
+    (s/when [value]
       (+ value 1))
-    (then [result]
+    (s/then [result]
       (should (= result 5))))
   (let [result (head (run))]
     (clear!)
@@ -153,11 +154,11 @@
 (deftest scenario-when-and-then-support-empty-arg-vectors
   (clear!)
   (deftest scenario
-    (given
+    (s/given
       4)
-    (when []
+    (s/when []
       5)
-    (then []
+    (s/then []
       (should true)))
   (let [result (head (run))]
     (clear!)
@@ -168,15 +169,15 @@
   (def events [])
   (deftest scenario-order
     (append! events :before)
-    (given
+    (s/given
       (append! events :given)
       4)
     (append! events :after-given)
-    (when [value]
+    (s/when [value]
       (append! events :when)
       (+ value 1))
     (append! events :after-when)
-    (then [result given-value]
+    (s/then [result given-value]
       (append! events :then)
       (should (= result 5))
       (should (= given-value 4)))

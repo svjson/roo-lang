@@ -100,21 +100,27 @@ registered tests and failures before defining new tests:
 
 ## Scenarios
 
-`given`, `when`, and `then` are available for scenario-style tests:
+Syntactic support for the **given/when/then** idiom is provided by `proof.syntax`.
+Require this namespace aliased to avoid collisions with to avoid collision with
+the `when` language form.
 
-```lisp
+```roo
+(ns sample.scenario-tests
+  (:require proof.core
+            [proof.syntax :as s]))
+
 (deftest moving-onto-enemy-triggers-attack
-  (given
+  (s/given
     {:world (world/fixture :small-arena)
      :player (unit/fixture :player {:at [2 2]})
      :enemy (unit/fixture :enemy {:at [3 2]})})
 
-  (when [{:keys [world player]}]
+  (s/when [{:keys [world player]}]
     (input/press world :right)
     (game/tick world 3)
     (events/drain world))
 
-  (then [events {:keys [player]}]
+  (s/then [events {:keys [player]}]
     (is (= (unit/state player) :attacking))
     (is (= [:attack] (event/types events)))))
 ```
@@ -130,15 +136,15 @@ last expression and the phases feed those values forward:
 The argument vectors use normal Roo function binding, including destructuring.
 If a phase does not need a value, omit it from the argument vector:
 
-```lisp
+```roo
 (deftest simple-scenario
-  (given
+  (s/given
     4)
 
-  (when [value]
+  (s/when [value]
     (+ value 1))
 
-  (then [result]
+  (s/then [result]
     (is (= result 5))))
 ```
 
