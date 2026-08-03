@@ -16,7 +16,7 @@
 
 (defun min-error [value field-schema]
   (let [min-value (:min field-schema)]
-    (when (and (not (nil? min-value))
+    (when (and (some? min-value)
                (number? value)
                (< value min-value))
       {:rule :min
@@ -25,7 +25,7 @@
 
 (defun max-error [value field-schema]
   (let [max-value (:max field-schema)]
-    (when (and (not (nil? max-value))
+    (when (and (some? max-value)
                (number? value)
                (> value max-value))
       {:rule :max

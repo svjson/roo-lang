@@ -18,7 +18,7 @@
 
 (defun path-present-at? [value path index]
   (cond
-    (>= index (count (or path []))) true
+    (>= index (count path)) true
 
     (and (map? value)
          (contains? value (nth path index)))
@@ -115,7 +115,7 @@
 
 (defun narrow-union-schema [union-schema variant-ids]
   (if (and (= (:type union-schema) :union)
-           (not (nil? variant-ids)))
+           (some? variant-ids))
     (let [variants (reduce variant-ids
                            {}
                            (fn [selected variant-id]
