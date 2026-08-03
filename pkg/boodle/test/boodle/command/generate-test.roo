@@ -52,9 +52,9 @@
     (io/spit-edn! index-file lookup-index)
     (let [result (generate/run! ["--out" output-dir index-file])]
       (is (= :text (:format result)))
-      (is (= ["boodle: wrote 4 files to boodle-generate-test/docs"]
+      (is (= ["boodle: wrote 7 files to boodle-generate-test/docs"]
              (:output result)))
-      (is (= "---\ntitle: r"
+      (is (= "---\nlayout: "
              (substr (io/slurp! (io/join-path output-dir "packages/roo/index.md"))
                      0
                      12))))

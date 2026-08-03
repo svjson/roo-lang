@@ -1,7 +1,8 @@
 (ns boodle.format.github-pages-test
   (:require proof.core
             [boodle.format.github-pages :as github-pages]
-            [boodle.model :as model]))
+            [boodle.model :as model]
+            [roo.string :as string]))
 
 (def sample-catalog
   "Catalog used by GitHub Pages rendering tests."
@@ -28,41 +29,103 @@
                                                    :returns {:doc "The sum."}}]})]})]})]))
 
 (deftest renders-github-pages-files
-  (is (= [{:path "_config.yml"
-           :content "title: Reference\nmarkdown: kramdown\n"}
-          {:path "index.md"
-           :content (str "---\n"
-                         "title: Reference\n"
-                         "---\n\n"
-                         "# Reference\n\n"
-                         "| Package                    | Description           |\n"
-                         "| -------------------------- | --------------------- |\n"
-                         "| [roo 0.1.0](packages/roo/) | Roo standard library. |"
-                         "\n")}
-          {:path "packages/roo/index.md"
-           :content (str "---\n"
-                         "title: roo 0.1.0\n"
-                         "---\n\n"
-                         "# roo 0.1.0\n\n"
-                         "Roo standard library.\n\n"
-                         "| Namespace                  | Symbols |\n"
-                         "| -------------------------- | ------- |\n"
-                         "| [roo](namespaces/roo.html) | 1       |"
-                         "\n")}
-          {:path "packages/roo/namespaces/roo.md"
-           :content (str "---\n"
-                         "title: roo\n"
-                         "---\n\n"
-                         "# roo\n\n"
-                         "Implicit runtime namespace.\n\n"
-                         "### roo/+\n\n"
-                         "Add numbers.\n\n"
-                         "Returns the numeric sum.\n\n"
-                         "```roo\n"
-                         "(+ numbers...)\n"
-                         "```\n\n"
-                         "| Arg        | Description     |\n"
-                         "| ---------- | --------------- |\n"
-                         "| numbers... | Numbers to add. |\n\n"
-                         "Returns: The sum.\n")}]
-         (github-pages/files sample-catalog))))
+  (let [files (github-pages/files sample-catalog)
+        paths (map files (fn [file] (:path file)))
+        layout-file (find-first files
+                                (fn [file]
+                                  (= "_layouts/reference.html" (:path file))))
+        stylesheet-file (find-first files
+                                    (fn [file]
+                                      (= "assets/boodle.css" (:path file))))
+        index-page (find-first files
+                               (fn [file]
+                                 (= "index.md" (:path file))))
+        package-page (find-first files
+                                 (fn [file]
+                                   (= "packages/roo/index.md" (:path file))))
+        namespace-page (find-first files
+                                   (fn [file]
+                                     (= "packages/roo/namespaces/roo.md"
+                                        (:path file))))
+        symbol-page (find-first files
+                                (fn [file]
+                                  (= "packages/roo/namespaces/roo/plus.md"
+                                     (:path file))))]
+    (is (= ["_config.yml"
+            "_layouts/reference.html"
+            "assets/boodle.css"
+            "index.md"
+            "packages/roo/index.md"
+            "packages/roo/namespaces/roo.md"
+            "packages/roo/namespaces/roo/plus.md"]
+           paths))
+    (is (= "title: Reference\nmarkdown: kramdown\n"
+           (:content (head files))))
+    (is (string/starts-with? (:content layout-file) "<!doctype html>\n"))
+    (is (string/starts-with? (:content stylesheet-file) ":root {"))
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: Reference\n"
+                "---\n\n"
+                "# Reference\n\n"
+                "| Package                    | Description           |\n"
+                "| -------------------------- | --------------------- |\n"
+                "| [roo 0.1.0](packages/roo/) | Roo standard library. |"
+                "\n")
+           (:content index-page)))
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: roo 0.1.0\n"
+                "---\n\n"
+                "# roo 0.1.0\n\n"
+                "Roo standard library.\n\n"
+                "| Namespace                  | Symbols |\n"
+                "| -------------------------- | ------- |\n"
+                "| [roo](namespaces/roo.html) | 1       |"
+                "\n")
+           (:content package-page)))
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: roo\n"
+                "---\n\n"
+                "<div class=\"reference-page\">\n"
+                "<nav class=\"reference-sidebar\">\n"
+                "<a class=\"namespace-link active\" href=\"roo.html\">roo</a>\n"
+                "<ol>\n"
+                "<li><a href=\"roo/plus.html\">+</a></li>\n"
+                "</ol>\n"
+                "</nav>\n"
+                "<main class=\"reference-content\" markdown=\"1\">\n\n"
+                "# roo\n\n"
+                "Implicit runtime namespace.\n\n"
+                "| Symbol                 | Summary      |\n"
+                "| ---------------------- | ------------ |\n"
+                "| [roo/+](roo/plus.html) | Add numbers. |"
+                "\n</main>\n"
+                "</div>\n")
+           (:content namespace-page)))
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: roo/+\n"
+                "---\n\n"
+                "<div class=\"reference-page\">\n"
+                "<nav class=\"reference-sidebar\">\n"
+                "<a class=\"namespace-link\" href=\"../roo.html\">roo</a>\n"
+                "<ol>\n"
+                "<li><a class=\"active\" href=\"plus.html\">+</a></li>\n"
+                "</ol>\n"
+                "</nav>\n"
+                "<main class=\"reference-content\" markdown=\"1\">\n\n"
+                "# roo/+\n\n"
+                "Add numbers.\n\n"
+                "Returns the numeric sum.\n\n"
+                "```roo\n"
+                "(+ numbers...)\n"
+                "```\n\n"
+                "| Arg        | Description     |\n"
+                "| ---------- | --------------- |\n"
+                "| numbers... | Numbers to add. |\n\n"
+                "Returns: The sum.\n"
+                "</main>\n"
+                "</div>\n")
+           (:content symbol-page)))))

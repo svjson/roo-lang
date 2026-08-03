@@ -1,4 +1,41 @@
-(ns boodle.topology.reference)
+(ns boodle.topology.reference
+  (:require [roo.string :as string]))
+
+(def symbolic-slugs
+  "Path-safe slugs for symbol names that kebab-case would erase or collide."
+  {"-" "minus"
+   "->" "minus-greater-than"})
+
+(def slug-replacements
+  "Character replacements used when building symbol page paths."
+  [["+" " plus "]
+   ["*" " star "]
+   ["/" " slash "]
+   ["=" " equals "]
+   ["<" " less than "]
+   [">" " greater than "]
+   ["!" " bang "]
+   ["?" " p "]])
+
+(defun slug-text
+  "Return path-safe text for VALUE.
+
+  Args:
+  - `value`: Text value to use in a generated path segment.
+
+  Returns:
+  Kebab-case path text with common Roo symbolic characters spelled out."
+  [value]
+  (let [text (str value)]
+    (if-let [slug (get symbolic-slugs text)]
+      slug
+      (kebab-case
+        (reduce slug-replacements
+                text
+                (fn [text replacement]
+                  (string/replace text
+                                  (head replacement)
+                                  (nth replacement 1))))))))
 
 (defun package-path
   "Return the reference page path for PACKAGE.
@@ -23,6 +60,25 @@
   [package namespace]
   (str "packages/" (:id package) "/namespaces/" (:name namespace) ".md"))
 
+(defun symbol-path
+  "Return the reference page path for ENTRY in NAMESPACE.
+
+  Args:
+  - `package`: Boodle package map.
+  - `namespace`: Boodle namespace map.
+  - `entry`: Boodle symbol entry map.
+
+  Returns:
+  Relative Markdown path for the symbol reference page."
+  [package namespace entry]
+  (str "packages/"
+       (:id package)
+       "/namespaces/"
+       (:name namespace)
+       "/"
+       (slug-text (:name entry))
+       ".md"))
+
 (defun pages
   "Return reference documentation pages for CATALOG.
 
@@ -31,19 +87,28 @@
 
   Returns:
   Page maps describing the output topology. The first page is `index.md`,
-  followed by package pages and namespace pages."
+  followed by package pages, namespace pages, and symbol pages."
   [catalog]
   (concat [{:kind :index
             :path "index.md"
             :catalog catalog}]
           (flat-map (:packages catalog)
                     (fn [package]
-                      (concat [{:kind :package
-                                :path (package-path package)
-                                :package package}]
-                              (map (:namespaces package)
-                                   (fn [namespace]
-                                     {:kind :namespace
-                                      :path (namespace-path package namespace)
-                                      :package package
-                                      :namespace namespace})))))))
+                      (concat
+                        [{:kind :package
+                          :path (package-path package)
+                          :package package}]
+                        (flat-map (:namespaces package)
+                                  (fn [namespace]
+                                    (concat
+                                      [{:kind :namespace
+                                        :path (namespace-path package namespace)
+                                        :package package
+                                        :namespace namespace}]
+                                      (map (:entries namespace)
+                                           (fn [entry]
+                                             {:kind :symbol
+                                              :path (symbol-path package namespace entry)
+                                              :package package
+                                              :namespace namespace
+                                              :entry entry}))))))))))

@@ -10,22 +10,43 @@
        {:id "roo"
         :name "roo"
         :version "0.1.0"
-        :namespaces [(model/namespace {:name "roo.string"})
+        :namespaces [(model/namespace
+                       {:name "roo.string"
+                        :entries [(model/entry
+                                    {:id "roo.string/replace"
+                                     :name "replace"
+                                     :qualified-name "roo.string/replace"
+                                     :namespace "roo.string"})]})
                      (model/namespace {:name "roo.io"})]})]))
 
+(deftest slugs-symbolic-names
+  (is (= "minus" (reference/slug-text "-")))
+  (is (= "minus-greater-than" (reference/slug-text "->")))
+  (is (= "greater-than" (reference/slug-text ">")))
+  (is (= "assoc-in" (reference/slug-text "assoc-in"))))
+
 (deftest creates-reference-pages
-  (is (= [{:kind :index
-           :path "index.md"
-           :catalog sample-catalog}
-          {:kind :package
-           :path "packages/roo/index.md"
-           :package (head (:packages sample-catalog))}
-          {:kind :namespace
-           :path "packages/roo/namespaces/roo.string.md"
-           :package (head (:packages sample-catalog))
-           :namespace (head (:namespaces (head (:packages sample-catalog))))}
-          {:kind :namespace
-           :path "packages/roo/namespaces/roo.io.md"
-           :package (head (:packages sample-catalog))
-           :namespace (nth (:namespaces (head (:packages sample-catalog))) 1)}]
-         (reference/pages sample-catalog))))
+  (let [package (head (:packages sample-catalog))
+        string-namespace (head (:namespaces package))
+        string-entry (head (:entries string-namespace))
+        io-namespace (nth (:namespaces package) 1)]
+    (is (= [{:kind :index
+             :path "index.md"
+             :catalog sample-catalog}
+            {:kind :package
+             :path "packages/roo/index.md"
+             :package package}
+            {:kind :namespace
+             :path "packages/roo/namespaces/roo.string.md"
+             :package package
+             :namespace string-namespace}
+            {:kind :symbol
+             :path "packages/roo/namespaces/roo.string/replace.md"
+             :package package
+             :namespace string-namespace
+             :entry string-entry}
+            {:kind :namespace
+             :path "packages/roo/namespaces/roo.io.md"
+             :package package
+             :namespace io-namespace}]
+           (reference/pages sample-catalog)))))

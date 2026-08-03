@@ -71,7 +71,7 @@ if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" "$INDE
   fail "boodle generate command failed"
 fi
 assert_eq "boodle generate output" \
-  "boodle: wrote 4 files to $OUTPUT_DIR" \
+  "boodle: wrote 7 files to $OUTPUT_DIR" \
   "$GENERATE_OUTPUT"
 
 if [ ! -s "$OUTPUT_DIR/_config.yml" ]; then
@@ -82,6 +82,14 @@ if [ ! -s "$OUTPUT_DIR/index.md" ]; then
   rm -rf "$ROOT"
   fail "boodle generate did not write index.md"
 fi
+if [ ! -s "$OUTPUT_DIR/_layouts/reference.html" ]; then
+  rm -rf "$ROOT"
+  fail "boodle generate did not write reference layout"
+fi
+if [ ! -s "$OUTPUT_DIR/assets/boodle.css" ]; then
+  rm -rf "$ROOT"
+  fail "boodle generate did not write stylesheet"
+fi
 if [ ! -s "$OUTPUT_DIR/packages/roo/index.md" ]; then
   rm -rf "$ROOT"
   fail "boodle generate did not write package page"
@@ -90,19 +98,32 @@ if [ ! -s "$OUTPUT_DIR/packages/roo/namespaces/roo.md" ]; then
   rm -rf "$ROOT"
   fail "boodle generate did not write namespace page"
 fi
+if [ ! -s "$OUTPUT_DIR/packages/roo/namespaces/roo/plus.md" ]; then
+  rm -rf "$ROOT"
+  fail "boodle generate did not write symbol page"
+fi
 
 NAMESPACE_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/namespaces/roo.md")
+SYMBOL_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/namespaces/roo/plus.md")
 rm -rf "$ROOT"
 case "$NAMESPACE_CONTENT" in
-  *"---"*\
-*"title: roo"*\
-*"# roo"*\
-*"### roo/+"*\
-*"| numbers... | Numbers to add. |"*\
-*"Returns: The sum."*) ;;
+  *"layout: reference"*\
+*"<nav class=\"reference-sidebar\">"*\
+*"[roo/+](roo/plus.html)"*) ;;
   *)
     printf '%s\n' "unexpected boodle namespace page:" >&2
     printf '%s\n' "$NAMESPACE_CONTENT" >&2
     fail "boodle generate namespace page"
+    ;;
+esac
+case "$SYMBOL_CONTENT" in
+  *"title: roo/+"*\
+*"<li><a class=\"active\" href=\"plus.html\">+</a></li>"*\
+*"| numbers... | Numbers to add. |"*\
+*"Returns: The sum."*) ;;
+  *)
+    printf '%s\n' "unexpected boodle symbol page:" >&2
+    printf '%s\n' "$SYMBOL_CONTENT" >&2
+    fail "boodle generate symbol page"
     ;;
 esac

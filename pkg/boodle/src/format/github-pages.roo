@@ -1,7 +1,8 @@
 (ns boodle.format.github-pages
   (:require [boodle.topology.reference :as reference]
             [moordown.ast :as md]
-            [moordown.render :as markdown]))
+            [moordown.render :as markdown]
+            [roo.string :as string]))
 
 (defun package-title
   "Return the display title for PACKAGE.
@@ -26,8 +27,29 @@
   YAML front matter that marks a Markdown file for Jekyll processing."
   [title]
   (str "---\n"
+       "layout: reference\n"
        "title: " title "\n"
        "---\n\n"))
+
+(defun html-text
+  "Escape VALUE for generated HTML.
+
+  Args:
+  - `value`: Text value to include in HTML.
+
+  Returns:
+  HTML-safe text."
+  [value]
+  (string/replace
+    (string/replace
+      (string/replace
+        (string/replace (str value) "&" "&amp;")
+        "<"
+        "&lt;")
+      ">"
+      "&gt;")
+    "\""
+    "&quot;"))
 
 (defun signature-params
   "Return a Markdown parameter table for SIGNATURE when it has parameters.
@@ -60,16 +82,17 @@
             [(md/paragraph (str "Returns: " return-doc))]
             [])))
 
-(defun entry-blocks
-  "Return Markdown blocks for ENTRY.
+(defun entry-detail-blocks
+  "Return Markdown blocks for ENTRY with HEADING-LEVEL.
 
   Args:
   - `entry`: Boodle entry map.
+  - `heading-level`: Markdown heading level for the symbol heading.
 
   Returns:
   Blocks documenting one symbol."
-  [entry]
-  (concat [(md/heading 3 (:qualified-name entry))]
+  [entry heading-level]
+  (concat [(md/heading heading-level (:qualified-name entry))]
           (keep [(:summary entry) (:body entry)]
                 (fn [text]
                   (when text
@@ -118,6 +141,18 @@
                                                ".html"))
                                  (count (:entries namespace))])))]))))
 
+(defun namespace-symbol-url
+  "Return the symbol page URL from a namespace overview page.
+
+  Args:
+  - `namespace`: Boodle namespace map.
+  - `entry`: Boodle entry map.
+
+  Returns:
+  Relative URL from the namespace overview page to the symbol page."
+  [namespace entry]
+  (str (:name namespace) "/" (reference/slug-text (:name entry)) ".html"))
+
 (defun namespace-document
   "Return the GitHub Pages namespace document for PAGE.
 
@@ -133,7 +168,23 @@
               (if-let [summary (:summary namespace)]
                 [(md/paragraph summary)]
                 [])
-              (flat-map (:entries namespace) entry-blocks)))))
+              [(md/table ["Symbol" "Summary"]
+                         (map (:entries namespace)
+                              (fn [entry]
+                                [(md/link (:qualified-name entry)
+                                          (namespace-symbol-url namespace entry))
+                                 (:summary entry)])))]))))
+
+(defun symbol-document
+  "Return the GitHub Pages symbol document for PAGE.
+
+  Args:
+  - `page`: Boodle symbol page map.
+
+  Returns:
+  A Moordown document."
+  [page]
+  (md/document (entry-detail-blocks (:entry page) 1)))
 
 (defun page-document
   "Return the Moordown document for PAGE.
@@ -147,7 +198,8 @@
   (case (:kind page)
     :index (index-document page)
     :package (package-document page)
-    :namespace (namespace-document page)))
+    :namespace (namespace-document page)
+    :symbol (symbol-document page)))
 
 (defun page-title
   "Return the HTML page title for PAGE.
@@ -161,7 +213,102 @@
   (case (:kind page)
     :index "Reference"
     :package (package-title (:package page))
-    :namespace (:name (:namespace page))))
+    :namespace (:name (:namespace page))
+    :symbol (:qualified-name (:entry page))))
+
+(defun namespace-overview-url
+  "Return the namespace overview URL from PAGE.
+
+  Args:
+  - `page`: Boodle namespace or symbol page.
+
+  Returns:
+  Relative URL to the namespace overview page."
+  [page]
+  (case (:kind page)
+    :namespace (str (:name (:namespace page)) ".html")
+    :symbol (str "../" (:name (:namespace page)) ".html")))
+
+(defun sidebar-symbol-url
+  "Return the URL for ENTRY from PAGE.
+
+  Args:
+  - `page`: Boodle namespace or symbol page.
+  - `entry`: Boodle entry map.
+
+  Returns:
+  Relative URL to `entry`."
+  [page entry]
+  (case (:kind page)
+    :namespace (namespace-symbol-url (:namespace page) entry)
+    :symbol (str (reference/slug-text (:name entry)) ".html")))
+
+(defun sidebar-symbol-link
+  "Return a sidebar link for ENTRY from PAGE.
+
+  Args:
+  - `page`: Boodle namespace or symbol page.
+  - `entry`: Boodle entry map.
+
+  Returns:
+  HTML list item for one sidebar symbol link."
+  [page entry]
+  (str "<li><a"
+       (if (= (:id entry) (:id (:entry page)))
+         " class=\"active\""
+         "")
+       " href=\""
+       (sidebar-symbol-url page entry)
+       "\">"
+       (html-text (:name entry))
+       "</a></li>\n"))
+
+(defun sidebar-html
+  "Return namespace sidebar HTML for PAGE.
+
+  Args:
+  - `page`: Boodle namespace or symbol page.
+
+  Returns:
+  HTML navigation listing all symbols in the page namespace."
+  [page]
+  (let [namespace (:namespace page)]
+    (str "<nav class=\"reference-sidebar\">\n"
+         "<a class=\""
+         (case (:kind page)
+           :namespace "namespace-link active"
+           :default "namespace-link")
+         "\" href=\""
+         (namespace-overview-url page)
+         "\">"
+         (html-text (:name namespace))
+         "</a>\n"
+         "<ol>\n"
+         (apply join (concat [""]
+                             (map (:entries namespace)
+                                  (fn [entry]
+                                    (sidebar-symbol-link page entry)))))
+         "</ol>\n"
+         "</nav>\n")))
+
+(defun reference-content
+  "Return rendered content for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Markdown or HTML/Markdown content for the page body."
+  [page]
+  (let [content (markdown/render-block (page-document page))]
+    (if (contains? [:namespace :symbol] (:kind page))
+      (str "<div class=\"reference-page\">\n"
+           (sidebar-html page)
+           "<main class=\"reference-content\" markdown=\"1\">\n\n"
+           content
+           "</main>\n"
+           "</div>\n")
+      content)))
 
 (defun render-page
   "Render PAGE as Jekyll-processable Markdown.
@@ -173,7 +320,53 @@
   Markdown source with YAML front matter."
   [page]
   (str (front-matter (page-title page))
-       (markdown/render-block (page-document page))))
+       (reference-content page)))
+
+(def layout-content
+  "Jekyll layout used by generated reference pages."
+  (str "<!doctype html>\n"
+       "<html lang=\"en\">\n"
+       "<head>\n"
+       "  <meta charset=\"utf-8\">\n"
+       "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+       "  <title>{{ page.title }} | {{ site.title }}</title>\n"
+       "  <link rel=\"stylesheet\" href=\"{{ '/assets/boodle.css' | relative_url }}\">\n"
+       "</head>\n"
+       "<body>\n"
+       "  <header class=\"site-header\"><a href=\"{{ '/' | relative_url }}\">{{ site.title }}</a></header>\n"
+       "  {{ content }}\n"
+       "</body>\n"
+       "</html>\n"))
+
+(def stylesheet-content
+  "CSS used by generated reference pages."
+  (str ":root { color-scheme: light; }\n"
+       "body { margin: 0; color: #1f2937; font: 16px/1.55 system-ui, sans-serif; }\n"
+       "a { color: #0f5f8f; text-decoration: none; }\n"
+       "a:hover { text-decoration: underline; }\n"
+       ".site-header { border-bottom: 1px solid #d7dde5; padding: 12px 24px; font-weight: 700; }\n"
+       ".site-header a { color: #111827; }\n"
+       "body > h1, body > p, body > table { margin-left: auto; margin-right: auto; max-width: 960px; }\n"
+       "body > h1 { padding: 0 24px; margin-top: 32px; }\n"
+       "body > p, body > table { margin-top: 16px; }\n"
+       "table { border-collapse: collapse; width: calc(100% - 48px); }\n"
+       "th, td { border-bottom: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; vertical-align: top; }\n"
+       "th { background: #f5f7fa; font-weight: 700; }\n"
+       "pre { overflow: auto; border: 1px solid #d7dde5; background: #f8fafc; padding: 12px; }\n"
+       ".reference-page { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 32px; max-width: 1180px; margin: 0 auto; padding: 24px; }\n"
+       ".reference-sidebar { align-self: start; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; border-right: 1px solid #d7dde5; padding-right: 16px; }\n"
+       ".reference-sidebar ol { list-style: none; margin: 12px 0 0; padding: 0; }\n"
+       ".reference-sidebar li { margin: 0; }\n"
+       ".reference-sidebar a { display: block; padding: 4px 6px; border-radius: 4px; color: #374151; }\n"
+       ".reference-sidebar a.active { background: #e8f2fb; color: #0f5f8f; font-weight: 700; }\n"
+       ".namespace-link { font-weight: 700; }\n"
+       ".reference-content { min-width: 0; }\n"
+       ".reference-content h1 { margin-top: 0; }\n"
+       ".reference-content table { width: 100%; }\n"
+       "@media (max-width: 760px) {\n"
+       "  .reference-page { display: block; padding: 16px; }\n"
+       "  .reference-sidebar { position: static; max-height: none; border-right: 0; border-bottom: 1px solid #d7dde5; padding: 0 0 16px; margin-bottom: 24px; }\n"
+       "}\n"))
 
 (defun files
   "Render CATALOG as GitHub Pages Markdown files.
@@ -185,7 +378,11 @@
   File maps with `:path` and Markdown `:content`."
   [catalog]
   (concat [{:path "_config.yml"
-            :content "title: Reference\nmarkdown: kramdown\n"}]
+            :content "title: Reference\nmarkdown: kramdown\n"}
+           {:path "_layouts/reference.html"
+            :content layout-content}
+           {:path "assets/boodle.css"
+            :content stylesheet-content}]
           (map (reference/pages catalog)
                (fn [page]
                  {:path (:path page)
