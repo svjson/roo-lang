@@ -1,7 +1,7 @@
 {:name proof
  :version "0.1.0"
  :description "Roo test framework."
- :dependencies {soot "file:../soot"}
+ :dependencies {soot "0.1.0"}
  :load-roots ["src"]
  :native-libraries [{:name "proof-native"
                      :version "0.1.0"
