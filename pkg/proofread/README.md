@@ -71,6 +71,8 @@ Supported style warnings:
   comparisons.
 - `use-flat-map`: reports `(flatten (map seq f))` forms that can be
   written as `flat-map`.
+- `use-keep`: reports `map` forms with inline functions whose single body form
+  is `when` or `unless` and can be written as `keep`.
 
 ## Commands
 

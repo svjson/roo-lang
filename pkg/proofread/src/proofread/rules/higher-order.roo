@@ -26,19 +26,57 @@
        (= 2 (count children))
        (map-form? (nth children 1))))
 
-(defun diagnostic
-  "Build a higher-order diagnostic for an AST node.
+(defun keep-conditional?
+  "Test whether an AST node is a conditional that can feed `keep`.
 
   Args:
   - `node`: A `roo.ast` node map.
 
   Returns:
-  A diagnostic map."
+  `true` for `when` and `unless` forms, otherwise `false`."
   [node]
-  {:rule :use-flat-map
+  (case (forms/head-name node)
+    "when"
+    true
+
+    "unless"
+    true
+
+    :default
+    false))
+
+(defun keep-candidate?
+  "Test whether an AST node can use `keep`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `map` forms with an inline function whose only body expression is
+  a `when` or `unless` form, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (map-form? node)
+       (let [mapper (nth children 2)
+             mapper-children (:children mapper)]
+         (and (= "fn" (forms/head-name mapper))
+              (= 3 (count mapper-children))
+              (keep-conditional? (nth mapper-children 2))))))
+
+(defun diagnostic
+  "Build a higher-order diagnostic for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `rule`: Diagnostic rule keyword.
+  - `message`: Diagnostic message text.
+
+  Returns:
+  A diagnostic map."
+  [node rule message]
+  {:rule rule
    :severity :warning
    :source (:source node)
-   :message "Use flat-map"})
+   :message message})
 
 (defun check-node
   "Find higher-order diagnostics beneath one AST node.
@@ -52,7 +90,10 @@
   (if (map? node)
     (concat
       (if (flat-map-candidate? node)
-        [(diagnostic node)]
+        [(diagnostic node :use-flat-map "Use flat-map")]
+        [])
+      (if (keep-candidate? node)
+        [(diagnostic node :use-keep "Use keep")]
         [])
       (flat-map (:children node) check-node))
     []))

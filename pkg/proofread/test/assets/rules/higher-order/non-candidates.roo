@@ -6,6 +6,31 @@
 (def plain-map
   (map items expand-item))
 
+(def already-keep
+  (keep items
+        (fn [item]
+          (when (active? item)
+            (:id item)))))
+
+(def map-without-nil-filter
+  (map items
+       (fn [item]
+         (:id item))))
+
+(def map-with-non-nil-branches
+  (map items
+       (fn [item]
+         (if (active? item)
+           (:id item)
+           (:fallback-id item)))))
+
+(def map-with-if-nil-branch
+  (map items
+       (fn [item]
+         (if (active? item)
+           (:id item)
+           nil))))
+
 (def plain-flatten
   (flatten nested-items))
 

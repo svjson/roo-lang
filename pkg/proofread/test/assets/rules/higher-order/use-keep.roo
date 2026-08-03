@@ -1,0 +1,13 @@
+(ns proofread.higher-order-use-keep)
+
+(def kept-when
+  (map items
+       (fn [item]
+         (when (active? item)
+           (:id item)))))
+
+(def kept-unless
+  (map items
+       (fn [item]
+         (unless (archived? item)
+           (:id item)))))
