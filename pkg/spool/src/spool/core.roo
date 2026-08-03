@@ -93,8 +93,8 @@
   (let [metadata (metadata-map metadata rest)
         path (head (:stack spool-state))
         end-ms (now-ms)]
-    (if (and path
-             (= context-key (:key (node-at-path (:roots spool-state) path))))
+    (when (and path
+               (= context-key (:key (node-at-path (:roots spool-state) path))))
       (do
         (assoc! spool-state
                 :roots
@@ -168,7 +168,7 @@
        (< (:elapsed-ms context) threshold)))
 
 (defun only-filter-active? [options]
-  (not (empty? (only-keys options))))
+  (not-empty? (only-keys options)))
 
 (defun context-collapsed? [context options]
   (or (key-selected? (collapse-keys options) (:key context))
@@ -183,9 +183,8 @@
         include-self?
         (or (not (only-filter-active? options))
             (key-selected? (only-keys options) (:key context)))]
-    (if (or include-self? (not (empty? projected-children)))
-      (assoc context :children projected-children)
-      nil)))
+    (when (or include-self? (not-empty? projected-children))
+      (assoc context :children projected-children))))
 
 (defun project-contexts [contexts options]
   (filter (map (or contexts [])
