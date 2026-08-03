@@ -44,6 +44,10 @@ dist_dir=${ROO_RELEASE_DIST_DIR:-"$root_dir/dist"}
 jobs=${ROO_RELEASE_JOBS:-1}
 config=${ROO_RELEASE_CONFIG:-Release}
 stage_dir="$dist_dir/$dist_name"
+exe_suffix=
+if [ "$platform_os" = "windows" ]; then
+  exe_suffix=.exe
+fi
 release_targets=${ROO_RELEASE_TARGETS:-"
 roo_static
 roo_shared
@@ -101,10 +105,49 @@ for target in $release_targets; do
   cmake --build "$build_dir" --config "$config" --parallel "$jobs" --target "$target"
 done
 
+printf '%s\n' "==> Staging native packages"
+cmake --build "$build_dir" --config "$config" --parallel "$jobs" --target stage_native_packages
+
+rooc="$build_dir/rooc$exe_suffix"
+if [ ! -f "$rooc" ]; then
+  rooc="$build_dir/$config/rooc$exe_suffix"
+fi
+if [ ! -f "$rooc" ]; then
+  printf '%s\n' "could not find release rooc executable" >&2
+  exit 1
+fi
+
+printf '%s\n' "==> Building release lookup indexer"
+lookup_build_dir="$build_dir/lookup-release"
+"$rooc" build "$build_dir/native-package-stage/pkg/lookup" \
+  --build-dir "$lookup_build_dir" \
+  --name lookup
+lookup="$lookup_build_dir/build/lookup$exe_suffix"
+if [ ! -f "$lookup" ]; then
+  lookup="$lookup_build_dir/build/$config/lookup$exe_suffix"
+fi
+if [ ! -f "$lookup" ]; then
+  printf '%s\n' "could not find release lookup executable" >&2
+  exit 1
+fi
+
 printf '%s\n' "==> Recreating staged install tree"
 cmake -E rm -rf "$stage_dir"
 cmake -E make_directory "$stage_dir"
 cmake --install "$build_dir" --config "$config"
+
+printf '%s\n' "==> Generating Roo language index"
+index_dir="$build_dir/indexes/roo-lang/$version"
+index_path="$index_dir/roo-symbols.edn"
+installed_index_dir="$stage_dir/share/roo/indexes/roo-lang/$version"
+cmake -E make_directory "$index_dir"
+"$lookup" index \
+  --root "$root_dir/lib/libroo/include/roo/lang" \
+  --root "$root_dir/lib/libroo/src/roo/lang" \
+  -o "$index_path"
+sh "$root_dir/scripts/audit-roo-lang-index.sh" "$lookup" "$index_path"
+cmake -E make_directory "$installed_index_dir"
+cmake -E copy_if_different "$index_path" "$installed_index_dir/roo-symbols.edn"
 
 printf '%s\n' "==> Writing release metadata"
 cmake -E copy_if_different "$root_dir/LICENSE" "$stage_dir/LICENSE"

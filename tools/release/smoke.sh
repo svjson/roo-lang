@@ -88,6 +88,12 @@ host_path()
   printf '%s\n' "$1"
 }
 
+printf '%s\n' "==> Testing release Roo language index"
+roo_lang_index="$release_root/share/roo/indexes/roo-lang/$version/roo-symbols.edn"
+if [ ! -s "$roo_lang_index" ]; then
+  fail "missing Roo language index: $roo_lang_index"
+fi
+
 printf '%s\n' "==> Testing release tool versions"
 assert_eq "roo --version output" "roo $version" "$("$roo" --version)"
 assert_eq "rooc --version output" "rooc $version" "$("$rooc" --version)"
