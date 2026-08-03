@@ -173,6 +173,48 @@
                          (fn [child]
                            (lookup-comparison? child target-name))))))))
 
+(defun cond-test-child?
+  "Test whether a node is a condition child in a `cond` form.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map.
+  - `node`: Possible condition child node map.
+
+  Returns:
+  `true` when `node` is in a `cond` test position, otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (and (= "cond" (forms/head-name parent))
+       (not (nil?
+              (find-first (range 1 (dec (count children)))
+                          (fn [index]
+                            (and (= node (nth children index))
+                                 (odd? index))))))))
+
+(defun predicate-position?
+  "Test whether an AST node is used in a boolean predicate position.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for root nodes.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is in a conditional or boolean-combinator predicate
+  position, otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (case (forms/head-name parent)
+    "if" (and (< 1 (count children))
+              (= node (nth children 1)))
+    "when" (and (< 1 (count children))
+                (= node (nth children 1)))
+    "unless" (and (< 1 (count children))
+                  (= node (nth children 1)))
+    "while" (and (< 1 (count children))
+                 (= node (nth children 1)))
+    "and" true
+    "or" true
+    "cond" (cond-test-child? parent node)
+    :default false))
+
 (defun diagnostic
   "Build a simple-expression diagnostic for an AST node.
 
@@ -193,11 +235,12 @@
   "Return the simple-expression diagnostic for an AST node.
 
   Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A diagnostic map, or `nil` when the node does not match a rule."
-  [{:keys [children] :as node}]
+  [parent {:keys [children] :as node}]
   (cond
     (and (= "nth" (forms/head-name node))
          (= 3 (count children))
@@ -207,8 +250,9 @@
     (empty-count-comparison? node)
     (diagnostic node :use-empty? "Use empty?")
 
-    (or (not-empty-count-comparison? node)
-        (not-empty-negation? node))
+    (and (predicate-position? parent node)
+         (or (not-empty-count-comparison? node)
+             (not-empty-negation? node)))
     (diagnostic node :use-not-empty? "Use not-empty?")
 
     (not-equals-negation? node)
@@ -227,17 +271,20 @@
   "Find simple-expression diagnostics beneath one AST node.
 
   Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [node]
+  [parent node]
   (if (map? node)
     (concat
-      (if-let [node-diagnostic (simple-expression-diagnostic node)]
+      (if-let [node-diagnostic (simple-expression-diagnostic parent node)]
         [node-diagnostic]
         [])
-      (flat-map (:children node) check-node))
+      (flat-map (:children node)
+                (fn [child]
+                  (check-node node child))))
     []))
 
 (defun check
@@ -249,4 +296,4 @@
   Returns:
   A vector of diagnostic maps."
   [root]
-  (check-node root))
+  (check-node nil root))

@@ -5,8 +5,7 @@
 
 (defun diagnostics
   [path]
-  (flatten
-    (map (ast/slurp! path) simple-expressions/check)))
+  (flat-map (ast/slurp! path) simple-expressions/check))
 
 (defun diagnostic-summary
   [path]
@@ -19,11 +18,11 @@
           [:use-empty? 7]
           [:use-empty? 10]
           [:use-not-empty? 13]
-          [:use-not-empty? 16]
-          [:use-not-empty? 19]
-          [:use-not= 22]
-          [:use-nil? 25]
-          [:use-nil? 28]]
+          [:use-not-empty? 18]
+          [:use-not-empty? 23]
+          [:use-not= 26]
+          [:use-nil? 29]
+          [:use-nil? 32]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

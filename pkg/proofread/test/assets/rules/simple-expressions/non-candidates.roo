@@ -9,6 +9,16 @@
 (def enough-items
   (> (count items) 1))
 
+(def value-preserving-branch
+  (let [field-errors (validate-field value)]
+    (if (empty? field-errors)
+      errors
+      (assoc errors field-id field-errors))))
+
+(def value-producing-expression
+  (let [field-errors (validate-field value)]
+    (assoc errors field-id (not (empty? field-errors)))))
+
 (def blank-text
   (not (blank? text)))
 

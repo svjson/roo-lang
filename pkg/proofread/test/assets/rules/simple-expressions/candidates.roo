@@ -10,13 +10,17 @@
   (= (count items) 0))
 
 (def not-empty-a
-  (< 0 (count items)))
+  (if (< 0 (count items))
+    :items
+    :none))
 
 (def not-empty-b
-  (> (count items) 0))
+  (when (> (count items) 0)
+    items))
 
 (def not-empty-c
-  (not (empty? items)))
+  (and ready?
+       (not (empty? items))))
 
 (def different-values
   (not (= left right)))
