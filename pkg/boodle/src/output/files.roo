@@ -1,0 +1,16 @@
+(ns boodle.output.files
+  (:require [roo.io :as io]))
+
+(defun write!
+  "Write generated documentation files under OUTPUT-DIR.
+
+  Args:
+  - `output-dir`: Directory where generated files should be written.
+  - `files`: File maps containing relative `:path` and text `:content`.
+
+  Returns:
+  The written file maps."
+  [output-dir files]
+  (doseq [file files]
+    (io/spit! (io/join-path output-dir (:path file)) (:content file)))
+  files)

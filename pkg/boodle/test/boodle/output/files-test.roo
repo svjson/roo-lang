@@ -1,0 +1,19 @@
+(ns boodle.output.files-test
+  (:require proof.core
+            [boodle.output.files :as files]
+            [roo.io :as io]))
+
+(deftest writes-generated-files
+  (let [output-dir "boodle-output-test"
+        generated [{:path "index.md"
+                    :content "# Reference\n"}
+                   {:path "packages/roo/index.md"
+                    :content "# roo\n"}]]
+    (when (io/exists? output-dir)
+      (io/remove-tree! output-dir))
+    (is (= generated (files/write! output-dir generated)))
+    (is (= "# Reference\n"
+           (io/slurp! (io/join-path output-dir "index.md"))))
+    (is (= "# roo\n"
+           (io/slurp! (io/join-path output-dir "packages/roo/index.md"))))
+    (io/remove-tree! output-dir)))
