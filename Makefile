@@ -129,6 +129,7 @@ stage-native-packages: configure
 
 install: build
 	cmake --build build --target install
+	$(MAKE) install-roo-lang-index
 
 install-loom: build stage-native-packages
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/loom --build-dir $(CURDIR)/build/loom-install --name loom
