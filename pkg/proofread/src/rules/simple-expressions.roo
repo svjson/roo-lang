@@ -149,6 +149,18 @@
   (and (= "some?" (forms/head-name node))
        (= 2 (count children))))
 
+(defun some-symbol-name
+  "Return the checked symbol name from a `some?` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The symbol name for `(some? name)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (some-check? node)
+    (forms/symbol-name (nth children 1))))
+
 (defun non-predicate-name?
   "Test whether a name is not predicate-shaped.
 
@@ -162,6 +174,38 @@
   (and (not (blank? name))
        (not (contains? ["nil" "true" "false"] name))
        (not (string/ends-with? name "?"))))
+
+(defun string-operation-on?
+  "Test whether an AST node calls a string operation on a symbol.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the string input.
+
+  Returns:
+  `true` for known string predicates called with `target-name`, otherwise
+  `false`."
+  [{:keys [children] :as node} target-name]
+  (and (contains? ["string/starts-with?" "string/ends-with?"]
+                  (forms/head-name node))
+       (< 1 (count children))
+       (= target-name (forms/symbol-name (nth children 1)))))
+
+(defun string-guard-some-check?
+  "Test whether `some?` guards a string operation.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for root nodes.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for `(and (some? value) (string/... value ...))`, otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (and (= "and" (forms/head-name parent))
+       (when-let [target-name (some-symbol-name node)]
+         (any? children
+               (fn [child]
+                 (string-operation-on? child target-name))))))
 
 (defun find-index-form?
   "Test whether an AST node is a `(find-index value predicate)` form.
@@ -616,6 +660,9 @@
 
     (not-nil-check? node)
     (diagnostic node :use-some? "Use some?")
+
+    (string-guard-some-check? parent node)
+    (diagnostic node :use-string? "Use string?")
 
     (redundant-some-check? parent node)
     (diagnostic node :redundant-some? "Remove redundant some?")

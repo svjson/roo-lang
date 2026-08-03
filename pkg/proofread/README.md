@@ -107,8 +107,10 @@ Supported style warnings:
   presence checks, which can usually be written as `any?`.
 - `use-contains?`: reports `index-of` calls used only as presence checks,
   which can usually be written as `contains?`.
-- `redundant-some?`: reports `some?` checks around non-predicate keyword
-  lookups in predicate positions.
+- `redundant-some?`: reports `some?` checks around non-predicate symbols and
+  keyword lookups in predicate positions.
+- `use-string?`: reports `some?` checks that guard string operations and can
+  be written as `string?`.
 - `redundant-empty-fallback`: reports nil-tolerant sequence calls that
   defensively wrap input in `(or value [])`.
 - `use-get-with-default`: reports `(or (get value key) default)` forms that

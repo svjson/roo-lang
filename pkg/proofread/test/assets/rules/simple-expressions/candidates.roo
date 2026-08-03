@@ -74,3 +74,7 @@
   (cond
     (some? reporter) reporter
     true :default))
+
+(def sub-namespace?
+  (and (some? namespace)
+       (string/starts-with? namespace (str parent "."))))

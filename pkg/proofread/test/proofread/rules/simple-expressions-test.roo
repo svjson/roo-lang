@@ -38,7 +38,8 @@
           [:use-get-with-default 63]
           [:use-any? 67]
           [:redundant-some? 70]
-          [:redundant-some? 75]]
+          [:redundant-some? 75]
+          [:use-string? 79]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates
