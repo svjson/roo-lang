@@ -29,11 +29,10 @@
   (:native-libraries manifest))
 
 (defun field-text [value]
-  (if (nil? value)
-    "none"
-    (if (empty? value)
-      "none"
-      (str value))))
+  (cond
+    (nil? value) "none"
+    (empty? value) "none"
+    :default (str value)))
 
 (defun add-required-atom-error! [errors manifest field label]
   (let [value (get manifest field)]

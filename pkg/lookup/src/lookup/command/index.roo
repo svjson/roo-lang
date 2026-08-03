@@ -93,7 +93,7 @@
                                   :roots []
                                   :excludes []
                                   :errors []})
-        has-package? (not (nil? (:package-dir options)))
+        has-package? (some? (:package-dir options))
         has-roots? (not-empty? (:roots options))
         with-default-extractors (if (empty? (:extractors options))
                                   (assoc options

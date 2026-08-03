@@ -104,14 +104,14 @@
     :default 0))
 
 (defun diagnostic-fails? [diagnostic fail-on]
-  (and (not (nil? fail-on))
+  (and (some? fail-on)
        (>= (severity-rank (:severity diagnostic))
            (severity-rank fail-on))))
 
 (defun audit-failed? [diagnostics options]
-  (not (nil? (find-first diagnostics
-                         (fn [diagnostic]
-                           (diagnostic-fails? diagnostic (:fail-on options)))))))
+  (any? diagnostics
+        (fn [diagnostic]
+          (diagnostic-fails? diagnostic (:fail-on options)))))
 
 (defun symbol-index
   "Audit a lookup symbol index and return diagnostic data.
@@ -126,7 +126,7 @@
   A `:roo/lookup-audit` map with diagnostics."
   [index options]
   (let [effective-options (merge default-options options)
-        diagnostics (flat-map (or (:symbols index) [])
+        diagnostics (flat-map (:symbols index)
                               (fn [symbol]
                                 (symbol-diagnostics symbol effective-options)))]
     {:format audit-format

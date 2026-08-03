@@ -141,7 +141,7 @@
       (string/starts-with? trimmed "@code")
       (cpp-doc-start-code state trimmed)
 
-      (not (nil? (cpp-doc-brief-text trimmed)))
+      (some? (cpp-doc-brief-text trimmed))
       (assoc state
              :summary
              (concat (:summary state) [(cpp-doc-brief-text trimmed)])
@@ -157,12 +157,12 @@
       (:brief? state)
       (cpp-doc-step (assoc state :brief? false) line)
 
-      (not (nil? (cpp-doc-return-text trimmed)))
+      (some? (cpp-doc-return-text trimmed))
       (assoc state
              :returns
              (concat (:returns state) [(cpp-doc-return-text trimmed)]))
 
-      (not (nil? (cpp-doc-arg-row trimmed)))
+      (some? (cpp-doc-arg-row trimmed))
       (let [row (cpp-doc-arg-row trimmed)
             key (:key row)]
         (if (:continuation? row)
@@ -234,7 +234,7 @@
   [text]
   (let [lines (filter (cpp-comment-lines text) (fn [line] (not (blank? line))))
         line (head lines)
-        separator (when (not (nil? line))
+        separator (when line
                     (find-index line (fn [ch] (= "-" (str ch)))))]
     (unless (nil? separator)
       {:native-class (trim (substr line 0 separator))
@@ -246,14 +246,13 @@
 
 (defun excluded-path? [path excludes]
   (let [normalized-path (source/normalized-path path)]
-    (not (nil?
-           (find-first excludes
-                       (fn [exclude]
-                         (let [normalized-exclude (source/normalized-path exclude)]
-                           (or (= normalized-path normalized-exclude)
-                               (string/starts-with?
-                                 normalized-path
-                                 (str normalized-exclude "/"))))))))))
+    (any? excludes
+          (fn [exclude]
+            (let [normalized-exclude (source/normalized-path exclude)]
+              (or (= normalized-path normalized-exclude)
+                  (string/starts-with?
+                    normalized-path
+                    (str normalized-exclude "/"))))))))
 
 (defun native-source-files-in-excluding [root excludes]
   (cond
@@ -333,7 +332,7 @@
       nil)))
 
 (defun native-declaration? [line]
-  (not (nil? (native-declaration-kind line))))
+  (some? (native-declaration-kind line)))
 
 (defun native-declaration-class [line]
   (let [trimmed (trim line)]
@@ -410,10 +409,10 @@
         pending-comment (:pending-comment state)]
     (cond
 
-      (not (nil? (:comment state)))
+      (:comment state)
       (append-comment-line state line-entry)
 
-      (not (nil? (native-line-identity-entry (:path state) line-entry)))
+      (some? (native-line-identity-entry (:path state) line-entry))
       (assoc state
              :pending-comment nil
              :entries (concat (:entries state)
@@ -423,11 +422,11 @@
       (block-comment-start? line)
       (start-comment state line-entry)
 
-      (and (not (nil? pending-comment))
+      (and (some? pending-comment)
            (blank? line))
       state
 
-      (and (not (nil? pending-comment))
+      (and (some? pending-comment)
            (native-declaration? line))
       (assoc state
              :pending-comment nil
@@ -500,11 +499,8 @@
     :special-form :special-form
     :default :function))
 
-(defun native-param-variadic? [key]
-  (string/ends-with? key "..."))
-
 (defun native-param-key-base [key]
-  (if (native-param-variadic? key)
+  (if (string/ends-with? key "...")
     (strip-suffix key "...")
     key))
 
@@ -515,9 +511,9 @@
 (defun native-param-numbered? [key]
   (let [base (native-param-key-base key)]
     (and (not (blank? base))
-         (nil? (find-first base
-                           (fn [ch]
-                             (not (native-param-digit? ch))))))))
+         (not (any? base
+                    (fn [ch]
+                      (not (native-param-digit? ch))))))))
 
 (defun native-param-name [key]
   (let [base (native-param-key-base key)
@@ -526,7 +522,7 @@
       (blank? base)
       "args"
 
-      (and numbered? (native-param-variadic? key))
+      (and numbered? (string/ends-with? key "..."))
       "args"
 
       numbered?
@@ -540,7 +536,7 @@
         param-keys (or (:param-order doc) (sort (keys param-docs) <))]
     (map param-keys
          (fn [key]
-           (let [rest? (native-param-variadic? key)
+           (let [rest? (string/ends-with? key "...")
                  param-doc (get param-docs key)]
              {:name (native-param-name key)
               :type (:type param-doc)
@@ -556,7 +552,7 @@
       (str "(" name " " params-display ")"))))
 
 (defun native-signature-arity [params]
-  (let [variadic? (not (nil? (find-first params (fn [param] (:rest? param)))))
+  (let [variadic? (any? params (fn [param] (:rest? param)))
         required-params (filter params
                                 (fn [param]
                                   (and (not (:optional? param))

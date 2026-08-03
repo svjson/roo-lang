@@ -75,7 +75,7 @@
   (let [trimmed (trim line)
         colon (find-index trimmed (fn [ch] (= ":" (str ch))))]
     (if (and (string/starts-with? trimmed "- ")
-             (not (nil? colon)))
+             (some? colon))
       (let [name (strip-backticks (substr trimmed 2 (- colon 2)))
             doc (trim (substr trimmed (+ colon 1)))]
         (assoc state
@@ -118,7 +118,7 @@
                           (keyword language)))
               :lines []})
 
-      (and (not (nil? (:fence state)))
+      (and (:fence state)
            (string/starts-with? trimmed "```"))
       (assoc state
              :examples
@@ -128,7 +128,7 @@
                                       (concat ["\n"] (:lines (:fence state))))}])
              :fence nil)
 
-      (not (nil? (:fence state)))
+      (:fence state)
       (assoc state
              :fence
              (assoc (:fence state)

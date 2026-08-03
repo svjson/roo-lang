@@ -130,28 +130,32 @@
         id (:id spec)
         target-dir (spec-root package-root repo-root spec)
         manifest-path (io/join-path target-dir "package.edn")]
-    (if (contains? ancestors id)
+    (cond
+      (contains? ancestors id)
       (package-node declared-name declared-version target-dir false true [])
-      (if (io/exists? manifest-path)
-        (let [package-manifest (manifest/validate! (io/slurp-edn! manifest-path)
-                                                   manifest-path)]
-          (if (nil? package-manifest)
-            (package-node declared-name declared-version target-dir true false [])
-            (let [resolved-name (manifest/package-name package-manifest)
-                  resolved-version (manifest/package-version package-manifest)
-                  resolved-id (repository/package-id resolved-name resolved-version)]
-              (if (contains? ancestors resolved-id)
-                (package-node resolved-name resolved-version target-dir false true [])
-                (package-node resolved-name
-                              resolved-version
-                              target-dir
-                              false
-                              false
-                              (dependency-nodes! target-dir
-                                                 repo-root
-                                                 (dependency-specs package-manifest)
-                                                 (concat ancestors [resolved-id])))))))
-        (package-node declared-name declared-version target-dir true false [])))))
+
+      (not (io/exists? manifest-path))
+      (package-node declared-name declared-version target-dir true false [])
+
+      true
+      (let [package-manifest (manifest/validate! (io/slurp-edn! manifest-path)
+                                                 manifest-path)]
+        (if (nil? package-manifest)
+          (package-node declared-name declared-version target-dir true false [])
+          (let [resolved-name (manifest/package-name package-manifest)
+                resolved-version (manifest/package-version package-manifest)
+                resolved-id (repository/package-id resolved-name resolved-version)]
+            (if (contains? ancestors resolved-id)
+              (package-node resolved-name resolved-version target-dir false true [])
+              (package-node resolved-name
+                            resolved-version
+                            target-dir
+                            false
+                            false
+                            (dependency-nodes! target-dir
+                                               repo-root
+                                               (dependency-specs package-manifest)
+                                               (concat ancestors [resolved-id]))))))))))
 
 (defun root-node! [package-dir repo-root]
   (let [package-manifest (manifest/read! package-dir)]

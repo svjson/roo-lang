@@ -161,14 +161,14 @@
 (defun diagnostic-extra [diagnostic]
   (cond
 
-    (and (not (nil? (:signature diagnostic)))
-         (not (nil? (:param diagnostic))))
+    (and (:signature diagnostic)
+         (:param diagnostic))
     (str " [" (:signature diagnostic) ", param: " (:param diagnostic) "]")
 
-    (not (nil? (:signature diagnostic)))
+    (:signature diagnostic)
     (str " [" (:signature diagnostic) "]")
 
-    (not (nil? (:param diagnostic)))
+    (:param diagnostic)
     (str " [param: " (:param diagnostic) "]")
 
     true

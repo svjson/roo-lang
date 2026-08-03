@@ -15,13 +15,12 @@
   Returns:
   A namespace map when the source contains an `ns` form; otherwise `nil`."
   [source]
-  (let [entry (find-first (:forms source)
-                          (fn [entry]
-                            (= "ns" (form-head-name (:form entry)))))]
-    (when (not (nil? entry))
-      {:name (str (nth (:form entry) 1))
-       :doc (docstrings/empty)
-       :source (:source entry)})))
+  (when-let [entry (find-first (:forms source)
+                               (fn [entry]
+                                 (= "ns" (form-head-name (:form entry)))))]
+    {:name (str (nth (:form entry) 1))
+     :doc (docstrings/empty)
+     :source (:source entry)}))
 
 (defun source-namespace-name [source]
   (or (:name (source-namespace-entry source)) "user"))
@@ -61,7 +60,7 @@
       (str "(" name " " params-display ")"))))
 
 (defun signature-arity [params]
-  (let [variadic? (not (nil? (find-first params (fn [param] (:rest? param)))))
+  (let [variadic? (any? params (fn [param] (:rest? param)))
         required-params (filter params
                                 (fn [param]
                                   (and (not (:optional? param))
@@ -84,11 +83,12 @@
     {:display (signature-display name raw-params)
      :params (map params
                   (fn [param]
-                    {:name (:name param)
-                     :type (:type param)
-                     :doc (:doc param)
-                     :optional? (:optional? param)
-                     :rest? (:rest? param)}))
+                    (assoc {}
+                           :name (:name param)
+                           :type (:type param)
+                           :doc (:doc param)
+                           :optional? (:optional? param)
+                           :rest? (:rest? param))))
      :returns {:type nil
                :doc nil}
      :arity (signature-arity params)}))
@@ -135,7 +135,7 @@
               (docstrings/from-string docstring))]
     (merge (base-symbol-entry package namespace name :var (:source entry))
            {:doc doc
-            :doc-source (when (not (nil? docstring))
+            :doc-source (when docstring
                           {:kind :roo-docstring
                            :source (:source entry)})
             :signatures []})))
@@ -150,7 +150,7 @@
               (docstrings/from-string docstring))]
     (merge (base-symbol-entry package namespace name :function (:source entry))
            {:doc doc
-            :doc-source (when (not (nil? docstring))
+            :doc-source (when docstring
                           {:kind :roo-docstring
                            :source (:source entry)})
             :signatures [(function-signature-with-doc name params doc)]})))

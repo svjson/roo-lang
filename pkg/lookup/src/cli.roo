@@ -90,8 +90,8 @@
       (print-errors-and-usage! errors)
       (case (:format result)
         :text (print-lines! (:output result))
-        :default (when (not (nil? (:value result)))
-                   (prn (:value result)))))))
+        :default (when-let [value (:value result)]
+                   (prn value))))))
 
 (defun print-index! [args]
   (print-command-result! (index-command/run! (tail args))))
