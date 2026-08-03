@@ -149,6 +149,28 @@ namespace Roo
   FUNC(HeadFunction, head)
 
   /*!
+   * @brief Interleave elements from sequences into one vector.
+   *
+   * Takes one element from each sequence in order, then repeats at the next
+   * index until all sequences are exhausted. Shorter sequences are skipped
+   * after their last element.
+   *
+   * Usage:
+   * @code
+   * (interleave [1 2 3] [:a :b :c])
+   * => [1 :a 2 :b 3 :c]
+   *
+   * (interleave [1 2 3] [", " ", "])
+   * => [1 ", " 2 ", " 3]
+   * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seqs... | Seqs or strings to interleave.                                     |
+   */
+  FUNC(InterleaveFunction, interleave)
+
+  /*!
    * @brief Get the last element of a sequence
    *
    * Usage:

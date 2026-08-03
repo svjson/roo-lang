@@ -125,6 +125,7 @@ namespace Roo
     lang_symbols.emplace("include", IncludeFunction::make());
     lang_symbols.emplace("index-of", IndexOfFunction::make());
     lang_symbols.emplace("int", IntFunction::make());
+    lang_symbols.emplace("interleave", InterleaveFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("keep", KeepFunction::make());
     lang_symbols.emplace("kebab-case", KebabCaseFunction::make());

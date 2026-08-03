@@ -366,6 +366,42 @@ namespace Roo
     return Roo::get_child(*args[0], 0);
   }
 
+  /** InterleaveFunction - roo/interleave */
+  FUNC_IMPL(InterleaveFunction,
+            SIG((FN_ARGS((VARARG, &Type::SEQ_OR_STRING)),
+                 EXEC_DISPATCH(&InterleaveFunction::exec_interleave))))
+
+  EXEC_BODY(InterleaveFunction, exec_interleave)
+  {
+    std::vector<sptr_val_v> seqs;
+    seqs.reserve(args.size());
+
+    size_t max_size = 0;
+    size_t result_size = 0;
+    for (auto& arg : args)
+    {
+      sptr_val_v children = Roo::get_children(*arg);
+      max_size = std::max(max_size, children.size());
+      result_size += children.size();
+      seqs.push_back(std::move(children));
+    }
+
+    sptr_val_v result;
+    result.reserve(result_size);
+    for (size_t i = 0; i < max_size; i++)
+    {
+      for (auto& seq : seqs)
+      {
+        if (i < seq.size())
+        {
+          result.push_back(seq[i]);
+        }
+      }
+    }
+
+    return Value::vector(std::move(result));
+  }
+
   /** LastFunction - roo/last */
   FUNC_IMPL(LastFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&LastFunction::exec_last))))
