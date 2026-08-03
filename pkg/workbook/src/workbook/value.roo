@@ -23,9 +23,10 @@
 
 (defun dirty? [book]
   (let [history (:history book)]
-    (or (not (nil? (:tx history)))
-        (not= (:current-revision history)
-              (:saved-revision history)))))
+    (if (:tx history)
+      true
+      (not= (:current-revision history)
+            (:saved-revision history)))))
 
 (defun mark-saved [book]
   (assoc-in book
