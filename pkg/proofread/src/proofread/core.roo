@@ -57,11 +57,13 @@
   Returns:
   The number of successfully parsed files."
   [args]
-  (let [files (native/files! args)
-        checked-count (native/check-files! files)]
-    (style/print-diagnostics!
-      (flat-map files style/check-file))
-    (report-ok checked-count)))
+  (report-ok
+    (reduce (native/files! args)
+            0
+            (fn [checked-count file]
+              (native/check-files! [file])
+              (style/print-diagnostics! (style/check-file file))
+              (inc checked-count)))))
 
 (defun main
   "Run the proofread command line entry point.
