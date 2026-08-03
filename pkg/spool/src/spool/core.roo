@@ -19,8 +19,7 @@
   (apply merge
          (concat [{}]
                  (filter (concat [metadata] rest)
-                         (fn [value]
-                           (not (nil? value)))))))
+                         some?))))
 
 (defun empty-path? [path]
   (or (nil? path)
@@ -160,11 +159,11 @@
       (:leaf-below-ms options)))
 
 (defun key-selected? [keys key]
-  (contains? (or keys []) key))
+  (contains? keys key))
 
 (defun elapsed-below-threshold? [context threshold]
-  (and (not (nil? threshold))
-       (not (nil? (:elapsed-ms context)))
+  (and (some? threshold)
+       (:elapsed-ms context)
        (< (:elapsed-ms context) threshold)))
 
 (defun only-filter-active? [options]
@@ -187,11 +186,11 @@
       (assoc context :children projected-children))))
 
 (defun project-contexts [contexts options]
-  (filter (map (or contexts [])
+  (filter (map contexts
                (fn [context]
                  (project-context context options)))
           (fn [context]
-            (not (nil? context)))))
+            (some? context))))
 
 (defun project-tree [tree options]
   (assoc tree :contexts (project-contexts (:contexts tree) options)))
