@@ -1,36 +1,10 @@
-(ns proofread.core
+(ns proofread.command.check
   (:require [proofread.native :as native]
-            [proofread.style :as style]
-            [roo.string :as string]))
+            [proofread.style :as style]))
 
-(def version
-  "Proofread command version."
-  "0.1.0")
-
-(defun usage
-  "Print the short proofread usage line.
-
-  Returns:
-  `nil`."
-  []
-  (prn "Usage: proofread [--help|--version] <file|pattern>..."))
-
-(defun print-help
-  "Print proofread help text.
-
-  Returns:
-  `nil`."
-  []
-  (prn "proofread: check that Roo and EDN files parse")
-  (usage))
-
-(defun print-version
-  "Print the proofread version line.
-
-  Returns:
-  `nil`."
-  []
-  (prn (str "proofread " version)))
+(def usage-line
+  "Usage line for the proofread check command."
+  "Usage: proofread [--help|--version] <file|pattern>...")
 
 (defun summary-text
   "Format a proofread run summary.
@@ -71,7 +45,7 @@
     (prn separator)
     summary))
 
-(defun check!
+(defun run!
   "Run proofread checks for CLI file and pattern arguments.
 
   Args:
@@ -98,33 +72,3 @@
     (case (:errors summary)
       0 summary
       :default (native/fail! "proofread: checks failed"))))
-
-(defun main
-  "Run the proofread command line entry point.
-
-  Args:
-  - `args`: Command line arguments.
-
-  Returns:
-  `nil` for help/version commands or the successful parse-check count."
-  [args]
-  (let [first-arg (head args)]
-    (cond
-      (nil? first-arg)
-      (do
-        (usage)
-        (native/fail! "No files or patterns provided."))
-
-      (contains? ["--help" "-h"] first-arg)
-      (print-help)
-
-      (= first-arg "--version")
-      (print-version)
-
-      (string/starts-with? first-arg "--")
-      (do
-        (usage)
-        (native/fail! (str "Unknown option: " first-arg)))
-
-      true
-      (check! args))))

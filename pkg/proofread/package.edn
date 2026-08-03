@@ -3,8 +3,9 @@
  :description "Roo syntax and style checker."
  :dependencies []
  :load-roots ["src"]
+ :namespace-roots {proofread "src"}
  :native-libraries [{:name "proofread-native"
                      :version "0.1.0"
                      :path "native"
                      :namespaces [proofread.native]}]
- :main proofread.core/main}
+ :main proofread.cli/main}
