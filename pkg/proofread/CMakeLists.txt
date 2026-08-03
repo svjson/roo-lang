@@ -39,7 +39,7 @@ if(ROO_BUILD_TESTS)
   set_tests_properties(
     proofread_cli_checks_directory_recursively
     PROPERTIES
-      PASS_REGULAR_EXPRESSION "proofread: 2 files ok"
+      PASS_REGULAR_EXPRESSION "proofread: 2 files, 0 warnings, 0 errors"
   )
 
   add_test(
@@ -51,7 +51,7 @@ if(ROO_BUILD_TESTS)
   set_tests_properties(
     proofread_cli_checks_package_root_sources
     PROPERTIES
-      PASS_REGULAR_EXPRESSION "proofread: 2 files ok"
+      PASS_REGULAR_EXPRESSION "proofread: 2 files, 0 warnings, 0 errors"
   )
 
   add_test(

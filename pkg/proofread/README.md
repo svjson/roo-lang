@@ -29,10 +29,12 @@ Quote patterns when you want `proofread` to expand them instead of your shell.
 
 ## Output
 
-When every requested file parses, `proofread` prints a short summary:
+When the run is complete, `proofread` prints a short summary:
 
 ```text
-proofread: 2 files ok
+----------------------------------------
+proofread: 2 files, 0 warnings, 0 errors
+----------------------------------------
 ```
 
 Style warnings include the source location, severity, rule name, and message:
@@ -41,10 +43,10 @@ Style warnings include the source location, severity, rule name, and message:
 src/app.roo:12:3: warning redundant-do: Redundant do form
 ```
 
-Warnings are informational and do not make the command fail.
+Warnings are counted in the summary but do not make the command fail.
 
 If a file cannot be read, does not match, or fails to parse, `proofread` prints
-the error and exits with a non-zero status.
+the error, includes it in the summary, and exits with a non-zero status.
 
 ## Style Warnings
 

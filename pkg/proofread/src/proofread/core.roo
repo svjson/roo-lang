@@ -32,21 +32,44 @@
   []
   (prn (str "proofread " version)))
 
-(defun report-ok
-  "Print the successful parse-check summary.
+(defun summary-text
+  "Format a proofread run summary.
 
   Args:
-  - `checked-count`: Number of files that parsed successfully.
+  - `summary`: A map containing `:files`, `:warnings`, and `:errors` counts.
 
   Returns:
-  `checked-count`."
-  [checked-count]
-  (prn (str "proofread: " checked-count " file"
-            (case checked-count
-              1 ""
-              :default "s")
-            " ok"))
-  checked-count)
+  A single summary line."
+  [{:keys [files warnings errors]}]
+  (str "proofread: " files " file"
+       (case files
+         1 ""
+         :default "s")
+       ", " warnings " warning"
+       (case warnings
+         1 ""
+         :default "s")
+       ", " errors " error"
+       (case errors
+         1 ""
+         :default "s")))
+
+(defun print-summary!
+  "Print a proofread run summary.
+
+  Args:
+  - `summary`: A map containing `:files`, `:warnings`, and `:errors` counts.
+
+  Returns:
+  `summary`."
+  [summary]
+  (let [text (summary-text summary)
+        separator (apply join (concat [""]
+                                      (repeat (count text) "-")))]
+    (prn separator)
+    (prn text)
+    (prn separator)
+    summary))
 
 (defun check!
   "Run proofread checks for CLI file and pattern arguments.
@@ -55,15 +78,26 @@
   - `args`: Command line file paths and shell-style patterns.
 
   Returns:
-  The number of successfully parsed files."
+  A summary map when no errors were found."
   [args]
-  (report-ok
-    (reduce (native/files! args)
-            0
-            (fn [checked-count file]
-              (native/check-files! [file])
-              (style/print-diagnostics! (style/check-file file))
-              (inc checked-count)))))
+  (let [summary (reduce (native/files! args)
+                        {:files 0
+                         :warnings 0
+                         :errors 0}
+                        (fn [{:keys [files warnings errors]} file]
+                          (let [check-result (native/check-files-result! [file])
+                                file-errors (:errors check-result)
+                                diagnostics (case file-errors
+                                              0 (style/check-file file)
+                                              :default [])]
+                            (style/print-diagnostics! diagnostics)
+                            {:files (+ files (:checked check-result) file-errors)
+                             :warnings (+ warnings (count diagnostics))
+                             :errors (+ errors file-errors)})))]
+    (print-summary! summary)
+    (case (:errors summary)
+      0 summary
+      :default (native/fail! "proofread: checks failed"))))
 
 (defun main
   "Run the proofread command line entry point.

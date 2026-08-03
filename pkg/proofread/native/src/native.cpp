@@ -383,6 +383,14 @@ namespace Roo::Proofread
       return checked_count;
     }
 
+    void print_errors(const std::vector<std::string>& errors)
+    {
+      for (const auto& error : errors)
+      {
+        std::cerr << error << "\n";
+      }
+    }
+
     void fail_with_errors(const std::vector<std::string>& errors)
     {
       if (errors.empty())
@@ -390,11 +398,16 @@ namespace Roo::Proofread
         return;
       }
 
-      for (const auto& error : errors)
-      {
-        std::cerr << error << "\n";
-      }
+      print_errors(errors);
       throw RooException("proofread: checks failed");
+    }
+
+    sptr_val check_result(size_t checked_count, size_t error_count)
+    {
+      return Value::map({Value::keyword("checked"),
+                         Value::number(static_cast<int>(checked_count)),
+                         Value::keyword("errors"),
+                         Value::number(static_cast<int>(error_count))});
     }
 
     sptr_val file_vector(const std::vector<std::filesystem::path>& files)
@@ -492,6 +505,35 @@ namespace Roo::Proofread
         return Value::number(static_cast<int>(checked_count));
       }
     };
+
+    class CheckFilesResultFunction : public Function
+    {
+     public:
+      CheckFilesResultFunction()
+        : Function(SIG((FN_ARGS((&Type::VECTOR)),
+                        EXEC_DISPATCH(&CheckFilesResultFunction::exec_check_files_result))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<CheckFilesResultFunction>());
+      }
+
+      sptr_val exec_check_files_result(Context&, sptr_val_v& args)
+      {
+        std::vector<std::filesystem::path> files;
+        for (const auto& file : string_args(args[0]))
+        {
+          files.emplace_back(file);
+        }
+
+        std::vector<std::string> errors;
+        const size_t checked_count = check_files(files, errors);
+        print_errors(errors);
+        return check_result(checked_count, errors.size());
+      }
+    };
   } // namespace
 
   std::unique_ptr<Namespace> make_native_namespace()
@@ -500,6 +542,7 @@ namespace Roo::Proofread
     ns->set_origin(Namespace::Origin::native());
     ns->store("check!", CheckFunction::make());
     ns->store("check-files!", CheckFilesFunction::make());
+    ns->store("check-files-result!", CheckFilesResultFunction::make());
     ns->store("fail!", FailFunction::make());
     ns->store("files!", FilesFunction::make());
     return ns;
