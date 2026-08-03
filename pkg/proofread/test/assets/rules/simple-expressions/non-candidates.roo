@@ -17,3 +17,11 @@
 
 (def missing-value
   (nil? value))
+
+(def required-map-check
+  (and (map? node)
+       (= (count node) 2)))
+
+(def different-target
+  (and (map? node)
+       (= (:type other) :symbol)))

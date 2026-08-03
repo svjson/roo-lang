@@ -1,0 +1,15 @@
+(ns proofread.simple-expressions-redundant-map-check)
+
+(def symbol-node?
+  (when (and (map? node)
+             (= (:type node) :symbol))
+    (str (:form node))))
+
+(def reversed-comparison
+  (and (map? node)
+       (= :symbol (:type node))))
+
+(def extra-condition
+  (and (map? node)
+       (= (:type node) :symbol)
+       (= (:form node) "value")))

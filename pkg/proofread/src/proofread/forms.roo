@@ -9,9 +9,20 @@
   Returns:
   The symbol name string, or `nil` when `node` is not a symbol."
   [node]
-  (when (and (map? node)
-             (= (:type node) :symbol))
+  (when (= (:type node) :symbol)
     (str (:form node))))
+
+(defun keyword-name
+  "Return the keyword name for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The keyword name string, or `nil` when `node` is not a keyword."
+  [node]
+  (when (= (:type node) :keyword)
+    (name (:form node))))
 
 (defun head-name
   "Return the list head name for an AST node.
@@ -23,6 +34,5 @@
   The string form of the symbol head when `node` is a named list; otherwise
   `nil`."
   [node]
-  (when (and (map? node)
-             (= (:type node) :list))
+  (when (= (:type node) :list)
     (symbol-name (head (:children node)))))

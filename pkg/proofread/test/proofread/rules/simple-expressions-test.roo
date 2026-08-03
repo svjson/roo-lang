@@ -29,3 +29,9 @@
 (deftest ignores-simple-expression-non-candidates
   (is (= []
          (diagnostics "assets/rules/simple-expressions/non-candidates.roo"))))
+
+(deftest reports-redundant-map-checks
+  (is (= [[:redundant-map-check 4]
+          [:redundant-map-check 9]
+          [:redundant-map-check 13]]
+         (diagnostic-summary "assets/rules/simple-expressions/redundant-map-check.roo"))))

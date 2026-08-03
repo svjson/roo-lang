@@ -10,8 +10,7 @@
   Returns:
   `true` for the numeric literal `0`, otherwise `false`."
   [node]
-  (and (map? node)
-       (= (:type node) :number)
+  (and (= (:type node) :number)
        (= (:form node) 0)))
 
 (defun nil-node?
@@ -112,6 +111,68 @@
        (or (nil-node? (nth children 1))
            (nil-node? (nth children 2)))))
 
+(defun map-check?
+  "Test whether an AST node is a `(map? value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The checked symbol name for `(map? name)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (and (= "map?" (forms/head-name node))
+             (= 2 (count children)))
+    (forms/symbol-name (nth children 1))))
+
+(defun keyword-lookup?
+  "Test whether an AST node is a keyword lookup form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the lookup target.
+
+  Returns:
+  `true` for `(:key target-name)`, otherwise `false`."
+  [node target-name]
+  (and (= (:type node) :list)
+       (= 2 (count (:children node)))
+       (forms/keyword-name (head (:children node)))
+       (= target-name (forms/symbol-name (nth (:children node) 1)))))
+
+(defun lookup-comparison?
+  "Test whether an AST node compares a keyword lookup against another value.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the lookup target.
+
+  Returns:
+  `true` for equality comparisons involving `(:key target-name)`, otherwise
+  `false`."
+  [{:keys [children] :as node} target-name]
+  (and (= "=" (forms/head-name node))
+       (= 3 (count children))
+       (or (keyword-lookup? (nth children 1) target-name)
+           (keyword-lookup? (nth children 2) target-name))))
+
+(defun redundant-map-check?
+  "Test whether an `and` form contains a redundant `map?` guard.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(and (map? value) (= (:key value) other) ...)`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (when (and (= "and" (forms/head-name node))
+             (< 1 (count children)))
+    (when-let [target-name (map-check? (nth children 1))]
+      (not (nil?
+             (find-first (tail (tail children))
+                         (fn [child]
+                           (lookup-comparison? child target-name))))))))
+
 (defun diagnostic
   "Build a simple-expression diagnostic for an AST node.
 
@@ -156,6 +217,9 @@
     (nil-comparison? node)
     (diagnostic node :use-nil? "Use nil?")
 
+    (redundant-map-check? node)
+    (diagnostic node :redundant-map-check "Remove redundant map? check")
+
     true
     nil))
 
@@ -185,4 +249,3 @@
   A vector of diagnostic maps."
   [root]
   (check-node root))
-

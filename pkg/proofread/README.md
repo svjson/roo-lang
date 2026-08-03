@@ -67,6 +67,8 @@ Implemented style warnings:
 - `use-nil?`: reports equality checks against `nil` that can be written as
   `nil?`.
 - `kebab-case-name`: reports symbol identifiers containing underscores.
+- `redundant-map-check`: reports redundant `map?` guards before keyword lookup
+  comparisons.
 
 ## Commands
 
