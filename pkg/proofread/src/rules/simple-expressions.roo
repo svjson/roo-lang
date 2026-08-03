@@ -149,6 +149,20 @@
   (and (= "some?" (forms/head-name node))
        (= 2 (count children))))
 
+(defun non-predicate-name?
+  "Test whether a name is not predicate-shaped.
+
+  Args:
+  - `name`: Symbol or keyword name string.
+
+  Returns:
+  `true` when `name` is not empty, not predicate-suffixed, and not a boolean or
+  nil literal name."
+  [name]
+  (and (not (blank? name))
+       (not (contains? ["nil" "true" "false"] name))
+       (not (string/ends-with? name "?"))))
+
 (defun find-index-form?
   "Test whether an AST node is a `(find-index value predicate)` form.
 
@@ -530,20 +544,20 @@
     :default (branch-predicate-position? parent node)))
 
 (defun redundant-some-check?
-  "Test whether `some?` redundantly wraps a keyword lookup in branch position.
+  "Test whether `some?` redundantly wraps a value in branch position.
 
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for root nodes.
   - `node`: Current `roo.ast` node map.
 
   Returns:
-  `true` for redundant non-predicate keyword lookup checks in branch predicate
-  positions, otherwise `false`."
+  `true` for redundant non-predicate symbol and keyword lookup checks in branch
+  predicate positions, otherwise `false`."
   [parent {:keys [children] :as node}]
   (and (branch-predicate-position? parent node)
        (some-check? node)
-       (when-let [key-name (keyword-lookup-key-name (nth children 1))]
-         (not (string/ends-with? key-name "?")))))
+       (or (non-predicate-name? (forms/symbol-name (nth children 1)))
+           (non-predicate-name? (keyword-lookup-key-name (nth children 1))))))
 
 (defun diagnostic
   "Build a simple-expression diagnostic for an AST node.

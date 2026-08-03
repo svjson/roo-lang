@@ -69,3 +69,8 @@
 (def print-result-value
   (when (some? (:value result))
     (prn (:value result))))
+
+(def selected-reporter
+  (cond
+    (some? reporter) reporter
+    true :default))

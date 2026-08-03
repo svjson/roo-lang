@@ -62,5 +62,5 @@
     (:enabled? options)))
 
 (def explicit-symbol-presence
-  (when (some? value)
-    value))
+  (when (some? enabled?)
+    enabled?))
