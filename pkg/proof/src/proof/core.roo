@@ -102,7 +102,7 @@
         test-result {:name (:name test)
                      :status (cond
                                (= (:status body-result) :error) :error
-                               (> (count current-failures) 0) :fail
+                               (not-empty? current-failures) :fail
                                true :pass)
                      :elapsed-ms (max 0 (- (epoch-ms) start-ms))}]
     (merge test-result

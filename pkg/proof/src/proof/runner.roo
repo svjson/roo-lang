@@ -35,9 +35,8 @@
 
 (defun flag-value [arg flag]
   (let [prefix (str flag "=")]
-    (if (string/starts-with? arg prefix)
-      (substr arg (count prefix))
-      nil)))
+    (when (string/starts-with? arg prefix)
+      (substr arg (count prefix)))))
 
 (defun cli-keyword [value]
   (if (string/starts-with? value ":")
@@ -58,7 +57,7 @@
 
 (defun parse-proof-args-from [args index config roots]
   (if (= index (count args))
-    (if (= 0 (count roots))
+    (if (empty? roots)
       config
       (assoc config :test-roots roots))
     (let [arg (nth args index)
@@ -222,17 +221,15 @@
           files (map (filter entries roo-file-entry?) :path)
           directories (filter entries directory-entry?)]
       (concat files
-              (flatten
-                (map directories
-                     (fn [entry]
-                       (discover-roo-files (:path entry)))))))
+              (flat-map directories
+                        (fn [entry]
+                          (discover-roo-files (:path entry))))))
     []))
 
 (defun discover-test-files [context]
-  (flatten
-    (map (configured-test-roots context)
-         (fn [root]
-           (discover-roo-files (absolute-test-root context root))))))
+  (flat-map (configured-test-roots context)
+            (fn [root]
+              (discover-roo-files (absolute-test-root context root)))))
 
 (defun relative-package-path [context path]
   (let [package-root (:package-root context)]
@@ -287,7 +284,7 @@
        "))"))
 
 (defun require-test-namespaces [namespaces]
-  (if (= 0 (count namespaces))
+  (if (empty? namespaces)
     namespaces
     (do
       (eval (require-form namespaces))
