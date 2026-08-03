@@ -13,5 +13,6 @@
     (is (= 1 (reporter/status-count results :pass)))
     (is (= 1 (reporter/status-count results :fail)))
     (is (= "proof: 1 passed, 1 failed, 2 total"
-           (reporter/summary-text {:total 2 :passed 1 :failed 1})))))
-
+           (reporter/summary-text {:total 2 :passed 1 :failed 1})))
+    (is (= "proof: 1 passed, 1 failed, 2 total (12ms)"
+           (reporter/summary-text {:total 2 :passed 1 :failed 1 :elapsed-ms 12})))))

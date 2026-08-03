@@ -20,7 +20,10 @@
        (if-let [error-count (:errored summary)]
          (str error-count " errored, ")
          "")
-       (:total summary) " total"))
+       (:total summary) " total"
+       (if-let [elapsed-ms (:elapsed-ms summary)]
+         (str " (" elapsed-ms "ms)")
+         "")))
 
 (defun print! [summary]
   (let [report-text (summary-text summary)

@@ -27,9 +27,9 @@ Example output:
 
 ```text
   PASS addition
-----------------------------------
-proof: 1 passed, 0 failed, 1 total
-----------------------------------
+----------------------------------------
+proof: 1 passed, 0 failed, 1 total (1ms)
+----------------------------------------
 ```
 
 Use `run-selected` to run only registered tests matching a selection map:

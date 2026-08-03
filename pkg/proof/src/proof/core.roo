@@ -129,16 +129,18 @@
 
 (defun run-selected [options]
   (let [tests-to-run (selected-tests options)
-        results (-> tests-to-run
-                    (reduce {:results []
-                             :options options
-                             :reporter (reporter/make options tests-to-run)}
-                            run-and-report-selected-test)
-                    :results)]
-    (-> results
+        start-ms (epoch-ms)
+        run-state (reduce tests-to-run
+                          {:results []
+                           :options options
+                           :reporter (reporter/make options tests-to-run)}
+                          run-and-report-selected-test)]
+    (-> run-state
+        :results
         reporter/result-summary
+        (assoc :elapsed-ms (max 0 (- (epoch-ms) start-ms)))
         reporter/print!)
-    results))
+    (:results run-state)))
 
 (defun run []
   (run-selected {}))
