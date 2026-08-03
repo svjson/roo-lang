@@ -10,7 +10,7 @@ ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_IND
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-i18n install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread install-loom install-proof install-lookup install-roo-lang-index install-proofread install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:benchmark test\:server clean
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
@@ -179,6 +179,12 @@ install-i18n: build
 	cmake -E copy_if_different $(CURDIR)/pkg/i18n/package.edn $(PREFIX)/share/roo/pkg/i18n/package.edn
 	cmake -E copy_if_different $(CURDIR)/pkg/i18n/README.md $(PREFIX)/share/roo/pkg/i18n/README.md
 
+install-moordown: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/moordown/src
+	cmake -E copy_directory $(CURDIR)/pkg/moordown/src $(PREFIX)/share/roo/pkg/moordown/src
+	cmake -E copy_if_different $(CURDIR)/pkg/moordown/package.edn $(PREFIX)/share/roo/pkg/moordown/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/moordown/README.md $(PREFIX)/share/roo/pkg/moordown/README.md
+
 install-spool: build
 	cmake -E make_directory $(PREFIX)/share/roo/pkg/spool/src
 	cmake -E copy_directory $(CURDIR)/pkg/spool/src $(PREFIX)/share/roo/pkg/spool/src
@@ -212,10 +218,10 @@ install-soot: build
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
 
-test: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:soot test\:rooc
+test: test\:support test\:lang test\:package test\:proof test\:proofread test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc
 test: test\:cli
 
-test\:all: test\:support test\:lang test\:package test\:proof test\:proofread test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:server
+test\:all: test\:support test\:lang test\:package test\:proof test\:proofread test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:server
 
 test\:support: build
 	cmake --build build --target testsupport
@@ -238,6 +244,9 @@ test\:proofread: configure
 	cmake --build build --target roo_cli
 	cmake --build build --target stage_native_packages
 	cd $(NATIVE_PACKAGE_STAGE)/proofread/test && $(CURDIR)/build/roo proof
+
+test\:moordown: build stage-native-packages
+	cd $(NATIVE_PACKAGE_STAGE)/moordown/test && $(CURDIR)/build/roo proof
 
 test\:workbook: build stage-native-packages
 	cd $(NATIVE_PACKAGE_STAGE)/workbook/test && $(CURDIR)/build/roo proof

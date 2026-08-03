@@ -1,0 +1,227 @@
+(ns moordown.render
+  (:require [moordown.ast :as ast]
+            [roo.string :as string]))
+
+(defun render-inline
+  "Render inline Markdown content.
+
+  Args:
+  - `content`: Plain text, nil, or a Moordown inline node.
+
+  Returns:
+  Markdown text."
+  [content]
+  (case (:kind content)
+    :link (str "[" (:label content) "](" (:target content) ")")
+    :default (ast/markdown-text content)))
+
+(defun escaped-table-cell
+  "Render a table cell value with table-breaking characters escaped.
+
+  Args:
+  - `value`: Cell content.
+
+  Returns:
+  Cell text where `|` is escaped and newlines become `<br>`."
+  [value]
+  (string/replace (string/replace (render-inline value) "|" "\\|")
+                  "\n"
+                  "<br>"))
+
+(defun table-cell
+  "Return the normalized table cell at INDEX.
+
+  Args:
+  - `cells`: Row cell values.
+  - `index`: Zero-based column index.
+
+  Returns:
+  Escaped cell text, or an empty string when the row has no value there."
+  [cells index]
+  (if (< index (count cells))
+    (escaped-table-cell (nth cells index))
+    ""))
+
+(defun normalized-row
+  "Normalize a table row to COLUMN-COUNT escaped cells.
+
+  Args:
+  - `row`: Source row values.
+  - `column-count`: Number of cells expected by the table headers.
+
+  Returns:
+  A vector of rendered cell strings."
+  [row column-count]
+  (let [cells []
+        index 0]
+    (while (< index column-count)
+      (append! cells (table-cell row index))
+      (set! [index] (+ index 1)))
+    cells))
+
+(defun normalized-rows
+  "Normalize table rows to match COLUMN-COUNT.
+
+  Args:
+  - `rows`: Source table rows.
+  - `column-count`: Number of cells expected by the table headers.
+
+  Returns:
+  A sequence of normalized row vectors."
+  [rows column-count]
+  (map (or rows [])
+       (fn [row]
+         (normalized-row row column-count))))
+
+(defun initial-widths
+  "Return minimum table column widths for HEADERS.
+
+  Args:
+  - `headers`: Rendered header cell strings.
+
+  Returns:
+  Widths with a minimum of three characters for Markdown separators."
+  [headers]
+  (map headers
+       (fn [header]
+         (max 3 (count header)))))
+
+(defun widen-column
+  "Return WIDTHS with one column widened to fit CELL.
+
+  Args:
+  - `widths`: Current column widths.
+  - `index`: Column index.
+  - `cell`: Rendered cell text.
+
+  Returns:
+  Updated width vector."
+  [widths index cell]
+  (assoc widths index (max (nth widths index) (count cell))))
+
+(defun widen-row
+  "Return WIDTHS widened to fit ROW.
+
+  Args:
+  - `widths`: Current column widths.
+  - `row`: Rendered row cells.
+
+  Returns:
+  Updated width vector."
+  [widths row]
+  (let [index 0]
+    (while (< index (count row))
+      (set! [widths] (widen-column widths index (nth row index)))
+      (set! [index] (+ index 1)))
+    widths))
+
+(defun table-widths
+  "Return padded Markdown table widths.
+
+  Args:
+  - `headers`: Rendered header cells.
+  - `rows`: Rendered table rows.
+
+  Returns:
+  Width vector for aligned Markdown table rendering."
+  [headers rows]
+  (let [widths (initial-widths headers)]
+    (doseq [row rows]
+      (set! [widths] (widen-row widths row)))
+    widths))
+
+(defun padded-cells
+  "Pad CELLS to WIDTHS.
+
+  Args:
+  - `cells`: Rendered cell strings.
+  - `widths`: Column widths.
+
+  Returns:
+  Padded cell strings."
+  [cells widths]
+  (let [result []
+        index 0]
+    (while (< index (count widths))
+      (append! result
+               (str (nth cells index)
+                    (apply str (repeat (- (nth widths index)
+                                          (count (nth cells index)))
+                                       " "))))
+      (set! [index] (+ index 1)))
+    result))
+
+(defun render-table-row
+  "Render a single Markdown table row.
+
+  Args:
+  - `cells`: Rendered cell strings.
+  - `widths`: Column widths.
+
+  Returns:
+  A Markdown table row."
+  [cells widths]
+  (str "| " (apply join (concat [" | "] (padded-cells cells widths))) " |"))
+
+(defun separator-cells
+  "Return Markdown separator cells for WIDTHS.
+
+  Args:
+  - `widths`: Column widths.
+
+  Returns:
+  A sequence of `-` strings."
+  [widths]
+  (map widths
+       (fn [width]
+         (apply str (repeat width "-")))))
+
+(defun render-table
+  "Render a Markdown table block.
+
+  Args:
+  - `block`: A `:table` node.
+
+  Returns:
+  Markdown table text without a trailing newline."
+  [block]
+  (let [headers (map (:headers block) escaped-table-cell)
+        rows (normalized-rows (:rows block) (count headers))
+        widths (table-widths headers rows)
+        lines [(render-table-row headers widths)
+               (render-table-row (separator-cells widths) widths)]]
+    (doseq [row rows]
+      (append! lines (render-table-row row widths)))
+    (apply join (concat ["\n"] lines))))
+
+(defun render-block
+  "Render a Markdown block.
+
+  Args:
+  - `block`: A Moordown block node, nil, or plain value.
+
+  Returns:
+  Markdown text for the block."
+  [block]
+  (case (:kind block)
+    :document (render-document (:blocks block))
+    :heading (str (apply str (repeat (:level block) "#"))
+                  " "
+                  (render-inline (:content block)))
+    :paragraph (render-inline (:content block))
+    :code-block (str "```" (:language block) "\n" (:code block) "\n```")
+    :table (render-table block)
+    :default (ast/markdown-text block)))
+
+(defun render-document
+  "Render Markdown blocks as a complete document.
+
+  Args:
+  - `blocks`: Markdown block nodes.
+
+  Returns:
+  Markdown text with blank lines between blocks and one trailing newline."
+  [blocks]
+  (if (empty? (or blocks []))
+    ""
+    (str (apply join (concat ["\n\n"] (map blocks render-block))) "\n")))

@@ -1,0 +1,35 @@
+(ns moordown.render-test
+  (:require proof.core
+            [moordown.ast :as md]
+            [moordown.render :as render]))
+
+(deftest renders-headings-and-paragraphs
+  (is (= "# Roo Reference\n\nAdds numbers together.\n"
+         (render/render-document [(md/heading 1 "Roo Reference")
+                                  (md/paragraph "Adds numbers together.")]))))
+
+(deftest renders-document-blocks
+  (is (= "# Roo Reference\n"
+         (render/render-block (md/document [(md/heading 1 "Roo Reference")])))))
+
+(deftest renders-fenced-code-blocks
+  (is (= "```roo\n(+ 1 2)\n```\n"
+         (render/render-document [(md/code-block "roo" "(+ 1 2)")]))))
+
+(deftest renders-links
+  (is (= "[roo/+](packages/roo/namespaces/roo.md)"
+         (render/render-inline
+          (md/link "roo/+" "packages/roo/namespaces/roo.md")))))
+
+(deftest renders-padded-tables
+  (is (= (str "| Arg         | Description      |\n"
+              "| ----------- | ---------------- |\n"
+              "| value \\| id | Lookup key.      |\n"
+              "| body        | First<br>Second. |")
+         (render/render-block
+          (md/table ["Arg" "Description"]
+                    [["value | id" "Lookup key."]
+                     ["body" "First\nSecond."]])))))
+
+(deftest renders-empty-documents
+  (is (= "" (render/render-document []))))

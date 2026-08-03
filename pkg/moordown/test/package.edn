@@ -1,0 +1,6 @@
+{:name moordown-tests
+ :version "0.1.0"
+ :dependencies {moordown "file:.."
+                proof "file:../../proof"}
+ :load-roots ["."]
+ :config {proof {:test-roots ["moordown"]}}}

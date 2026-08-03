@@ -1,0 +1,94 @@
+(ns moordown.ast)
+
+(defun markdown-text
+  "Normalize a value to Markdown text.
+
+  Args:
+  - `value`: A value used as Markdown text. Nil becomes an empty string.
+
+  Returns:
+  A string suitable for storing in Moordown AST nodes."
+  [value]
+  (if (nil? value)
+    ""
+    (str value)))
+
+(defun heading
+  "Create a Markdown heading node.
+
+  Args:
+  - `level`: Heading level, where 1 renders as `#`.
+  - `content`: Heading text or inline node.
+
+  Returns:
+  A `:heading` node."
+  [level content]
+  {:kind :heading
+   :level level
+   :content content})
+
+(defun paragraph
+  "Create a Markdown paragraph node.
+
+  Args:
+  - `content`: Paragraph text or inline node.
+
+  Returns:
+  A `:paragraph` node."
+  [content]
+  {:kind :paragraph
+   :content content})
+
+(defun code-block
+  "Create a fenced Markdown code block node.
+
+  Args:
+  - `language`: Fence language label, or nil for an unlabeled fence.
+  - `code`: Code text.
+
+  Returns:
+  A `:code-block` node."
+  [language code]
+  {:kind :code-block
+   :language (markdown-text language)
+   :code (markdown-text code)})
+
+(defun table
+  "Create a Markdown table node.
+
+  Args:
+  - `headers`: Header cell values.
+  - `rows`: Row vectors. Short rows are padded with empty cells during render.
+
+  Returns:
+  A `:table` node."
+  [headers rows]
+  {:kind :table
+   :headers headers
+   :rows rows})
+
+(defun document
+  "Create a Markdown document node.
+
+  Args:
+  - `blocks`: Markdown block nodes.
+
+  Returns:
+  A `:document` node."
+  [blocks]
+  {:kind :document
+   :blocks blocks})
+
+(defun link
+  "Create a Markdown link inline node.
+
+  Args:
+  - `label`: Link label text.
+  - `target`: Link target text.
+
+  Returns:
+  A `:link` inline node."
+  [label target]
+  {:kind :link
+   :label (markdown-text label)
+   :target (markdown-text target)})

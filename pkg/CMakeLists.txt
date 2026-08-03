@@ -13,6 +13,7 @@ add_subdirectory(i18n)
 add_subdirectory(loom)
 add_subdirectory(proofread)
 add_subdirectory(lookup)
+add_subdirectory(moordown)
 add_subdirectory(spool)
 add_subdirectory(workbook)
 add_subdirectory(footsteps)
@@ -75,6 +76,7 @@ roo_add_stage_package_target(proof NATIVE_TARGET proof_native)
 roo_add_stage_package_target(lookup NATIVE_TARGET lookup_native)
 roo_add_stage_package_target(proofread NATIVE_TARGET proofread_native)
 roo_add_stage_package_target(loom)
+roo_add_stage_package_target(moordown)
 roo_add_stage_package_target(workbook)
 roo_add_stage_package_target(footsteps)
 roo_add_stage_package_target(zoology)
@@ -86,6 +88,7 @@ add_custom_target(stage_native_packages
     stage_lookup_package
     stage_proofread_package
     stage_loom_package
+    stage_moordown_package
     stage_workbook_package
     stage_footsteps_package
     stage_zoology_package

@@ -1,0 +1,6 @@
+{:name moordown
+ :version "0.1.0"
+ :description "Markdown construction and rendering helpers for Roo."
+ :dependencies []
+ :load-roots ["src"]
+ :namespace-roots {moordown "src"}}
