@@ -27,6 +27,10 @@ namespace Roo
    * (abs nil)
    * => nil
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | number | The number whose absolute value is returned.                       |
    */
   FUNC(AbsFunction, abs)
 

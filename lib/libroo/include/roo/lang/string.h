@@ -18,6 +18,10 @@ namespace Roo
    * (str "The number " x " is the value of x")
    * => "The number 10 is the value of x"
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Values to concatenate as strings.                                  |
    */
   FUNC(StrFunction, str)
 
@@ -44,6 +48,11 @@ namespace Roo
    * @code
    * (join ", " "a" "b" "c") => "a, b, c"
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | separator | String inserted between values.                                    |
+   * | values... | Values to join as strings.                                         |
    */
   FUNC(JoinFunction, join)
 
@@ -55,6 +64,12 @@ namespace Roo
    * (substr "abcdef" 2) => "cdef"
    * (substr "abcdef" 2 3) => "cde"
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to read from.                                               |
+   * | start  | Zero-based start index.                                            |
+   * | end    | Optional zero-based end index, exclusive.                          |
    */
   FUNC(SubstrFunction, substr)
 
@@ -65,6 +80,10 @@ namespace Roo
    * @code
    * (trim "  hello  ") => "hello"
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to trim.                                                    |
    */
   FUNC(TrimFunction, trim)
 
@@ -77,6 +96,10 @@ namespace Roo
    * (blank? " \n\t ") => true
    * (blank? nil) => true
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to test. Nil is considered blank.                           |
    */
   FUNC(BlankPFunction, blank_p)
 
@@ -88,6 +111,10 @@ namespace Roo
    * (upper-case "mIxEd-CaSe!") => "MIXED-CASE!"
    * (upper-case :regular-key) => ":REGULAR-KEY"
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Value to convert through its string representation.                 |
    */
   FUNC(UpperCaseFunction, upper_case)
 
@@ -99,6 +126,10 @@ namespace Roo
    * (lower-case "mIxEd-CaSe!") => "mixed-case!"
    * (lower-case :UPCASE-KEY) => ":upcase-key"
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Value to convert through its string representation.                 |
    */
   FUNC(LowerCaseFunction, lower_case)
 

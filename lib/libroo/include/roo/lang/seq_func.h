@@ -19,10 +19,10 @@ namespace Roo
    * => false
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The seq to test                                                    |
-   * | predicate  | The predicate function.                                            |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to test                                                    |
+   * | predicate | The predicate function.                                            |
    */
   FUNC(AnyFunction, any)
 
@@ -30,7 +30,7 @@ namespace Roo
    * @brief Keep only certain elements of a Seq by applying a function/executable
    * to each element.
    *
-   * A new Seq is created containing only hose elements for which the predicate
+   * A new Seq is created containing only those elements for which the predicate
    * function returns a truthy value.
    *
    * Usage:
@@ -39,11 +39,12 @@ namespace Roo
    *
    * (filter [1 2 3 4] (fn [n] (even? n)))
    * => [2 4]
+   * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The seq to filter                                                  |
-   * | f          | The function/executable to apply to each element                   |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to filter                                                  |
+   * | f         | The function/executable to apply to each element                   |
    */
   FUNC(FilterFunction, filter)
 
@@ -62,7 +63,7 @@ namespace Roo
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
-   * | sequence  | The sequence to query                                              |
+   * | seq       | The seq to query                                                   |
    * | predicate | The predicate function.                                            |
    */
   FUNC(FindFirstFunction, find_first)
@@ -82,7 +83,7 @@ namespace Roo
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
-   * | sequence  | The sequence to query                                              |
+   * | seq       | The seq to query                                                   |
    * | predicate | The predicate function.                                            |
    */
   FUNC(FindIndexFunction, find_index)
@@ -92,8 +93,8 @@ namespace Roo
    * into a single sequence.
    *
    * Elements of the mapped result that are sequences are flattened; non-sequence
-   * values are included directly. Argument order is flexible: collection first
-   * or function first.
+   * values are included directly. Argument order is flexible: seq first or
+   * function first.
    *
    * Usage:
    * @code
@@ -104,10 +105,10 @@ namespace Roo
    * => [1 2 3 4 5]
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The seq to transform                                               |
-   * | f          | A function; seq results are flattened, scalars are kept as-is      |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to transform                                               |
+   * | f         | A function; seq results are flattened, scalars are kept as-is      |
    */
   FUNC(FlatMapFunction, flat_map)
 
@@ -124,10 +125,10 @@ namespace Roo
    * => nil
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The sequence to query                                              |
-   * | value    | The value to find                                                  |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | seq   | The seq to query                                                   |
+   * | value | The value to find                                                  |
    */
   FUNC(IndexOfFunction, index_of)
 
@@ -142,6 +143,11 @@ namespace Roo
    *                   (when (even? nil) (str "Number " x))))
    * => ["Number 2" "Number 4"]
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to transform                                               |
+   * | f         | Function applied to each element. Non-nil results are kept.        |
    */
   FUNC(KeepFunction, keep)
 
@@ -159,10 +165,10 @@ namespace Roo
    * ==> [2 4 6]
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The seq to transform                                               |
-   * | f          | The function/executable to apply to each element                   |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to transform                                               |
+   * | f         | The function/executable to apply to each element                   |
    */
   FUNC(MapFunction, map)
 
@@ -176,12 +182,12 @@ namespace Roo
    *         (fn [result element] (assoc result (:id element) element)))
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The sequence to reduce                                             |
-   * | init       | The initial value of result                                        |
-   * | f          | A function to apply for each element taking the accumulated        |
-   * |            | result and current element as arguments                            |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to reduce                                                  |
+   * | init      | The initial value of result                                        |
+   * | f         | A function to apply for each element taking the accumulated        |
+   * |           | result and current element as arguments                            |
    */
   FUNC(ReduceFunction, reduce)
 
@@ -203,10 +209,10 @@ namespace Roo
    * => [1 2 4 5 6 8]
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | f          | The function/executable to apply to each element                   |
-   * | collection | The seq to filter                                                  |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | The function/executable to apply to each element                   |
+   * | seq       | The seq to filter                                                  |
    */
   FUNC(RemoveFunction, remove)
 
@@ -226,10 +232,10 @@ namespace Roo
    * => [1 2 4 5 8]
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | f          | The function/executable to apply to each element                   |
-   * | collection | The seq to modify                                                  |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | The function/executable to apply to each element                   |
+   * | seq       | The seq to modify                                                  |
    */
   FUNC(RemoveBangFunction, remove_bang)
 
@@ -248,10 +254,10 @@ namespace Roo
    * => [1 2 4 5 6 nil 8 nil]
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | f          | The function/executable to apply to each element                   |
-   * | collection | The seq to filter                                                  |
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | The function/executable to apply to each element                   |
+   * | seq       | The seq to filter                                                  |
    */
   FUNC(RemoveFirstFunction, remove_first)
 
@@ -264,10 +270,10 @@ namespace Roo
    * (seq-match seq {:id 2 :status {:desc "disabled"}})
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The sequence to query                                              |
-   * | pattern  | The partial map pattern to match                                   |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seq     | The seq to query                                                   |
+   * | pattern | The partial map pattern to match                                   |
    */
   FUNC(SeqMatchFunction, match)
 
@@ -276,10 +282,10 @@ namespace Roo
    *
    * Usage: (sort [5 3 7 2 8 1] <) => [1 2 3 5 7 8]
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The seq to sort                                                    |
-   * | compare    | The comparison function, a functiong taking                        |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seq     | The seq to sort                                                    |
+   * | compare | Comparison function used to order elements.                        |
    */
   FUNC(SortFunction, sort)
 

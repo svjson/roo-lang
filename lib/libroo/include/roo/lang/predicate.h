@@ -71,6 +71,10 @@ namespace Roo
    * (callable? 42)
    * => false
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose callable status to query.                          |
    */
   FUNC(CallablePFunction, callable)
 
@@ -87,6 +91,10 @@ namespace Roo
    * (fn? :name)
    * => false
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value whose function status to query.                          |
    */
   FUNC(FnPFunction, fn)
 
@@ -226,7 +234,9 @@ namespace Roo
    * => true
    * @endcode
    *
-   * Param value: The expression, value or identifier to test
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The expression, value or identifier to test.                       |
    */
   FUNC(NilPFunction, is_nil)
 
@@ -247,6 +257,10 @@ namespace Roo
    * (not nil)
    * => true
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value to invert.                                               |
    */
   FUNC(NotFunction, not)
 
@@ -262,7 +276,9 @@ namespace Roo
    * => false
    * @endcode
    *
-   * Param value: The value to test
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The value to test.                                                 |
    */
   FUNC(SomePFunction, is_some)
 

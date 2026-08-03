@@ -47,7 +47,9 @@ namespace Roo
    * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
    *        (concat 1 2 [3 4]) => [1 2 3 4]
    *
-   * Param sequences... - The sequences to splice together
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seqs... | The seqs to splice together.                                       |
    */
   FUNC(ConcatFunction, concat)
 
@@ -59,7 +61,9 @@ namespace Roo
    * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
    *        (concat! [1] 2 [3 4]) => [1 2 3 4]
    *
-   * Param sequences... - The sequences to splice together
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seqs... | The seqs to splice into the first argument.                        |
    */
   FUNC(ConcatBangFunction, concat_bang)
 
@@ -71,10 +75,10 @@ namespace Roo
    * (contains? my-vector "a value")
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The Seq to test                                                    |
-   * | value      | The value to test for                                              |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | seq   | The seq to test.                                                   |
+   * | value | The value to test for.                                             |
    */
   FUNC(ContainsPFunction, contains)
 
@@ -86,10 +90,10 @@ namespace Roo
    * (contains-any? [1 2 3] [0 3])
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The Seq to test                                                    |
-   * | values     | The Seq of values to test for                                      |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | seq    | The seq to test.                                                   |
+   * | values | The seq of values to test for.                                     |
    */
   FUNC(ContainsAnyPFunction, contains_any)
 
@@ -101,19 +105,19 @@ namespace Roo
    * (contains-all? [1 2 3] [1 3])
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | The Seq to test                                                    |
-   * | values     | The Seq of values to test for                                      |
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | seq    | The seq to test.                                                   |
+   * | values | The seq of values to test for.                                     |
    */
   FUNC(ContainsAllPFunction, contains_all)
 
   /*!
    * @brief Return the number of elements in a sequence or map.
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | collection | Collection to count.                                               |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Seq or map to count.                                               |
    */
   FUNC(CountFunction, count)
 
@@ -122,6 +126,10 @@ namespace Roo
    * into a single level vector
    *
    * Usage: (flatten [[1 2 3] [4 5 6]]) => [1 2 3 4 5 6]
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seqs... | Seqs to flatten into a single vector.                              |
    */
   FUNC(FlattenFunction, flatten)
 
@@ -175,6 +183,11 @@ namespace Roo
    * (partition 4 [1 2 3 4 5 6])
    * => [[1 2 3 4] [5 6]]
    * @endcode
+   *
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | size | Partition size.                                                    |
+   * | seq  | Seq to partition.                                                  |
    */
   FUNC(PartitionFunction, partition)
 
@@ -267,6 +280,11 @@ namespace Roo
    * (repeat 3 :a :b)
    * => [:a :b :a :b :a :b]
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | count     | Number of repetitions.                                             |
+   * | values... | Values to repeat.                                                  |
    */
   FUNC(RepeatFunction, repeat)
 
@@ -278,6 +296,10 @@ namespace Roo
    * (reverse [1 2 3])
    * => [3 2 1]
    * @endcode
+   *
+   * | Arg | Description                                                        |
+   * | --- | ------------------------------------------------------------------ |
+   * | seq | Seq to reverse.                                                    |
    */
   FUNC(ReverseFunction, reverse)
 
@@ -302,6 +324,11 @@ namespace Roo
    * (take 200 [1 2 3 4 5])
    * => [1 2 3 4 5]
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | count | Maximum number of elements to keep.                                |
+   * | seq   | Seq to read from.                                                  |
    */
   FUNC(TakeFunction, take)
 
@@ -312,6 +339,10 @@ namespace Roo
    * @code
    * (vector 1 2 3) => [1 2 3]
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Values to place in the new vector.                                 |
    */
   FUNC(VectorFunction, vector)
 

@@ -42,6 +42,12 @@ namespace Roo
 
   /**
    * @brief Define a function in the current namespace
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | name    | Symbol to bind to the function.                                    |
+   * | params  | Vector of argument declarations.                                   |
+   * | body... | One or more forms that make up the function body.                  |
    */
   SPECIAL_FORM_DECL(DefunForm, decl, decl_docstring)
 

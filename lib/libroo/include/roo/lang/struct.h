@@ -210,6 +210,11 @@ namespace Roo
    * (dissoc my-map :key)
    * (dissoc my-map :key1 :key2)
    * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | target  | The map or map-like value to copy.                                 |
+   * | keys... | Keys to remove from the copy.                                      |
    */
   FUNC(DissocFunction, dissoc);
 
@@ -241,6 +246,11 @@ namespace Roo
    * @code
    * (dissoc! my-map :key)
    * @endcode
+   *
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | map  | The map to mutate.                                                 |
+   * | key  | Key to remove.                                                     |
    */
   FUNC(DissocBangFunction, dissoc_bang)
 
@@ -255,6 +265,11 @@ namespace Roo
    * @code
    * (dissoc-in! my-map [:key :nested-key])
    * @endcode
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | target   | The map or map-like value to mutate.                               |
+   * | paths... | One or more paths to nested keys to remove.                        |
    */
   FUNC(DissocInBangFunction, dissoc_in_bang)
 
@@ -265,6 +280,10 @@ namespace Roo
    * @code
    * (keys {:name "A name" :age 23}) => [:name :age]
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | The map or complex object whose keys are returned.                 |
    */
   FUNC(KeysFunction, keys)
 
@@ -277,6 +296,10 @@ namespace Roo
    * (merge {:a 1 :b 2} {:c 3 :d 4}) => {:a 1 :b 2 :c 3 :d 4}
    * (merge {:a 1} {:b 2} {:a 4 :c 3}) => {:a 4 :b 2 :c 3}
    * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | maps... | Maps whose entries are merged.                                     |
    */
   FUNC(MergeFunction, merge)
 
@@ -309,6 +332,11 @@ namespace Roo
    * @code
    * (select-keys {:a 1 :b 2 :c 3} [:a :c]) => {:a 1 :c 3}
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | map    | The source map.                                                    |
+   * | keys   | Seq of keys to keep.                                               |
    */
   FUNC(SelectKeysFunction, select_keys)
 

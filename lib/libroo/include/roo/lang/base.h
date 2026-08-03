@@ -22,6 +22,11 @@ namespace Roo
    * (def my-map {:a 1 :b 2})
    * => {:a 1 :b 2}
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | name  | Symbol to bind in the current namespace.                           |
+   * | value | Optional value assigned to the symbol.                             |
    */
   SPECIAL_FORM_DECL(DefForm, def, def_docstring)
 
@@ -40,6 +45,10 @@ namespace Roo
    *   :status/success)
    * => :status/success
    * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | body... | Forms to evaluate sequentially.                                    |
    */
   SPECIAL_FORM_DECL(DoForm, do)
 
@@ -51,6 +60,10 @@ namespace Roo
    * (eval '(+ 1 1)) => 2
    * (eval "(+ 1 1)") => 2
    * @endcode
+   *
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | form | A Roo form or source string to evaluate.                           |
    */
   FUNC(EvalFunction, eval_string, eval_form)
 
@@ -61,6 +74,10 @@ namespace Roo
    * @code
    * (include "my-file.lsp")
    * @endcode
+   *
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | path | Source file path to evaluate.                                      |
    */
   FUNC(IncludeFunction, include)
 
@@ -81,6 +98,10 @@ namespace Roo
    * (and true false nil)
    * => false
    * @endcode
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | forms... | Forms evaluated until one is falsy.                                |
    */
   SPECIAL_FORM_DECL(AndForm, and)
 
@@ -122,6 +143,10 @@ namespace Roo
    * (name :accept/ok) => "ok"
    * (name :ok) => "ok"
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Keyword or symbol to extract the name from.                        |
    */
   FUNC(NameFunction, name)
 
@@ -133,6 +158,11 @@ namespace Roo
    * (ns sample.core)
    * (ns sample.core (:require [roo.string :as string]))
    * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | name    | Namespace name for the current source file.                        |
+   * | clauses | Optional namespace clauses such as :require.                       |
    */
   SPECIAL_FORM_DECL(NsForm, ns);
 
@@ -163,6 +193,10 @@ namespace Roo
    * (or nil 2)
    * => 2
    * @endcode
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | forms... | Forms evaluated until one is truthy.                               |
    */
   SPECIAL_FORM_DECL(OrForm, or)
 
@@ -173,6 +207,10 @@ namespace Roo
    * @code
    * (prn "Hello" "World")
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Values to print.                                                   |
    */
   FUNC(PrnFunction, prn)
 
@@ -183,6 +221,10 @@ namespace Roo
    * @code
    * (resolve '+) => <fn>
    * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | symbol | Symbol to resolve.                                                 |
    */
   FUNC(ResolveFunction, resolve)
 
@@ -193,6 +235,10 @@ namespace Roo
    * @code
    * (random-seed! 1234)
    * @endcode
+   *
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | seed | Integer seed value.                                                |
    */
   FUNC(RandomSeedBangFunction, random_seed_bang)
 
@@ -219,12 +265,22 @@ namespace Roo
    * (with-random-seed 1234
    *   (rnd 10))
    * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seed    | Integer seed value for the body.                                   |
+   * | body... | Forms evaluated with the temporary random seed.                    |
    */
   SPECIAL_FORM_DECL(WithRandomSeedForm, with_random_seed)
 
   /*!
    * @brief Set a new value for a symbol in the lexical scope, namespace or
    * nested structure.
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | Symbol or nested place to assign.                                  |
+   * | value  | New value.                                                         |
    */
   SPECIAL_FORM_DECL(SetBangForm, set)
 
@@ -237,6 +293,10 @@ namespace Roo
    * (qualifier :accept/ok) => "accept"
    * (qualifier :ok) => nil
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Keyword or symbol to extract the qualifier from.                   |
    */
   FUNC(QualifierFunction, qualifier)
 
@@ -264,6 +324,10 @@ namespace Roo
    * (type-of true) => "boolean"
    * (type-of nil) => "nil"
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Value whose runtime type is returned.                              |
    */
   FUNC(TypeOfFunction, type_of)
 

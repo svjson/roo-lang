@@ -9,6 +9,10 @@ namespace Roo
   /*!
    * @brief Allows retaining code in a source file without risk of evaluation in
    * runtime.
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | body... | Forms retained without evaluation.                                 |
    */
   SPECIAL_FORM_DECL(CommentForm, comment);
 
@@ -21,6 +25,11 @@ namespace Roo
    *     (first-call)
    *     (second-call))
    * @endcode
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | value    | Initial value to thread.                                           |
+   * | forms... | Forms to receive the threaded value as first argument.              |
    */
   SPECIAL_FORM_DECL(ThreadFirstForm, thread_first)
 } // namespace Roo

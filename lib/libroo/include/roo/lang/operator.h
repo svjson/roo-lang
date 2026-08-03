@@ -302,6 +302,11 @@ namespace Roo
    * (< 10 10)
    * => false
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side number or string.                                   |
+   * | right | Right hand side number or string.                                  |
    */
   FUNC(LessThanFunction, lt_num, lt_str)
 
@@ -319,6 +324,11 @@ namespace Roo
    * (<= 10 10)
    * => true
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side number or string.                                   |
+   * | right | Right hand side number or string.                                  |
    */
   FUNC(LessThanOrEqualsFunction, lte_num, lte_str)
 
@@ -340,6 +350,11 @@ namespace Roo
    * => true
    *
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side number or string.                                   |
+   * | right | Right hand side number or string.                                  |
    */
   FUNC(GreaterThanFunction, gt_num, gt_str)
 
@@ -357,6 +372,11 @@ namespace Roo
    * (>= 10 10)
    * => true
    * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side number or string.                                   |
+   * | right | Right hand side number or string.                                  |
    */
   FUNC(GreaterThanOrEqualsFunction, gte_num, gte_str)
 
