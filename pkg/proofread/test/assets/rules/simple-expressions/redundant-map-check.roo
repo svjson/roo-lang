@@ -13,3 +13,8 @@
   (and (map? node)
        (= (:type node) :symbol)
        (= (:form node) "value")))
+
+(def progress-report?
+  (and (map? candidate)
+       (:progress-value candidate)
+       (:progress-max candidate)))
