@@ -74,58 +74,58 @@
           include-sub-namespaces (flag-value arg "--include-sub-namespaces")
           include-sub-namespaces-p (flag-value arg "--include-sub-namespaces?")]
       (cond
-        (not (nil? reporter))
+        reporter
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :reporter (cli-keyword reporter))
                                roots)
 
-        (not (nil? filter-pattern))
+        filter-pattern
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :filter filter-pattern)
                                roots)
 
-        (not (nil? namespace))
+        namespace
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :namespace namespace)
                                roots)
 
-        (not (nil? fixture-root))
+        fixture-root
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :fixture-root fixture-root)
                                roots)
 
-        (not (nil? test-root))
+        test-root
         (parse-proof-args-from args (+ index 1) config (append! roots test-root))
 
-        (not (nil? test-roots))
+        test-roots
         (parse-proof-args-from args (+ index 1) config (append! roots test-roots))
 
-        (not (nil? durations))
+        durations
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :durations? (cli-bool durations))
           roots)
 
-        (not (nil? durations-p))
+        durations-p
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :durations? (cli-bool durations-p))
           roots)
 
-        (not (nil? include-sub-namespaces))
+        include-sub-namespaces
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces))
           roots)
 
-        (not (nil? include-sub-namespaces-p))
+        include-sub-namespaces-p
         (parse-proof-args-from
           args
           (+ index 1)

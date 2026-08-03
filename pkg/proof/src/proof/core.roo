@@ -37,7 +37,7 @@
   tests)
 
 (defun sub-namespace? [parent namespace]
-  (and (not (nil? namespace))
+  (and (string? namespace)
        (string/starts-with? namespace (str parent "."))))
 
 (defun qualified-test-name [test]
