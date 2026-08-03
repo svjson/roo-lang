@@ -89,12 +89,11 @@
                (advance-history history entry))))))
 
 (defun cancel [book]
-  (let [tx (get-in book [:history :tx])]
-    (if tx
-      (assoc book
-             :value (patch-apply/revert-patches (:value book) (:patches tx))
-             :history (assoc (:history book) :tx nil))
-      book)))
+  (if-let [tx (get-in book [:history :tx])]
+    (assoc book
+           :value (patch-apply/revert-patches (:value book) (:patches tx))
+           :history (assoc (:history book) :tx nil))
+    book))
 
 (defun undo [book]
   (let [undo-stack (get-in book [:history :undo])

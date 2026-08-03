@@ -33,10 +33,10 @@
             (get-in book [:history :current-revision])))
 
 (defun can-undo? [book]
-  (not (empty? (get-in book [:history :undo]))))
+  (not-empty? (get-in book [:history :undo])))
 
 (defun can-redo? [book]
-  (not (empty? (get-in book [:history :redo]))))
+  (not-empty? (get-in book [:history :redo])))
 
 (defun undo-label [book]
   (:label (head (get-in book [:history :undo]))))
