@@ -35,15 +35,13 @@
                  (str prefix
                       (child-branch last?)
                       (node-label child repeated? show-repeated?)))
-        (if repeated?
-          nil
-          (do
-            (append! seen id)
-            (append-child-lines! lines
-                                 (:dependencies child)
-                                 (str prefix (child-prefix last?))
-                                 seen
-                                 show-repeated?)))
+        (unless repeated?
+          (append! seen id)
+          (append-child-lines! lines
+                               (:dependencies child)
+                               (str prefix (child-prefix last?))
+                               seen
+                               show-repeated?))
         (set! [index] (+ index 1))))))
 
 (defun tree-lines [root show-repeated?]
@@ -54,14 +52,12 @@
 
 (defun append-flat-ids! [ids seen node]
   (let [id (:id node)]
-    (if (contains? seen id)
-      nil
-      (do
-        (append! seen id)
-        (append! ids id)
-        (map (:dependencies node)
-             (fn [child]
-               (append-flat-ids! ids seen child)))))))
+    (unless (contains? seen id)
+      (append! seen id)
+      (append! ids id)
+      (map (:dependencies node)
+           (fn [child]
+             (append-flat-ids! ids seen child))))))
 
 (defun flat-lines [root]
   (let [ids []
@@ -77,8 +73,7 @@
 
 (defun deps! [package-dir repo-root show-repeated? flat?]
   (let [root (graph/root-node! package-dir repo-root)]
-    (if (nil? root)
-      nil
+    (unless (nil? root)
       (if flat?
         (print-lines! (flat-lines root))
         (print-lines! (tree-lines root show-repeated?))))))

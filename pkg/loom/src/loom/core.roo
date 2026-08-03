@@ -22,14 +22,13 @@
 (defun option? [arg]
   (if (nil? arg)
     false
-    (if (= 0 (count arg))
+    (if (empty? arg)
       false
-      (= "-" (str (nth arg 0))))))
+      (= "-" (str (head arg))))))
 
 (defun init-package-dir [argv]
   (let [first-arg (args/arg-at argv 1)]
-    (if (option? first-arg)
-      nil
+    (unless (option? first-arg)
       first-arg)))
 
 (defun init-command [argv]

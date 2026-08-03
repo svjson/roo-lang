@@ -10,18 +10,16 @@
       (let [package-manifest (manifest/validate! (io/slurp-edn! manifest-path)
                                                  manifest-path)
             package-id (repository/package-id name version)]
-        (if (nil? package-manifest)
-          nil
-          (do
-            (prn package-id)
-            (prn (str "path: " target-dir))
-            (prn (str "description: " (manifest/field-text (:description package-manifest))))
-            (prn (str "load-roots: " (manifest/field-text (:load-roots package-manifest))))
-            (prn (str "dependencies: "
-                      (manifest/field-text (:dependencies package-manifest))))
-            (prn (str "native-libraries: "
-                      (manifest/field-text (:native-libraries package-manifest))))
-            package-manifest)))
+        (unless (nil? package-manifest)
+          (prn package-id)
+          (prn (str "path: " target-dir))
+          (prn (str "description: " (manifest/field-text (:description package-manifest))))
+          (prn (str "load-roots: " (manifest/field-text (:load-roots package-manifest))))
+          (prn (str "dependencies: "
+                    (manifest/field-text (:dependencies package-manifest))))
+          (prn (str "native-libraries: "
+                    (manifest/field-text (:native-libraries package-manifest))))
+          package-manifest))
       (do
         (prn (str "loom: package is not installed: "
                   (repository/package-id name version)))

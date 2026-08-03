@@ -8,9 +8,8 @@
 (defun installed-version-id [package-entry version-entry]
   (let [name (:name package-entry)
         version (:name version-entry)]
-    (if (io/exists? (io/join-path (:path version-entry) "package.edn"))
-      (repository/package-id name version)
-      nil)))
+    (when (io/exists? (io/join-path (:path version-entry) "package.edn"))
+      (repository/package-id name version))))
 
 (defun installed-package-ids-for [package-entry]
   (keep (filter (io/list-directory! (:path package-entry)) directory-entry?)
@@ -20,9 +19,8 @@
 (defun installed-package-ids [repo-root]
   (if (io/directory? repo-root)
     (sort
-      (flatten
-        (map (filter (io/list-directory! repo-root) directory-entry?)
-             installed-package-ids-for))
+      (flat-map (filter (io/list-directory! repo-root) directory-entry?)
+                installed-package-ids-for)
       <)
     []))
 

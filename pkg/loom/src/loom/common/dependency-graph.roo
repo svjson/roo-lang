@@ -5,9 +5,9 @@
             [loom.common.repository :as repository]))
 
 (defun keyword-name? [text]
-  (if (= 0 (count text))
+  (if (empty? text)
     false
-    (= ":" (str (nth text 0)))))
+    (= ":" (str (head text)))))
 
 (defun normalize-name [name]
   (let [text (str name)]
@@ -16,9 +16,8 @@
       text)))
 
 (defun file-path [text]
-  (if (string/starts-with? text "file:")
-    (substr text (count "file:"))
-    nil))
+  (when (string/starts-with? text "file:")
+    (substr text (count "file:"))))
 
 (defun dependency-spec-from-atom [name value]
   (let [text (str value)
@@ -36,8 +35,8 @@
 (defun dependency-spec-from-map [name value]
   (let [version (:version value)
         path (:path value)
-        normalized-version (if (nil? version) nil (str version))
-        normalized-path (if (nil? path) nil (str path))]
+        normalized-version (unless (nil? version) (str version))
+        normalized-path (unless (nil? path) (str path))]
     {:name name
      :version normalized-version
      :path normalized-path
@@ -98,9 +97,9 @@
        (path-separator? (str (nth path 2)))))
 
 (defun absolute-path? [path]
-  (if (= 0 (count path))
+  (if (empty? path)
     false
-    (or (path-separator? (str (nth path 0)))
+    (or (path-separator? (str (head path)))
         (windows-drive-path? path))))
 
 (defun dependency-path-root [package-root spec]
@@ -156,8 +155,7 @@
 
 (defun root-node! [package-dir repo-root]
   (let [package-manifest (manifest/read! package-dir)]
-    (if (nil? package-manifest)
-      nil
+    (unless (nil? package-manifest)
       (let [name (manifest/package-name package-manifest)
             version (manifest/package-version package-manifest)
             id (manifest/package-id package-manifest)]
@@ -176,8 +174,7 @@
     (if (:missing? node)
       [(:id node)]
       [])
-    (flatten
-      (map (:dependencies node) collect-missing-package-ids))))
+    (flat-map (:dependencies node) collect-missing-package-ids)))
 
 (defun complete? [node]
-  (= 0 (count (collect-missing-package-ids node))))
+  (empty? (collect-missing-package-ids node)))

@@ -2,15 +2,13 @@
   (:require [roo.io :as io]))
 
 (defun copy-tree! [source target]
-  (if (io/file? source)
-    (io/copy-file! source target)
-    (if (io/directory? source)
-      (map (io/list-directory! source {:hidden? true})
-           (fn [entry]
-             (copy-tree! (:path entry) (io/join-path target (:name entry)))))
-      nil)))
+    (if (io/file? source)
+      (io/copy-file! source target)
+      (when (io/directory? source)
+        (map (io/list-directory! source {:hidden? true})
+             (fn [entry]
+               (copy-tree! (:path entry) (io/join-path target (:name entry))))))))
 
 (defun copy-path-if-present! [source target]
-  (if (io/exists? source)
-    (copy-tree! source target)
-    nil))
+  (when (io/exists? source)
+    (copy-tree! source target)))

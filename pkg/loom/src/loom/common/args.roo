@@ -1,9 +1,8 @@
 (ns loom.common.args)
 
 (defun arg-at [args index]
-  (if (< index (count args))
-    (nth args index)
-    nil))
+  (when (< index (count args))
+    (nth args index)))
 
 (defun flag-from? [args index flag]
   (if (< index (count args))

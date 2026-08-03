@@ -6,8 +6,7 @@
             [loom.common.repository :as repository]))
 
 (defun copy-load-roots! [package-dir target-dir roots]
-  (if (nil? roots)
-    nil
+  (unless (nil? roots)
     (map roots
          (fn [root]
            (files/copy-path-if-present! (io/join-path package-dir root)
@@ -15,30 +14,26 @@
 
 (defun copy-native-library! [package-dir target-dir library]
   (let [path (:path library)]
-    (if (nil? path)
-      nil
+    (unless (nil? path)
       (files/copy-path-if-present! (io/join-path package-dir path)
                                    (io/join-path target-dir path)))))
 
 (defun copy-native-libraries! [package-dir target-dir libraries]
-  (if (nil? libraries)
-    nil
+  (unless (nil? libraries)
     (map libraries
          (fn [library]
            (copy-native-library! package-dir target-dir library)))))
 
 (defun install! [package-dir repo-root force?]
   (let [package-manifest (manifest/read! package-dir)]
-    (if (nil? package-manifest)
-      nil
+    (unless (nil? package-manifest)
       (let [manifest-path (manifest/manifest-path package-dir)
             name (manifest/package-name package-manifest)
             version (manifest/package-version package-manifest)
             package-id (manifest/package-id package-manifest)
             target-dir (repository/package-target-dir repo-root name version)]
-        (if (io/exists? target-dir)
-          (uninstall/uninstall! repo-root name version)
-          nil)
+        (when (io/exists? target-dir)
+          (uninstall/uninstall! repo-root name version))
         (io/copy-file! manifest-path (io/join-path target-dir "package.edn"))
         (copy-load-roots! package-dir target-dir (manifest/load-roots package-manifest))
         (copy-native-libraries! package-dir

@@ -31,7 +31,7 @@
 (defun field-text [value]
   (if (nil? value)
     "none"
-    (if (= 0 (count value))
+    (if (empty? value)
       "none"
       (str value))))
 
@@ -39,18 +39,16 @@
   (let [value (get manifest field)]
     (if (nil? value)
       (append! errors (str "missing required field " label))
-      (if (atom? value)
-        nil
+      (unless (atom? value)
         (append! errors (str label " must be a string, symbol, or keyword"))))))
 
 (defun add-load-roots-error! [errors manifest]
   (let [roots (:load-roots manifest)]
     (if (nil? roots)
-      (append! errors "missing required field :load-roots")
+        (append! errors "missing required field :load-roots")
       (if (= "vector" (type-of roots))
         (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
-          (if (= 0 (count invalid-roots))
-            nil
+          (unless (empty? invalid-roots)
             (append! errors ":load-roots must contain only strings, symbols, or keywords")))
         (append! errors ":load-roots must be a vector")))))
 
@@ -72,7 +70,7 @@
 
 (defun validate! [manifest manifest-path]
   (let [errors (validation-errors manifest)]
-    (if (= 0 (count errors))
+    (if (empty? errors)
       manifest
       (do
         (report-errors! manifest-path errors)
