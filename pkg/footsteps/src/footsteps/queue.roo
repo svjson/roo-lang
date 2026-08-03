@@ -89,14 +89,14 @@
 
 (defun append-after-current [work step entries]
   (let [start (max (:highest-progress work)
-                   (if (empty? (or (:completed work) []))
+                   (if (empty? (:completed work))
                      0
                      (-> work :completed last :scope :end))
                    (-> step :scope :end))
         end (:progress-max work)
         parent-scope (scope/make :footsteps.scope/appended start end)
         remaining (concat entries
-                          (map (or (:queue work) [])
+                          (map (:queue work)
                                (fn [instance]
                                  {:step (:step instance)
                                   :id (:id instance)
@@ -113,7 +113,7 @@
         hidden-scope (scope/make :footsteps.scope/hidden
                                  (-> current :scope :start)
                                  (-> current :scope :start))
-        appended (map (or entries [])
+        appended (map entries
                       (fn [entry]
                         (instance work entry hidden-scope)))]
     (assoc work :queue (concat appended (:queue work)))))
