@@ -82,6 +82,35 @@
             [(md/paragraph (str "Returns: " return-doc))]
             [])))
 
+(defun example-format-name
+  "Return the Markdown code fence language name for EXAMPLE.
+
+  Args:
+  - `example`: Lookup documentation example map.
+
+  Returns:
+  Code fence language name."
+  [example]
+  (name (or (:format example) :roo)))
+
+(defun example-blocks
+  "Return Markdown blocks for documentation examples in ENTRY.
+
+  Args:
+  - `entry`: Boodle entry map.
+
+  Returns:
+  Blocks containing an examples heading and fenced code blocks."
+  [entry]
+  (let [examples (:examples (:doc entry))]
+    (unless (empty? examples)
+      (concat [(md/heading 2 "Examples")]
+              (keep examples
+                    (fn [example]
+                      (when-let [source (:source example)]
+                        (md/code-block (example-format-name example)
+                                       source))))))))
+
 (defun entry-detail-blocks
   "Return Markdown blocks for ENTRY with HEADING-LEVEL.
 
@@ -97,7 +126,8 @@
                 (fn [text]
                   (when text
                     (md/paragraph text))))
-          (flat-map (:signatures entry) signature-blocks)))
+          (flat-map (:signatures entry) signature-blocks)
+          (example-blocks entry)))
 
 (defun index-document
   "Return the GitHub Pages index document for PAGE.

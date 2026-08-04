@@ -26,7 +26,9 @@
                                      :signatures [{:display "(+ numbers...)"
                                                    :params [{:name "numbers..."
                                                              :doc "Numbers to add."}]
-                                                   :returns {:doc "The sum."}}]})]})]})]))
+                                                   :returns {:doc "The sum."}}]
+                                     :doc {:examples [{:format :roo
+                                                       :source "(+ 1 2)\n=> 3"}]}})]})]})]))
 
 (deftest renders-github-pages-files
   (let [files (github-pages/files sample-catalog)
@@ -125,7 +127,12 @@
                 "| Arg        | Description     |\n"
                 "| ---------- | --------------- |\n"
                 "| numbers... | Numbers to add. |\n\n"
-                "Returns: The sum.\n"
+                "Returns: The sum.\n\n"
+                "## Examples\n\n"
+                "```roo\n"
+                "(+ 1 2)\n"
+                "=> 3\n"
+                "```\n"
                 "\n</main>\n"
                 "</div>\n")
            (:content symbol-page)))))
