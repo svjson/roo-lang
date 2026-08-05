@@ -79,6 +79,7 @@ namespace Roo
     lang_symbols.emplace("capitalize", CapitalizeFunction::make());
     lang_symbols.emplace("capitalize-first", CapitalizeFirstFunction::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
+    lang_symbols.emplace("clamp", ClampFunction::make());
     lang_symbols.emplace("callable?", CallablePFunction::make());
     lang_symbols.emplace("comment", CommentForm::make());
     lang_symbols.emplace("concat", ConcatFunction::make());

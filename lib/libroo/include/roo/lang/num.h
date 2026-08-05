@@ -75,6 +75,32 @@ namespace Roo
   FUNC(FloatFunction, to_float)
 
   /*!
+   * @brief Clamp a number to the range [low, high].
+   *
+   * Usage:
+   * @code
+   * (clamp 5 0 10)
+   * => 5
+   *
+   * (clamp -3 0 10)
+   * => 0
+   *
+   * (clamp 15 0 10)
+   * => 10
+   *
+   * (clamp nil 0 10)
+   * => nil
+   * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | The number to clamp.                                               |
+   * | low   | Lower bound (inclusive).                                           |
+   * | high  | Upper bound (inclusive).                                           |
+   */
+  FUNC(ClampFunction, clamp)
+
+  /*!
    * @brief Return the smallest numeric argument.
    *
    * | Arg        | Description                                                        |
