@@ -23,12 +23,10 @@ namespace Roo
    *   :default "x is not 10 or 20")
    * @endcode
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | value      | The value to match                                                 |
-   * | match      | A value or expression to match against value                       |
-   * | result     | An expression evaluated if match equals value                      |
-   * | clauses... | Repetitions of match and result                                    |
+   * | Arg               | Description                                             |
+   * | ----------------- | ------------------------------------------------------- |
+   * | value             | The value to match                                      |
+   * | (match result)... | Repeated match/result pairs.                            |
    */
   SPECIAL_FORM_DECL(CaseForm, case)
 
@@ -50,11 +48,9 @@ namespace Roo
    * In the example above, :else is a truthy value and can therefore be used
    * as a last catch-all condition.
    *
-   * | Arg        | Description                                                        |
-   * | ---------- | ------------------------------------------------------------------ |
-   * | condition  | A conditional form                                                 |
-   * | result     | An expression that will, conditionally, be evaluated               |
-   * | clauses... | Repetitions of condition and result                                |
+   * | Arg                    | Description                                         |
+   * |------------------------|-----------------------------------------------------|
+   * | (condition result)...  | Repeated condition/result pairs.                    |
    */
   SPECIAL_FORM_DECL(CondForm, cond)
 
