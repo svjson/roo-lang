@@ -26,8 +26,14 @@
   [node]
   (when-let [binding-name (single-binding-symbol node)
              body (sole-let-body-form node)]
-    (and (= "if" (forms/head-name body))
-         (= binding-name (forms/symbol-name (nth (:children body) 1))))))
+    (let [children (:children body)
+          condition (nth children 1)]
+      (and (= "if" (forms/head-name body))
+           (or (= binding-name (forms/symbol-name condition))
+               (and (= 4 (count children))
+                    (forms/call? condition "nil?" 2)
+                    (= binding-name
+                       (forms/symbol-name (nth (:children condition) 1)))))))))
 
 (defun let-when-candidate?
   "Test whether a `let` form should be `when-let`."

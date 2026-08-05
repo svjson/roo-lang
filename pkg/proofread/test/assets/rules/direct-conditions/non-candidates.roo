@@ -11,6 +11,12 @@
       item
       :missing)))
 
+(def different-nil-condition
+  (let [item (find-item)]
+    (if (nil? ready?)
+      item
+      :missing)))
+
 (def different-when-condition
   (let [item (find-item)]
     (when ready?

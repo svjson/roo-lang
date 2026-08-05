@@ -11,3 +11,9 @@
     (if item
       (:name item)
       :missing)))
+
+(def nil-test
+  (let [value (:value option)]
+    (if (nil? value)
+      (:id option)
+      value)))

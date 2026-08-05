@@ -108,18 +108,17 @@
                                                 reporter-name)])))))
 
       (= arg "--group-by")
-      (let [group-text (nth args 1)]
-        (if (nil? group-text)
-          (assoc options
-                 :errors
-                 (concat (:errors options) ["Missing group criteria after --group-by"]))
-          (let [result (parse-groups group-text)]
-            (parse-args-step (tail (tail args))
-                             (assoc options
-                                    :groups (concat (:groups options)
-                                                    (:groups result))
-                                    :errors (concat (:errors options)
-                                                    (:errors result)))))))
+      (if-let [group-text (nth args 1)]
+        (let [result (parse-groups group-text)]
+          (parse-args-step (tail (tail args))
+                           (assoc options
+                                  :groups (concat (:groups options)
+                                                  (:groups result))
+                                  :errors (concat (:errors options)
+                                                  (:errors result)))))
+        (assoc options
+               :errors
+               (concat (:errors options) ["Missing group criteria after --group-by"])))
 
       (string/starts-with? arg "--")
       (parse-args-step (tail args)

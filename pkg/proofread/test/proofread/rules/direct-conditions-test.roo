@@ -22,7 +22,7 @@
          (diagnostic-summary "assets/rules/direct-conditions/use-unless.roo"))))
 
 (deftest reports-use-if-let-for-let-wrapped-if-forms
-  (is (= [[:use-if-let 4] [:use-if-let 10]]
+  (is (= [[:use-if-let 4] [:use-if-let 10] [:use-if-let 16]]
          (diagnostic-summary "assets/rules/direct-conditions/use-if-let.roo"))))
 
 (deftest reports-use-when-let-for-let-wrapped-when-forms
