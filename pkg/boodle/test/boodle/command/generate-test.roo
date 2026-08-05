@@ -105,7 +105,8 @@
         output-dir (io/join-path root "docs")
         old-version-page (io/join-path output-dir
                                        "packages/roo/versions/0.0.9/index.md")
-        package-index-page (io/join-path output-dir "packages/roo/index.md")]
+        package-page (io/join-path output-dir
+                                   "packages/roo/versions/0.1.0/index.md")]
     (when (io/exists? root)
       (io/remove-tree! root))
     (io/spit! old-version-page "old version")
@@ -113,14 +114,21 @@
     (generate/run! ["--out" output-dir index-file])
     (is (= (str "---\n"
                 "layout: reference\n"
-                "title: roo\n"
+                "title: roo 0.1.0\n"
                 "---\n\n"
-                "# roo\n\n"
+                "<div class=\"version-context\">\n"
+                "<span class=\"version-package\">roo</span>\n"
+                "<label class=\"version-select-label\">Version "
+                "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
+                "<option value=\"../0.0.9/\">0.0.9</option>\n"
+                "<option value=\"../0.1.0/\" selected>0.1.0</option>\n"
+                "</select></label>\n"
+                "</div>\n"
+                "# roo 0.1.0\n\n"
                 "Roo standard library.\n\n"
-                "| Version                  | Namespaces | Symbols |\n"
-                "| ------------------------ | ---------- | ------- |\n"
-                "| [0.0.9](versions/0.0.9/) |            |         |\n"
-                "| [0.1.0](versions/0.1.0/) | 1          | 1       |"
+                "| Namespace                  | Symbols |\n"
+                "| -------------------------- | ------- |\n"
+                "| [roo](namespaces/roo.html) | 1       |"
                 "\n")
-           (io/slurp! package-index-page)))
+           (io/slurp! package-page)))
     (io/remove-tree! root)))

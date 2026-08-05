@@ -113,7 +113,7 @@ SYMBOL_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo/plu
 rm -rf "$ROOT"
 case "$ROOT_INDEX_CONTENT" in
   *"## The Roo Language"*\
-*"[roo](packages/roo/)"*) ;;
+*"[roo](packages/roo/versions/0.1.0/)"*) ;;
   *)
     printf '%s\n' "unexpected boodle root index page:" >&2
     printf '%s\n' "$ROOT_INDEX_CONTENT" >&2
@@ -123,7 +123,7 @@ esac
 case "$NAMESPACE_CONTENT" in
   *"layout: reference"*\
 *"<nav class=\"reference-sidebar\">"*\
-*"<div class=\"version-context\">roo 0.1.0</div>"*\
+*"<select class=\"version-select\""*\
 *"[roo/+](roo/plus.html)"*) ;;
   *)
     printf '%s\n' "unexpected boodle namespace page:" >&2
@@ -134,7 +134,7 @@ esac
 case "$SYMBOL_CONTENT" in
   *"title: roo/+"*\
 *"<li><a class=\"active\" href=\"plus.html\">+</a></li>"*\
-*"<div class=\"version-context\">roo 0.1.0</div>"*\
+*"<select class=\"version-select\""*\
 *"| numbers... | Numbers to add. |"*\
 *"Returns: The sum."*) ;;
   *)

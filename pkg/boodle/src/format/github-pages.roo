@@ -28,20 +28,6 @@
   [package]
   (reference/package-version package))
 
-(defun package-symbol-count
-  "Return the number of documented symbols in PACKAGE.
-
-  Args:
-  - `package`: Boodle package map.
-
-  Returns:
-  Total number of namespace entries in `package`."
-  [package]
-  (reduce (:namespaces package)
-          0
-          (fn [total namespace]
-            (+ total (count (:entries namespace))))))
-
 (defun package-versions
   "Return known versions for PACKAGE.
 
@@ -171,6 +157,17 @@
           (flat-map (:signatures entry) signature-blocks)
           (example-blocks entry)))
 
+(defun package-url
+  "Return the root index URL for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  URL to the current package version page."
+  [package]
+  (str "packages/" (:id package) "/versions/" (package-version package) "/"))
+
 (defun package-row
   "Return the root index table row for PACKAGE.
 
@@ -180,7 +177,7 @@
   Returns:
   A Markdown table row vector."
   [package]
-  [(md/link (:name package) (str "packages/" (:id package) "/"))
+  [(md/link (:name package) (package-url package))
    (apply join (concat [", "] (package-versions package)))
    (:summary package)])
 
@@ -282,31 +279,30 @@
       (concat [(md/heading 1 "Reference")]
               (package-index-blocks packages (:package-groups catalog))))))
 
+(defun package-index-url
+  "Return the current-version URL from a package index redirect page.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Relative URL to the current package version page."
+  [package]
+  (str "versions/" (package-version package) "/"))
+
 (defun package-index-document
-  "Return the GitHub Pages package version index document for PAGE.
+  "Return the GitHub Pages package redirect document for PAGE.
 
   Args:
   - `page`: Boodle package index page map.
 
   Returns:
-  A Moordown document."
+  A Moordown document linking to the current package version."
   [page]
   (let [package (:package page)]
     (md/document
-      (concat [(md/heading 1 (:name package))]
-              (if-let [summary (:summary package)]
-                [(md/paragraph summary)]
-                [])
-              [(md/table ["Version" "Namespaces" "Symbols"]
-                         (map (package-versions package)
-                              (fn [version]
-                                [(md/link version (str "versions/" version "/"))
-                                 (if (= version (package-version package))
-                                   (count (:namespaces package))
-                                   "")
-                                 (if (= version (package-version package))
-                                   (package-symbol-count package)
-                                   "")])))]))))
+      [(md/paragraph
+         (md/link (package-title package) (package-index-url package)))])))
 
 (defun package-document
   "Return the GitHub Pages package document for PAGE.
@@ -484,6 +480,75 @@
          "</ol>\n"
          "</nav>\n")))
 
+(defun version-page-url
+  "Return the URL for VERSION from PAGE.
+
+  Args:
+  - `page`: Boodle versioned reference page.
+  - `version`: Package version label.
+
+  Returns:
+  Relative URL to the matching page in VERSION."
+  [page version]
+  (case (:kind page)
+    :package (str "../" version "/")
+    :namespace (str "../../"
+                    version
+                    "/namespaces/"
+                    (:name (:namespace page))
+                    ".html")
+    :symbol (str "../../../"
+                 version
+                 "/namespaces/"
+                 (:name (:namespace page))
+                 "/"
+                 (reference/slug-text (:name (:entry page)))
+                 ".html")))
+
+(defun version-option-html
+  "Return one package version selector option.
+
+  Args:
+  - `page`: Boodle versioned reference page.
+  - `version`: Package version label.
+
+  Returns:
+  HTML option element for VERSION."
+  [page version]
+  (let [package (:package page)]
+    (str "<option value=\""
+         (html-text (version-page-url page version))
+         "\""
+         (if (= version (package-version package))
+           " selected"
+           "")
+         ">"
+         (html-text version)
+         "</option>\n")))
+
+(defun version-selector-html
+  "Return package version selector HTML for PAGE.
+
+  Args:
+  - `page`: Boodle versioned reference page.
+
+  Returns:
+  HTML allowing navigation between materialized package versions."
+  [page]
+  (let [package (:package page)]
+    (str "<div class=\"version-context\">\n"
+         "<span class=\"version-package\">"
+         (html-text (:name package))
+         "</span>\n"
+         "<label class=\"version-select-label\">Version "
+         "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
+         (apply join (concat [""]
+                             (map (package-versions package)
+                                  (fn [version]
+                                    (version-option-html page version)))))
+         "</select></label>\n"
+         "</div>\n")))
+
 (defun version-context-html
   "Return visible package version context for PAGE.
 
@@ -491,16 +556,27 @@
   - `page`: Boodle reference topology page.
 
   Returns:
-  HTML context text for versioned package pages, or an empty string."
+  HTML context for versioned package pages, or an empty string."
   [page]
   (if (contains? [:package :namespace :symbol] (:kind page))
-    (let [package (:package page)]
-      (str "<div class=\"version-context\">"
-           (html-text (:name package))
-           " "
-           (html-text (package-version package))
-           "</div>\n"))
+    (version-selector-html page)
     ""))
+
+(defun package-index-redirect-html
+  "Return redirect markup for PAGE.
+
+  Args:
+  - `page`: Boodle package index page.
+
+  Returns:
+  HTML and fallback Markdown linking to the current package version."
+  [page]
+  (let [package (:package page)
+        url (package-index-url package)]
+    (str "<meta http-equiv=\"refresh\" content=\"0; url="
+         (html-text url)
+         "\">\n"
+         (markdown/render-block (page-document page)))))
 
 (defun reference-content
   "Return rendered content for PAGE.
@@ -511,8 +587,10 @@
   Returns:
   Markdown or HTML/Markdown content for the page body."
   [page]
-  (let [content (str (version-context-html page)
-                     (markdown/render-block (page-document page)))]
+  (let [content (case (:kind page)
+                  :package-index (package-index-redirect-html page)
+                  :default (str (version-context-html page)
+                                (markdown/render-block (page-document page))))]
     (if (contains? [:namespace :symbol] (:kind page))
       (str "<div class=\"reference-page\">\n"
            (sidebar-html page)
@@ -573,7 +651,10 @@
        ".reference-sidebar a { display: block; padding: 4px 6px; border-radius: 4px; color: #374151; }\n"
        ".reference-sidebar a.active { background: #e8f2fb; color: #0f5f8f; font-weight: 700; }\n"
        ".namespace-link { font-weight: 700; }\n"
-       ".version-context { color: #6b7280; font-size: 14px; font-weight: 700; margin-bottom: 12px; }\n"
+       ".version-context { align-items: center; color: #6b7280; display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 14px; font-weight: 700; margin-bottom: 12px; }\n"
+       ".version-package { color: #374151; }\n"
+       ".version-select-label { align-items: center; display: inline-flex; gap: 6px; }\n"
+       ".version-select { border: 1px solid #cbd5e1; border-radius: 4px; color: #1f2937; font: inherit; font-weight: 600; padding: 2px 24px 2px 6px; }\n"
        ".reference-content { min-width: 0; }\n"
        ".reference-content h1 { margin-top: 0; }\n"
        ".reference-content table { width: 100%; }\n"
@@ -592,7 +673,11 @@
   File maps with `:path` and Markdown `:content`."
   [catalog]
   (concat [{:path "_config.yml"
-            :content "title: Reference\nmarkdown: kramdown\n"}
+            :content (str "title: Reference\n"
+                          "markdown: kramdown\n"
+                          "kramdown:\n"
+                          "  syntax_highlighter_opts:\n"
+                          "    formatter: HTML\n")}
            {:path "_layouts/reference.html"
             :content layout-content}
            {:path "assets/boodle.css"
