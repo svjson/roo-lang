@@ -23,13 +23,11 @@
   (message catalog (default-locale catalog) key))
 
 (defun translate [catalog locale key]
-  (let [localized (message catalog locale key)]
-    (if (nil? localized)
-      (let [fallback (fallback-message catalog key)]
-        (if (nil? fallback)
-          (str key)
-          fallback))
-      localized)))
+  (if-let [localized (message catalog locale key)]
+    localized
+    (if-let [fallback (fallback-message catalog key)]
+      fallback
+      (str key))))
 
 (defun missing? [catalog locale key]
   (nil? (message catalog locale key)))
