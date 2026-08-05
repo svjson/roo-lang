@@ -1,0 +1,17 @@
+(ns proofread.rules.simple-expressions.use-clamp
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun nested-clamp-call?
+  "Test whether a `min` or `max` call wraps the opposite operation."
+  [{:keys [children] :as node} outer inner]
+  (and (forms/call? node outer 3)
+       (or (forms/call? (nth children 1) inner 3)
+           (forms/call? (nth children 2) inner 3))))
+
+(defun check
+  "Return a `use-clamp` diagnostic for matching nodes."
+  [parent node]
+  (when (or (nested-clamp-call? node "min" "max")
+            (nested-clamp-call? node "max" "min"))
+    (diagnostics/make node :use-clamp "Use clamp")))

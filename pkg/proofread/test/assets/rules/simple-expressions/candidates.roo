@@ -91,3 +91,15 @@
   (any? features
         (fn [candidate]
           (= candidate feature))))
+
+(def clamped-a
+  (min upper (max lower value)))
+
+(def clamped-b
+  (min (max lower value) upper))
+
+(def clamped-c
+  (max lower (min upper value)))
+
+(def clamped-d
+  (max (min upper value) lower))

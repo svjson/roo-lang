@@ -42,7 +42,11 @@
           [:redundant-some? 78]
           [:use-string? 82]
           [:use-contains? 86]
-          [:use-contains? 91]]
+          [:use-contains? 91]
+          [:use-clamp 96]
+          [:use-clamp 99]
+          [:use-clamp 102]
+          [:use-clamp 105]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

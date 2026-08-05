@@ -3,6 +3,7 @@
             [proofread.rules.simple-expressions.redundant-map-check :as redundant-map-check]
             [proofread.rules.simple-expressions.redundant-some :as redundant-some]
             [proofread.rules.simple-expressions.use-any :as use-any]
+            [proofread.rules.simple-expressions.use-clamp :as use-clamp]
             [proofread.rules.simple-expressions.use-contains :as use-contains]
             [proofread.rules.simple-expressions.use-empty :as use-empty]
             [proofread.rules.simple-expressions.use-get-with-default :as use-get-with-default]
@@ -21,6 +22,7 @@
   (registry/descriptors
     :simple-expressions
     [[:use-head use-head/check]
+     [:use-clamp use-clamp/check]
      [:use-empty? use-empty/check]
      [:use-not-empty? use-not-empty/check]
      [:use-not= use-not-equal/check]

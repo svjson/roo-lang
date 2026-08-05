@@ -81,3 +81,15 @@
   (any? features
         (fn [candidate]
           (enabled? feature candidate))))
+
+(def plain-min
+  (min upper value))
+
+(def plain-max
+  (max lower value))
+
+(def three-argument-min
+  (min upper value (max lower fallback)))
+
+(def three-argument-max
+  (max lower value (min upper fallback)))
