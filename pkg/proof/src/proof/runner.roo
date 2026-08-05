@@ -28,7 +28,7 @@
   (prn "  --help, -h                         Show this help.")
   (prn "  --test-root <path>                 Add a test root. Repeat for multiple roots.")
   (prn "  --filter <pattern>                 Select tests by name or qualified name.")
-  (prn "  --namespace <namespace>            Select tests in a namespace. Repeat for multiple namespaces.")
+  (prn "  --namespace, -n <namespace>        Select tests in a namespace. Repeat for multiple namespaces.")
   (prn "  --include-sub-namespaces           Include child namespaces with --namespace.")
   (prn "  --no-include-sub-namespaces        Exclude child namespaces with --namespace.")
   (prn "  --reporter simple|tree             Select the test reporter.")
@@ -155,7 +155,7 @@
                                (assoc config :filter (nth args (+ index 1)))
                                roots)
 
-        (= arg "--namespace")
+        (or (= arg "--namespace") (= arg "-n"))
         (parse-proof-args-from args
                                (+ index 2)
                                (add-namespace-filter config (nth args (+ index 1)))

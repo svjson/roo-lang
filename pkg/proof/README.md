@@ -425,7 +425,7 @@ Command-line flags override the `package.edn` values for a single run:
 ```sh
 roo proof --test-root test \
           --filter '*discount*' \
-          --namespace my-package.checkout \
+          -n my-package.checkout \
           --include-sub-namespaces \
           --reporter tree
 ```
@@ -438,7 +438,7 @@ Supported flags are:
 - `--help` or `-h`
 - `--test-root <path>` or `--test-root=<path>`; repeat it to provide multiple roots
 - `--filter <pattern>` or `--filter=<pattern>`
-- `--namespace <namespace>` or `--namespace=<namespace>`; repeat it to provide multiple namespaces
+- `--namespace <namespace>`, `--namespace=<namespace>`, or `-n <namespace>`; repeat it to provide multiple namespaces
 - `--include-sub-namespaces`, `--include-sub-namespaces=true|false`, and `--no-include-sub-namespaces`
 - `--reporter simple|tree` or `--reporter=simple|tree`
 - `--durations`, `--durations=true|false`, and `--no-durations`

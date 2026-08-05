@@ -424,7 +424,7 @@ TEST(ProofPackage, runner_accepts_multiple_namespace_cli_filters)
 
   auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
                               " :config {:test-roots [\"test\"]} "
-                              ":args [\"--namespace\" \"app.checkout-test\" "
+                              ":args [\"-n\" \"app.checkout-test\" "
                               "\"--namespace=app.profile-test\"]})");
 
   EXPECT_EQ(without_elapsed_ms_string(results),
