@@ -6,6 +6,12 @@
 (def plain-map
   (map items expand-item))
 
+(def plain-head
+  (head items))
+
+(def plain-filter
+  (filter items active?))
+
 (def already-keep
   (keep items
         (fn [item]

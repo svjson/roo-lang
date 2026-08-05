@@ -20,6 +20,12 @@
   (is (= [4 8]
          (diagnostic-lines "assets/rules/higher-order/use-flat-map.roo"))))
 
+(deftest reports-find-first-candidates
+  (is (= [:use-find-first :use-find-first]
+         (diagnostic-rules "assets/rules/higher-order/use-find-first.roo")))
+  (is (= [4 7]
+         (diagnostic-lines "assets/rules/higher-order/use-find-first.roo"))))
+
 (deftest reports-keep-candidates
   (is (= [:use-keep :use-keep]
          (diagnostic-rules "assets/rules/higher-order/use-keep.roo")))

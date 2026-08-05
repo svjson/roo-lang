@@ -1,0 +1,9 @@
+(ns proofread.higher-order-use-find-first)
+
+(def first-selectable-option
+  (head (filter options selectable-option?)))
+
+(def option-by-value
+  (head (filter options
+                (fn [option]
+                  (= (option-value option) value)))))

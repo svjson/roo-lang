@@ -1,0 +1,15 @@
+(ns proofread.rules.higher-order.use-find-first
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun candidate?
+  "Test whether an AST node can use `find-first`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "head" 2)
+       (forms/call? (nth children 1) "filter" 3)))
+
+(defun check
+  "Return a `use-find-first` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node :use-find-first "Use find-first")))
