@@ -1,0 +1,22 @@
+(ns proofread.rules.loops-test
+  (:require proof.core
+            [proofread.rules.loops :as loops]
+            [roo.ast :as ast]))
+
+(defun diagnostics
+  [path]
+  (flat-map (ast/slurp! path) loops/check))
+
+(defun diagnostic-summary
+  [path]
+  (for [diagnostic (diagnostics path)]
+    [(:rule diagnostic) (:line (:source diagnostic))]))
+
+(deftest reports-indexed-while-loops
+  (is (= [[:use-for-indexed 4]
+          [:use-for-indexed 15]]
+         (diagnostic-summary "assets/rules/loops/use-for-indexed.roo"))))
+
+(deftest ignores-loop-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/loops/non-candidates.roo"))))

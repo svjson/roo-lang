@@ -2,6 +2,7 @@
   (:require [proofread.config :as config]
             [proofread.rules.direct-conditions :as direct-conditions]
             [proofread.rules.higher-order :as higher-order]
+            [proofread.rules.loops :as loops]
             [proofread.rules.names :as names]
             [proofread.rules.registry :as registry]
             [proofread.rules.redundant-do :as redundant-do]
@@ -12,6 +13,7 @@
   "Registered proofread rule descriptors."
   (concat direct-conditions/rules
           higher-order/rules
+          loops/rules
           simple-expressions/rules
           names/rules
           redundant-functions/rules
@@ -43,6 +45,7 @@
   [roots active-config]
   (let [direct-condition-rules (enabled-rules active-config direct-conditions/rules)
         higher-order-rules (enabled-rules active-config higher-order/rules)
+        loop-rules (enabled-rules active-config loops/rules)
         simple-expression-rules (enabled-rules active-config simple-expressions/rules)
         name-rules (enabled-rules active-config names/rules)
         redundant-function-rules (enabled-rules active-config redundant-functions/rules)
@@ -52,6 +55,7 @@
                 (concat
                   (direct-conditions/check-with-rules direct-condition-rules root)
                   (higher-order/check-with-rules higher-order-rules root)
+                  (loops/check-with-rules loop-rules root)
                   (simple-expressions/check-with-rules simple-expression-rules root)
                   (names/check-with-rules name-rules root)
                   (redundant-functions/check-with-rules redundant-function-rules root)

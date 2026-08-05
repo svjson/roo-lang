@@ -1,0 +1,66 @@
+(ns proofread.rules.loops
+  (:require [proofread.rules.loops.use-for-indexed :as use-for-indexed]
+            [proofread.rules.registry :as registry]))
+
+(def rules
+  "Loop rule descriptors."
+  (registry/descriptors
+    :loops
+    [[:use-for-indexed use-for-indexed/check]]))
+
+(defun node-diagnostic
+  "Return the first loop diagnostic for an AST node.
+
+  Args:
+  - `active-rules`: Rule descriptors to run.
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map, or `nil` when no loop rule matches."
+  [active-rules parent node]
+  (registry/node-diagnostic active-rules parent node))
+
+(defun check-node
+  "Find loop diagnostics beneath one AST node.
+
+  Args:
+  - `active-rules`: Rule descriptors to run.
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [active-rules parent node]
+  (if (map? node)
+    (concat
+      (if-let [diagnostic (node-diagnostic active-rules parent node)]
+        [diagnostic]
+        [])
+      (flat-map (:children node)
+                (fn [child]
+                  (check-node active-rules node child))))
+    []))
+
+(defun check-with-rules
+  "Find loop diagnostics using selected rules.
+
+  Args:
+  - `active-rules`: Rule descriptors to run.
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [active-rules root]
+  (check-node active-rules nil root))
+
+(defun check
+  "Find loop diagnostics beneath one AST root.
+
+  Args:
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [root]
+  (check-with-rules rules root))

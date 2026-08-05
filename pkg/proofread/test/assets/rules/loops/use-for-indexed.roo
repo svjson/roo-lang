@@ -1,0 +1,19 @@
+(ns proofread.loops-use-for-indexed)
+
+(def tree-lines
+  (let [index 0]
+    (while (< index (count children))
+      (let [child (nth children index)
+            last? (= index (- (count children) 1))]
+        (append! lines
+                 (str prefix
+                      (if last? "└── " "├── ")
+                      (:id child)))
+        (set! [index] (+ index 1))))))
+
+(def report-lines
+  (let [cursor 0]
+    (while (< cursor (count contexts))
+      (let [context (nth contexts cursor)]
+        (append! lines (:key context))
+        (set! [cursor] (+ 1 cursor))))))

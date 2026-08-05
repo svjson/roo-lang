@@ -1,0 +1,89 @@
+(ns proofread.rules.loops.use-for-indexed
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun one-node?
+  "Test whether an AST node is the number `1`."
+  [node]
+  (and (= (:type node) :number)
+       (= (:form node) 1)))
+
+(defun single-symbol-vector?
+  "Test whether a vector contains one expected symbol."
+  [node symbol]
+  (and (= (:type node) :vector)
+       (= 1 (count (:children node)))
+       (forms/direct-symbol? (head (:children node)) symbol)))
+
+(defun increment?
+  "Test whether a node increments `index-name` by one."
+  [{:keys [children] :as node} index-name]
+  (and (forms/call? node "set!" 3)
+       (single-symbol-vector? (nth children 1) index-name)
+       (let [value (nth children 2)
+             value-children (:children value)]
+         (and (forms/call? value "+" 3)
+              (or (and (forms/direct-symbol? (nth value-children 1) index-name)
+                       (one-node? (nth value-children 2)))
+                  (and (one-node? (nth value-children 1))
+                       (forms/direct-symbol? (nth value-children 2) index-name)))))))
+
+(defun final-form
+  "Return the final executable form inside `node`."
+  [node]
+  (case (forms/head-name node)
+    "do" (nth (:children node) (dec (count (:children node))))
+    "let" (nth (:children node) (dec (count (:children node))))
+    :default node))
+
+(defun count-condition-target
+  "Return the counted collection from `(< index (count collection))`."
+  [{:keys [children] :as node} index-name]
+  (when (and (forms/call? node "<" 3)
+             (forms/direct-symbol? (nth children 1) index-name)
+             (forms/call? (nth children 2) "count" 2))
+    (nth (:children (nth children 2)) 1)))
+
+(defun indexed-nth?
+  "Test whether a node reads `collection` with `index-name`."
+  [{:keys [children] :as node} collection index-name]
+  (and (forms/call? node "nth" 3)
+       (forms/same-form? (nth children 1) collection)
+       (forms/direct-symbol? (nth children 2) index-name)))
+
+(defun contains-indexed-nth?
+  "Test whether a node contains an indexed read from `collection`."
+  [node collection index-name]
+  (and (map? node)
+       (or (indexed-nth? node collection index-name)
+           (any? (:children node)
+                 (fn [child]
+                   (contains-indexed-nth? child collection index-name))))))
+
+(defun increment-final-body?
+  "Test whether a while body ends by incrementing `index-name`."
+  [{:keys [children]} index-name]
+  (and (> (count children) 2)
+       (increment? (final-form (nth children (dec (count children)))) index-name)))
+
+(defun counted-while?
+  "Test whether a while loop manually indexes one collection."
+  [{:keys [children] :as node} index-name]
+  (when (forms/call? node "while" 3)
+    (when-let [collection (count-condition-target (nth children 1) index-name)]
+      (and (contains-indexed-nth? (nth children 2) collection index-name)
+           (increment-final-body? node index-name)))))
+
+(defun candidate?
+  "Test whether a let-wrapped while loop should use `for-indexed`."
+  [node]
+  (when-let [index-name (forms/single-binding-symbol node)]
+    (let [bindings (:children (nth (:children node) 1))]
+      (and (forms/zero-node? (nth bindings 1))
+           (counted-while? (forms/sole-let-body-form node) index-name)))))
+
+(defun check
+  "Return a `use-for-indexed` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node :use-for-indexed "Use for-indexed")))
