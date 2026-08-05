@@ -10,12 +10,14 @@ namespace Roo
    * @brief Tests if at least one element in a seq satisfies a predicate
    * function.
    *
+   * The seq and predicate arguments may be provided in either order.
+   *
    * Usage:
    * @code
    * (any? [1 2 3 4] odd?)
    * => true
    *
-   * (any? [2 4] odd?)
+   * (any? odd? [2 4])
    * => false
    * @endcode
    *
@@ -23,6 +25,11 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | seq       | The seq to test                                                    |
    * | predicate | The predicate function.                                            |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | predicate | The predicate function.                                            |
+   * | seq       | The seq to test                                                    |
    */
   FUNC(AnyFunction, any)
 
@@ -31,13 +38,14 @@ namespace Roo
    * to each element.
    *
    * A new Seq is created containing only those elements for which the predicate
-   * function returns a truthy value.
+   * function returns a truthy value. The seq and function arguments may be
+   * provided in either order.
    *
    * Usage:
    * @code
    * (filter my-seq exec)
    *
-   * (filter [1 2 3 4] (fn [n] (even? n)))
+   * (filter even? [1 2 3 4])
    * => [2 4]
    * @endcode
    *
@@ -45,6 +53,11 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | seq       | The seq to filter                                                  |
    * | f         | The function/executable to apply to each element                   |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | The function/executable to apply to each element                   |
+   * | seq       | The seq to filter                                                  |
    */
   FUNC(FilterFunction, filter)
 
@@ -52,19 +65,26 @@ namespace Roo
    * @brief Returns the first element of a seq that matches a predicate function,
    * or nil if no match is found.
    *
+   * The seq and predicate arguments may be provided in either order.
+   *
    * Usage:
    * @code
    * (find-first [1 2 3 4 5] even?)
    * => 2
    *
-   * (find-first [1 3 4] even?)
-   * => nil
+   * (find-first even? [1 3 4])
+   * => 4
    * @endcode
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | seq       | The seq to query                                                   |
    * | predicate | The predicate function.                                            |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | predicate | The predicate function.                                            |
+   * | seq       | The seq to query                                                   |
    */
   FUNC(FindFirstFunction, find_first)
 
@@ -72,19 +92,26 @@ namespace Roo
    * @brief Returns the index of the first element of a seq that matches a predicate
    * function, or nil if no match is found.
    *
+   * The seq and predicate arguments may be provided in either order.
+   *
    * Usage:
    * @code
    * (find-index [1 3 7 8 5 10 2] even?)
    * => 3
    *
-   * (find-index [1 3 4] even?)
-   * => nil
+   * (find-index even? [1 3 4])
+   * => 2
    * @endcode
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | seq       | The seq to query                                                   |
    * | predicate | The predicate function.                                            |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | predicate | The predicate function.                                            |
+   * | seq       | The seq to query                                                   |
    */
   FUNC(FindIndexFunction, find_index)
 
@@ -93,15 +120,15 @@ namespace Roo
    * into a single sequence.
    *
    * Elements of the mapped result that are sequences are flattened; non-sequence
-   * values are included directly. Argument order is flexible: seq first or
-   * function first.
+   * values are included directly. The seq and function arguments may be provided
+   * in either order.
    *
    * Usage:
    * @code
    * (flat-map [1 2 3] (fn [n] [n (* n 10)]))
    * => [1 10 2 20 3 30]
    *
-   * (flat-map [[1 2] 3 [4 5]] identity)
+   * (flat-map identity [[1 2] 3 [4 5]])
    * => [1 2 3 4 5]
    * @endcode
    *
@@ -109,6 +136,11 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | seq       | The seq to transform                                               |
    * | f         | A function; seq results are flattened, scalars are kept as-is      |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | A function; seq results are flattened, scalars are kept as-is      |
+   * | seq       | The seq to transform                                               |
    */
   FUNC(FlatMapFunction, flat_map)
 
@@ -137,49 +169,74 @@ namespace Roo
    * determines if an element is to be kept based on non-nil/nil instead
    * of truthiness, like map.
    *
+   * The seq and function arguments may be provided in either order.
+   *
    * Usage:
    * @code
    * (keep [1 2 3 4] (fn [x]
-   *                   (when (even? nil) (str "Number " x))))
+   *                   (when (even? x) (str "Number " x))))
    * => ["Number 2" "Number 4"]
+   *
+   * (keep (fn [x] (when (even? x) (* x 10))) [1 2 3])
+   * => [20]
    * @endcode
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | seq       | The seq to transform                                               |
    * | f         | Function applied to each element. Non-nil results are kept.        |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | Function applied to each element. Non-nil results are kept.        |
+   * | seq       | The seq to transform                                               |
    */
   FUNC(KeepFunction, keep)
 
   /*!
-   * @brief Transforms elements of a Seq by applying a function/executable
-   * to each element, creating a new Seq containing the transformed elements.
-   * The original Seq is not mutated.
+   * @brief Transforms elements of one or more seqs by applying a
+   * function/executable, creating a new Seq containing the transformed elements.
+   * The original seqs are not mutated.
+   *
+   * The function may be provided before or after the seq arguments.
    *
    * Usage:
    * @code
    * (map my-seq exec)
    *
-   * (map [1 2 3]
-   *  (fn [n] (* 2 n)))
-   * ==> [2 4 6]
+   * (map [1 2 3] (fn [n] (* 2 n)))
+   * => [2 4 6]
+   *
+   * (map + [1 2 3] [30 20 10])
+   * => [31 22 13]
    * @endcode
    *
-   * | Arg       | Description                                                        |
-   * | --------- | ------------------------------------------------------------------ |
-   * | seq       | The seq to transform                                               |
-   * | f         | The function/executable to apply to each element                   |
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | seqs... | One or more seqs to transform                                      |
+   * | f       | The function/executable to apply to each element group             |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | f       | The function/executable to apply to each element group             |
+   * | seqs... | One or more seqs to transform                                      |
    */
   FUNC(MapFunction, map)
 
   /*!
-   * @brief Performs a functional reduce on a sequence
+   * @brief Performs a functional reduce on a sequence.
+   *
+   * The seq and reducer function may be provided in either order; the initial
+   * value follows the seq in both forms.
    *
    * Usage:
    * @code
    * (reduce sequence
    *         {}
    *         (fn [result element] (assoc result (:id element) element)))
+   *
+   * (reduce + [1 2 3] 0)
+   * => 6
    * @endcode
    *
    * | Arg       | Description                                                        |
@@ -188,6 +245,13 @@ namespace Roo
    * | init      | The initial value of result                                        |
    * | f         | A function to apply for each element taking the accumulated        |
    * |           | result and current element as arguments                            |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | f         | A function to apply for each element taking the accumulated        |
+   * |           | result and current element as arguments                            |
+   * | seq       | The seq to reduce                                                  |
+   * | init      | The initial value of result                                        |
    */
   FUNC(ReduceFunction, reduce)
 
@@ -196,18 +260,24 @@ namespace Roo
    * to each element, creating a new Seq without those elements for which the
    * predicate function returns a truthy value.
    *
-   * Effectively the inverse of @code filter @endcode
+   * Effectively the inverse of @code filter @endcode. The seq and function
+   * arguments may be provided in either order.
    *
    * Usage:
    * @code
-   * (remove exec my-seq)
+   * (remove my-seq exec)
    *
-   * (remove (fn [n] (even? n)) [1 2 3 4])
+   * (remove even? [1 2 3 4])
    * => [1 3]
    *
    * (remove nil? [1 2 nil 5 6 nil 8 nil])
    * => [1 2 4 5 6 8]
    * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to filter                                                  |
+   * | f         | The function/executable to apply to each element                   |
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
@@ -221,21 +291,27 @@ namespace Roo
    * element, removing any element for which the predicate function returns a
    * truthy value.
    *
+   * The seq and function arguments may be provided in either order.
+   *
    * Usage:
    * @code
    * (remove! exec seq)
    *
-   * (remove! (fn [n] (even? n)) [1 2 3 4]
-   * => [1 3])
+   * (remove! seq exec)
    *
-   * (remove nil? [1 2 nil 5 6 nil 8 nil])
-   * => [1 2 4 5 8]
+   * (remove! even? [1 2 3 4])
+   * => [1 3]
    * @endcode
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | f         | The function/executable to apply to each element                   |
    * | seq       | The seq to modify                                                  |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to modify                                                  |
+   * | f         | The function/executable to apply to each element                   |
    */
   FUNC(RemoveBangFunction, remove_bang)
 
@@ -243,21 +319,28 @@ namespace Roo
    * @brief Yield a new Seq containing all elements except the first element that
    * yields a truthy value when applying a function/executable to each element.
    *
+   * The seq and function arguments may be provided in either order.
+   *
    * Usage:
    * @code
    * (remove-first exec my-seq)
    *
-   * (remove-first (fn [n] (even? n)) [1 2 3 4])
+   * (remove-first [1 2 3 4] even?)
    * => [1 3 4]
    *
-   * (remove nil? [1 2 nil 5 6 nil 8 nil])
-   * => [1 2 4 5 6 nil 8 nil]
+   * (remove-first nil? [1 2 nil 5 6 nil 8 nil])
+   * => [1 2 5 6 nil 8 nil]
    * @endcode
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | f         | The function/executable to apply to each element                   |
    * | seq       | The seq to filter                                                  |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to filter                                                  |
+   * | f         | The function/executable to apply to each element                   |
    */
   FUNC(RemoveFirstFunction, remove_first)
 
@@ -280,12 +363,26 @@ namespace Roo
   /*!
    * @brief Sorts a sequence according to a predicate function.
    *
-   * Usage: (sort [5 3 7 2 8 1] <) => [1 2 3 5 7 8]
+   * The seq and comparison function may be provided in either order.
+   *
+   * Usage:
+   * @code
+   * (sort [5 3 7 2 8 1] <)
+   * => [1 2 3 5 7 8]
+   *
+   * (sort > [5 3 7 2 8 1])
+   * => [8 7 5 3 2 1]
+   * @endcode
    *
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | seq     | The seq to sort                                                    |
    * | compare | Comparison function used to order elements.                        |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | compare | Comparison function used to order elements.                        |
+   * | seq     | The seq to sort                                                    |
    */
   FUNC(SortFunction, sort)
 

@@ -306,22 +306,33 @@ namespace Roo
   /*!
    * @brief Perform a functional reduce on all key-value pairs of a Map.
    *
+   * The map and reducer function may be provided in either order; the initial
+   * value follows the map in both forms.
+   *
    * Usage:
    * @code
-   * (reduce {:a 1 :b 2}
-   *         {:total 0}
-   *         (fn [result k v] (assoc result
-   *                                 :total
-   *                                 (+ v (:total result)))))
+   * (reduce-kv {:a 1 :b 2}
+   *            {:total 0}
+   *            (fn [result k v] (assoc result
+   *                                    :total
+   *                                    (+ v (:total result)))))
    * => {:total 3}
+   *
+   * (reduce-kv (fn [result k v] (assoc result k v)) {:a 1} {})
+   * => {:a 1}
    * @endcode
    *
-   * | Arg   | Description                                                        |
-   * | ----- | ------------------------------------------------------------------ |
-   * | map   | The map to reduce                                                  |
-   * | init  | The initial value of result                                        |
-   * | f     | A function to apply for each key-value pair, taking the key and    |
-   * |       | the value for each pair in the map accumulated result              |
+   * | Arg  | Description                                                         |
+   * | ---- | ------------------------------------------------------------------- |
+   * | map  | The map to reduce                                                   |
+   * | init | The initial value of result                                         |
+   * | f    | A function applied with the accumulated result, key, and value.     |
+   *
+   * | Arg  | Description                                                         |
+   * | ---- | ------------------------------------------------------------------- |
+   * | f    | A function applied with the accumulated result, key, and value.     |
+   * | map  | The map to reduce                                                   |
+   * | init | The initial value of result                                         |
    */
   FUNC(ReduceKeyValueFunction, reduce_kv)
 

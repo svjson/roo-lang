@@ -30,3 +30,18 @@ TEST_F(FindIndexFunction, finds_index_in_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(find-index values even?)")->to_string(), "1");
 }
+
+TEST_F(FindIndexFunction, accepts_predicate_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(find-index even? [1 3 4])")->to_string(), "2");
+}
+
+TEST_F(FindIndexFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(find-index nil even?)"), *Roo::Constant::NIL);
+}
+
+TEST_F(FindIndexFunction, treats_nil_as_sequence_in_predicate_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(find-index even? nil)"), *Roo::Constant::NIL);
+}

@@ -9,6 +9,11 @@ namespace Roo
 {
   namespace
   {
+    bool is_exec_arg(const sptr_val& arg)
+    {
+      return arg->type == Value::Type::FUNCTION || arg->type == Value::Type::KEYWORD;
+    }
+
     struct UpdateCall
     {
       Executable* updater = nullptr;
@@ -590,17 +595,21 @@ namespace Roo
 
   /** ReduceKeyValueFunction - roo/reduce-kv */
   FUNC_IMPL(ReduceKeyValueFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC)),
-                 EXEC_DISPATCH(&ReduceKeyValueFunction::exec_reduce_kv))))
+            MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::EXEC)),
+                       EXEC_DISPATCH(&ReduceKeyValueFunction::exec_reduce_kv)),
+                      (FN_ARGS((&Type::EXEC), (&Type::COMPLEX), (&Type::ANY)),
+                       EXEC_DISPATCH(&ReduceKeyValueFunction::exec_reduce_kv))))
 
   EXEC_BODY(ReduceKeyValueFunction, exec_reduce_kv)
   {
-    sptr_val result = args[1];
-    Executable& reducer = args.back()->exec();
+    bool reducer_first = is_exec_arg(args[0]);
+    sptr_val map_arg = reducer_first ? args[1] : args[0];
+    sptr_val result = reducer_first ? args[2] : args[1];
+    Executable& reducer = (reducer_first ? args[0] : args[2])->exec();
 
-    for (auto key : Dict::map_sptr_keys(args[0]))
+    for (auto key : Dict::map_sptr_keys(map_arg))
     {
-      sptr_val_v reducer_args{result, key, Dict::get_property(args[0], *key)};
+      sptr_val_v reducer_args{result, key, Dict::get_property(map_arg, *key)};
 
       sptr_val new_result = reducer.execute(ctx, reducer_args);
       if (new_result.get() != result.get())

@@ -24,6 +24,18 @@ TEST_F(FlatMapFunction, accepts_function_first_arg_order)
             "[1 1 2 2 3 3]");
 }
 
+TEST_F(FlatMapFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  // Then
+  EXPECT_EQ(runtime.eval("(flat-map nil identity)")->to_string(), "[]");
+}
+
+TEST_F(FlatMapFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  // Then
+  EXPECT_EQ(runtime.eval("(flat-map identity nil)")->to_string(), "[]");
+}
+
 TEST_F(FlatMapFunction, empty_collection_yields_empty)
 {
   // Then

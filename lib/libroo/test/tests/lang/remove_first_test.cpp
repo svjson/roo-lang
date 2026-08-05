@@ -63,6 +63,16 @@ TEST_F(RemoveFirstFunction, empty_sequence_returns_empty)
   ASSERT_EQ(Roo::count(*result), 0);
 }
 
+TEST_F(RemoveFirstFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(remove-first nil even?)")->to_string(), "[]");
+}
+
+TEST_F(RemoveFirstFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(remove-first even? nil)")->to_string(), "[]");
+}
+
 TEST_F(RemoveFirstFunction, removes_only_first_of_multiple_matches)
 {
   // Given

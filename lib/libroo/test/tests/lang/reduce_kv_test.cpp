@@ -27,3 +27,23 @@ TEST_F(ReduceKeyValueFunction, recreate_map)
   // Then
   EXPECT_EQ(*retval, *runtime.eval("{:a 5 :b 3}"));
 }
+
+TEST_F(ReduceKeyValueFunction, accepts_function_first_arg_order)
+{
+  auto retval =
+    runtime.eval("(reduce-kv (fn [r k v] (assoc r k (count v))) {:a [1 2] :b [1 2 3]} {})");
+
+  EXPECT_EQ(*retval, *runtime.eval("{:a 2 :b 3}"));
+}
+
+TEST_F(ReduceKeyValueFunction, treats_nil_as_map_in_map_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(reduce-kv nil {:seen false} (fn [r k v] (assoc r k v)))"),
+            *runtime.eval("{:seen false}"));
+}
+
+TEST_F(ReduceKeyValueFunction, treats_nil_as_map_in_function_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(reduce-kv (fn [r k v] (assoc r k v)) nil {:seen false})"),
+            *runtime.eval("{:seen false}"));
+}

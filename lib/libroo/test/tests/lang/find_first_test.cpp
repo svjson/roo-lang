@@ -46,3 +46,18 @@ TEST_F(FindFirstFunction, finds_in_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(find-first values even?)")->to_string(), "2");
 }
+
+TEST_F(FindFirstFunction, accepts_predicate_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(find-first even? [1 3 4])")->to_string(), "4");
+}
+
+TEST_F(FindFirstFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(find-first nil even?)"), *Roo::Constant::NIL);
+}
+
+TEST_F(FindFirstFunction, treats_nil_as_sequence_in_predicate_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(find-first even? nil)"), *Roo::Constant::NIL);
+}

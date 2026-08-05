@@ -12,16 +12,34 @@
 
 namespace Roo
 {
+  namespace
+  {
+    bool is_exec_arg(const sptr_val& arg)
+    {
+      return arg->type == Value::Type::FUNCTION || arg->type == Value::Type::KEYWORD;
+    }
+
+    bool is_function_arg(const sptr_val& arg)
+    {
+      return arg->type == Value::Type::FUNCTION;
+    }
+  }
+
   /** AnyFunction - roo/any? */
   FUNC_IMPL(AnyFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
-                 EXEC_DISPATCH(&AnyFunction::exec_any))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
+                       EXEC_DISPATCH(&AnyFunction::exec_any)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&AnyFunction::exec_any))))
 
   EXEC_BODY(AnyFunction, exec_any)
   {
+    bool fn_first = is_exec_arg(args[0]);
+    sptr_val seq_arg = fn_first ? args[1] : args[0];
+    sptr_val fn_arg = fn_first ? args[0] : args[1];
     sptr_val_v val_arg = {nullptr};
-    auto& fn = args.back()->exec();
-    sptr_val_v elements = Roo::get_children(*args[0]);
+    auto& fn = fn_arg->exec();
+    sptr_val_v elements = Roo::get_children(*seq_arg);
     for (auto& element : elements)
     {
       val_arg[0] = element;
@@ -45,15 +63,15 @@ namespace Roo
   {
     Roo::sptr_val original;
     Roo::sptr_val fn;
-    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
-    {
-      original = args[0];
-      fn = args[1];
-    }
-    else
+    if (is_exec_arg(args[0]))
     {
       original = args[1];
       fn = args[0];
+    }
+    else
+    {
+      original = args[0];
+      fn = args[1];
     }
 
     if (*Constant::NIL == *original) return Value::vector({});
@@ -80,17 +98,20 @@ namespace Roo
 
   /** FindFirstFunction - roo/find-first */
   FUNC_IMPL(FindFirstFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&FindFirstFunction::exec_find_first))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
+                       EXEC_DISPATCH(&FindFirstFunction::exec_find_first)),
+                      (FN_ARGS((&Type::FUNCTION), (&Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&FindFirstFunction::exec_find_first))))
 
   EXEC_BODY(FindFirstFunction, exec_find_first)
   {
-    auto original = args[0];
-
-    auto& filter_fn = args.back()->exec();
+    bool fn_first = is_function_arg(args[0]);
+    sptr_val seq_arg = fn_first ? args[1] : args[0];
+    sptr_val fn_arg = fn_first ? args[0] : args[1];
+    auto& filter_fn = fn_arg->exec();
 
     sptr_val_v val_args{nullptr};
-    sptr_val_v children = Roo::get_children(*original);
+    sptr_val_v children = Roo::get_children(*seq_arg);
     for (auto val : children)
     {
       val_args[0] = val;
@@ -106,16 +127,21 @@ namespace Roo
 
   /** FindIndexFunction - roo/find-index */
   FUNC_IMPL(FindIndexFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&FindIndexFunction::exec_find_index))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
+                       EXEC_DISPATCH(&FindIndexFunction::exec_find_index)),
+                      (FN_ARGS((&Type::FUNCTION), (&Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&FindIndexFunction::exec_find_index))))
 
   EXEC_BODY(FindIndexFunction, exec_find_index)
   {
-    if (*args[0] == *Constant::NIL) return Constant::NIL;
+    bool fn_first = is_function_arg(args[0]);
+    sptr_val seq_arg = fn_first ? args[1] : args[0];
+    sptr_val fn_arg = fn_first ? args[0] : args[1];
+    if (*seq_arg == *Constant::NIL) return Constant::NIL;
 
-    auto& filter_fn = args.back()->exec();
+    auto& filter_fn = fn_arg->exec();
 
-    sptr_val_v children = Roo::get_children(*args[0]);
+    sptr_val_v children = Roo::get_children(*seq_arg);
 
     sptr_val_v val_args{nullptr};
     for (size_t i = 0; i < children.size(); i++)
@@ -142,15 +168,15 @@ namespace Roo
   {
     Roo::sptr_val original;
     Roo::sptr_val fn;
-    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
-    {
-      original = args[0];
-      fn = args[1];
-    }
-    else
+    if (is_exec_arg(args[0]))
     {
       original = args[1];
       fn = args[0];
+    }
+    else
+    {
+      original = args[0];
+      fn = args[1];
     }
 
     // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
@@ -212,13 +238,18 @@ namespace Roo
 
   /** KeepFunction - roo/keep */
   FUNC_IMPL(KeepFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
-                 EXEC_DISPATCH(&KeepFunction::exec_keep))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
+                       EXEC_DISPATCH(&KeepFunction::exec_keep)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&KeepFunction::exec_keep))))
 
   EXEC_BODY(KeepFunction, exec_keep)
   {
-    sptr_val_v values = Roo::get_children(*args[0]);
-    Executable& exec = args[1]->exec();
+    bool fn_first = is_exec_arg(args[0]);
+    sptr_val seq_arg = fn_first ? args[1] : args[0];
+    sptr_val fn_arg = fn_first ? args[0] : args[1];
+    sptr_val_v values = Roo::get_children(*seq_arg);
+    Executable& exec = fn_arg->exec();
 
     sptr_val_v result;
 
@@ -235,17 +266,22 @@ namespace Roo
 
   /** MapFunction - roo/map */
   FUNC_IMPL(MapFunction,
-            SIG((FN_ARGS((&VARARG, &Type::SEQ_OR_STRING), (&Type::EXEC)),
-                 EXEC_DISPATCH(&MapFunction::exec_map))))
+            MULTI_SIG((FN_ARGS((&VARARG, &Type::SEQ_OR_STRING), (&Type::EXEC)),
+                       EXEC_DISPATCH(&MapFunction::exec_map)),
+                      (FN_ARGS((&Type::EXEC), (&VARARG, &Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&MapFunction::exec_map))))
 
   EXEC_BODY(MapFunction, exec_map)
   {
-    auto& mapper = args.back();
+    bool mapper_first = is_exec_arg(args[0]);
+    auto& mapper = mapper_first ? args.front() : args.back();
     sptr_val_v result;
 
     std::vector<sptr_val_v> seqs;
 
-    for (size_t i = 0; i < args.size() - 1; i++)
+    const size_t first_seq = mapper_first ? 1 : 0;
+    const size_t end_seq = mapper_first ? args.size() : args.size() - 1;
+    for (size_t i = first_seq; i < end_seq; i++)
     {
       seqs.push_back(Roo::get_children(*args[i]));
     }
@@ -318,14 +354,18 @@ namespace Roo
 
   /** ReduceFunction - roo/reduce */
   FUNC_IMPL(ReduceFunction,
-            SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY), (&Type::FUNCTION)),
-                 EXEC_DISPATCH(&ReduceFunction::exec_reduce))))
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::ANY), (&Type::FUNCTION)),
+                       EXEC_DISPATCH(&ReduceFunction::exec_reduce)),
+                      (FN_ARGS((&Type::FUNCTION), (&Type::SEQ_OR_STRING), (&Type::ANY)),
+                       EXEC_DISPATCH(&ReduceFunction::exec_reduce))))
 
   EXEC_BODY(ReduceFunction, exec_reduce)
   {
-    sptr_val_v children = Roo::get_children(*args[0]);
-    sptr_val result = args[1];
-    auto& reducer = args.back()->exec();
+    bool reducer_first = is_function_arg(args[0]);
+    sptr_val seq_arg = reducer_first ? args[1] : args[0];
+    sptr_val result = reducer_first ? args[2] : args[1];
+    auto& reducer = (reducer_first ? args[0] : args[2])->exec();
+    sptr_val_v children = Roo::get_children(*seq_arg);
 
     sptr_val iter_result;
     sptr_val_v reduce_args{result, nullptr};
@@ -355,15 +395,15 @@ namespace Roo
     Value* original;
     Executable* remove_fn;
 
-    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
-    {
-      original = args[0].get();
-      remove_fn = &args[1]->exec();
-    }
-    else
+    if (is_exec_arg(args[0]))
     {
       original = args[1].get();
       remove_fn = &args[0]->exec();
+    }
+    else
+    {
+      original = args[0].get();
+      remove_fn = &args[1]->exec();
     }
 
     sptr_val_v result;
@@ -385,16 +425,21 @@ namespace Roo
 
   /** RemoveBangFunction - roo/remove! */
   FUNC_IMPL(RemoveBangFunction,
-            SIG((FN_ARGS((&Type::EXEC), (&Type::STRICT_SEQ)),
-                 EXEC_DISPATCH(&RemoveBangFunction::exec_remove_bang))))
+            MULTI_SIG((FN_ARGS((&Type::EXEC), (&Type::STRICT_SEQ)),
+                       EXEC_DISPATCH(&RemoveBangFunction::exec_remove_bang)),
+                      (FN_ARGS((&Type::STRICT_SEQ), (&Type::EXEC)),
+                       EXEC_DISPATCH(&RemoveBangFunction::exec_remove_bang))))
 
   EXEC_BODY(RemoveBangFunction, exec_remove_bang)
   {
-    auto& remove_fn = args[0]->exec();
+    bool fn_first = is_exec_arg(args[0]);
+    sptr_val seq_arg = fn_first ? args[1] : args[0];
+    sptr_val fn_arg = fn_first ? args[0] : args[1];
+    auto& remove_fn = fn_arg->exec();
 
-    if (args[1]->type == Value::Type::OBJECT && Type::HOST_SEQ.is_type_of(*args[1]))
+    if (seq_arg->type == Value::Type::OBJECT && Type::HOST_SEQ.is_type_of(*seq_arg))
     {
-      sptr_ast_node obj = args[1]->obj();
+      sptr_ast_node obj = seq_arg->obj();
       AST::Seq& host_seq = obj->as<AST::Seq>();
       sptr_ast_node_v& children = host_seq.get_children();
       auto it = std::remove_if(children.begin(),
@@ -409,13 +454,13 @@ namespace Roo
 
       host_seq.replace_children(children);
     }
-    else if (args[1]->type == Value::Type::NATIVE_OBJECT)
+    else if (seq_arg->type == Value::Type::NATIVE_OBJECT)
     {
       throw TypeError("remove! not implemented for native host sequences.");
     }
     else
     {
-      sptr_val_v& children = std::get<sptr_val_v>(args[1]->value);
+      sptr_val_v& children = std::get<sptr_val_v>(seq_arg->value);
 
       auto it = std::remove_if(children.begin(),
                                children.end(),
@@ -429,7 +474,7 @@ namespace Roo
       children.erase(it, children.end());
     }
 
-    return args.back();
+    return seq_arg;
   }
 
   /** RemoveFirstFunction - roo/remove-first */
@@ -444,15 +489,15 @@ namespace Roo
     Value* original;
     Executable* remove_fn;
 
-    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
-    {
-      original = args[0].get();
-      remove_fn = &args[1]->exec();
-    }
-    else
+    if (is_exec_arg(args[0]))
     {
       original = args[1].get();
       remove_fn = &args[0]->exec();
+    }
+    else
+    {
+      original = args[0].get();
+      remove_fn = &args[1]->exec();
     }
 
     sptr_val_v result;
@@ -532,15 +577,15 @@ namespace Roo
     Value* seq_arg;
     Executable* comparator;
 
-    if (Type::SEQ_OR_STRING.is_type_of(*args[0]))
-    {
-      seq_arg = args[0].get();
-      comparator = &args[1]->exec();
-    }
-    else
+    if (is_exec_arg(args[0]))
     {
       seq_arg = args[1].get();
       comparator = &args[0]->exec();
+    }
+    else
+    {
+      seq_arg = args[0].get();
+      comparator = &args[1]->exec();
     }
 
     Roo::sptr_val_v elements = Roo::get_children(*seq_arg);

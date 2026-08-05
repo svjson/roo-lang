@@ -74,3 +74,18 @@ TEST_F(SortFunction, sorts_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(sort values >)")->to_string(), "[3 2 1]");
 }
+
+TEST_F(SortFunction, accepts_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(sort > [1 4 2])")->to_string(), "[4 2 1]");
+}
+
+TEST_F(SortFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(sort nil <)")->to_string(), "[]");
+}
+
+TEST_F(SortFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(sort < nil)")->to_string(), "[]");
+}

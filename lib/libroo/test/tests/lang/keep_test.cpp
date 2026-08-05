@@ -46,3 +46,19 @@ TEST_F(KeepFunction, keeps_from_native_vector_adapter_as_sequence)
   EXPECT_EQ(runtime.eval("(keep values (fn [n] (if (even? n) (* n 10) nil)))")->to_string(),
             "[20]");
 }
+
+TEST_F(KeepFunction, accepts_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(keep (fn [n] (if (even? n) (* n 10) nil)) [1 2 3])")->to_string(),
+            "[20]");
+}
+
+TEST_F(KeepFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(keep nil identity)")->to_string(), "[]");
+}
+
+TEST_F(KeepFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(keep identity nil)")->to_string(), "[]");
+}

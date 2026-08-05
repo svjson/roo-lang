@@ -88,3 +88,18 @@ TEST_F(AnyFunction, searches_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(*runtime.eval("(any? values even?)"), *Roo::Constant::BOOL_TRUE);
 }
+
+TEST_F(AnyFunction, accepts_predicate_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(any? even? [1 3 4])"), *Roo::Constant::BOOL_TRUE);
+}
+
+TEST_F(AnyFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(any? nil even?)"), *Roo::Constant::BOOL_FALSE);
+}
+
+TEST_F(AnyFunction, treats_nil_as_sequence_in_predicate_first_arg_order)
+{
+  EXPECT_EQ(*runtime.eval("(any? even? nil)"), *Roo::Constant::BOOL_FALSE);
+}

@@ -43,3 +43,18 @@ TEST_F(ReduceFunction, reduces_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(reduce values 0 +)")->to_string(), "6");
 }
+
+TEST_F(ReduceFunction, accepts_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(reduce + [1 2 3] 0)")->to_string(), "6");
+}
+
+TEST_F(ReduceFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(reduce nil 42 +)")->to_string(), "42");
+}
+
+TEST_F(ReduceFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(reduce + nil 42)")->to_string(), "42");
+}

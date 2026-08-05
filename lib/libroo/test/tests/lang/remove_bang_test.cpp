@@ -34,3 +34,12 @@ TEST_F(RemoveBangFunction, rejects_map_target)
 {
   EXPECT_THROW(runtime.eval("(remove! keyword? {:a 1})"), Roo::InvocationException);
 }
+
+TEST_F(RemoveBangFunction, accepts_sequence_first_arg_order)
+{
+  runtime.eval("(def my-seq [1 2 3 4])");
+
+  runtime.eval("(remove! my-seq even?)");
+
+  EXPECT_EQ(runtime.lookup("my-seq")->to_string(), "[1 3]");
+}

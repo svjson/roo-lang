@@ -30,3 +30,18 @@ TEST_F(RemoveFunction, removes_from_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(remove values even?)")->to_string(), "[1 3]");
 }
+
+TEST_F(RemoveFunction, accepts_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(remove even? [1 2 3])")->to_string(), "[1 3]");
+}
+
+TEST_F(RemoveFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(remove nil even?)")->to_string(), "[]");
+}
+
+TEST_F(RemoveFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(remove even? nil)")->to_string(), "[]");
+}

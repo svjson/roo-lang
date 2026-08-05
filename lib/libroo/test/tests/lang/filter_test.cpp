@@ -47,3 +47,18 @@ TEST_F(FilterFunction, filters_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(filter values even?)")->to_string(), "[2]");
 }
+
+TEST_F(FilterFunction, accepts_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(filter even? [1 2 3])")->to_string(), "[2]");
+}
+
+TEST_F(FilterFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(filter nil even?)")->to_string(), "[]");
+}
+
+TEST_F(FilterFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(filter even? nil)")->to_string(), "[]");
+}

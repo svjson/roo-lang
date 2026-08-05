@@ -67,3 +67,23 @@ TEST_F(MapFunction, maps_native_vector_adapter_as_sequence)
 
   EXPECT_EQ(runtime.eval("(map values (fn [n] (* n 2)))")->to_string(), "[2 4 6]");
 }
+
+TEST_F(MapFunction, accepts_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(map (fn [n] (* n 2)) [1 2 3])")->to_string(), "[2 4 6]");
+}
+
+TEST_F(MapFunction, accepts_function_first_with_multiple_sequences)
+{
+  EXPECT_EQ(runtime.eval("(map + [1 2 3] [30 20 10])")->to_string(), "[31 22 13]");
+}
+
+TEST_F(MapFunction, treats_nil_as_sequence_in_sequence_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(map nil identity)")->to_string(), "[]");
+}
+
+TEST_F(MapFunction, treats_nil_as_sequence_in_function_first_arg_order)
+{
+  EXPECT_EQ(runtime.eval("(map identity nil)")->to_string(), "[]");
+}
