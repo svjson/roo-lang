@@ -413,6 +413,13 @@ The same config map can select tests for `roo proof`:
                  :reporter :tree}}}
 ```
 
+Use a vector to select multiple namespaces:
+
+```lisp
+{:config {proof {:namespace ["my-package.checkout"
+                             "my-package.profile"]}}}
+```
+
 Command-line flags override the `package.edn` values for a single run:
 
 ```sh
@@ -431,7 +438,7 @@ Supported flags are:
 - `--help` or `-h`
 - `--test-root <path>` or `--test-root=<path>`; repeat it to provide multiple roots
 - `--filter <pattern>` or `--filter=<pattern>`
-- `--namespace <namespace>` or `--namespace=<namespace>`
+- `--namespace <namespace>` or `--namespace=<namespace>`; repeat it to provide multiple namespaces
 - `--include-sub-namespaces`, `--include-sub-namespaces=true|false`, and `--no-include-sub-namespaces`
 - `--reporter simple|tree` or `--reporter=simple|tree`
 - `--durations`, `--durations=true|false`, and `--no-durations`

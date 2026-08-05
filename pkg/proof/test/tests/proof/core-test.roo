@@ -70,6 +70,24 @@
     (is (= 1 (count qualified-name-results)))
     (assert-result (head qualified-name-results) "applies-discount" :pass)))
 
+(deftest run-selected-filters-registered-tests-by-multiple-namespaces
+  (clear!)
+  (register-test! 'checkout-total (fn [] (is true)) "app.checkout")
+  (register-test! 'checkout-card (fn [] (is true)) "app.checkout.card")
+  (register-test! 'profile-page (fn [] (is true)) "app.profile")
+  (register-test! 'admin-page (fn [] (is true)) "app.admin")
+  (let [exact-results (run-selected {:namespace ["app.checkout" "app.profile"]})
+        subtree-results (run-selected {:namespace ["app.checkout" "app.profile"]
+                                       :include-sub-namespaces? true})]
+    (clear!)
+    (is (= 2 (count exact-results)))
+    (assert-result (nth exact-results 0) "checkout-total" :pass)
+    (assert-result (nth exact-results 1) "profile-page" :pass)
+    (is (= 3 (count subtree-results)))
+    (assert-result (nth subtree-results 0) "checkout-total" :pass)
+    (assert-result (nth subtree-results 1) "checkout-card" :pass)
+    (assert-result (nth subtree-results 2) "profile-page" :pass)))
+
 (deftest returns-failure-results
   (let [result (run-test {:name "bad-math"
                           :body (fn [] (is (= 5 (+ 2 2))))})]

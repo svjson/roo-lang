@@ -75,12 +75,15 @@
   (let [namespace (:namespace options)]
     (if (nil? namespace)
       true
-      (let [namespace-text (str namespace)
-            test-namespace (:namespace test)]
-        (if (:include-sub-namespaces? options)
-          (or (= namespace-text test-namespace)
-              (sub-namespace? namespace-text test-namespace))
-          (= namespace-text test-namespace))))))
+      (let [test-namespace (:namespace test)
+            namespaces (if (sequential? namespace) namespace [namespace])]
+        (any? namespaces
+              (fn [selected-namespace]
+                (let [namespace-text (str selected-namespace)]
+                  (if (:include-sub-namespaces? options)
+                    (or (= namespace-text test-namespace)
+                        (sub-namespace? namespace-text test-namespace))
+                    (= namespace-text test-namespace)))))))))
 
 (defun test-selected? [options test]
   (and (test-namespace-matches? options test)
