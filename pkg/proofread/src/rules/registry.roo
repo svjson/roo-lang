@@ -26,9 +26,8 @@
   Returns:
   Rule descriptor maps."
   [category entries]
-  (map entries
-       (fn [entry]
-         (descriptor category entry))))
+  (for [entry entries]
+    (descriptor category entry)))
 
 (defun scoped
   "Return rule descriptors for one scope.

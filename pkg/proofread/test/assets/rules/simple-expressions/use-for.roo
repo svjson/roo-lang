@@ -1,0 +1,11 @@
+(ns proofread.simple-expressions-use-for)
+
+(def rendered-items
+  (map items
+       (fn [item]
+         (item-view item (:selected? item)))))
+
+(def selected-labels
+  (map options
+       (fn [option]
+         (str (:label option) " (" (:value option) ")"))))

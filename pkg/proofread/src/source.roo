@@ -83,10 +83,8 @@
                  source-context (context file roots)
                  diagnostics (concat (rules/check-file-with-config file effective-config)
                                      (rules/check-with-config roots effective-config))]
-             (map (config/apply-diagnostics effective-config
-                                            diagnostics)
-                  (fn [diagnostic]
-                    (merge source-context diagnostic))))
+             (for [diagnostic (config/apply-diagnostics effective-config diagnostics)]
+               (merge source-context diagnostic)))
     :default []))
 
 (defun diagnostics

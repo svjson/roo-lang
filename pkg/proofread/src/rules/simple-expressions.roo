@@ -6,6 +6,7 @@
             [proofread.rules.simple-expressions.use-clamp :as use-clamp]
             [proofread.rules.simple-expressions.use-contains :as use-contains]
             [proofread.rules.simple-expressions.use-empty :as use-empty]
+            [proofread.rules.simple-expressions.use-for :as use-for]
             [proofread.rules.simple-expressions.use-get-with-default :as use-get-with-default]
             [proofread.rules.simple-expressions.use-head :as use-head]
             [proofread.rules.simple-expressions.use-keyword-lookup :as use-keyword-lookup]
@@ -23,6 +24,7 @@
     :simple-expressions
     [[:use-head use-head/check]
      [:use-clamp use-clamp/check]
+     [:use-for use-for/check]
      [:use-empty? use-empty/check]
      [:use-not-empty? use-not-empty/check]
      [:use-not= use-not-equal/check]

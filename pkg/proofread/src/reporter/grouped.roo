@@ -92,9 +92,8 @@
   A vector of formatted output lines."
   [diagnostics groups level]
   (if (empty? groups)
-    (map diagnostics
-         (fn [diagnostic]
-           (str (indent level) (rc/diagnostic-line diagnostic))))
+    (for [diagnostic diagnostics]
+      (str (indent level) (rc/diagnostic-line diagnostic)))
     (let [criterion (head groups)]
       (flat-map (group-values diagnostics criterion)
                 (fn [value]

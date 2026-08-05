@@ -68,3 +68,8 @@
 (deftest ignores-select-keys-non-candidates
   (is (= []
          (diagnostics "assets/rules/simple-expressions/select-keys-non-candidates.roo"))))
+
+(deftest reports-for-candidates
+  (is (= [[:use-for 4]
+          [:use-for 9]]
+         (diagnostic-summary "assets/rules/simple-expressions/use-for.roo"))))
