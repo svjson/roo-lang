@@ -52,6 +52,9 @@
 (def named-symbol
   (find-first (or symbols []) named?))
 
+(def configured-rules
+  (keys (or (:rules config) {})))
+
 (def symbol-name
   (get symbol :name))
 

@@ -96,6 +96,20 @@
   [config rule]
   (get-in config [:rules rule]))
 
+(defun unknown-rules
+  "Return configured rule IDs that are not registered.
+
+  Args:
+  - `config`: Effective proofread config.
+  - `known-rules`: Registered rule IDs.
+
+  Returns:
+  Configured rule IDs missing from `known-rules`."
+  [config known-rules]
+  (remove (keys (:rules config))
+          (fn [rule]
+            (contains? known-rules rule))))
+
 (defun rule-enabled?
   "Test whether a rule is enabled by config.
 

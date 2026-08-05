@@ -5,51 +5,66 @@
             [proofread.rules.direct-conditions.use-if-let :as use-if-let]
             [proofread.rules.direct-conditions.use-unless :as use-unless]
             [proofread.rules.direct-conditions.use-when :as use-when]
-            [proofread.rules.direct-conditions.use-when-let :as use-when-let]))
+            [proofread.rules.direct-conditions.use-when-let :as use-when-let]
+            [proofread.rules.registry :as registry]))
 
-(def checks
-  "Direct-condition rule check functions."
-  [use-if-let/check
-   use-when-let/check
-   use-case/check
-   use-cond/check
-   use-when/check
-   use-unless/check])
+(def rules
+  "Direct-condition rule descriptors."
+  (registry/descriptors
+    :direct-conditions
+    [[:use-if-let use-if-let/check]
+     [:use-when-let use-when-let/check]
+     [:use-case use-case/check]
+     [:use-cond use-cond/check]
+     [:use-when use-when/check]
+     [:use-unless use-unless/check]]))
 
 (defun node-diagnostic
   "Return the direct-condition diagnostic for an AST node.
 
   Args:
+  - `active-rules`: Rule descriptors to run.
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A diagnostic map, or `nil` when the node does not match a rule."
-  [parent node]
+  [active-rules parent node]
   (when (not (query/nested-if-chain-child? parent node))
-    (head (keep checks
-                (fn [check]
-                  (check parent node))))))
+    (registry/node-diagnostic active-rules parent node)))
 
 (defun check-node
   "Find direct-condition diagnostics beneath one AST node.
 
   Args:
+  - `active-rules`: Rule descriptors to run.
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [parent node]
+  [active-rules parent node]
   (if (map? node)
     (concat
-      (if-let [diagnostic (node-diagnostic parent node)]
+      (if-let [diagnostic (node-diagnostic active-rules parent node)]
         [diagnostic]
         [])
       (flat-map (:children node)
                 (fn [child]
-                  (check-node node child))))
+                  (check-node active-rules node child))))
     []))
+
+(defun check-with-rules
+  "Find direct-condition diagnostics using selected rules.
+
+  Args:
+  - `active-rules`: Rule descriptors to run.
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [active-rules root]
+  (check-node active-rules nil root))
 
 (defun check
   "Find direct-condition diagnostics beneath one AST root.
@@ -60,4 +75,4 @@
   Returns:
   A vector of diagnostic maps."
   [root]
-  (check-node nil root))
+  (check-with-rules rules root))

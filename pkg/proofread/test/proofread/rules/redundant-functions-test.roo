@@ -16,7 +16,9 @@
 (deftest reports-redundant-functions
   (is (= [[:redundant-function 3]
           [:redundant-function 8]
-          [:redundant-function 12]]
+          [:redundant-function 12]
+          [:redundant-function 18]
+          [:redundant-function 22]]
          (diagnostic-summary "assets/rules/redundant-functions/candidates.roo"))))
 
 (deftest ignores-redundant-function-non-candidates

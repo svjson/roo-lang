@@ -11,4 +11,3 @@
              (or (= 3 (count children))
                  (forms/nil-node? (nth children 3))))
     (diagnostics/make node :use-when "Use when")))
-

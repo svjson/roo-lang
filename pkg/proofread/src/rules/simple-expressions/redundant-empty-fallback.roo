@@ -14,17 +14,29 @@
   (and (= :vector (:type node))
        (empty? (:children node))))
 
-(defun empty-fallback?
-  "Test whether an AST node is an `(or value [])` fallback.
+(defun empty-map?
+  "Test whether an AST node is an empty map literal.
 
   Args:
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for `(or value [])`, otherwise `false`."
+  `true` for `{}`, otherwise `false`."
+  [node]
+  (and (= :map (:type node))
+       (empty? (:children node))))
+
+(defun empty-seq-fallback?
+  "Test whether an AST node is an `(or value [])` fallback."
   [{:keys [children] :as node}]
   (and (forms/call? node "or" 3)
        (empty-vector? (nth children 2))))
+
+(defun empty-map-fallback?
+  "Test whether an AST node is an `(or value {})` fallback."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "or" 3)
+       (empty-map? (nth children 2))))
 
 (defun nil-tolerant-seq-call?
   "Test whether a call treats nil input as an empty sequence.
@@ -40,6 +52,18 @@
        (contains? ["any?" "count" "empty?" "filter" "find-first" "find-index" "flat-map" "keep" "map" "not-empty?" "remove"]
                   (forms/head-name node))))
 
+(defun nil-tolerant-map-call?
+  "Test whether a call treats nil input as an empty map.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for map calls whose first argument can be `nil`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (< 1 (count children))
+       (contains? ["keys"] (forms/head-name node))))
+
 (defun check
   "Report redundant empty sequence fallbacks.
 
@@ -50,6 +74,8 @@
   Returns:
   A diagnostic map when `node` should remove `(or value [])`, otherwise `nil`."
   [parent {:keys [children] :as node}]
-  (when (and (nil-tolerant-seq-call? node)
-             (empty-fallback? (nth children 1)))
+  (when (or (and (nil-tolerant-seq-call? node)
+                 (empty-seq-fallback? (nth children 1)))
+            (and (nil-tolerant-map-call? node)
+                 (empty-map-fallback? (nth children 1))))
     (diagnostics/make node :redundant-empty-fallback "Remove redundant empty fallback")))

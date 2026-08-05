@@ -1,0 +1,9 @@
+(ns proofread.rules.registry-test
+  (:require proof.core
+            [proofread.rules :as rules]
+            [proofread.rules.registry :as registry]))
+
+(deftest exposes-registered-rule-ids
+  (is (registry/known-rule? rules/rules :use-head))
+  (is (registry/known-rule? rules/rules :redundant-do))
+  (is (= false (registry/known-rule? rules/rules :missing-rule))))

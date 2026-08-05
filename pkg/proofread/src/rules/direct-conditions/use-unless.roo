@@ -11,4 +11,3 @@
              (= 4 (count children))
              (forms/nil-node? (nth children 2)))
     (diagnostics/make node :use-unless "Use unless")))
-

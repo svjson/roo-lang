@@ -68,6 +68,47 @@
   (and (directly-redundant-predicate-call? node)
        (wrapper-arguments? (:children node) 1 param-names false false)))
 
+(defun closed-over-symbol?
+  "Test whether an AST node is a direct non-parameter symbol."
+  [param-names node]
+  (when-let [name (forms/symbol-name node)]
+    (and (not (literal-node? node))
+         (not (contains? param-names name)))))
+
+(defun closed-over-wrapper-arguments?
+  "Test whether wrapper arguments are simple and use a closed-over symbol."
+  [children index param-names closed-over?]
+  (if (>= index (count children))
+    closed-over?
+    (let [argument (nth children index)]
+      (cond
+        (parameter-node? param-names argument)
+        (closed-over-wrapper-arguments? children (inc index) param-names closed-over?)
+
+        (literal-node? argument)
+        (closed-over-wrapper-arguments? children (inc index) param-names closed-over?)
+
+        (closed-over-symbol? param-names argument)
+        (closed-over-wrapper-arguments? children (inc index) param-names true)
+
+        true
+        false))))
+
+(defun unqualified-name
+  "Return the name after a namespace slash."
+  [name]
+  (if-let [separator (find-index name (fn [ch] (= "/" (str ch))))]
+    (substr name (+ separator 1) (count name))
+    name))
+
+(defun closed-over-wrapper?
+  "Test whether a function only forwards to another call with closed-over data."
+  [function-name param-names node]
+  (when-let [callee (forms/head-name node)]
+    (and (= function-name (unqualified-name callee))
+         (not= function-name callee)
+         (closed-over-wrapper-arguments? (:children node) 1 param-names false))))
+
 (defun redundant-function?
   "Test whether a `defun` only names a simple redundant expression."
   [{:keys [children] :as node}]
@@ -78,10 +119,11 @@
                  (= :vector (:type params)))
         (when-let [param-names (plain-param-names params 0 [])]
           (let [body (nth children body-index)]
-            (and (not-empty? param-names)
-                 (or (redundant-keyword-accessor? function-name param-names body)
-                     (and (not= function-name (forms/head-name body))
-                          (specialized-wrapper? param-names body))))))))))
+            (or (redundant-keyword-accessor? function-name param-names body)
+                (closed-over-wrapper? function-name param-names body)
+                (and (not-empty? param-names)
+                     (not= function-name (forms/head-name body))
+                     (specialized-wrapper? param-names body)))))))))
 
 (defun check
   "Return a `redundant-function` diagnostic for matching nodes."

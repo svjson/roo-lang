@@ -46,4 +46,3 @@
   [parent node]
   (when (redundant-do? parent node)
     (diagnostics/make node :redundant-do "Redundant do form")))
-

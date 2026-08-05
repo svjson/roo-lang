@@ -12,3 +12,13 @@
 (defun object-kind
   [object]
   (:kind object))
+
+(def rules [])
+
+(defun rule-ids
+  []
+  (registry/rule-ids rules))
+
+(defun known-rule?
+  [id]
+  (registry/known-rule? rules id))

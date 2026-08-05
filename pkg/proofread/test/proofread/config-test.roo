@@ -1,6 +1,8 @@
 (ns proofread.config-test
   (:require proof.core
             [proofread.config :as config]
+            [proofread.rules :as rules]
+            [proofread.rules.registry :as registry]
             [proofread.source :as source]))
 
 (def parent-config
@@ -30,6 +32,12 @@
                                      :severity :warning}
                                     {:rule :use-head
                                      :severity :warning}]))))
+
+(deftest reports-unknown-configured-rules
+  (is (= [:missing-rule]
+         (config/unknown-rules {:rules {:use-head :off
+                                        :missing-rule :off}}
+                               (registry/rule-ids rules/rules)))))
 
 (deftest discovers-and-applies-nested-config
   (is (= [[:redundant-do :error]]

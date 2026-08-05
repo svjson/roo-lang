@@ -1,0 +1,81 @@
+(ns proofread.rules.registry)
+
+(defun descriptor
+  "Build a proofread rule descriptor.
+
+  Args:
+  - `category`: Rule category keyword.
+  - `entry`: Vector containing rule ID and check function.
+
+  Returns:
+  A rule descriptor map."
+  [category entry]
+  {:id (head entry)
+   :category category
+   :default-severity :warning
+   :check (nth entry 1)})
+
+(defun descriptors
+  "Build proofread rule descriptors for a category.
+
+  Args:
+  - `category`: Rule category keyword.
+  - `entries`: Vectors containing rule ID and check function.
+
+  Returns:
+  Rule descriptor maps."
+  [category entries]
+  (map entries
+       (fn [entry]
+         (descriptor category entry))))
+
+(defun check-rule
+  "Run one rule descriptor against an AST node.
+
+  Args:
+  - `rule`: Rule descriptor map.
+  - `parent`: Parent `roo.ast` node map, or `nil`.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map, or `nil` when the rule does not match."
+  [rule parent node]
+  ((:check rule) parent node))
+
+(defun node-diagnostic
+  "Return the first diagnostic from matching rule descriptors.
+
+  Args:
+  - `rules`: Rule descriptor maps.
+  - `parent`: Parent `roo.ast` node map, or `nil`.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map, or `nil` when no rule matches."
+  [rules parent node]
+  (head (keep rules
+              (fn [rule]
+                (check-rule rule parent node)))))
+
+(defun rule-ids
+  "Return rule IDs from descriptors.
+
+  Args:
+  - `rules`: Rule descriptor maps.
+
+  Returns:
+  A vector of rule ID keywords."
+  [rules]
+  (map rules :id))
+
+(defun known-rule?
+  "Test whether a rule ID is registered.
+
+  Args:
+  - `rules`: Rule descriptor maps.
+  - `id`: Rule keyword.
+
+  Returns:
+  `true` when `id` is present in `rules`, otherwise `false`."
+  [rules id]
+  (contains? (rule-ids rules) id))

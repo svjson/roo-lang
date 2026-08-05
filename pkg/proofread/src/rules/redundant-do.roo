@@ -1,37 +1,58 @@
 (ns proofread.rules.redundant-do
-  (:require [proofread.rules.redundant-do.redundant-do :as redundant-do]))
+  (:require [proofread.rules.redundant-do.redundant-do :as redundant-do]
+            [proofread.rules.registry :as registry]))
+
+(def rules
+  "Redundant-do rule descriptors."
+  (registry/descriptors
+    :redundant-do
+    [[:redundant-do redundant-do/check]]))
 
 (defun node-diagnostic
   "Return the redundant-do diagnostic for an AST node.
 
   Args:
+  - `active-rules`: Rule descriptors to run.
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A diagnostic map, or `nil` when no redundant-do rule matches."
-  [parent node]
-  (redundant-do/check parent node))
+  [active-rules parent node]
+  (registry/node-diagnostic active-rules parent node))
 
 (defun check-node
   "Find redundant `do` forms beneath one AST node.
 
   Args:
+  - `active-rules`: Rule descriptors to run.
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [parent node]
+  [active-rules parent node]
   (if (map? node)
     (concat
-      (if-let [diagnostic (node-diagnostic parent node)]
+      (if-let [diagnostic (node-diagnostic active-rules parent node)]
         [diagnostic]
         [])
       (flat-map (:children node)
                 (fn [child]
-                  (check-node node child))))
+                  (check-node active-rules node child))))
     []))
+
+(defun check-with-rules
+  "Find redundant `do` diagnostics using selected rules.
+
+  Args:
+  - `active-rules`: Rule descriptors to run.
+  - `root`: A top-level `roo.ast` node map.
+
+  Returns:
+  A vector of diagnostic maps."
+  [active-rules root]
+  (check-node active-rules nil root))
 
 (defun check
   "Find redundant `do` forms beneath one AST root.
@@ -42,4 +63,4 @@
   Returns:
   A vector of diagnostic maps."
   [root]
-  (check-node nil root))
+  (check-with-rules rules root))

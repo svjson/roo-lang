@@ -40,6 +40,9 @@
 (def non-empty-default
   (keep (or (:symbols index) [:default]) symbol-entry))
 
+(def non-empty-map-default
+  (keys (or (:rules config) {:default :off})))
+
 (def dynamic-get
   (get values key))
 
