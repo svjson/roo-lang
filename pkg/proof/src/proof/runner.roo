@@ -5,16 +5,14 @@
             [roo.string :as string]))
 
 (defun base-config [context]
-  (let [config (:config context)]
-    (if (nil? config)
-      {}
-      config)))
+  (if-let [config (:config context)]
+    config
+    {}))
 
 (defun cli-args [context]
-  (let [args (:args context)]
-    (if (nil? args)
-      []
-      args)))
+  (if-let [args (:args context)]
+    args
+    []))
 
 (defun help-requested? [context]
   (let [args (cli-args context)]
@@ -216,10 +214,9 @@
   (parse-proof-args-from (cli-args context) 0 (base-config context) []))
 
 (defun configured-test-roots [context]
-  (let [roots (:test-roots (:config context))]
-    (if (nil? roots)
-      ["test"]
-      roots)))
+  (if-let [roots (:test-roots (:config context))]
+    roots
+    ["test"]))
 
 (defun configured-fixture-root [context]
   (or (:fixture-root (:config context))
@@ -266,15 +263,14 @@
               (discover-roo-files (absolute-test-root context root)))))
 
 (defun relative-package-path [context path]
-  (let [package-root (:package-root context)]
-    (if (nil? package-root)
-      (normalized-path path)
-      (let [normalized-root (trim-trailing-slash (normalized-path package-root))
-            normalized-file (normalized-path path)
-            prefix (str normalized-root "/")]
-        (if (string/starts-with? normalized-file prefix)
-          (substr normalized-file (count prefix))
-          normalized-file)))))
+  (if-let [package-root (:package-root context)]
+    (let [normalized-root (trim-trailing-slash (normalized-path package-root))
+          normalized-file (normalized-path path)
+          prefix (str normalized-root "/")]
+      (if (string/starts-with? normalized-file prefix)
+        (substr normalized-file (count prefix))
+        normalized-file))
+    (normalized-path path)))
 
 (defun test-file-entry [context path]
   {:path path

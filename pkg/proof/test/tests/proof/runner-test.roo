@@ -16,6 +16,12 @@
          (:fixture-root
           (runner/configured-proof {:args ["--fixture-root=tmp/fixtures"]})))))
 
+(deftest parses-repeated-namespace-cli-options
+  (is (= ["app.checkout-test" "app.profile-test"]
+         (:namespace
+          (runner/configured-proof {:args ["-n" "app.checkout-test"
+                                           "--namespace=app.profile-test"]})))))
+
 (deftest resolves-relative-fixture-root-under-package-root
   (is (= "/repo/app/test/fixtures"
          (runner/absolute-fixture-root {:package-root "/repo/app"} "test/fixtures")))

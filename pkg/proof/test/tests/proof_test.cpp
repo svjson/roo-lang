@@ -391,46 +391,6 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
   EXPECT_EQ(runtime.eval("app.admin-test/loaded?")->to_string(), "true");
 }
 
-TEST(ProofPackage, runner_accepts_multiple_namespace_cli_filters)
-{
-  const auto root = fresh_proof_fixture_root("multiple-namespace-filters");
-  write_file(root / "test/app/checkout-test.roo",
-             R"((ns app.checkout-test
-  (:require proof.core))
-
-(deftest checkout-total
-  (is true))
-)");
-  write_file(root / "test/app/profile-test.roo",
-             R"((ns app.profile-test
-  (:require proof.core))
-
-(deftest profile-page
-  (is true))
-)");
-  write_file(root / "test/app/admin-test.roo",
-             R"((ns app.admin-test
-  (:require proof.core))
-
-(deftest hidden-failure
-  (is false))
-)");
-
-  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
-  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
-
-  runtime.eval(R"((ns proof.runner-multiple-namespace-test
-    (:require proof.runner)))");
-
-  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
-                              " :config {:test-roots [\"test\"]} "
-                              ":args [\"-n\" \"app.checkout-test\" "
-                              "\"--namespace=app.profile-test\"]})");
-
-  EXPECT_EQ(without_elapsed_ms_string(results),
-            "[{:name checkout-total :status :pass} {:name profile-page :status :pass}]");
-}
-
 TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
 {
   const auto root = fresh_proof_fixture_root("tree-reporter");
@@ -617,37 +577,6 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name discovered-proof :status :pass}]");
   EXPECT_NE(output.find(bold_label("test/smoke/discovered.roo") + "\n"), std::string::npos);
   expect_duration_output_line(output, "└── " + pass_label() + " - discovered-proof");
-}
-
-TEST(ProofPackage, runtime_error_marks_test_error_and_continues)
-{
-  Roo::DirRootFileSystem fs(proof_load_paths());
-  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
-
-  runtime.eval(R"(
-    (ns proof.package-error-test
-      (:require proof.core))
-  )");
-  runtime.eval("(clear!)");
-  runtime.eval(R"(
-    (deftest division-error
-      (/ 1 0))
-    (deftest after-error
-      (is true))
-  )");
-
-  testing::internal::CaptureStdout();
-  auto results = runtime.eval("(run)");
-  std::string output = testing::internal::GetCapturedStdout();
-
-  EXPECT_EQ(without_elapsed_ms_string(results),
-            "[{:name division-error :status :error :message \"Division by zero\"} "
-            "{:name after-error :status :pass}]");
-  EXPECT_NE(output.find("  " + error_label() + " division-error\n"
-                        "    - Division by zero\n"),
-            std::string::npos);
-  EXPECT_NE(output.find("  " + pass_label() + " after-error\n"), std::string::npos);
-  EXPECT_NE(output.find("proof: 1 passed, 0 failed, 1 errored, 2 total"), std::string::npos);
 }
 
 TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)

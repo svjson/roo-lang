@@ -5,7 +5,7 @@
 (defun assert-result [result expected-name expected-status]
   (is (= expected-name (str (:name result))))
   (is (= expected-status (:status result)))
-  (is (not (nil? (:elapsed-ms result))))
+  (is (some? (:elapsed-ms result)))
   (is (not (< (:elapsed-ms result) 0))))
 
 (deftest registers-and-runs-tests
@@ -19,7 +19,7 @@
   (let [results (run)]
     (clear!)
     (is (= 3 (count results)))
-    (assert-result (nth results 0) "addition" :pass)
+    (assert-result (head results) "addition" :pass)
     (assert-result (nth results 1) "should-alias" :pass)
     (assert-result (nth results 2) "assert-alias" :pass)))
 
@@ -28,7 +28,7 @@
                  (run-test {:name "failing-test" :body (fn [] (is false))})
                  (run-test {:name "error-test" :body (fn [] (/ 1 0))})]]
     (is (= 3 (count results)))
-    (assert-result (nth results 0) "passing-test" :pass)
+    (assert-result (head results) "passing-test" :pass)
     (assert-result (nth results 1) "failing-test" :fail)
     (is (= "Expected truthy expression: false." (:message (nth results 1))))
     (is (= [{:message "Expected truthy expression: false."}]
@@ -47,7 +47,7 @@
   (let [results (run-selected {:filter "*checkout*"})]
     (clear!)
     (is (= 2 (count results)))
-    (assert-result (nth results 0) "checkout-total" :pass)
+    (assert-result (head results) "checkout-total" :pass)
     (assert-result (nth results 1) "checkout-discount" :pass)))
 
 (deftest run-selected-filters-registered-tests-by-namespace
@@ -63,7 +63,7 @@
         qualified-name-results (run-selected {:filter "app.checkout/*discount"})]
     (clear!)
     (is (= 2 (count exact-results)))
-    (assert-result (nth exact-results 0) "completes-order" :pass)
+    (assert-result (head exact-results) "completes-order" :pass)
     (assert-result (nth exact-results 1) "applies-discount" :pass)
     (is (= 1 (count subtree-results)))
     (assert-result (head subtree-results) "applies-discount" :pass)
@@ -81,10 +81,10 @@
                                        :include-sub-namespaces? true})]
     (clear!)
     (is (= 2 (count exact-results)))
-    (assert-result (nth exact-results 0) "checkout-total" :pass)
+    (assert-result (head exact-results) "checkout-total" :pass)
     (assert-result (nth exact-results 1) "profile-page" :pass)
     (is (= 3 (count subtree-results)))
-    (assert-result (nth subtree-results 0) "checkout-total" :pass)
+    (assert-result (head subtree-results) "checkout-total" :pass)
     (assert-result (nth subtree-results 1) "checkout-card" :pass)
     (assert-result (nth subtree-results 2) "profile-page" :pass)))
 
@@ -112,10 +112,10 @@
                  (run-test {:name "after-wrapped-assertion"
                             :body (fn [] (is true))})]]
     (is (= 2 (count results)))
-    (assert-result (nth results 0) "assertion-through-apply" :fail)
-    (is (= "Expected 1, got 2." (:message (nth results 0))))
+    (assert-result (head results) "assertion-through-apply" :fail)
+    (is (= "Expected 1, got 2." (:message (head results))))
     (is (= [{:message "Expected 1, got 2."}]
-           (:failures (nth results 0))))
+           (:failures (head results))))
     (assert-result (nth results 1) "after-wrapped-assertion" :pass)))
 
 (deftest runtime-error-marks-test-error-and-continues
@@ -124,8 +124,8 @@
                  (run-test {:name "after-error"
                             :body (fn [] (is true))})]]
     (is (= 2 (count results)))
-    (assert-result (nth results 0) "division-error" :error)
-    (is (contains-all? (:message (nth results 0)) "Division by zero"))
+    (assert-result (head results) "division-error" :error)
+    (is (contains-all? (:message (head results)) "Division by zero"))
     (assert-result (nth results 1) "after-error" :pass)))
 
 (deftest expect-records-failures-and-continues

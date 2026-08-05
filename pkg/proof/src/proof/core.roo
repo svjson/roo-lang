@@ -24,10 +24,9 @@
   name)
 
 (defun annotate-test [metadata-by-namespace test]
-  (let [metadata (get metadata-by-namespace (:namespace test) nil)]
-    (if (nil? metadata)
-      test
-      (merge test metadata))))
+  (if-let [metadata (get metadata-by-namespace (:namespace test) nil)]
+    (merge test metadata)
+    test))
 
 (defun annotate-tests! [metadata-by-namespace]
   (set! [tests]
@@ -65,25 +64,23 @@
   (wildcard-match-from? (str pattern) 0 (str text) 0))
 
 (defun test-name-matches? [options test]
-  (let [pattern (:filter options)]
-    (if (nil? pattern)
-      true
-      (or (wildcard-match? pattern (-> test :name str))
-          (wildcard-match? pattern (qualified-test-name test))))))
+  (if-let [pattern (:filter options)]
+    (or (wildcard-match? pattern (-> test :name str))
+        (wildcard-match? pattern (qualified-test-name test)))
+    true))
 
 (defun test-namespace-matches? [options test]
-  (let [namespace (:namespace options)]
-    (if (nil? namespace)
-      true
-      (let [test-namespace (:namespace test)
-            namespaces (if (sequential? namespace) namespace [namespace])]
-        (any? namespaces
-              (fn [selected-namespace]
-                (let [namespace-text (str selected-namespace)]
-                  (if (:include-sub-namespaces? options)
-                    (or (= namespace-text test-namespace)
-                        (sub-namespace? namespace-text test-namespace))
-                    (= namespace-text test-namespace)))))))))
+  (if-let [namespace (:namespace options)]
+    (let [test-namespace (:namespace test)
+          namespaces (if (sequential? namespace) namespace [namespace])]
+      (any? namespaces
+            (fn [selected-namespace]
+              (let [namespace-text (str selected-namespace)]
+                (if (:include-sub-namespaces? options)
+                  (or (= namespace-text test-namespace)
+                      (sub-namespace? namespace-text test-namespace))
+                  (= namespace-text test-namespace))))))
+    true))
 
 (defun test-selected? [options test]
   (and (test-namespace-matches? options test)
