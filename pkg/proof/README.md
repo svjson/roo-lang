@@ -373,10 +373,13 @@ Then run:
 
 ```sh
 roo proof
+roo proof test/my-package/smoke-test.roo
 ```
 
 By default, proof discovers and loads `.roo` files under the package's
 `test/` directory, then runs the registered tests.
+Positional arguments add test paths for the run. Each path may be a test
+directory or a single `.roo` test file.
 
 Test namespaces should require `proof.core` and define tests:
 
@@ -437,6 +440,7 @@ Supported flags are:
 
 - `--help` or `-h`
 - `--test-root <path>` or `--test-root=<path>`; repeat it to provide multiple roots
+- positional `<test-path>` arguments; repeat them to provide test directories or `.roo` files
 - `--filter <pattern>` or `--filter=<pattern>`
 - `--namespace <namespace>`, `--namespace=<namespace>`, or `-n <namespace>`; repeat it to provide multiple namespaces
 - `--include-sub-namespaces`, `--include-sub-namespaces=true|false`, and `--no-include-sub-namespaces`

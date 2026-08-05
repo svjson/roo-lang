@@ -11,9 +11,8 @@
   result)
 
 (defun report-results [results & options &rest]
-  (map results
-       (fn [result]
-         (report-result result options))))
+  (for [result results]
+    (report-result result options)))
 
 (defun report-test-result [state test result options]
   (report-result result options)

@@ -22,6 +22,12 @@
           (runner/configured-proof {:args ["-n" "app.checkout-test"
                                            "--namespace=app.profile-test"]})))))
 
+(deftest parses-positional-test-paths
+  (is (= ["test/app/checkout-test.roo" "test/app/profile-test.roo"]
+         (:test-roots
+          (runner/configured-proof {:args ["test/app/checkout-test.roo"
+                                           "test/app/profile-test.roo"]})))))
+
 (deftest resolves-relative-fixture-root-under-package-root
   (is (= "/repo/app/test/fixtures"
          (runner/absolute-fixture-root {:package-root "/repo/app"} "test/fixtures")))

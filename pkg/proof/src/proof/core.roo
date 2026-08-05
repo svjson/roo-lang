@@ -30,9 +30,8 @@
 
 (defun annotate-tests! [metadata-by-namespace]
   (set! [tests]
-        (map tests
-             (fn [test]
-               (annotate-test metadata-by-namespace test))))
+        (for [test tests]
+          (annotate-test metadata-by-namespace test)))
   tests)
 
 (defun sub-namespace? [parent namespace]

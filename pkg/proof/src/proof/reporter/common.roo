@@ -16,9 +16,8 @@
 
 (defun report-result-details [result]
   (case (:status result)
-    :fail (map (:failures result)
-               (fn [failure]
-                 (prn "    -" (:message failure))))
+    :fail (for [failure (:failures result)]
+            (prn "    -" (:message failure)))
     :error (prn "    -" (:message result)))
   result)
 

@@ -391,6 +391,67 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
   EXPECT_EQ(runtime.eval("app.admin-test/loaded?")->to_string(), "true");
 }
 
+TEST(ProofPackage, runner_accepts_positional_test_file)
+{
+  const auto root = fresh_proof_fixture_root("positional-test-file");
+  write_file(root / "test/app/checkout-test.roo",
+             R"((ns app.checkout-test
+  (:require proof.core))
+
+(deftest checkout-total
+  (is true))
+)");
+  write_file(root / "test/app/admin-test.roo",
+             R"((ns app.admin-test
+  (:require proof.core))
+
+(deftest hidden-failure
+  (is false))
+)");
+
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-positional-file-test
+    (:require proof.runner)))");
+
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :args [\"test/app/checkout-test.roo\"]})");
+
+  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-total :status :pass}]");
+  expect_elapsed_ms_for_results(results);
+}
+
+TEST(ProofPackage, runner_reports_unknown_cli_argument)
+{
+  const auto root = fresh_proof_fixture_root("unknown-cli-argument");
+  write_file(root / "test/app/failing-test.roo",
+             R"((ns app.failing-test
+  (:require proof.core))
+
+(deftest should-not-run
+  (is false))
+)");
+
+  Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+
+  runtime.eval(R"((ns proof.runner-unknown-argument-test
+    (:require proof.runner)))");
+
+  testing::internal::CaptureStdout();
+  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
+                              " :args [\"--wat\"]})");
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(without_elapsed_ms_string(results), "nil");
+  EXPECT_NE(output.find("Unrecognized argument: --wat\n"), std::string::npos);
+  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"),
+            std::string::npos);
+  EXPECT_EQ(output.find("should-not-run"), std::string::npos);
+  EXPECT_EQ(output.find("FAIL"), std::string::npos);
+}
+
 TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
 {
   const auto root = fresh_proof_fixture_root("tree-reporter");
@@ -545,7 +606,9 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "nil");
-  EXPECT_NE(output.find("Usage: roo proof [options]\n"), std::string::npos);
+  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"),
+            std::string::npos);
+  EXPECT_NE(output.find("<test-path>"), std::string::npos);
   EXPECT_NE(output.find("--reporter simple|tree"), std::string::npos);
   EXPECT_NE(output.find("--durations"), std::string::npos);
   EXPECT_EQ(output.find("should-not-run"), std::string::npos);

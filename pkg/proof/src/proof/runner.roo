@@ -20,11 +20,12 @@
         (contains? args "-h"))))
 
 (defun print-help []
-  (prn "Usage: roo proof [options]")
+  (prn "Usage: roo proof [options] [<test-path>...]")
   (prn "")
   (prn "Options:")
   (prn "  --help, -h                         Show this help.")
   (prn "  --test-root <path>                 Add a test root. Repeat for multiple roots.")
+  (prn "  <test-path>                        Add a test directory or .roo file.")
   (prn "  --filter <pattern>                 Select tests by name or qualified name.")
   (prn "  --namespace, -n <namespace>        Select tests in a namespace. Repeat for multiple namespaces.")
   (prn "  --include-sub-namespaces           Include child namespaces with --namespace.")
@@ -64,11 +65,11 @@
              (sequential? current) (append current namespace)
              true [current namespace]))))
 
-(defun parse-proof-args-from [args index config roots]
+(defun parse-proof-args-from [args index config paths]
   (if (= index (count args))
-    (if (empty? roots)
+    (if (empty? paths)
       config
-      (assoc config :test-roots roots))
+      (assoc config :test-roots paths))
     (let [arg (nth args index)
           reporter (flag-value arg "--reporter")
           filter-pattern (flag-value arg "--filter")
@@ -85,59 +86,59 @@
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :reporter (cli-keyword reporter))
-                               roots)
+                               paths)
 
         filter-pattern
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :filter filter-pattern)
-                               roots)
+                               paths)
 
         namespace
         (parse-proof-args-from args
                                (+ index 1)
                                (add-namespace-filter config namespace)
-                               roots)
+                               paths)
 
         fixture-root
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :fixture-root fixture-root)
-                               roots)
+                               paths)
 
         test-root
-        (parse-proof-args-from args (+ index 1) config (append! roots test-root))
+        (parse-proof-args-from args (+ index 1) config (append! paths test-root))
 
         test-roots
-        (parse-proof-args-from args (+ index 1) config (append! roots test-roots))
+        (parse-proof-args-from args (+ index 1) config (append! paths test-roots))
 
         durations
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :durations? (cli-bool durations))
-          roots)
+          paths)
 
         durations-p
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :durations? (cli-bool durations-p))
-          roots)
+          paths)
 
         include-sub-namespaces
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces))
-          roots)
+          paths)
 
         include-sub-namespaces-p
         (parse-proof-args-from
           args
           (+ index 1)
           (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces-p))
-          roots)
+          paths)
 
         (= arg "--reporter")
         (parse-proof-args-from args
@@ -145,31 +146,31 @@
                                (assoc config
                                       :reporter
                                       (cli-keyword (nth args (+ index 1))))
-                               roots)
+                               paths)
 
         (= arg "--filter")
         (parse-proof-args-from args
                                (+ index 2)
                                (assoc config :filter (nth args (+ index 1)))
-                               roots)
+                               paths)
 
         (or (= arg "--namespace") (= arg "-n"))
         (parse-proof-args-from args
                                (+ index 2)
                                (add-namespace-filter config (nth args (+ index 1)))
-                               roots)
+                               paths)
 
         (= arg "--fixture-root")
         (parse-proof-args-from args
                                (+ index 2)
                                (assoc config :fixture-root (nth args (+ index 1)))
-                               roots)
+                               paths)
 
         (or (= arg "--test-root") (= arg "--test-roots"))
         (parse-proof-args-from args
                                (+ index 2)
                                config
-                               (append! roots (nth args (+ index 1))))
+                               (append! paths (nth args (+ index 1))))
 
         (or (= arg "--durations") (= arg "--durations?"))
         (if (next-value? args index)
@@ -177,11 +178,11 @@
             args
             (+ index 2)
             (assoc config :durations? (cli-bool (nth args (+ index 1))))
-            roots)
+            paths)
           (parse-proof-args-from args
                                  (+ index 1)
                                  (assoc config :durations? true)
-                                 roots))
+                                 paths))
 
         (or (= arg "--include-sub-namespaces") (= arg "--include-sub-namespaces?"))
         (if (next-value? args index)
@@ -189,31 +190,40 @@
             args
             (+ index 2)
             (assoc config :include-sub-namespaces? (cli-bool (nth args (+ index 1))))
-            roots)
+            paths)
           (parse-proof-args-from args
                                  (+ index 1)
                                  (assoc config :include-sub-namespaces? true)
-                                 roots))
+                                 paths))
 
         (= arg "--no-include-sub-namespaces")
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :include-sub-namespaces? false)
-                               roots)
+                               paths)
 
         (= arg "--no-durations")
         (parse-proof-args-from args
                                (+ index 1)
                                (assoc config :durations? false)
-                               roots)
+                               paths)
+
+        (string/starts-with? arg "-")
+        (parse-proof-args-from args
+                               (+ index 1)
+                               (assoc config
+                                      :errors
+                                      (append (or (:errors config) [])
+                                              (str "Unrecognized argument: " arg)))
+                               paths)
 
         :else
-        (parse-proof-args-from args (+ index 1) config roots)))))
+        (parse-proof-args-from args (+ index 1) config (append! paths arg))))))
 
 (defun configured-proof [context]
   (parse-proof-args-from (cli-args context) 0 (base-config context) []))
 
-(defun configured-test-roots [context]
+(defun configured-test-paths [context]
   (if-let [roots (:test-roots (:config context))]
     roots
     ["test"]))
@@ -222,8 +232,11 @@
   (or (:fixture-root (:config context))
       "test/fixtures"))
 
-(defun absolute-test-root [context root]
-  (io/join-path (:package-root context) root))
+(defun absolute-test-path [context path]
+  (if (or (nil? (:package-root context))
+          (string/starts-with? path "/"))
+    path
+    (io/join-path (:package-root context) path)))
 
 (defun absolute-fixture-root [context root]
   (if (or (nil? (:package-root context))
@@ -247,7 +260,8 @@
   (= (:type entry) :directory))
 
 (defun discover-roo-files [root]
-  (if (io/directory? root)
+  (cond
+    (io/directory? root)
     (let [entries (io/list-directory! root)
           files (map (filter entries roo-file-entry?) :path)
           directories (filter entries directory-entry?)]
@@ -255,12 +269,18 @@
               (flat-map directories
                         (fn [entry]
                           (discover-roo-files (:path entry))))))
+
+    (and (io/file? root)
+         (= ".roo" (io/extension root)))
+    [root]
+
+    true
     []))
 
 (defun discover-test-files [context]
-  (flat-map (configured-test-roots context)
-            (fn [root]
-              (discover-roo-files (absolute-test-root context root)))))
+  (flat-map (configured-test-paths context)
+            (fn [path]
+              (discover-roo-files (absolute-test-path context path)))))
 
 (defun relative-package-path [context path]
   (if-let [package-root (:package-root context)]
@@ -340,9 +360,18 @@
       (print-help)
       nil)
     (let [config (configured-proof context)
+          errors (or (:errors config) [])
           run-context (assoc context :config config)]
-      (fixture/configure!
-        {:fixture-root (absolute-fixture-root run-context
-                                             (configured-fixture-root run-context))})
-      (load-tests run-context)
-      (proof.core/run-selected config))))
+      (if (not-empty? errors)
+        (do
+          (for [error errors]
+            (prn error))
+          (prn "")
+          (print-help)
+          nil)
+        (do
+          (fixture/configure!
+            {:fixture-root (absolute-fixture-root run-context
+                                                 (configured-fixture-root run-context))})
+          (load-tests run-context)
+          (proof.core/run-selected config))))))
