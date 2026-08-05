@@ -160,12 +160,11 @@
 
       (or (= arg "-o")
           (= arg "--out"))
-      (let [out (nth args 1)]
-        (if (nil? out)
-          (assoc options :errors (append (:errors options)
-                                         (str "Missing directory after " arg)))
-          (parse-args-step (tail (tail args))
-                           (assoc options :out out))))
+      (if-let [out (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options :out out))
+        (assoc options :errors (append (:errors options)
+                                       (str "Missing directory after " arg))))
 
       (= arg "--package-group")
       (add-package-group-option args options)

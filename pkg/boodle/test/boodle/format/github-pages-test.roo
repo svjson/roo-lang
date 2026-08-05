@@ -180,9 +180,9 @@
                 "</div>\n"
                 "# roo\n\n"
                 "Implicit runtime namespace.\n\n"
-                "| Symbol             | Summary      |\n"
-                "| ------------------ | ------------ |\n"
-                "| [+](roo/plus.html) | Add numbers. |"
+                "| Symbol               | Summary      |\n"
+                "| -------------------- | ------------ |\n"
+                "| [`+`](roo/plus.html) | Add numbers. |"
                 "\n\n</main>\n"
                 "</div>\n")
            (:content namespace-page)))
@@ -214,7 +214,7 @@
                 "<option value=\"../../../0.1.0/namespaces/roo/plus.html\" selected>0.1.0</option>\n"
                 "</select></label>\n"
                 "</div>\n"
-                "# +\n\n"
+                "# `+`\n\n"
                 "Add numbers.\n\n"
                 "Returns the numeric sum.\n\n"
                 "```roo\n"

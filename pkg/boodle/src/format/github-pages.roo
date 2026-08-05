@@ -148,6 +148,17 @@
   [entry]
   (or (:name entry) (:qualified-name entry)))
 
+(defun entry-title-code
+  "Return ENTRY display title as Markdown inline code text.
+
+  Args:
+  - `entry`: Boodle entry map.
+
+  Returns:
+  Markdown code span text for the local symbol name."
+  [entry]
+  (str "`" (entry-title entry) "`"))
+
 (defun entry-detail-blocks
   "Return Markdown blocks for ENTRY with HEADING-LEVEL.
 
@@ -158,7 +169,7 @@
   Returns:
   Blocks documenting one symbol."
   [entry heading-level]
-  (concat [(md/heading heading-level (entry-title entry))]
+  (concat [(md/heading heading-level (entry-title-code entry))]
           (keep [(:summary entry) (:body entry)]
                 (fn [text]
                   (when text
@@ -367,7 +378,7 @@
               [(md/table ["Symbol" "Summary"]
                          (map (:entries namespace)
                               (fn [entry]
-                                [(md/link (entry-title entry)
+                                [(md/link (entry-title-code entry)
                                           (namespace-symbol-url namespace entry))
                                  (:summary entry)])))]))))
 
