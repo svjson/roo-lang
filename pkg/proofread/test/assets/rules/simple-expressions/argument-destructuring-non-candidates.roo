@@ -21,3 +21,12 @@
     (prepare!)
     (let [payload (:payload event)]
       payload)))
+
+(defun aliases-defun-keyword [event]
+  (let [value (:payload event)]
+    value))
+
+(defun multiple-defun-body-forms [event]
+  (prepare!)
+  (let [payload (:payload event)]
+    payload))

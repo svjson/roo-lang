@@ -16,3 +16,11 @@
   (fn [option]
     (let [label (:label option)]
       (str label))))
+
+(defun append-flat-ids! [ids seen node]
+  (let [id (:id node)]
+    (unless (contains? seen id)
+      (append! seen id)
+      (append! ids id)
+      (for [child (:dependencies node)]
+        (append-flat-ids! ids seen child)))))

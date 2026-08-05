@@ -11,16 +11,33 @@
       (and (= binding-name (forms/keyword-lookup-key-name value))
            (forms/keyword-lookup? value param-name)))))
 
-(defun candidate?
-  "Test whether an immediate function-body `let` should be argument destructuring."
-  [parent {:keys [children] :as node}]
-  (and (forms/call? parent "fn" 3)
-       (= node (nth (:children parent) 2))
-       (= "let" (forms/head-name node))
-       (any? (:children (nth (:children parent) 1))
+(defun defun-body-index
+  "Return the first body child index for a `defun` form."
+  [{:keys [children] :as node}]
+  (when (= "defun" (forms/head-name node))
+    (case (:type (nth children 2))
+      :string 4
+      :default 3)))
+
+(defun destructurable-let?
+  "Test whether a `let` binds a keyword lookup from any parameter."
+  [{:keys [children] :as node} params]
+  (and (= "let" (forms/head-name node))
+       (any? (:children params)
              (fn [param]
                (when-let [param-name (forms/symbol-name param)]
                  (matching-binding? (:children (nth children 1)) param-name))))))
+
+(defun candidate?
+  "Test whether an immediate function-body `let` should be argument destructuring."
+  [parent node]
+  (or (and (forms/call? parent "fn" 3)
+           (= node (nth (:children parent) 2))
+           (destructurable-let? node (nth (:children parent) 1)))
+      (when-let [body-index (defun-body-index parent)]
+        (and (= (+ body-index 1) (count (:children parent)))
+             (= node (nth (:children parent) body-index))
+             (destructurable-let? node (nth (:children parent) (dec body-index)))))))
 
 (defun check
   "Return a `use-argument-destructuring` diagnostic for matching nodes."

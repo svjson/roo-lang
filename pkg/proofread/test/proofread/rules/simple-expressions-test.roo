@@ -77,7 +77,8 @@
 
 (deftest reports-argument-destructuring-candidates
   (is (= [[:use-argument-destructuring 5]
-          [:use-argument-destructuring 17]]
+          [:use-argument-destructuring 17]
+          [:use-argument-destructuring 21]]
          (diagnostic-summary "assets/rules/simple-expressions/use-argument-destructuring.roo"))))
 
 (deftest ignores-argument-destructuring-non-candidates
