@@ -179,10 +179,11 @@ namespace Roo
   /**
    * @brief Shifts an integer bit pattern right by one bit, or by the given number of bits.
    *
-   * `>>>` is the logical/unsigned right shift operator. It treats the input as a
-   * 64-bit bit pattern and shifts zero bits in from the left. It accepts integer
-   * numbers only; floating point values are rejected. The optional shift amount
-   * defaults to `1` and must be between `0` and `63`, inclusive.
+   * `>>>` is the logical/unsigned right shift operator.
+   * It treats the input as a 64-bit bit pattern and shifts zero bits in from the left.
+   *
+   * It accepts integer numbers only; floating point values are rejected. The optional
+   * shift amount defaults to `1` and must be between `0` and `63`, inclusive.
    *
    * Usage:
    * @code
@@ -204,7 +205,9 @@ namespace Roo
    * @brief Computes the bitwise AND of one or more integer values.
    *
    * `bit-and` accepts integer numbers only; floating point values are rejected. At
-   * least one argument is required. All operands are treated as 64-bit integer bit
+   * least one argument is required.
+   *
+   * All operands are treated as 64-bit integer bit
    * patterns, and the result is returned as an integer number.
    *
    * Usage:
@@ -226,7 +229,9 @@ namespace Roo
    * @brief Computes the bitwise OR of one or more integer values.
    *
    * `bit-or` accepts integer numbers only; floating point values are rejected. At
-   * least one argument is required. All operands are treated as 64-bit integer bit
+   * least one argument is required.
+   *
+   * All operands are treated as 64-bit integer bit
    * patterns, and the result is returned as an integer number.
    *
    * Usage:
@@ -247,8 +252,9 @@ namespace Roo
   /**
    * @brief Computes the bitwise XOR of one or more integer values.
    *
-   * `bit-xor` accepts integer numbers only; floating point values are rejected. At
-   * least one argument is required. All operands are treated as 64-bit integer bit
+   * `bit-xor` accepts integer numbers only; floating point values are rejected.
+   *
+   * At least one argument is required. All operands are treated as 64-bit integer bit
    * patterns, and the result is returned as an integer number.
    *
    * Usage:
@@ -269,8 +275,9 @@ namespace Roo
   /**
    * @brief Computes the bitwise complement of an integer value.
    *
-   * `bit-not` accepts integer numbers only; floating point values are rejected. The
-   * operand is treated as a 64-bit integer bit pattern, and the result is returned
+   * `bit-not` accepts integer numbers only; floating point values are rejected.
+   *
+   * The operand is treated as a 64-bit integer bit pattern, and the result is returned
    * as an integer number.
    *
    * Usage:
