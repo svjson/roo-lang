@@ -5,9 +5,8 @@
     (if (io/file? source)
       (io/copy-file! source target)
       (when (io/directory? source)
-        (map (io/list-directory! source {:hidden? true})
-             (fn [entry]
-               (copy-tree! (:path entry) (io/join-path target (:name entry))))))))
+        (for [entry (io/list-directory! source {:hidden? true})]
+          (copy-tree! (:path entry) (io/join-path target (:name entry)))))))
 
 (defun copy-path-if-present! [source target]
   (when (io/exists? source)

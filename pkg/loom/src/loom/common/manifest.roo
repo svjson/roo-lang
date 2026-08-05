@@ -35,21 +35,19 @@
     :default (str value)))
 
 (defun add-required-atom-error! [errors manifest field label]
-  (let [value (get manifest field)]
-    (if (nil? value)
-      (append! errors (str "missing required field " label))
-      (unless (atom? value)
-        (append! errors (str label " must be a string, symbol, or keyword"))))))
+  (if-let [value (get manifest field)]
+    (unless (atom? value)
+      (append! errors (str label " must be a string, symbol, or keyword")))
+    (append! errors (str "missing required field " label))))
 
 (defun add-load-roots-error! [errors manifest]
-  (let [roots (:load-roots manifest)]
-    (if (nil? roots)
-        (append! errors "missing required field :load-roots")
-      (case (type-of roots)
-        "vector" (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
-                   (unless (empty? invalid-roots)
-                     (append! errors ":load-roots must contain only strings, symbols, or keywords")))
-        :default (append! errors ":load-roots must be a vector")))))
+  (if-let [roots (:load-roots manifest)]
+    (case (type-of roots)
+      "vector" (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
+                 (unless (empty? invalid-roots)
+                   (append! errors ":load-roots must contain only strings, symbols, or keywords")))
+      :default (append! errors ":load-roots must be a vector"))
+    (append! errors "missing required field :load-roots")))
 
 (defun validation-errors [manifest]
   (let [errors []]
@@ -63,9 +61,8 @@
 
 (defun report-errors! [manifest-path errors]
   (prn (str "loom: invalid package manifest: " manifest-path))
-  (map errors
-       (fn [error]
-         (prn (str "loom: " error)))))
+  (for [error errors]
+    (prn (str "loom: " error))))
 
 (defun validate! [manifest manifest-path]
   (let [errors (validation-errors manifest)]

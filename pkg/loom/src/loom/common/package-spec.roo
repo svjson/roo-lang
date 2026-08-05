@@ -4,13 +4,12 @@
   (find-index package-id (fn [c] (= (str c) "@"))))
 
 (defun parse [package-id version]
-  (unless (nil? package-id)
-    (let [separator (separator-index package-id)]
-      (if (nil? separator)
-        (unless (or (nil? version)
-                    (= version "--repo"))
-          {:name package-id :version version})
-        (unless (or (= "" (substr package-id 0 separator))
-                    (= "" (substr package-id (+ separator 1))))
-          {:name (substr package-id 0 separator)
-           :version (substr package-id (+ separator 1))})))))
+  (when package-id
+    (if-let [separator (separator-index package-id)]
+      (unless (or (= "" (substr package-id 0 separator))
+                  (= "" (substr package-id (+ separator 1))))
+        {:name (substr package-id 0 separator)
+         :version (substr package-id (+ separator 1))})
+      (unless (or (nil? version)
+                  (= version "--repo"))
+        {:name package-id :version version}))))

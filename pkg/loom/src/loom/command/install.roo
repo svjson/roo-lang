@@ -7,37 +7,33 @@
 
 (defun copy-load-roots! [package-dir target-dir roots]
   (unless (nil? roots)
-    (map roots
-         (fn [root]
-           (files/copy-path-if-present! (io/join-path package-dir root)
-                                        (io/join-path target-dir root))))))
+    (for [root roots]
+      (files/copy-path-if-present! (io/join-path package-dir root)
+                                   (io/join-path target-dir root)))))
 
 (defun copy-native-library! [package-dir target-dir library]
-  (let [path (:path library)]
-    (unless (nil? path)
-      (files/copy-path-if-present! (io/join-path package-dir path)
-                                   (io/join-path target-dir path)))))
+  (when-let [path (:path library)]
+    (files/copy-path-if-present! (io/join-path package-dir path)
+                                 (io/join-path target-dir path))))
 
 (defun copy-native-libraries! [package-dir target-dir libraries]
   (unless (nil? libraries)
-    (map libraries
-         (fn [library]
-           (copy-native-library! package-dir target-dir library)))))
+    (for [lib libraries]
+      (copy-native-library! package-dir target-dir lib))))
 
 (defun install! [package-dir repo-root force?]
-  (let [package-manifest (manifest/read! package-dir)]
-    (unless (nil? package-manifest)
-      (let [manifest-path (manifest/manifest-path package-dir)
-            name (manifest/package-name package-manifest)
-            version (manifest/package-version package-manifest)
-            package-id (manifest/package-id package-manifest)
-            target-dir (repository/package-target-dir repo-root name version)]
-        (when (io/exists? target-dir)
-          (uninstall/uninstall! repo-root name version))
-        (io/copy-file! manifest-path (io/join-path target-dir "package.edn"))
-        (copy-load-roots! package-dir target-dir (manifest/load-roots package-manifest))
-        (copy-native-libraries! package-dir
-                                target-dir
-                                (manifest/native-libraries package-manifest))
-        (prn (str "Installed " package-id " to " target-dir))
-        target-dir))))
+  (when-let [package-manifest (manifest/read! package-dir)]
+    (let [manifest-path (manifest/manifest-path package-dir)
+          name (manifest/package-name package-manifest)
+          version (manifest/package-version package-manifest)
+          package-id (manifest/package-id package-manifest)
+          target-dir (repository/package-target-dir repo-root name version)]
+      (when (io/exists? target-dir)
+        (uninstall/uninstall! repo-root name version))
+      (io/copy-file! manifest-path (io/join-path target-dir "package.edn"))
+      (copy-load-roots! package-dir target-dir (manifest/load-roots package-manifest))
+      (copy-native-libraries! package-dir
+                              target-dir
+                              (manifest/native-libraries package-manifest))
+      (prn (str "Installed " package-id " to " target-dir))
+      target-dir)))

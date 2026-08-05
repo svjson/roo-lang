@@ -37,56 +37,51 @@
                 (args/option-from argv 1 "--version" nil))))
 
 (defun install-command [argv]
-  (let [package-dir (args/arg-at argv 1)]
-    (if (nil? package-dir)
-      (usage)
-      (let [repo-root (args/option-from argv 2 "--repo"
-                                        (repository/default-repository-root))]
-        (if (args/flag-from? argv 2 "--link")
-          (link/link! package-dir repo-root)
-          (install/install! package-dir
-                            repo-root
-                            (args/flag-from? argv 2 "--force")))))))
+  (if-let [package-dir (args/arg-at argv 1)]
+    (let [repo-root (args/option-from argv 2 "--repo"
+                                      (repository/default-repository-root))]
+      (if (args/flag-from? argv 2 "--link")
+        (link/link! package-dir repo-root)
+        (install/install! package-dir
+                          repo-root
+                          (args/flag-from? argv 2 "--force"))))
+    (usage)))
 
 (defun link-command [argv]
-  (let [package-dir (args/arg-at argv 1)]
-    (if (nil? package-dir)
-      (usage)
-      (link/link! package-dir
-                  (args/option-from argv 2 "--repo"
-                                    (repository/default-repository-root))))))
+  (if-let [package-dir (args/arg-at argv 1)]
+    (link/link! package-dir
+                (args/option-from argv 2 "--repo"
+                                  (repository/default-repository-root)))
+    (usage)))
 
 (defun uninstall-command [argv]
-  (let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
-    (if (nil? spec)
-      (usage)
-      (uninstall/uninstall! (args/option-from argv 1 "--repo"
-                                              (repository/default-repository-root))
-                            (:name spec)
-                            (:version spec)))))
+  (if-let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
+    (uninstall/uninstall! (args/option-from argv 1 "--repo"
+                                            (repository/default-repository-root))
+                          (:name spec)
+                          (:version spec))
+    (usage)))
 
 (defun list-command [argv]
   (list/list! (args/option-from argv 1 "--repo"
                                 (repository/default-repository-root))))
 
 (defun info-command [argv]
-  (let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
-    (if (nil? spec)
-      (usage)
-      (info/info! (args/option-from argv 1 "--repo"
-                                    (repository/default-repository-root))
-                  (:name spec)
-                  (:version spec)))))
+  (if-let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
+    (info/info! (args/option-from argv 1 "--repo"
+                                  (repository/default-repository-root))
+                (:name spec)
+                (:version spec))
+    (usage)))
 
 (defun deps-command [argv]
-  (let [package-dir (args/arg-at argv 1)]
-    (if (nil? package-dir)
-      (usage)
-      (deps/deps! package-dir
-                  (args/option-from argv 1 "--repo"
-                                    (repository/default-repository-root))
-                  (args/flag-from? argv 1 "--show-repeated")
-                  (args/flag-from? argv 1 "--flat")))))
+  (if-let [package-dir (args/arg-at argv 1)]
+    (deps/deps! package-dir
+                (args/option-from argv 1 "--repo"
+                                  (repository/default-repository-root))
+                (args/flag-from? argv 1 "--show-repeated")
+                (args/flag-from? argv 1 "--flat"))
+    (usage)))
 
 (defun main [args]
   (case (args/arg-at args 0)

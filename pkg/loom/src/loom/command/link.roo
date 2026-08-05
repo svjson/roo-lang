@@ -5,15 +5,14 @@
             [loom.common.repository :as repository]))
 
 (defun link! [package-dir repo-root]
-  (let [package-manifest (manifest/read! package-dir)]
-    (unless (nil? package-manifest)
-      (let [name (manifest/package-name package-manifest)
-            version (manifest/package-version package-manifest)
-            package-id (manifest/package-id package-manifest)
-            target-dir (repository/package-target-dir repo-root name version)
-            source-dir (io/absolute-path! package-dir)]
-        (when (io/exists? target-dir)
-          (uninstall/uninstall! repo-root name version))
-        (io/symlink! source-dir target-dir)
-        (prn (str "Linked " package-id " to " source-dir))
-        target-dir))))
+  (when-let [package-manifest (manifest/read! package-dir)]
+    (let [name (manifest/package-name package-manifest)
+          version (manifest/package-version package-manifest)
+          package-id (manifest/package-id package-manifest)
+          target-dir (repository/package-target-dir repo-root name version)
+          source-dir (io/absolute-path! package-dir)]
+      (when (io/exists? target-dir)
+        (uninstall/uninstall! repo-root name version))
+      (io/symlink! source-dir target-dir)
+      (prn (str "Linked " package-id " to " source-dir))
+      target-dir)))
