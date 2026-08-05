@@ -15,3 +15,19 @@
    :severity :warning
    :source (:source node)
    :message message})
+
+(defun make-file
+  "Build a proofread rule diagnostic for a file.
+
+  Args:
+  - `file`: Checked source file path.
+  - `rule`: Diagnostic rule keyword.
+  - `message`: Diagnostic message.
+
+  Returns:
+  A diagnostic map."
+  [file rule message]
+  {:rule rule
+   :severity :warning
+   :source {:path file}
+   :message message})

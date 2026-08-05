@@ -1,0 +1,9 @@
+(ns proofread.rules.names.kebab-case-filename
+  (:require [proofread.rules.diagnostics :as diagnostics]
+            [roo.io :as io]))
+
+(defun check
+  "Return a `kebab-case-filename` diagnostic for matching files."
+  [file]
+  (when (contains? (io/basename file) '_')
+    (diagnostics/make-file file :kebab-case-filename "Use kebab-case filenames")))

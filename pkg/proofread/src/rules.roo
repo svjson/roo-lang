@@ -57,6 +57,18 @@
                   (redundant-functions/check-with-rules redundant-function-rules root)
                   (redundant-do/check-with-rules redundant-do-rules root))))))
 
+(defun check-file-with-config
+  "Run enabled file-level proofread rules.
+
+  Args:
+  - `file`: Checked Roo file path.
+  - `active-config`: Effective proofread config.
+
+  Returns:
+  A vector of diagnostic maps from file-level rules."
+  [file active-config]
+  (names/check-file-with-rules (enabled-rules active-config names/rules) file))
+
 (defun check
   "Run all proofread rules for parsed source roots.
 

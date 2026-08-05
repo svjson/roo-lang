@@ -80,10 +80,11 @@
   [file effective-config]
   (case (io/extension file)
     ".roo" (let [roots (ast/slurp! file)
-                 source-context (context file roots)]
+                 source-context (context file roots)
+                 diagnostics (concat (rules/check-file-with-config file effective-config)
+                                     (rules/check-with-config roots effective-config))]
              (map (config/apply-diagnostics effective-config
-                                            (rules/check-with-config roots
-                                                                     effective-config))
+                                            diagnostics)
                   (fn [diagnostic]
                     (merge source-context diagnostic))))
     :default []))

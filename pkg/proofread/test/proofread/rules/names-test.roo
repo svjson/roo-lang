@@ -14,6 +14,10 @@
        (fn [diagnostic]
          (:line (:source diagnostic)))))
 
+(defun file-diagnostics
+  [path]
+  (names/check-file-with-rules names/rules path))
+
 (deftest reports-underscore-identifiers
   (is (= [3 6 11]
          (diagnostic-lines "assets/rules/names/candidates.roo"))))
@@ -21,3 +25,11 @@
 (deftest ignores-kebab-case-identifiers
   (is (= []
          (diagnostics "assets/rules/names/non-candidates.roo"))))
+
+(deftest reports-underscore-filenames
+  (is (= [:kebab-case-filename]
+         (map (file-diagnostics "assets/rules/names/bad_filename.roo") :rule))))
+
+(deftest ignores-kebab-case-filenames
+  (is (= []
+         (file-diagnostics "assets/rules/names/good-filename.roo"))))

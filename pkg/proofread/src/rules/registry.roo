@@ -5,7 +5,7 @@
 
   Args:
   - `category`: Rule category keyword.
-  - `entry`: Vector containing rule ID and check function.
+  - `entry`: Vector containing rule ID, check function, and optional scope.
 
   Returns:
   A rule descriptor map."
@@ -13,6 +13,7 @@
   {:id (head entry)
    :category category
    :default-severity :warning
+   :scope (or (nth entry 2) :node)
    :check (nth entry 1)})
 
 (defun descriptors
@@ -20,7 +21,7 @@
 
   Args:
   - `category`: Rule category keyword.
-  - `entries`: Vectors containing rule ID and check function.
+  - `entries`: Vectors containing rule ID, check function, and optional scope.
 
   Returns:
   Rule descriptor maps."
@@ -28,6 +29,20 @@
   (map entries
        (fn [entry]
          (descriptor category entry))))
+
+(defun scoped
+  "Return rule descriptors for one scope.
+
+  Args:
+  - `rules`: Rule descriptor maps.
+  - `scope`: Scope keyword.
+
+  Returns:
+  Rule descriptors whose `:scope` is `scope`."
+  [rules scope]
+  (filter rules
+          (fn [rule]
+            (= scope (:scope rule)))))
 
 (defun check-rule
   "Run one rule descriptor against an AST node.

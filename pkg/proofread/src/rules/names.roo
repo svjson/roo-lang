@@ -1,12 +1,14 @@
 (ns proofread.rules.names
-  (:require [proofread.rules.names.kebab-case-name :as kebab-case-name]
+  (:require [proofread.rules.names.kebab-case-filename :as kebab-case-filename]
+            [proofread.rules.names.kebab-case-name :as kebab-case-name]
             [proofread.rules.registry :as registry]))
 
 (def rules
   "Name rule descriptors."
   (registry/descriptors
     :names
-    [[:kebab-case-name kebab-case-name/check]]))
+    [[:kebab-case-name kebab-case-name/check]
+     [:kebab-case-filename kebab-case-filename/check :file]]))
 
 (defun node-diagnostic
   "Return the name diagnostic for an AST node.
@@ -52,7 +54,21 @@
   Returns:
   A vector of diagnostic maps."
   [active-rules root]
-  (check-node active-rules nil root))
+  (check-node (registry/scoped active-rules :node) nil root))
+
+(defun check-file-with-rules
+  "Find name diagnostics for one source file.
+
+  Args:
+  - `active-rules`: Rule descriptors to run.
+  - `file`: Checked Roo file path.
+
+  Returns:
+  A vector of diagnostic maps."
+  [active-rules file]
+  (keep (registry/scoped active-rules :file)
+        (fn [rule]
+          ((:check rule) file))))
 
 (defun check
   "Find name diagnostics beneath one AST root.
