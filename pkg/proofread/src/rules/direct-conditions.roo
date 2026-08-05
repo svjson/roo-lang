@@ -1,333 +1,22 @@
 (ns proofread.rules.direct-conditions
-  (:require [proofread.forms :as forms]))
-
-(defun nil-node?
-  "Test whether an AST node is the symbol `nil`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for the `nil` symbol, otherwise `false`."
-  [node]
-  (= "nil" (forms/symbol-name node)))
-
-(defun case-literal?
-  "Test whether an AST node is a literal suitable for `case` dispatch.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for string, keyword, number, and character literals, otherwise
-  `false`."
-  [node]
-  (contains? [:string :keyword :number :char] (:type node)))
-
-(defun diagnostic
-  "Build a direct-condition diagnostic for an AST node.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-  - `rule`: Diagnostic rule keyword.
-  - `message`: Diagnostic message.
-
-  Returns:
-  A diagnostic map."
-  [node rule message]
-  {:rule rule
-   :severity :warning
-   :source (:source node)
-   :message message})
-
-(defun single-binding-symbol
-  "Return the binding symbol for a single-binding `let` form.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  The bound symbol name when `node` is `(let [name expr] body)`, otherwise
-  `nil`."
-  [{:keys [children] :as node}]
-  (when (= "let" (forms/head-name node))
-    (when-let [bindings (:children (nth children 1))]
-      (when (= 2 (count bindings))
-        (forms/symbol-name (head bindings))))))
-
-(defun sole-let-body-form
-  "Return the sole body form for a single-body `let`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  The sole body child when `node` is a `let` with exactly one body form,
-  otherwise `nil`."
-  [{:keys [children] :as node}]
-  (when (= "let" (forms/head-name node))
-    (when (= 3 (count children))
-      (nth children 2))))
-
-(defun let-if-candidate?
-  "Test whether a `let` form should be `if-let`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `(let [name expr] (if name ...))`, otherwise `false`."
-  [node]
-  (when-let [binding-name (single-binding-symbol node)
-             body (sole-let-body-form node)]
-    (and (= "if" (forms/head-name body))
-         (= binding-name (forms/symbol-name (nth (:children body) 1))))))
-
-(defun let-when-candidate?
-  "Test whether a `let` form should be `when-let`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `(let [name expr] (when name ...))`, otherwise `false`."
-  [node]
-  (when-let [binding-name (single-binding-symbol node)
-             body (sole-let-body-form node)]
-    (and (= "when" (forms/head-name body))
-         (= binding-name (forms/symbol-name (nth (:children body) 1))))))
-
-(defun keyword-lookup?
-  "Test whether an AST node is a keyword lookup form.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `(:key value)`, otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (= (:type node) :list)
-       (= 2 (count children))
-       (forms/keyword-name (head children))))
-
-(defun same-form?
-  "Test whether two AST nodes represent the same source form.
-
-  Args:
-  - `left`: A `roo.ast` node map.
-  - `right`: A `roo.ast` node map.
-
-  Returns:
-  `true` when both nodes have the same form value, otherwise `false`."
-  [left right]
-  (= (:form left) (:form right)))
-
-(defun contains-form?
-  "Test whether an AST subtree contains a matching form.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-  - `target`: A `roo.ast` node map to search for.
-
-  Returns:
-  `true` when `node` or one of its descendants has the same form as `target`,
-  otherwise `false`."
-  [node target]
-  (and (map? node)
-       (or (same-form? node target)
-           (any? (:children node)
-                 (fn [child]
-                   (contains-form? child target))))))
-
-(defun when-repeats-keyword-lookup?
-  "Test whether a `when` form repeats its keyword lookup condition.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `(when (:key value) ... (:key value) ...)`, otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (= "when" (forms/head-name node))
-       (< 2 (count children))
-       (keyword-lookup? (nth children 1))
-       (any? (tail (tail children))
-             (fn [body]
-               (contains-form? body (nth children 1))))))
-
-(defun let-condition-child?
-  "Test whether `node` is the condition form inside a direct-condition `let`.
-
-  Args:
-  - `parent`: Parent `roo.ast` node map, or `nil`.
-  - `node`: Current `roo.ast` node map.
-
-  Returns:
-  `true` when the parent will produce an `if-let` or `when-let` diagnostic."
-  [parent node]
-  (and (= node (sole-let-body-form parent))
-       (or (let-if-candidate? parent)
-           (let-when-candidate? parent))))
-
-(defun equality-dispatch?
-  "Test whether an AST node compares one expression to one literal.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for equality forms that can be expressed as `case` dispatch,
-  otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (= "=" (forms/head-name node))
-       (= 3 (count children))
-       (or (and (case-literal? (nth children 1))
-                (not (case-literal? (nth children 2))))
-           (and (not (case-literal? (nth children 1)))
-                (case-literal? (nth children 2))))))
-
-(defun equality-dispatch-expression
-  "Return the non-literal expression in an equality dispatch condition.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  The comparable form for the dispatch expression, or `nil` when `node` is not
-  a literal equality dispatch."
-  [{:keys [children] :as node}]
-  (when (equality-dispatch? node)
-    (if (case-literal? (nth children 1))
-      (:form (nth children 2))
-      (:form (nth children 1)))))
-
-(defun full-if?
-  "Test whether an AST node is an `if` form with an explicit else branch.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for four-form `if` nodes, otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (= "if" (forms/head-name node))
-       (= 4 (count children))))
-
-(defun if-else
-  "Return the else branch of a full `if` form.
-
-  Args:
-  - `node`: A full `if` node.
-
-  Returns:
-  The else child node."
-  [node]
-  (nth (:children node) 3))
-
-(defun same-case-chain?
-  "Test whether an `if` chain dispatches on one expression.
-
-  Args:
-  - `dispatch-expression`: Comparable dispatch expression form.
-  - `node`: Current `if` node.
-
-  Returns:
-  `true` when each condition compares `dispatch-expression` to a literal and
-  every branch carries a meaningful value."
-  [dispatch-expression {:keys [children] :as node}]
-  (and (full-if? node)
-       (= dispatch-expression
-          (equality-dispatch-expression (nth children 1)))
-       (not (nil-node? (nth children 2)))
-       (let [else (if-else node)]
-         (if (full-if? else)
-           (same-case-chain? dispatch-expression else)
-           (not (nil-node? else))))))
-
-(defun if-case-candidate?
-  "Test whether an `if` form should be `case`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for one `if`, or an `if` chain, dispatching on equality against
-  literals for the same expression; otherwise `false`."
-  [{:keys [children] :as node}]
-  (when (full-if? node)
-    (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
-      (same-case-chain? dispatch-expression node))))
-
-(defun value-if-chain?
-  "Test whether an `if` chain has meaningful branch values.
-
-  Args:
-  - `node`: Current `if` node.
-
-  Returns:
-  `true` when `node` is an `if` chain with non-`nil` branch values."
-  [{:keys [children] :as node}]
-  (and (full-if? node)
-       (not (nil-node? (nth children 2)))
-       (let [else (if-else node)]
-         (if (full-if? else)
-           (value-if-chain? else)
-           (not (nil-node? else))))))
-
-(defun if-cond-candidate?
-  "Test whether an `if` chain should be `cond`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for nested `if` chains that are not better expressed as `case`,
-  otherwise `false`."
-  [node]
-  (and (full-if? node)
-       (full-if? (if-else node))
-       (not (if-case-candidate? node))
-       (value-if-chain? node)))
-
-(defun else-child?
-  "Test whether `node` is the else branch of `parent`.
-
-  Args:
-  - `parent`: Parent `roo.ast` node map, or `nil`.
-  - `node`: Current `roo.ast` node map.
-
-  Returns:
-  `true` when `node` is the else child of a full `if` parent."
-  [parent node]
-  (and (full-if? parent)
-       (= node (if-else parent))))
-
-(defun if-chain-candidate?
-  "Test whether `node` is a reportable `if` chain.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `use-case` and `use-cond` chain candidates."
-  [node]
-  (or (if-case-candidate? node)
-      (if-cond-candidate? node)))
-
-(defun nested-if-chain-child?
-  "Test whether `node` is already covered by a parent `if` chain diagnostic.
-
-  Args:
-  - `parent`: Parent `roo.ast` node map, or `nil`.
-  - `node`: Current `roo.ast` node map.
-
-  Returns:
-  `true` when the parent chain should produce the diagnostic."
-  [parent node]
-  (and (else-child? parent node)
-       (if-chain-candidate? parent)))
-
-(defun direct-condition-diagnostic
+  (:require [proofread.rules.direct-conditions.query :as query]
+            [proofread.rules.direct-conditions.use-case :as use-case]
+            [proofread.rules.direct-conditions.use-cond :as use-cond]
+            [proofread.rules.direct-conditions.use-if-let :as use-if-let]
+            [proofread.rules.direct-conditions.use-unless :as use-unless]
+            [proofread.rules.direct-conditions.use-when :as use-when]
+            [proofread.rules.direct-conditions.use-when-let :as use-when-let]))
+
+(def checks
+  "Direct-condition rule check functions."
+  [use-if-let/check
+   use-when-let/check
+   use-case/check
+   use-cond/check
+   use-when/check
+   use-unless/check])
+
+(defun node-diagnostic
   "Return the direct-condition diagnostic for an AST node.
 
   Args:
@@ -336,40 +25,11 @@
 
   Returns:
   A diagnostic map, or `nil` when the node does not match a rule."
-  [parent {:keys [children] :as node}]
-  (cond
-    (nested-if-chain-child? parent node)
-    nil
-
-    (let-if-candidate? node)
-    (diagnostic node :use-if-let "Use if-let")
-
-    (let-when-candidate? node)
-    (diagnostic node :use-when-let "Use when-let")
-
-    (when-repeats-keyword-lookup? node)
-    (diagnostic node :use-when-let "Use when-let")
-
-    (if-case-candidate? node)
-    (diagnostic node :use-case "Use case")
-
-    (if-cond-candidate? node)
-    (diagnostic node :use-cond "Use cond")
-
-    (and (= "if" (forms/head-name node))
-         (not (let-condition-child? parent node))
-         (or (= 3 (count children))
-             (nil-node? (nth children 3))))
-    (diagnostic node :use-when "Use when")
-
-    (and (= "if" (forms/head-name node))
-         (not (let-condition-child? parent node))
-         (= 4 (count children))
-         (nil-node? (nth children 2)))
-    (diagnostic node :use-unless "Use unless")
-
-    true
-    nil))
+  [parent node]
+  (when (not (query/nested-if-chain-child? parent node))
+    (head (keep checks
+                (fn [check]
+                  (check parent node))))))
 
 (defun check-node
   "Find direct-condition diagnostics beneath one AST node.
@@ -383,8 +43,8 @@
   [parent node]
   (if (map? node)
     (concat
-      (if-let [node-diagnostic (direct-condition-diagnostic parent node)]
-        [node-diagnostic]
+      (if-let [diagnostic (node-diagnostic parent node)]
+        [diagnostic]
         [])
       (flat-map (:children node)
                 (fn [child]

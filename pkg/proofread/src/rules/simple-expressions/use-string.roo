@@ -1,0 +1,60 @@
+(ns proofread.rules.simple-expressions.use-string
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun some-symbol-name
+  "Return the checked symbol name from a `some?` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The symbol name for `(some? name)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "some?" 2)
+    (forms/symbol-name (nth children 1))))
+
+(defun string-operation-on?
+  "Test whether an AST node calls a string operation on a symbol.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the string input.
+
+  Returns:
+  `true` for known string predicates called with `target-name`, otherwise
+  `false`."
+  [{:keys [children] :as node} target-name]
+  (and (contains? ["string/starts-with?" "string/ends-with?"]
+                  (forms/head-name node))
+       (< 1 (count children))
+       (= target-name (forms/symbol-name (nth children 1)))))
+
+(defun string-guard-some-check?
+  "Test whether `some?` guards a string operation.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for root nodes.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for `(and (some? value) (string/... value ...))`, otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (and (= "and" (forms/head-name parent))
+       (when-let [target-name (some-symbol-name node)]
+         (any? children
+               (fn [child]
+                 (string-operation-on? child target-name))))))
+
+(defun check
+  "Report `some?` guards that should use `string?`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `string?`, otherwise `nil`."
+  [parent node]
+  (when (string-guard-some-check? parent node)
+    (diagnostics/make node :use-string? "Use string?")))

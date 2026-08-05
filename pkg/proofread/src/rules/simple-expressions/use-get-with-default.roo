@@ -1,0 +1,29 @@
+(ns proofread.rules.simple-expressions.use-get-with-default
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun get-form?
+  "Test whether an AST node is a two-argument `get` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(get value key)`, otherwise `false`."
+  [node]
+  (forms/call? node "get" 3))
+
+(defun check
+  "Report `(or (get value key) default)` forms.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `get` with a default, otherwise
+  `nil`."
+  [parent {:keys [children] :as node}]
+  (when (and (forms/call? node "or" 3)
+             (get-form? (nth children 1)))
+    (diagnostics/make node :use-get-with-default "Use get with default")))

@@ -1,0 +1,9 @@
+(ns proofread.rules.direct-conditions.use-cond
+  (:require [proofread.rules.diagnostics :as diagnostics]
+            [proofread.rules.direct-conditions.query :as query]))
+
+(defun check
+  "Return a `use-cond` diagnostic for matching nodes."
+  [parent node]
+  (when (query/if-cond-candidate? node)
+    (diagnostics/make node :use-cond "Use cond")))

@@ -1,0 +1,20 @@
+(ns proofread.rules.higher-order.use-keep
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]
+            [proofread.rules.higher-order.query :as query]))
+
+(defun candidate?
+  "Test whether an AST node can use `keep`."
+  [{:keys [children] :as node}]
+  (and (query/map-form? node)
+       (let [mapper (nth children 2)
+             mapper-children (:children mapper)]
+         (and (= "fn" (forms/head-name mapper))
+              (= 3 (count mapper-children))
+              (query/keep-conditional? (nth mapper-children 2))))))
+
+(defun check
+  "Return a `use-keep` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node :use-keep "Use keep")))

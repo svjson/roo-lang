@@ -1,0 +1,28 @@
+(ns proofread.rules.simple-expressions.use-not-equal
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun not-equals-negation?
+  "Test whether an AST node negates an equality call.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(not (= left right))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "not" 2)
+       (= "=" (forms/head-name (nth children 1)))))
+
+(defun check
+  "Report negated equality checks.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `not=`, otherwise `nil`."
+  [parent node]
+  (when (not-equals-negation? node)
+    (diagnostics/make node :use-not= "Use not=")))

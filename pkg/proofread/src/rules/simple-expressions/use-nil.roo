@@ -1,0 +1,29 @@
+(ns proofread.rules.simple-expressions.use-nil
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun nil-comparison?
+  "Test whether an AST node compares a value to `nil`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(= nil value)` and `(= value nil)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "=" 3)
+       (or (forms/nil-node? (nth children 1))
+           (forms/nil-node? (nth children 2)))))
+
+(defun check
+  "Report equality checks against `nil`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `nil?`, otherwise `nil`."
+  [parent node]
+  (when (nil-comparison? node)
+    (diagnostics/make node :use-nil? "Use nil?")))

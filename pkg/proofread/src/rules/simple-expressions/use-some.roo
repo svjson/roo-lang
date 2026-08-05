@@ -1,0 +1,39 @@
+(ns proofread.rules.simple-expressions.use-some
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun nil-check?
+  "Test whether an AST node is a `(nil? value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for one-argument `nil?` calls, otherwise `false`."
+  [node]
+  (forms/call? node "nil?" 2))
+
+(defun not-nil-check?
+  "Test whether an AST node negates a `nil?` check.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(not (nil? value))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "not" 2)
+       (nil-check? (nth children 1))))
+
+(defun check
+  "Report negated `nil?` checks.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `some?`, otherwise `nil`."
+  [parent node]
+  (when (not-nil-check? node)
+    (diagnostics/make node :use-some? "Use some?")))

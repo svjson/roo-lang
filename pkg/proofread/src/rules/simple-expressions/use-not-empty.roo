@@ -1,0 +1,59 @@
+(ns proofread.rules.simple-expressions.use-not-empty
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun count-form?
+  "Test whether an AST node is a `(count value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for two-child `count` calls, otherwise `false`."
+  [node]
+  (forms/call? node "count" 2))
+
+(defun not-empty-count-comparison?
+  "Test whether an AST node compares a count as greater than zero.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(< 0 (count value))` and `(> (count value) 0)`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (= 3 (count children))
+       (or (and (= "<" (forms/head-name node))
+                (forms/zero-node? (nth children 1))
+                (count-form? (nth children 2)))
+           (and (= ">" (forms/head-name node))
+                (count-form? (nth children 1))
+                (forms/zero-node? (nth children 2))))))
+
+(defun not-empty-negation?
+  "Test whether an AST node negates an `empty?` call.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(not (empty? value))`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "not" 2)
+       (= "empty?" (forms/head-name (nth children 1)))))
+
+(defun check
+  "Report positive count checks and negated `empty?` calls.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `not-empty?`, otherwise `nil`."
+  [parent node]
+  (when (and (forms/predicate-position? parent node)
+             (or (not-empty-count-comparison? node)
+                 (not-empty-negation? node)))
+    (diagnostics/make node :use-not-empty? "Use not-empty?")))

@@ -1,0 +1,49 @@
+(ns proofread.rules.redundant-do.redundant-do
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun body-start-index
+  "Return the child index where a form's implicit body starts."
+  [{:keys [children] :as node}]
+  (case (forms/head-name node)
+    "defun"
+    (case (:type (nth children 2))
+      :string 4
+      :default 3)
+
+    "do" 1
+    "fn" 2
+    "let" 2
+    "when" 2
+    "unless" 2
+    "when-let" 2
+    "dotimes" 2
+    "for" 2
+    "doseq" 2
+    "for-indexed" 2
+    "while" 2
+    "with-random-seed" 2
+
+    :default nil))
+
+(defun sole-body-form?
+  "Test whether `node` is the only form in `parent`'s implicit body."
+  [{:keys [children] :as parent} node]
+  (when-let [body-start (body-start-index parent)]
+    (and (= 1 (- (count children) body-start))
+         (= node (nth children body-start)))))
+
+(defun redundant-do?
+  "Test whether an AST node is a redundant `do` form."
+  [parent {:keys [children] :as node}]
+  (and (= "do" (forms/head-name node))
+       (or (= 2 (count children))
+           (and (< 1 (count children))
+                (sole-body-form? parent node)))))
+
+(defun check
+  "Return a `redundant-do` diagnostic for matching nodes."
+  [parent node]
+  (when (redundant-do? parent node)
+    (diagnostics/make node :redundant-do "Redundant do form")))
+

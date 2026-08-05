@@ -1,0 +1,66 @@
+(ns proofread.rules.simple-expressions.use-keyword-lookup
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun get-form?
+  "Test whether an AST node is a two-argument `get` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(get value key)`, otherwise `false`."
+  [node]
+  (forms/call? node "get" 3))
+
+(defun defaulted-get-fallback?
+  "Test whether an AST node defaults a `get` with `or`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(or (get value key) default)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "or" 3)
+       (get-form? (nth children 1))))
+
+(defun get-default-child?
+  "Test whether `node` is the `get` child in a defaulted `or` form.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` for the `(get value key)` child in `(or (get value key) default)`,
+  otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (and (defaulted-get-fallback? parent)
+       (= node (nth children 1))))
+
+(defun keyword-get?
+  "Test whether an AST node gets a literal keyword key.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(get value :key)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (get-form? node)
+       (= :keyword (:type (nth children 2)))))
+
+(defun check
+  "Report `(get value :key)` forms.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use keyword lookup, otherwise `nil`."
+  [parent node]
+  (when (and (keyword-get? node)
+             (not (get-default-child? parent node)))
+    (diagnostics/make node :use-keyword-lookup "Use keyword lookup")))

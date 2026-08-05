@@ -1,0 +1,9 @@
+(ns proofread.rules.direct-conditions.use-if-let
+  (:require [proofread.rules.diagnostics :as diagnostics]
+            [proofread.rules.direct-conditions.query :as query]))
+
+(defun check
+  "Return a `use-if-let` diagnostic for matching nodes."
+  [parent node]
+  (when (query/let-if-candidate? node)
+    (diagnostics/make node :use-if-let "Use if-let")))

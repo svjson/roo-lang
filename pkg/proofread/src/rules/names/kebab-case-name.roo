@@ -1,0 +1,16 @@
+(ns proofread.rules.names.kebab-case-name
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun non-kebab-name?
+  "Test whether an identifier should use kebab-case."
+  [node]
+  (when-let [name (forms/symbol-name node)]
+    (and (not= "_" name)
+         (contains? name '_'))))
+
+(defun check
+  "Return a `kebab-case-name` diagnostic for matching nodes."
+  [parent node]
+  (when (non-kebab-name? node)
+    (diagnostics/make node :kebab-case-name "Use kebab-case names")))

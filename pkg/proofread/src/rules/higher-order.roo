@@ -1,101 +1,44 @@
 (ns proofread.rules.higher-order
-  (:require [proofread.forms :as forms]))
+  (:require [proofread.rules.higher-order.use-flat-map :as use-flat-map]
+            [proofread.rules.higher-order.use-keep :as use-keep]))
 
-(defun map-form?
-  "Test whether an AST node is a single-sequence `map` form.
+(def checks
+  "Higher-order rule check functions."
+  [use-flat-map/check
+   use-keep/check])
 
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `(map sequence mapper)`, otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (= "map" (forms/head-name node))
-       (= 3 (count children))))
-
-(defun flat-map-candidate?
-  "Test whether an AST node can use `flat-map`.
+(defun node-diagnostic
+  "Return the first higher-order diagnostic for an AST node.
 
   Args:
-  - `node`: A `roo.ast` node map.
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
 
   Returns:
-  `true` for `(flatten (map sequence mapper))`, otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (= "flatten" (forms/head-name node))
-       (= 2 (count children))
-       (map-form? (nth children 1))))
-
-(defun keep-conditional?
-  "Test whether an AST node is a conditional that can feed `keep`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `when` and `unless` forms, otherwise `false`."
-  [node]
-  (case (forms/head-name node)
-    "when"
-    true
-
-    "unless"
-    true
-
-    :default
-    false))
-
-(defun keep-candidate?
-  "Test whether an AST node can use `keep`.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `map` forms with an inline function whose only body expression is
-  a `when` or `unless` form, otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (map-form? node)
-       (let [mapper (nth children 2)
-             mapper-children (:children mapper)]
-         (and (= "fn" (forms/head-name mapper))
-              (= 3 (count mapper-children))
-              (keep-conditional? (nth mapper-children 2))))))
-
-(defun diagnostic
-  "Build a higher-order diagnostic for an AST node.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-  - `rule`: Diagnostic rule keyword.
-  - `message`: Diagnostic message text.
-
-  Returns:
-  A diagnostic map."
-  [node rule message]
-  {:rule rule
-   :severity :warning
-   :source (:source node)
-   :message message})
+  A diagnostic map, or `nil` when no higher-order rule matches."
+  [parent node]
+  (head (keep checks
+              (fn [check]
+                (check parent node)))))
 
 (defun check-node
   "Find higher-order diagnostics beneath one AST node.
 
   Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [node]
+  [parent node]
   (if (map? node)
     (concat
-      (if (flat-map-candidate? node)
-        [(diagnostic node :use-flat-map "Use flat-map")]
+      (if-let [diagnostic (node-diagnostic parent node)]
+        [diagnostic]
         [])
-      (if (keep-candidate? node)
-        [(diagnostic node :use-keep "Use keep")]
-        [])
-      (flat-map (:children node) check-node))
+      (flat-map (:children node)
+                (fn [child]
+                  (check-node node child))))
     []))
 
 (defun check
@@ -107,4 +50,4 @@
   Returns:
   A vector of diagnostic maps."
   [root]
-  (check-node root))
+  (check-node nil root))

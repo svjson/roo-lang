@@ -1,0 +1,14 @@
+(ns proofread.rules.direct-conditions.use-unless
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]
+            [proofread.rules.direct-conditions.query :as query]))
+
+(defun check
+  "Return a `use-unless` diagnostic for matching nodes."
+  [parent {:keys [children] :as node}]
+  (when (and (= "if" (forms/head-name node))
+             (not (query/let-condition-child? parent node))
+             (= 4 (count children))
+             (forms/nil-node? (nth children 2)))
+    (diagnostics/make node :use-unless "Use unless")))
+

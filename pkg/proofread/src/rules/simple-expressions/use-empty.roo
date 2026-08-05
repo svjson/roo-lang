@@ -1,0 +1,43 @@
+(ns proofread.rules.simple-expressions.use-empty
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun count-form?
+  "Test whether an AST node is a `(count value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for two-child `count` calls, otherwise `false`."
+  [node]
+  (forms/call? node "count" 2))
+
+(defun empty-count-comparison?
+  "Test whether an AST node compares a count to zero.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(= 0 (count value))` and `(= (count value) 0)`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "=" 3)
+       (or (and (forms/zero-node? (nth children 1))
+                (count-form? (nth children 2)))
+           (and (count-form? (nth children 1))
+                (forms/zero-node? (nth children 2))))))
+
+(defun check
+  "Report count comparisons that should use `empty?`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `empty?`, otherwise `nil`."
+  [parent node]
+  (when (empty-count-comparison? node)
+    (diagnostics/make node :use-empty? "Use empty?")))

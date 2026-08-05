@@ -1,0 +1,62 @@
+(ns proofread.rules.simple-expressions.redundant-map-check
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun map-check?
+  "Test whether an AST node is a `(map? value)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The checked symbol name for `(map? name)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "map?" 2)
+    (forms/symbol-name (nth children 1))))
+
+(defun lookup-comparison?
+  "Test whether an AST node compares a keyword lookup against another value.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the lookup target.
+
+  Returns:
+  `true` for equality comparisons involving `(:key target-name)`, otherwise
+  `false`."
+  [{:keys [children] :as node} target-name]
+  (and (forms/call? node "=" 3)
+       (or (forms/keyword-lookup? (nth children 1) target-name)
+           (forms/keyword-lookup? (nth children 2) target-name))))
+
+(defun lookup-access?
+  "Test whether an AST node directly accesses a target through keyword lookup.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the lookup target.
+
+  Returns:
+  `true` for direct keyword lookups or equality comparisons using them,
+  otherwise `false`."
+  [node target-name]
+  (or (forms/keyword-lookup? node target-name)
+      (lookup-comparison? node target-name)))
+
+(defun check
+  "Report redundant `map?` guards before keyword lookup.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should remove `map?`, otherwise `nil`."
+  [parent {:keys [children] :as node}]
+  (when (and (= "and" (forms/head-name node))
+             (< 1 (count children)))
+    (when-let [target-name (map-check? (nth children 1))]
+      (when (any? (tail (tail children))
+                  (fn [child]
+                    (lookup-access? child target-name)))
+        (diagnostics/make node :redundant-map-check "Remove redundant map? check")))))

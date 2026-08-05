@@ -1,65 +1,17 @@
 (ns proofread.rules.redundant-do
-  (:require [proofread.forms :as forms]))
+  (:require [proofread.rules.redundant-do.redundant-do :as redundant-do]))
 
-(defun body-start-index
-  "Return the child index where a form's implicit body starts.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  The zero-based child index for forms with body tails, otherwise `nil`."
-  [{:keys [children] :as node}]
-  (case (forms/head-name node)
-    "defun"
-    (case (:type (nth children 2))
-      :string 4
-      :default 3)
-
-    "do" 1
-    "fn" 2
-    "let" 2
-    "when" 2
-    "unless" 2
-    "when-let" 2
-    "dotimes" 2
-    "for" 2
-    "doseq" 2
-    "for-indexed" 2
-    "while" 2
-    "with-random-seed" 2
-
-    :default nil))
-
-(defun sole-body-form?
-  "Test whether `node` is the only form in `parent`'s implicit body.
-
-  Args:
-  - `parent`: Parent `roo.ast` node map.
-  - `node`: Possible body child node map.
-
-  Returns:
-  `true` when `node` is the only child in `parent`'s body tail."
-  [{:keys [children] :as parent} node]
-  (when-let [body-start (body-start-index parent)]
-    (and (= 1 (- (count children) body-start))
-         (= node (nth children body-start)))))
-
-(defun redundant-do?
-  "Test whether an AST node is a redundant `do` form.
+(defun node-diagnostic
+  "Return the redundant-do diagnostic for an AST node.
 
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
-  - `node`: A `roo.ast` node map.
+  - `node`: Current `roo.ast` node map.
 
   Returns:
-  `true` for single-expression `do` forms and `do` forms that wrap a whole
-  implicit body, otherwise `false`."
-  [parent {:keys [children] :as node}]
-  (and (= "do" (forms/head-name node))
-       (or (= 2 (count children))
-           (and (< 1 (count children))
-                (sole-body-form? parent node)))))
+  A diagnostic map, or `nil` when no redundant-do rule matches."
+  [parent node]
+  (redundant-do/check parent node))
 
 (defun check-node
   "Find redundant `do` forms beneath one AST node.
@@ -73,11 +25,8 @@
   [parent node]
   (if (map? node)
     (concat
-      (if (redundant-do? parent node)
-        [{:rule :redundant-do
-          :severity :warning
-          :source (:source node)
-          :message "Redundant do form"}]
+      (if-let [diagnostic (node-diagnostic parent node)]
+        [diagnostic]
         [])
       (flat-map (:children node)
                 (fn [child]

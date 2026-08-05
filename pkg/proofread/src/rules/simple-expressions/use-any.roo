@@ -1,0 +1,51 @@
+(ns proofread.rules.simple-expressions.use-any
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun find-index-form?
+  "Test whether an AST node is a `(find-index value predicate)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for three-child `find-index` calls, otherwise `false`."
+  [node]
+  (forms/call? node "find-index" 3))
+
+(defun find-first-form?
+  "Test whether an AST node is a `(find-first value predicate)` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for three-child `find-first` calls, otherwise `false`."
+  [node]
+  (forms/call? node "find-first" 3))
+
+(defun presence-check?
+  "Test whether an AST node checks value nil-ness.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `nil?` and `some?` calls, otherwise `false`."
+  [node]
+  (contains? ["nil?" "some?"] (forms/head-name node)))
+
+(defun check
+  "Report search calls used only as presence checks.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `any?`, otherwise `nil`."
+  [parent node]
+  (when (and (presence-check? parent)
+             (or (find-index-form? node)
+                 (find-first-form? node)))
+    (diagnostics/make node :use-any? "Use any?")))

@@ -1,0 +1,55 @@
+(ns proofread.rules.simple-expressions.redundant-empty-fallback
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun empty-vector?
+  "Test whether an AST node is an empty vector literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `[]`, otherwise `false`."
+  [node]
+  (and (= :vector (:type node))
+       (empty? (:children node))))
+
+(defun empty-fallback?
+  "Test whether an AST node is an `(or value [])` fallback.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(or value [])`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "or" 3)
+       (empty-vector? (nth children 2))))
+
+(defun nil-tolerant-seq-call?
+  "Test whether a call treats nil input as an empty sequence.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for sequence calls whose first argument can be `nil`, otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (< 1 (count children))
+       (contains? ["any?" "count" "empty?" "filter" "find-first" "find-index" "flat-map" "keep" "map" "not-empty?" "remove"]
+                  (forms/head-name node))))
+
+(defun check
+  "Report redundant empty sequence fallbacks.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should remove `(or value [])`, otherwise `nil`."
+  [parent {:keys [children] :as node}]
+  (when (and (nil-tolerant-seq-call? node)
+             (empty-fallback? (nth children 1)))
+    (diagnostics/make node :redundant-empty-fallback "Remove redundant empty fallback")))

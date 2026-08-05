@@ -1,0 +1,65 @@
+(ns proofread.rules.simple-expressions.use-select-keys
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun select-keys-entry-target
+  "Return the source symbol name for a select-keys map entry.
+
+  Args:
+  - `key-node`: Map key node.
+  - `value-node`: Map value node.
+
+  Returns:
+  The lookup target symbol name for `:key (:key target)`, otherwise `nil`."
+  [key-node value-node]
+  (when (= (:type key-node) :keyword)
+    (let [value-children (:children value-node)]
+      (when (and (= (:type value-node) :list)
+                 (= 2 (count value-children))
+                 (= (:form key-node) (:form (head value-children))))
+        (forms/symbol-name (nth value-children 1))))))
+
+(defun select-keys-target
+  "Return the shared source symbol for select-keys candidate entries.
+
+  Args:
+  - `children`: Map child nodes.
+  - `index`: Current key index.
+  - `target-name`: Previously seen source symbol name, or `nil`.
+
+  Returns:
+  The shared source symbol name when all entries match, otherwise `nil`."
+  [children index target-name]
+  (if (>= index (count children))
+    target-name
+    (when-let [entry-target (select-keys-entry-target (nth children index)
+                                                      (nth children (+ index 1)))]
+      (when (or (nil? target-name)
+                (= target-name entry-target))
+        (select-keys-target children (+ index 2) entry-target)))))
+
+(defun select-keys-candidate?
+  "Test whether a map literal should be `select-keys`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for map literals such as `{:a (:a value) :b (:b value) :c (:c value)}`."
+  [{:keys [children] :as node}]
+  (and (= (:type node) :map)
+       (< 5 (count children))
+       (select-keys-target children 0 nil)))
+
+(defun check
+  "Report map literals that should use `select-keys`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `select-keys`, otherwise `nil`."
+  [parent node]
+  (when (select-keys-candidate? node)
+    (diagnostics/make node :use-select-keys "Use select-keys")))

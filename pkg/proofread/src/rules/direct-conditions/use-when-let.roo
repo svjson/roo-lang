@@ -1,0 +1,10 @@
+(ns proofread.rules.direct-conditions.use-when-let
+  (:require [proofread.rules.diagnostics :as diagnostics]
+            [proofread.rules.direct-conditions.query :as query]))
+
+(defun check
+  "Return a `use-when-let` diagnostic for matching nodes."
+  [parent node]
+  (when (or (query/let-when-candidate? node)
+            (query/when-repeats-keyword-lookup? node))
+    (diagnostics/make node :use-when-let "Use when-let")))

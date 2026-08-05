@@ -1,0 +1,9 @@
+(ns proofread.rules.direct-conditions.use-case
+  (:require [proofread.rules.diagnostics :as diagnostics]
+            [proofread.rules.direct-conditions.query :as query]))
+
+(defun check
+  "Return a `use-case` diagnostic for matching nodes."
+  [parent node]
+  (when (query/if-case-candidate? node)
+    (diagnostics/make node :use-case "Use case")))

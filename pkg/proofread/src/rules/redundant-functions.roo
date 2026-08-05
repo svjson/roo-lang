@@ -1,185 +1,36 @@
 (ns proofread.rules.redundant-functions
-  (:require [proofread.forms :as forms]))
+  (:require [proofread.rules.redundant-functions.redundant-function :as redundant-function]))
 
-(defun defun-body-index
-  "Return the first body child index for a `defun` form.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  The body index for `defun` forms, otherwise `nil`."
-  [{:keys [children] :as node}]
-  (when (and (= "defun" (forms/head-name node))
-             (< 2 (count children)))
-    (case (:type (nth children 2))
-      :string 4
-      :default 3)))
-
-(defun plain-param-names
-  "Return a plain symbol parameter name vector.
+(defun node-diagnostic
+  "Return the redundant-function diagnostic for an AST node.
 
   Args:
-  - `params`: A parameter vector AST node.
-  - `index`: Current parameter index.
-  - `names`: Collected parameter names.
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
 
   Returns:
-  A vector of parameter names, or `nil` for destructuring/rest params."
-  [params index names]
-  (if (>= index (count (:children params)))
-    names
-    (when-let [name (forms/symbol-name (nth (:children params) index))]
-      (when (not= "&" name)
-        (plain-param-names params (inc index) (append names name))))))
-
-(defun parameter-node?
-  "Test whether an AST node is one of the function parameters.
-
-  Args:
-  - `param-names`: Parameter name strings.
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` when `node` is a plain parameter reference, otherwise `false`."
-  [param-names node]
-  (contains? param-names (forms/symbol-name node)))
-
-(defun literal-node?
-  "Test whether an AST node is a literal value.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for simple literal nodes, otherwise `false`."
-  [node]
-  (or (contains? [:string :keyword :number :char] (:type node))
-      (contains? ["nil" "true" "false"] (forms/symbol-name node))))
-
-(defun wrapper-arguments?
-  "Test whether call arguments only specialize parameters with literals.
-
-  Args:
-  - `children`: Call child nodes.
-  - `index`: Current argument index.
-  - `param-names`: Function parameter name strings.
-  - `param?`: Whether a parameter has been passed through.
-  - `literal?`: Whether a literal has been used.
-
-  Returns:
-  `true` when all arguments are parameter references or literals, with at least
-  one of each."
-  [children index param-names param? literal?]
-  (if (>= index (count children))
-    (and param? literal?)
-    (let [argument (nth children index)]
-      (cond
-        (parameter-node? param-names argument)
-        (wrapper-arguments? children (inc index) param-names true literal?)
-
-        (literal-node? argument)
-        (wrapper-arguments? children (inc index) param-names param? true)
-
-        true
-        false))))
-
-(defun redundant-keyword-accessor?
-  "Test whether an AST node redundantly names a keyword accessor.
-
-  Args:
-  - `function-name`: Function name string.
-  - `param-names`: Function parameter name strings.
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for forms such as `(defun object-kind [object] (:kind object))`,
-  otherwise `false`."
-  [function-name param-names {:keys [children] :as node}]
-  (when (and (= :list (:type node))
-             (= 2 (count children))
-             (= :keyword (:type (head children))))
-    (when-let [param-name (forms/symbol-name (nth children 1))]
-      (and (contains? param-names param-name)
-           (= function-name (str param-name "-" (forms/keyword-name (head children))))))))
-
-(defun directly-redundant-predicate-call?
-  "Test whether an AST node is a directly redundant predicate call.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for built-in predicate calls that are usually clearer inline,
-  otherwise `false`."
-  [node]
-  (contains? ["=" "not=" "contains?"] (forms/head-name node)))
-
-(defun specialized-wrapper?
-  "Test whether an AST node is a specialized predicate wrapper call.
-
-  Args:
-  - `param-names`: Function parameter name strings.
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` when `node` is a direct redundant predicate call over parameters and
-  literals, otherwise `false`."
-  [param-names node]
-  (and (directly-redundant-predicate-call? node)
-       (wrapper-arguments? (:children node) 1 param-names false false)))
-
-(defun redundant-function?
-  "Test whether a `defun` only names a simple redundant expression.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for one-body `defun` forms such as `(defun p [x] (f? x :value))`
-  and `(defun value-kind [value] (:kind value))`, otherwise `false`."
-  [{:keys [children] :as node}]
-  (when-let [body-index (defun-body-index node)]
-    (let [function-name (forms/symbol-name (nth children 1))
-          params (nth children (dec body-index))]
-      (when (and (= (+ body-index 1) (count children))
-                 (= :vector (:type params)))
-        (when-let [param-names (plain-param-names params 0 [])]
-          (let [body (nth children body-index)]
-            (and (not-empty? param-names)
-                 (or (redundant-keyword-accessor? function-name param-names body)
-                     (and (not= function-name (forms/head-name body))
-                          (specialized-wrapper? param-names body))))))))))
-
-(defun diagnostic
-  "Build a redundant function diagnostic.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  A diagnostic map."
-  [node]
-  {:rule :redundant-function
-   :severity :warning
-   :source (:source node)
-   :message "Inline redundant function"})
+  A diagnostic map, or `nil` when no redundant-function rule matches."
+  [parent node]
+  (redundant-function/check parent node))
 
 (defun check-node
   "Find redundant function diagnostics beneath one AST node.
 
   Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [node]
+  [parent node]
   (if (map? node)
     (concat
-      (if (redundant-function? node)
-        [(diagnostic node)]
+      (if-let [diagnostic (node-diagnostic parent node)]
+        [diagnostic]
         [])
-      (flat-map (:children node) check-node))
+      (flat-map (:children node)
+                (fn [child]
+                  (check-node node child))))
     []))
 
 (defun check
@@ -191,4 +42,4 @@
   Returns:
   A vector of diagnostic maps."
   [root]
-  (check-node root))
+  (check-node nil root))

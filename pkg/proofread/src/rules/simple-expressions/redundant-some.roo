@@ -1,0 +1,34 @@
+(ns proofread.rules.simple-expressions.redundant-some
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]
+            [roo.string :as string]))
+
+(defun non-predicate-name?
+  "Test whether a name is not predicate-shaped.
+
+  Args:
+  - `name`: Symbol or keyword name string.
+
+  Returns:
+  `true` when `name` is not empty, not predicate-suffixed, and not a boolean or
+  nil literal name."
+  [name]
+  (and (not (blank? name))
+       (not (contains? ["nil" "true" "false"] name))
+       (not (string/ends-with? name "?"))))
+
+(defun check
+  "Report redundant `some?` checks in branch predicate positions.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should remove `some?`, otherwise `nil`."
+  [parent {:keys [children] :as node}]
+  (when (and (forms/branch-predicate-position? parent node)
+             (forms/call? node "some?" 2)
+             (or (non-predicate-name? (forms/symbol-name (nth children 1)))
+                 (non-predicate-name? (forms/keyword-lookup-key-name (nth children 1)))))
+    (diagnostics/make node :redundant-some? "Remove redundant some?")))

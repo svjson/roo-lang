@@ -1,0 +1,90 @@
+(ns proofread.rules.redundant-functions.redundant-function
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun defun-body-index
+  "Return the first body child index for a `defun` form."
+  [{:keys [children] :as node}]
+  (when (and (= "defun" (forms/head-name node))
+             (< 2 (count children)))
+    (case (:type (nth children 2))
+      :string 4
+      :default 3)))
+
+(defun plain-param-names
+  "Return a plain symbol parameter name vector."
+  [params index names]
+  (if (>= index (count (:children params)))
+    names
+    (when-let [name (forms/symbol-name (nth (:children params) index))]
+      (when (not= "&" name)
+        (plain-param-names params (inc index) (append names name))))))
+
+(defun parameter-node?
+  "Test whether an AST node is one of the function parameters."
+  [param-names node]
+  (contains? param-names (forms/symbol-name node)))
+
+(defun literal-node?
+  "Test whether an AST node is a literal value."
+  [node]
+  (or (contains? [:string :keyword :number :char] (:type node))
+      (contains? ["nil" "true" "false"] (forms/symbol-name node))))
+
+(defun wrapper-arguments?
+  "Test whether call arguments only specialize parameters with literals."
+  [children index param-names param? literal?]
+  (if (>= index (count children))
+    (and param? literal?)
+    (let [argument (nth children index)]
+      (cond
+        (parameter-node? param-names argument)
+        (wrapper-arguments? children (inc index) param-names true literal?)
+
+        (literal-node? argument)
+        (wrapper-arguments? children (inc index) param-names param? true)
+
+        true
+        false))))
+
+(defun redundant-keyword-accessor?
+  "Test whether an AST node redundantly names a keyword accessor."
+  [function-name param-names {:keys [children] :as node}]
+  (when (and (= :list (:type node))
+             (= 2 (count children))
+             (= :keyword (:type (head children))))
+    (when-let [param-name (forms/symbol-name (nth children 1))]
+      (and (contains? param-names param-name)
+           (= function-name (str param-name "-" (forms/keyword-name (head children))))))))
+
+(defun directly-redundant-predicate-call?
+  "Test whether an AST node is a directly redundant predicate call."
+  [node]
+  (contains? ["=" "not=" "contains?"] (forms/head-name node)))
+
+(defun specialized-wrapper?
+  "Test whether an AST node is a specialized predicate wrapper call."
+  [param-names node]
+  (and (directly-redundant-predicate-call? node)
+       (wrapper-arguments? (:children node) 1 param-names false false)))
+
+(defun redundant-function?
+  "Test whether a `defun` only names a simple redundant expression."
+  [{:keys [children] :as node}]
+  (when-let [body-index (defun-body-index node)]
+    (let [function-name (forms/symbol-name (nth children 1))
+          params (nth children (dec body-index))]
+      (when (and (= (+ body-index 1) (count children))
+                 (= :vector (:type params)))
+        (when-let [param-names (plain-param-names params 0 [])]
+          (let [body (nth children body-index)]
+            (and (not-empty? param-names)
+                 (or (redundant-keyword-accessor? function-name param-names body)
+                     (and (not= function-name (forms/head-name body))
+                          (specialized-wrapper? param-names body))))))))))
+
+(defun check
+  "Return a `redundant-function` diagnostic for matching nodes."
+  [parent node]
+  (when (redundant-function? node)
+    (diagnostics/make node :redundant-function "Inline redundant function")))

@@ -1,0 +1,17 @@
+(ns proofread.rules.diagnostics)
+
+(defun make
+  "Build a proofread rule diagnostic for an AST node.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `rule`: Diagnostic rule keyword.
+  - `message`: Diagnostic message.
+
+  Returns:
+  A diagnostic map."
+  [node rule message]
+  {:rule rule
+   :severity :warning
+   :source (:source node)
+   :message message})

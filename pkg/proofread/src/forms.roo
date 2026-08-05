@@ -36,3 +36,151 @@
   [node]
   (when (= (:type node) :list)
     (symbol-name (head (:children node)))))
+
+(defun call?
+  "Test whether an AST node is a list call with a specific head and arity.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `head`: Expected call head name.
+  - `arity`: Expected child count including the head symbol.
+
+  Returns:
+  `true` when `node` is a list headed by `head` with `arity` children,
+  otherwise `false`."
+  [{:keys [children] :as node} head arity]
+  (and (= head (head-name node))
+       (= arity (count children))))
+
+(defun zero-node?
+  "Test whether an AST node is the number `0`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for the numeric literal `0`, otherwise `false`."
+  [node]
+  (and (= (:type node) :number)
+       (= (:form node) 0)))
+
+(defun nil-node?
+  "Test whether an AST node is the symbol `nil`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for the `nil` symbol, otherwise `false`."
+  [node]
+  (= "nil" (symbol-name node)))
+
+(defun direct-symbol?
+  "Test whether an AST node is a direct symbol reference.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `name`: Expected symbol name.
+
+  Returns:
+  `true` when `node` is the symbol `name`, otherwise `false`."
+  [node name]
+  (= name (symbol-name node)))
+
+(defun keyword-lookup?
+  "Test whether an AST node is a keyword lookup form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `target-name`: Symbol name expected as the lookup target.
+
+  Returns:
+  `true` for `(:key target-name)`, otherwise `false`."
+  [node target-name]
+  (and (= (:type node) :list)
+       (= 2 (count (:children node)))
+       (keyword-name (head (:children node)))
+       (= target-name (symbol-name (nth (:children node) 1)))))
+
+(defun keyword-lookup-key-name
+  "Return the key name from a keyword lookup form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The keyword name for `(:key value)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (and (= (:type node) :list)
+             (= 2 (count children)))
+    (keyword-name (head children))))
+
+(defun fn-single-param-name
+  "Return the parameter name from a one-argument `fn`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The parameter name for `(fn [name] body)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (call? node "fn" 3)
+    (let [params (nth children 1)]
+      (when (and (= (:type params) :vector)
+                 (= 1 (count (:children params))))
+        (symbol-name (head (:children params)))))))
+
+(defun cond-test-child?
+  "Test whether a node is a condition child in a `cond` form.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map.
+  - `node`: Possible condition child node map.
+
+  Returns:
+  `true` when `node` is in a `cond` test position, otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (and (= "cond" (head-name parent))
+       (any? (range 1 (dec (count children)))
+             (fn [index]
+               (and (= node (nth children index))
+                    (odd? index))))))
+
+(defun branch-predicate-position?
+  "Test whether an AST node is used as a branch predicate.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for root nodes.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is a direct `if`, `when`, `unless`, `while`, or `cond`
+  predicate, otherwise `false`."
+  [{:keys [children] :as parent} node]
+  (case (head-name parent)
+    "if" (and (< 1 (count children))
+              (= node (nth children 1)))
+    "when" (and (< 1 (count children))
+                (= node (nth children 1)))
+    "unless" (and (< 1 (count children))
+                  (= node (nth children 1)))
+    "while" (and (< 1 (count children))
+                 (= node (nth children 1)))
+    "cond" (cond-test-child? parent node)
+    :default false))
+
+(defun predicate-position?
+  "Test whether an AST node is used in a boolean predicate position.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for root nodes.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is in a conditional or boolean-combinator predicate
+  position, otherwise `false`."
+  [parent node]
+  (case (head-name parent)
+    "and" true
+    "or" true
+    :default (branch-predicate-position? parent node)))

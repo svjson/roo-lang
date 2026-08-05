@@ -1,0 +1,17 @@
+(ns proofread.rules.simple-expressions.use-head
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun check
+  "Report `(nth value 0)` forms.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `head`, otherwise `nil`."
+  [parent {:keys [children] :as node}]
+  (when (and (forms/call? node "nth" 3)
+             (forms/zero-node? (nth children 2)))
+    (diagnostics/make node :use-head "Use head")))
