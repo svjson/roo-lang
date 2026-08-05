@@ -97,9 +97,11 @@
           (let [arg (trim (substr content 0 separator))
                 doc (trim (substr content (+ separator 1) (count content)))]
             (cond
-              (or (contains? ["Arg #" "Arg" "Param" "Parameter" "Name"] arg)
-                  (string/starts-with? arg "---"))
-              nil
+              (contains? ["Arg #" "Arg" "Param" "Parameter" "Name"] arg)
+              {:header? true}
+
+              (string/starts-with? arg "---")
+              {:separator? true}
 
               (blank? arg)
               (unless (blank? doc)
@@ -121,6 +123,47 @@
 
       true
       nil)))
+
+(defun cpp-doc-signature-state
+  "Return the current parsed signature state.
+
+  Args:
+  - `state`: Native doc parser state.
+
+  Returns:
+  A signature doc map containing params and param order."
+  [state]
+  {:params (:params state)
+   :param-order (:param-order state)})
+
+(defun cpp-doc-finish-signature
+  "Append the current arg table to STATE when it has parameters.
+
+  Args:
+  - `state`: Native doc parser state.
+
+  Returns:
+  STATE with current parameters moved into `:signature-docs`."
+  [state]
+  (if (empty? (:param-order state))
+    state
+    (assoc state
+           :signature-docs
+           (concat (:signature-docs state) [(cpp-doc-signature-state state)])
+           :params {}
+           :param-order []
+           :last-param-key nil)))
+
+(defun cpp-doc-start-signature
+  "Start a new argument table in STATE.
+
+  Args:
+  - `state`: Native doc parser state.
+
+  Returns:
+  STATE prepared to collect the next signature's parameters."
+  [state]
+  (cpp-doc-finish-signature state))
 
 (defun cpp-doc-append-param-doc [param-doc doc]
   (assoc param-doc
@@ -165,7 +208,14 @@
       (some? (cpp-doc-arg-row trimmed))
       (let [row (cpp-doc-arg-row trimmed)
             key (:key row)]
-        (if (:continuation? row)
+        (cond
+          (:header? row)
+          (cpp-doc-start-signature state)
+
+          (:separator? row)
+          state
+
+          (:continuation? row)
           (if-let [last-key (:last-param-key state)]
             (assoc state
                    :params
@@ -175,6 +225,8 @@
                             (get (:params state) last-key)
                             (:doc row))))
             state)
+
+          true
           (assoc state
                  :params
                  (assoc (:params state) key (:doc row))
@@ -204,6 +256,7 @@
                        :body []
                        :params {}
                        :param-order []
+                       :signature-docs []
                        :last-param-key nil
                        :returns []
                        :examples []
@@ -211,12 +264,16 @@
                        :code-format nil
                        :code-lines []
                        :brief? false}
-                      cpp-doc-step)]
+                      cpp-doc-step)
+        state (cpp-doc-finish-signature state)
+        signature-docs (:signature-docs state)
+        first-signature (head signature-docs)]
     {:summary (join-lines " " (:summary state))
      :body (docstrings/paragraph-text (docstrings/paragraphs (:body state)))
      :format :markdown
-     :params (:params state)
-     :param-order (:param-order state)
+     :params (or (:params first-signature) {})
+     :param-order (or (:param-order first-signature) [])
+     :signature-docs signature-docs
      :returns (unless (empty? (:returns state))
                 {:type nil
                  :doc (docstrings/paragraph-text
@@ -504,6 +561,16 @@
     (strip-suffix key "...")
     key))
 
+(defun native-param-group-key? [key]
+  (let [base (native-param-key-base key)]
+    (and (string/starts-with? base "(")
+         (string/ends-with? base ")"))))
+
+(defun native-param-group-text [key]
+  (let [base (native-param-key-base key)]
+    (when (native-param-group-key? key)
+      (trim (substr base 1 (- (count base) 2))))))
+
 (defun native-param-digit? [ch]
   (contains? ["0" "1" "2" "3" "4" "5" "6" "7" "8" "9"]
              (str ch)))
@@ -517,8 +584,12 @@
 
 (defun native-param-name [key]
   (let [base (native-param-key-base key)
+        grouped-text (native-param-group-text key)
         numbered? (native-param-numbered? key)]
     (cond
+      grouped-text
+      grouped-text
+
       (blank? base)
       "args"
 
@@ -531,21 +602,75 @@
       true
       base)))
 
+(defun native-param-display [key]
+  (if (native-param-group-key? key)
+    key
+    (let [name (native-param-name key)]
+      (if (string/ends-with? key "...")
+        (str name "...")
+        name))))
+
+(defun whitespace? [character]
+  (contains? [" " "\t" "\n" "\r"] (str character)))
+
+(defun native-param-group-members [key]
+  "Return parameter names inside grouped native parameter KEY.
+
+  Args:
+  - `key`: Native argument table key, such as `(match result)...`.
+
+  Returns:
+  Names inside the group, or nil when KEY is not grouped."
+  [key]
+  (when-let [text (native-param-group-text key)]
+    (let [members []
+          token ""
+          index 0]
+      (while (< index (count text))
+        (let [character (str (nth text index))]
+          (if (whitespace? character)
+            (do
+              (when (not (blank? token))
+                (append! members token))
+              (set! [token] ""))
+            (set! [token] (str token character))))
+        (set! [index] (+ index 1)))
+      (when (not (blank? token))
+        (append! members token))
+      members)))
+
+(defun native-signature-param [key param-doc]
+  "Return signature parameter metadata for native argument KEY.
+
+  Args:
+  - `key`: Argument table key.
+  - `param-doc`: Parsed parameter documentation map.
+
+  Returns:
+  Lookup signature parameter metadata."
+  [key param-doc]
+  (let [rest? (string/ends-with? key "...")
+        grouped? (native-param-group-key? key)
+        param {:name (native-param-name key)
+               :display (native-param-display key)
+               :type (:type param-doc)
+               :doc (:doc param-doc)
+               :optional? rest?
+               :rest? rest?
+               :group? grouped?}]
+    (if grouped?
+      (assoc param :group {:params (native-param-group-members key)})
+      param)))
+
 (defun native-signature-params [doc]
   (let [param-docs (:params doc)
         param-keys (or (:param-order doc) (sort (keys param-docs) <))]
     (map param-keys
          (fn [key]
-           (let [rest? (string/ends-with? key "...")
-                 param-doc (get param-docs key)]
-             {:name (native-param-name key)
-              :type (:type param-doc)
-              :doc (:doc param-doc)
-              :optional? rest?
-              :rest? rest?})))))
+           (native-signature-param key (get param-docs key))))))
 
 (defun native-signature-display [name params]
-  (let [param-names (map params :name)
+  (let [param-names (map params (fn [param] (or (:display param) (:name param))))
         params-display (join-lines " " param-names)]
     (if (nil? params-display)
       (str "(" name ")")
@@ -570,6 +695,25 @@
                    :doc nil})
      :arity (native-signature-arity params)}))
 
+(defun native-signatures [name doc]
+  "Return native signatures for NAME from DOC.
+
+  Args:
+  - `name`: Public Roo symbol name.
+  - `doc`: Parsed native documentation map.
+
+  Returns:
+  One signature per parsed argument table, or one empty signature when no
+  argument table was documented."
+  [name doc]
+  (let [signature-docs (:signature-docs doc)]
+    (if (empty? signature-docs)
+      [(native-signature name doc)]
+      (map signature-docs
+           (fn [signature-doc]
+             (native-signature name
+                               (assoc signature-doc :returns (:returns doc))))))))
+
 (defun native-symbol-entry [package entries identity-entry]
   (let [qualified-name (:qualified-name identity-entry)
         namespace (qualified-symbol-namespace qualified-name)
@@ -578,7 +722,7 @@
         doc (if (nil? doc-entry)
               (docstrings/empty)
               (:doc doc-entry))
-        public-doc (dissoc doc :param-order)]
+        public-doc (dissoc (dissoc doc :param-order) :signature-docs)]
     (unless (nil? namespace)
       (let [entry {:id qualified-name
                    :name name
@@ -594,7 +738,7 @@
                                  {:kind :native-cpp-comment
                                   :source (:source doc-entry)})
                    :doc public-doc
-                   :signatures [(native-signature name doc)]}]
+                   :signatures (native-signatures name doc)}]
         (if (nil? package)
           entry
           (assoc entry :package package))))))

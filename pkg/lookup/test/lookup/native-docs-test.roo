@@ -83,20 +83,77 @@
                * | values... | Additional values.                                                 |
                */")
         signature (native-docs/native-signature "collect" doc)]
-    (is (= "(collect path values)" (:display signature)))
+    (is (= "(collect path values...)" (:display signature)))
     (is (= [{:name "path"
+             :display "path"
              :type nil
              :doc "Path to read."
              :optional? false
-             :rest? false}
+             :rest? false
+             :group? false}
             {:name "values"
+             :display "values..."
              :type nil
              :doc "Additional values."
              :optional? true
-             :rest? true}]
+             :rest? true
+             :group? false}]
            (:params signature)))
     (is (= {:min 1 :max nil :variadic true}
            (:arity signature)))))
+
+
+(deftest builds-native-signature-with-repeating-argument-groups
+  (let [doc (native-docs/from-cpp-comment
+              "/**
+               * @brief Branch by pairs.
+               *
+               * | Arg                   | Description                                   |
+               * | --------------------- | --------------------------------------------- |
+               * | value                 | Value to match.                               |
+               * | (condition result)... | Repeated condition/result pairs.              |
+               */")
+        signature (native-docs/native-signature "cond" doc)]
+    (is (= "(cond value (condition result)...)" (:display signature)))
+    (is (= [{:name "value"
+             :display "value"
+             :type nil
+             :doc "Value to match."
+             :optional? false
+             :rest? false
+             :group? false}
+            {:name "condition result"
+             :display "(condition result)..."
+             :type nil
+             :doc "Repeated condition/result pairs."
+             :optional? true
+             :rest? true
+             :group? true
+             :group {:params ["condition" "result"]}}]
+           (:params signature)))
+    (is (= {:min 1 :max nil :variadic true}
+           (:arity signature)))))
+
+(deftest builds-multiple-native-signatures-from-multiple-arg-tables
+  (let [doc (native-docs/from-cpp-comment
+              "/**
+               * @brief Read a value.
+               *
+               * | Arg  | Description                                   |
+               * | ---- | --------------------------------------------- |
+               * | path | Path to read.                                 |
+               *
+               * | Arg      | Description                                |
+               * | -------- | ------------------------------------------ |
+               * | path     | Path to read.                              |
+               * | fallback | Value returned when the path is missing.   |
+               */")
+        signatures (native-docs/native-signatures "read" doc)]
+    (is (= 2 (count signatures)))
+    (is (= ["(read path)" "(read path fallback)"]
+           (map signatures :display)))
+    (is (= "Value returned when the path is missing."
+           (:doc (nth (:params (nth signatures 1)) 1))))))
 
 (deftest parses-cpp-native-identity-comment
   (is (= {:native-class "SlurpBangFunction"
@@ -226,8 +283,10 @@
            (:source symbol)))
     (is (= "(read! path)" (:display signature)))
     (is (= [{:name "path"
+             :display "path"
              :type nil
              :doc "Path to read."
              :optional? false
-             :rest? false}]
+             :rest? false
+             :group? false}]
            (:params signature)))))
