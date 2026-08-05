@@ -91,7 +91,7 @@
     [(md/table ["Arg" "Description"]
                (map (:params signature)
                     (fn [param]
-                      [(:name param) (:doc param)])))]))
+                      [(or (:display param) (:name param)) (:doc param)])))]))
 
 (defun signature-blocks
   "Return Markdown blocks for SIGNATURE.

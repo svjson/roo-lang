@@ -21,7 +21,8 @@
               :origin :native
               :doc {:summary "Add numbers."}
               :signatures [{:display "(+ numbers...)"
-                            :params [{:name "numbers..."
+                            :params [{:name "numbers"
+                                      :display "numbers..."
                                       :doc "Numbers to add."}]
                             :returns {:doc "The sum."}}]}]})
 

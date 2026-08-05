@@ -24,7 +24,8 @@
                                      :summary "Add numbers."
                                      :body "Returns the numeric sum."
                                      :signatures [{:display "(+ numbers...)"
-                                                   :params [{:name "numbers..."
+                                                   :params [{:name "numbers"
+                                                             :display "numbers..."
                                                              :doc "Numbers to add."}]
                                                    :returns {:doc "The sum."}}]
                                      :doc {:examples [{:format :roo

@@ -67,7 +67,7 @@ cat > "$INDEX_FILE" <<'EOF'
  :version 1
  :package {:name "roo" :version "0.1.0" :description "Roo standard library."}
  :namespaces [{:name "roo" :doc {:summary "Implicit runtime namespace."}}]
- :symbols [{:id "roo/+" :name "+" :qualified-name "roo/+" :namespace "roo" :kind :function :origin :native :doc {:summary "Add numbers."} :signatures [{:display "(+ numbers...)" :params [{:name "numbers..." :doc "Numbers to add."}] :returns {:doc "The sum."}}]}]}
+ :symbols [{:id "roo/+" :name "+" :qualified-name "roo/+" :namespace "roo" :kind :function :origin :native :doc {:summary "Add numbers."} :signatures [{:display "(+ numbers...)" :params [{:name "numbers" :display "numbers..." :doc "Numbers to add."}] :returns {:doc "The sum."}}]}]}
 EOF
 
 if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" --package-group "The Roo Language:roo" "$INDEX_FILE"); then
