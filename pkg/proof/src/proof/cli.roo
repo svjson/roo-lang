@@ -1,0 +1,336 @@
+(ns proof.cli
+  (:require [roo.string :as string]))
+
+(def usage-line
+  "Usage line for `roo proof`."
+  "Usage: roo proof [options] [<test-path>...]")
+
+(def help-lines
+  "Help text lines printed for `roo proof --help` and argument errors."
+  [usage-line
+   ""
+   "Options:"
+   "  --help, -h                         Show this help."
+   "  --test-root <path>                 Add a test root. Repeat for multiple roots."
+   "  <test-path>                        Add a test directory or .roo file."
+   "  --filter <pattern>                 Select tests by name or qualified name."
+   "  --namespace, -n <namespace>        Select tests in a namespace. Repeat for multiple namespaces."
+   "  --include-sub-namespaces           Include child namespaces with --namespace."
+   "  --no-include-sub-namespaces        Exclude child namespaces with --namespace."
+   "  --reporter simple|tree             Select the test reporter."
+   "  --fixture-root <path>              Set the persistent fixture root."
+   "  --durations                        Print each test duration."])
+
+(defun print-lines! [lines]
+  "Print lines to standard output.
+
+  Args:
+  - `lines`: Text lines to print.
+
+  Returns:
+  The printed lines."
+  [lines]
+  (for [line lines]
+    (prn line)))
+
+(defun print-help! []
+  "Print `roo proof` help.
+
+  Returns:
+  The printed help lines."
+  []
+  (print-lines! help-lines))
+
+(defun print-errors-and-help! [errors]
+  "Print CLI argument errors followed by help.
+
+  Args:
+  - `errors`: Error lines produced while parsing `roo proof` arguments.
+
+  Returns:
+  `nil`."
+  [errors]
+  (print-lines! errors)
+  (prn "")
+  (print-help!)
+  nil)
+
+(defun base-config [context]
+  "Return the package proof config from a runner context.
+
+  Args:
+  - `context`: Package tool context passed to `proof.runner/run`.
+
+  Returns:
+  The `:config` map, or `{}` when no config is present."
+  [context]
+  (if-let [config (:config context)]
+    config
+    {}))
+
+(defun args [context]
+  "Return CLI arguments from a runner context.
+
+  Args:
+  - `context`: Package tool context passed to `proof.runner/run`.
+
+  Returns:
+  The `:args` vector, or `[]` when no args are present."
+  [context]
+  (if-let [args (:args context)]
+    args
+    []))
+
+(defun help-requested? [context]
+  "Return true when the context requests proof help.
+
+  Args:
+  - `context`: Package tool context passed to `proof.runner/run`.
+
+  Returns:
+  A boolean."
+  [context]
+  (let [args (args context)]
+    (or (contains? args "--help")
+        (contains? args "-h"))))
+
+(defun flag-value [arg flag]
+  "Return the value from a `--flag=value` argument.
+
+  Args:
+  - `arg`: CLI argument text.
+  - `flag`: Long flag name without an assigned value.
+
+  Returns:
+  The value string, or nil when `arg` is not an assignment for `flag`."
+  [arg flag]
+  (let [prefix (str flag "=")]
+    (when (string/starts-with? arg prefix)
+      (substr arg (count prefix)))))
+
+(defun cli-keyword [value]
+  "Convert a CLI value to a keyword.
+
+  Args:
+  - `value`: Text with or without a leading `:`.
+
+  Returns:
+  The keyword value."
+  [value]
+  (if (string/starts-with? value ":")
+    (keyword (substr value 1))
+    (keyword value)))
+
+(defun false-cli-value? [value]
+  "Return true when a CLI boolean value means false.
+
+  Args:
+  - `value`: CLI value text.
+
+  Returns:
+  A boolean."
+  [value]
+  (or (= value "false")
+      (= value "0")
+      (= value "no")))
+
+(defun cli-bool [value]
+  "Convert CLI boolean text to a Roo boolean.
+
+  Args:
+  - `value`: CLI value text.
+
+  Returns:
+  `false` for `false`, `0`, and `no`; otherwise `true`."
+  [value]
+  (not (false-cli-value? value)))
+
+(defun next-value? [args index]
+  "Return true when `args[index + 1]` is a positional value.
+
+  Args:
+  - `args`: CLI argument vector.
+  - `index`: Current argument index.
+
+  Returns:
+  A boolean."
+  [args index]
+  (and (< (+ index 1) (count args))
+       (not (string/starts-with? (nth args (+ index 1)) "--"))))
+
+(defun add-namespace-filter [config namespace]
+  "Add a namespace filter to a parsed proof config.
+
+  Args:
+  - `config`: Parsed proof config.
+  - `namespace`: Namespace filter text.
+
+  Returns:
+  Config with `:namespace` stored as a vector."
+  [config namespace]
+  (let [current (:namespace config)]
+    (assoc config
+           :namespace
+           (cond
+             (nil? current) [namespace]
+             (sequential? current) (append current namespace)
+             true [current namespace]))))
+
+(defun parse-args-from [args index config paths]
+  "Parse `roo proof` arguments starting at `index`.
+
+  Args:
+  - `args`: CLI argument vector.
+  - `index`: Current argument index.
+  - `config`: Config accumulated so far.
+  - `paths`: Positional test paths and `--test-root` values accumulated so far.
+
+  Returns:
+  Parsed proof config with optional `:errors`."
+  [args index config paths]
+  (if (= index (count args))
+    (if (empty? paths)
+      config
+      (assoc config :test-roots paths))
+    (let [arg (nth args index)
+          reporter (flag-value arg "--reporter")
+          filter-pattern (flag-value arg "--filter")
+          namespace (flag-value arg "--namespace")
+          fixture-root (flag-value arg "--fixture-root")
+          test-root (flag-value arg "--test-root")
+          test-roots (flag-value arg "--test-roots")
+          durations (flag-value arg "--durations")
+          include-sub-namespaces (flag-value arg "--include-sub-namespaces")]
+      (cond
+        reporter
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config :reporter (cli-keyword reporter))
+                         paths)
+
+        filter-pattern
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config :filter filter-pattern)
+                         paths)
+
+        namespace
+        (parse-args-from args
+                         (+ index 1)
+                         (add-namespace-filter config namespace)
+                         paths)
+
+        fixture-root
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config :fixture-root fixture-root)
+                         paths)
+
+        test-root
+        (parse-args-from args (+ index 1) config (append! paths test-root))
+
+        test-roots
+        (parse-args-from args (+ index 1) config (append! paths test-roots))
+
+        durations
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config :durations? (cli-bool durations))
+                         paths)
+
+        include-sub-namespaces
+        (parse-args-from
+          args
+          (+ index 1)
+          (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces))
+          paths)
+
+        (= arg "--reporter")
+        (parse-args-from args
+                         (+ index 2)
+                         (assoc config
+                                :reporter
+                                (cli-keyword (nth args (+ index 1))))
+                         paths)
+
+        (= arg "--filter")
+        (parse-args-from args
+                         (+ index 2)
+                         (assoc config :filter (nth args (+ index 1)))
+                         paths)
+
+        (or (= arg "--namespace") (= arg "-n"))
+        (parse-args-from args
+                         (+ index 2)
+                         (add-namespace-filter config (nth args (+ index 1)))
+                         paths)
+
+        (= arg "--fixture-root")
+        (parse-args-from args
+                         (+ index 2)
+                         (assoc config :fixture-root (nth args (+ index 1)))
+                         paths)
+
+        (or (= arg "--test-root") (= arg "--test-roots"))
+        (parse-args-from args
+                         (+ index 2)
+                         config
+                         (append! paths (nth args (+ index 1))))
+
+        (= arg "--durations")
+        (if (next-value? args index)
+          (parse-args-from args
+                           (+ index 2)
+                           (assoc config :durations? (cli-bool (nth args (+ index 1))))
+                           paths)
+          (parse-args-from args
+                           (+ index 1)
+                           (assoc config :durations? true)
+                           paths))
+
+        (= arg "--include-sub-namespaces")
+        (if (next-value? args index)
+          (parse-args-from
+            args
+            (+ index 2)
+            (assoc config :include-sub-namespaces? (cli-bool (nth args (+ index 1))))
+            paths)
+          (parse-args-from args
+                           (+ index 1)
+                           (assoc config :include-sub-namespaces? true)
+                           paths))
+
+        (= arg "--no-include-sub-namespaces")
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config :include-sub-namespaces? false)
+                         paths)
+
+        (= arg "--no-durations")
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config :durations? false)
+                         paths)
+
+        (string/starts-with? arg "-")
+        (parse-args-from args
+                         (+ index 1)
+                         (assoc config
+                                :errors
+                                (append (or (:errors config) [])
+                                        (str "Unrecognized argument: " arg)))
+                         paths)
+
+        :else
+        (parse-args-from args (+ index 1) config (append! paths arg))))))
+
+(defun config [context]
+  "Build proof run config from package config and CLI arguments.
+
+  Args:
+  - `context`: Package tool context passed to `proof.runner/run`.
+
+  Returns:
+  Parsed proof config with command-line overrides and optional `:errors`."
+  [context]
+  (parse-args-from (args context) 0 (base-config context) []))

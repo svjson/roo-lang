@@ -1,0 +1,30 @@
+(ns proof.cli-test
+  (:require proof.core
+            [proof.cli :as cli]))
+
+(deftest parses-fixture-root-cli-option
+  (is (= "tmp/fixtures"
+         (:fixture-root
+          (cli/config {:args ["--fixture-root" "tmp/fixtures"]}))))
+  (is (= "tmp/fixtures"
+         (:fixture-root
+          (cli/config {:args ["--fixture-root=tmp/fixtures"]})))))
+
+(deftest parses-repeated-namespace-cli-options
+  (is (= ["app.checkout-test" "app.profile-test"]
+         (:namespace
+          (cli/config {:args ["-n" "app.checkout-test"
+                              "--namespace=app.profile-test"]})))))
+
+(deftest parses-positional-test-paths
+  (is (= ["test/app/checkout-test.roo" "test/app/profile-test.roo"]
+         (:test-roots
+          (cli/config {:args ["test/app/checkout-test.roo"
+                              "test/app/profile-test.roo"]})))))
+
+(deftest rejects-predicate-style-cli-flags
+  (is (= ["Unrecognized argument: --durations?"
+          "Unrecognized argument: --include-sub-namespaces?"]
+         (:errors
+          (cli/config {:args ["--durations?"
+                              "--include-sub-namespaces?"]})))))

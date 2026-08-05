@@ -1,227 +1,9 @@
 (ns proof.runner
-  (:require proof.core
+  (:require [proof.cli :as cli]
+            proof.core
             [proof.fixture :as fixture]
             [roo.io :as io]
             [roo.string :as string]))
-
-(defun base-config [context]
-  (if-let [config (:config context)]
-    config
-    {}))
-
-(defun cli-args [context]
-  (if-let [args (:args context)]
-    args
-    []))
-
-(defun help-requested? [context]
-  (let [args (cli-args context)]
-    (or (contains? args "--help")
-        (contains? args "-h"))))
-
-(defun print-help []
-  (prn "Usage: roo proof [options] [<test-path>...]")
-  (prn "")
-  (prn "Options:")
-  (prn "  --help, -h                         Show this help.")
-  (prn "  --test-root <path>                 Add a test root. Repeat for multiple roots.")
-  (prn "  <test-path>                        Add a test directory or .roo file.")
-  (prn "  --filter <pattern>                 Select tests by name or qualified name.")
-  (prn "  --namespace, -n <namespace>        Select tests in a namespace. Repeat for multiple namespaces.")
-  (prn "  --include-sub-namespaces           Include child namespaces with --namespace.")
-  (prn "  --no-include-sub-namespaces        Exclude child namespaces with --namespace.")
-  (prn "  --reporter simple|tree             Select the test reporter.")
-  (prn "  --fixture-root <path>              Set the persistent fixture root.")
-  (prn "  --durations                        Print each test duration."))
-
-(defun flag-value [arg flag]
-  (let [prefix (str flag "=")]
-    (when (string/starts-with? arg prefix)
-      (substr arg (count prefix)))))
-
-(defun cli-keyword [value]
-  (if (string/starts-with? value ":")
-    (keyword (substr value 1))
-    (keyword value)))
-
-(defun false-cli-value? [value]
-  (or (= value "false")
-      (= value "0")
-      (= value "no")))
-
-(defun cli-bool [value]
-  (not (false-cli-value? value)))
-
-(defun next-value? [args index]
-  (and (< (+ index 1) (count args))
-       (not (string/starts-with? (nth args (+ index 1)) "--"))))
-
-(defun add-namespace-filter [config namespace]
-  (let [current (:namespace config)]
-    (assoc config
-           :namespace
-           (cond
-             (nil? current) [namespace]
-             (sequential? current) (append current namespace)
-             true [current namespace]))))
-
-(defun parse-proof-args-from [args index config paths]
-  (if (= index (count args))
-    (if (empty? paths)
-      config
-      (assoc config :test-roots paths))
-    (let [arg (nth args index)
-          reporter (flag-value arg "--reporter")
-          filter-pattern (flag-value arg "--filter")
-          namespace (flag-value arg "--namespace")
-          fixture-root (flag-value arg "--fixture-root")
-          test-root (flag-value arg "--test-root")
-          test-roots (flag-value arg "--test-roots")
-          durations (flag-value arg "--durations")
-          durations-p (flag-value arg "--durations?")
-          include-sub-namespaces (flag-value arg "--include-sub-namespaces")
-          include-sub-namespaces-p (flag-value arg "--include-sub-namespaces?")]
-      (cond
-        reporter
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (assoc config :reporter (cli-keyword reporter))
-                               paths)
-
-        filter-pattern
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (assoc config :filter filter-pattern)
-                               paths)
-
-        namespace
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (add-namespace-filter config namespace)
-                               paths)
-
-        fixture-root
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (assoc config :fixture-root fixture-root)
-                               paths)
-
-        test-root
-        (parse-proof-args-from args (+ index 1) config (append! paths test-root))
-
-        test-roots
-        (parse-proof-args-from args (+ index 1) config (append! paths test-roots))
-
-        durations
-        (parse-proof-args-from
-          args
-          (+ index 1)
-          (assoc config :durations? (cli-bool durations))
-          paths)
-
-        durations-p
-        (parse-proof-args-from
-          args
-          (+ index 1)
-          (assoc config :durations? (cli-bool durations-p))
-          paths)
-
-        include-sub-namespaces
-        (parse-proof-args-from
-          args
-          (+ index 1)
-          (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces))
-          paths)
-
-        include-sub-namespaces-p
-        (parse-proof-args-from
-          args
-          (+ index 1)
-          (assoc config :include-sub-namespaces? (cli-bool include-sub-namespaces-p))
-          paths)
-
-        (= arg "--reporter")
-        (parse-proof-args-from args
-                               (+ index 2)
-                               (assoc config
-                                      :reporter
-                                      (cli-keyword (nth args (+ index 1))))
-                               paths)
-
-        (= arg "--filter")
-        (parse-proof-args-from args
-                               (+ index 2)
-                               (assoc config :filter (nth args (+ index 1)))
-                               paths)
-
-        (or (= arg "--namespace") (= arg "-n"))
-        (parse-proof-args-from args
-                               (+ index 2)
-                               (add-namespace-filter config (nth args (+ index 1)))
-                               paths)
-
-        (= arg "--fixture-root")
-        (parse-proof-args-from args
-                               (+ index 2)
-                               (assoc config :fixture-root (nth args (+ index 1)))
-                               paths)
-
-        (or (= arg "--test-root") (= arg "--test-roots"))
-        (parse-proof-args-from args
-                               (+ index 2)
-                               config
-                               (append! paths (nth args (+ index 1))))
-
-        (or (= arg "--durations") (= arg "--durations?"))
-        (if (next-value? args index)
-          (parse-proof-args-from
-            args
-            (+ index 2)
-            (assoc config :durations? (cli-bool (nth args (+ index 1))))
-            paths)
-          (parse-proof-args-from args
-                                 (+ index 1)
-                                 (assoc config :durations? true)
-                                 paths))
-
-        (or (= arg "--include-sub-namespaces") (= arg "--include-sub-namespaces?"))
-        (if (next-value? args index)
-          (parse-proof-args-from
-            args
-            (+ index 2)
-            (assoc config :include-sub-namespaces? (cli-bool (nth args (+ index 1))))
-            paths)
-          (parse-proof-args-from args
-                                 (+ index 1)
-                                 (assoc config :include-sub-namespaces? true)
-                                 paths))
-
-        (= arg "--no-include-sub-namespaces")
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (assoc config :include-sub-namespaces? false)
-                               paths)
-
-        (= arg "--no-durations")
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (assoc config :durations? false)
-                               paths)
-
-        (string/starts-with? arg "-")
-        (parse-proof-args-from args
-                               (+ index 1)
-                               (assoc config
-                                      :errors
-                                      (append (or (:errors config) [])
-                                              (str "Unrecognized argument: " arg)))
-                               paths)
-
-        :else
-        (parse-proof-args-from args (+ index 1) config (append! paths arg))))))
-
-(defun configured-proof [context]
-  (parse-proof-args-from (cli-args context) 0 (base-config context) []))
 
 (defun configured-test-paths [context]
   (if-let [roots (:test-roots (:config context))]
@@ -355,19 +137,16 @@
     entries))
 
 (defun run [context]
-  (if (help-requested? context)
+  (if (cli/help-requested? context)
     (do
-      (print-help)
+      (cli/print-help!)
       nil)
-    (let [config (configured-proof context)
+    (let [config (cli/config context)
           errors (or (:errors config) [])
           run-context (assoc context :config config)]
       (if (not-empty? errors)
         (do
-          (for [error errors]
-            (prn error))
-          (prn "")
-          (print-help)
+          (cli/print-errors-and-help! errors)
           nil)
         (do
           (fixture/configure!
