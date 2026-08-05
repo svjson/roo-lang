@@ -16,10 +16,18 @@
   (is (= "```roo\n(+ 1 2)\n```\n"
          (render/render-document [(md/code-block "roo" "(+ 1 2)")]))))
 
+(deftest renders-inline-code
+  (is (= "`>>`" (render/render-inline (md/code ">>"))))
+  (is (= "``tick`name``" (render/render-inline (md/code "tick`name")))))
+
 (deftest renders-links
   (is (= "[roo/+](packages/roo/namespaces/roo.md)"
          (render/render-inline
-          (md/link "roo/+" "packages/roo/namespaces/roo.md")))))
+          (md/link "roo/+" "packages/roo/namespaces/roo.md"))))
+  (is (= "[`>>`](packages/roo/namespaces/roo/greater-than-greater-than.md)"
+         (render/render-inline
+          (md/link (md/code ">>")
+                   "packages/roo/namespaces/roo/greater-than-greater-than.md")))))
 
 (deftest renders-padded-tables
   (is (= (str "| Arg         | Description      |\n"

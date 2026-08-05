@@ -79,16 +79,28 @@
   {:kind :document
    :blocks blocks})
 
+(defun code
+  "Create an inline Markdown code node.
+
+  Args:
+  - `content`: Inline code text.
+
+  Returns:
+  A `:code` inline node."
+  [content]
+  {:kind :code
+   :content (markdown-text content)})
+
 (defun link
   "Create a Markdown link inline node.
 
   Args:
-  - `label`: Link label text.
+  - `label`: Link label text or inline node.
   - `target`: Link target text.
 
   Returns:
   A `:link` inline node."
   [label target]
   {:kind :link
-   :label (markdown-text label)
+   :label label
    :target (markdown-text target)})

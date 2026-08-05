@@ -2,6 +2,52 @@
   (:require [moordown.ast :as ast]
             [roo.string :as string]))
 
+(defun backtick-run-length
+  "Return the backtick run length at INDEX in TEXT.
+
+  Args:
+  - `text`: Source text.
+  - `index`: Start index.
+
+  Returns:
+  Number of consecutive backticks starting at INDEX."
+  [text index]
+  (let [run 0]
+    (while (and (< (+ index run) (count text))
+                (= "`" (str (nth text (+ index run)))))
+      (set! [run] (+ run 1)))
+    run))
+
+(defun longest-backtick-run
+  "Return the longest backtick run in TEXT.
+
+  Args:
+  - `text`: Source text.
+
+  Returns:
+  Length of the longest consecutive backtick run."
+  [text]
+  (let [index 0
+        longest 0]
+    (while (< index (count text))
+      (let [run (backtick-run-length text index)]
+        (when (> run longest)
+          (set! [longest] run))
+        (set! [index] (+ index (max run 1)))))
+    longest))
+
+(defun code-span
+  "Render TEXT as Markdown inline code.
+
+  Args:
+  - `text`: Inline code text.
+
+  Returns:
+  Markdown code span using a fence longer than any backtick run in TEXT."
+  [text]
+  (let [fence (apply str (repeat (+ (longest-backtick-run text) 1) "`"))]
+    (str fence text fence)))
+
 (defun render-inline
   "Render inline Markdown content.
 
@@ -12,7 +58,8 @@
   Markdown text."
   [content]
   (case (:kind content)
-    :link (str "[" (:label content) "](" (:target content) ")")
+    :code (code-span (:content content))
+    :link (str "[" (render-inline (:label content)) "](" (:target content) ")")
     :default (ast/markdown-text content)))
 
 (defun escaped-table-cell
