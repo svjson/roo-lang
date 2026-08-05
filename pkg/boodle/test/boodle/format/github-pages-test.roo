@@ -180,9 +180,9 @@
                 "</div>\n"
                 "# roo\n\n"
                 "Implicit runtime namespace.\n\n"
-                "| Symbol                 | Summary      |\n"
-                "| ---------------------- | ------------ |\n"
-                "| [roo/+](roo/plus.html) | Add numbers. |"
+                "| Symbol             | Summary      |\n"
+                "| ------------------ | ------------ |\n"
+                "| [+](roo/plus.html) | Add numbers. |"
                 "\n\n</main>\n"
                 "</div>\n")
            (:content namespace-page)))
@@ -205,7 +205,7 @@
                 "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
                 "<a href=\"../roo.html\">roo</a>\n"
                 "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
-                "<span aria-current=\"page\">roo/+</span>\n"
+                "<span aria-current=\"page\">+</span>\n"
                 "</nav>\n"
                 "<div class=\"version-context\">\n"
                 "<span class=\"version-package\">roo</span>\n"
@@ -214,7 +214,7 @@
                 "<option value=\"../../../0.1.0/namespaces/roo/plus.html\" selected>0.1.0</option>\n"
                 "</select></label>\n"
                 "</div>\n"
-                "# roo/+\n\n"
+                "# +\n\n"
                 "Add numbers.\n\n"
                 "Returns the numeric sum.\n\n"
                 "```roo\n"
@@ -250,7 +250,7 @@
                 "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
                 "<a href=\"../roo.html\">roo</a>\n"
                 "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
-                "<span aria-current=\"page\">roo/+</span>\n"
+                "<span aria-current=\"page\">+</span>\n"
                 "</nav>\n")
            (github-pages/navigation-html page)))
     (is (= "<nav class=\"reference-up\" aria-label=\"Up\"><a href=\"../roo.html\">Up to roo</a></nav>\n"

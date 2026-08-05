@@ -84,7 +84,7 @@
              :url "../../"}
             {:label "roo.string"
              :url "../roo.string.html"}
-            {:label "roo.string/replace"}]
+            {:label "replace"}]
            (reference/breadcrumbs symbol-page)))
     (is (= {:label "Up to Reference"
             :url "../../../../"}

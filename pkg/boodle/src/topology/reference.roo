@@ -158,7 +158,7 @@
   Symbol breadcrumb item, or nil when PAGE has no symbol entry."
   [page]
   (when-let [entry (:entry page)]
-    {:label (:qualified-name entry)}))
+    {:label (or (:name entry) (:qualified-name entry))}))
 
 (defun breadcrumbs
   "Return hierarchy breadcrumbs for PAGE.
