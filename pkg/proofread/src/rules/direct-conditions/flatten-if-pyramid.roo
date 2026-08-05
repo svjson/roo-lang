@@ -1,19 +1,19 @@
 (ns proofread.rules.direct-conditions.flatten-if-pyramid
-  (:require [proofread.rules.diagnostics :as diagnostics]
-            [proofread.rules.direct-conditions.query :as query]))
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
 
 (defun candidate?
   "Test whether an `if` pyramid can combine repeated branches."
   [{:keys [children] :as node}]
-  (and (query/full-if? node)
+  (and (forms/full-if? node)
        (let [then (nth children 2)
              else (nth children 3)]
-         (or (and (query/full-if? then)
-                  (or (query/same-form? (nth (:children then) 2) else)
-                      (query/same-form? (nth (:children then) 3) else)))
-             (and (query/full-if? else)
-                  (or (query/same-form? then (nth (:children else) 2))
-                      (query/same-form? then (nth (:children else) 3))))))))
+         (or (and (forms/full-if? then)
+                  (or (forms/same-form? (nth (:children then) 2) else)
+                      (forms/same-form? (nth (:children then) 3) else)))
+             (and (forms/full-if? else)
+                  (or (forms/same-form? then (nth (:children else) 2))
+                      (forms/same-form? then (nth (:children else) 3))))))))
 
 (defun check
   "Return a `flatten-if-pyramid` diagnostic for matching nodes."

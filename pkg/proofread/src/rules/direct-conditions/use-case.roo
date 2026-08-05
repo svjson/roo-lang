@@ -1,7 +1,6 @@
 (ns proofread.rules.direct-conditions.use-case
   (:require [proofread.forms :as forms]
-            [proofread.rules.diagnostics :as diagnostics]
-            [proofread.rules.direct-conditions.query :as query]))
+            [proofread.rules.diagnostics :as diagnostics]))
 
 (defun case-literal?
   "Test whether an AST node is a literal suitable for `case` dispatch."
@@ -29,19 +28,19 @@
 (defun same-case-chain?
   "Test whether an `if` chain dispatches on one expression."
   [dispatch-expression {:keys [children] :as node}]
-  (and (query/full-if? node)
+  (and (forms/full-if? node)
        (= dispatch-expression
           (equality-dispatch-expression (nth children 1)))
        (not (forms/nil-node? (nth children 2)))
-       (let [else (query/if-else node)]
-         (if (query/full-if? else)
+       (let [else (forms/if-else node)]
+         (if (forms/full-if? else)
            (same-case-chain? dispatch-expression else)
            (not (forms/nil-node? else))))))
 
 (defun candidate?
   "Test whether an `if` form should be `case`."
   [{:keys [children] :as node}]
-  (when (query/full-if? node)
+  (when (forms/full-if? node)
     (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
       (same-case-chain? dispatch-expression node))))
 

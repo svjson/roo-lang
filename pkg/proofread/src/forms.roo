@@ -52,6 +52,93 @@
   (and (= head (head-name node))
        (= arity (count children))))
 
+(defun map-form?
+  "Test whether an AST node is a single-sequence `map` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(map values f)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "map" (head-name node))
+       (= 3 (count children))))
+
+(defun single-binding-symbol
+  "Return the binding symbol for a single-binding `let` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The bound symbol name for `(let [name value] ...)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (= "let" (head-name node))
+    (when-let [bindings (:children (nth children 1))]
+      (when (= 2 (count bindings))
+        (symbol-name (head bindings))))))
+
+(defun sole-let-body-form
+  "Return the sole body form for a single-body `let`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The sole body form for `(let [...] body)`, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (= "let" (head-name node))
+    (when (= 3 (count children))
+      (nth children 2))))
+
+(defun same-form?
+  "Test whether two AST nodes represent the same source form.
+
+  Args:
+  - `left`: A `roo.ast` node map.
+  - `right`: A `roo.ast` node map.
+
+  Returns:
+  `true` when both nodes have the same parsed form value, otherwise `false`."
+  [left right]
+  (= (:form left) (:form right)))
+
+(defun full-if?
+  "Test whether an AST node is an `if` form with an explicit else branch.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(if condition then else)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (= "if" (head-name node))
+       (= 4 (count children))))
+
+(defun if-else
+  "Return the else branch of a full `if` form.
+
+  Args:
+  - `node`: A full `if` AST node map.
+
+  Returns:
+  The else branch AST node."
+  [node]
+  (nth (:children node) 3))
+
+(defun else-child?
+  "Test whether `node` is the else branch of `parent`.
+
+  Args:
+  - `parent`: A `roo.ast` node map.
+  - `node`: Possible child node map.
+
+  Returns:
+  `true` when `node` is the else branch of `parent`, otherwise `false`."
+  [parent node]
+  (and (full-if? parent)
+       (= node (if-else parent))))
+
 (defun zero-node?
   "Test whether an AST node is the number `0`.
 

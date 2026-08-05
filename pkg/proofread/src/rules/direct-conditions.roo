@@ -1,6 +1,6 @@
 (ns proofread.rules.direct-conditions
-  (:require [proofread.rules.direct-conditions.flatten-if-pyramid :as flatten-if-pyramid]
-            [proofread.rules.direct-conditions.query :as query]
+  (:require [proofread.forms :as forms]
+            [proofread.rules.direct-conditions.flatten-if-pyramid :as flatten-if-pyramid]
             [proofread.rules.direct-conditions.use-case :as use-case]
             [proofread.rules.direct-conditions.use-cond :as use-cond]
             [proofread.rules.direct-conditions.use-if-let :as use-if-let]
@@ -24,9 +24,9 @@
 (defun covered-child?
   "Test whether a child is covered by an existing parent diagnostic."
   [active-rules parent node]
-  (or (and (= node (query/sole-let-body-form parent))
+  (or (and (= node (forms/sole-let-body-form parent))
            (registry/node-diagnostic active-rules nil parent))
-      (and (query/else-child? parent node)
+      (and (forms/else-child? parent node)
            (registry/node-diagnostic
              (filter active-rules
                      (fn [rule]

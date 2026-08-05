@@ -1,24 +1,23 @@
 (ns proofread.rules.direct-conditions.use-cond
   (:require [proofread.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]
-            [proofread.rules.direct-conditions.query :as query]
             [proofread.rules.direct-conditions.use-case :as use-case]))
 
 (defun value-if-chain?
   "Test whether an `if` chain has meaningful branch values."
   [{:keys [children] :as node}]
-  (and (query/full-if? node)
+  (and (forms/full-if? node)
        (not (forms/nil-node? (nth children 2)))
-       (let [else (query/if-else node)]
-         (if (query/full-if? else)
+       (let [else (forms/if-else node)]
+         (if (forms/full-if? else)
            (value-if-chain? else)
            (not (forms/nil-node? else))))))
 
 (defun candidate?
   "Test whether an `if` chain should be `cond`."
   [node]
-  (and (query/full-if? node)
-       (query/full-if? (query/if-else node))
+  (and (forms/full-if? node)
+       (forms/full-if? (forms/if-else node))
        (not (use-case/candidate? node))
        (value-if-chain? node)))
 

@@ -1,13 +1,12 @@
 (ns proofread.rules.direct-conditions.use-when-let
   (:require [proofread.forms :as forms]
-            [proofread.rules.diagnostics :as diagnostics]
-            [proofread.rules.direct-conditions.query :as query]))
+            [proofread.rules.diagnostics :as diagnostics]))
 
 (defun let-candidate?
   "Test whether a `let` form should be `when-let`."
   [node]
-  (when-let [binding-name (query/single-binding-symbol node)
-             body (query/sole-let-body-form node)]
+  (when-let [binding-name (forms/single-binding-symbol node)
+             body (forms/sole-let-body-form node)]
     (let [condition (nth (:children body) 1)]
       (or (and (= "when" (forms/head-name body))
                (= binding-name (forms/symbol-name condition)))
@@ -20,7 +19,7 @@
   "Test whether an AST subtree contains a matching form."
   [node target]
   (and (map? node)
-       (or (query/same-form? node target)
+       (or (forms/same-form? node target)
            (any? (:children node)
                  (fn [child]
                    (contains-form? child target))))))

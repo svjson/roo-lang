@@ -1,14 +1,13 @@
 (ns proofread.rules.higher-order.use-flat-map
   (:require [proofread.forms :as forms]
-            [proofread.rules.diagnostics :as diagnostics]
-            [proofread.rules.higher-order.query :as query]))
+            [proofread.rules.diagnostics :as diagnostics]))
 
 (defun candidate?
   "Test whether an AST node can use `flat-map`."
   [{:keys [children] :as node}]
   (and (= "flatten" (forms/head-name node))
        (= 2 (count children))
-       (query/map-form? (nth children 1))))
+       (forms/map-form? (nth children 1))))
 
 (defun check
   "Return a `use-flat-map` diagnostic for matching nodes."
