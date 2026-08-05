@@ -1,13 +1,11 @@
 (ns proofread.rules.direct-conditions.use-when
   (:require [proofread.forms :as forms]
-            [proofread.rules.diagnostics :as diagnostics]
-            [proofread.rules.direct-conditions.query :as query]))
+            [proofread.rules.diagnostics :as diagnostics]))
 
 (defun check
   "Return a `use-when` diagnostic for matching nodes."
   [parent {:keys [children] :as node}]
   (when (and (= "if" (forms/head-name node))
-             (not (query/let-condition-child? parent node))
              (or (= 3 (count children))
                  (forms/nil-node? (nth children 3))))
     (diagnostics/make node :use-when "Use when")))

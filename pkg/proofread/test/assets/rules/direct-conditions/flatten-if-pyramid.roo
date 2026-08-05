@@ -1,0 +1,29 @@
+(ns proofread.direct-conditions-flatten-if-pyramid)
+
+(def repeated-label
+  (if repeated?
+    (if show-repeated?
+      " (*)"
+      "")
+    ""))
+
+(def visible-label
+  (if visible?
+    "shown"
+    (if forced?
+      "shown"
+      "hidden")))
+
+(def fallback-on-inner-then
+  (if ready?
+    (if valid?
+      :fallback
+      :value)
+    :fallback))
+
+(def value-on-inner-else
+  (if ready?
+    :fallback
+    (if valid?
+      :value
+      :fallback)))

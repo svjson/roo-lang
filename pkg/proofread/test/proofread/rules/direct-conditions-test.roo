@@ -47,6 +47,13 @@
           [:use-cond 11]]
          (diagnostic-summary "assets/rules/direct-conditions/use-cond.roo"))))
 
+(deftest reports-flatten-if-pyramid-candidates
+  (is (= [[:flatten-if-pyramid 4]
+          [:flatten-if-pyramid 11]
+          [:flatten-if-pyramid 18]
+          [:flatten-if-pyramid 25]]
+         (diagnostic-summary "assets/rules/direct-conditions/flatten-if-pyramid.roo"))))
+
 (deftest ignores-direct-condition-non-candidates
   (is (= []
          (diagnostics "assets/rules/direct-conditions/non-candidates.roo"))))

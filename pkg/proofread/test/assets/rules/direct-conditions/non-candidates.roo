@@ -50,6 +50,13 @@
     :same
     :different))
 
+(def distinct-nested-branches
+  (if ready?
+    (if valid?
+      :ok
+      :invalid)
+    :missing))
+
 (def repeated-call-condition
   (when (next-value!)
     (save! (next-value!))))

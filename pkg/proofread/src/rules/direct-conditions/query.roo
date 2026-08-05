@@ -1,11 +1,6 @@
 (ns proofread.rules.direct-conditions.query
   (:require [proofread.forms :as forms]))
 
-(defun case-literal?
-  "Test whether an AST node is a literal suitable for `case` dispatch."
-  [node]
-  (contains? [:string :keyword :number :char] (:type node)))
-
 (defun single-binding-symbol
   "Return the binding symbol for a single-binding `let` form."
   [{:keys [children] :as node}]
@@ -21,81 +16,10 @@
     (when (= 3 (count children))
       (nth children 2))))
 
-(defun let-if-candidate?
-  "Test whether a `let` form should be `if-let`."
-  [node]
-  (when-let [binding-name (single-binding-symbol node)
-             body (sole-let-body-form node)]
-    (let [children (:children body)
-          condition (nth children 1)]
-      (and (= "if" (forms/head-name body))
-           (or (= binding-name (forms/symbol-name condition))
-               (and (= 4 (count children))
-                    (forms/call? condition "nil?" 2)
-                    (= binding-name
-                       (forms/symbol-name (nth (:children condition) 1)))))))))
-
-(defun let-when-candidate?
-  "Test whether a `let` form should be `when-let`."
-  [node]
-  (when-let [binding-name (single-binding-symbol node)
-             body (sole-let-body-form node)]
-    (let [condition (nth (:children body) 1)]
-      (or (and (= "when" (forms/head-name body))
-               (= binding-name (forms/symbol-name condition)))
-          (and (= "unless" (forms/head-name body))
-               (forms/call? condition "nil?" 2)
-               (= binding-name
-                  (forms/symbol-name (nth (:children condition) 1))))))))
-
 (defun same-form?
   "Test whether two AST nodes represent the same source form."
   [left right]
   (= (:form left) (:form right)))
-
-(defun contains-form?
-  "Test whether an AST subtree contains a matching form."
-  [node target]
-  (and (map? node)
-       (or (same-form? node target)
-           (any? (:children node)
-                 (fn [child]
-                   (contains-form? child target))))))
-
-(defun when-repeats-keyword-lookup?
-  "Test whether a `when` form repeats its keyword lookup condition."
-  [{:keys [children] :as node}]
-  (and (= "when" (forms/head-name node))
-       (< 2 (count children))
-       (forms/keyword-lookup-key-name (nth children 1))
-       (any? (tail (tail children))
-             (fn [body]
-               (contains-form? body (nth children 1))))))
-
-(defun let-condition-child?
-  "Test whether `node` is the condition form inside a direct-condition `let`."
-  [parent node]
-  (and (= node (sole-let-body-form parent))
-       (or (let-if-candidate? parent)
-           (let-when-candidate? parent))))
-
-(defun equality-dispatch?
-  "Test whether an AST node compares one expression to one literal."
-  [{:keys [children] :as node}]
-  (and (= "=" (forms/head-name node))
-       (= 3 (count children))
-       (or (and (case-literal? (nth children 1))
-                (not (case-literal? (nth children 2))))
-           (and (not (case-literal? (nth children 1)))
-                (case-literal? (nth children 2))))))
-
-(defun equality-dispatch-expression
-  "Return the non-literal expression in an equality dispatch condition."
-  [{:keys [children] :as node}]
-  (when (equality-dispatch? node)
-    (if (case-literal? (nth children 1))
-      (:form (nth children 2))
-      (:form (nth children 1)))))
 
 (defun full-if?
   "Test whether an AST node is an `if` form with an explicit else branch."
@@ -108,57 +32,8 @@
   [node]
   (nth (:children node) 3))
 
-(defun same-case-chain?
-  "Test whether an `if` chain dispatches on one expression."
-  [dispatch-expression {:keys [children] :as node}]
-  (and (full-if? node)
-       (= dispatch-expression
-          (equality-dispatch-expression (nth children 1)))
-       (not (forms/nil-node? (nth children 2)))
-       (let [else (if-else node)]
-         (if (full-if? else)
-           (same-case-chain? dispatch-expression else)
-           (not (forms/nil-node? else))))))
-
-(defun if-case-candidate?
-  "Test whether an `if` form should be `case`."
-  [{:keys [children] :as node}]
-  (when (full-if? node)
-    (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
-      (same-case-chain? dispatch-expression node))))
-
-(defun value-if-chain?
-  "Test whether an `if` chain has meaningful branch values."
-  [{:keys [children] :as node}]
-  (and (full-if? node)
-       (not (forms/nil-node? (nth children 2)))
-       (let [else (if-else node)]
-         (if (full-if? else)
-           (value-if-chain? else)
-           (not (forms/nil-node? else))))))
-
-(defun if-cond-candidate?
-  "Test whether an `if` chain should be `cond`."
-  [node]
-  (and (full-if? node)
-       (full-if? (if-else node))
-       (not (if-case-candidate? node))
-       (value-if-chain? node)))
-
 (defun else-child?
   "Test whether `node` is the else branch of `parent`."
   [parent node]
   (and (full-if? parent)
        (= node (if-else parent))))
-
-(defun if-chain-candidate?
-  "Test whether `node` is a reportable `if` chain."
-  [node]
-  (or (if-case-candidate? node)
-      (if-cond-candidate? node)))
-
-(defun nested-if-chain-child?
-  "Test whether `node` is already covered by a parent `if` chain diagnostic."
-  [parent node]
-  (and (else-child? parent node)
-       (if-chain-candidate? parent)))

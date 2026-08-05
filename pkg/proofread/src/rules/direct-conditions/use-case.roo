@@ -1,9 +1,52 @@
 (ns proofread.rules.direct-conditions.use-case
-  (:require [proofread.rules.diagnostics :as diagnostics]
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]
             [proofread.rules.direct-conditions.query :as query]))
+
+(defun case-literal?
+  "Test whether an AST node is a literal suitable for `case` dispatch."
+  [node]
+  (contains? [:string :keyword :number :char] (:type node)))
+
+(defun equality-dispatch?
+  "Test whether an AST node compares one expression to one literal."
+  [{:keys [children] :as node}]
+  (and (= "=" (forms/head-name node))
+       (= 3 (count children))
+       (or (and (case-literal? (nth children 1))
+                (not (case-literal? (nth children 2))))
+           (and (not (case-literal? (nth children 1)))
+                (case-literal? (nth children 2))))))
+
+(defun equality-dispatch-expression
+  "Return the non-literal expression in an equality dispatch condition."
+  [{:keys [children] :as node}]
+  (when (equality-dispatch? node)
+    (if (case-literal? (nth children 1))
+      (:form (nth children 2))
+      (:form (nth children 1)))))
+
+(defun same-case-chain?
+  "Test whether an `if` chain dispatches on one expression."
+  [dispatch-expression {:keys [children] :as node}]
+  (and (query/full-if? node)
+       (= dispatch-expression
+          (equality-dispatch-expression (nth children 1)))
+       (not (forms/nil-node? (nth children 2)))
+       (let [else (query/if-else node)]
+         (if (query/full-if? else)
+           (same-case-chain? dispatch-expression else)
+           (not (forms/nil-node? else))))))
+
+(defun candidate?
+  "Test whether an `if` form should be `case`."
+  [{:keys [children] :as node}]
+  (when (query/full-if? node)
+    (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
+      (same-case-chain? dispatch-expression node))))
 
 (defun check
   "Return a `use-case` diagnostic for matching nodes."
   [parent node]
-  (when (query/if-case-candidate? node)
+  (when (candidate? node)
     (diagnostics/make node :use-case "Use case")))
