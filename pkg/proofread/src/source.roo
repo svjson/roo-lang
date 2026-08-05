@@ -1,5 +1,6 @@
 (ns proofread.source
-  (:require [proofread.forms :as forms]
+  (:require [proofread.config :as config]
+            [proofread.forms :as forms]
             [proofread.rules :as rules]
             [roo.ast :as ast]
             [roo.io :as io]))
@@ -67,19 +68,31 @@
    :namespace (namespace-name roots)
    :package (package-name file)})
 
-(defun diagnostics
+(defun diagnostics-with-config
   "Run proofread rules and attach source context for reporter grouping.
+
+  Args:
+  - `file`: Checked input file path.
+  - `effective-config`: Proofread config for the file.
+
+  Returns:
+  A vector of diagnostic maps. Non-Roo files return an empty vector."
+  [file effective-config]
+  (case (io/extension file)
+    ".roo" (let [roots (ast/slurp! file)
+                 source-context (context file roots)]
+             (map (config/apply-diagnostics effective-config (rules/check roots))
+                  (fn [diagnostic]
+                    (merge source-context diagnostic))))
+    :default []))
+
+(defun diagnostics
+  "Run proofread rules using the discovered config for a file.
 
   Args:
   - `file`: Checked input file path.
 
   Returns:
-  A vector of diagnostic maps. Non-Roo files return an empty vector."
+  A vector of diagnostic maps."
   [file]
-  (case (io/extension file)
-    ".roo" (let [roots (ast/slurp! file)
-                 source-context (context file roots)]
-             (map (rules/check roots)
-                  (fn [diagnostic]
-                    (merge source-context diagnostic))))
-    :default []))
+  (diagnostics-with-config file (config/file-config file)))

@@ -1,0 +1,7 @@
+(ns proofread.config-nested)
+
+(def first-item (nth items 0))
+
+(def body
+  (do
+    :ok))

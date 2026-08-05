@@ -1,0 +1,2 @@
+{:rules {:redundant-do :off
+         :use-head {:severity :error}}}

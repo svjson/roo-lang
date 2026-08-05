@@ -127,6 +127,34 @@ Supported style warnings:
 - `use-select-keys`: reports map literals that copy three or more matching keys
   from the same source map and can be written as `select-keys`.
 
+## Configuration
+
+`proofread` automatically reads `.proofread.edn` files. Config files are
+discovered from parent directories down to each checked file, and nested config
+files overlay parent config files.
+
+For example, a repository-level `.proofread.edn` applies to every checked file
+under that repository. A nested package can add its own `.proofread.edn` to
+override only the settings it needs to change.
+
+Disable a rule:
+
+```clojure
+{:rules {:redundant-do :off}}
+```
+
+Change a rule severity:
+
+```clojure
+{:rules {:use-head {:severity :error}}}
+```
+
+Rules configured with `:severity :error` are counted as errors and make the run
+exit with a non-zero status.
+
+When configs are merged, maps merge recursively and other values replace the
+parent value.
+
 ## Commands
 
 Show help:
@@ -162,7 +190,6 @@ This installs the `proofread` command under the configured installation prefix.
 ## Current Limitations
 
 - Style warnings do not affect the exit status.
-- Style check configuration is not implemented yet.
 - Recursive `**` glob behavior is not implemented yet. Pass a directory to
   check a tree recursively.
 - Parse diagnostics currently use the Roo reader's existing error messages.

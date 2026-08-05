@@ -1,0 +1,38 @@
+(ns proofread.config-test
+  (:require proof.core
+            [proofread.config :as config]
+            [proofread.source :as source]))
+
+(def parent-config
+  {:rules {:redundant-do {:severity :error}
+           :use-head :off}})
+
+(def child-config
+  {:rules {:redundant-do :off
+           :use-head {:severity :error}}})
+
+(defun diagnostic-summary [file]
+  (map (source/diagnostics file)
+       (fn [diagnostic]
+         [(:rule diagnostic) (:severity diagnostic)])))
+
+(deftest merges-config-maps-recursively
+  (is (= {:rules {:redundant-do :off
+                  :use-head {:severity :error}}}
+         (config/merge-config parent-config child-config))))
+
+(deftest applies-rule-config-to-diagnostics
+  (is (= [{:rule :use-head
+           :severity :error}]
+         (config/apply-diagnostics {:rules {:redundant-do :off
+                                            :use-head {:severity :error}}}
+                                   [{:rule :redundant-do
+                                     :severity :warning}
+                                    {:rule :use-head
+                                     :severity :warning}]))))
+
+(deftest discovers-and-applies-nested-config
+  (is (= [[:redundant-do :error]]
+         (diagnostic-summary "assets/config/root.roo")))
+  (is (= [[:use-head :error]]
+         (diagnostic-summary "assets/config/project/nested.roo"))))

@@ -1,0 +1,151 @@
+(ns proofread.config
+  (:require [roo.io :as io]))
+
+(def config-file
+  "Proofread configuration file name."
+  ".proofread.edn")
+
+(defun config-path
+  "Return the proofread config path for a directory.
+
+  Args:
+  - `dir`: Directory path.
+
+  Returns:
+  The `.proofread.edn` path under `dir`."
+  [dir]
+  (io/join-path dir config-file))
+
+(defun config-files
+  "Find proofread config files that apply to a directory.
+
+  Args:
+  - `dir`: Absolute or relative directory path.
+
+  Returns:
+  A vector of `.proofread.edn` paths ordered from parent to child."
+  [dir]
+  (cond
+    (empty? dir)
+    []
+
+    true
+    (let [parent (io/dirname dir)
+          inherited (unless (= parent dir)
+                      (config-files parent))
+          path (config-path dir)]
+      (if (io/exists? path)
+        (append (or inherited []) path)
+        (or inherited [])))))
+
+(defun merge-config
+  "Merge proofread config maps recursively.
+
+  Args:
+  - `base`: Parent config map.
+  - `overlay`: Child config map.
+
+  Returns:
+  A config map where child values override parent values. Maps merge
+  recursively; other values replace."
+  [base overlay]
+  (reduce (keys overlay)
+          base
+          (fn [result key]
+            (let [base-value (get result key)
+                  overlay-value (get overlay key)]
+              (assoc result
+                     key
+                     (if (and (map? base-value)
+                              (map? overlay-value))
+                       (merge-config base-value overlay-value)
+                       overlay-value))))))
+
+(defun merge-configs
+  "Merge proofread config maps in order.
+
+  Args:
+  - `configs`: Config maps ordered from parent to child.
+
+  Returns:
+  The merged config map."
+  [configs]
+  (reduce configs {} merge-config))
+
+(defun file-config
+  "Load the effective proofread config for a file.
+
+  Args:
+  - `file`: Checked source file path.
+
+  Returns:
+  The merged config map from all parent `.proofread.edn` files."
+  [file]
+  (merge-configs (map (config-files (io/dirname (io/absolute-path! file)))
+                      io/slurp-edn!)))
+
+(defun rule-setting
+  "Return the config setting for a rule.
+
+  Args:
+  - `config`: Effective proofread config.
+  - `rule`: Rule keyword.
+
+  Returns:
+  The configured value for `rule`, or `nil` when not configured."
+  [config rule]
+  (get-in config [:rules rule]))
+
+(defun rule-enabled?
+  "Test whether a rule is enabled by config.
+
+  Args:
+  - `config`: Effective proofread config.
+  - `rule`: Rule keyword.
+
+  Returns:
+  `false` when the rule is configured as `:off` or `false`, otherwise `true`."
+  [config rule]
+  (not (contains? [:off false] (rule-setting config rule))))
+
+(defun diagnostic-severity
+  "Return the configured severity for a diagnostic.
+
+  Args:
+  - `config`: Effective proofread config.
+  - `diagnostic`: Diagnostic map.
+
+  Returns:
+  The configured rule severity, or the diagnostic's current severity."
+  [config diagnostic]
+  (let [setting (rule-setting config (:rule diagnostic))]
+    (if (map? setting)
+      (or (:severity setting) (:severity diagnostic))
+      (:severity diagnostic))))
+
+(defun apply-diagnostic
+  "Apply proofread config to one diagnostic.
+
+  Args:
+  - `config`: Effective proofread config.
+  - `diagnostic`: Diagnostic map.
+
+  Returns:
+  The updated diagnostic, or `nil` when its rule is disabled."
+  [config diagnostic]
+  (when (rule-enabled? config (:rule diagnostic))
+    (assoc diagnostic :severity (diagnostic-severity config diagnostic))))
+
+(defun apply-diagnostics
+  "Apply proofread config to diagnostics.
+
+  Args:
+  - `config`: Effective proofread config.
+  - `diagnostics`: Diagnostic maps.
+
+  Returns:
+  Enabled diagnostics with configured severities."
+  [config diagnostics]
+  (keep diagnostics
+        (fn [diagnostic]
+          (apply-diagnostic config diagnostic))))
