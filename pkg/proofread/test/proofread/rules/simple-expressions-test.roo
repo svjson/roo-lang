@@ -37,16 +37,17 @@
           [:use-keyword-lookup 59]
           [:use-get-with-default 62]
           [:use-get-with-default 66]
-          [:use-any? 70]
-          [:redundant-some? 73]
+          [:use-get-in-with-default 70]
+          [:use-any? 75]
           [:redundant-some? 78]
-          [:use-string? 82]
-          [:use-contains? 86]
+          [:redundant-some? 83]
+          [:use-string? 87]
           [:use-contains? 91]
-          [:use-clamp 96]
-          [:use-clamp 99]
-          [:use-clamp 102]
-          [:use-clamp 105]]
+          [:use-contains? 96]
+          [:use-clamp 101]
+          [:use-clamp 104]
+          [:use-clamp 107]
+          [:use-clamp 110]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates
@@ -73,3 +74,12 @@
   (is (= [[:use-for 4]
           [:use-for 9]]
          (diagnostic-summary "assets/rules/simple-expressions/use-for.roo"))))
+
+(deftest reports-argument-destructuring-candidates
+  (is (= [[:use-argument-destructuring 5]
+          [:use-argument-destructuring 17]]
+         (diagnostic-summary "assets/rules/simple-expressions/use-argument-destructuring.roo"))))
+
+(deftest ignores-argument-destructuring-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/simple-expressions/argument-destructuring-non-candidates.roo"))))

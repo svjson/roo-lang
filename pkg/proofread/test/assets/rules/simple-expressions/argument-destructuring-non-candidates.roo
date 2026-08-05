@@ -1,0 +1,23 @@
+(ns proofread.simple-expressions-argument-destructuring-non-candidates)
+
+(def aliases-keyword
+  (fn [event]
+    (let [value (:payload event)]
+      value)))
+
+(def reads-non-argument
+  (fn [event]
+    (let [payload (:payload result)]
+      payload)))
+
+(def multiple-bindings
+  (fn [event]
+    (let [payload (:payload event)
+          type (:type payload)]
+      type)))
+
+(def separate-body-step
+  (fn [event]
+    (prepare!)
+    (let [payload (:payload event)]
+      payload)))

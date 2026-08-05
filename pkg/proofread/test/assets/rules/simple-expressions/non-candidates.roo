@@ -49,6 +49,9 @@
 (def explicit-default
   (get values key default-value))
 
+(def explicit-nested-default
+  (get-in values path default-value))
+
 (def non-get-default
   (or selected-value default-value))
 

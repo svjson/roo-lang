@@ -1,0 +1,31 @@
+(ns proofread.rules.simple-expressions.use-argument-destructuring
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun matching-binding?
+  "Test whether a let binding can move into an argument destructuring form."
+  [bindings param-name]
+  (when (= 2 (count bindings))
+    (let [binding-name (forms/symbol-name (head bindings))
+          value (nth bindings 1)]
+      (and (= binding-name (forms/keyword-lookup-key-name value))
+           (forms/keyword-lookup? value param-name)))))
+
+(defun candidate?
+  "Test whether an immediate function-body `let` should be argument destructuring."
+  [parent {:keys [children] :as node}]
+  (and (forms/call? parent "fn" 3)
+       (= node (nth (:children parent) 2))
+       (= "let" (forms/head-name node))
+       (any? (:children (nth (:children parent) 1))
+             (fn [param]
+               (when-let [param-name (forms/symbol-name param)]
+                 (matching-binding? (:children (nth children 1)) param-name))))))
+
+(defun check
+  "Return a `use-argument-destructuring` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? parent node)
+    (diagnostics/make node
+                      :use-argument-destructuring
+                      "Use argument destructuring")))

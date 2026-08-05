@@ -3,10 +3,12 @@
             [proofread.rules.simple-expressions.redundant-map-check :as redundant-map-check]
             [proofread.rules.simple-expressions.redundant-some :as redundant-some]
             [proofread.rules.simple-expressions.use-any :as use-any]
+            [proofread.rules.simple-expressions.use-argument-destructuring :as use-argument-destructuring]
             [proofread.rules.simple-expressions.use-clamp :as use-clamp]
             [proofread.rules.simple-expressions.use-contains :as use-contains]
             [proofread.rules.simple-expressions.use-empty :as use-empty]
             [proofread.rules.simple-expressions.use-for :as use-for]
+            [proofread.rules.simple-expressions.use-get-in-with-default :as use-get-in-with-default]
             [proofread.rules.simple-expressions.use-get-with-default :as use-get-with-default]
             [proofread.rules.simple-expressions.use-head :as use-head]
             [proofread.rules.simple-expressions.use-keyword-lookup :as use-keyword-lookup]
@@ -23,6 +25,7 @@
   (registry/descriptors
     :simple-expressions
     [[:use-head use-head/check]
+     [:use-argument-destructuring use-argument-destructuring/check]
      [:use-clamp use-clamp/check]
      [:use-for use-for/check]
      [:use-empty? use-empty/check]
@@ -36,6 +39,7 @@
      [:redundant-some? redundant-some/check]
      [:redundant-empty-fallback redundant-empty-fallback/check]
      [:use-get-with-default use-get-with-default/check]
+     [:use-get-in-with-default use-get-in-with-default/check]
      [:use-keyword-lookup use-keyword-lookup/check]
      [:redundant-map-check redundant-map-check/check]
      [:use-select-keys use-select-keys/check]]))

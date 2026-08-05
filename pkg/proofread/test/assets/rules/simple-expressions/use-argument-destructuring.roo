@@ -1,0 +1,18 @@
+(ns proofread.simple-expressions-use-argument-destructuring)
+
+(def handler
+  (fn [state event ctx]
+    (let [payload (:payload event)]
+      (case (:type payload)
+        :confirm
+        (actions/edit-selected-mask-set
+         state
+         (:id payload)
+         (:name payload))
+
+        :default state))))
+
+(def option-renderer
+  (fn [option]
+    (let [label (:label option)]
+      (str label))))

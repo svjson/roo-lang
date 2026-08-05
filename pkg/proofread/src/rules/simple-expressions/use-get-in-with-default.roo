@@ -1,0 +1,10 @@
+(ns proofread.rules.simple-expressions.use-get-in-with-default
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun check
+  "Report `(or (get-in value path) default)` forms."
+  [parent {:keys [children] :as node}]
+  (when (and (forms/call? node "or" 3)
+             (forms/call? (nth children 1) "get-in" 3))
+    (diagnostics/make node :use-get-in-with-default "Use get-in with default")))

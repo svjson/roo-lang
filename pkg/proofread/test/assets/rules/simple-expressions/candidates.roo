@@ -66,6 +66,11 @@
   (or (get values :name)
       "Missing"))
 
+(def selected-groups
+  (or (get-in game-state
+              (concat obligations-path [:groups group-id]))
+      []))
+
 (def failing-audit?
   (some? (find-first diagnostics failing?)))
 
