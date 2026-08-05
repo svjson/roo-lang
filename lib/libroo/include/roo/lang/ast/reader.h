@@ -18,9 +18,9 @@ namespace Roo
    * source locations with file path, line, column, start, and end positions, and
    * nested child nodes for sequence forms.
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The path of the source file to read.                             |
+   * | Arg       | Description                                                  |
+   * |-----------|--------------------------------------------------------------|
+   * | file-path | The path of the source file to read.                         |
    */
   FUNC(AstSlurpBangFunction, slurp)
 
@@ -33,10 +33,10 @@ namespace Roo
    * (roo.ast/read-string "(def answer 42)" {:path "inline.roo"})
    * @endcode
    *
-   * | Arg # | Description                                                      |
-   * |-------|------------------------------------------------------------------|
-   * | 0     | The source text to read.                                         |
-   * | 1     | Optional map with :path used in source locations.                |
+   * | Arg #      | Description                                                      |
+   * |------------|------------------------------------------------------------------|
+   * | source-str | The source text to read.                                         |
+   * | opts        | Optional map with :path used in source locations.               |
    */
   FUNC(AstReadStringFunction, read_string)
 } // namespace Roo
