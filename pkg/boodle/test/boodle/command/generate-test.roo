@@ -28,6 +28,7 @@
 (deftest parses-generate-options
   (is (= {:format :github-pages
           :out "build/docs"
+          :navigation-style :breadcrumbs
           :package-groups []
           :indexes ["roo.edn" "zoology.edn"]
           :errors []}
@@ -39,6 +40,7 @@
 (deftest parses-package-group-options
   (is (= {:format :github-pages
           :out "build/docs"
+          :navigation-style :breadcrumbs
           :package-groups [(model/package-group {:title "The Roo Language"
                                                 :package-ids ["roo"]})
                            (model/package-group {:title "Packages"
@@ -50,15 +52,36 @@
                                "--package-group" "Packages:*"
                                "roo.edn"]))))
 
+(deftest parses-navigation-options
+  (is (= {:format :github-pages
+          :out "build/docs"
+          :navigation-style :up
+          :package-groups []
+          :indexes ["roo.edn"]
+          :errors []}
+         (generate/parse-args ["--out" "build/docs"
+                               "--navigation" "up"
+                               "roo.edn"]))))
+
 (deftest reports-generate-argument-errors
   (is (= {:format :github-pages
           :out nil
+          :navigation-style :breadcrumbs
           :package-groups []
           :indexes []
           :errors ["Unknown output format: html"
                    "Missing output directory"
                    "Missing lookup index file"]}
-         (generate/parse-args ["--format" "html"]))))
+         (generate/parse-args ["--format" "html"])))
+  (is (= {:format :github-pages
+          :out "build/docs"
+          :navigation-style :breadcrumbs
+          :package-groups []
+          :indexes ["roo.edn"]
+          :errors ["Unknown navigation style: trail"]}
+         (generate/parse-args ["--out" "build/docs"
+                               "--navigation" "trail"
+                               "roo.edn"]))))
 
 (deftest expands-package-group-wildcards
   (let [catalog (model/catalog
@@ -116,6 +139,11 @@
                 "layout: reference\n"
                 "title: roo 0.1.0\n"
                 "---\n\n"
+                "<nav class=\"reference-breadcrumbs\" aria-label=\"Breadcrumbs\">\n"
+                "<a href=\"../../../../\">Reference</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<span aria-current=\"page\">roo 0.1.0</span>\n"
+                "</nav>\n"
                 "<div class=\"version-context\">\n"
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "

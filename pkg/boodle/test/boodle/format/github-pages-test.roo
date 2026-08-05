@@ -95,7 +95,19 @@
                 "    formatter: HTML\n")
            (:content (head files))))
     (is (string/starts-with? (:content layout-file) "<!doctype html>\n"))
-    (is (string/starts-with? (:content stylesheet-file) ":root {"))
+    (is (string/starts-with?
+          (:content stylesheet-file)
+          (str ":root { color-scheme: light; }\n"
+               "body { margin: 0; color: #1f2937; font: 16px/1.55 system-ui, sans-serif; }\n"
+               "a { color: #0f5f8f; text-decoration: none; }\n"
+               "a:hover { text-decoration: underline; }\n"
+               ".site-header { border-bottom: 1px solid #d7dde5; padding: 12px 24px; font-weight: 700; }\n"
+               ".site-header a { color: #111827; }\n"
+               "body > h1, body > h2, body > p, body > table { margin-left: auto; margin-right: auto; max-width: 960px; }\n"
+               "body > h1 { padding: 0 24px; margin-top: 32px; }\n"
+               "body > h2 { padding: 0 24px; margin-top: 28px; }\n"
+               "body > .reference-breadcrumbs, body > .reference-up, body > .version-context { box-sizing: border-box; margin-left: auto; margin-right: auto; margin-top: 32px; max-width: 1008px; padding-left: 24px; padding-right: 24px; }\n"
+               "body > .reference-breadcrumbs + .version-context, body > .reference-up + .version-context { margin-top: 0; }\n")))
     (is (= (str "---\n"
                 "layout: reference\n"
                 "title: Reference\n"
@@ -121,6 +133,11 @@
                 "layout: reference\n"
                 "title: roo 0.1.0\n"
                 "---\n\n"
+                "<nav class=\"reference-breadcrumbs\" aria-label=\"Breadcrumbs\">\n"
+                "<a href=\"../../../../\">Reference</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<span aria-current=\"page\">roo 0.1.0</span>\n"
+                "</nav>\n"
                 "<div class=\"version-context\">\n"
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
@@ -147,6 +164,13 @@
                 "</ol>\n"
                 "</nav>\n"
                 "<main class=\"reference-content\" markdown=\"block\">\n\n"
+                "<nav class=\"reference-breadcrumbs\" aria-label=\"Breadcrumbs\">\n"
+                "<a href=\"../../../../../\">Reference</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<a href=\"../\">roo 0.1.0</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<span aria-current=\"page\">roo</span>\n"
+                "</nav>\n"
                 "<div class=\"version-context\">\n"
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
@@ -174,6 +198,15 @@
                 "</ol>\n"
                 "</nav>\n"
                 "<main class=\"reference-content\" markdown=\"block\">\n\n"
+                "<nav class=\"reference-breadcrumbs\" aria-label=\"Breadcrumbs\">\n"
+                "<a href=\"../../../../../../\">Reference</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<a href=\"../../\">roo 0.1.0</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<a href=\"../roo.html\">roo</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<span aria-current=\"page\">roo/+</span>\n"
+                "</nav>\n"
                 "<div class=\"version-context\">\n"
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
@@ -200,6 +233,36 @@
                 "</div>\n")
            (:content symbol-page)))))
 
+
+(deftest renders-hierarchy-navigation-strategies
+  (let [package (head (:packages sample-catalog))
+        namespace (head (:namespaces package))
+        entry (head (:entries namespace))
+        page {:kind :symbol
+              :catalog sample-catalog
+              :package package
+              :namespace namespace
+              :entry entry}]
+    (is (= (str "<nav class=\"reference-breadcrumbs\" aria-label=\"Breadcrumbs\">\n"
+                "<a href=\"../../../../../../\">Reference</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<a href=\"../../\">roo 0.1.0</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<a href=\"../roo.html\">roo</a>\n"
+                "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
+                "<span aria-current=\"page\">roo/+</span>\n"
+                "</nav>\n")
+           (github-pages/navigation-html page)))
+    (is (= "<nav class=\"reference-up\" aria-label=\"Up\"><a href=\"../roo.html\">Up to roo</a></nav>\n"
+           (github-pages/navigation-html
+             (assoc page
+                    :catalog
+                    (assoc sample-catalog :navigation-style :up)))))
+    (is (= ""
+           (github-pages/navigation-html
+             (assoc page
+                    :catalog
+                    (assoc sample-catalog :navigation-style :none)))))))
 
 (deftest renders-grouped-root-package-index
   (let [catalog (assoc sample-catalog

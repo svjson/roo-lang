@@ -37,6 +37,159 @@
                                   (head replacement)
                                   (nth replacement 1))))))))
 
+(defun package-title
+  "Return the display title for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Package name with version when available."
+  [package]
+  (if (:version package)
+    (str (:name package) " " (:version package))
+    (:name package)))
+
+(defun navigation-style
+  "Return the reference navigation style for CATALOG.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+
+  Returns:
+  Navigation strategy keyword."
+  [catalog]
+  (or (:navigation-style catalog) :breadcrumbs))
+
+(defun root-url
+  "Return the root reference URL from PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Relative URL to the reference root, or nil from the root itself."
+  [page]
+  (case (:kind page)
+    :package-index "../../"
+    :package "../../../../"
+    :namespace "../../../../../"
+    :symbol "../../../../../../"
+    :default nil))
+
+(defun package-page-url
+  "Return the package page URL from PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Relative URL to the current package page."
+  [page]
+  (case (:kind page)
+    :package-index (str "versions/" (package-version (:package page)) "/")
+    :namespace "../"
+    :symbol "../../"
+    :default nil))
+
+(defun namespace-page-url
+  "Return the namespace page URL from PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Relative URL to the current namespace page."
+  [page]
+  (case (:kind page)
+    :symbol (str "../" (:name (:namespace page)) ".html")
+    :default nil))
+
+(defun root-breadcrumb
+  "Return the root breadcrumb item for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Root breadcrumb item, or nil on the root page."
+  [page]
+  (when-let [url (root-url page)]
+    {:label "Reference"
+     :url url}))
+
+(defun package-breadcrumb
+  "Return the package breadcrumb item for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Package breadcrumb item, or nil when PAGE has no package."
+  [page]
+  (when-let [package (:package page)]
+    (if-let [url (package-page-url page)]
+      {:label (package-title package)
+       :url url}
+      {:label (package-title package)})))
+
+(defun namespace-breadcrumb
+  "Return the namespace breadcrumb item for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Namespace breadcrumb item, or nil when PAGE has no namespace."
+  [page]
+  (when-let [namespace (:namespace page)]
+    (if-let [url (namespace-page-url page)]
+      {:label (:name namespace)
+       :url url}
+      {:label (:name namespace)})))
+
+(defun symbol-breadcrumb
+  "Return the symbol breadcrumb item for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Symbol breadcrumb item, or nil when PAGE has no symbol entry."
+  [page]
+  (when-let [entry (:entry page)]
+    {:label (:qualified-name entry)}))
+
+(defun breadcrumbs
+  "Return hierarchy breadcrumbs for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  Breadcrumb item maps in root-to-page order."
+  [page]
+  (keep [(root-breadcrumb page)
+         (package-breadcrumb page)
+         (namespace-breadcrumb page)
+         (symbol-breadcrumb page)]
+        identity))
+
+(defun up-item
+  "Return the immediate parent navigation item for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  A navigation item pointing one level up, or nil."
+  [page]
+  (let [items (breadcrumbs page)]
+    (when (> (count items) 1)
+      (let [parent (nth items (- (count items) 2))]
+        {:label (str "Up to " (:label parent))
+         :url (:url parent)}))))
+
 (defun package-version
   "Return the version label for PACKAGE.
 

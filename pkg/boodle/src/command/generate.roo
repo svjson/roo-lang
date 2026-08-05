@@ -8,7 +8,7 @@
 
 (def usage-line
   "Usage line for the `boodle generate` command."
-  "       boodle generate [-f|--format github-pages] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...")
+  "       boodle generate [-f|--format github-pages] [--navigation breadcrumbs|up|none] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...")
 
 (defun split-package-ids
   "Split a comma-separated package id list.
@@ -78,6 +78,50 @@
                               (append (:errors options)
                                       (str "Invalid package group: " spec)))))))
 
+(defun navigation-style-option
+  "Return the navigation style keyword for TEXT.
+
+  Args:
+  - `text`: Command line navigation style value.
+
+  Returns:
+  Navigation style keyword, or nil when TEXT is unknown."
+  [text]
+  (case text
+    "breadcrumbs" :breadcrumbs
+    "up" :up
+    "none" :none
+    :default nil))
+
+(defun add-navigation-option
+  "Parse and set a navigation style option.
+
+  Args:
+  - `args`: Current argument list.
+  - `options`: Accumulated options map.
+
+  Returns:
+  Updated options map after consuming `--navigation` and its value."
+  [args options]
+  (let [style (nth args 1)
+        navigation-style (when style
+                           (navigation-style-option style))]
+    (cond
+      (nil? style)
+      (assoc options :errors (append (:errors options)
+                                     "Missing navigation style after --navigation"))
+
+      navigation-style
+      (parse-args-step (tail (tail args))
+                       (assoc options :navigation-style navigation-style))
+
+      true
+      (parse-args-step (tail (tail args))
+                       (assoc options
+                              :errors
+                              (append (:errors options)
+                                      (str "Unknown navigation style: " style)))))))
+
 (defun parse-args-step
   "Parse Boodle generate arguments.
 
@@ -126,6 +170,9 @@
       (= arg "--package-group")
       (add-package-group-option args options)
 
+      (= arg "--navigation")
+      (add-navigation-option args options)
+
       (= "-" (substr arg 0 1))
       (parse-args-step (tail args)
                        (assoc options
@@ -151,6 +198,7 @@
   (let [options (parse-args-step args
                                  {:format :github-pages
                                   :out nil
+                                  :navigation-style :breadcrumbs
                                   :package-groups []
                                   :indexes []
                                   :errors []})
@@ -340,6 +388,18 @@
                   (fn [group]
                     (expand-package-group catalog explicit-ids group)))))))
 
+(defun catalog-with-navigation-style
+  "Attach navigation style metadata to CATALOG.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+  - `style`: Navigation style keyword.
+
+  Returns:
+  Catalog with `:navigation-style` metadata."
+  [catalog style]
+  (assoc catalog :navigation-style style))
+
 (defun generated-files
   "Return documentation files for OPTIONS.
 
@@ -352,7 +412,9 @@
   (let [catalog (catalog-with-known-versions (:out options)
                                              (read-catalog (:indexes options)))
         catalog (catalog-with-package-groups catalog
-                                             (:package-groups options))]
+                                             (:package-groups options))
+        catalog (catalog-with-navigation-style catalog
+                                               (:navigation-style options))]
     (case (:format options)
       :github-pages (github-pages/files catalog))))
 

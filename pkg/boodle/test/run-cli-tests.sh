@@ -44,7 +44,7 @@ fi
 assert_eq "boodle --help output" \
   "boodle: generate reference documentation
 Usage: boodle [--help|--version]
-       boodle generate [-f|--format github-pages] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...
+       boodle generate [-f|--format github-pages] [--navigation breadcrumbs|up|none] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...
 
 Formats: github-pages" \
   "$HELP_OUTPUT"

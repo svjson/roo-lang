@@ -11,6 +11,9 @@ Generate GitHub Pages Markdown from one or more lookup index files:
 boodle generate --format github-pages --out build/docs package-symbols.edn
 ```
 
+Generated hierarchy navigation defaults to breadcrumbs. Use `--navigation up`
+for a single parent link, or `--navigation none` to omit hierarchy navigation.
+
 Root package listings can be grouped with repeatable `--package-group` options.
 Use `*` to include packages not listed by any exact group:
 

@@ -53,3 +53,45 @@
              :package package
              :namespace io-namespace}]
            (reference/pages sample-catalog)))))
+
+(deftest creates-hierarchy-navigation
+  (let [package (head (:packages sample-catalog))
+        namespace (head (:namespaces package))
+        entry (head (:entries namespace))
+        package-page {:kind :package
+                      :package package}
+        namespace-page {:kind :namespace
+                        :package package
+                        :namespace namespace}
+        symbol-page {:kind :symbol
+                     :package package
+                     :namespace namespace
+                     :entry entry}]
+    (is (= :breadcrumbs (reference/navigation-style {})))
+    (is (= [{:label "Reference"
+             :url "../../../../"}
+            {:label "roo 0.1.0"}]
+           (reference/breadcrumbs package-page)))
+    (is (= [{:label "Reference"
+             :url "../../../../../"}
+            {:label "roo 0.1.0"
+             :url "../"}
+            {:label "roo.string"}]
+           (reference/breadcrumbs namespace-page)))
+    (is (= [{:label "Reference"
+             :url "../../../../../../"}
+            {:label "roo 0.1.0"
+             :url "../../"}
+            {:label "roo.string"
+             :url "../roo.string.html"}
+            {:label "roo.string/replace"}]
+           (reference/breadcrumbs symbol-page)))
+    (is (= {:label "Up to Reference"
+            :url "../../../../"}
+           (reference/up-item package-page)))
+    (is (= {:label "Up to roo 0.1.0"
+            :url "../"}
+           (reference/up-item namespace-page)))
+    (is (= {:label "Up to roo.string"
+            :url "../roo.string.html"}
+           (reference/up-item symbol-page)))))
