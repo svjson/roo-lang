@@ -6,11 +6,17 @@ ROO_LANG_INDEX_VERSION ?= $(shell cat $(CURDIR)/VERSION)
 ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/roo-symbols.edn
 ROO_LANG_INDEX_INSTALL_DIR = $(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
+ROO_REPOSITORY_PACKAGES := boodle footsteps i18n lookup loom moordown proof proofread soot spool workbook zoology
+ROO_PACKAGE_INDEX_DIR := $(CURDIR)/build/indexes/packages
+ROO_PACKAGE_INDEX_PATHS := $(foreach package,$(ROO_REPOSITORY_PACKAGES),$(ROO_PACKAGE_INDEX_DIR)/$(package)/symbols.edn)
+GITHUB_PAGES_DOCS_DIR ?= $(CURDIR)/build/docs/github-pages
+GITHUB_PAGES_DOC_INDEXES := $(ROO_LANG_INDEX_PATH) $(ROO_PACKAGE_INDEX_PATHS)
 
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index audit-roo-lang-index build-proofread build-boodle install-loom install-proof install-lookup install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build relink dev-native-packages dev-native-package-links stage-native-packages install build-proof build-lookup build-roo-lang-index build-roo-package-indexes audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-lookup install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot release test test\:all test\:support test\:lang test\:package test\:proof test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+.PHONY: $(ROO_PACKAGE_INDEX_PATHS)
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
@@ -156,6 +162,20 @@ build-lookup: configure
 build-roo-lang-index: build-lookup
 	cmake -E make_directory $(ROO_LANG_INDEX_DIR)
 	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang --package-name roo --package-version $(ROO_LANG_INDEX_VERSION) -o $(ROO_LANG_INDEX_PATH)
+
+define BUILD_REPOSITORY_PACKAGE_INDEX
+$(ROO_PACKAGE_INDEX_DIR)/$(1)/symbols.edn: build-lookup
+	cmake -E make_directory $(ROO_PACKAGE_INDEX_DIR)/$(1)
+	$(CURDIR)/build/lookup-install/build/$$(LOOKUP_BINARY) index $(CURDIR)/pkg/$(1) -o $(ROO_PACKAGE_INDEX_DIR)/$(1)/symbols.edn
+endef
+
+$(foreach package,$(ROO_REPOSITORY_PACKAGES),$(eval $(call BUILD_REPOSITORY_PACKAGE_INDEX,$(package))))
+
+build-roo-package-indexes: $(ROO_PACKAGE_INDEX_PATHS)
+
+build-github-pages-docs: build-boodle build-roo-lang-index build-roo-package-indexes
+	cmake -E make_directory $(GITHUB_PAGES_DOCS_DIR)
+	$(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) generate --format github-pages --out $(GITHUB_PAGES_DOCS_DIR) $(GITHUB_PAGES_DOC_INDEXES)
 
 audit-roo-lang-index: build-roo-lang-index
 	$(SHELL) $(CURDIR)/scripts/audit-roo-lang-index.sh $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(ROO_LANG_INDEX_PATH)
