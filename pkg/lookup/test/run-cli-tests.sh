@@ -40,7 +40,7 @@ fi
 assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
-       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]
+       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [-o <file>] [<package-dir>]
        lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>
        lookup thing-at <package-dir> <file> <line> <column>
 

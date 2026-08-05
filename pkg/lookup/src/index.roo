@@ -58,9 +58,20 @@
 
 
 (defun root-index
-  "Build a symbol index from generic roots."
-  [roots excludes extractors]
-  (let [normalized-roots (map roots source/normalized-path)
+  "Build a symbol index from generic roots.
+
+  Args:
+  - `options`: Map containing `:roots`, `:excludes`, `:extractors`, and
+    optional `:package` metadata.
+
+  Returns:
+  A `:roo/symbol-index` map."
+  [options]
+  (let [roots (:roots options)
+        excludes (:excludes options)
+        extractors (:extractors options)
+        package (:package options)
+        normalized-roots (map roots source/normalized-path)
         normalized-excludes (map excludes source/normalized-path)
         native-files (sort
                        (flat-map roots
@@ -71,12 +82,13 @@
                        <)
         native-symbols (if (contains? extractors :native)
                          (native-docs/native-source-root-symbol-entries!
-                           nil
+                           (:name package)
                            roots
                            excludes)
                          [])]
     {:format :roo/symbol-index
      :version 1
+     :package package
      :origin {:kind :roots
               :roots normalized-roots
               :excludes normalized-excludes
@@ -84,6 +96,20 @@
      :sources (map native-files (fn [path] {:path path}))
      :namespaces []
      :symbols native-symbols}))
+
+(defun explicit-package
+  "Return explicit package metadata from OPTIONS.
+
+  Args:
+  - `options`: Parsed lookup index options.
+
+  Returns:
+  Package metadata map, or nil when no package name was provided."
+  [options]
+  (when-let [name (:package-name options)]
+    {:name name
+     :version (:package-version options)
+     :description (:package-description options)}))
 
 (defun index-with-options
   "Build an index using parsed CLI options."
@@ -94,14 +120,21 @@
         excludes (:excludes options)
         forms? (contains? extractors :forms)
         symbols? (contains? extractors :symbols)
-        native? (contains? extractors :native)]
+        native? (contains? extractors :native)
+        package (explicit-package options)]
     (cond
 
       (and native? (not symbols?) (not forms?))
-      (root-index roots excludes extractors)
+      (root-index {:roots roots
+                   :excludes excludes
+                   :extractors extractors
+                   :package package})
 
       (nil? package-dir)
-      (root-index roots excludes extractors)
+      (root-index {:roots roots
+                   :excludes excludes
+                   :extractors extractors
+                   :package package})
 
       (and forms? symbols?)
       (let [forms-index (source-form-index package-dir)

@@ -28,8 +28,8 @@ From the repository root:
 ./build/roo pkg/lookup index pkg/lookup
 ```
 
-`index` defaults to the symbol extractor. Select specific extractors with
-repeated `-x` options:
+`index` defaults to the symbol extractor when indexing a package. Select
+specific extractors with repeated `-x` options:
 
 ```sh
 ./build/roo pkg/lookup index -x symbols pkg/lookup
@@ -37,10 +37,39 @@ repeated `-x` options:
 ./build/roo pkg/lookup index -x forms -x symbols pkg/lookup
 ```
 
-Write the generated EDN to a file with `-o`:
+Index generic source roots with `--root`. A root-only index defaults to the
+native extractor:
+
+```sh
+./build/roo pkg/lookup index --root native/include --root native/src
+```
+
+Skip paths or subtrees under indexed roots with repeated `--exclude` options:
+
+```sh
+./build/roo pkg/lookup index --root native --exclude native/test
+```
+
+Root-based indexes can carry explicit package metadata. This is useful when
+indexing sources that belong to a package but do not live under a Roo package
+root:
+
+```sh
+./build/roo pkg/lookup index \
+  --root native/include \
+  --root native/src \
+  --package-name my-package \
+  --package-version 1.2.3
+```
+
+Use `--package-description` to include a package description. `--package-version`
+and `--package-description` require `--package-name`.
+
+Write the generated EDN to a file with `-o` or `--out`:
 
 ```sh
 ./build/roo pkg/lookup index -x symbols -o build/lookup.edn pkg/lookup
+./build/roo pkg/lookup index --root native/src --out build/native.edn
 ```
 
 ## Roo Docstrings

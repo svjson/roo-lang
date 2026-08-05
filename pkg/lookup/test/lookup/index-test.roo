@@ -193,7 +193,10 @@
     (is (= 16 (:column source-location)))))
 
 (deftest builds-native-only-symbol-index-from-generic-root
-  (let [symbol-index (index/root-index ["assets/native-root-only"] [] [:native])
+  (let [symbol-index (index/root-index
+                      {:roots ["assets/native-root-only"]
+                       :excludes []
+                       :extractors [:native]})
         symbols (:symbols symbol-index)
         native-symbol (head symbols)]
     (is (= :roo/symbol-index (:format symbol-index)))
@@ -211,8 +214,26 @@
     (is (= "Read data from an external native source root."
            (:summary (:doc native-symbol))))))
 
+(deftest builds-native-only-symbol-index-with-package-metadata
+  (let [symbol-index (index/root-index
+                       {:roots ["assets/native-root-only"]
+                        :excludes []
+                        :extractors [:native]
+                        :package {:name "roo"
+                                  :version "0.1.0"
+                                  :description "Roo standard library."}})
+        native-symbol (head (:symbols symbol-index))]
+    (is (= {:name "roo"
+            :version "0.1.0"
+            :description "Roo standard library."}
+           (:package symbol-index)))
+    (is (= "roo" (:package native-symbol)))))
+
 (deftest builds-native-only-symbol-index-with-excludes
-  (let [symbol-index (index/root-index ["assets"] ["assets/native-package"] [:native])
+  (let [symbol-index (index/root-index
+                      {:roots ["assets"]
+                       :excludes ["assets/native-package"]
+                       :extractors [:native]})
         symbols (:symbols symbol-index)
         native-symbol (head symbols)]
     (is (= {:kind :roots

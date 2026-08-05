@@ -4,7 +4,7 @@
 
 (def usage-line
   "Usage line for the `lookup index` command."
-  "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [-o <file>] [<package-dir>]")
+  "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [-o <file>] [<package-dir>]")
 
 (defun parse-args-step [args options]
   (let [arg (head args)]
@@ -37,6 +37,30 @@
                            (assoc options
                                   :roots
                                   (concat (:roots options) [root])))))
+
+      (= arg "--package-name")
+      (let [name (nth args 1)]
+        (if (nil? name)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing name after --package-name"]))
+          (parse-args-step (tail (tail args))
+                           (assoc options :package-name name))))
+
+      (= arg "--package-version")
+      (let [version (nth args 1)]
+        (if (nil? version)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing version after --package-version"]))
+          (parse-args-step (tail (tail args))
+                           (assoc options :package-version version))))
+
+      (= arg "--package-description")
+      (let [description (nth args 1)]
+        (if (nil? description)
+          (assoc options :errors (concat (:errors options)
+                                         ["Missing description after --package-description"]))
+          (parse-args-step (tail (tail args))
+                           (assoc options :package-description description))))
 
       (= arg "--exclude")
       (let [path (nth args 1)]
@@ -84,7 +108,7 @@
 
   Returns:
   An options map with `:extractors`, `:out`, `:package-dir`, `:roots`,
-  `:excludes`, and `:errors`."
+  `:excludes`, package metadata options, and `:errors`."
   [args]
   (let [options (parse-args-step args
                                  {:extractors []
@@ -92,6 +116,9 @@
                                   :package-dir nil
                                   :roots []
                                   :excludes []
+                                  :package-name nil
+                                  :package-version nil
+                                  :package-description nil
                                   :errors []})
         has-package? (some? (:package-dir options))
         has-roots? (not-empty? (:roots options))
@@ -101,8 +128,16 @@
                                          (if has-package? [:symbols] [:native]))
                                   options)
         forms? (contains? (:extractors with-default-extractors) :forms)
-        native? (contains? (:extractors with-default-extractors) :native)]
+        native? (contains? (:extractors with-default-extractors) :native)
+        has-package-metadata? (or (:package-version with-default-extractors)
+                                  (:package-description with-default-extractors))]
     (cond
+
+      (and has-package-metadata? (nil? (:package-name with-default-extractors)))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Package name required for package metadata"]))
 
       (and (not has-package?) (not has-roots?))
       (assoc with-default-extractors

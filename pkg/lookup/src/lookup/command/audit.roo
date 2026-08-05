@@ -151,9 +151,9 @@
                                  :errors []})
 
       (io/directory? input)
-      (index/root-index (concat [input] (:roots options))
-                        (:excludes options)
-                        [:native])
+      (index/root-index {:roots (concat [input] (:roots options))
+                         :excludes (:excludes options)
+                         :extractors [:native]})
 
       true
       (system/fail! (str "lookup audit input does not exist: " input)))))

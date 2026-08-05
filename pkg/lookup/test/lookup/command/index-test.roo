@@ -8,6 +8,9 @@
           :package-dir "pkg/lookup"
           :roots []
           :excludes []
+          :package-name nil
+          :package-version nil
+          :package-description nil
           :errors []}
          (index-command/parse-args ["pkg/lookup"]))))
 
@@ -17,6 +20,9 @@
           :package-dir "pkg/lookup"
           :roots []
           :excludes []
+          :package-name nil
+          :package-version nil
+          :package-description nil
           :errors []}
          (index-command/parse-args ["-x" "forms" "-x" "symbols" "pkg/lookup"]))))
 
@@ -26,6 +32,9 @@
           :package-dir "pkg/lookup"
           :roots ["lib/libroo/include" "lib/libroo/src"]
           :excludes ["lib/libroo/test"]
+          :package-name nil
+          :package-version nil
+          :package-description nil
           :errors []}
          (index-command/parse-args ["--root" "lib/libroo/include"
                                     "--root" "lib/libroo/src"
@@ -38,8 +47,27 @@
           :package-dir nil
           :roots ["lib/libroo/include"]
           :excludes []
+          :package-name nil
+          :package-version nil
+          :package-description nil
           :errors []}
          (index-command/parse-args ["--root" "lib/libroo/include"]))))
+
+(deftest parses-native-index-package-metadata
+  (is (= {:extractors [:native]
+          :out nil
+          :package-dir nil
+          :roots ["lib/libroo/include"]
+          :excludes []
+          :package-name "roo"
+          :package-version "0.1.0"
+          :package-description "Roo standard library."
+          :errors []}
+         (index-command/parse-args ["--root" "lib/libroo/include"
+                                    "--package-name" "roo"
+                                    "--package-version" "0.1.0"
+                                    "--package-description"
+                                    "Roo standard library."]))))
 
 (deftest parses-explicit-native-index-options
   (is (= {:extractors [:native]
@@ -47,6 +75,9 @@
           :package-dir nil
           :roots ["lib/libroo/include"]
           :excludes ["lib/libroo/test"]
+          :package-name nil
+          :package-version nil
+          :package-description nil
           :errors []}
          (index-command/parse-args ["-x" "native"
                                     "--root" "lib/libroo/include"
@@ -58,6 +89,9 @@
           :package-dir "pkg/lookup"
           :roots []
           :excludes []
+          :package-name nil
+          :package-version nil
+          :package-description nil
           :errors []}
          (index-command/parse-args ["-o" "build/lookup.edn" "pkg/lookup"]))))
 
