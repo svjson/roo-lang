@@ -37,16 +37,49 @@
                                   (head replacement)
                                   (nth replacement 1))))))))
 
-(defun package-path
-  "Return the reference page path for PACKAGE.
+(defun package-version
+  "Return the version label for PACKAGE.
 
   Args:
   - `package`: Boodle package map.
 
   Returns:
-  Relative Markdown path for the package overview page."
+  Package version, or `unversioned` when no version is available."
+  [package]
+  (or (:version package) "unversioned"))
+
+(defun package-index-path
+  "Return the package version index path for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Relative Markdown path for the package version listing page."
   [package]
   (str "packages/" (:id package) "/index.md"))
+
+(defun package-version-root
+  "Return the versioned reference root path for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Relative path for the package version documentation root."
+  [package]
+  (str "packages/" (:id package) "/versions/" (package-version package)))
+
+(defun package-path
+  "Return the versioned reference page path for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Relative Markdown path for the package version overview page."
+  [package]
+  (str (package-version-root package) "/index.md"))
 
 (defun namespace-path
   "Return the reference page path for NAMESPACE in PACKAGE.
@@ -58,7 +91,7 @@
   Returns:
   Relative Markdown path for the namespace reference page."
   [package namespace]
-  (str "packages/" (:id package) "/namespaces/" (:name namespace) ".md"))
+  (str (package-version-root package) "/namespaces/" (:name namespace) ".md"))
 
 (defun symbol-path
   "Return the reference page path for ENTRY in NAMESPACE.
@@ -71,8 +104,7 @@
   Returns:
   Relative Markdown path for the symbol reference page."
   [package namespace entry]
-  (str "packages/"
-       (:id package)
+  (str (package-version-root package)
        "/namespaces/"
        (:name namespace)
        "/"
@@ -95,7 +127,10 @@
           (flat-map (:packages catalog)
                     (fn [package]
                       (concat
-                        [{:kind :package
+                        [{:kind :package-index
+                          :path (package-index-path package)
+                          :package package}
+                         {:kind :package
                           :path (package-path package)
                           :package package}]
                         (flat-map (:namespaces package)

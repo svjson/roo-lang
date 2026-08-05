@@ -2,6 +2,7 @@
   (:require [boodle.format.github-pages :as github-pages]
             [boodle.format.lookup :as lookup]
             [boodle.output.files :as files]
+            [boodle.topology.reference :as reference]
             [roo.io :as io]))
 
 (def usage-line
@@ -100,6 +101,85 @@
   [paths]
   (lookup/catalog (map paths io/slurp-edn!)))
 
+(defun directory-entry?
+  "Return non-nil when ENTRY describes a directory.
+
+  Args:
+  - `entry`: Directory listing entry map.
+
+  Returns:
+  True when `entry` is a directory."
+  [entry]
+  (= (:type entry) :directory))
+
+(defun versions-dir
+  "Return the materialized versions directory for PACKAGE in OUTPUT-DIR.
+
+  Args:
+  - `output-dir`: Documentation output directory.
+  - `package`: Boodle package map.
+
+  Returns:
+  Filesystem path containing package version directories."
+  [output-dir package]
+  (io/join-path
+    (io/join-path
+      (io/join-path output-dir "packages")
+      (:id package))
+    "versions"))
+
+(defun existing-package-versions
+  "Return already materialized documentation versions for PACKAGE.
+
+  Args:
+  - `output-dir`: Documentation output directory.
+  - `package`: Boodle package map.
+
+  Returns:
+  Sorted version directory names."
+  [output-dir package]
+  (let [dir (versions-dir output-dir package)]
+    (if (io/directory? dir)
+      (sort (map (filter (io/list-directory! dir) directory-entry?) :name) <)
+      [])))
+
+(defun package-with-known-versions
+  "Return PACKAGE with generated and materialized versions attached.
+
+  Args:
+  - `output-dir`: Documentation output directory.
+  - `package`: Boodle package map.
+
+  Returns:
+  Package map with `:versions` containing known version names."
+  [output-dir package]
+  (assoc package
+         :versions
+         (sort (reduce (concat [(reference/package-version package)]
+                               (existing-package-versions output-dir package))
+                       []
+                       (fn [versions version]
+                         (if (contains? versions version)
+                           versions
+                           (append versions version))))
+               <)))
+
+(defun catalog-with-known-versions
+  "Return CATALOG annotated with already materialized versions.
+
+  Args:
+  - `output-dir`: Documentation output directory.
+  - `catalog`: Boodle catalog map.
+
+  Returns:
+  Catalog with package `:versions` metadata."
+  [output-dir catalog]
+  (assoc catalog
+         :packages
+         (map (:packages catalog)
+              (fn [package]
+                (package-with-known-versions output-dir package)))))
+
 (defun generated-files
   "Return documentation files for OPTIONS.
 
@@ -109,8 +189,10 @@
   Returns:
   File maps for the selected output format."
   [options]
-  (case (:format options)
-    :github-pages (github-pages/files (read-catalog (:indexes options)))))
+  (let [catalog (catalog-with-known-versions (:out options)
+                                             (read-catalog (:indexes options)))]
+    (case (:format options)
+      :github-pages (github-pages/files catalog))))
 
 (defun run!
   "Run the `boodle generate` command.

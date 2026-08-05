@@ -52,10 +52,36 @@
     (io/spit-edn! index-file lookup-index)
     (let [result (generate/run! ["--out" output-dir index-file])]
       (is (= :text (:format result)))
-      (is (= ["boodle: wrote 7 files to boodle-generate-test/docs"]
+      (is (= ["boodle: wrote 8 files to boodle-generate-test/docs"]
              (:output result)))
       (is (= "---\nlayout: "
-             (substr (io/slurp! (io/join-path output-dir "packages/roo/index.md"))
+             (substr (io/slurp! (io/join-path output-dir "packages/roo/versions/0.1.0/index.md"))
                      0
                      12))))
+    (io/remove-tree! root)))
+
+(deftest includes-materialized-package-versions
+  (let [root "boodle-generate-versions-test"
+        index-file (io/join-path root "roo.edn")
+        output-dir (io/join-path root "docs")
+        old-version-page (io/join-path output-dir
+                                       "packages/roo/versions/0.0.9/index.md")
+        package-index-page (io/join-path output-dir "packages/roo/index.md")]
+    (when (io/exists? root)
+      (io/remove-tree! root))
+    (io/spit! old-version-page "old version")
+    (io/spit-edn! index-file lookup-index)
+    (generate/run! ["--out" output-dir index-file])
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: roo\n"
+                "---\n\n"
+                "# roo\n\n"
+                "Roo standard library.\n\n"
+                "| Version                  | Namespaces | Symbols |\n"
+                "| ------------------------ | ---------- | ------- |\n"
+                "| [0.0.9](versions/0.0.9/) |            |         |\n"
+                "| [0.1.0](versions/0.1.0/) | 1          | 1       |"
+                "\n")
+           (io/slurp! package-index-page)))
     (io/remove-tree! root)))

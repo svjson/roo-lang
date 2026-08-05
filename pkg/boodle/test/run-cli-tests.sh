@@ -71,7 +71,7 @@ if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" "$INDE
   fail "boodle generate command failed"
 fi
 assert_eq "boodle generate output" \
-  "boodle: wrote 7 files to $OUTPUT_DIR" \
+  "boodle: wrote 8 files to $OUTPUT_DIR" \
   "$GENERATE_OUTPUT"
 
 if [ ! -s "$OUTPUT_DIR/_config.yml" ]; then
@@ -92,23 +92,28 @@ if [ ! -s "$OUTPUT_DIR/assets/boodle.css" ]; then
 fi
 if [ ! -s "$OUTPUT_DIR/packages/roo/index.md" ]; then
   rm -rf "$ROOT"
-  fail "boodle generate did not write package page"
+  fail "boodle generate did not write package index page"
 fi
-if [ ! -s "$OUTPUT_DIR/packages/roo/namespaces/roo.md" ]; then
+if [ ! -s "$OUTPUT_DIR/packages/roo/versions/0.1.0/index.md" ]; then
+  rm -rf "$ROOT"
+  fail "boodle generate did not write package version page"
+fi
+if [ ! -s "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo.md" ]; then
   rm -rf "$ROOT"
   fail "boodle generate did not write namespace page"
 fi
-if [ ! -s "$OUTPUT_DIR/packages/roo/namespaces/roo/plus.md" ]; then
+if [ ! -s "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo/plus.md" ]; then
   rm -rf "$ROOT"
   fail "boodle generate did not write symbol page"
 fi
 
-NAMESPACE_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/namespaces/roo.md")
-SYMBOL_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/namespaces/roo/plus.md")
+NAMESPACE_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo.md")
+SYMBOL_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo/plus.md")
 rm -rf "$ROOT"
 case "$NAMESPACE_CONTENT" in
   *"layout: reference"*\
 *"<nav class=\"reference-sidebar\">"*\
+*"<div class=\"version-context\">roo 0.1.0</div>"*\
 *"[roo/+](roo/plus.html)"*) ;;
   *)
     printf '%s\n' "unexpected boodle namespace page:" >&2
@@ -119,6 +124,7 @@ esac
 case "$SYMBOL_CONTENT" in
   *"title: roo/+"*\
 *"<li><a class=\"active\" href=\"plus.html\">+</a></li>"*\
+*"<div class=\"version-context\">roo 0.1.0</div>"*\
 *"| numbers... | Numbers to add. |"*\
 *"Returns: The sum."*) ;;
   *)

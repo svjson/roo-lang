@@ -155,7 +155,7 @@ build-lookup: configure
 
 build-roo-lang-index: build-lookup
 	cmake -E make_directory $(ROO_LANG_INDEX_DIR)
-	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang -o $(ROO_LANG_INDEX_PATH)
+	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang --package-name roo --package-version $(ROO_LANG_INDEX_VERSION) -o $(ROO_LANG_INDEX_PATH)
 
 audit-roo-lang-index: build-roo-lang-index
 	$(SHELL) $(CURDIR)/scripts/audit-roo-lang-index.sh $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(ROO_LANG_INDEX_PATH)

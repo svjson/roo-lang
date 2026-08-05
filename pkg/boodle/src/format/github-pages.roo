@@ -17,6 +17,48 @@
     (str (:name package) " " (:version package))
     (:name package)))
 
+(defun package-version
+  "Return the version label for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Package version, or `unversioned` when no version is available."
+  [package]
+  (reference/package-version package))
+
+(defun package-symbol-count
+  "Return the number of documented symbols in PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Total number of namespace entries in `package`."
+  [package]
+  (reduce (:namespaces package)
+          0
+          (fn [total namespace]
+            (+ total (count (:entries namespace))))))
+
+(defun package-versions
+  "Return known versions for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  Sorted version labels, including the package version."
+  [package]
+  (sort (reduce (concat [(package-version package)] (:versions package))
+                []
+                (fn [versions version]
+                  (if (or (nil? version) (contains? versions version))
+                    versions
+                    (append versions version))))
+        <))
+
 (defun front-matter
   "Return Jekyll front matter for TITLE.
 
@@ -140,12 +182,39 @@
   [page]
   (md/document
     [(md/heading 1 "Reference")
-     (md/table ["Package" "Description"]
+     (md/table ["Package" "Versions" "Description"]
                (map (:packages (:catalog page))
                     (fn [package]
-                      [(md/link (package-title package)
+                      [(md/link (:name package)
                                 (str "packages/" (:id package) "/"))
+                       (apply join (concat [", "] (package-versions package)))
                        (:summary package)])))]))
+
+(defun package-index-document
+  "Return the GitHub Pages package version index document for PAGE.
+
+  Args:
+  - `page`: Boodle package index page map.
+
+  Returns:
+  A Moordown document."
+  [page]
+  (let [package (:package page)]
+    (md/document
+      (concat [(md/heading 1 (:name package))]
+              (if-let [summary (:summary package)]
+                [(md/paragraph summary)]
+                [])
+              [(md/table ["Version" "Namespaces" "Symbols"]
+                         (map (package-versions package)
+                              (fn [version]
+                                [(md/link version (str "versions/" version "/"))
+                                 (if (= version (package-version package))
+                                   (count (:namespaces package))
+                                   "")
+                                 (if (= version (package-version package))
+                                   (package-symbol-count package)
+                                   "")])))]))))
 
 (defun package-document
   "Return the GitHub Pages package document for PAGE.
@@ -227,6 +296,7 @@
   [page]
   (case (:kind page)
     :index (index-document page)
+    :package-index (package-index-document page)
     :package (package-document page)
     :namespace (namespace-document page)
     :symbol (symbol-document page)))
@@ -242,6 +312,7 @@
   [page]
   (case (:kind page)
     :index "Reference"
+    :package-index (:name (:package page))
     :package (package-title (:package page))
     :namespace (:name (:namespace page))
     :symbol (:qualified-name (:entry page))))
@@ -321,6 +392,24 @@
          "</ol>\n"
          "</nav>\n")))
 
+(defun version-context-html
+  "Return visible package version context for PAGE.
+
+  Args:
+  - `page`: Boodle reference topology page.
+
+  Returns:
+  HTML context text for versioned package pages, or an empty string."
+  [page]
+  (if (contains? [:package :namespace :symbol] (:kind page))
+    (let [package (:package page)]
+      (str "<div class=\"version-context\">"
+           (html-text (:name package))
+           " "
+           (html-text (package-version package))
+           "</div>\n"))
+    ""))
+
 (defun reference-content
   "Return rendered content for PAGE.
 
@@ -330,7 +419,8 @@
   Returns:
   Markdown or HTML/Markdown content for the page body."
   [page]
-  (let [content (markdown/render-block (page-document page))]
+  (let [content (str (version-context-html page)
+                     (markdown/render-block (page-document page)))]
     (if (contains? [:namespace :symbol] (:kind page))
       (str "<div class=\"reference-page\">\n"
            (sidebar-html page)
@@ -390,6 +480,7 @@
        ".reference-sidebar a { display: block; padding: 4px 6px; border-radius: 4px; color: #374151; }\n"
        ".reference-sidebar a.active { background: #e8f2fb; color: #0f5f8f; font-weight: 700; }\n"
        ".namespace-link { font-weight: 700; }\n"
+       ".version-context { color: #6b7280; font-size: 14px; font-weight: 700; margin-bottom: 12px; }\n"
        ".reference-content { min-width: 0; }\n"
        ".reference-content h1 { margin-top: 0; }\n"
        ".reference-content table { width: 100%; }\n"

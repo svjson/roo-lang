@@ -42,24 +42,30 @@
         index-page (find-first files
                                (fn [file]
                                  (= "index.md" (:path file))))
+        package-index-page (find-first files
+                                      (fn [file]
+                                        (= "packages/roo/index.md"
+                                           (:path file))))
         package-page (find-first files
-                                 (fn [file]
-                                   (= "packages/roo/index.md" (:path file))))
+                                (fn [file]
+                                  (= "packages/roo/versions/0.1.0/index.md"
+                                     (:path file))))
         namespace-page (find-first files
                                    (fn [file]
-                                     (= "packages/roo/namespaces/roo.md"
+                                     (= "packages/roo/versions/0.1.0/namespaces/roo.md"
                                         (:path file))))
         symbol-page (find-first files
                                 (fn [file]
-                                  (= "packages/roo/namespaces/roo/plus.md"
+                                  (= "packages/roo/versions/0.1.0/namespaces/roo/plus.md"
                                      (:path file))))]
     (is (= ["_config.yml"
             "_layouts/reference.html"
             "assets/boodle.css"
             "index.md"
             "packages/roo/index.md"
-            "packages/roo/namespaces/roo.md"
-            "packages/roo/namespaces/roo/plus.md"]
+            "packages/roo/versions/0.1.0/index.md"
+            "packages/roo/versions/0.1.0/namespaces/roo.md"
+            "packages/roo/versions/0.1.0/namespaces/roo/plus.md"]
            paths))
     (is (= "title: Reference\nmarkdown: kramdown\n"
            (:content (head files))))
@@ -70,15 +76,27 @@
                 "title: Reference\n"
                 "---\n\n"
                 "# Reference\n\n"
-                "| Package                    | Description           |\n"
-                "| -------------------------- | --------------------- |\n"
-                "| [roo 0.1.0](packages/roo/) | Roo standard library. |"
+                "| Package              | Versions | Description           |\n"
+                "| -------------------- | -------- | --------------------- |\n"
+                "| [roo](packages/roo/) | 0.1.0    | Roo standard library. |"
                 "\n")
            (:content index-page)))
     (is (= (str "---\n"
                 "layout: reference\n"
+                "title: roo\n"
+                "---\n\n"
+                "# roo\n\n"
+                "Roo standard library.\n\n"
+                "| Version                  | Namespaces | Symbols |\n"
+                "| ------------------------ | ---------- | ------- |\n"
+                "| [0.1.0](versions/0.1.0/) | 1          | 1       |"
+                "\n")
+           (:content package-index-page)))
+    (is (= (str "---\n"
+                "layout: reference\n"
                 "title: roo 0.1.0\n"
                 "---\n\n"
+                "<div class=\"version-context\">roo 0.1.0</div>\n"
                 "# roo 0.1.0\n\n"
                 "Roo standard library.\n\n"
                 "| Namespace                  | Symbols |\n"
@@ -98,6 +116,7 @@
                 "</ol>\n"
                 "</nav>\n"
                 "<main class=\"reference-content\" markdown=\"block\">\n\n"
+                "<div class=\"version-context\">roo 0.1.0</div>\n"
                 "# roo\n\n"
                 "Implicit runtime namespace.\n\n"
                 "| Symbol                 | Summary      |\n"
@@ -118,6 +137,7 @@
                 "</ol>\n"
                 "</nav>\n"
                 "<main class=\"reference-content\" markdown=\"block\">\n\n"
+                "<div class=\"version-context\">roo 0.1.0</div>\n"
                 "# roo/+\n\n"
                 "Add numbers.\n\n"
                 "Returns the numeric sum.\n\n"

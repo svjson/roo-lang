@@ -33,20 +33,23 @@
     (is (= [{:kind :index
              :path "index.md"
              :catalog sample-catalog}
-            {:kind :package
+            {:kind :package-index
              :path "packages/roo/index.md"
              :package package}
+            {:kind :package
+             :path "packages/roo/versions/0.1.0/index.md"
+             :package package}
             {:kind :namespace
-             :path "packages/roo/namespaces/roo.string.md"
+             :path "packages/roo/versions/0.1.0/namespaces/roo.string.md"
              :package package
              :namespace string-namespace}
             {:kind :symbol
-             :path "packages/roo/namespaces/roo.string/replace.md"
+             :path "packages/roo/versions/0.1.0/namespaces/roo.string/replace.md"
              :package package
              :namespace string-namespace
              :entry string-entry}
             {:kind :namespace
-             :path "packages/roo/namespaces/roo.io.md"
+             :path "packages/roo/versions/0.1.0/namespaces/roo.io.md"
              :package package
              :namespace io-namespace}]
            (reference/pages sample-catalog)))))
