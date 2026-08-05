@@ -22,6 +22,11 @@
     (when ready?
       (save! item))))
 
+(def different-unless-nil-condition
+  (let [item (find-item)]
+    (unless (nil? ready?)
+      (save! item))))
+
 (def multiple-bindings
   (let [item (find-item)
         ready? (ready? item)]

@@ -40,8 +40,13 @@
   [node]
   (when-let [binding-name (single-binding-symbol node)
              body (sole-let-body-form node)]
-    (and (= "when" (forms/head-name body))
-         (= binding-name (forms/symbol-name (nth (:children body) 1))))))
+    (let [condition (nth (:children body) 1)]
+      (or (and (= "when" (forms/head-name body))
+               (= binding-name (forms/symbol-name condition)))
+          (and (= "unless" (forms/head-name body))
+               (forms/call? condition "nil?" 2)
+               (= binding-name
+                  (forms/symbol-name (nth (:children condition) 1))))))))
 
 (defun same-form?
   "Test whether two AST nodes represent the same source form."

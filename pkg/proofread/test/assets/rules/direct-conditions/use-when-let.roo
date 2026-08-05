@@ -8,3 +8,10 @@
 (def printed-value
   (when (:value result)
     (prn (:value result))))
+
+(def dependency-lines
+  (let [root (graph/root-node! package-dir repo-root)]
+    (unless (nil? root)
+      (if flat?
+        (print-lines! (flat-lines root))
+        (print-lines! (tree-lines root show-repeated?))))))
