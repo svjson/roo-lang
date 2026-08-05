@@ -40,7 +40,7 @@ fi
 assert_eq "boodle --help output" \
   "boodle: generate reference documentation
 Usage: boodle [--help|--version]
-       boodle generate [-f|--format github-pages] -o|--out <dir> <index-file>...
+       boodle generate [-f|--format github-pages] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...
 
 Formats: github-pages" \
   "$HELP_OUTPUT"
@@ -66,7 +66,7 @@ cat > "$INDEX_FILE" <<'EOF'
  :symbols [{:id "roo/+" :name "+" :qualified-name "roo/+" :namespace "roo" :kind :function :origin :native :doc {:summary "Add numbers."} :signatures [{:display "(+ numbers...)" :params [{:name "numbers..." :doc "Numbers to add."}] :returns {:doc "The sum."}}]}]}
 EOF
 
-if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" "$INDEX_FILE"); then
+if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" --package-group "The Roo Language:roo" "$INDEX_FILE"); then
   rm -rf "$ROOT"
   fail "boodle generate command failed"
 fi
@@ -107,9 +107,19 @@ if [ ! -s "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo/plus.md" ]; th
   fail "boodle generate did not write symbol page"
 fi
 
+ROOT_INDEX_CONTENT=$(cat "$OUTPUT_DIR/index.md")
 NAMESPACE_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo.md")
 SYMBOL_CONTENT=$(cat "$OUTPUT_DIR/packages/roo/versions/0.1.0/namespaces/roo/plus.md")
 rm -rf "$ROOT"
+case "$ROOT_INDEX_CONTENT" in
+  *"## The Roo Language"*\
+*"[roo](packages/roo/)"*) ;;
+  *)
+    printf '%s\n' "unexpected boodle root index page:" >&2
+    printf '%s\n' "$ROOT_INDEX_CONTENT" >&2
+    fail "boodle generate root index page"
+    ;;
+esac
 case "$NAMESPACE_CONTENT" in
   *"layout: reference"*\
 *"<nav class=\"reference-sidebar\">"*\

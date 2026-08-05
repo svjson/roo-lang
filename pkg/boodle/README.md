@@ -8,7 +8,17 @@ The initial supported source format is the lookup symbol index shape.
 Generate GitHub Pages Markdown from one or more lookup index files:
 
 ```sh
-boodle generate --format github-pages --out build/docs roo-symbols.edn
+boodle generate --format github-pages --out build/docs package-symbols.edn
+```
+
+Root package listings can be grouped with repeatable `--package-group` options.
+Use `*` to include packages not listed by any exact group:
+
+```sh
+boodle generate --format github-pages --out build/docs \
+  --package-group "Runtime:core" \
+  --package-group "Packages:*" \
+  core-symbols.edn app-symbols.edn
 ```
 
 Preview the generated pages with Jekyll:

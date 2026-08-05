@@ -1,6 +1,7 @@
 (ns boodle.command.generate-test
   (:require proof.core
             [boodle.command.generate :as generate]
+            [boodle.model :as model]
             [roo.io :as io]))
 
 (def lookup-index
@@ -27,6 +28,7 @@
 (deftest parses-generate-options
   (is (= {:format :github-pages
           :out "build/docs"
+          :package-groups []
           :indexes ["roo.edn" "zoology.edn"]
           :errors []}
          (generate/parse-args ["--format" "github-pages"
@@ -34,14 +36,51 @@
                                "roo.edn"
                                "zoology.edn"]))))
 
+(deftest parses-package-group-options
+  (is (= {:format :github-pages
+          :out "build/docs"
+          :package-groups [(model/package-group {:title "The Roo Language"
+                                                :package-ids ["roo"]})
+                           (model/package-group {:title "Packages"
+                                                :package-ids ["*"]})]
+          :indexes ["roo.edn"]
+          :errors []}
+         (generate/parse-args ["--out" "build/docs"
+                               "--package-group" "The Roo Language:roo"
+                               "--package-group" "Packages:*"
+                               "roo.edn"]))))
+
 (deftest reports-generate-argument-errors
   (is (= {:format :github-pages
           :out nil
+          :package-groups []
           :indexes []
           :errors ["Unknown output format: html"
                    "Missing output directory"
                    "Missing lookup index file"]}
          (generate/parse-args ["--format" "html"]))))
+
+(deftest expands-package-group-wildcards
+  (let [catalog (model/catalog
+                  [(model/package {:id "roo" :name "roo"})
+                   (model/package {:id "loom" :name "loom"})
+                   (model/package {:id "proof" :name "proof"})
+                   (model/package {:id "zoology" :name "zoology"})])
+        grouped (generate/catalog-with-package-groups
+                  catalog
+                  [(model/package-group {:title "The Roo Language"
+                                        :package-ids ["roo"]})
+                   (model/package-group {:title "Core Libraries"
+                                        :package-ids ["loom" "proof"]})
+                   (model/package-group {:title "Packages"
+                                        :package-ids ["*"]})])]
+    (is (= [(model/package-group {:title "The Roo Language"
+                                 :package-ids ["roo"]})
+            (model/package-group {:title "Core Libraries"
+                                 :package-ids ["loom" "proof"]})
+            (model/package-group {:title "Packages"
+                                 :package-ids ["zoology"]})]
+           (:package-groups grouped)))))
 
 (deftest generates-github-pages-files
   (let [root "boodle-generate-test"

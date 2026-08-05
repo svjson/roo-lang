@@ -28,7 +28,22 @@
                                                              :doc "Numbers to add."}]
                                                    :returns {:doc "The sum."}}]
                                      :doc {:examples [{:format :roo
-                                                       :source "(+ 1 2)\n=> 3"}]}})]})]})]))
+                                                       :source "(+ 1 2)\n=> 3"}]}})]})]})
+     (model/package
+       {:id "loom"
+        :name "loom"
+        :version "0.1.0"
+        :summary "Roo package manager."})
+     (model/package
+       {:id "proof"
+        :name "proof"
+        :version "0.1.0"
+        :summary "Roo test framework."})
+     (model/package
+       {:id "zoology"
+        :name "zoology"
+        :version "0.1.0"
+        :summary "Schema validation."})]))
 
 (deftest renders-github-pages-files
   (let [files (github-pages/files sample-catalog)
@@ -65,7 +80,13 @@
             "packages/roo/index.md"
             "packages/roo/versions/0.1.0/index.md"
             "packages/roo/versions/0.1.0/namespaces/roo.md"
-            "packages/roo/versions/0.1.0/namespaces/roo/plus.md"]
+            "packages/roo/versions/0.1.0/namespaces/roo/plus.md"
+            "packages/loom/index.md"
+            "packages/loom/versions/0.1.0/index.md"
+            "packages/proof/index.md"
+            "packages/proof/versions/0.1.0/index.md"
+            "packages/zoology/index.md"
+            "packages/zoology/versions/0.1.0/index.md"]
            paths))
     (is (= "title: Reference\nmarkdown: kramdown\n"
            (:content (head files))))
@@ -76,9 +97,12 @@
                 "title: Reference\n"
                 "---\n\n"
                 "# Reference\n\n"
-                "| Package              | Versions | Description           |\n"
-                "| -------------------- | -------- | --------------------- |\n"
-                "| [roo](packages/roo/) | 0.1.0    | Roo standard library. |"
+                "| Package                      | Versions | Description           |\n"
+                "| ---------------------------- | -------- | --------------------- |\n"
+                "| [roo](packages/roo/)         | 0.1.0    | Roo standard library. |\n"
+                "| [loom](packages/loom/)       | 0.1.0    | Roo package manager.  |\n"
+                "| [proof](packages/proof/)     | 0.1.0    | Roo test framework.   |\n"
+                "| [zoology](packages/zoology/) | 0.1.0    | Schema validation.    |"
                 "\n")
            (:content index-page)))
     (is (= (str "---\n"
@@ -156,3 +180,38 @@
                 "\n</main>\n"
                 "</div>\n")
            (:content symbol-page)))))
+
+
+(deftest renders-grouped-root-package-index
+  (let [catalog (assoc sample-catalog
+                       :package-groups
+                       [(model/package-group {:title "The Roo Language"
+                                             :package-ids ["roo"]})
+                        (model/package-group {:title "Core Libraries"
+                                             :package-ids ["loom" "proof"]})
+                        (model/package-group {:title "Packages"
+                                             :package-ids ["zoology"]})])
+        files (github-pages/files catalog)
+        index-page (find-first files
+                               (fn [file]
+                                 (= "index.md" (:path file))))]
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: Reference\n"
+                "---\n\n"
+                "# Reference\n\n"
+                "## The Roo Language\n\n"
+                "| Package              | Versions | Description           |\n"
+                "| -------------------- | -------- | --------------------- |\n"
+                "| [roo](packages/roo/) | 0.1.0    | Roo standard library. |\n\n"
+                "## Core Libraries\n\n"
+                "| Package                  | Versions | Description          |\n"
+                "| ------------------------ | -------- | -------------------- |\n"
+                "| [loom](packages/loom/)   | 0.1.0    | Roo package manager. |\n"
+                "| [proof](packages/proof/) | 0.1.0    | Roo test framework.  |\n\n"
+                "## Packages\n\n"
+                "| Package                      | Versions | Description        |\n"
+                "| ---------------------------- | -------- | ------------------ |\n"
+                "| [zoology](packages/zoology/) | 0.1.0    | Schema validation. |"
+                "\n")
+           (:content index-page)))))

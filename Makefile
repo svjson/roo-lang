@@ -175,7 +175,13 @@ build-roo-package-indexes: $(ROO_PACKAGE_INDEX_PATHS)
 
 build-github-pages-docs: build-boodle build-roo-lang-index build-roo-package-indexes
 	cmake -E make_directory $(GITHUB_PAGES_DOCS_DIR)
-	$(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) generate --format github-pages --out $(GITHUB_PAGES_DOCS_DIR) $(GITHUB_PAGES_DOC_INDEXES)
+	$(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) generate \
+		--format github-pages \
+		--package-group "The Roo Language:roo" \
+		--package-group "Core Libraries:loom,proof" \
+		--package-group "Packages:*" \
+		--out $(GITHUB_PAGES_DOCS_DIR) \
+		$(GITHUB_PAGES_DOC_INDEXES)
 
 audit-roo-lang-index: build-roo-lang-index
 	$(SHELL) $(CURDIR)/scripts/audit-roo-lang-index.sh $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(ROO_LANG_INDEX_PATH)

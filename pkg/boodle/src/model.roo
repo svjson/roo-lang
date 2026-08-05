@@ -13,6 +13,20 @@
   {:kind :boodle/catalog
    :packages packages})
 
+(defun package-group
+  "Create a package group for catalog-level navigation.
+
+  Args:
+  - `data`: Map containing `:title` and `:package-ids`.
+
+  Returns:
+  A `:boodle/package-group` map."
+  [data]
+  (merge {:kind :boodle/package-group
+          :title nil
+          :package-ids []}
+         data))
+
 (defun package
   "Create a package documentation entry.
 

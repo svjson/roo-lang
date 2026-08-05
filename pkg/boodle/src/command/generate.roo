@@ -1,13 +1,82 @@
 (ns boodle.command.generate
   (:require [boodle.format.github-pages :as github-pages]
             [boodle.format.lookup :as lookup]
+            [boodle.model :as model]
             [boodle.output.files :as files]
             [boodle.topology.reference :as reference]
             [roo.io :as io]))
 
 (def usage-line
   "Usage line for the `boodle generate` command."
-  "       boodle generate [-f|--format github-pages] -o|--out <dir> <index-file>...")
+  "       boodle generate [-f|--format github-pages] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...")
+
+(defun split-package-ids
+  "Split a comma-separated package id list.
+
+  Args:
+  - `text`: Comma-separated package ids.
+
+  Returns:
+  A vector of trimmed package ids."
+  [text]
+  (if-let [separator (find-index text
+                                 (fn [ch]
+                                   (= "," (str ch))))]
+    (concat [(trim (substr text 0 separator))]
+            (split-package-ids (substr text (+ separator 1) (count text))))
+    [(trim text)]))
+
+(defun parse-package-group
+  "Parse a package group command line value.
+
+  Args:
+  - `text`: Group value formatted as `title:id,id`.
+
+  Returns:
+  A Boodle package group, or nil when TEXT is invalid."
+  [text]
+  (when-let [separator (find-index text
+                                   (fn [ch]
+                                     (= ":" (str ch))))]
+    (let [title (trim (substr text 0 separator))
+          package-ids (remove (split-package-ids (substr text
+                                                        (+ separator 1)
+                                                        (count text)))
+                              blank?)]
+      (unless (or (blank? title) (empty? package-ids))
+        (model/package-group {:title title
+                              :package-ids package-ids})))))
+
+(defun add-package-group-option
+  "Parse and append a package group option.
+
+  Args:
+  - `args`: Current argument list.
+  - `options`: Accumulated options map.
+
+  Returns:
+  Updated options map after consuming `--package-group` and its value."
+  [args options]
+  (let [spec (nth args 1)
+        group (when spec
+                (parse-package-group spec))]
+    (cond
+      (nil? spec)
+      (assoc options :errors (append (:errors options)
+                                     "Missing package group after --package-group"))
+
+      group
+      (parse-args-step (tail (tail args))
+                       (assoc options
+                              :package-groups
+                              (append (:package-groups options) group)))
+
+      true
+      (parse-args-step (tail (tail args))
+                       (assoc options
+                              :errors
+                              (append (:errors options)
+                                      (str "Invalid package group: " spec)))))))
 
 (defun parse-args-step
   "Parse Boodle generate arguments.
@@ -54,6 +123,9 @@
           (parse-args-step (tail (tail args))
                            (assoc options :out out))))
 
+      (= arg "--package-group")
+      (add-package-group-option args options)
+
       (= "-" (substr arg 0 1))
       (parse-args-step (tail args)
                        (assoc options
@@ -79,6 +151,7 @@
   (let [options (parse-args-step args
                                  {:format :github-pages
                                   :out nil
+                                  :package-groups []
                                   :indexes []
                                   :errors []})
         options (if (nil? (:out options))
@@ -180,6 +253,93 @@
               (fn [package]
                 (package-with-known-versions output-dir package)))))
 
+(defun catalog-package-ids
+  "Return package ids in CATALOG order.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+
+  Returns:
+  Package ids from the catalog."
+  [catalog]
+  (map (:packages catalog) :id))
+
+(defun append-package-id-once
+  "Append ID to IDS when it is not already present.
+
+  Args:
+  - `ids`: Accumulated package ids.
+  - `id`: Package id to append.
+
+  Returns:
+  IDS with ID appended once."
+  [ids id]
+  (if (or (= id "*") (contains? ids id))
+    ids
+    (append ids id)))
+
+(defun explicit-package-group-ids
+  "Return non-wildcard package ids mentioned by GROUPS.
+
+  Args:
+  - `groups`: Package group maps.
+
+  Returns:
+  Unique package ids in group order."
+  [groups]
+  (reduce groups
+          []
+          (fn [ids group]
+            (reduce (:package-ids group) ids append-package-id-once))))
+
+(defun remaining-package-ids
+  "Return package ids not explicitly assigned to a package group.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+  - `explicit-ids`: Package ids already assigned by exact group entries.
+
+  Returns:
+  Package ids not found in EXPLICIT-IDS."
+  [catalog explicit-ids]
+  (filter (catalog-package-ids catalog)
+          (fn [id]
+            (not (contains? explicit-ids id)))))
+
+(defun expand-package-group
+  "Expand wildcard package ids in GROUP.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+  - `explicit-ids`: Non-wildcard package ids from all groups.
+  - `group`: Package group map.
+
+  Returns:
+  GROUP with `*` replaced by remaining catalog package ids."
+  [catalog explicit-ids group]
+  (if (contains? (:package-ids group) "*")
+    (assoc group :package-ids (remaining-package-ids catalog explicit-ids))
+    group))
+
+(defun catalog-with-package-groups
+  "Attach expanded package groups to CATALOG.
+
+  Args:
+  - `catalog`: Boodle catalog map.
+  - `groups`: Package groups from command line options.
+
+  Returns:
+  Catalog with `:package-groups` when groups were provided."
+  [catalog groups]
+  (if (empty? groups)
+    catalog
+    (let [explicit-ids (explicit-package-group-ids groups)]
+      (assoc catalog
+             :package-groups
+             (map groups
+                  (fn [group]
+                    (expand-package-group catalog explicit-ids group)))))))
+
 (defun generated-files
   "Return documentation files for OPTIONS.
 
@@ -190,7 +350,9 @@
   File maps for the selected output format."
   [options]
   (let [catalog (catalog-with-known-versions (:out options)
-                                             (read-catalog (:indexes options)))]
+                                             (read-catalog (:indexes options)))
+        catalog (catalog-with-package-groups catalog
+                                             (:package-groups options))]
     (case (:format options)
       :github-pages (github-pages/files catalog))))
 

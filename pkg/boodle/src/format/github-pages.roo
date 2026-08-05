@@ -171,6 +171,102 @@
           (flat-map (:signatures entry) signature-blocks)
           (example-blocks entry)))
 
+(defun package-row
+  "Return the root index table row for PACKAGE.
+
+  Args:
+  - `package`: Boodle package map.
+
+  Returns:
+  A Markdown table row vector."
+  [package]
+  [(md/link (:name package) (str "packages/" (:id package) "/"))
+   (apply join (concat [", "] (package-versions package)))
+   (:summary package)])
+
+(defun package-table
+  "Return a package table block for PACKAGES.
+
+  Args:
+  - `packages`: Boodle package maps.
+
+  Returns:
+  A Moordown table block."
+  [packages]
+  (md/table ["Package" "Versions" "Description"]
+            (map packages package-row)))
+
+(defun package-with-id
+  "Return the package with ID from PACKAGES.
+
+  Args:
+  - `packages`: Boodle package maps.
+  - `id`: Package id to find.
+
+  Returns:
+  Matching package map, or nil."
+  [packages id]
+  (find-first packages
+              (fn [package]
+                (= id (:id package)))))
+
+(defun packages-with-ids
+  "Return PACKAGES matching IDS in IDS order.
+
+  Args:
+  - `packages`: Boodle package maps.
+  - `ids`: Package ids to include.
+
+  Returns:
+  Matching packages."
+  [packages ids]
+  (keep ids
+        (fn [id]
+          (package-with-id packages id))))
+
+(defun package-section-blocks
+  "Return root index blocks for TITLE and PACKAGES.
+
+  Args:
+  - `title`: Section heading text.
+  - `packages`: Boodle package maps.
+
+  Returns:
+  Heading and package table blocks, or an empty vector when PACKAGES is empty."
+  [title packages]
+  (unless (empty? packages)
+    [(md/heading 2 title)
+     (package-table packages)]))
+
+(defun package-group-blocks
+  "Return root index blocks for GROUP.
+
+  Args:
+  - `packages`: Catalog package maps.
+  - `group`: Package group map.
+
+  Returns:
+  Heading and package table blocks for the packages named by GROUP."
+  [packages group]
+  (package-section-blocks (:title group)
+                          (packages-with-ids packages (:package-ids group))))
+
+(defun package-index-blocks
+  "Return package blocks for the root index.
+
+  Args:
+  - `packages`: Catalog package maps.
+  - `groups`: Optional package group maps.
+
+  Returns:
+  Either grouped package sections or one flat package table."
+  [packages groups]
+  (if (or (nil? groups) (empty? groups))
+    [(package-table packages)]
+    (flat-map groups
+              (fn [group]
+                (package-group-blocks packages group)))))
+
 (defun index-document
   "Return the GitHub Pages index document for PAGE.
 
@@ -180,15 +276,11 @@
   Returns:
   A Moordown document."
   [page]
-  (md/document
-    [(md/heading 1 "Reference")
-     (md/table ["Package" "Versions" "Description"]
-               (map (:packages (:catalog page))
-                    (fn [package]
-                      [(md/link (:name package)
-                                (str "packages/" (:id package) "/"))
-                       (apply join (concat [", "] (package-versions package)))
-                       (:summary package)])))]))
+  (let [catalog (:catalog page)
+        packages (:packages catalog)]
+    (md/document
+      (concat [(md/heading 1 "Reference")]
+              (package-index-blocks packages (:package-groups catalog))))))
 
 (defun package-index-document
   "Return the GitHub Pages package version index document for PAGE.
@@ -466,8 +558,9 @@
        "a:hover { text-decoration: underline; }\n"
        ".site-header { border-bottom: 1px solid #d7dde5; padding: 12px 24px; font-weight: 700; }\n"
        ".site-header a { color: #111827; }\n"
-       "body > h1, body > p, body > table { margin-left: auto; margin-right: auto; max-width: 960px; }\n"
+       "body > h1, body > h2, body > p, body > table { margin-left: auto; margin-right: auto; max-width: 960px; }\n"
        "body > h1 { padding: 0 24px; margin-top: 32px; }\n"
+       "body > h2 { padding: 0 24px; margin-top: 28px; }\n"
        "body > p, body > table { margin-top: 16px; }\n"
        "table { border-collapse: collapse; width: calc(100% - 48px); }\n"
        "th, td { border-bottom: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; vertical-align: top; }\n"
