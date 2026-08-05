@@ -14,72 +14,65 @@
       options
 
       (= arg "-x")
-      (let [extractor (nth args 1)]
-        (if (nil? extractor)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing extractor after -x"]))
-          (let [extractor-key (keyword extractor)]
-            (parse-args-step
-              (tail (tail args))
-              (if (contains? [:forms :symbols :native] extractor-key)
-                (assoc options :extractors (concat (:extractors options)
-                                                   [extractor-key]))
-                (assoc options :errors (concat (:errors options)
-                                               [(str "Unknown index extractor: "
-                                                     extractor)])))))))
+      (if-let [extractor (nth args 1)]
+        (let [extractor-key (keyword extractor)]
+          (parse-args-step
+           (tail (tail args))
+           (if (contains? [:forms :symbols :native] extractor-key)
+             (assoc options :extractors (concat (:extractors options)
+                                                [extractor-key]))
+             (assoc options :errors (concat (:errors options)
+                                            [(str "Unknown index extractor: "
+                                                  extractor)])))))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing extractor after -x"])))
 
       (= arg "--root")
-      (let [root (nth args 1)]
-        (if (nil? root)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing directory after --root"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options
-                                  :roots
-                                  (concat (:roots options) [root])))))
+      (if-let [root (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options
+                                :roots
+                                (concat (:roots options) [root])))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing directory after --root"])))
 
       (= arg "--package-name")
-      (let [name (nth args 1)]
-        (if (nil? name)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing name after --package-name"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options :package-name name))))
+      (if-let [name (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options :package-name name))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing name after --package-name"])))
 
       (= arg "--package-version")
-      (let [version (nth args 1)]
-        (if (nil? version)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing version after --package-version"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options :package-version version))))
+      (if-let [version (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options :package-version version))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing version after --package-version"])))
 
       (= arg "--package-description")
-      (let [description (nth args 1)]
-        (if (nil? description)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing description after --package-description"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options :package-description description))))
+      (if-let [description (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options :package-description description))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing description after --package-description"])))
 
       (= arg "--exclude")
-      (let [path (nth args 1)]
-        (if (nil? path)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing path after --exclude"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options
-                                  :excludes
-                                  (concat (:excludes options) [path])))))
+      (if-let [path (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options
+                                :excludes
+                                (concat (:excludes options) [path])))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing path after --exclude"])))
 
       (or (= arg "-o")
           (= arg "--out"))
-      (let [out (nth args 1)]
-        (if (nil? out)
-          (assoc options :errors (concat (:errors options)
-                                         [(str "Missing file after " arg)]))
-          (parse-args-step (tail (tail args))
-                           (assoc options :out out))))
+      (if-let [out (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options :out out))
+        (assoc options :errors (concat (:errors options)
+                                       [(str "Missing file after " arg)])))
 
       (= "-" (substr arg 0 1))
       (parse-args-step (tail args)

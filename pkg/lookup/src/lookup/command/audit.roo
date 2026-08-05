@@ -30,63 +30,58 @@
 
       (or (= arg "-o")
           (= arg "--output-format"))
-      (let [format (nth args 1)]
-        (if (nil? format)
-          (assoc options :errors (concat (:errors options)
-                                         [(str "Missing format after " arg)]))
-          (let [format-key (keyword format)]
-            (parse-args-step
-              (tail (tail args))
-              (if (contains? [:edn :text] format-key)
-                (assoc options :format format-key)
-                (assoc options :errors (concat (:errors options)
-                                               [(str "Unknown audit output format: "
-                                                     format)])))))))
+      (if-let [format (nth args 1)
+               format-key (keyword format)]
+        (parse-args-step
+         (tail (tail args))
+         (if (contains? [:edn :text] format-key)
+           (assoc options :format format-key)
+           (assoc options :errors (concat (:errors options)
+                                          [(str "Unknown audit output format: "
+                                                format)]))))
+        (assoc options :errors (concat (:errors options)
+                                       [(str "Missing format after " arg)])))
 
       (= arg "--allow-zero-arity")
-      (let [symbol (nth args 1)]
-        (if (nil? symbol)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing symbol after --allow-zero-arity"]))
-          (parse-args-step
-            (tail (tail args))
-            (assoc options
-                   :allow-zero-arity
-                   (concat (:allow-zero-arity options) [symbol])))))
+      (if-let [symbol (nth args 1)]
+        (parse-args-step
+         (tail (tail args))
+         (assoc options
+                :allow-zero-arity
+                (concat (:allow-zero-arity options) [symbol])))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing symbol after --allow-zero-arity"])))
 
       (= arg "--root")
-      (let [root (nth args 1)]
-        (if (nil? root)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing directory after --root"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options
-                                  :roots
-                                  (concat (:roots options) [root])))))
+      (if-let [root (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options
+                                :roots
+                                (concat (:roots options) [root])))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing directory after --root"])))
 
       (= arg "--exclude")
-      (let [path (nth args 1)]
-        (if (nil? path)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing path after --exclude"]))
-          (parse-args-step (tail (tail args))
-                           (assoc options
-                                  :excludes
-                                  (concat (:excludes options) [path])))))
+      (if-let [path (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options
+                                :excludes
+                                (concat (:excludes options) [path])))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing path after --exclude"])))
 
       (= arg "--fail-on")
-      (let [level (nth args 1)]
-        (if (nil? level)
-          (assoc options :errors (concat (:errors options)
-                                         ["Missing level after --fail-on"]))
-          (let [level-key (keyword level)]
-            (parse-args-step
-              (tail (tail args))
-              (if (contains? [:warning :error] level-key)
-                (assoc options :fail-on level-key)
-                (assoc options :errors (concat (:errors options)
-                                               [(str "Unknown audit failure level: "
-                                                     level)])))))))
+      (if-let [level (nth args 1)]
+        (let [level-key (keyword level)]
+          (parse-args-step
+           (tail (tail args))
+           (if (contains? [:warning :error] level-key)
+             (assoc options :fail-on level-key)
+             (assoc options :errors (concat (:errors options)
+                                            [(str "Unknown audit failure level: "
+                                                  level)])))))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing level after --fail-on"])))
 
       (= "-" (substr arg 0 1))
       (parse-args-step (tail args)
@@ -128,11 +123,11 @@
                                   :format :edn
                                   :fail-on nil
                                   :errors []})]
-    (if (nil? (:input options))
+    (if (:input options)
+      options
       (assoc options
              :errors
-             (concat (:errors options) ["Missing audit input"]))
-      options)))
+             (concat (:errors options) ["Missing audit input"])))))
 
 (defun audit-index! [options]
   (let [input (:input options)]
