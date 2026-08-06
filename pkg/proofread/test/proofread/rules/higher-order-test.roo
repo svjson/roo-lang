@@ -27,9 +27,9 @@
          (diagnostic-lines "assets/rules/higher-order/use-find-first.roo"))))
 
 (deftest reports-keep-candidates
-  (is (= [:use-keep :use-keep :use-keep]
+  (is (= [:use-keep :use-keep :use-keep :use-keep :use-keep :use-keep]
          (diagnostic-rules "assets/rules/higher-order/use-keep.roo")))
-  (is (= [4 10 16]
+  (is (= [4 10 16 21 28 35]
          (diagnostic-lines "assets/rules/higher-order/use-keep.roo"))))
 
 (deftest ignores-higher-order-non-candidates

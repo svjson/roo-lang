@@ -1,5 +1,6 @@
 (ns proofread.rules.higher-order.use-keep
   (:require [proofread.inspect.forms :as forms]
+            [proofread.inspect.sequences :as sequences]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun map-with-conditional-body?
@@ -23,7 +24,8 @@
   "Test whether an AST node can use `keep`."
   [node]
   (or (map-with-conditional-body? node)
-      (map-filter? node)))
+      (map-filter? node)
+      (sequences/filter-mapped-nil-results? node)))
 
 (defun check
   "Return a `use-keep` diagnostic for matching nodes."

@@ -1,0 +1,32 @@
+(ns proofread.inspect.sequences
+  (:require [proofread.inspect.forms :as forms]))
+
+(defun not-nil-param?
+  "Test whether an AST node rejects nil values for `param-name`."
+  [{:keys [children] :as node} param-name]
+  (case (forms/head-name node)
+    "some?"
+    (and (forms/call? node "some?" 2)
+         (forms/direct-symbol? (nth children 1) param-name))
+
+    "not"
+    (let [not-body (nth children 1)]
+      (and (forms/call? node "not" 2)
+           (forms/call? not-body "nil?" 2)
+           (forms/direct-symbol? (nth (:children not-body) 1) param-name)))
+
+    :default false))
+
+(defun nil-filter?
+  "Test whether a filter predicate keeps non-nil values."
+  [node]
+  (or (forms/direct-symbol? node "some?")
+      (when-let [param-name (forms/fn-single-param-name node)]
+        (not-nil-param? (nth (:children node) 2) param-name))))
+
+(defun filter-mapped-nil-results?
+  "Test whether a filter discards nil results from a map."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "filter" 3)
+       (forms/map-form? (nth children 1))
+       (nil-filter? (nth children 2))))

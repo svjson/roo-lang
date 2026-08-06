@@ -107,6 +107,13 @@
        (fn [param]
          (missing-param-doc-diagnostic symbol signature param))))
 
+(def filter-map-non-nil
+  (filter (map contexts
+               (fn [context]
+                 (project-context context options)))
+          (fn [context]
+            (some? context))))
+
 (def dynamic-type-dispatch
   (case (type-of value)
     "map" :map

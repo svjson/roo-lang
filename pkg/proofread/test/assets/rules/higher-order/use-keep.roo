@@ -16,3 +16,23 @@
   (map (filter params (fn [param] (blank-text? (:doc param))))
        (fn [param]
          (missing-param-doc-diagnostic symbol signature param))))
+
+(def filtered-map
+  (filter (map contexts
+               (fn [context]
+                 (project-context context options)))
+          (fn [context]
+            (some? context))))
+
+(def filtered-map-not-nil
+  (filter (map contexts
+               (fn [context]
+                 (project-context context options)))
+          (fn [context]
+            (not (nil? context)))))
+
+(def filtered-map-some
+  (filter (map contexts
+               (fn [context]
+                 (project-context context options)))
+          some?))
