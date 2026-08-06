@@ -103,6 +103,17 @@
   [left right]
   (= (:form left) (:form right)))
 
+(defun form-string
+  "Return the source-like string for an AST node form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The string representation of `node`'s parsed form."
+  [node]
+  (str (:form node)))
+
 (defun empty-vector?
   "Test whether an AST node is an empty vector literal.
 

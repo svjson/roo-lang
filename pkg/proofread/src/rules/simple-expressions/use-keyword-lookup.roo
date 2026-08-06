@@ -51,6 +51,15 @@
   (and (get-form? node)
        (= :keyword (:type (nth children 2)))))
 
+(defun replacement
+  "Return the replacement for `(get value :key)`."
+  [{:keys [children] :as node}]
+  (str "("
+       (forms/form-string (nth children 2))
+       " "
+       (forms/form-string (nth children 1))
+       ")"))
+
 (defun check
   "Report `(get value :key)` forms.
 
@@ -63,4 +72,8 @@
   [parent node]
   (when (and (keyword-get? node)
              (not (get-default-child? parent node)))
-    (diagnostics/make node :use-keyword-lookup "Use keyword lookup")))
+    (diagnostics/make-suggesting
+      node
+      :use-keyword-lookup
+      "Use keyword lookup"
+      [(diagnostics/rewrite node "Rewrite as keyword lookup" (replacement node))])))

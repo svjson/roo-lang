@@ -1,5 +1,47 @@
 (ns proofread.rules.diagnostics)
 
+(defun edit
+  "Build a source replacement edit.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `replacement`: Replacement source text.
+
+  Returns:
+  A source edit map."
+  [node replacement]
+  {:source (:source node)
+   :replacement replacement})
+
+(defun rewrite
+  "Build a single-edit rewrite suggestion.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `title`: User-facing suggestion title.
+  - `replacement`: Replacement source text.
+
+  Returns:
+  A suggestion map containing replacement edits."
+  [node title replacement]
+  {:title title
+   :kind :rewrite
+   :edits [(edit node replacement)]})
+
+(defun with-suggestions
+  "Attach suggestions to a diagnostic.
+
+  Args:
+  - `diagnostic`: Diagnostic map.
+  - `suggestions`: Suggestion maps.
+
+  Returns:
+  `diagnostic` with `:suggestions` when suggestions are present."
+  [diagnostic suggestions]
+  (cond-> diagnostic
+          (not-empty? suggestions)
+          (assoc :suggestions suggestions)))
+
 (defun make
   "Build a proofread rule diagnostic for an AST node.
 
@@ -15,6 +57,20 @@
    :severity :warning
    :source (:source node)
    :message message})
+
+(defun make-suggesting
+  "Build a proofread rule diagnostic with structured suggestions.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `rule`: Diagnostic rule keyword.
+  - `message`: Diagnostic message.
+  - `suggestions`: Suggestion maps.
+
+  Returns:
+  A diagnostic map with `:suggestions` when suggestions are present."
+  [node rule message suggestions]
+  (with-suggestions (make node rule message) suggestions))
 
 (defun make-file
   "Build a proofread rule diagnostic for a file.

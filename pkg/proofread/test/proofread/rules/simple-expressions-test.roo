@@ -13,6 +13,20 @@
        (fn [diagnostic]
          [(:rule diagnostic) (:line (:source diagnostic))])))
 
+(defun diagnostic-for-rule
+  [path rule]
+  (find-first (diagnostics path)
+              (fn [diagnostic]
+                (= rule (:rule diagnostic)))))
+
+(defun suggestion-summary
+  [path rule]
+  (map (:suggestions (diagnostic-for-rule path rule))
+       (fn [suggestion]
+         [(:title suggestion)
+          (:kind suggestion)
+          (map (:edits suggestion) :replacement)])))
+
 (deftest reports-simple-expression-rewrites
   (is (= [[:use-head 4]
           [:use-empty? 7]
@@ -53,6 +67,14 @@
 (deftest ignores-simple-expression-non-candidates
   (is (= []
          (diagnostics "assets/rules/simple-expressions/non-candidates.roo"))))
+
+(deftest reports-structured-suggestions
+  (is (= [["Rewrite as head" :rewrite ["(head items)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-head)))
+  (is (= [["Rewrite as keyword lookup" :rewrite ["(:name symbol)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-keyword-lookup))))
 
 (deftest reports-redundant-map-checks
   (is (= [[:redundant-map-check 4]

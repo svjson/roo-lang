@@ -2,6 +2,11 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
+(defun replacement
+  "Return the replacement for `(nth value 0)`."
+  [{:keys [children] :as node}]
+  (str "(head " (forms/form-string (nth children 1)) ")"))
+
 (defun check
   "Report `(nth value 0)` forms.
 
@@ -14,4 +19,8 @@
   [parent {:keys [children] :as node}]
   (when (and (forms/call? node "nth" 3)
              (forms/zero-node? (nth children 2)))
-    (diagnostics/make node :use-head "Use head")))
+    (diagnostics/make-suggesting
+      node
+      :use-head
+      "Use head"
+      [(diagnostics/rewrite node "Rewrite as head" (replacement node))])))
