@@ -87,13 +87,14 @@
   - `diagnostics`: Diagnostic maps.
   - `groups`: Remaining grouping criteria.
   - `level`: Current group nesting level.
+  - `options`: Reporter display options.
 
   Returns:
   A vector of formatted output lines."
-  [diagnostics groups level]
+  [diagnostics groups level options]
   (if (empty? groups)
     (for [diagnostic diagnostics]
-      (str (indent level) (rc/diagnostic-line diagnostic)))
+      (str (indent level) (rc/diagnostic-line-with-options diagnostic options)))
     (let [criterion (head groups)]
       (flat-map (group-values diagnostics criterion)
                 (fn [value]
@@ -102,7 +103,21 @@
                                                                criterion
                                                                value)
                                           (tail groups)
-                                          (+ level 1))))))))
+                                          (+ level 1)
+                                          options)))))))
+
+(defun lines-with-options
+  "Return grouped reporter diagnostic lines with display options.
+
+  Args:
+  - `diagnostics`: Diagnostic maps.
+  - `groups`: Grouping criteria, in nesting order.
+  - `options`: Reporter display options.
+
+  Returns:
+  A vector of formatted output lines."
+  [diagnostics groups options]
+  (lines-at-level diagnostics groups 0 options))
 
 (defun lines
   "Return grouped reporter diagnostic lines.
@@ -114,7 +129,7 @@
   Returns:
   A vector of formatted output lines."
   [diagnostics groups]
-  (lines-at-level diagnostics groups 0))
+  (lines-with-options diagnostics groups {}))
 
 (defun report-file!
   "Collect diagnostics for grouped output.
@@ -138,7 +153,10 @@
   Returns:
   `summary`."
   [state summary]
-  (map (lines (:diagnostics state) (:groups state)) prn)
+  (map (lines-with-options (:diagnostics state)
+                           (:groups state)
+                           (:options state))
+       prn)
   (rc/print-summary! summary))
 
 (defun make
@@ -147,12 +165,14 @@
   Args:
   - `files`: Files selected for the proofread run.
   - `groups`: Grouping criteria, in nesting order.
+  - `options`: Reporter display options.
 
   Returns:
   A reporter map that buffers diagnostics and prints grouped output before the
   final summary."
-  [files groups]
+  [files groups options]
   {:state {:diagnostics []
-           :groups groups}
+           :groups groups
+           :options options}
    :report-file! report-file!
    :report-summary! report-summary!})

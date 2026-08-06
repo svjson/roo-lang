@@ -6,7 +6,7 @@
 
 (def usage-line
   "Usage line for the proofread check command."
-  "Usage: proofread [--help|--version] [--reporter simple] [--group-by rule,namespace,file,package] <file|pattern>...")
+  "Usage: proofread [--help|--version] [--reporter simple] [--group-by rule,namespace,file,package] [--show-ranges] <file|pattern>...")
 
 (defun split-groups
   "Split a comma-separated group option.
@@ -120,6 +120,10 @@
                 :errors
                 [concat ["Missing group criteria after --group-by"]]))
 
+      (= arg "--show-ranges")
+      (parse-args-step (tail args)
+                       (assoc options :show-ranges? true))
+
       (string/starts-with? arg "--")
       (parse-args-step (tail args)
                        (update options
@@ -143,6 +147,7 @@
                                  {:files []
                                   :reporter :simple
                                   :groups []
+                                  :show-ranges? false
                                   :errors []})]
     (cond-> options
             (empty? (:files options))

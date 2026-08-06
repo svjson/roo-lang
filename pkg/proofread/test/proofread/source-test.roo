@@ -7,3 +7,8 @@
     (is (= "assets/style/redundant-do.roo" (:file diagnostic)))
     (is (= "proofread.style-sample" (:namespace diagnostic)))
     (is (= "proofread-tests" (:package diagnostic)))))
+
+(deftest keeps-diagnostic-source-ranges
+  (let [source (:source (head (source/diagnostics "assets/style/redundant-do.roo")))]
+    (is (= {:line 4 :column 3} (:start source)))
+    (is (= {:line 4 :column 9} (:end source)))))

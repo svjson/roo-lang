@@ -97,6 +97,19 @@
   Returns:
   A styled location string."
   [source]
+  (diagnostic-location-with-options source {}))
+
+(defun diagnostic-location-with-options
+  "Format one styled diagnostic source location with display options.
+
+  Args:
+  - `source`: Diagnostic source map containing `:path`, `:line`, `:column`,
+    `:start`, and `:end`.
+  - `options`: Reporter display options.
+
+  Returns:
+  A styled location string."
+  [source options]
   (str (location-prefix (:path source))
        (soot/paint filename-styles (io/basename (:path source)))
        (if (nil? (:line source))
@@ -105,6 +118,13 @@
               (soot/paint location-position-styles (:line source))
               (soot/paint location-separator-styles ":")
               (soot/paint location-position-styles (:column source))
+              (if (and (:show-ranges? options)
+                       (:end source))
+                (str (soot/paint location-separator-styles "-")
+                     (soot/paint location-position-styles (:line (:end source)))
+                     (soot/paint location-separator-styles ":")
+                     (soot/paint location-position-styles (:column (:end source))))
+                "")
               ":"))))
 
 (defun group-line
@@ -128,8 +148,20 @@
 
   Returns:
   A single warning line containing styled source, severity, rule, and message."
-  [{:keys [source severity rule message]}]
-  (str (diagnostic-location source)
+  [diagnostic]
+  (diagnostic-line-with-options diagnostic {}))
+
+(defun diagnostic-line-with-options
+  "Format one styled diagnostic for CLI output with display options.
+
+  Args:
+  - `diagnostic`: A diagnostic map from a style rule.
+  - `options`: Reporter display options.
+
+  Returns:
+  A single warning line containing styled source, severity, rule, and message."
+  [{:keys [source severity rule message]} options]
+  (str (diagnostic-location-with-options source options)
        " "
        (soot/paint (severity-styles severity) (name severity))
        " "

@@ -23,6 +23,26 @@
               ":")
          (common/diagnostic-location {:path "world-map/src/symbols.roo"}))))
 
+(deftest formats-location-ranges-when-enabled
+  (is (= (str "world-map/src/"
+              esc "[1msymbols.roo" esc "[22m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m117" esc "[39m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m28" esc "[39m"
+              esc "[2;90m-" esc "[39;22m"
+              esc "[36m119" esc "[39m"
+              esc "[2;90m:" esc "[39;22m"
+              esc "[36m9" esc "[39m"
+              ":")
+         (common/diagnostic-location-with-options
+          {:path "world-map/src/symbols.roo"
+           :line 117
+           :column 28
+           :end {:line 119
+                 :column 9}}
+          {:show-ranges? true}))))
+
 (deftest styles-error-diagnostics
   (is (= (str esc "[1msymbols.roo" esc "[22m"
               ": "

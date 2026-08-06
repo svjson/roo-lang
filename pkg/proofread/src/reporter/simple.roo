@@ -12,7 +12,7 @@
   The unchanged reporter state."
   [state file-result]
   (for [diagnostic (:diagnostics file-result)]
-    (prn (rc/diagnostic-line diagnostic)))
+    (prn (rc/diagnostic-line-with-options diagnostic (:options state))))
   state)
 
 (defun report-summary!
@@ -32,11 +32,12 @@
 
   Args:
   - `files`: Files selected for the proofread run.
+  - `options`: Reporter display options.
 
   Returns:
   A reporter map that prints diagnostics as each file is checked and prints the
   final summary at the end."
-  [files]
-  {:state {}
+  [files options]
+  {:state {:options options}
    :report-file! report-file!
    :report-summary! report-summary!})
