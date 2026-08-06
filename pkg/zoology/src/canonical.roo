@@ -60,13 +60,13 @@
 
 (defun canonical-field [schema value field-id field-schema]
   (let [path (schema/field-path field-id field-schema)]
-    (if (schema/path-present? value path)
-      (assoc-in value
-                path
-                (canonical-value
-                 (schema/schema-document-with-root schema field-schema)
-                 (get-in value path)))
-      value)))
+    (cond-> value
+
+            (schema/path-present? value path)
+            (assoc-in path
+                      (canonical-value
+                       (schema/schema-document-with-root schema field-schema)
+                       (get-in value path))))))
 
 (defun canonical-fields [schema fields value]
   (reduce-kv fields
@@ -92,9 +92,8 @@
 (defun canonical-array [schema root value]
   (if (sequential? value)
     (let [item-schema (schema/schema-document-with-root schema (:items root))]
-      (map value
-           (fn [item]
-             (canonical-value item-schema item))))
+      (for [item value]
+        (canonical-value item-schema item)))
     value))
 
 (defun canonical-value [schema value]

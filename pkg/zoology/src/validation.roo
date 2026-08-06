@@ -3,9 +3,8 @@
             [zoology.valid-values :as valid-values]))
 
 (defun append-error [errors error]
-  (if error
-    (concat errors [error])
-    errors))
+  (cond-> errors
+          error (append error)))
 
 (defun required-error [value field-schema]
   (when (and (= (:required field-schema) true)
@@ -32,9 +31,8 @@
        :max max-value
        :actual value})))
 
-(defun valid-value-error [context parent-value value field-schema]
-  (let [valid-values (:valid-values field-schema)
-        allowed (valid-values/valid-value-values context field-schema parent-value)]
+(defun valid-value-error [context parent-value value {:keys [valid-values] :as field-schema}]
+  (let [allowed (valid-values/valid-value-values context field-schema parent-value)]
     (when (and valid-values
                (not (or (nil? value)
                         (and (string? value)

@@ -1,11 +1,10 @@
 (ns zoology.schema)
 
-(defun field-path [field-id field-schema]
-  (let [path (:path field-schema)]
-    (cond
-      (nil? path) [field-id]
-      (sequential? path) path
-      :default [path])))
+(defun field-path [field-id {:keys [path] :as field-schema}]
+  (cond
+    (nil? path) [field-id]
+    (sequential? path) path
+    :default [path]))
 
 (defun field-value [value field-id field-schema]
   (get-in value (field-path field-id field-schema)))
@@ -119,13 +118,11 @@
     (let [variants (reduce variant-ids
                            {}
                            (fn [selected variant-id]
-                             (if (contains? (:variants union-schema)
-                                            variant-id)
-                               (assoc selected
-                                      variant-id
-                                      (get (:variants union-schema)
-                                           variant-id))
-                               selected)))
+                             (cond-> selected
+                                     (contains? (:variants union-schema) variant-id)
+                                     (assoc variant-id
+                                            (get (:variants union-schema)
+                                                 variant-id)))))
           discriminator-values (keys variants)]
       (assoc union-schema
              :base
@@ -288,11 +285,11 @@
       (let [base-fields (schema-fields
                          (schema-document-with-root schema (:base root)))
             variant (union-variant-schema root value)]
-        (if variant
-          (merge base-fields
-                 (schema-fields
-                  (schema-document-with-root schema variant)))
-          base-fields))
+        (cond-> base-fields
+
+                variant
+                (merge (schema-fields
+                        (schema-document-with-root schema variant)))))
 
       :default
       (schema-fields schema))))

@@ -4,14 +4,14 @@
 (defun valid-values-source-items [context value source]
   (cond
     (sequential? source)
-    (or (get-in context source) [])
+    (get-in context source [])
 
     (map? source)
     (let [source-key (schema/path-value value (or (:field source)
                                                   (:path source)))
           source-path (get (:sources source) source-key)]
       (if source-path
-        (or (get-in context source-path) [])
+        (get-in context source-path [])
         []))
 
     :default []))
@@ -31,21 +31,20 @@
 
     :default []))
 
-(defun valid-value-item-value [item valid-values]
-  (let [value-path (:value-path valid-values)]
-    (cond
-      value-path
-      (get-in item value-path)
+(defun valid-value-item-value [item {:keys [value-path] :as valid-values}]
+  (cond
+    value-path
+    (get-in item value-path)
 
-      (map? item)
-      (if (contains? item :value)
-        (:value item)
-        (:id item))
+    (map? item)
+    (if (contains? item :value)
+      (:value item)
+      (:id item))
 
-      :default item)))
+    :default item))
 
-(defun valid-value-values [context field-schema value]
-  (let [valid-values (:valid-values field-schema)]
-    (map (valid-values-items context valid-values value)
-         (fn [item]
-           (valid-value-item-value item valid-values)))))
+(defun valid-value-values [context
+                           {:keys [valid-values] :as field-schema}
+                           value]
+  (for [item  (valid-values-items context valid-values value)]
+    (valid-value-item-value item valid-values)))
