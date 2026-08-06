@@ -75,7 +75,10 @@ namespace Roo
   FUNC(FloatFunction, to_float)
 
   /*!
-   * @brief Clamp a number to the range [low, high].
+   * @brief Clamp a number to the range between a low and high value.
+   *
+   * The `low` and `high` arguments can be passed in any order, and consumers do
+   * not need to validate the range.
    *
    * Usage:
    * @code
@@ -88,6 +91,9 @@ namespace Roo
    * (clamp 15 0 10)
    * => 10
    *
+   * (clamp 15 10 0)
+   * => 10
+   *
    * (clamp nil 0 10)
    * => nil
    * @endcode
@@ -95,8 +101,8 @@ namespace Roo
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
    * | value | The number to clamp.                                               |
-   * | low   | Lower bound (inclusive).                                           |
-   * | high  | Upper bound (inclusive).                                           |
+   * | low   | One inclusive range bound.                                         |
+   * | high  | The other inclusive range bound.                                   |
    */
   FUNC(ClampFunction, clamp)
 

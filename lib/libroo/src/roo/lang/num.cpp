@@ -253,19 +253,27 @@ namespace Roo
 
   EXEC_BODY(ClampFunction, exec_clamp)
   {
-    if (args[0]->type == Value::Type::NIL ||
-        args[1]->type == Value::Type::NIL ||
+    if (args[0]->type == Value::Type::NIL || args[1]->type == Value::Type::NIL ||
         args[2]->type == Value::Type::NIL)
     {
       return Constant::NIL;
     }
 
     const float value = std::get<const Value::Number>(args[0]->value).get_float();
-    const float low   = std::get<const Value::Number>(args[1]->value).get_float();
-    const float high  = std::get<const Value::Number>(args[2]->value).get_float();
+    float low = std::get<const Value::Number>(args[1]->value).get_float();
+    float high = std::get<const Value::Number>(args[2]->value).get_float();
 
-    if (value <= low)  { return args[1]; }
-    if (value >= high) { return args[2]; }
+    if (low < high)
+    {
+      if (value <= low) return args[1];
+      if (value >= high) return args[2];
+    }
+    else
+    {
+      if (value >= low) return args[1];
+      if (value <= high) return args[2];
+    }
+
     return args[0];
   }
 
