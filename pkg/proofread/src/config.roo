@@ -34,9 +34,9 @@
           inherited (unless (= parent dir)
                       (config-files parent))
           path (config-path dir)]
-      (if (io/exists? path)
-        (append (or inherited []) path)
-        (or inherited [])))))
+      (cond-> (or inherited [])
+              (io/exists? path)
+              (append path)))))
 
 (defun merge-config
   "Merge proofread config maps recursively.

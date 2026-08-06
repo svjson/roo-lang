@@ -5,6 +5,23 @@
     (save!)
     (skip!)))
 
+(def transformed-else-branch
+  (if enabled?
+    config
+    (assoc config :enabled true)))
+
+(def unrelated-else-value
+  (if enabled?
+    (assoc config :enabled true)
+    other-config))
+
+(def value-as-if-condition
+  (if enabled?
+    (if config
+      :enabled
+      :disabled)
+    config))
+
 (def different-if-condition
   (let [item (find-item)]
     (if ready?

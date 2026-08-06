@@ -1,0 +1,13 @@
+(ns proofread.direct-conditions-use-cond-thread-first)
+
+(def conditional-assoc
+  (if enabled?
+    (assoc config :enabled true)
+    config))
+
+(def conditional-thread
+  (if debug?
+    (-> options
+        (assoc :debug true)
+        (assoc :level :verbose))
+    options))

@@ -1,0 +1,29 @@
+(ns proofread.rules.direct-conditions.use-cond-thread-first
+  (:require [proofread.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun candidate?
+  "Test whether an `if` form should use `cond->`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` when the then branch transforms the else value, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/full-if? node)
+       (forms/thread-first-transform? (nth children 2)
+                                      (nth children 3))))
+
+(defun check
+  "Return a `use-cond-thread-first` diagnostic for matching nodes.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `cond->`, otherwise `nil`."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node :use-cond-thread-first "Use cond->")))

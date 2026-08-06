@@ -103,6 +103,48 @@
   [left right]
   (= (:form left) (:form right)))
 
+(defun thread-first-form?
+  "Test whether an AST node is a `->` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(-> value form...)`, otherwise `false`."
+  [node]
+  (= "->" (head-name node)))
+
+(defun thread-first-call?
+  "Test whether an AST node is a callable thread-first step.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for named calls that can receive a threaded first argument."
+  [node]
+  (and (head-name node)
+       (not (contains? ["if" "when" "unless" "cond" "case" "let" "fn" "do"
+                        "quote" "->" "cond->"]
+                       (head-name node)))))
+
+(defun thread-first-transform?
+  "Test whether a form threads `value` as its first argument.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `value`: Expected threaded value node.
+
+  Returns:
+  `true` for `(call value ...)` and `(-> value form...)`, otherwise `false`."
+  [{:keys [children] :as node} value]
+  (if (thread-first-form? node)
+    (and (< 2 (count children))
+         (same-form? (nth children 1) value))
+    (and (thread-first-call? node)
+         (< 1 (count children))
+         (same-form? (nth children 1) value))))
+
 (defun full-if?
   "Test whether an AST node is an `if` form with an explicit else branch.
 

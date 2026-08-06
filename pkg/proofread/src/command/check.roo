@@ -147,11 +147,10 @@
                                   :reporter :simple
                                   :groups []
                                   :errors []})]
-    (if (empty? (:files options))
-      (assoc options
-             :errors
-             (concat (:errors options) ["No files or patterns provided."]))
-      options)))
+    (cond-> options
+            (empty? (:files options))
+            (assoc :errors
+                   (concat (:errors options) ["No files or patterns provided."])))))
 
 (defun parse-error-diagnostic
   "Build a diagnostic for a parse or read error.
