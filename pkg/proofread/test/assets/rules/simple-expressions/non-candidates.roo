@@ -96,3 +96,8 @@
 
 (def three-argument-max
   (max lower value (min upper fallback)))
+
+(def map-filter
+  (map (filter params (fn [param] (blank-text? (:doc param))))
+       (fn [param]
+         (missing-param-doc-diagnostic symbol signature param))))

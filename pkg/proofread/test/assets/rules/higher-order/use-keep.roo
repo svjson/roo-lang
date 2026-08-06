@@ -11,3 +11,8 @@
        (fn [item]
          (unless (archived? item)
            (:id item)))))
+
+(def mapped-filter
+  (map (filter params (fn [param] (blank-text? (:doc param))))
+       (fn [param]
+         (missing-param-doc-diagnostic symbol signature param))))

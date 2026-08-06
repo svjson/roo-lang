@@ -2,8 +2,8 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(defun candidate?
-  "Test whether an AST node can use `keep`."
+(defun map-with-conditional-body?
+  "Test whether a map function conditionally returns a value."
   [{:keys [children] :as node}]
   (and (forms/map-form? node)
        (let [mapper (nth children 2)
@@ -12,6 +12,18 @@
               (= 3 (count mapper-children))
               (contains? ["when" "unless"]
                          (forms/head-name (nth mapper-children 2)))))))
+
+(defun map-filter?
+  "Test whether a map consumes a filtered sequence."
+  [{:keys [children] :as node}]
+  (and (forms/map-form? node)
+       (forms/call? (nth children 1) "filter" 3)))
+
+(defun candidate?
+  "Test whether an AST node can use `keep`."
+  [node]
+  (or (map-with-conditional-body? node)
+      (map-filter? node)))
 
 (defun check
   "Return a `use-keep` diagnostic for matching nodes."

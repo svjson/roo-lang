@@ -8,6 +8,7 @@
   (when (forms/call? node "map" 3)
     (let [mapper (nth children 2)]
       (and (not= "flatten" (forms/head-name parent))
+           (not (forms/call? (nth children 1) "filter" 3))
            (forms/call? mapper "fn" 3)
            (case (forms/head-name (nth (:children mapper) 2))
              "when" false
