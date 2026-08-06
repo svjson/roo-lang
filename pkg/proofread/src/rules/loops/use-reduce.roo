@@ -1,0 +1,68 @@
+(ns proofread.rules.loops.use-reduce
+  (:require [proofread.inspect.bindings :as bindings]
+            [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(def loop-heads
+  "Forms that execute a body once per input."
+  ["doseq" "for" "for-indexed" "map"])
+
+(defun binding-names
+  "Return direct symbol names from let bindings."
+  [items index]
+  (when (< index (count items))
+    (concat
+      (if-let [name (forms/symbol-name (nth items index))]
+        [name]
+        [])
+      (binding-names items (+ index 2)))))
+
+(defun collection-loop?
+  "Test whether an AST node loops over an input collection."
+  [node]
+  (contains? loop-heads (forms/head-name node)))
+
+(defun mutates-bound-name?
+  "Test whether a `set!` form mutates one of `names`."
+  [{:keys [children] :as node} names]
+  (and (forms/call? node "set!" 3)
+       (any? (:children (nth children 1))
+             (fn [target]
+               (contains? names (forms/symbol-name target))))))
+
+(defun contains-mutating-set?
+  "Test whether an AST subtree mutates one of `names`."
+  [node names]
+  (and (map? node)
+       (or (mutates-bound-name? node names)
+           (any? (:children node)
+                 (fn [child]
+                   (contains-mutating-set? child names))))))
+
+(defun loop-mutates-bound-name?
+  "Test whether a collection loop mutates one of `names`."
+  [node names]
+  (and (map? node)
+       (or (and (collection-loop? node)
+                (contains-mutating-set? node names))
+           (any? (:children node)
+                 (fn [child]
+                   (loop-mutates-bound-name? child names))))))
+
+(defun candidate?
+  "Test whether a `let` contains loop-carried mutable state."
+  [node]
+  (when-let [items (bindings/let-bindings node)]
+    (let [names (binding-names items 0)]
+      (and (head names)
+           (any? (bindings/let-body-forms node)
+                 (fn [body-form]
+                   (loop-mutates-bound-name? body-form names)))))))
+
+(defun check
+  "Return a `use-reduce` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node
+                      :use-reduce
+                      "Use reduce for loop-carried state")))

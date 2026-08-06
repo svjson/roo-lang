@@ -4,25 +4,19 @@
   (for-indexed [index child children]
     (append! lines (:id child))))
 
-(def counted-while-without-indexed-read
-  (let [index 0]
-    (while (< index (count children))
-      (append! lines index)
-      (set! [index] (+ index 1)))))
+(def plain-map
+  (map values render-value))
 
-(def counted-while-with-different-read-target
-  (let [index 0]
-    (while (< index (count children))
-      (let [child (nth other-children index)]
-        (append! lines (:id child))
-        (set! [index] (+ index 1))))))
+(def direct-set-outside-loop
+  (let [current value]
+    (set! [current] (advance current))
+    current))
 
-(def counted-while-with-non-unit-step
-  (let [index 0]
-    (while (< index (count children))
-      (let [child (nth children index)]
-        (append! lines (:id child))
-        (set! [index] (+ index 2))))))
+(def loop-mutates-unbound-state
+  (let [current value]
+    (for [entry entries]
+      (set! [external] entry)
+      (handle current entry))))
 
 (def plain-while
   (while (active?)

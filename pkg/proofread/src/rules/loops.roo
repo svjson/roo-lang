@@ -1,12 +1,14 @@
 (ns proofread.rules.loops
-  (:require [proofread.rules.loops.use-for-indexed :as use-for-indexed]
+  (:require [proofread.rules.loops.use-reduce :as use-reduce]
+            [proofread.rules.loops.use-for-indexed :as use-for-indexed]
             [proofread.rules.registry :as registry]))
 
 (def rules
   "Loop rule descriptors."
   (registry/descriptors
     :loops
-    [[:use-for-indexed use-for-indexed/check]]))
+    [[:use-for-indexed use-for-indexed/check]
+     [:use-reduce use-reduce/check]]))
 
 (defun node-diagnostic
   "Return the first loop diagnostic for an AST node.

@@ -1,0 +1,24 @@
+(ns proofread.loops-use-reduce)
+
+(def normalize-patches
+  (let [normalized []
+        next-value value]
+    (map patches
+         (fn [patch]
+           (let [normalized-patch (normalize-patch next-value patch)]
+             (append! normalized normalized-patch)
+             (set! [next-value]
+                   (apply-patch next-value normalized-patch)))))
+    normalized))
+
+(def walking-for
+  (let [current value]
+    (for [entry entries]
+      (set! [current] (advance current entry)))
+    current))
+
+(def walking-doseq
+  (let [current value]
+    (doseq [entry entries]
+      (set! [current] (advance current entry)))
+    current))

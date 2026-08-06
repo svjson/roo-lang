@@ -17,6 +17,12 @@
           [:use-for-indexed 15]]
          (diagnostic-summary "assets/rules/loops/use-for-indexed.roo"))))
 
+(deftest reports-use-reduce-candidates
+  (is (= [[:use-reduce 4]
+          [:use-reduce 15]
+          [:use-reduce 21]]
+         (diagnostic-summary "assets/rules/loops/use-reduce.roo"))))
+
 (deftest ignores-loop-non-candidates
   (is (= []
          (diagnostics "assets/rules/loops/non-candidates.roo"))))
