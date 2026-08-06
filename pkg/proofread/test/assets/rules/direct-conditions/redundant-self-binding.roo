@@ -1,0 +1,10 @@
+(ns proofread.direct-conditions-redundant-self-binding)
+
+(def option-value
+  (if-let [value value]
+    value
+    id))
+
+(def optional-label
+  (when-let [label label]
+    (render-label label)))

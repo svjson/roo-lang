@@ -85,3 +85,17 @@
 (def unrepeated-keyword-condition
   (when (:value result)
     (save! result)))
+
+(def meaningful-if-let-binding
+  (if-let [value (:value option)]
+    value
+    (:id option)))
+
+(def meaningful-when-let-binding
+  (when-let [value (selected-value option)]
+    (render value)))
+
+(def destructured-if-let-binding
+  (if-let [{:keys [value]} option]
+    value
+    (:id option)))

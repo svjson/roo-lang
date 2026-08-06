@@ -1,0 +1,27 @@
+(ns proofread.rules.direct-conditions.redundant-self-binding
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun self-binding?
+  "Test whether a binding vector binds a symbol to itself."
+  [node]
+  (when (= :vector (:type node))
+    (let [children (:children node)]
+      (and (= 2 (count children))
+           (when-let [name (forms/symbol-name (head children))]
+             (forms/direct-symbol? (nth children 1) name))))))
+
+(defun candidate?
+  "Test whether an `if-let` or `when-let` uses a redundant self-binding."
+  [{:keys [children] :as node}]
+  (and (contains? ["if-let" "when-let"] (forms/head-name node))
+       (< 1 (count children))
+       (self-binding? (nth children 1))))
+
+(defun check
+  "Return a `redundant-self-binding` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node
+                      :redundant-self-binding
+                      "Remove redundant self-binding")))

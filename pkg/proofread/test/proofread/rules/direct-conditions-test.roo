@@ -31,6 +31,11 @@
           [:use-when-let 13]]
          (diagnostic-summary "assets/rules/direct-conditions/use-when-let.roo"))))
 
+(deftest reports-redundant-self-bindings
+  (is (= [[:redundant-self-binding 4]
+          [:redundant-self-binding 9]]
+         (diagnostic-summary "assets/rules/direct-conditions/redundant-self-binding.roo"))))
+
 (deftest reports-use-case-for-literal-equality-dispatch
   (is (= [[:use-case 4]
           [:use-case 9]
