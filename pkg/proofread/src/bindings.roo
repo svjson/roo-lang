@@ -1,0 +1,125 @@
+(ns proofread.bindings
+  (:require [proofread.expressions :as expressions]
+            [proofread.forms :as forms]))
+
+(defun let-bindings
+  "Return binding children for a `let` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The binding vector children for a `let` form, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (and (= "let" (forms/head-name node))
+             (< 1 (count children)))
+    (:children (nth children 1))))
+
+(defun let-body-forms
+  "Return body children for a `let` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A sequence of `let` body forms, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (= "let" (forms/head-name node))
+    (tail (tail children))))
+
+(defun symbol-use-count
+  "Count direct symbol uses in an AST subtree.
+
+  Args:
+  - `name`: Symbol name to count.
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The number of direct references to `name` beneath `node`."
+  [name node]
+  (if (map? node)
+    (if (forms/direct-symbol? node name)
+      1
+      (reduce (:children node)
+              0
+              (fn [total child]
+                (+ total (symbol-use-count name child)))))
+    0))
+
+(defun later-binding-use-count
+  "Count symbol uses in later binding values.
+
+  Args:
+  - `name`: Symbol name to count.
+  - `bindings`: Let binding vector children.
+  - `value-index`: First binding value index to inspect.
+
+  Returns:
+  The number of references to `name` in later binding values."
+  [name bindings value-index]
+  (if (>= value-index (count bindings))
+    0
+    (+ (symbol-use-count name (nth bindings value-index))
+       (later-binding-use-count name bindings (+ value-index 2)))))
+
+(defun body-use-count
+  "Count symbol uses in body forms.
+
+  Args:
+  - `name`: Symbol name to count.
+  - `body`: Body AST nodes.
+
+  Returns:
+  The number of references to `name` in `body`."
+  [name body]
+  (reduce body
+          0
+          (fn [total form]
+            (+ total (symbol-use-count name form)))))
+
+(defun binding-use-count
+  "Count uses of one let binding in its scope.
+
+  Args:
+  - `name`: Bound symbol name.
+  - `bindings`: Let binding vector children.
+  - `binding-index`: Index of the binding symbol.
+  - `body`: Let body forms.
+
+  Returns:
+  The number of references to `name` in later binding values and the body."
+  [name bindings binding-index body]
+  (+ (later-binding-use-count name bindings (+ binding-index 3))
+     (body-use-count name body)))
+
+(defun single-use-simple-binding?
+  "Test whether one binding has a simple value and one use.
+
+  Args:
+  - `bindings`: Let binding vector children.
+  - `binding-index`: Index of the binding symbol.
+  - `body`: Let body forms.
+
+  Returns:
+  `true` when the binding can be inlined without hiding work."
+  [bindings binding-index body]
+  (when (< (inc binding-index) (count bindings))
+    (when-let [name (forms/symbol-name (nth bindings binding-index))]
+      (and (expressions/simple? (nth bindings (inc binding-index)))
+           (= 1 (binding-use-count name bindings binding-index body))))))
+
+(defun first-single-use-simple-binding
+  "Return the first single-use simple binding symbol node.
+
+  Args:
+  - `bindings`: Let binding vector children.
+  - `binding-index`: First binding symbol index to inspect.
+  - `body`: Let body forms.
+
+  Returns:
+  A binding symbol node, or `nil` when no binding matches."
+  [bindings binding-index body]
+  (when (< (inc binding-index) (count bindings))
+    (if (single-use-simple-binding? bindings binding-index body)
+      (nth bindings binding-index)
+      (first-single-use-simple-binding bindings (+ binding-index 2) body))))

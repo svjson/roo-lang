@@ -3,30 +3,36 @@
 (def aliases-keyword
   (fn [event]
     (let [value (:payload event)]
+      (trace! value)
       value)))
 
 (def reads-non-argument
   (fn [event]
     (let [payload (:payload result)]
+      (trace! payload)
       payload)))
 
 (def multiple-bindings
   (fn [event]
     (let [payload (:payload event)
           type (:type payload)]
+      (trace! payload type)
       type)))
 
 (def separate-body-step
   (fn [event]
     (prepare!)
     (let [payload (:payload event)]
+      (trace! payload)
       payload)))
 
 (defun aliases-defun-keyword [event]
   (let [value (:payload event)]
+    (trace! value)
     value))
 
 (defun multiple-defun-body-forms [event]
   (prepare!)
   (let [payload (:payload event)]
+    (trace! payload)
     payload))

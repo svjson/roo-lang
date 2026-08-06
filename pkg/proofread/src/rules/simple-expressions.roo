@@ -1,5 +1,7 @@
 (ns proofread.rules.simple-expressions
   (:require [proofread.rules.simple-expressions.redundant-empty-fallback :as redundant-empty-fallback]
+            [proofread.rules.simple-expressions.redundant-let :as redundant-let]
+            [proofread.rules.simple-expressions.redundant-let-binding :as redundant-let-binding]
             [proofread.rules.simple-expressions.redundant-map-check :as redundant-map-check]
             [proofread.rules.simple-expressions.redundant-some :as redundant-some]
             [proofread.rules.simple-expressions.use-any :as use-any]
@@ -37,6 +39,8 @@
      [:use-some? use-some/check]
      [:use-string? use-string/check]
      [:redundant-some? redundant-some/check]
+     [:redundant-let redundant-let/check]
+     [:redundant-let-binding redundant-let-binding/check]
      [:redundant-empty-fallback redundant-empty-fallback/check]
      [:use-get-with-default use-get-with-default/check]
      [:use-get-in-with-default use-get-in-with-default/check]

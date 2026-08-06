@@ -76,11 +76,10 @@
 
 (defun candidate?
   "Test whether a let-wrapped while loop should use `for-indexed`."
-  [node]
+  [{:keys [children] :as node}]
   (when-let [index-name (forms/single-binding-symbol node)]
-    (let [bindings (:children (nth (:children node) 1))]
-      (and (forms/zero-node? (nth bindings 1))
-           (counted-while? (forms/sole-let-body-form node) index-name)))))
+    (and (forms/zero-node? (nth (:children (nth children 1)) 1))
+         (counted-while? (forms/sole-let-body-form node) index-name))))
 
 (defun check
   "Return a `use-for-indexed` diagnostic for matching nodes."

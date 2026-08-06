@@ -1,0 +1,68 @@
+(ns proofread.expressions
+  (:require [proofread.forms :as forms]))
+
+(defun literal?
+  "Test whether an AST node is a simple literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for literal values, otherwise `false`."
+  [node]
+  (or (contains? [:string :keyword :number :char] (:type node))
+      (contains? ["nil" "true" "false"] (forms/symbol-name node))))
+
+(defun simple-argument?
+  "Test whether an AST node is simple enough to inline as an argument.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for direct symbols, literals, and keyword lookups."
+  [node]
+  (or (literal? node)
+      (forms/symbol-name node)
+      (forms/keyword-lookup-key-name node)))
+
+(defun simple-arguments?
+  "Test whether call arguments from `index` are simple.
+
+  Args:
+  - `children`: AST child nodes for a call form.
+  - `index`: First child index to inspect.
+
+  Returns:
+  `true` when every inspected argument is simple, otherwise `false`."
+  [children index]
+  (if (>= index (count children))
+    true
+    (and (simple-argument? (nth children index))
+         (simple-arguments? children (inc index)))))
+
+(defun simple-call?
+  "Test whether an AST node is a simple call expression.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for a known simple call with simple arguments."
+  [{:keys [children] :as node}]
+  (and (contains? ["=" "not=" "<" ">" "<=" ">=" "nil?" "some?" "empty?"
+                   "not-empty?" "count" "contains?"]
+                  (forms/head-name node))
+       (simple-arguments? children 1)))
+
+(defun simple?
+  "Test whether an AST node is simple enough to inline.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` when the expression is cheap and clear enough to inline."
+  [node]
+  (or (simple-argument? node)
+      (simple-call? node)))

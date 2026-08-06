@@ -1,0 +1,13 @@
+(ns proofread.rules.simple-expressions.redundant-let
+  (:require [proofread.bindings :as bindings]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun check
+  "Return a `redundant-let` diagnostic for single-binding lets."
+  [parent node]
+  (when-let [items (bindings/let-bindings node)]
+    (when (and (= 2 (count items))
+               (bindings/single-use-simple-binding? items
+                                                    0
+                                                    (bindings/let-body-forms node)))
+      (diagnostics/make node :redundant-let "Inline redundant let"))))

@@ -1,0 +1,22 @@
+(ns proofread.rules.simple-expressions.redundant-let-binding
+  (:require [proofread.bindings :as bindings]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun check
+  "Return a `redundant-let-binding` diagnostic for multi-binding lets.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` contains a redundant binding, otherwise `nil`."
+  [parent node]
+  (when-let [items (bindings/let-bindings node)]
+    (when (< 2 (count items))
+      (when-let [binding (bindings/first-single-use-simple-binding items
+                                                                    0
+                                                                    (bindings/let-body-forms node))]
+        (diagnostics/make binding
+                          :redundant-let-binding
+                          "Inline redundant let binding")))))

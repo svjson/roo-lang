@@ -1,0 +1,16 @@
+(ns proofread.simple-expressions-redundant-let)
+
+(def single-binding
+  (let [id (:id node)]
+    (save! id)))
+
+(def multi-binding-first
+  (let [age (:age input)
+        old? (> age 80)]
+    (when old?
+      :old)))
+
+(def multi-binding-second
+  (let [value (build-value input)
+        id (:id value)]
+    (save! id)))

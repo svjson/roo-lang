@@ -128,16 +128,14 @@
 
   Returns:
   A single warning line containing styled source, severity, rule, and message."
-  [diagnostic]
-  (let [source (:source diagnostic)
-        severity (:severity diagnostic)]
-    (str (diagnostic-location source)
-         " "
-         (soot/paint (severity-styles severity) (name severity))
-         " "
-         (soot/paint rule-styles (name (:rule diagnostic)))
-         ": "
-         (:message diagnostic))))
+  [{:keys [source severity rule message]}]
+  (str (diagnostic-location source)
+       " "
+       (soot/paint (severity-styles severity) (name severity))
+       " "
+       (soot/paint rule-styles (name rule))
+       ": "
+       message))
 
 (defun summary-text
   "Format a proofread run summary.

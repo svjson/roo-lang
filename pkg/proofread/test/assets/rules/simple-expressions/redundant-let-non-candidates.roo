@@ -1,0 +1,20 @@
+(ns proofread.simple-expressions-redundant-let-non-candidates)
+
+(def complex-single-binding
+  (let [value (build-value input)]
+    (save! value)))
+
+(def repeated-single-binding
+  (let [id (:id node)]
+    (save! id)
+    (index! id)))
+
+(def repeated-multi-binding
+  (let [id (:id node)
+        label (:label node)]
+    (save! id label)
+    (index! id label)))
+
+(def destructured-binding
+  (let [{:keys [id]} node]
+    (save! id)))

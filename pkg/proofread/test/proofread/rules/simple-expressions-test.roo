@@ -84,3 +84,13 @@
 (deftest ignores-argument-destructuring-non-candidates
   (is (= []
          (diagnostics "assets/rules/simple-expressions/argument-destructuring-non-candidates.roo"))))
+
+(deftest reports-redundant-let-candidates
+  (is (= [[:redundant-let 4]
+          [:redundant-let-binding 8]
+          [:redundant-let-binding 15]]
+         (diagnostic-summary "assets/rules/simple-expressions/redundant-let.roo"))))
+
+(deftest ignores-redundant-let-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/simple-expressions/redundant-let-non-candidates.roo"))))
