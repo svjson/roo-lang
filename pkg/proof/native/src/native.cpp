@@ -274,6 +274,27 @@ namespace Roo::Proof
       return ctx.call("proof.core/record-failure!", Value::string(message));
     }
 
+    std::string assertion_failure_message(Context& ctx,
+                                          const std::string& kind,
+                                          const std::string& expr,
+                                          const sptr_val& expected,
+                                          const sptr_val& actual)
+    {
+      sptr_val message = ctx.call("proof.assertion/format-failure-message",
+                                  {
+                                    Value::keyword(kind),
+                                    Value::string(expr),
+                                    expected,
+                                    actual,
+                                  });
+      if (message->type != Value::Type::STRING)
+      {
+        throw InvocationException(
+          "proof.assertion/format-failure-message must return a string.");
+      }
+      return message->str();
+    }
+
     class AssertionForm : public SpecialForm
     {
       std::string form_name;
@@ -348,8 +369,7 @@ namespace Roo::Proof
           sptr_val expected = exec(ctx, *snode.exec_nodes[0]);
           sptr_val actual = exec(ctx, *snode.exec_nodes[1]);
           passed = *expected == *actual;
-          message =
-            "Expected " + expected->to_string() + ", got " + actual->to_string() + ".";
+          message = assertion_failure_message(ctx, assertion_kind, expr, expected, actual);
         }
         else
         {
@@ -359,7 +379,8 @@ namespace Roo::Proof
           }
           sptr_val value = exec(ctx, *snode.exec_nodes[0]);
           passed = is_truthy(*value);
-          message = "Expected truthy expression: " + expr + ".";
+          message =
+            assertion_failure_message(ctx, assertion_kind, expr, Constant::NIL, value);
         }
 
         if (passed)

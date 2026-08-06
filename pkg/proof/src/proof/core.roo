@@ -1,5 +1,6 @@
 (ns proof.core
-  (:require proof.syntax
+  (:require proof.assertion
+            proof.syntax
             [proof.reporter :as reporter]
             [roo.string :as string]))
 

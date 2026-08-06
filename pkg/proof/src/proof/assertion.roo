@@ -1,0 +1,19 @@
+(ns proof.assertion)
+
+(defun format-failure-message
+  "Format a failed assertion message.
+
+  Args:
+  - `kind`: Assertion kind keyword. Supported values are `:equality` and
+    `:truthy`.
+  - `form`: Source text for the assertion expression.
+  - `expected`: Evaluated expected value for equality assertions.
+  - `actual`: Evaluated actual value for equality assertions.
+
+  Returns:
+  A human-readable failure message."
+  [kind form expected actual]
+  (case kind
+    :equality (str "Expected " expected ", got " actual ".")
+    :truthy (str "Expected truthy expression: " form ".")
+    :default (str "Failed assertion: " form ".")))
