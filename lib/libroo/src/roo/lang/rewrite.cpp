@@ -4,8 +4,6 @@
 #include "roo/runtime/value.h"
 #include "roo/type.h"
 
-#include <variant>
-
 #include <roo/lang/rewrite.h>
 #include <roo/runtime/exec_node.h>
 
@@ -68,6 +66,96 @@ namespace Roo
     deprecated_special_form_invocations++;
 
     return Constant::NIL;
+  }
+
+  /** CondThreadFirstForm - roo/cond-> */
+  SPECIAL_FORM_IMPL(CondThreadFirstForm,
+                    SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&CondThreadFirstForm::execnode_cond_thread_first))))
+
+  SFORM_LOWER_IMPL(CondThreadFirstForm)
+  {
+    sptr_ast_node_v& elements = ast_node->get_children();
+
+    if (elements.size() < 2) return lower_literal(Roo::AST::NIL);
+    if (elements.size() == 2) return lower_expr(ctx, elements[1]);
+
+    if ((elements.size() - 2) % 2 != 0)
+    {
+      throw RooException("cond->: Requires pairs of [test form], got " +
+                         std::to_string(elements.size() - 2) + " trailing args");
+    }
+
+    uptr_exec_node_v exec_nodes;
+    sptr_val_v values;
+    exec_nodes.reserve(elements.size());
+
+    exec_nodes.push_back(lower_expr(ctx, elements[1]));
+
+    for (size_t i = 2; i < elements.size(); i += 2)
+    {
+      sptr_ast_node& test = elements[i];
+      sptr_ast_node& form = elements[i + 1];
+
+      exec_nodes.push_back(lower_expr(ctx, test));
+
+      size_t extra_arg_count = 0;
+      if (form->get_type() == Form::LIST)
+      {
+        sptr_ast_node_v& list_elems = form->get_children();
+        exec_nodes.push_back(lower_expr(ctx, list_elems[0]));
+        for (size_t j = 1; j < list_elems.size(); j++)
+        {
+          exec_nodes.push_back(lower_expr(ctx, list_elems[j]));
+        }
+        extra_arg_count = list_elems.size() - 1;
+      }
+      else
+      {
+        exec_nodes.push_back(lower_expr(ctx, form));
+      }
+
+      values.push_back(Value::number(static_cast<int>(extra_arg_count)));
+    }
+
+    return std::make_unique<ExecNode>(
+      SpecialFormNode(this, values, std::move(exec_nodes)));
+  }
+
+  EXECNODE_BODY(CondThreadFirstForm, execnode_cond_thread_first)
+  {
+    sptr_val current = exec(ctx, *snode.exec_nodes[0]);
+
+    size_t node_idx = 1;
+    for (size_t pair_idx = 0; pair_idx < snode.values.size(); pair_idx++)
+    {
+      const size_t extra_arg_count =
+        static_cast<size_t>(snode.values[pair_idx]->i64());
+
+      if (Roo::is_truthy(*exec(ctx, *snode.exec_nodes[node_idx])))
+      {
+        node_idx++;
+        sptr_val fn_val = exec(ctx, *snode.exec_nodes[node_idx]);
+        node_idx++;
+
+        sptr_val_v call_args;
+        call_args.reserve(1 + extra_arg_count);
+        call_args.push_back(current);
+        for (size_t j = 0; j < extra_arg_count; j++)
+        {
+          call_args.push_back(exec(ctx, *snode.exec_nodes[node_idx + j]));
+        }
+        node_idx += extra_arg_count;
+
+        current = fn_val->exec().execute(ctx, call_args);
+      }
+      else
+      {
+        node_idx += 2 + extra_arg_count;
+      }
+    }
+
+    return current;
   }
 
 } // namespace Roo
