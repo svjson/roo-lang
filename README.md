@@ -32,8 +32,8 @@ It lowers forms to an executable IR for evaluation rather than interpreting the 
   - **[proofread](pkg/proofread/README.md)** - Roo syntax checker.
   - **[footsteps](pkg/footsteps/README.md)** - Stepwise work/progress orchestration.
   - **[workbook](pkg/workbook/)** - Persistent structured workbook values.
-  - **[spool](pkg/spool/)** - Tree-shaped progress/reporting helpers.
-  - **[i18n](pkg/i18n/)** - Small localization helper package.
+  - **[spool](pkg/spool/)** - Metrics collection and reporting for roo programs.
+  - **[i18n](pkg/i18n/)** - Small localization library package.
 
 ## Language
 

@@ -338,11 +338,11 @@ Reporter behavior is implemented in ordinary Roo namespaces:
 
 - `proof.reporter` contains reporter selection and summary printing.
 - `proof.reporter.common` contains shared result-detail, duration, and
-  file-display helpers.
+  file-display functions.
 - `proof.reporter.simple` streams the default one-line-per-test report.
 - `proof.reporter.tree` streams grouped output by test file.
 
-`proof.reporter` exposes summary helpers:
+`proof.reporter` exposes summary a summary facade for reporters:
 
 - `status-count`
 - `result-summary`

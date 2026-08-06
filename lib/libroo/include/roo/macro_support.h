@@ -3,7 +3,7 @@
 #define ROO__MACRO_SUPPORT_H
 
 /*
- * Helper macros for selecting a specific macro implementation depending on the
+ * Support macros for selecting a specific macro implementation depending on the
  * size of varargs.
  */
 #define __SELECT_MACRO__2(_1, _2, MACRO_NAME, ...) MACRO_NAME
@@ -13,12 +13,12 @@
 #define __SELECT_MACRO__6(_1, _2, _3, _4, _5, _6, MACRO_NAME, ...) MACRO_NAME
 
 /*
- * Helper macro for expanding values eliminating containing parentheses.
+ * Support macro for expanding values eliminating containing parentheses.
  */
 #define ESC(...) __VA_ARGS__
 
 /*
- * Helper macros for defining a dynamic number of adapter properties.
+ * Macros for defining a dynamic number of adapter properties.
  */
 #define __VA_REP_1(M_NAME, PROP)                \
   M_NAME(PROP)

@@ -17,7 +17,7 @@
  * __TRAITS_NAME_CONCAT
  * __TRAITS_NAME
  *
- * Helper macros for generating a unique name for a constant. Uses
+ * Utility macros for generating a unique name for a constant. Uses
  * __COUNTER__ (available in gcc, clang and MSVC) to ensure uniqueness.
  */
 #define __TRAITS_NAME_CONCAT_IMPL(A, B) A##B

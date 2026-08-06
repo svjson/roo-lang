@@ -336,10 +336,10 @@ TEST(PackageManifest, deduplicates_same_package_resolved_from_repository_and_pat
   fs.add("/repo/app/package.edn",
          R"({:name app
              :dependencies {proof "0.1.0"
-                            helper "file:../helper"}
+                            sidecar "file:../sidecar"}
              :load-roots ["src"]})");
-  fs.add("/repo/helper/package.edn",
-         R"({:name helper
+  fs.add("/repo/sidecar/package.edn",
+         R"({:name sidecar
              :dependencies {proof {:path "../proof-path"}}
              :load-roots ["src"]})");
   fs.add("/repo/proof-path/package.edn",
@@ -362,10 +362,10 @@ TEST(PackageManifest, deduplicates_same_package_resolved_from_repository_and_pat
   // Then
   EXPECT_EQ(
     plan.package_roots,
-    (std::vector<std::string>{"/repo/packages/proof/0.1.0", "/repo/helper", "/repo/app"}));
+    (std::vector<std::string>{"/repo/packages/proof/0.1.0", "/repo/sidecar", "/repo/app"}));
   EXPECT_EQ(plan.load_paths,
             (std::vector<std::string>{"/repo/packages/proof/0.1.0/src",
-                                      "/repo/helper/src",
+                                      "/repo/sidecar/src",
                                       "/repo/app/src"}));
 }
 
@@ -376,10 +376,10 @@ TEST(PackageManifest, rejects_same_package_name_with_different_versions)
   fs.add("/repo/app/package.edn",
          R"({:name app
              :dependencies {proof "0.1.0"
-                            helper "file:../helper"}
+                            sidecar "file:../sidecar"}
              :load-roots ["src"]})");
-  fs.add("/repo/helper/package.edn",
-         R"({:name helper
+  fs.add("/repo/sidecar/package.edn",
+         R"({:name sidecar
              :dependencies {proof {:path "../proof-path"}}
              :load-roots ["src"]})");
   fs.add("/repo/proof-path/package.edn",

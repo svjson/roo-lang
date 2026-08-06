@@ -19,7 +19,7 @@ stacks, transactions, and dirty-state metadata.
 ;; => {:name "Map"}
 ```
 
-Patch helpers create compact forward and inverse changes from the current
+Patch functions create compact forward and inverse changes from the current
 value. The first patch vocabulary is deliberately small:
 
 - `:set` replaces the value at a path.

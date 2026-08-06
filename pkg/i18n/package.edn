@@ -1,5 +1,5 @@
 {:name i18n
  :version "0.1.0"
- :description "Translation catalog helpers for Roo programs."
+ :description "Translation catalog library for Roo programs."
  :dependencies []
  :load-roots ["src"]}

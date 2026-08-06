@@ -10,7 +10,7 @@
              :description "Schema tools."}
    :sources [{:path "src/schema.roo"}]
    :namespaces [{:name "zoology.schema"
-                 :doc {:summary "Schema helpers."}}]
+                 :doc {:summary "Schema implementation."}}]
    :symbols [{:id "zoology.schema/resolve"
               :name "resolve"
               :qualified-name "zoology.schema/resolve"
@@ -61,7 +61,7 @@
     (is (= "0.1.0" (:version package)))
     (is (= "Schema tools." (:summary package)))
     (is (= "zoology.schema" (:name namespace)))
-    (is (= "Schema helpers." (:summary namespace)))
+    (is (= "Schema implementation." (:summary namespace)))
     (is (= "zoology.schema/resolve" (:qualified-name entry)))
     (is (= :function (:entry-kind entry)))
     (is (= "Resolve schema references." (:summary entry)))

@@ -1,6 +1,6 @@
 # i18n
 
-`i18n` provides small translation catalog helpers for Roo programs.
+`i18n` provides small translation catalog library for Roo programs.
 
 Catalogs are ordinary maps with a default locale and a nested translation table:
 

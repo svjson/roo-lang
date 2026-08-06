@@ -217,7 +217,7 @@
 /** NATIVE_SUB_ADAPTER_MAIN_DECL
  *
  * Entry point. SUB_PAIR stays as one argument until ESC expands it inside
- * the dispatch helper's variadic substitution.
+ * the dispatch function's variadic substitution.
  */
 #define NATIVE_SUB_ADAPTER_MAIN_DECL(SUB_PAIR, AD_SUP_CLASS)                   \
   __NATIVE_SUB_ADAPTER_MAIN_DECL_DISPATCH(AD_SUP_CLASS, ESC SUB_PAIR)

@@ -43,7 +43,7 @@
 
 
 /* -----------------------------------------------------------------------
- * Field accessor dispatch helpers
+ * Field accessor dispatch
  *
  * Three families, differing only in the default name when no explicit
  * field/method name is supplied as an optional argument:
@@ -85,7 +85,7 @@
 
 
 /* -----------------------------------------------------------------------
- * Adapter accessor dispatch helpers
+ * Adapter accessor dispatch macros
  *
  * Same three families as above, but with a required ADAPTER_TYPE arg
  * threaded through before the optional field/method name.
@@ -122,7 +122,7 @@
   (MACRO, AD_CLASS, PROP_NAME, ADAPTER_TYPE, ##__VA_ARGS__)
 
 /* -----------------------------------------------------------------------
- * Keyword vector-copy accessor dispatch helpers
+ * Keyword vector-copy accessor dispatch macros
  *
  * Supports both native-style usage with no extra arguments and legacy-style
  * usage with a value type argument:
