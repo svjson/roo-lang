@@ -122,3 +122,17 @@
 
 (def unsupported-type-predicate
   (= (type-of value) "vector"))
+
+(def plain-assoc
+  (assoc options :errors errors))
+
+(def different-update-key
+  (assoc options :errors (append (:warnings options) "Missing output directory")))
+
+(def different-update-target
+  (assoc options :errors (append (:errors other-options) "Missing output directory")))
+
+(def threaded-different-update-key
+  (cond-> options
+          missing?
+          (assoc :errors (append (:warnings options) "Missing output directory"))))

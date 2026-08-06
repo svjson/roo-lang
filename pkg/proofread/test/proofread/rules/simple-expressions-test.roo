@@ -63,7 +63,9 @@
           [:use-clamp 107]
           [:use-clamp 110]
           [:use-type-predicate 113]
-          [:use-type-predicate 116]]
+          [:use-type-predicate 116]
+          [:use-update 119]
+          [:use-update 124]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates

@@ -53,9 +53,10 @@
   (if (blank? text)
     result
     (if-let [criterion (group-criterion text)]
-      (assoc result :groups (append! (:groups result) criterion))
-      (assoc result :errors (append! (:errors result)
-                                     (str "Unknown group criterion: " text))))))
+      (update result :groups [append! criterion])
+      (update result
+              :errors
+              [append! (str "Unknown group criterion: " text)]))))
 
 (defun parse-groups
   "Parse a CLI group option.
@@ -91,9 +92,9 @@
       (let [reporter-name (nth args 1)]
         (cond
           (nil? reporter-name)
-          (assoc options
-                 :errors
-                 (concat (:errors options) ["Missing reporter after --reporter"]))
+          (update options
+                  :errors
+                  [concat ["Missing reporter after --reporter"]])
 
           (reporter/known? (keyword reporter-name))
           (parse-args-step (tail (tail args))
@@ -101,11 +102,10 @@
 
           true
           (parse-args-step (tail (tail args))
-                           (assoc options
-                                  :errors
-                                  (concat (:errors options)
-                                          [(str "Unknown reporter: "
-                                                reporter-name)])))))
+                           (update options
+                                   :errors
+                                   [concat [(str "Unknown reporter: "
+                                                 reporter-name)]]))))
 
       (= arg "--group-by")
       (if-let [group-text (nth args 1)]
@@ -116,22 +116,19 @@
                                                   (:groups result))
                                   :errors (concat (:errors options)
                                                   (:errors result)))))
-        (assoc options
-               :errors
-               (concat (:errors options) ["Missing group criteria after --group-by"])))
+        (update options
+                :errors
+                [concat ["Missing group criteria after --group-by"]]))
 
       (string/starts-with? arg "--")
       (parse-args-step (tail args)
-                       (assoc options
-                              :errors
-                              (concat (:errors options)
-                                      [(str "Unknown option: " arg)])))
+                       (update options
+                               :errors
+                               [concat [(str "Unknown option: " arg)]]))
 
       true
       (parse-args-step (tail args)
-                       (assoc options
-                              :files
-                              (concat (:files options) [arg]))))))
+                       (update options :files [concat [arg]])))))
 
 (defun parse-args
   "Parse arguments for the proofread check command.
@@ -149,8 +146,7 @@
                                   :errors []})]
     (cond-> options
             (empty? (:files options))
-            (assoc :errors
-                   (concat (:errors options) ["No files or patterns provided."])))))
+            (update :errors [concat ["No files or patterns provided."]]))))
 
 (defun parse-error-diagnostic
   "Build a diagnostic for a parse or read error.

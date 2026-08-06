@@ -114,3 +114,11 @@
 
 (def string-name?
   (= "string" (type-of name)))
+
+(def updated-errors
+  (assoc options :errors (append (:errors options) "Missing output directory")))
+
+(def threaded-updated-errors
+  (cond-> options
+          missing?
+          (assoc :errors (append (:errors options) "Missing output directory"))))

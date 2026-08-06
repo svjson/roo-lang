@@ -1,0 +1,53 @@
+(ns proofread.rules.simple-expressions.use-update
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun same-key-lookup?
+  "Test whether a node reads `key` from `target-name`."
+  [node target-name key]
+  (and (forms/keyword-lookup? node target-name)
+       (= (forms/keyword-name key)
+          (forms/keyword-lookup-key-name node))))
+
+(defun update-value?
+  "Test whether a value expression updates a key's current value."
+  [{:keys [children] :as node} target-name key]
+  (and (forms/thread-first-call? node)
+       (< 1 (count children))
+       (same-key-lookup? (nth children 1) target-name key)))
+
+(defun assoc-update?
+  "Test whether an `assoc` rebuilds a key from its current value."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "assoc" 4)
+    (when-let [target-name (forms/symbol-name (nth children 1))]
+      (update-value? (nth children 3) target-name (nth children 2)))))
+
+(defun cond-thread-step?
+  "Test whether `node` is a step form in `parent`."
+  [{:keys [children] :as parent} node]
+  (and (= "cond->" (forms/head-name parent))
+       (any? (range 3 (count children))
+             (fn [index]
+               (and (odd? index)
+                    (= node (nth children index)))))))
+
+(defun cond-thread-assoc-update?
+  "Test whether a `cond->` assoc step should use `update`."
+  [parent {:keys [children] :as node}]
+  (when (and (forms/call? node "assoc" 3)
+             (cond-thread-step? parent node))
+    (when-let [target-name (forms/symbol-name (nth (:children parent) 1))]
+      (update-value? (nth children 2) target-name (nth children 1)))))
+
+(defun candidate?
+  "Test whether an AST node can use `update`."
+  [parent node]
+  (or (assoc-update? node)
+      (cond-thread-assoc-update? parent node)))
+
+(defun check
+  "Return a `use-update` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? parent node)
+    (diagnostics/make node :use-update "Use update")))

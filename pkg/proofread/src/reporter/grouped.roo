@@ -126,8 +126,7 @@
   Returns:
   Updated reporter state."
   [state file-result]
-  (assoc state :diagnostics (concat (:diagnostics state)
-                                    (:diagnostics file-result))))
+  (update state :diagnostics [concat (:diagnostics file-result)]))
 
 (defun report-summary!
   "Print grouped diagnostics and the final proofread summary.
