@@ -14,7 +14,6 @@
 
 namespace Roo
 {
-  /** DoTimes - dotimes */
   /** DoTimesForm - roo/dotimes */
   SPECIAL_FORM_IMPL(DoTimesForm,
                     SIG((FN_ARGS((&Type::VECTOR, DATA), (VARARG, &Type::ANY, NO_EVAL)),
