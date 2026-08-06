@@ -72,6 +72,39 @@ namespace Roo
    */
   SPECIAL_FORM_DECL(FnForm, decl)
 
+  /*!
+   * @brief Takes a set of functions and returns a function that applies each of
+   * them to its arguments, returning a vector of the results.
+   *
+   * The returned function accepts any arguments and passes them unchanged to
+   * every captured function. The result vector preserves the order of the
+   * functions supplied to `juxt`.
+   *
+   * Usage:
+   * @code
+   * ((juxt inc dec) 5)        => [6 4]
+   * ((juxt :a :b) {:a 1 :b 2}) => [1 2]
+   * ((juxt min max) [3 1 4 1 5]) => [1 5]
+   * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | fns...| One or more functions to apply in parallel.                        |
+   */
+  FUNC(JuxtFunction, juxt)
+
+  /** @brief The function value returned by (juxt ...). */
+  class JuxtedFunction : public Function
+  {
+    sptr_val_v fns;
+
+    sptr_val exec_juxt(Context& ctx, sptr_val_v& args);
+
+   public:
+    explicit JuxtedFunction(sptr_val_v fns);
+    std::string to_string(int depth = -1) const override;
+  };
+
 } // namespace Roo
 
 #endif /* ROO__LANG__FUNC_H */

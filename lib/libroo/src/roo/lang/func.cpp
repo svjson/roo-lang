@@ -2,10 +2,13 @@
 #include "roo/exception.h"
 #include "roo/runtime/lower.h"
 
+#include <functional>
 #include <roo/exec.h>
 #include <roo/impl.h>
 #include <roo/lang/func.h>
+#include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
+#include <roo/runtime/value.h>
 
 namespace Roo
 {
@@ -144,6 +147,50 @@ namespace Roo
     deprecated_special_form_invocations++;
 
     return Constant::NIL;
+  }
+
+  /** JuxtFunction - roo/juxt */
+  FUNC_IMPL(JuxtFunction,
+            SIG((FN_ARGS((VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&JuxtFunction::exec_juxt))))
+
+  EXEC_BODY(JuxtFunction, exec_juxt)
+  {
+    return Value::executable(std::make_shared<JuxtedFunction>(args));
+  }
+
+  JuxtedFunction::JuxtedFunction(sptr_val_v captured_fns)
+    : Function(std::make_unique<Signature>(
+        arg_v{arg(VARARG, &Type::ANY)},
+        exec_val_fn(std::bind(&JuxtedFunction::exec_juxt,
+                              this,
+                              std::placeholders::_1,
+                              std::placeholders::_2))))
+    , fns(std::move(captured_fns))
+  {
+  }
+
+  sptr_val JuxtedFunction::exec_juxt(Context& ctx, sptr_val_v& args)
+  {
+    sptr_val_v results;
+    results.reserve(fns.size());
+    for (auto& fn_val : fns)
+    {
+      if (fn_val->type == Value::Type::KEYWORD)
+      {
+        results.push_back(Dict::get_property(args[0], fn_val));
+      }
+      else
+      {
+        results.push_back(fn_val->exec().execute(ctx, args));
+      }
+    }
+    return Value::vector(std::move(results));
+  }
+
+  std::string JuxtedFunction::to_string(int) const
+  {
+    return "#<juxt>";
   }
 
 } // namespace Roo
