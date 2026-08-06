@@ -1,4 +1,49 @@
-(ns proof.assertion)
+(ns proof.assertion
+  (:require [soot :as soot]))
+
+(defun diff-lines
+  "Return rendered line-by-line diff lines for pretty-printed values.
+
+  Args:
+  - `expected-lines`: Pretty-printed expected value lines.
+  - `actual-lines`: Pretty-printed actual value lines.
+
+  Returns:
+  Rendered diff lines with unchanged lines prefixed by two spaces, expected-only
+  lines prefixed with red `-`, and actual-only lines prefixed with green `+`."
+  [expected-lines actual-lines]
+  (flat-map (range 0 (- (max (count expected-lines) (count actual-lines)) 1))
+            (fn [index]
+              (let [expected-line (when (< index (count expected-lines))
+                                    (nth expected-lines index))
+                    actual-line (when (< index (count actual-lines))
+                                  (nth actual-lines index))]
+                (cond
+                  (= expected-line actual-line) [(str "  " expected-line)]
+                  (nil? expected-line) [(soot/green (str "+ " actual-line))]
+                  (nil? actual-line) [(soot/red (str "- " expected-line))]
+                  true [(soot/red (str "- " expected-line))
+                        (soot/green (str "+ " actual-line))])))))
+
+(defun equality-fail-message
+  "Format an equality assertion failure message.
+
+  Args:
+  - `form`: Source text for the assertion expression.
+  - `expected`: Evaluated expected value.
+  - `actual`: Evaluated actual value.
+
+  Returns:
+  A human-readable failure message. Multi-line pretty values include a colored
+  line diff."
+  [form expected actual]
+  (let [expected-lines (split (pretty-str expected) "\n")
+        actual-lines (split (pretty-str actual) "\n")]
+    (if (or (> (count expected-lines) 1)
+            (> (count actual-lines) 1))
+      (str "Expected " expected ", got " actual ".\n\nDiff:\n"
+           (apply join (concat ["\n"] (diff-lines expected-lines actual-lines))))
+      (str "Expected " expected ", got " actual "."))))
 
 (defun format-failure-message
   "Format a failed assertion message.
@@ -14,6 +59,6 @@
   A human-readable failure message."
   [kind form expected actual]
   (case kind
-    :equality (str "Expected " expected ", got " actual ".")
+    :equality (equality-fail-message form expected actual)
     :truthy (str "Expected truthy expression: " form ".")
     :default (str "Failed assertion: " form ".")))
