@@ -15,6 +15,10 @@
     (assoc config :enabled true)
     other-config))
 
+(def meaningful-conditional-merge
+  (merge base
+         (if enabled? {:enabled true} {:enabled false})))
+
 (def value-as-if-condition
   (if enabled?
     (if config

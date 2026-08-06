@@ -2,7 +2,28 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(defun candidate?
+(defun branch-map?
+  "Test whether an `if` branch builds a map value."
+  [node]
+  (or (= :map (:type node))
+      (and (= "assoc" (forms/head-name node))
+           (< 3 (count (:children node))))))
+
+(defun conditional-empty-map?
+  "Test whether a node is `(if condition map {})`."
+  [{:keys [children] :as node}]
+  (and (forms/full-if? node)
+       (branch-map? (nth children 2))
+       (forms/empty-map? (nth children 3))))
+
+(defun conditional-merge?
+  "Test whether a `merge` call has conditional empty-map arguments."
+  [{:keys [children] :as node}]
+  (and (= "merge" (forms/head-name node))
+       (< 2 (count children))
+       (any? (tail (tail children)) conditional-empty-map?)))
+
+(defun conditional-transform?
   "Test whether an `if` form should use `cond->`.
 
   Args:
@@ -14,6 +35,12 @@
   (and (forms/full-if? node)
        (forms/thread-first-transform? (nth children 2)
                                       (nth children 3))))
+
+(defun candidate?
+  "Test whether an AST node should use `cond->`."
+  [node]
+  (or (conditional-transform? node)
+      (conditional-merge? node)))
 
 (defun check
   "Return a `use-cond-thread-first` diagnostic for matching nodes.

@@ -11,3 +11,10 @@
         (assoc :debug true)
         (assoc :level :verbose))
     options))
+
+(def conditional-merge
+  (merge {:mode 'ui/button
+          :style (or style {})}
+         (if class {:class class} {})
+         (if ui-state {:ui-state ui-state} {})
+         (if init {:init init} {})))

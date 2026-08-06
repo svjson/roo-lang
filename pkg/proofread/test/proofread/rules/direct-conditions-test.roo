@@ -49,7 +49,8 @@
 
 (deftest reports-use-cond-thread-first-candidates
   (is (= [[:use-cond-thread-first 4]
-          [:use-cond-thread-first 9]]
+          [:use-cond-thread-first 9]
+          [:use-cond-thread-first 16]]
          (diagnostic-summary "assets/rules/direct-conditions/use-cond-thread-first.roo"))))
 
 (deftest reports-flatten-if-pyramid-candidates
