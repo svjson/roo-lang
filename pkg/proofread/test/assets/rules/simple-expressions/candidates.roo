@@ -108,3 +108,9 @@
 
 (def clamped-d
   (max (min upper value) lower))
+
+(def map-patch?
+  (= (type-of patch) "map"))
+
+(def string-name?
+  (= "string" (type-of name)))

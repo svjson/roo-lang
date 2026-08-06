@@ -61,7 +61,9 @@
           [:use-clamp 101]
           [:use-clamp 104]
           [:use-clamp 107]
-          [:use-clamp 110]]
+          [:use-clamp 110]
+          [:use-type-predicate 113]
+          [:use-type-predicate 116]]
          (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
 
 (deftest ignores-simple-expression-non-candidates
@@ -74,7 +76,10 @@
                              :use-head)))
   (is (= [["Rewrite as keyword lookup" :rewrite ["(:name symbol)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-keyword-lookup))))
+                             :use-keyword-lookup)))
+  (is (= [["Rewrite as type predicate" :rewrite ["(map? patch)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-type-predicate))))
 
 (deftest reports-redundant-map-checks
   (is (= [[:redundant-map-check 4]

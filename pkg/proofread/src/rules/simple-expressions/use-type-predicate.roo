@@ -1,0 +1,61 @@
+(ns proofread.rules.simple-expressions.use-type-predicate
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(def predicates
+  "Type names with direct predicate functions."
+  {"keyword" "keyword?"
+   "map" "map?"
+   "nil" "nil?"
+   "number" "number?"
+   "string" "string?"})
+
+(defun type-of-call?
+  "Test whether an AST node is a one-argument `type-of` call."
+  [node]
+  (forms/call? node "type-of" 2))
+
+(defun type-predicate
+  "Return the direct predicate for a type name node."
+  [node]
+  (when (= :string (:type node))
+    (get predicates (:form node))))
+
+(defun type-of-comparison
+  "Return `[value predicate]` for type-of equality comparisons."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "=" 3)
+    (let [left (nth children 1)
+          right (nth children 2)]
+      (cond
+        (type-of-call? left)
+        (when-let [predicate (type-predicate right)]
+          [(nth (:children left) 1) predicate])
+
+        (type-of-call? right)
+        (when-let [predicate (type-predicate left)]
+          [(nth (:children right) 1) predicate])))))
+
+(defun replacement
+  "Return replacement source for a type-of equality comparison."
+  [[value predicate]]
+  (str "(" predicate " " (forms/form-string value) ")"))
+
+(defun check
+  "Report type-of equality checks with direct predicates.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use a predicate, otherwise `nil`."
+  [parent node]
+  (when-let [type-check (type-of-comparison node)]
+    (diagnostics/make-suggesting
+      node
+      :use-type-predicate
+      "Use type predicate"
+      [(diagnostics/rewrite node
+                            "Rewrite as type predicate"
+                            (replacement type-check))])))

@@ -106,3 +106,12 @@
   (map (filter params (fn [param] (blank-text? (:doc param))))
        (fn [param]
          (missing-param-doc-diagnostic symbol signature param))))
+
+(def dynamic-type-dispatch
+  (case (type-of value)
+    "map" :map
+    "vector" :vector
+    :default :other))
+
+(def unsupported-type-predicate
+  (= (type-of value) "vector"))

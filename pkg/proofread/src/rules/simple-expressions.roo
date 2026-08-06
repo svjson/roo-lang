@@ -21,6 +21,7 @@
             [proofread.rules.simple-expressions.use-select-keys :as use-select-keys]
             [proofread.rules.simple-expressions.use-some :as use-some]
             [proofread.rules.simple-expressions.use-string :as use-string]
+            [proofread.rules.simple-expressions.use-type-predicate :as use-type-predicate]
             [proofread.rules.registry :as registry]))
 
 (def rules
@@ -39,6 +40,7 @@
      [:use-any? use-any/check]
      [:use-some? use-some/check]
      [:use-string? use-string/check]
+     [:use-type-predicate use-type-predicate/check]
      [:redundant-some? redundant-some/check]
      [:redundant-let
       redundant-let/check
