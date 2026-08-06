@@ -1,0 +1,1 @@
+{:rules {:redundant-let {:options {:additional-simple-call-heads ["custom-simple"]}}}}

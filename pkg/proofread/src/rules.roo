@@ -29,9 +29,13 @@
   Returns:
   Rule descriptors not disabled by config."
   [active-config rule-descriptors]
-  (filter rule-descriptors
-          (fn [rule]
-            (config/rule-enabled? active-config (:id rule)))))
+  (keep rule-descriptors
+        (fn [rule]
+          (when (config/rule-enabled? active-config (:id rule))
+            (assoc rule
+                   :options
+                   (config/merge-config (:default-options rule)
+                                        (:options (get-in active-config [:rules (:id rule)]))))))))
 
 (defun check-with-config
   "Run enabled proofread rules for parsed source roots.

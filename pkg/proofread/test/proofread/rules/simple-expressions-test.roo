@@ -58,7 +58,8 @@
   (is (= [[:redundant-map-check 4]
           [:redundant-map-check 9]
           [:redundant-map-check 13]
-          [:redundant-map-check 18]]
+          [:redundant-map-check 18]
+          [:redundant-map-check 23]]
          (diagnostic-summary "assets/rules/simple-expressions/redundant-map-check.roo"))))
 
 (deftest reports-select-keys-candidates

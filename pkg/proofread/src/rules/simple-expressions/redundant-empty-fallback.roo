@@ -2,41 +2,17 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(defun empty-vector?
-  "Test whether an AST node is an empty vector literal.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `[]`, otherwise `false`."
-  [node]
-  (and (= :vector (:type node))
-       (empty? (:children node))))
-
-(defun empty-map?
-  "Test whether an AST node is an empty map literal.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for `{}`, otherwise `false`."
-  [node]
-  (and (= :map (:type node))
-       (empty? (:children node))))
-
 (defun empty-seq-fallback?
   "Test whether an AST node is an `(or value [])` fallback."
   [{:keys [children] :as node}]
   (and (forms/call? node "or" 3)
-       (empty-vector? (nth children 2))))
+       (forms/empty-vector? (nth children 2))))
 
 (defun empty-map-fallback?
   "Test whether an AST node is an `(or value {})` fallback."
   [{:keys [children] :as node}]
   (and (forms/call? node "or" 3)
-       (empty-map? (nth children 2))))
+       (forms/empty-map? (nth children 2))))
 
 (defun nil-tolerant-seq-call?
   "Test whether a call treats nil input as an empty sequence.

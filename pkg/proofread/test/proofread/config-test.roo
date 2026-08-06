@@ -44,3 +44,7 @@
          (diagnostic-summary "assets/config/root.roo")))
   (is (= [[:use-head :error]]
          (diagnostic-summary "assets/config/project/nested.roo"))))
+
+(deftest applies-rule-options
+  (is (= [[:redundant-let :warning]]
+         (diagnostic-summary "assets/config/options/redundant-let.roo"))))

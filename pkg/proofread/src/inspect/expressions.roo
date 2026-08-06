@@ -1,6 +1,24 @@
 (ns proofread.inspect.expressions
   (:require [proofread.inspect.forms :as forms]))
 
+(def default-simple-call-heads
+  "Default call heads treated as simple expressions."
+  ["=" "not=" "<" ">" "<=" ">=" "nil?" "some?" "empty?"
+   "not-empty?" "count" "contains?"])
+
+(defun simple-call-heads
+  "Return configured simple call heads.
+
+  Args:
+  - `options`: Rule options map.
+
+  Returns:
+  A vector of call head names."
+  [options]
+  (or (:simple-call-heads options)
+      (concat default-simple-call-heads
+              (or (:additional-simple-call-heads options) []))))
+
 (defun literal?
   "Test whether an AST node is a simple literal.
 
@@ -32,37 +50,38 @@
   Args:
   - `children`: AST child nodes for a call form.
   - `index`: First child index to inspect.
+  - `options`: Rule options map.
 
   Returns:
   `true` when every inspected argument is simple, otherwise `false`."
-  [children index]
+  [children index options]
   (if (>= index (count children))
     true
     (and (simple-argument? (nth children index))
-         (simple-arguments? children (inc index)))))
+         (simple-arguments? children (inc index) options))))
 
 (defun simple-call?
   "Test whether an AST node is a simple call expression.
 
   Args:
   - `node`: A `roo.ast` node map.
+  - `options`: Rule options map.
 
   Returns:
   `true` for a known simple call with simple arguments."
-  [{:keys [children] :as node}]
-  (and (contains? ["=" "not=" "<" ">" "<=" ">=" "nil?" "some?" "empty?"
-                   "not-empty?" "count" "contains?"]
-                  (forms/head-name node))
-       (simple-arguments? children 1)))
+  [{:keys [children] :as node} options]
+  (and (contains? (simple-call-heads options) (forms/head-name node))
+       (simple-arguments? children 1 options)))
 
 (defun simple?
   "Test whether an AST node is simple enough to inline.
 
   Args:
   - `node`: A `roo.ast` node map.
+  - `options`: Rule options map.
 
   Returns:
   `true` when the expression is cheap and clear enough to inline."
-  [node]
+  [node options]
   (or (simple-argument? node)
-      (simple-call? node)))
+      (simple-call? node options)))

@@ -43,6 +43,20 @@
   (or (forms/keyword-lookup? node target-name)
       (lookup-comparison? node target-name)))
 
+(defun lookup-with-same-fallback?
+  "Test whether an `or` branch reads a lookup with the else fallback."
+  [{:keys [children] :as node} target-name fallback]
+  (and (forms/call? node "or" 3)
+       (forms/keyword-lookup? (nth children 1) target-name)
+       (forms/same-form? (nth children 2) fallback)))
+
+(defun guarded-lookup-branch?
+  "Test whether an `if` branch only reads from a map-guarded value."
+  [branch target-name fallback]
+  (or (and (forms/nil-node? fallback)
+           (lookup-access? branch target-name))
+      (lookup-with-same-fallback? branch target-name fallback)))
+
 (defun check
   "Report redundant `map?` guards before keyword lookup.
 
@@ -53,10 +67,22 @@
   Returns:
   A diagnostic map when `node` should remove `map?`, otherwise `nil`."
   [parent {:keys [children] :as node}]
-  (when (and (= "and" (forms/head-name node))
-             (< 1 (count children)))
-    (when-let [target-name (map-check? (nth children 1))]
-      (when (any? (tail (tail children))
-                  (fn [child]
-                    (lookup-access? child target-name)))
-        (diagnostics/make node :redundant-map-check "Remove redundant map? check")))))
+  (case (forms/head-name node)
+    "and"
+    (when (< 1 (count children))
+      (when-let [target-name (map-check? (nth children 1))]
+        (when (any? (tail (tail children))
+                    (fn [child]
+                      (lookup-access? child target-name)))
+          (diagnostics/make node :redundant-map-check "Remove redundant map? check"))))
+
+    "if"
+    (when (forms/full-if? node)
+      (when-let [target-name (map-check? (nth children 1))]
+        (when (and (forms/empty-fallback? (nth children 3))
+                   (guarded-lookup-branch? (nth children 2)
+                                           target-name
+                                           (nth children 3)))
+          (diagnostics/make node :redundant-map-check "Remove redundant map? check"))))
+
+    :default nil))

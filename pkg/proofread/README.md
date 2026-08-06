@@ -152,6 +152,19 @@ Change a rule severity:
 Rules configured with `:severity :error` are counted as errors and make the run
 exit with a non-zero status.
 
+Some rules also accept options:
+
+```clojure
+{:rules {:redundant-let
+         {:options {:additional-simple-call-heads ["custom-simple"]}}}}
+```
+
+`redundant-let` and `redundant-let-binding` support:
+
+- `:additional-simple-call-heads`: call names to treat as simple in addition
+  to the defaults.
+- `:simple-call-heads`: call names to treat as simple instead of the defaults.
+
 When configs are merged, maps merge recursively and other values replace the
 parent value.
 

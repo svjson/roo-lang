@@ -1,0 +1,5 @@
+(ns proofread.config-options-redundant-let)
+
+(def custom-simple-binding
+  (let [value (custom-simple input)]
+    (save! value)))

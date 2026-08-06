@@ -103,6 +103,43 @@
   [left right]
   (= (:form left) (:form right)))
 
+(defun empty-vector?
+  "Test whether an AST node is an empty vector literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `[]`, otherwise `false`."
+  [node]
+  (and (= :vector (:type node))
+       (empty? (:children node))))
+
+(defun empty-map?
+  "Test whether an AST node is an empty map literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `{}`, otherwise `false`."
+  [node]
+  (and (= :map (:type node))
+       (empty? (:children node))))
+
+(defun empty-fallback?
+  "Test whether an AST node is an empty fallback value.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `nil`, `{}`, or `[]`, otherwise `false`."
+  [node]
+  (or (nil-node? node)
+      (empty-map? node)
+      (empty-vector? node)))
+
 (defun thread-first-form?
   "Test whether an AST node is a `->` form.
 

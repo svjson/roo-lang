@@ -18,3 +18,8 @@
   (and (map? candidate)
        (:progress-value candidate)
        (:progress-max candidate)))
+
+(def options
+  (if (map? setting)
+    (or (:options setting) {})
+    {}))

@@ -84,18 +84,6 @@
   (merge-configs (map (config-files (io/dirname (io/absolute-path! file)))
                       io/slurp-edn!)))
 
-(defun rule-setting
-  "Return the config setting for a rule.
-
-  Args:
-  - `config`: Effective proofread config.
-  - `rule`: Rule keyword.
-
-  Returns:
-  The configured value for `rule`, or `nil` when not configured."
-  [config rule]
-  (get-in config [:rules rule]))
-
 (defun unknown-rules
   "Return configured rule IDs that are not registered.
 
@@ -120,7 +108,7 @@
   Returns:
   `false` when the rule is configured as `:off` or `false`, otherwise `true`."
   [config rule]
-  (not (contains? [:off false] (rule-setting config rule))))
+  (not (contains? [:off false] (get-in config [:rules rule]))))
 
 (defun diagnostic-severity
   "Return the configured severity for a diagnostic.
@@ -132,7 +120,7 @@
   Returns:
   The configured rule severity, or the diagnostic's current severity."
   [config diagnostic]
-  (let [setting (rule-setting config (:rule diagnostic))]
+  (let [setting (get-in config [:rules (:rule diagnostic)])]
     (if (map? setting)
       (or (:severity setting) (:severity diagnostic))
       (:severity diagnostic))))

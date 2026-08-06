@@ -99,13 +99,14 @@
   - `bindings`: Let binding vector children.
   - `binding-index`: Index of the binding symbol.
   - `body`: Let body forms.
+  - `options`: Rule options map.
 
   Returns:
   `true` when the binding can be inlined without hiding work."
-  [bindings binding-index body]
+  [bindings binding-index body options]
   (when (< (inc binding-index) (count bindings))
     (when-let [name (forms/symbol-name (nth bindings binding-index))]
-      (and (expressions/simple? (nth bindings (inc binding-index)))
+      (and (expressions/simple? (nth bindings (inc binding-index)) options)
            (= 1 (binding-use-count name bindings binding-index body))))))
 
 (defun first-single-use-simple-binding
@@ -115,11 +116,12 @@
   - `bindings`: Let binding vector children.
   - `binding-index`: First binding symbol index to inspect.
   - `body`: Let body forms.
+  - `options`: Rule options map.
 
   Returns:
   A binding symbol node, or `nil` when no binding matches."
-  [bindings binding-index body]
+  [bindings binding-index body options]
   (when (< (inc binding-index) (count bindings))
-    (if (single-use-simple-binding? bindings binding-index body)
+    (if (single-use-simple-binding? bindings binding-index body options)
       (nth bindings binding-index)
-      (first-single-use-simple-binding bindings (+ binding-index 2) body))))
+      (first-single-use-simple-binding bindings (+ binding-index 2) body options))))

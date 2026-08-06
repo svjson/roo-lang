@@ -63,6 +63,11 @@
   (and (map? node)
        (= (:type other) :symbol)))
 
+(def meaningful-map-branch
+  (if (map? setting)
+    (load-options! setting)
+    {}))
+
 (def explicit-false-option
   (when (some? (:enabled? options))
     (:enabled? options)))

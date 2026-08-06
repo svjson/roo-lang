@@ -10,11 +10,18 @@
   Returns:
   A rule descriptor map."
   [category entry]
-  {:id (head entry)
-   :category category
-   :default-severity :warning
-   :scope (or (nth entry 2) :node)
-   :check (nth entry 1)})
+  (let [options (when (map? (nth entry 2))
+                  (nth entry 2))]
+    {:id (head entry)
+     :category category
+     :default-severity :warning
+     :default-options (or (:default-options options) {})
+     :scope (or (:scope options)
+                (when (nil? options)
+                  (nth entry 2))
+                :node)
+     :check (nth entry 1)
+     :check-with-options (:check-with-options options)}))
 
 (defun descriptors
   "Build proofread rule descriptors for a category.
@@ -54,7 +61,9 @@
   Returns:
   A diagnostic map, or `nil` when the rule does not match."
   [rule parent node]
-  ((:check rule) parent node))
+  (if-let [check (:check-with-options rule)]
+    (check parent node (:options rule))
+    ((:check rule) parent node)))
 
 (defun node-diagnostic
   "Return the first diagnostic from matching rule descriptors.
