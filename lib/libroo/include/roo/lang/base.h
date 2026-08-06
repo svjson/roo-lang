@@ -112,6 +112,7 @@ namespace Roo
    * @code
    * (keyword "a string") => :a-string
    * (keyword 'a-symbol) => :a-symbol
+   * (keyword nil) => nil
    * @endcode
    *
    * | Arg   | Description                                                        |
