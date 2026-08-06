@@ -479,4 +479,41 @@ namespace Roo
     return Value::string(result);
   }
 
+  /** SplitFunction - roo/split */
+  FUNC_IMPL(SplitFunction,
+            SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
+                 EXEC_DISPATCH(&SplitFunction::exec_split))))
+
+  EXEC_BODY(SplitFunction, exec_split)
+  {
+    sptr_val_v result;
+
+    if (args[0]->type == Value::Type::STRING)
+    {
+      const std::string& str = args[0]->str();
+      const std::string& delim = args[1]->str();
+
+      if (delim.empty())
+      {
+        result.reserve(str.size());
+        for (char c : str)
+        {
+          result.push_back(Value::string(std::string(1, c)));
+        }
+        return Value::vector(std::move(result));
+      }
+
+      size_t start = 0;
+      size_t pos = str.find(delim);
+      while (pos != std::string::npos)
+      {
+        result.push_back(Value::string(str.substr(start, pos - start)));
+        start = pos + delim.size();
+        pos = str.find(delim, start);
+      }
+      result.push_back(Value::string(str.substr(start)));
+    }
+    return Value::vector(std::move(result));
+  }
+
 } // namespace Roo

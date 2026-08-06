@@ -237,6 +237,32 @@ namespace Roo
    */
   FUNC(CamelCaseFunction, camel_case)
 
+  /*!
+   * @brief Splits a string on a delimiter and returns a vector of strings.
+   *
+   * Each occurrence of the delimiter produces a split point. Empty strings
+   * between adjacent delimiters, at the start, or at the end of the input are
+   * preserved as empty-string elements in the result.
+   *
+   * When the delimiter is an empty string the input is split into individual
+   * single-character strings.
+   *
+   * Usage:
+   * @code
+   * (split "a,b,c" ",")     => ["a" "b" "c"]
+   * (split "a,,b" ",")      => ["a" "" "b"]
+   * (split ",a" ",")        => ["" "a"]
+   * (split "abc" "")        => ["a" "b" "c"]
+   * (split "no-match" ",")  => ["no-match"]
+   * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | string    | String to split.                                                   |
+   * | delimiter | String to split on.                                                |
+   */
+  FUNC(SplitFunction, split)
+
 } // namespace Roo
 
 #endif /* ROO__LANG__STRING_H */

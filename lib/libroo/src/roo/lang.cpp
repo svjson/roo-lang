@@ -184,6 +184,7 @@ namespace Roo
     lang_symbols.emplace("sin", SinFunction::make());
     lang_symbols.emplace("some?", SomePFunction::make());
     lang_symbols.emplace("sort", SortFunction::make());
+    lang_symbols.emplace("split", SplitFunction::make());
     lang_symbols.emplace("sqrt", SqrtFunction::make());
     lang_symbols.emplace("str", StrFunction::make());
     lang_symbols.emplace("substr", SubstrFunction::make());
