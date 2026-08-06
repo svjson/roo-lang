@@ -1,0 +1,13 @@
+(ns proofread.config-options-nested-redundant-let)
+
+(def parent-added-simple
+  (let [value (custom-simple input)]
+    (save! value)))
+
+(def nested-simple
+  (let [value (nested-simple input)]
+    (save! value)))
+
+(def default-replaced
+  (let [value (count items)]
+    (save! value)))

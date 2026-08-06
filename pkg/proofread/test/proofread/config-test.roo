@@ -48,3 +48,8 @@
 (deftest applies-rule-options
   (is (= [[:redundant-let :warning]]
          (diagnostic-summary "assets/config/options/redundant-let.roo"))))
+
+(deftest applies-nested-rule-option-overlays
+  (is (= [[:redundant-let :warning]
+          [:redundant-let :warning]]
+         (diagnostic-summary "assets/config/options/nested/redundant-let.roo"))))

@@ -1,5 +1,6 @@
 (ns proofread.rules.simple-expressions
-  (:require [proofread.rules.simple-expressions.redundant-empty-fallback :as redundant-empty-fallback]
+  (:require [proofread.inspect.expressions :as expressions]
+            [proofread.rules.simple-expressions.redundant-empty-fallback :as redundant-empty-fallback]
             [proofread.rules.simple-expressions.redundant-let :as redundant-let]
             [proofread.rules.simple-expressions.redundant-let-binding :as redundant-let-binding]
             [proofread.rules.simple-expressions.redundant-map-check :as redundant-map-check]
@@ -41,10 +42,12 @@
      [:redundant-some? redundant-some/check]
      [:redundant-let
       redundant-let/check
-      {:check-with-options redundant-let/check-with-options}]
+      {:default-options expressions/default-options
+       :check-with-options redundant-let/check-with-options}]
      [:redundant-let-binding
       redundant-let-binding/check
-      {:check-with-options redundant-let-binding/check-with-options}]
+      {:default-options expressions/default-options
+       :check-with-options redundant-let-binding/check-with-options}]
      [:redundant-empty-fallback redundant-empty-fallback/check]
      [:use-get-with-default use-get-with-default/check]
      [:use-get-in-with-default use-get-in-with-default/check]

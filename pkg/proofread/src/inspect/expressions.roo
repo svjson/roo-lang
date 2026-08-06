@@ -6,6 +6,10 @@
   ["=" "not=" "<" ">" "<=" ">=" "nil?" "some?" "empty?"
    "not-empty?" "count" "contains?"])
 
+(def default-options
+  "Default simple-expression inspection options."
+  {:simple-call-heads default-simple-call-heads})
+
 (defun simple-call-heads
   "Return configured simple call heads.
 
@@ -15,9 +19,8 @@
   Returns:
   A vector of call head names."
   [options]
-  (or (:simple-call-heads options)
-      (concat default-simple-call-heads
-              (or (:additional-simple-call-heads options) []))))
+  (concat (or (:simple-call-heads options) default-simple-call-heads)
+          (or (:additional-simple-call-heads options) [])))
 
 (defun literal?
   "Test whether an AST node is a simple literal.

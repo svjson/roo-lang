@@ -1,0 +1,1 @@
+{:rules {:redundant-let {:options {:simple-call-heads ["nested-simple"]}}}}
