@@ -662,12 +662,9 @@
       (assoc param :group {:params (native-param-group-members key)})
       param)))
 
-(defun native-signature-params [doc]
-  (let [param-docs (:params doc)
-        param-keys (or (:param-order doc) (sort (keys param-docs) <))]
-    (map param-keys
-         (fn [key]
-           (native-signature-param key (get param-docs key))))))
+(defun native-signature-params [{:keys [params] :as doc}]
+  (for [key (or (:param-order doc) (sort (keys params) <))]
+    (native-signature-param key (get params key))))
 
 (defun native-signature-display [name params]
   (let [param-names (map params (fn [param] (or (:display param) (:name param))))

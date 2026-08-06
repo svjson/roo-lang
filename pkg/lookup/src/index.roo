@@ -29,7 +29,7 @@
     {:format :roo/symbol-index
      :version 1
      :package (:package source-index)
-     :sources (map sources (fn [source] {:path (:path source)}))
+     :sources (for [source sources] {:path (:path source)})
      :namespaces (keep sources symbols/source-namespace-entry)
      :symbols (concat
                 (flat-map sources
@@ -93,7 +93,7 @@
               :roots normalized-roots
               :excludes normalized-excludes
               :extractors extractors}
-     :sources (map native-files (fn [path] {:path path}))
+     :sources (for [path native-files] {:path path})
      :namespaces []
      :symbols native-symbols}))
 
@@ -120,11 +120,10 @@
         excludes (:excludes options)
         forms? (contains? extractors :forms)
         symbols? (contains? extractors :symbols)
-        native? (contains? extractors :native)
         package (explicit-package options)]
     (cond
 
-      (and native? (not symbols?) (not forms?))
+      (and (contains? extractors :native) (not symbols?) (not forms?))
       (root-index {:roots roots
                    :excludes excludes
                    :extractors extractors

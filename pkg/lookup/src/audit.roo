@@ -21,12 +21,6 @@
 (defun function-symbol? [symbol]
   (contains? [:function :special-form] (:kind symbol)))
 
-(defun signatures [symbol]
-  (or (:signatures symbol) []))
-
-(defun signature-params [signature]
-  (or (:params signature) []))
-
 (defun diagnostic [kind symbol message details]
   (merge {:severity :warning
           :kind kind
@@ -68,24 +62,23 @@
 (defun zero-arity-allowed? [symbol options]
   (contains? (:allow-zero-arity options) (symbol-id symbol)))
 
-(defun signature-diagnostics [symbol signature options]
-  (let [params (signature-params signature)]
-    (concat
-      (if (and (:require-signatures? options)
-               (empty? params)
-               (not (zero-arity-allowed? symbol options)))
-        [(zero-arity-signature-diagnostic symbol signature)]
-        [])
-      (if (:require-param-docs? options)
-        (map (filter params (fn [param] (blank-text? (:doc param))))
-             (fn [param]
-               (missing-param-doc-diagnostic symbol signature param)))
-        []))))
+(defun signature-diagnostics [symbol {:keys [params] :as signature} options]
+  (concat
+   (if (and (:require-signatures? options)
+            (empty? params)
+            (not (zero-arity-allowed? symbol options)))
+     [(zero-arity-signature-diagnostic symbol signature)]
+     [])
+   (if (:require-param-docs? options)
+     (map (filter params (fn [param] (blank-text? (:doc param))))
+          (fn [param]
+            (missing-param-doc-diagnostic symbol signature param)))
+     [])))
 
 (defun signatures-diagnostics [symbol options]
   (if (not (function-symbol? symbol))
     []
-    (let [symbol-signatures (signatures symbol)]
+    (let [symbol-signatures (:signatures symbol)]
       (if (and (:require-signatures? options)
                (empty? symbol-signatures))
         [(missing-signatures-diagnostic symbol)]

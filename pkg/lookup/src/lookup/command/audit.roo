@@ -129,29 +129,28 @@
              :errors
              (concat (:errors options) ["Missing audit input"])))))
 
-(defun audit-index! [options]
-  (let [input (:input options)]
-    (cond
+(defun audit-index! [{:keys [input] :as options}]
+  (cond
 
-      (io/file? input)
-      (io/slurp-edn! input)
+    (io/file? input)
+    (io/slurp-edn! input)
 
-      (and (io/directory? input)
-           (io/exists? (source/manifest-path input)))
-      (index/index-with-options {:extractors [:symbols]
-                                 :out nil
-                                 :package-dir input
-                                 :roots (:roots options)
-                                 :excludes (:excludes options)
-                                 :errors []})
+    (and (io/directory? input)
+         (io/exists? (source/manifest-path input)))
+    (index/index-with-options {:extractors [:symbols]
+                               :out nil
+                               :package-dir input
+                               :roots (:roots options)
+                               :excludes (:excludes options)
+                               :errors []})
 
-      (io/directory? input)
-      (index/root-index {:roots (concat [input] (:roots options))
-                         :excludes (:excludes options)
-                         :extractors [:native]})
+    (io/directory? input)
+    (index/root-index {:roots (concat [input] (:roots options))
+                       :excludes (:excludes options)
+                       :extractors [:native]})
 
-      true
-      (system/fail! (str "lookup audit input does not exist: " input)))))
+    true
+    (system/fail! (str "lookup audit input does not exist: " input))))
 
 (defun diagnostic-extra [diagnostic]
   (cond
