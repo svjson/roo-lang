@@ -4,6 +4,8 @@
 #include "roo/runtime/value.h"
 #include "roo/type.h"
 
+#include <limits>
+
 #include <roo/bind.h>
 #include <roo/exception.h>
 #include <roo/lang/loop.h>
@@ -125,28 +127,35 @@ namespace Roo
       throw RooException("for: No loop expression - " + ast_node->to_string());
     }
 
-    if (elements[1]->get_type() != Form::VECTOR || elements[1]->size() != 2)
+    sptr_ast_node_v& bind_elems = elements[1]->get_children();
+    const size_t N = bind_elems.size() / 2;
+
+    if (elements[1]->get_type() != Form::VECTOR || bind_elems.size() < 2 ||
+        bind_elems.size() % 2 != 0)
     {
-      throw RooException("for: Invalid loop expression - " + ast_node->to_string());
+      throw RooException("for: Invalid loop expression - expected [sym coll ...] pairs - " +
+                         ast_node->to_string());
     }
 
-    sptr_ast_node_v& bind_forms = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
-    bindings.reserve(1);
-
-    auto sym_node = lower_literal(bind_forms[0]);
-    bindings.push_back(
-      std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
-                     std::make_unique<ExecNode>(Constant::NIL)));
+    bindings.reserve(N);
 
     uptr_exec_node_v exec_nodes;
-    exec_nodes.reserve(elements.size() - 1);
-    exec_nodes.push_back(lower_expr(ctx, bind_forms.back()));
+    exec_nodes.reserve(N + elements.size() - 2);
+
+    for (size_t i = 0; i < bind_elems.size(); i += 2)
+    {
+      auto sym_node = lower_literal(bind_elems[i]);
+      bindings.push_back(
+        std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                       std::make_unique<ExecNode>(Constant::NIL)));
+      exec_nodes.push_back(lower_expr(ctx, bind_elems[i + 1]));
+    }
 
     ctx.push({});
-    for (auto& binding : bindings)
+    for (auto& [binding, _] : bindings)
     {
-      ctx.add_lexical_binding(*binding.first);
+      ctx.add_lexical_binding(*binding);
     }
     for (size_t i = 2; i < elements.size(); i++)
     {
@@ -154,46 +163,67 @@ namespace Roo
     }
     ctx.pop();
 
+    sptr_val_v values{Value::number(static_cast<int>(N))};
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+      SpecialFormNode(this, values, std::move(bindings), std::move(exec_nodes)));
   }
+
   EXECNODE_BODY(ForForm, execnode_for)
   {
-    sptr_val_v result;
+    const size_t N = static_cast<size_t>(snode.values[0]->i64());
 
-    auto* binding = snode.bind_forms.front().first.get();
+    std::vector<sptr_val_v> all_elements;
+    all_elements.reserve(N);
+    size_t min_len = std::numeric_limits<size_t>::max();
 
-    sptr_val seq = exec(ctx, *snode.exec_nodes[0]);
-
-    if (seq->type != Value::Type::NIL && (Type::STRICT_SEQ_OR_STRING.is_type_of(*seq) ||
-                                          seq->type == Value::Type::NATIVE_OBJECT))
+    for (size_t i = 0; i < N; i++)
     {
-      sptr_val_v elements = Roo::get_children(*seq);
-      if (elements.size() > 0)
+      sptr_val seq = exec(ctx, *snode.exec_nodes[i]);
+      if (seq->type == Value::Type::NIL || !(Type::STRICT_SEQ_OR_STRING.is_type_of(*seq) ||
+                                             seq->type == Value::Type::NATIVE_OBJECT))
       {
-        result.reserve(elements.size());
+        min_len = 0;
+        all_elements.push_back({});
+      }
+      else
+      {
+        sptr_val_v elems = Roo::get_children(*seq);
+        min_len = std::min(min_len, elems.size());
+        all_elements.push_back(std::move(elems));
+      }
+    }
 
-        ctx.push_context(true);
-        Scope& iter_scope = ctx.current_scope();
-        size_t n_args = snode.exec_nodes.size();
+    if (min_len == std::numeric_limits<size_t>::max())
+    {
+      min_len = 0;
+    }
 
-        for (auto& item : elements)
+    sptr_val_v result;
+    if (min_len > 0)
+    {
+      result.reserve(min_len);
+      ctx.push_context(true);
+      Scope& iter_scope = ctx.current_scope();
+      const size_t n_exec = snode.exec_nodes.size();
+
+      for (size_t i = 0; i < min_len; i++)
+      {
+        for (size_t j = 0; j < N; j++)
         {
-          binding->apply(iter_scope, item);
-
-          sptr_val iter_result;
-
-          for (size_t j = 1; j < n_args; j++)
-          {
-            iter_result = exec(ctx, *snode.exec_nodes[j]);
-          }
-
-          result.push_back(iter_result);
-          iter_scope.clear();
+          snode.bind_forms[j].first->apply(iter_scope, all_elements[j][i]);
         }
 
-        ctx.pop_context();
+        sptr_val iter_result;
+        for (size_t j = N; j < n_exec; j++)
+        {
+          iter_result = exec(ctx, *snode.exec_nodes[j]);
+        }
+
+        result.push_back(iter_result ? iter_result : Constant::NIL);
+        iter_scope.clear();
       }
+
+      ctx.pop_context();
     }
 
     return Value::vector(std::move(result));
@@ -296,33 +326,41 @@ namespace Roo
       throw RooException("for-indexed: No loop expression - " + ast_node->to_string());
     }
 
-    if (elements[1]->get_type() != Form::VECTOR || elements[1]->size() != 3)
+    sptr_ast_node_v& bind_elems = elements[1]->get_children();
+    const size_t pair_count = bind_elems.size() > 0 ? (bind_elems.size() - 1) / 2 : 0;
+
+    if (elements[1]->get_type() != Form::VECTOR || bind_elems.size() < 3 ||
+        (bind_elems.size() - 1) % 2 != 0)
     {
-      throw RooException("for-indexed: Invalid loop expression - " + ast_node->to_string());
+      throw RooException(
+        "for-indexed: Invalid loop expression - expected [idx sym coll ...] - " +
+        ast_node->to_string());
     }
 
-    sptr_ast_node_v& bind_form = elements[1]->get_children();
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
-    bindings.reserve(2);
+    bindings.reserve(1 + pair_count);
 
-    auto index_node = lower_literal(bind_form[0]);
+    auto index_node = lower_literal(bind_elems[0]);
     bindings.push_back(
       std::make_pair(LexicalBinding::create(std::get<LiteralNode>(index_node->data)),
                      std::make_unique<ExecNode>(Constant::NIL)));
 
-    auto sym_node = lower_literal(bind_form[1]);
-    bindings.push_back(
-      std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
-                     std::make_unique<ExecNode>(Constant::NIL)));
-
     uptr_exec_node_v exec_nodes;
-    exec_nodes.reserve(elements.size() - 1);
-    exec_nodes.push_back(lower_expr(ctx, bind_form.back()));
+    exec_nodes.reserve(pair_count + elements.size() - 2);
+
+    for (size_t i = 1; i < bind_elems.size(); i += 2)
+    {
+      auto sym_node = lower_literal(bind_elems[i]);
+      bindings.push_back(
+        std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
+                       std::make_unique<ExecNode>(Constant::NIL)));
+      exec_nodes.push_back(lower_expr(ctx, bind_elems[i + 1]));
+    }
 
     ctx.push({});
-    for (auto& binding : bindings)
+    for (auto& [binding, _] : bindings)
     {
-      ctx.add_lexical_binding(*binding.first);
+      ctx.add_lexical_binding(*binding);
     }
     for (size_t i = 2; i < elements.size(); i++)
     {
@@ -330,53 +368,74 @@ namespace Roo
     }
     ctx.pop();
 
+    sptr_val_v values{Value::number(static_cast<int>(pair_count))};
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this, std::move(bindings), std::move(exec_nodes)));
+      SpecialFormNode(this, values, std::move(bindings), std::move(exec_nodes)));
   }
+
   EXECNODE_BODY(ForIndexedForm, execnode_for_indexed)
   {
-    sptr_val_v result;
+    const size_t N = static_cast<size_t>(snode.values[0]->i64());
 
-    auto* index_binding = snode.bind_forms.front().first.get();
-    auto* val_binding = snode.bind_forms.back().first.get();
+    std::vector<sptr_val_v> all_elements;
+    all_elements.reserve(N);
+    size_t min_len = std::numeric_limits<size_t>::max();
 
-    sptr_val seq = exec(ctx, *snode.exec_nodes[0]);
-
-    if (seq->type != Value::Type::NIL && (Type::STRICT_SEQ.is_type_of(*seq)))
+    for (size_t i = 0; i < N; i++)
     {
-      sptr_val_v elements = Roo::get_children(*seq);
-      if (elements.size() > 0)
+      sptr_val seq = exec(ctx, *snode.exec_nodes[i]);
+      if (seq->type == Value::Type::NIL || !Type::STRICT_SEQ.is_type_of(*seq))
       {
-        result.reserve(elements.size());
+        min_len = 0;
+        all_elements.push_back({});
+      }
+      else
+      {
+        sptr_val_v elems = Roo::get_children(*seq);
+        min_len = std::min(min_len, elems.size());
+        all_elements.push_back(std::move(elems));
+      }
+    }
 
-        ctx.push_context(true);
-        Scope& iter_scope = ctx.current_scope();
-        size_t n_args = snode.exec_nodes.size();
+    if (min_len == std::numeric_limits<size_t>::max())
+    {
+      min_len = 0;
+    }
 
-        // FIXME: This should be size_t, but until such a time that Value::Number
-        // natively supports unsigned numbers, we will have to stick to int or
-        // redundantly reinterpret size_t to int for each iteration, which is not
-        // very attractive.
-        int index = 0;
-        for (auto& item : elements)
+    sptr_val_v result;
+    if (min_len > 0)
+    {
+      result.reserve(min_len);
+      ctx.push_context(true);
+      Scope& iter_scope = ctx.current_scope();
+      auto* index_binding = snode.bind_forms[0].first.get();
+      const size_t n_exec = snode.exec_nodes.size();
+
+      // FIXME: This should be size_t, but until such a time that Value::Number
+      // natively supports unsigned numbers, we will have to stick to int or
+      // redundantly reinterpret size_t to int for each iteration, which is not
+      // very attractive.
+      int index = 0;
+      for (size_t i = 0; i < min_len; i++)
+      {
+        index_binding->apply(iter_scope, Value::number(index));
+        for (size_t j = 0; j < N; j++)
         {
-          index_binding->apply(iter_scope, Value::number(index));
-          val_binding->apply(iter_scope, item);
-
-          sptr_val iter_result;
-
-          for (size_t j = 1; j < n_args; j++)
-          {
-            iter_result = exec(ctx, *snode.exec_nodes[j]);
-          }
-
-          result.push_back(iter_result);
-          iter_scope.clear();
-          index++;
+          snode.bind_forms[1 + j].first->apply(iter_scope, all_elements[j][i]);
         }
 
-        ctx.pop_context();
+        sptr_val iter_result;
+        for (size_t j = N; j < n_exec; j++)
+        {
+          iter_result = exec(ctx, *snode.exec_nodes[j]);
+        }
+
+        result.push_back(iter_result ? iter_result : Constant::NIL);
+        iter_scope.clear();
+        index++;
       }
+
+      ctx.pop_context();
     }
 
     return Value::vector(std::move(result));

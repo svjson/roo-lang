@@ -26,17 +26,22 @@ namespace Roo
 
   /*!
    * @brief Executes a form for every element in a sequence, binding the element
-   * to the local scope. Returns an vector constructed from the return value of
-   * each iteration
+   * to the local scope. Returns a vector constructed from the return value of
+   * each iteration.
+   *
+   * Multiple sym/collection pairs may be supplied in the binding form. When more
+   * than one collection is given, all collections are iterated in lockstep and
+   * iteration stops at the length of the shortest one.
    *
    * Usage:
    * @code
    * (for [num [1 2 3 4]] (* 2 num)) => [2 4 6 8]
+   * (for [a [1 2 3] b [10 20 30]] (+ a b)) => [11 22 33]
    * @endcode
    *
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
-   * | binding | Binding form, [<var-name> <seq>]                                   |
+   * | binding | Binding form: one or more [sym seq] pairs                          |
    * | body    | Form body to execute                                               |
    */
   SPECIAL_FORM_DECL(ForForm, for)
@@ -60,18 +65,22 @@ namespace Roo
 
   /*!
    * @brief Executes a form for every element in a sequence, just like
-   * (for ...), but takes a leading binding in the binding form containing
-   * the zero-based iteration index
+   * (for ...), but takes a leading index symbol in the binding form that
+   * is bound to the zero-based iteration index.
+   *
+   * Multiple sym/collection pairs may follow the index symbol. When more than
+   * one collection is given, all collections are iterated in lockstep and
+   * iteration stops at the length of the shortest one.
    *
    * Usage:
    * @code
-   * (for-indexed [index num [1 2 3 4]]
-   *   (* index num) => [0 2 6 12])
+   * (for-indexed [i num [1 2 3 4]] (* i num)) => [0 2 6 12]
+   * (for-indexed [i a [1 2 3] b [10 20 30]] (str i ":" (+ a b))) => ["0:11" "1:22" "2:33"]
    * @endcode
    *
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
-   * | binding | Binding form, [<index-var-name> <var-name> <seq>]                  |
+   * | binding | Binding form: index-sym followed by one or more [sym seq] pairs    |
    * | body    | Form body to execute                                               |
    */
   SPECIAL_FORM_DECL(ForIndexedForm, for_indexed)

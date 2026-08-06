@@ -116,6 +116,11 @@ namespace Roo
       const SpecialForm* form,
       std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms,
       uptr_exec_node_v exec_nodes);
+    SpecialFormNode(
+      const SpecialForm* form,
+      const sptr_val_v& values,
+      std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bind_forms,
+      uptr_exec_node_v exec_nodes);
   };
 
   struct ExecNodeList
