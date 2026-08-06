@@ -34,9 +34,17 @@
              (fn [body]
                (contains-form? body (nth children 1))))))
 
+(defun nil-else-if-let?
+  "Test whether an `if-let` form should be `when-let`."
+  [{:keys [children] :as node}]
+  (and (= "if-let" (forms/head-name node))
+       (= 4 (count children))
+       (forms/nil-node? (nth children 3))))
+
 (defun check
   "Return a `use-when-let` diagnostic for matching nodes."
   [parent node]
   (when (or (let-candidate? node)
-            (repeated-keyword-lookup? node))
+            (repeated-keyword-lookup? node)
+            (nil-else-if-let? node))
     (diagnostics/make node :use-when-let "Use when-let")))

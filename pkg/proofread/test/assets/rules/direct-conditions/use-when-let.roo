@@ -15,3 +15,8 @@
       (if flat?
         (print-lines! (flat-lines root))
         (print-lines! (tree-lines root show-repeated?))))))
+
+(def selected-option-value
+  (if-let [option (selected-option options selected-index)]
+    (or (:value option) (:id option))
+    nil))

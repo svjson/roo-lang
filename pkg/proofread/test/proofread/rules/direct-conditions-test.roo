@@ -28,7 +28,8 @@
 (deftest reports-use-when-let-for-let-wrapped-when-forms
   (is (= [[:use-when-let 4]
           [:use-when-let 9]
-          [:use-when-let 13]]
+          [:use-when-let 13]
+          [:use-when-let 20]]
          (diagnostic-summary "assets/rules/direct-conditions/use-when-let.roo"))))
 
 (deftest reports-redundant-self-bindings
