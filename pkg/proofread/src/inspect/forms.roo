@@ -1,4 +1,4 @@
-(ns proofread.forms)
+(ns proofread.inspect.forms)
 
 (defun symbol-name
   "Return the symbol name for an AST node.

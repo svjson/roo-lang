@@ -1,5 +1,5 @@
-(ns proofread.expressions
-  (:require [proofread.forms :as forms]))
+(ns proofread.inspect.expressions
+  (:require [proofread.inspect.forms :as forms]))
 
 (defun literal?
   "Test whether an AST node is a simple literal.

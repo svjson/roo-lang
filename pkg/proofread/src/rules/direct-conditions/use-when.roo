@@ -1,5 +1,5 @@
 (ns proofread.rules.direct-conditions.use-when
-  (:require [proofread.forms :as forms]
+  (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun check

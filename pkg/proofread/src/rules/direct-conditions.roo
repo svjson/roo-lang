@@ -1,5 +1,5 @@
 (ns proofread.rules.direct-conditions
-  (:require [proofread.forms :as forms]
+  (:require [proofread.inspect.forms :as forms]
             [proofread.rules.direct-conditions.flatten-if-pyramid :as flatten-if-pyramid]
             [proofread.rules.direct-conditions.use-case :as use-case]
             [proofread.rules.direct-conditions.use-cond :as use-cond]

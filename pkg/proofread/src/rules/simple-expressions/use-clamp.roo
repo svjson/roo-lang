@@ -1,5 +1,5 @@
 (ns proofread.rules.simple-expressions.use-clamp
-  (:require [proofread.forms :as forms]
+  (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun nested-clamp-call?

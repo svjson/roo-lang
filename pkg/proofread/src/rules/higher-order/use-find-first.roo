@@ -1,5 +1,5 @@
 (ns proofread.rules.higher-order.use-find-first
-  (:require [proofread.forms :as forms]
+  (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun candidate?

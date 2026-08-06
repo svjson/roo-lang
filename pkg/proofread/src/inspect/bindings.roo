@@ -1,6 +1,6 @@
-(ns proofread.bindings
-  (:require [proofread.expressions :as expressions]
-            [proofread.forms :as forms]))
+(ns proofread.inspect.bindings
+  (:require [proofread.inspect.expressions :as expressions]
+            [proofread.inspect.forms :as forms]))
 
 (defun let-bindings
   "Return binding children for a `let` form.

@@ -1,5 +1,5 @@
 (ns proofread.rules.simple-expressions.redundant-let-binding
-  (:require [proofread.bindings :as bindings]
+  (:require [proofread.inspect.bindings :as bindings]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun check

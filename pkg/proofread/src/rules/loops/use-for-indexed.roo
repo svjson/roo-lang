@@ -1,5 +1,5 @@
 (ns proofread.rules.loops.use-for-indexed
-  (:require [proofread.forms :as forms]
+  (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun one-node?

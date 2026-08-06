@@ -1,6 +1,6 @@
 (ns proofread.source
   (:require [proofread.config :as config]
-            [proofread.forms :as forms]
+            [proofread.inspect.forms :as forms]
             [proofread.rules :as rules]
             [roo.ast :as ast]
             [roo.io :as io]))

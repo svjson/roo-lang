@@ -1,5 +1,5 @@
 (ns proofread.rules.simple-expressions.use-select-keys
-  (:require [proofread.forms :as forms]
+  (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun select-keys-entry-target
