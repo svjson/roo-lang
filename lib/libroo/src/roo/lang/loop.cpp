@@ -100,7 +100,7 @@ namespace Roo
             iter_result = exec(ctx, *snode.exec_nodes[j]);
           }
 
-          result.push_back(iter_result);
+          result.push_back(iter_result ? iter_result : Constant::NIL);
           iter_scope.clear();
         }
 

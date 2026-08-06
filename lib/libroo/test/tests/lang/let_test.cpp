@@ -82,3 +82,13 @@ TEST_F(LetForm, bound_value_and_source_are_the_same)
   // Then
   EXPECT_EQ(runtime.lookup("state")->to_string(), "{:nested {:x 10 :y 100}}");
 }
+
+TEST_F(LetForm, empty_let_body_returns_nil)
+{
+  // Given
+  auto result = runtime.eval("(let [{:keys [a b]} {:a 10 :b 25}])");
+
+  // Then
+  ASSERT_TRUE(result.get());
+  ASSERT_EQ(result, Roo::Constant::NIL);
+}

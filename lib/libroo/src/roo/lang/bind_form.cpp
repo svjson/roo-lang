@@ -73,7 +73,7 @@ namespace Roo
       ctx.pop_context();
     }
 
-    return result;
+    return result ? result : Roo::Constant::NIL;
   }
 
   /** IfLetForm - roo/if-let */

@@ -119,6 +119,14 @@ TEST_F(Runtime, eval__quoted_list)
   EXPECT_EQ(*result->elements().at(3), *Roo::Value::symbol("symbols"));
 }
 
+TEST_F(Runtime, eval__empty_source_returns_nil)
+{
+  auto result = runtime.eval("");
+
+  ASSERT_TRUE(result.get());
+  ASSERT_EQ(result, Roo::Constant::NIL);
+}
+
 TEST_F(Runtime, lookup__string_with_default__returns_value_when_found)
 {
   // Given

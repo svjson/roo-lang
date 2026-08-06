@@ -465,7 +465,7 @@ namespace Roo
     {
       result = eval(ctx, sexp);
     }
-    return result;
+    return result ? result : Constant::NIL;
   }
 
   sptr_val Runtime::eval(const std::string& str)

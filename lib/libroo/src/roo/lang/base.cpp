@@ -89,7 +89,7 @@ namespace Roo
     {
       ret = exec(ctx, *form);
     }
-    return ret;
+    return ret ? ret : Constant::NIL;
   }
 
   /** EvalFunction - roo/eval */
@@ -151,7 +151,7 @@ namespace Roo
         return Constant::BOOL_FALSE;
       }
     }
-    return val;
+    return val ? val : Constant::NIL;
   }
 
   /** KeywordFunction - roo/keyword */

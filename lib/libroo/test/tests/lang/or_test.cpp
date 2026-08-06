@@ -27,5 +27,8 @@ TEST_F(OrForm, returns_first_truthy_value)
 
 TEST_F(OrForm, no_args_returns_nil)
 {
-  EXPECT_EQ(*runtime.eval("(or)"), *Roo::Constant::NIL);
+  auto result = runtime.eval("(or)");
+
+  ASSERT_TRUE(result.get());
+  ASSERT_EQ(result, Roo::Constant::NIL);
 }

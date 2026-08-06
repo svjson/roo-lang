@@ -38,3 +38,16 @@ TEST_F(DoTimesForm, no_binding__iterations_as_expression)
   // Then
   EXPECT_EQ(result->to_string(), "[:repeat-me :repeat-me :repeat-me]");
 }
+
+TEST_F(DoTimesForm, empty_body_returns_nil_values)
+{
+  auto result = runtime.eval("(dotimes [n 3])");
+
+  ASSERT_TRUE(result.get());
+  ASSERT_EQ(result->to_string(), "[nil nil nil]");
+  for (auto& value : result->elements())
+  {
+    ASSERT_TRUE(value.get());
+    ASSERT_EQ(value, Roo::Constant::NIL);
+  }
+}
