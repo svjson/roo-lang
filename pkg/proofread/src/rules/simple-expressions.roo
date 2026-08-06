@@ -3,6 +3,7 @@
             [proofread.rules.simple-expressions.redundant-empty-fallback :as redundant-empty-fallback]
             [proofread.rules.simple-expressions.redundant-let :as redundant-let]
             [proofread.rules.simple-expressions.redundant-let-binding :as redundant-let-binding]
+            [proofread.rules.simple-expressions.redundant-let-rebind :as redundant-let-rebind]
             [proofread.rules.simple-expressions.redundant-map-check :as redundant-map-check]
             [proofread.rules.simple-expressions.redundant-some :as redundant-some]
             [proofread.rules.simple-expressions.use-any :as use-any]
@@ -52,6 +53,7 @@
       redundant-let-binding/check
       {:default-options expressions/default-options
        :check-with-options redundant-let-binding/check-with-options}]
+     [:redundant-let-rebind redundant-let-rebind/check]
      [:redundant-empty-fallback redundant-empty-fallback/check]
      [:use-get-with-default use-get-with-default/check]
      [:use-get-in-with-default use-get-in-with-default/check]

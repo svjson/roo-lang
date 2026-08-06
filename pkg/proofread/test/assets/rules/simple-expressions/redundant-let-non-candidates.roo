@@ -18,3 +18,12 @@
 (def destructured-binding
   (let [{:keys [id]} node]
     (save! id)))
+
+(def self-rebound-with-intermediate-condition
+  (let [options (parse-options args)
+        options (cond-> options
+                        missing?
+                        (update :errors [append "Missing output directory"]))]
+    (cond-> options
+            (empty? (:errors options))
+            (update :errors [append "Missing lookup index file"]))))

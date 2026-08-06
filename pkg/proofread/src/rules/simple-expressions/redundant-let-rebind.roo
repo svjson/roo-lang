@@ -1,0 +1,83 @@
+(ns proofread.rules.simple-expressions.redundant-let-rebind
+  (:require [proofread.inspect.bindings :as bindings]
+            [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun cond-thread?
+  "Test whether a node is a non-empty `cond->` over `name`."
+  [{:keys [children] :as node} name]
+  (and (= "cond->" (forms/head-name node))
+       (< 2 (count children))
+       (even? (count children))
+       (forms/direct-symbol? (nth children 1) name)))
+
+(defun update-step-key
+  "Return the updated keyword name from a `cond->` update step."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "update" 3)
+    (forms/keyword-name (nth children 1))))
+
+(defun all-update-steps?
+  "Test whether all `cond->` steps from `index` are `update` steps."
+  [children index]
+  (or (>= index (count children))
+      (and (update-step-key (nth children index))
+           (all-update-steps? children (+ index 2)))))
+
+(defun update-keys
+  "Return keyword names updated by `cond->` steps from `index`."
+  [children index]
+  (when (< index (count children))
+    (concat [(update-step-key (nth children index))]
+            (update-keys children (+ index 2)))))
+
+(defun cond-thread-update-keys
+  "Return updated keys for a `cond->` over `name`."
+  [{:keys [children] :as node} name]
+  (when (and (cond-thread? node name)
+             (all-update-steps? children 3))
+    (update-keys children 3)))
+
+(defun reads-updated-key?
+  "Test whether a node reads an updated key from `target-name`."
+  [node target-name keys]
+  (and (map? node)
+       (or (and (forms/keyword-lookup? node target-name)
+                (contains? keys (forms/keyword-lookup-key-name node)))
+           (any? (:children node)
+                 (fn [child]
+                   (reads-updated-key? child target-name keys))))))
+
+(defun tests-read-updated-key?
+  "Test whether `cond->` tests read a key changed by earlier steps."
+  [children target-name keys index]
+  (and (< index (count children))
+       (or (reads-updated-key? (nth children index) target-name keys)
+           (tests-read-updated-key? children target-name keys (+ index 2)))))
+
+(defun candidate?
+  "Test whether a self-rebinding `let` step can be folded into the body."
+  [node]
+  (when-let [items (bindings/let-bindings node)]
+    (when (and (= 4 (count items))
+               (= 1 (count (bindings/let-body-forms node))))
+      (when-let [name (forms/symbol-name (head items))]
+        (when (= name (forms/symbol-name (nth items 2)))
+          (let [step (nth items 3)
+                body (head (bindings/let-body-forms node))
+                step-keys (cond-thread-update-keys step name)
+                body-keys (cond-thread-update-keys body name)]
+            (and (head step-keys)
+                 (head body-keys)
+                 (not (tests-read-updated-key? (:children body)
+                                               name
+                                               step-keys
+                                               2)))))))))
+
+(defun check
+  "Return a `redundant-let-rebind` diagnostic for matching nodes."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make node
+                      :redundant-let-rebind
+                      "Combine redundant let rebind")))

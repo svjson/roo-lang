@@ -14,3 +14,12 @@
   (let [value (build-value input)
         id (:id value)]
     (save! id)))
+
+(def self-rebound-cond-thread
+  (let [options (parse-options args)
+        options (cond-> options
+                        (nil? (:out options))
+                        (update :errors [append "Missing output directory"]))]
+    (cond-> options
+            (empty? (:indexes options))
+            (update :errors [append "Missing lookup index file"]))))
