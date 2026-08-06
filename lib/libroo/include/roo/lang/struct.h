@@ -279,6 +279,7 @@ namespace Roo
    * Usage:
    * @code
    * (keys {:name "A name" :age 23}) => [:name :age]
+   * (keys nil) => []
    * @endcode
    *
    * | Arg    | Description                                                        |

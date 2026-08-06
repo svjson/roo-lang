@@ -289,6 +289,7 @@ namespace Roo::Dict
   {
     std::vector<sptr_val> keys;
     sptr_val_v dc = get_children(*dict);
+    keys.reserve(dc.size());
     for (size_t i = 0; i < dc.size(); i += 2)
     {
       keys.push_back(dc[i]);
