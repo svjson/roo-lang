@@ -21,12 +21,11 @@
 (defun history [book]
   (:history book))
 
-(defun dirty? [book]
-  (let [history (:history book)]
-    (if (:tx history)
-      true
-      (not= (:current-revision history)
-            (:saved-revision history)))))
+(defun dirty? [{:keys [history] :as book}]
+  (if (:tx history)
+    true
+    (not= (:current-revision history)
+          (:saved-revision history))))
 
 (defun mark-saved [book]
   (assoc-in book

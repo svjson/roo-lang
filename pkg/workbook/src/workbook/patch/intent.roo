@@ -21,7 +21,7 @@
 
 (defun normalize-patch [value patch]
   (cond
-    (= (type-of patch) "map")
+    (map? patch)
     patch
 
     (= (head patch) :set)
@@ -36,12 +36,11 @@
     :default patch))
 
 (defun normalize-patches [value patches]
-  (let [normalized []
-        next-value value]
-    (map patches
-         (fn [patch]
-           (let [normalized-patch (normalize-patch next-value patch)]
-             (append! normalized normalized-patch)
-             (set! [next-value]
-                   (patch-apply/apply-patch next-value normalized-patch)))))
-    normalized))
+  (-> patches
+      (reduce {:normalized []
+               :next-value value}
+              (fn [{:keys [normalized next-value]} patch]
+                (let [normalized-patch (normalize-patch next-value patch)]
+                  {:normalized (append normalized normalized-patch)
+                   :next-value (patch-apply/apply-patch next-value normalized-patch)})))
+      :normalized))
