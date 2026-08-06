@@ -1,0 +1,42 @@
+(ns cli-trooper.command.core
+  (:require [cli-trooper.command.flag :as f]))
+
+
+
+
+(defun get-flag [cmd flag]
+  (get (:flags cmd) (find-first (keys (:flags cmd))
+                                (fn [fk] (f/flag= fk flag)))))
+
+(defun apply-mixins [cmd cmd-mixins mixins]
+  (reduce (if (seq? cmd-mixins) cmd-mixins [cmd-mixins])
+          cmd
+          (fn [result mixin]
+            (let [complemented (if-let [m (get mixins mixin)]
+                                 (merge result
+                                        {:flags (merge (:flags m) (:flags cmd))})
+                                 result)]
+              (assoc complemented :flags
+                                  (reduce-kv (:flags complemented)
+                                             {}
+                                             (fn [result k s]
+                                               (assoc result
+                                                      (f/normalize k)
+                                                      s))))))))
+
+(defun build-command [name spec {:keys [mixins] :as config}]
+  "Construct a full command specification from input and configuration.
+
+  Args:
+  - `name`: The command name as expressed as a CLI argument.
+  - `spec`: The command specification as it defined in cli-trooper config.
+  - `config`: The full cli-trooper config.
+
+  Returns:
+  A fully formed cli-trooper command."
+  (let [base {:command name
+              :positional (:positional spec)
+              :flags (:flags spec)}]
+    (if-let [cmd-mixin (:mixin spec)]
+      (apply-mixins base cmd-mixin mixins)
+      base)))

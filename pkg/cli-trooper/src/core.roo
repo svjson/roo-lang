@@ -1,0 +1,32 @@
+(ns cli-trooper.core
+  (:require [cli-trooper.command.format :as fmt]
+            [cli-trooper.command.core :as cmd]
+            [cli-trooper.command.parse :as cmdp]))
+
+(defun usage-string [{:keys [application description mixins commands] :as config}]
+  (concat
+   [(str application ": " description)]
+   [""]
+   (reduce-kv commands [] (fn [cmds name cmd]
+                            (concat cmds
+                                    (fmt/command-string
+                                     application
+                                     (cmd/build-command name cmd config)))))))
+
+(defun print-help! [config]
+  (prn "halp?"))
+
+
+(defun run [config args & opts]
+  (let [cfg (cfg/build-config config)
+        raw-arg (head args)
+        first-arg (str raw-arg)]
+    (cond
+      (or (nil? raw-arg)
+          (contains? ["--help" "-h"] first-arg))
+      (print-help! cfg)
+
+      true
+      (let [parsed-cmd (cmdp/parse config args)]
+        (prn (pretty-str parsed-cmd))
+        parsed-cmd))))

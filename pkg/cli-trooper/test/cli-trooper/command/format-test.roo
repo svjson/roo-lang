@@ -1,0 +1,41 @@
+(ns cli-trooper.command.format-test
+  (:require proof.core
+            [cli-trooper.command.format :as fmt]))
+
+(deftest command-string--positional-with-flag
+  (is (= "find-all files <path> [-f]"
+         (fmt/command-string "find-all"
+                             {:command "files"
+                              :flags {"-f" :flag}
+                              :positional [:path]}))))
+
+(deftest command-string--positional-with-multiple-flags
+  (is (= "lookup index <index-file|source-root|package-dir> [--root <dir>]... [--exclude <dir>]... [--require-summary]"
+         (fmt/command-string "lookup"
+                             {:command "index"
+                              :positional [{:type :enum
+                                            :values ["index-file"
+                                                     "source-root"
+                                                     "package-dir"]}]
+                              :flags {"--root" {:type :dir
+                                                :repeatable? true}
+                                      "--exclude" {:type :dir
+                                                   :repeatable? true}
+                                      "--require-summary" :flag}}))))
+
+(deftest command-string--positional-strings
+  (is (= "lookup thing-at <file> <line> <column>"
+         (fmt/command-string "lookup"
+                             {:command "thing-at"
+                              :positional ["file"
+                                           "line"
+                                           "column"]}))))
+
+(deftest format-flag-name--single-char
+  (is (= "-f"
+         (fmt/format-flag-name "f"))))
+
+(deftest format-flag-name--vector
+  (is (= "-f,--file"
+         (fmt/format-flag-name ["f" "--file"]))))
+

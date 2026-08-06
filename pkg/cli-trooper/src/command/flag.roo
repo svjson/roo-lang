@@ -1,0 +1,112 @@
+(ns cli-trooper.command.flag
+  (:require [roo.string :as s]))
+
+
+
+;; Predicate functions
+
+(defun flag?
+  "Determine if an argument is a flag-shaped string.
+
+   Args:
+    - `arg`: The argument to check.
+
+    Returns:
+    - truthy if the argument is a string that starts with a dash (`-`),
+      indicating it is a flag. "
+  [arg]
+  (and (string? arg)
+       (s/starts-with? arg "-")))
+
+(defun flag=
+  "Determine if an argument matches a flag key.
+
+   Args:
+     - `arg`: The argument to check.
+     - `k`: The flag key to compare against.
+
+   Returns:
+     - truthy if the argument matches the flag key, either as an exact match
+       or as a match to the last segment of a dash-separated string."
+  [arg k]
+  (cond
+    (string? k)
+    (or (= arg k)
+        (= arg (last (split k "-"))))
+
+    (seq? k)
+    (any? k (fn [fk] (flag= arg fk)))))
+
+
+
+;; Transform functions
+
+(defun flag-kw
+  "Convert a flag argument to a keyword based on the command's flag keys.
+
+   Args:
+      - `arg`: The flag argument to convert.
+      - `command`: The command specification containing the flag keys.
+
+   Returns:
+      - A keyword representing the flag, derived from the last segment of the
+        matching flag key."
+  [arg command]
+  (keyword (let [flag-key (find-first (keys (:flags command)) (fn [k] (flag= arg k)))]
+             (cond
+               (string? flag-key)
+               (last (split flag-key "-"))
+
+               (seq? flag-key)
+               (-> flag-key
+                   last
+                   (split "-")
+                   last)
+
+               true
+               flag-key))))
+
+(defun dash-prefixed
+  "Ensure a flag string is properly prefixed with dashes.
+
+   Args:
+     - `fl`: The flag string to normalize.
+
+   Returns:
+     - The flag string prefixed with a single dash (`-`) if it has one character,
+       or double dashes (`--`) if it has more than one character. If the input
+       is already a valid flag, it is returned unchanged."
+  [fl]
+  (if (flag? fl)
+    fl
+    (case (count fl)
+      0 nil
+      1 (str "-" fl)
+      :default (str "--" fl))))
+
+(defun normalize
+  "Normalize a flag representation to a standard format.
+
+   Args:
+       - `flag`: The flag representation to normalize, which can be a string,
+         a sequence, or an existing flag.
+
+   Returns:
+       - A normalized flag representation, ensuring it is properly prefixed with
+         dashes and converted to a consistent format."
+  [flag]
+  (cond
+    (flag? flag)
+    flag
+
+    (string? flag)
+    (dash-prefixed flag)
+
+    (and (seq? flag) (= 1 (count flag)))
+    (normalize (head flag))
+
+    (seq? flag)
+    (map flag dash-prefixed)
+
+    true
+    flag))

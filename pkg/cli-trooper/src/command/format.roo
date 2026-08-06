@@ -1,0 +1,88 @@
+(ns cli-trooper.command.format
+  (:require [roo.string :as string]))
+
+
+
+;; Utility functions
+
+(defun wrap-opt [val]
+  (str "[" val "]"))
+
+(defun wrap-mand [val]
+  (str "<" val ">"))
+
+
+
+;; Formatting function primitives
+
+(defun format-flag-name [flag]
+  (cond
+    (and (string? flag) (not (string/starts-with? flag "-")))
+    (str "-" flag)
+
+    (seq? flag)
+    (apply join (flatten ["," (map flag format-flag-name)]))
+
+    true
+    flag))
+
+(defun format-flag-arg [flag-spec]
+  (cond
+    (= :flag flag-spec)
+    nil
+
+    (:name flag-spec)
+    (:name flag-spec)
+
+    (keyword? flag-spec)
+    (name flag-spec)
+
+    (map? flag-spec)
+    (case (:type flag-spec)
+      :enum (apply join (concat "|" (:values flag-spec)))
+      :default (format-flag-arg (:type flag-spec)))))
+
+(defun format-positional [pos]
+  (let [pos-arg (wrap-mand
+                 (cond
+                   (= :enum (:type pos))
+                   (apply join (concat "|" (:values pos)))
+
+                   (string? pos)
+                   pos
+
+                   (keyword? pos)
+                   (name pos)
+
+                   (:name pos)
+                   (:name pos)
+
+                   (keyword? (:type pos))
+                   (name (:type pos))))]
+    (cond-> pos-arg
+
+            (:optional? pos)
+            wrap-opt)))
+
+(defun format-flag [flag spec]
+  (let [f (format-flag-name flag)
+        f-arg (format-flag-arg spec)]
+    (str "[" f
+         (if f-arg (str " "(wrap-mand f-arg)) "")
+         "]"
+         (if (:repeatable? spec) "..." ""))))
+
+
+
+;; Command formatting
+
+(defun command-string [application cmd]
+  (apply join (flatten [" " (concat
+                             [(str application " " (:command cmd))]
+                             (for [pos (:positional cmd)]
+                               (format-positional pos))
+                             (reduce-kv (:flags cmd)
+                                        []
+                                        (fn [result flag spec]
+                                          (append result (format-flag flag spec)))))])))
+

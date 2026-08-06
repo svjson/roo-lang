@@ -1,0 +1,90 @@
+(ns cli-trooper.example.lookup-test
+  (:require proof.core
+            [cli-trooper.core :as ct]
+            [cli-trooper.command.core :as cmd]
+            [cli-trooper.command.parse :as cmdp]
+            [cli-trooper.config.core :as cfg]))
+
+
+
+;; Test Fixture
+
+(def lookup-config {:application "lookup"
+                    :description "build Roo symbol index artifacts"
+                    :mixins {:recur-dir {:flags {"--root" {:repeatable? true
+                                                           :type :path}
+                                                 "--exclude" {:repeatable? true
+                                                              :type :path}}}}
+                    :commands {"index"
+                               {:mixin :recur-dir
+                                :flags {"x" {:repeatable? true
+                                             :type :enum
+                                             :values ["forms" "symbols" "native"]}
+                                        ["o"] :path-or-file
+                                        "--package-name" {:type :string
+                                                          :name "name"}
+                                        "--package-version" {:type :string
+                                                             :name "version"}
+                                        "--package-description" :text}
+                                :positional [{:type :dir
+                                              :name "package-dir"
+                                              :optional? true}]}
+                               "audit"
+                               {:mixin :recur-dir
+                                :positional [{:type :enum
+                                              :values ["index-file"
+                                                       "source-root"
+                                                       "package-dir"]}]
+                                :flags {["o" "output-format"] {:type :enum
+                                                               :values ["edn" "text"]}
+                                        "--require-summary" :flag
+                                        "--require-param-docs" :flag
+                                        "--require-signatures" :flag
+                                        "--allow-zero-arity" {:repeatable? true
+                                                              :type :symbol}
+                                        "--fail-on" {:type :enum
+                                                     :values ["warning" "error"]}}}
+
+                               "thing-at"
+                               {:positional ["file"
+                                             "line"
+                                             "column"]}}})
+
+
+
+;; Usage Tests
+
+(deftest print-usage--default-formatter
+  (is (= ["lookup: build Roo symbol index artifacts"
+          ""
+          "lookup index [<package-dir>] [--root <path>]... [--exclude <path>]... [-x <forms|symbols|native>]... [-o <path-or-file>] [--package-name <name>] [--package-version <version>] [--package-description <text>]"
+          "lookup audit <index-file|source-root|package-dir> [--root <path>]... [--exclude <path>]... [-o,--output-format <edn|text>] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--fail-on <warning|error>]"
+          "lookup thing-at <file> <line> <column>"]
+
+         (ct/usage-string lookup-config))))
+
+;; Argparse Tests
+
+(deftest parse-command--index-with-executor-and-output-file
+  (is (= {:command {:command "index"
+                    :positional [{:type :dir
+                                  :name "package-dir"
+                                  :optional? true}]
+                    :flags {"--root" {:repeatable? true
+                                      :type :path}
+                            "--exclude" {:repeatable? true
+                                         :type :path}
+                            "-x" {:repeatable? true
+                                  :type :enum
+                                  :values ["forms" "symbols" "native"]}
+                            "-o" :path-or-file
+                            "--package-name" {:type :string
+                                              :name "name"}
+                            "--package-version" {:type :string
+                                                 :name "version"}
+                            "--package-description" :text}
+                    :doc-line "lookup index [<package-dir>] [--root <path>]... [--exclude <path>]... [-x <forms|symbols|native>]... [-o <path-or-file>] [--package-name <name>] [--package-version <version>] [--package-description <text>]"}
+          :options {:x [:symbols :native]
+                    :o "/build/index.edn"}}
+         (cmdp/parse (cfg/build-config lookup-config)
+                     ["index" "-x" "symbols" "-x" "native" "-o" "/build/index.edn"]))))

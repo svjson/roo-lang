@@ -1,0 +1,50 @@
+(ns cli-trooper.command.parse
+  (:require [roo.string :as s]
+            [cli-trooper.command.flag :as f]
+            [cli-trooper.command.core :as cmd]))
+
+
+
+;; Support functions
+
+(defun positional? [arg]
+  (and (string? arg)
+       (not (s/starts-with? arg "-"))))
+
+
+
+;; Command parsing
+
+(defun parse
+  "Parse input argument list `args` and resolve the command and options specified
+   according to the cli-trooper configuration `cfg`."
+  [cfg args]
+  (when-let [cmd-index (find-index args (fn [arg]
+                                          (and (positional? arg)
+                                               (get-in cfg [:commands arg]))))
+             cmd-literal (nth args cmd-index)
+             command (get-in cfg [:commands cmd-literal])]
+    {:command command
+     :options (-> args
+                  (reduce {:n 0 :opts {} :ctx nil}
+                          (fn [result arg]
+                            (cond
+                              (and (f/flag? arg)
+                                   (not (:ctx result)))
+                              (assoc result :ctx {:type :flag
+                                                  :flag (cmd/get-flag command arg)
+                                                  :val (f/flag-kw arg command)})
+
+                              (and (positional? arg)
+                                   (-> result :ctx :flag))
+                              (let [fl-key (-> result :ctx :val)
+                                    flag-spec (-> result :ctx :flag)
+                                    arg-val (case (:type flag-spec)
+                                              :enum (keyword arg)
+                                              :default arg)]
+                                (assoc-in result [:opts fl-key]
+                                                 (if (:repeatable? flag-spec)
+                                                   (append (get-in result [:opts fl-key]) arg-val)
+                                                   arg-val)
+                                                 [:ctx] nil)))))
+                  :opts)}))

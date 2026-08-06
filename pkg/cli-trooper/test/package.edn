@@ -1,0 +1,6 @@
+{:name cli-trooper-tests
+ :version "0.1.0"
+ :dependencies {cli-trooper "file:.."
+                proof "0.1.0"}
+ :load-roots ["."]
+ :config {proof {:test-roots ["cli-trooper"]}}}

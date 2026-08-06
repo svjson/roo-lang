@@ -1,0 +1,6 @@
+{:name cli-trooper
+ :version "0.1.0"
+ :description "CLI argument parser and dispatcher"
+ :dependencies []
+ :load-roots ["src"]
+ :namespace-roots {cli-trooper "src"}}

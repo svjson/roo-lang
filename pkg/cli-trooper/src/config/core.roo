@@ -1,0 +1,17 @@
+(ns cli-trooper.config.core
+  (:require [cli-trooper.command.core :as cc]
+            [cli-trooper.command.format :as fmt]))
+
+(defun build-config [{:keys [application description mixins commands] :as config}]
+  (assoc config
+         :commands
+         (reduce-kv commands {}
+                    (fn [result name spec]
+                      (let [cmd (cc/build-command name spec config)]
+                        (assoc result
+                               name
+                               (assoc cmd
+                                      :doc-line
+                                      (fmt/command-string application
+                                                          cmd))))))))
+

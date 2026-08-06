@@ -1,0 +1,18 @@
+(ns cli-trooper.command.flag-test
+  (:require proof.core
+            [cli-trooper.command.flag :as f]))
+
+(deftest flag?--truthy-for-dash-prefixed-strings
+  (is (f/flag? "-o"))
+  (is (f/flag? "-p")))
+
+(deftest flag=--exact-match
+  (is (f/flag= "-o" "-o")))
+
+(deftest normalize--single-letter
+  (is (= "-o"
+         (f/normalize "o"))))
+
+(deftest normalize--multi-letter-letter
+  (is (= "--output-file"
+         (f/normalize "output-file"))))

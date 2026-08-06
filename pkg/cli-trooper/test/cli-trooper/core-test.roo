@@ -1,0 +1,4 @@
+(ns cli-trooper.core-test
+  (:require proof.core
+            [cli-trooper.core :as cc]))
+
