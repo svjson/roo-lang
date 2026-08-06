@@ -23,6 +23,8 @@ namespace Roo::Dict
   std::vector<sptr_val> map_sptr_keys(const sptr_val& dict);
   std::unordered_set<std::string> map_string_keys(Value& map);
 
+  std::vector<sptr_val> map_sptr_vals(const sptr_val& dict);
+
   sptr_val get_property_or_throw(Value& source, const std::string& keyword);
   sptr_val get_property(Value& object, const std::string& property);
   sptr_val get_property(const sptr_val& object, const sptr_val& property);

@@ -197,6 +197,7 @@ namespace Roo
     lang_symbols.emplace("type-of", TypeOfFunction::make());
     lang_symbols.emplace("unless", UnlessForm::make());
     lang_symbols.emplace("upper-case", UpperCaseFunction::make());
+    lang_symbols.emplace("vals", ValsFunction::make());
     lang_symbols.emplace("vector", VectorFunction::make());
     lang_symbols.emplace("when", WhenForm::make());
     lang_symbols.emplace("when-let", WhenLetForm::make());

@@ -641,4 +641,13 @@ namespace Roo
     return Value::map(std::move(new_content));
   }
 
+  /** ValsFunction - roo/vals */
+  FUNC_IMPL(ValsFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&ValsFunction::exec_vals))))
+
+  EXEC_BODY(ValsFunction, exec_vals)
+  {
+    return Value::vector(Dict::map_sptr_vals(args[0]));
+  }
+
 } // namespace Roo

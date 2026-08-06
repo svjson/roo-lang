@@ -296,6 +296,18 @@ namespace Roo::Dict
     return keys;
   }
 
+  std::vector<sptr_val> map_sptr_vals(const sptr_val& dict)
+  {
+    std::vector<sptr_val> vals;
+    sptr_val_v dc = get_children(*dict);
+    vals.reserve(dc.size());
+    for (size_t i = 1; i < dc.size(); i += 2)
+    {
+      vals.push_back(dc[i]);
+    }
+    return vals;
+  }
+
   const std::vector<const Value*> map_keys(const Value& map_data)
   {
     if (const Roo::sptr_val_v* children = std::get_if<sptr_val_v>(&map_data.value))

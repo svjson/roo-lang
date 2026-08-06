@@ -351,6 +351,22 @@ namespace Roo
    */
   FUNC(SelectKeysFunction, select_keys)
 
+  /*!
+   * @brief Returns a vector of all values present under the keys of a map or complex
+   * object.
+   *
+   * Usage:
+   * @code
+   * (vals {:name "A name" :age 23}) => ["A name" 23]
+   * (vals nil) => []
+   * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | The map or complex object whose keys are returned.                 |
+   */
+  FUNC(ValsFunction, vals)
+
 } // namespace Roo
 
 #endif /* ROO__LANG__STRUCT_H */
