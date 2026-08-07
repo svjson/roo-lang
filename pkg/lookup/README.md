@@ -16,38 +16,41 @@ The index should describe:
 - Symbols provided by installed package dependencies.
 - Native symbols exposed by packages through metadata.
 
-The generated artifact should not be embedded into `package.edn`. Package
-manifests may eventually point to an index artifact, or the package format may
-define a conventional path for it.
+Current canonical index outputs are:
+
+- `:roo/source-forms`
+- `:roo/symbol-index`
+- `:roo/index` (combined forms + symbols)
+- `:roo/lookup-audit` (audit diagnostics)
 
 ## Running From Source
 
-From the repository root:
+From an installed `lookup` CLI:
 
 ```sh
-./build/roo pkg/lookup index pkg/lookup
+lookup index ./path/to/package
 ```
 
-`index` defaults to the symbol extractor when indexing a package. Select
-specific extractors with repeated `-x` options:
+`index` defaults to the symbol extractor when indexing a package. Select specific
+extractors with repeated `-x` options:
 
 ```sh
-./build/roo pkg/lookup index -x symbols pkg/lookup
-./build/roo pkg/lookup index -x forms pkg/lookup
-./build/roo pkg/lookup index -x forms -x symbols pkg/lookup
+lookup index -x symbols ./path/to/package
+lookup index -x forms ./path/to/package
+lookup index -x forms -x symbols ./path/to/package
 ```
 
 Index generic source roots with `--root`. A root-only index defaults to the
 native extractor:
 
 ```sh
-./build/roo pkg/lookup index --root native/include --root native/src
+lookup index --root ./path/to/native/include --root ./path/to/native/src
 ```
 
 Skip paths or subtrees under indexed roots with repeated `--exclude` options:
 
 ```sh
-./build/roo pkg/lookup index --root native --exclude native/test
+lookup index --root ./path/to/native --exclude ./path/to/native/test
 ```
 
 Root-based indexes can carry explicit package metadata. This is useful when
@@ -55,9 +58,9 @@ indexing sources that belong to a package but do not live under a Roo package
 root:
 
 ```sh
-./build/roo pkg/lookup index \
-  --root native/include \
-  --root native/src \
+lookup index \
+  --root ./path/to/native/include \
+  --root ./path/to/native/src \
   --package-name my-package \
   --package-version 1.2.3
 ```
@@ -68,8 +71,8 @@ and `--package-description` require `--package-name`.
 Write the generated EDN to a file with `-o` or `--out`:
 
 ```sh
-./build/roo pkg/lookup index -x symbols -o build/lookup.edn pkg/lookup
-./build/roo pkg/lookup index --root native/src --out build/native.edn
+lookup index -x symbols -o build/lookup.edn ./path/to/package
+lookup index --root ./path/to/native/src -x native -o build/native.edn
 ```
 
 ## Roo Docstrings
@@ -98,7 +101,7 @@ string literal inside the defining form:
 
   Examples:
   ```roo
-  (greet \"Ada\")
+  (greet "Ada")
   ```
 
   See Also:
@@ -107,62 +110,25 @@ string literal inside the defining form:
   (str "Hello " name))
 ````
 
-The first prose paragraph becomes `:summary`. Later prose paragraphs before a
-section heading become `:body`. Inline backticks are preserved in summary and
-body text so documentation renderers can treat them as Markdown.
+The output format is currently captured as `:markdown`, with section-aware parsing
+for Args, Returns, Examples, See Also, Since, and Deprecated.
 
-Recognized section headings are:
-
-- `Args:`
-- `Returns:`
-- `Examples:`
-- `See Also:`
-- `Since:`
-- `Deprecated:`
-
-Argument lines use bullets of the form `- name: description`. The argument
-name may be wrapped in backticks in the docstring. Argument docs are copied
-into both the symbol doc map and the matching function signature parameter.
-`Returns:` records return documentation, fenced `Examples:` blocks are emitted
-as Roo examples, and `See Also:` bullets are emitted as symbol names without
-backticks.
-
-For now, `:doc-source` points at the source range of the defining form. The
-source reader does not yet expose separate source metadata for child string
-literals.
-
-Ask for position-aware information about a buffer by passing the current
-source on standard input:
-
-```sh
-printf '(ns sample.core)\n(let [command-value 1]\n  command-value)\n' \
-  | ./build/roo pkg/lookup thing-at . src/sample.roo 3 3
-```
-
-Build a standalone `lookup` command with:
-
-```sh
-./build/rooc build pkg/lookup --build-dir build/lookup-install --name lookup
-```
-
-Then run:
-
-```sh
-./build/lookup-install/build/lookup --help
-```
+`lookup` does not yet extract namespace (`ns`) docstrings in the current
+implementation. That backlog item is tracked in
+`docs/lookup/backlog.md`.
 
 ## Current Status
 
-`lookup` currently provides a source-form index, a symbol index, selectable
-index extraction, file output, and a position-aware `thing-at` query for editor
-tooling. The source reader bridge is:
+`lookup` currently provides a source-form index, a symbol index, selectable index
+extraction, file output, and a position-aware `thing-at` query for editor tooling.
+The source reader bridge is:
 
 ```roo
 (lookup.reader/read-file-forms! path)
 ```
 
-The bridge reads one Roo source file and returns top-level forms as ordinary
-Roo data with source location metadata.
+The bridge reads one Roo source file and returns top-level forms as ordinary Roo
+data with source location metadata.
 
 ## License
 
