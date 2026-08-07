@@ -1,0 +1,8 @@
+(ns proofread.simple-expressions-use-argument-destructuring-renamed)
+
+(defun make
+  [next-id stereotype opts]
+  (let [stereotype-id (:id stereotype)]
+    {:id stereotype-id
+     :next-id next-id
+     :opts opts}))

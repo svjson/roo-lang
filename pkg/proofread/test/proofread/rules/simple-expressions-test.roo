@@ -151,9 +151,14 @@
           [:use-argument-destructuring 21]]
          (diagnostic-summary "assets/rules/simple-expressions/use-argument-destructuring.roo"))))
 
+(deftest reports-argument-destructuring-renamed-candidates
+  (is (= [[:use-argument-destructuring 5]]
+         (diagnostic-summary "assets/rules/simple-expressions/use-argument-destructuring-renamed.roo"))))
+
 (deftest ignores-argument-destructuring-non-candidates
-  (is (= []
-         (diagnostics "assets/rules/simple-expressions/argument-destructuring-non-candidates.roo"))))
+  (is (= [[:use-argument-destructuring 5]
+          [:use-argument-destructuring 30]]
+         (diagnostic-summary "assets/rules/simple-expressions/argument-destructuring-non-candidates.roo"))))
 
 (deftest reports-redundant-let-candidates
   (is (= [[:redundant-let 4]

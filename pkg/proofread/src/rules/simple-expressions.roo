@@ -32,7 +32,6 @@
   (registry/descriptors
     :simple-expressions
     [[:use-head use-head/check]
-     [:use-argument-destructuring use-argument-destructuring/check]
      [:use-clamp use-clamp/check]
      [:use-for use-for/check]
      [:use-empty? use-empty/check]
@@ -47,6 +46,10 @@
      [:use-type-predicate use-type-predicate/check]
      [:use-update use-update/check]
      [:redundant-some? redundant-some/check]
+     [:use-argument-destructuring
+      use-argument-destructuring/check
+      {:default-options use-argument-destructuring/default-options
+       :check-with-options use-argument-destructuring/check-with-options}]
      [:redundant-let
       redundant-let/check
       {:default-options expressions/default-options

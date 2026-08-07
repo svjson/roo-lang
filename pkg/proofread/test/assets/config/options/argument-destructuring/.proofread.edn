@@ -1,0 +1,2 @@
+{:rules {:redundant-let :off
+         :use-argument-destructuring {:options {:allow-renamed-keyword-lookups false}}}}

@@ -53,3 +53,7 @@
   (is (= [[:redundant-let :warning]
           [:redundant-let :warning]]
          (diagnostic-summary "assets/config/options/nested/redundant-let.roo"))))
+
+(deftest applies-argument-destructuring-options
+  (is (= []
+         (diagnostic-summary "assets/config/options/argument-destructuring/use-argument-destructuring-renamed.roo"))))
