@@ -1,0 +1,114 @@
+(ns proofread.rules.simple-expressions.use-string-starts-with
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun leading-substr-call?
+  "Test whether a form is `(substr value 0 1)`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "substr" 4)
+       (forms/literal-number? (nth children 2) 0)
+       (forms/literal-number? (nth children 3) 1)))
+
+(defun leading-substr-source
+  "Return the source argument for `(substr value 0 1)`."
+  [{:keys [children] :as node}]
+  (when (leading-substr-call? node)
+    (nth children 1)))
+
+(defun trailing-substr-call?
+  "Test whether a form removes the first character from the same source."
+  [{:keys [children] :as node} source]
+  (and (or (forms/call? node "substr" 3)
+           (forms/call? node "substr" 4))
+       (forms/same-form? source (nth children 1))
+       (forms/literal-number? (nth children 2) 1)
+       (or (= 3 (count children))
+           (and (= 4 (count children))
+                (forms/call? (nth children 3) "count" 2)
+                (forms/same-form? source (forms/count-argument (nth children 3)))))))
+
+(defun equality-candidate?
+  "Return start-with candidate info from an equality form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A map with `:source` and `:prefix` when the pattern matches, otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "=" 3)
+    (let [left (nth children 1)
+          right (nth children 2)]
+      (cond
+        (and (forms/literal-string-with-len? left 1)
+             (leading-substr-call? right))
+        {:source (leading-substr-source right)
+         :prefix left}
+
+        (and (leading-substr-call? left)
+             (forms/literal-string-with-len? right 1))
+        {:source (leading-substr-source left)
+         :prefix right}))))
+
+(defun case-candidate?
+  "Return start-with candidate info from a `case` form.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A map with `:source`, `:prefix`, and `:replacement-body` when matching.
+  Otherwise `nil`."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "case" 6)
+    (let [dispatch (nth children 1)
+          prefix (nth children 2)
+          replacement-body (nth children 3)
+          default-keyword (nth children 4)
+          default-value (nth children 5)]
+      (when (and (leading-substr-call? dispatch)
+                 (forms/literal-string-with-len? prefix 1)
+                 (trailing-substr-call? replacement-body (leading-substr-source dispatch))
+                 (= "default" (forms/keyword-name default-keyword))
+                 (forms/same-form? (leading-substr-source dispatch)
+                                  default-value))
+        {:source (leading-substr-source dispatch)
+         :prefix prefix
+         :replacement-body replacement-body}))))
+
+(defun candidate?
+  "Return candidate metadata for `string/starts-with?` suggestions."
+  [node]
+  (or (equality-candidate? node)
+      (case-candidate? node)))
+
+(defun replacement
+  "Return a source replacement string for `string/starts-with?`."
+  [{:keys [source prefix replacement-body]}]
+  (if replacement-body
+    (str "(if (string/starts-with? "
+         (forms/form-string source)
+         " \""
+         (forms/form-string prefix)
+         "\""
+         ") "
+         (forms/form-string replacement-body)
+         " "
+         (forms/form-string source)
+         ")")
+    (str "(string/starts-with? "
+         (forms/form-string source)
+         " \""
+         (forms/form-string prefix)
+         "\""
+         ")")))
+
+(defun check
+  "Report `string/starts-with?` opportunities in equality and case forms."
+  [parent node]
+  (when-let [candidate (candidate? node)]
+    (diagnostics/make-suggesting
+      node
+      :use-string-starts-with?
+      "Use string/starts-with?"
+      [(diagnostics/rewrite node "Rewrite as starts-with?" (replacement candidate))])))

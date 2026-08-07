@@ -1,0 +1,9 @@
+(ns proofread.use-string-starts-with-candidates)
+
+(def leading-colon?
+  (= ":" (substr text 0 1)))
+
+(def trim-leading-colon
+  (case (substr text 0 1)
+    ":" (substr text 1)
+    :default text))

@@ -252,6 +252,47 @@
   (and (full-if? parent)
        (= node (if-else parent))))
 
+(defun literal-number?
+  "Test whether a node is a numeric literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `value`: Optional expected numeric value.
+
+  Returns:
+  `true` for numeric nodes, or for numeric nodes with the given value when
+  `value` is provided."
+  [node value]
+  (and (= (:type node) :number)
+       (or (nil? value) (= (:form node) value))))
+
+(defun literal-string?
+  "Test whether a node is a string literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `value`: Optional expected string value.
+
+  Returns:
+  `true` for string nodes, or for string nodes with the given value when
+  `value` is provided."
+  [node value]
+  (and (= (:type node) :string)
+       (or (nil? value) (= (:form node) value))))
+
+(defun literal-string-with-len?
+  "Test whether a node is a string literal with the given length.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `length`: Expected string length.
+
+  Returns:
+  `true` when `node` is a string literal of `length` characters."
+  [node length]
+  (and (literal-string? node nil)
+       (= length (count (str (:form node))))))
+
 (defun zero-node?
   "Test whether an AST node is the number `0`.
 
@@ -261,8 +302,7 @@
   Returns:
   `true` for the numeric literal `0`, otherwise `false`."
   [node]
-  (and (= (:type node) :number)
-       (= (:form node) 0)))
+  (literal-number? node 0))
 
 (defun nil-node?
   "Test whether an AST node is the symbol `nil`.

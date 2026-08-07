@@ -108,6 +108,9 @@
   (is (= [["Rewrite as type predicate" :rewrite ["(map? patch)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-type-predicate)))
+  (is (= [["Rewrite as starts-with?" :rewrite ["(string/starts-with? text \":\")"]]]
+         (suggestion-summary "assets/rules/simple-expressions/use-string-starts-with.roo"
+                             :use-string-starts-with?)))
 )
 
 (deftest reports-redundant-map-checks
@@ -136,6 +139,11 @@
   (is (= [[:use-for 4]
           [:use-for 9]]
          (diagnostic-summary "assets/rules/simple-expressions/use-for.roo"))))
+
+(deftest reports-string-starts-with-candidates
+  (is (= [[:use-string-starts-with? 4]
+          [:use-string-starts-with? 7]]
+         (diagnostic-summary "assets/rules/simple-expressions/use-string-starts-with.roo"))))
 
 (deftest reports-argument-destructuring-candidates
   (is (= [[:use-argument-destructuring 5]
