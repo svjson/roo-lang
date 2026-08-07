@@ -2,17 +2,6 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(defun count-form?
-  "Test whether an AST node is a `(count value)` form.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for two-child `count` calls, otherwise `false`."
-  [node]
-  (forms/call? node "count" 2))
-
 (defun not-empty-count-comparison?
   "Test whether an AST node compares a count as greater than zero.
 
@@ -26,9 +15,9 @@
   (and (= 3 (count children))
        (or (and (= "<" (forms/head-name node))
                 (forms/zero-node? (nth children 1))
-                (count-form? (nth children 2)))
+                (forms/count-call? (nth children 2)))
            (and (= ">" (forms/head-name node))
-                (count-form? (nth children 1))
+                (forms/count-call? (nth children 1))
                 (forms/zero-node? (nth children 2))))))
 
 (defun not-empty-negation?
@@ -43,6 +32,42 @@
   (and (forms/call? node "not" 2)
        (= "empty?" (forms/head-name (nth children 1)))))
 
+(defun count-empty-arg
+  "Return the argument for a count-based not-empty comparison.
+
+  Args:
+  - `node`: A matching count-based `use-not-empty` AST node.
+
+  Returns:
+  The expression being counted."
+  [{:keys [children] :as node}]
+  (case (forms/head-name node)
+    "<" (forms/count-argument (nth children 2))
+    ">" (forms/count-argument (nth children 1))))
+
+(defun negated-empty-arg
+  "Return the argument to an `empty?` call in a negated form.
+
+  Args:
+  - `node`: A matching negated-empty `use-not-empty` AST node.
+
+  Returns:
+  The argument to `(empty? ...)`."
+  [{:keys [children] :as node}]
+  (nth (:children (nth children 1)) 1))
+
+(defun source-argument
+  "Return the replacement source argument for `not-empty?`."
+  [{:keys [children] :as node}]
+  (if (not-empty-count-comparison? node)
+    (count-empty-arg node)
+    (negated-empty-arg node)))
+
+(defun replacement
+  "Return the replacement for `use-not-empty?`."
+  [node]
+  (str "(not-empty? " (forms/form-string (source-argument node)) ")"))
+
 (defun check
   "Report positive count checks and negated `empty?` calls.
 
@@ -56,4 +81,8 @@
   (when (and (forms/predicate-position? parent node)
              (or (not-empty-count-comparison? node)
                  (not-empty-negation? node)))
-    (diagnostics/make node :use-not-empty? "Use not-empty?")))
+    (diagnostics/make-suggesting
+      node
+      :use-not-empty?
+      "Use not-empty?"
+      [(diagnostics/rewrite node "Rewrite as not-empty?" (replacement node))])))

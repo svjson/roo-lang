@@ -64,6 +64,29 @@
   (and (= "map" (head-name node))
        (= 3 (count children))))
 
+(defun count-call?
+  "Test whether an AST node is a two-argument `(count ...)` call.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is `(count value)`, otherwise `false`."
+  [node]
+  (call? node "count" 2))
+
+(defun count-argument
+  "Return the argument expression of a `(count value)` call.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The single argument node for `(count value)`, or `nil` when not a count call."
+  [{:keys [children] :as node}]
+  (when (count-call? node)
+    (nth children 1)))
+
 (defun single-binding-symbol
   "Return the binding symbol for a single-binding `let` form.
 

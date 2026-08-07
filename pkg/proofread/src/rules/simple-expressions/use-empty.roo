@@ -2,17 +2,6 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(defun count-form?
-  "Test whether an AST node is a `(count value)` form.
-
-  Args:
-  - `node`: A `roo.ast` node map.
-
-  Returns:
-  `true` for two-child `count` calls, otherwise `false`."
-  [node]
-  (forms/call? node "count" 2))
-
 (defun empty-count-comparison?
   "Test whether an AST node compares a count to zero.
 
@@ -23,11 +12,23 @@
   `true` for `(= 0 (count value))` and `(= (count value) 0)`, otherwise
   `false`."
   [{:keys [children] :as node}]
-  (and (forms/call? node "=" 3)
-       (or (and (forms/zero-node? (nth children 1))
-                (count-form? (nth children 2)))
-           (and (count-form? (nth children 1))
-                (forms/zero-node? (nth children 2))))))
+       (and (forms/call? node "=" 3)
+            (or (and (forms/zero-node? (nth children 1))
+                     (forms/count-call? (nth children 2)))
+                (and (forms/count-call? (nth children 1))
+                     (forms/zero-node? (nth children 2))))))
+
+(defun count-form-argument
+  "Return the argument inside a `count` call in a count/zero comparison."
+  [{:keys [children] :as node}]
+  (if (forms/zero-node? (nth children 1))
+    (forms/count-argument (nth children 2))
+    (forms/count-argument (nth children 1))))
+
+(defun replacement
+  "Return the replacement for a count/zero comparison."
+  [node]
+  (str "(empty? " (forms/form-string (count-form-argument node)) ")"))
 
 (defun check
   "Report count comparisons that should use `empty?`.
@@ -40,4 +41,8 @@
   A diagnostic map when `node` should use `empty?`, otherwise `nil`."
   [parent node]
   (when (empty-count-comparison? node)
-    (diagnostics/make node :use-empty? "Use empty?")))
+    (diagnostics/make-suggesting
+      node
+      :use-empty?
+      "Use empty?"
+      [(diagnostics/rewrite node "Rewrite as empty?" (replacement node))])))

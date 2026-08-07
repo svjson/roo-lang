@@ -25,6 +25,18 @@
   (and (forms/call? node "not" 2)
        (nil-check? (nth children 1))))
 
+(defun replacement
+  "Return the replacement for `(not (nil? value))`.
+
+  Args:
+  - `node`: A negated nil-check AST node.
+
+  Returns:
+  Source text for the `some?` rewrite."
+  [{:keys [children]}]
+  (let [value-node (nth (:children (nth children 1)) 1)]
+    (str "(some? " (forms/form-string value-node) ")")))
+
 (defun check
   "Report negated `nil?` checks.
 
@@ -36,4 +48,8 @@
   A diagnostic map when `node` should use `some?`, otherwise `nil`."
   [parent node]
   (when (not-nil-check? node)
-    (diagnostics/make node :use-some? "Use some?")))
+    (diagnostics/make-suggesting
+      node
+      :use-some?
+      "Use some?"
+      [(diagnostics/rewrite node "Rewrite as some?" (replacement node))])))

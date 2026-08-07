@@ -76,6 +76,32 @@
   (is (= [["Rewrite as head" :rewrite ["(head items)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-head)))
+  (is (= [["Rewrite as empty?" :rewrite ["(empty? (count items))"]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-empty?)))
+  (is (= [["Rewrite as not-empty?" :rewrite ["(not-empty? items)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-not-empty?)))
+  (is (= [["Rewrite as not=" :rewrite ["(not= left right)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-not=)))
+  (is (= [["Rewrite as nil?" :rewrite ["(nil? value)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-nil?)))
+  (is (= [["Rewrite as some?" :rewrite ["(some? value)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-some?)))
+  (is (= [["Rewrite as any?" :rewrite ["(any? diagnostics failing?)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-any?)))
+  (is (= [["Rewrite as get with default" :rewrite ["(get values key default-value)"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-get-with-default)))
+  (is (= [["Rewrite as get-in with default"
+           :rewrite
+           ["(get-in game-state (concat obligations-path [:groups group-id]) [])"]]]
+         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                             :use-get-in-with-default)))
   (is (= [["Rewrite as keyword lookup" :rewrite ["(:name symbol)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-keyword-lookup)))

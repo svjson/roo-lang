@@ -35,6 +35,18 @@
   [node]
   (contains? ["nil?" "some?"] (forms/head-name node)))
 
+(defun replacement
+  "Return the replacement for a boolean `find-*` check.
+
+  Args:
+  - `node`: A `find-index` or `find-first` AST node.
+
+  Returns:
+  Source text for the `any?` rewrite."
+  [{:keys [children]}]
+  (str "(any? " (forms/form-string (nth children 1)) " "
+       (forms/form-string (nth children 2)) ")"))
+
 (defun check
   "Report search calls used only as presence checks.
 
@@ -48,4 +60,8 @@
   (when (and (presence-check? parent)
              (or (find-index-form? node)
                  (find-first-form? node)))
-    (diagnostics/make node :use-any? "Use any?")))
+    (diagnostics/make-suggesting
+      node
+      :use-any?
+      "Use any?"
+      [(diagnostics/rewrite node "Rewrite as any?" (replacement node))])))

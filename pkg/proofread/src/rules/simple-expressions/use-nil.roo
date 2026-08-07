@@ -15,6 +15,18 @@
        (or (forms/nil-node? (nth children 1))
            (forms/nil-node? (nth children 2)))))
 
+(defun nil-comparison-value
+  "Return the non-nil side of a nil comparison."
+  [{:keys [children] :as node}]
+  (if (forms/nil-node? (nth children 1))
+    (nth children 2)
+    (nth children 1)))
+
+(defun replacement
+  "Return the replacement for `(= nil value)`."
+  [node]
+  (str "(nil? " (forms/form-string (nil-comparison-value node)) ")"))
+
 (defun check
   "Report equality checks against `nil`.
 
@@ -26,4 +38,8 @@
   A diagnostic map when `node` should use `nil?`, otherwise `nil`."
   [parent node]
   (when (nil-comparison? node)
-    (diagnostics/make node :use-nil? "Use nil?")))
+    (diagnostics/make-suggesting
+      node
+      :use-nil?
+      "Use nil?"
+      [(diagnostics/rewrite node "Rewrite as nil?" (replacement node))])))

@@ -2,9 +2,23 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
+(defun replacement
+  "Return the replacement for `or` plus `get-in` usage."
+  [node]
+  (let [get-in-form (nth (:children node) 1)]
+    (str "(get-in " (forms/form-string (nth (:children get-in-form) 1)) " "
+         (forms/form-string (nth (:children get-in-form) 2)) " "
+         (forms/form-string (nth (:children node) 2)) ")")))
+
 (defun check
   "Report `(or (get-in value path) default)` forms."
   [parent {:keys [children] :as node}]
   (when (and (forms/call? node "or" 3)
              (forms/call? (nth children 1) "get-in" 3))
-    (diagnostics/make node :use-get-in-with-default "Use get-in with default")))
+    (diagnostics/make-suggesting
+      node
+      :use-get-in-with-default
+      "Use get-in with default"
+      [(diagnostics/rewrite node
+                            "Rewrite as get-in with default"
+                            (replacement node))])))

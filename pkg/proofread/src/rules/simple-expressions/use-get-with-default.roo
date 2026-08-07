@@ -13,6 +13,14 @@
   [node]
   (forms/call? node "get" 3))
 
+(defun replacement
+  "Return the replacement for `or` plus `get` usage."
+  [node]
+  (let [get-form (nth (:children node) 1)]
+    (str "(get " (forms/form-string (nth (:children get-form) 1)) " "
+         (forms/form-string (nth (:children get-form) 2)) " "
+         (forms/form-string (nth (:children node) 2)) ")")))
+
 (defun check
   "Report `(or (get value key) default)` forms.
 
@@ -26,4 +34,10 @@
   [parent {:keys [children] :as node}]
   (when (and (forms/call? node "or" 3)
              (get-form? (nth children 1)))
-    (diagnostics/make node :use-get-with-default "Use get with default")))
+    (diagnostics/make-suggesting
+      node
+      :use-get-with-default
+      "Use get with default"
+      [(diagnostics/rewrite node
+                            "Rewrite as get with default"
+                            (replacement node))])))

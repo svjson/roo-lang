@@ -14,6 +14,16 @@
   (and (forms/call? node "not" 2)
        (= "=" (forms/head-name (nth children 1)))))
 
+(defun replacement
+  "Return the replacement for `(not (= left right))`."
+  [{:keys [children]}]
+  (let [negated (nth children 1)]
+    (str "(not= "
+         (forms/form-string (nth (:children negated) 1))
+         " "
+         (forms/form-string (nth (:children negated) 2))
+         ")")))
+
 (defun check
   "Report negated equality checks.
 
@@ -25,4 +35,8 @@
   A diagnostic map when `node` should use `not=`, otherwise `nil`."
   [parent node]
   (when (not-equals-negation? node)
-    (diagnostics/make node :use-not= "Use not=")))
+    (diagnostics/make-suggesting
+      node
+      :use-not=
+      "Use not="
+      [(diagnostics/rewrite node "Rewrite as not=" (replacement node))])))
