@@ -21,11 +21,11 @@
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for sequence calls whose first argument can be `nil`, otherwise
-  `false`."
+  `true` for sequence calls whose collection argument can be `nil`,
+  otherwise `false`."
   [{:keys [children] :as node}]
   (and (< 1 (count children))
-       (contains? ["any?" "count" "empty?" "filter" "find-first" "find-index" "flat-map" "keep" "map" "not-empty?" "remove"]
+       (contains? ["any?" "count" "empty?" "filter" "find-first" "find-index" "flat-map" "keep" "map" "not-empty?" "reduce" "remove"]
                   (forms/head-name node))))
 
 (defun nil-tolerant-map-call?
@@ -52,6 +52,9 @@
   [parent {:keys [children] :as node}]
   (when (or (and (nil-tolerant-seq-call? node)
                  (empty-seq-fallback? (nth children 1)))
+            (and (= "reduce" (forms/head-name node))
+                 (= 3 (count children))
+                 (empty-seq-fallback? (nth children 2)))
             (and (nil-tolerant-map-call? node)
                  (empty-map-fallback? (nth children 1))))
     (diagnostics/make node :redundant-empty-fallback "Remove redundant empty fallback")))

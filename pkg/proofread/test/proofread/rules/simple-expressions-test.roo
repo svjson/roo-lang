@@ -76,7 +76,7 @@
   (is (= [["Rewrite as head" :rewrite ["(head items)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-head)))
-  (is (= [["Rewrite as empty?" :rewrite ["(empty? (count items))"]]
+  (is (= [["Rewrite as empty?" :rewrite ["(empty? items)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-empty?)))
   (is (= [["Rewrite as not-empty?" :rewrite ["(not-empty? items)"]]]
@@ -91,7 +91,7 @@
   (is (= [["Rewrite as some?" :rewrite ["(some? value)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-some?)))
-  (is (= [["Rewrite as any?" :rewrite ["(any? diagnostics failing?)"]]]
+  (is (= [["Rewrite as any?" :rewrite ["(any? name (fn [ch] (= \"_\" (str ch))))"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                              :use-any?)))
   (is (= [["Rewrite as get with default" :rewrite ["(get values key default-value)"]]]
@@ -107,7 +107,8 @@
                              :use-keyword-lookup)))
   (is (= [["Rewrite as type predicate" :rewrite ["(map? patch)"]]]
          (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-type-predicate))))
+                             :use-type-predicate)))
+)
 
 (deftest reports-redundant-map-checks
   (is (= [[:redundant-map-check 4]
@@ -125,6 +126,11 @@
 (deftest ignores-select-keys-non-candidates
   (is (= []
          (diagnostics "assets/rules/simple-expressions/select-keys-non-candidates.roo"))))
+
+(deftest reports-redundant-empty-fallback-candidates
+  (is (= [[:redundant-empty-fallback 4]
+          [:redundant-empty-fallback 8]]
+         (diagnostic-summary "assets/rules/simple-expressions/redundant-empty-fallback.roo"))))
 
 (deftest reports-for-candidates
   (is (= [[:use-for 4]
