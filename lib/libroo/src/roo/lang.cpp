@@ -86,6 +86,7 @@ namespace Roo
     lang_symbols.emplace("concat!", ConcatBangFunction::make());
     lang_symbols.emplace("cond", CondForm::make());
     lang_symbols.emplace("cond->", CondThreadFirstForm::make());
+    lang_symbols.emplace("cond-let", CondLetForm::make());
     lang_symbols.emplace("contains-all?", ContainsAllPFunction::make());
     lang_symbols.emplace("contains-any?", ContainsAnyPFunction::make());
     lang_symbols.emplace("contains?", ContainsPFunction::make());

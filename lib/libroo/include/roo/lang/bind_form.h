@@ -57,6 +57,32 @@ namespace Roo
    */
   SPECIAL_FORM_DECL(WhenLetForm, when_let)
 
+  /*!
+   * @brief Multi-branch conditional with optional per-clause let bindings.
+   *
+   * Evaluates test-body pairs in order and returns the body of the first
+   * truthy test. When a test is a two-element vector `[sym expr]`, `expr` is
+   * evaluated, and if the result is truthy it is bound to `sym` for the
+   * duration of that clause's body. When a test is any other form it is
+   * evaluated as a plain boolean condition with no binding introduced.
+   *
+   * Only the first matching branch is evaluated. Returns nil if no test
+   * is truthy.
+   *
+   * Usage:
+   * @code
+   * (cond-let
+   *   [user  (find-user id)]   (greet user)
+   *   [guest (find-guest id)]  (welcome guest)
+   *   :else                    "unknown visitor")
+   * @endcode
+   *
+   * | Arg          | Description                                                    |
+   * | ------------ | -------------------------------------------------------------- |
+   * | test body... | Pairs of test (or [sym expr]) and consequent body form.        |
+   */
+  SPECIAL_FORM_DECL(CondLetForm, cond_let)
+
 } // namespace Roo
 
 #endif /* ROO__LANG__BIND_FORM_H */
