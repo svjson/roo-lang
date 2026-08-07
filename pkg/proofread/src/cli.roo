@@ -1,5 +1,6 @@
 (ns proofread.cli
   (:require [proofread.command.check :as check-command]
+            [proofread.command.suggest :as suggest-command]
             [proofread.native :as native]))
 
 (def version
@@ -12,7 +13,8 @@
   Returns:
   `nil`."
   []
-  (prn check-command/usage-line))
+  (prn check-command/usage-line)
+  (prn suggest-command/usage-line))
 
 (defun print-help!
   "Print proofread help text.
@@ -52,6 +54,12 @@
 
       (= first-arg "--version")
       (print-version!)
+
+      (= first-arg "check")
+      (check-command/run! (tail args))
+
+      (= first-arg "suggest")
+      (suggest-command/run! (tail args))
 
       true
       (check-command/run! args))))

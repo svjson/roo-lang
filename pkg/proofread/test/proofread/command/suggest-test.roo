@@ -1,0 +1,83 @@
+(ns proofread.command.suggest-test
+  (:require proof.core
+            [proofread.command.suggest :as suggest-command]
+            [proofread.source :as source]))
+
+(def candidates-path
+  "Simple-expression candidate fixture path."
+  "assets/rules/simple-expressions/candidates.roo")
+
+(defun suggestion-summary
+  [diagnostic]
+  [(:rule diagnostic)
+   (map (:suggestions diagnostic) :title)
+   (flat-map (:suggestions diagnostic)
+             (fn [suggestion]
+               (map (:edits suggestion) :replacement)))])
+
+(defun suggestions-at
+  [line column]
+  (map (suggest-command/suggestions-at (source/diagnostics candidates-path)
+                                       line
+                                       column)
+       suggestion-summary))
+
+(deftest parses-suggest-options
+  (is (= {:errors []
+          :file "src/app.roo"
+          :line 12
+          :column 4}
+         (suggest-command/parse-args ["src/app.roo"
+                                      "--line" "12"
+                                      "--column" "4"])))
+  (is (= {:errors ["Missing file."]
+          :line 12
+          :column 4}
+         (suggest-command/parse-args ["--line" "12" "--column" "4"]))))
+
+(deftest reports-invalid-suggest-options
+  (is (= {:errors ["Missing line."
+                   "Missing column."]
+          :file "src/app.roo"}
+         (suggest-command/parse-args ["src/app.roo"])))
+  (is (= {:errors ["Invalid line: zero"
+                   "Missing line."
+                   "Missing column."]
+          :file "src/app.roo"}
+         (suggest-command/parse-args ["src/app.roo" "--line" "zero"])))
+  (is (= {:errors ["Unknown option: --wat"
+                   "Missing line."
+                   "Missing column."]
+          :file "src/app.roo"}
+         (suggest-command/parse-args ["src/app.roo" "--wat"]))))
+
+(deftest finds-suggestions-at-source-position
+  (is (= [[:use-head
+           ["Rewrite as head"]
+           ["(head items)"]]]
+         (suggestions-at 4 5))))
+
+(deftest ignores-positions-without-suggestions
+  (is (= [] (suggestions-at 1 1)))
+  (is (= [] (suggestions-at 7 5))))
+
+(deftest preserves-multiple-suggestions-and-orders-inner-ranges-first
+  (let [diagnostics [{:rule :outer
+                      :source {:start {:line 1 :column 1}
+                               :end {:line 6 :column 1}}
+                      :suggestions [{:title "Outer rewrite"
+                                     :kind :rewrite
+                                     :edits []}
+                                    {:title "Outer alternative"
+                                     :kind :rewrite
+                                     :edits []}]}
+                     {:rule :inner
+                      :source {:start {:line 3 :column 3}
+                               :end {:line 3 :column 12}}
+                      :suggestions [{:title "Inner rewrite"
+                                     :kind :rewrite
+                                     :edits []}]}]
+        matches (suggest-command/suggestions-at diagnostics 3 5)]
+    (is (= [:inner :outer] (map matches :rule)))
+    (is (= ["Outer rewrite" "Outer alternative"]
+           (map (:suggestions (nth matches 1)) :title)))))

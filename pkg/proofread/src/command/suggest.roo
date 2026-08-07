@@ -1,0 +1,158 @@
+(ns proofread.command.suggest
+  (:require [proofread.native :as native]
+            [proofread.source :as source]
+            [roo.string :as string]))
+
+(def usage-line
+  "Usage line for the proofread suggest command."
+  "Usage: proofread suggest <file> --line <line> --column <column>")
+
+(defun digit?
+  [ch]
+  (contains? ["0" "1" "2" "3" "4" "5" "6" "7" "8" "9"]
+             (str ch)))
+
+(defun positive-int
+  [text]
+  (when (and (not (blank? text))
+             (not (any? text
+                        (fn [ch]
+                          (not (digit? ch))))))
+    (let [value (int text)]
+      (when (< 0 value)
+        value))))
+
+(defun parse-number-option
+  [args options key label]
+  (if-let [value (nth args 1)]
+    (parse-args-step
+      (tail (tail args))
+      (if-let [number (positive-int value)]
+        (assoc options key number)
+        (update options :errors [append! (str "Invalid " label ": " value)])))
+    (update options :errors [append! (str "Missing value after --" label)])))
+
+(defun parse-args-step
+  [args options]
+  (let [arg (head args)]
+    (cond
+      (nil? arg)
+      options
+
+      (= arg "--line")
+      (parse-number-option args options :line "line")
+
+      (= arg "--column")
+      (parse-number-option args options :column "column")
+
+      (string/starts-with? arg "--")
+      (parse-args-step
+        (tail args)
+        (update options :errors [append! (str "Unknown option: " arg)]))
+
+      (nil? (:file options))
+      (parse-args-step (tail args)
+                       (assoc options :file arg))
+
+      true
+      (parse-args-step
+        (tail args)
+        (update options :errors [append! (str "Unexpected argument: " arg)])))))
+
+(defun parse-args
+  "Parse proofread suggest arguments.
+
+  Args:
+  - `args`: Command line file path and position options.
+
+  Returns:
+  An options map containing `:file`, `:line`, `:column`, and `:errors`."
+  [args]
+  (let [options (parse-args-step args {:errors []})]
+    (cond-> options
+            (nil? (:file options))
+            (update :errors [append! "Missing file."])
+
+            (nil? (:line options))
+            (update :errors [append! "Missing line."])
+
+            (nil? (:column options))
+            (update :errors [append! "Missing column."]))))
+
+(defun before-or-at?
+  [left right]
+  (or (< (:line left) (:line right))
+      (and (= (:line left) (:line right))
+           (not (< (:column right) (:column left))))))
+
+(defun source-range
+  [source]
+  (when-let [start (:start source)]
+    (when-let [end (:end source)]
+      {:start start
+       :end end})))
+
+(defun position-in-source?
+  [source line column]
+  (when-let [range (source-range source)]
+    (let [position {:line line :column column}]
+      (and (before-or-at? (:start range) position)
+           (before-or-at? position (:end range))))))
+
+(defun range-size
+  [source]
+  (let [range (source-range source)]
+    (+ (* 100000 (- (:line (:end range))
+                   (:line (:start range))))
+       (- (:column (:end range))
+          (:column (:start range))))))
+
+(defun suggestable-at?
+  [diagnostic line column]
+  (and (head (:suggestions diagnostic))
+       (position-in-source? (:source diagnostic) line column)))
+
+(defun suggestions-at
+  "Return suggestable diagnostics containing a source position.
+
+  Args:
+  - `diagnostics`: Proofread diagnostics.
+  - `line`: One-based line number.
+  - `column`: One-based column number.
+
+  Returns:
+  Matching diagnostics, ordered from innermost to outermost source range."
+  [diagnostics line column]
+  (sort (filter diagnostics
+                (fn [diagnostic]
+                  (suggestable-at? diagnostic line column)))
+        (fn [left right]
+          (< (range-size (:source left))
+             (range-size (:source right))))))
+
+(defun checked-diagnostics
+  [file]
+  (case (:errors (native/check-files-result! [file]))
+    0 (source/diagnostics file)
+    :default []))
+
+(defun run!
+  "Print suggestions at a file position.
+
+  Args:
+  - `args`: Command line file path and position options.
+
+  Returns:
+  Matching diagnostics with structured suggestions."
+  [args]
+  (let [options (parse-args args)]
+    (if (not-empty? (:errors options))
+      (do
+        (map (:errors options) prn)
+        (prn usage-line)
+        (native/fail! "proofread: invalid arguments"))
+      (let [diagnostics (suggestions-at (checked-diagnostics (:file options))
+                                        (:line options)
+                                        (:column options))]
+        (prn diagnostics)
+        diagnostics))))
