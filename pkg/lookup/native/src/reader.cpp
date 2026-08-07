@@ -7,7 +7,6 @@
 #include <system_error>
 
 #include <roo/context.h>
-#include <roo/exception.h>
 #include <roo/reader.h>
 #include <roo/runtime/value.h>
 #include <roo/source.h>
@@ -17,6 +16,14 @@
 
 namespace Roo::Lookup
 {
+  namespace
+  {
+    sptr_val read_file_forms_error_entry(const std::string& path, const std::string& message)
+    {
+      return Value::map({Value::keyword("error"), Value::string(message), Value::keyword("path"), Value::string(path)});
+    }
+  } // namespace
+
   /** ReadFileFormsFunction - lookup.reader/read-file-forms! */
   FUNC_IMPL(ReadFileFormsFunction,
             SIG((FN_ARGS((&Type::STRING)),
@@ -25,30 +32,36 @@ namespace Roo::Lookup
   EXEC_BODY(ReadFileFormsFunction, exec_read_file_forms)
   {
     const std::filesystem::path path = args[0]->str();
+    const std::string path_text = path.string();
     std::error_code ec;
+    sptr_val_v entries;
+
     if (!std::filesystem::is_regular_file(path, ec))
     {
       if (ec)
       {
-        throw RooException("Could not inspect file: " + path.string() + ": " + ec.message());
+        return Value::vector(
+          {read_file_forms_error_entry(path_text, "Could not inspect file: " + path_text + ": " + ec.message())});
       }
-      throw RooException("Not a regular file: " + path.string());
+      return Value::vector(
+        {read_file_forms_error_entry(path_text, "Not a regular file: " + path_text)});
     }
 
     SourceMap source_map;
-    const uint32_t source_id = source_map.intern_file(path.string());
-    Reader reader;
     sptr_ast_node_v forms;
     try
     {
+      const uint32_t source_id = source_map.intern_file(path.string());
+      Reader reader;
       forms = reader.read_sexps(read_file(path), source_id, true);
     }
     catch (const std::exception& e)
     {
-      throw RooException("Could not read Roo forms from " + path.string() + ": " + e.what());
+      return Value::vector({read_file_forms_error_entry(
+        path_text,
+        "Could not read Roo forms from " + path_text + ": " + e.what())});
     }
 
-    sptr_val_v entries;
     entries.reserve(forms.size());
     for (const auto& form : forms)
     {

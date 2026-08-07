@@ -15,6 +15,9 @@ namespace Roo::Lookup
    * @code
    * (lookup.reader/read-file-forms! "src/app/core.roo")
    * => [{:form (ns app.core) :source {...}}]
+   * ; or if the file cannot be parsed:
+   * => [{:error \"Could not read Roo forms from src/app/core.roo: ...\",
+   *      :path \"src/app/core.roo\"}]
    * @endcode
    *
    * | Arg # | Description                 |

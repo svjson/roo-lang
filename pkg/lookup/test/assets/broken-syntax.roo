@@ -1,0 +1,5 @@
+(ns sample.broken
+
+(def answer
+  "This file intentionally ends early."
+

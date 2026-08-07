@@ -123,6 +123,15 @@
     (is (= 3 (:line def-source)))
     (is (= 5 (:line defun-source)))))
 
+(deftest reads-broken-source-file-into-error-entry
+  (let [entry (source/source-entry "assets/broken-syntax.roo")
+        forms (:forms entry)
+        broken-entry (head forms)]
+    (is (= 1 (count forms)))
+    (is (= "assets/broken-syntax.roo" (:path entry)))
+    (is (string? (:error broken-entry)))
+    (is (= "assets/broken-syntax.roo" (:path (:source broken-entry))))))
+
 (deftest extracts-docstrings-from-def-and-defun
   (let [source {:path "assets/docstrings-sample.roo"
                 :forms (reader/read-file-forms! "assets/docstrings-sample.roo")}
