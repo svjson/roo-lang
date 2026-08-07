@@ -36,3 +36,11 @@
 
 (defun default-separator []
   '-')
+
+(defun check
+  [value]
+  (normalize value))
+
+(defun check-file
+  [path]
+  (parse-file path))

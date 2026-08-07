@@ -16,7 +16,7 @@
 
 (defun file-diagnostics
   [path]
-  (names/check-file-with-rules names/rules path))
+  (names/check-file names/rules path))
 
 (deftest reports-underscore-identifiers
   (is (= [3 6 11]

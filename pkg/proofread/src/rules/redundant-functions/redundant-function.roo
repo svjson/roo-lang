@@ -130,3 +130,17 @@
   [parent node]
   (when (redundant-function? node)
     (diagnostics/make node :redundant-function "Inline redundant function")))
+
+(defun skipped-function?
+  "Test whether a function name is exempt from redundant-function checks."
+  [node options]
+  (contains? (or (:ignore-function-names options)
+                 ["check" "check-file"])
+             (forms/symbol-name (nth (:children node) 1))))
+
+(defun check-with-options
+  "Return a `redundant-function` diagnostic for matching nodes."
+  [parent node options]
+  (when (and (not (skipped-function? node options))
+             (redundant-function? node))
+    (diagnostics/make node :redundant-function "Inline redundant function")))
