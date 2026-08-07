@@ -1,0 +1,5 @@
+(ns proofread.simple-expressions-use-contains-and-append)
+
+(if (any? (fn [entry] (= entry item)) result)
+  result
+  (concat result [item]))

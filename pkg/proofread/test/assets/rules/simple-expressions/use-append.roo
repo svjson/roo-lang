@@ -1,0 +1,4 @@
+(ns proofread.simple-expressions-use-append)
+
+(def add-error
+  (concat (:errors options) ["Missing output directory"]))

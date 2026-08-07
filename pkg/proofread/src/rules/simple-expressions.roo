@@ -4,6 +4,7 @@
             [proofread.rules.simple-expressions.redundant-let :as redundant-let]
             [proofread.rules.simple-expressions.redundant-let-binding :as redundant-let-binding]
             [proofread.rules.simple-expressions.redundant-let-rebind :as redundant-let-rebind]
+            [proofread.rules.simple-expressions.use-append :as use-append]
             [proofread.rules.simple-expressions.redundant-map-check :as redundant-map-check]
             [proofread.rules.simple-expressions.redundant-some :as redundant-some]
             [proofread.rules.simple-expressions.use-any :as use-any]
@@ -64,6 +65,7 @@
      [:use-get-in-with-default use-get-in-with-default/check]
      [:use-keyword-lookup use-keyword-lookup/check]
      [:redundant-map-check redundant-map-check/check]
+     [:use-append use-append/check]
      [:use-select-keys use-select-keys/check]]))
 
 (defun node-diagnostic

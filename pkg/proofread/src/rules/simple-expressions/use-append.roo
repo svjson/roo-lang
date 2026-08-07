@@ -1,0 +1,55 @@
+(ns proofread.rules.simple-expressions.use-append
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun single-item-vector?
+  "Test whether a node is a vector containing one element.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` when the node is a single-item vector, otherwise `false`."
+  [node]
+  (and (= :vector (:type node))
+       (= 1 (count (:children node)))))
+
+(defun candidate?
+  "Test whether a `concat` call appends exactly one item.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(concat values [item])`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "concat" 3)
+       (single-item-vector? (nth children 2))))
+
+(defun replacement
+  "Return a source replacement for a single-item `concat` append pattern."
+  [{:keys [children] :as node}]
+  (let [collection (nth children 1)
+        single-item (head (:children (nth children 2)))]
+    (str "(append "
+         (forms/form-string collection)
+         " "
+         (forms/form-string single-item)
+         ")")))
+
+(defun check
+  "Report `concat` calls that should use `append`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `append`, otherwise `nil`."
+  [parent node]
+  (when (candidate? node)
+    (diagnostics/make-suggesting
+      node
+      :use-append
+      "Use append"
+      [(diagnostics/rewrite node "Rewrite as append" (replacement node))])))

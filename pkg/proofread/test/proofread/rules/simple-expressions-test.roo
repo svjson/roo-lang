@@ -113,6 +113,20 @@
                              :use-string-starts-with?)))
 )
 
+(deftest reports-use-append-candidates
+  (is (= [[:use-append 4]]
+         (diagnostic-summary "assets/rules/simple-expressions/use-append.roo"))))
+
+(deftest ignores-use-append-non-candidates
+  (is (= []
+         (diagnostics "assets/rules/simple-expressions/use-append-non-candidates.roo"))))
+
+(deftest reports-contains-and-append-candidates
+  (let [path "assets/rules/simple-expressions/use-contains-and-append.roo"]
+    (is (= 2 (count (diagnostics path))))
+    (is (some? (diagnostic-for-rule path :use-contains?)))
+    (is (some? (diagnostic-for-rule path :use-append)))))
+
 (deftest reports-redundant-map-checks
   (is (= [[:redundant-map-check 4]
           [:redundant-map-check 9]

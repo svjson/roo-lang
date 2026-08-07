@@ -65,6 +65,18 @@
   (and (forms/call? node "any?" 3)
        (equality-membership-predicate? (nth children 2))))
 
+(defun any-equality-membership-reversed?
+  "Test whether `any?` performs a simple equality membership scan with reversed args.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(any? (fn [value] (= value needle)) values)`, otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (forms/call? node "any?" 3)
+       (equality-membership-predicate? (nth children 1))))
+
 (defun check
   "Report membership checks that should use `contains?`.
 
@@ -77,5 +89,6 @@
   [parent node]
   (when (or (and (presence-check? parent)
                  (index-of-form? node))
-            (any-equality-membership? node))
+            (any-equality-membership? node)
+            (any-equality-membership-reversed? node))
     (diagnostics/make node :use-contains? "Use contains?")))
