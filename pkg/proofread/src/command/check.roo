@@ -168,6 +168,20 @@
    :source {:path (:path error)}
    :message (:message error)})
 
+(defun check-file-diagnostics
+  "Return diagnostics for a file from a native check result.
+
+  Args:
+  - `file`: File path.
+  - `check-result`: Result map from `proofread.native/check-files-result!`.
+
+  Returns:
+  A vector of rule diagnostics, including parse diagnostics when checking fails."
+  [file check-result]
+  (case (:errors check-result)
+    0 (source/diagnostics file)
+    :default (map (:error-details check-result) parse-error-diagnostic)))
+
 (defun diagnostic-count
   "Count diagnostics with a given severity.
 
@@ -206,25 +220,22 @@
                                (fn [{:keys [summary reporter]} file]
                                  (let [check-result (native/check-files-result! [file])
                                        file-errors (:errors check-result)
-                                       diagnostics (case file-errors
-                                                     0 (source/diagnostics file)
-                                                     :default (map (:error-details check-result)
-                                                                   parse-error-diagnostic))
+                                       diagnostics (check-file-diagnostics file check-result)
                                        file-result {:file file
                                                     :checked (:checked check-result)
                                                     :errors file-errors
                                                     :diagnostics diagnostics}]
                                    {:summary {:files (+ (:files summary)
-                                                        (:checked check-result)
-                                                        file-errors)
+                                                       (:checked check-result)
+                                                       file-errors)
                                               :warnings (+ (:warnings summary)
                                                            (diagnostic-count diagnostics
                                                                              :warning))
                                               :errors (+ (:errors summary)
-                                                         (case file-errors
-                                                           0 (diagnostic-count diagnostics
-                                                                               :error)
-                                                           :default file-errors))}
+                                                        (case file-errors
+                                                          0 (diagnostic-count diagnostics
+                                                                              :error)
+                                                          :default file-errors))}
                                     :reporter (reporter/report-file! reporter
                                                                     file-result)})))
             summary (:summary run-result)]

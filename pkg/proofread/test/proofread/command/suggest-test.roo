@@ -55,11 +55,27 @@
   (is (= [[:use-head
            ["Rewrite as head"]
            ["(head items)"]]]
-         (suggestions-at 4 5))))
+        (suggestions-at 4 5))))
+
+(deftest returns-parse-error-diagnostics-when-unreadable
+  (let [diagnostics (suggest-command/checked-diagnostics "assets/invalid/broken.roo")
+        diagnostic (head diagnostics)]
+    (is (= 1 (count diagnostics)))
+    (is (= :parse (:rule diagnostic)))
+    (is (= :error (:severity diagnostic)))
+    (is (= "assets/invalid/broken.roo" (:file diagnostic)))
+    (is (= "assets/invalid/broken.roo" (:path (:source diagnostic))))
+    (is (= "Unexpected end of input" (:message diagnostic)))))
+
+(deftest suggest-no-nil-for-not-empty-with-guard
+  (is (= [[:use-not-empty?
+           ["Rewrite as not-empty?"]
+           ["(not-empty? items)"]]]
+        (suggestions-at 23 8))))
 
 (deftest ignores-positions-without-suggestions
   (is (= [] (suggestions-at 1 1)))
-  (is (= [] (suggestions-at 7 5))))
+  (is (= [] (suggestions-at 8 5))))
 
 (deftest preserves-multiple-suggestions-and-orders-inner-ranges-first
   (let [diagnostics [{:rule :outer

@@ -1,5 +1,6 @@
 (ns proofread.command.check-test
   (:require proof.core
+            [proofread.native :as native]
             [proofread.command.check :as check-command]))
 
 (deftest parses-reporter-option
@@ -79,4 +80,16 @@
           :source {:path "src/broken.roo"}
           :message "Unexpected end of input"}
          (check-command/parse-error-diagnostic {:path "src/broken.roo"
-                                                :message "Unexpected end of input"}))))
+                                              :message "Unexpected end of input"}))))
+
+(deftest returns-parse-error-diagnostics-for-unreadable-file
+  (let [check-result (native/check-files-result! ["assets/invalid/broken.roo"])
+        diagnostics (check-command/check-file-diagnostics "assets/invalid/broken.roo"
+                                                         check-result)
+        diagnostic (head diagnostics)]
+    (is (= 1 (count diagnostics)))
+    (is (= :parse (:rule diagnostic)))
+    (is (= :error (:severity diagnostic)))
+    (is (= "assets/invalid/broken.roo" (:file diagnostic)))
+    (is (= "assets/invalid/broken.roo" (:path (:source diagnostic))))
+    (is (= "Unexpected end of input" (:message diagnostic)))))

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -469,7 +470,11 @@ namespace Roo::Proofread
 
       static sptr_val make() { return Value::executable(std::make_shared<FailFunction>()); }
 
-      sptr_val exec_fail(Context&, sptr_val_v& args) { throw RooException(args[0]->str()); }
+      sptr_val exec_fail(Context&, sptr_val_v& args)
+      {
+        std::cerr << args[0]->str() << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
     };
 
     class CheckFunction : public Function

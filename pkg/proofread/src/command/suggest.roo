@@ -107,6 +107,21 @@
        (- (:column (:end range))
           (:column (:start range))))))
 
+(defun parse-error-diagnostic
+  "Build a diagnostic for a parse or read error.
+
+  Args:
+  - `error`: Error detail map returned by `proofread.native/check-files-result!`.
+
+  Returns:
+  A diagnostic map with `:error` severity."
+  [error]
+  {:rule :parse
+   :severity :error
+   :file (:path error)
+   :source {:path (:path error)}
+   :message (:message error)})
+
 (defun suggestable-at?
   [diagnostic line column]
   (and (head (:suggestions diagnostic))
@@ -132,9 +147,10 @@
 
 (defun checked-diagnostics
   [file]
-  (case (:errors (native/check-files-result! [file]))
-    0 (source/diagnostics file)
-    :default []))
+  (let [check-result (native/check-files-result! [file])]
+    (case (:errors check-result)
+      0 (source/diagnostics file)
+      :default (map (:error-details check-result) parse-error-diagnostic))))
 
 (defun run!
   "Print suggestions at a file position.
