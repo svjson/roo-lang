@@ -70,9 +70,9 @@
      [(zero-arity-signature-diagnostic symbol signature)]
      [])
    (if (:require-param-docs? options)
-     (map (filter params (fn [param] (blank-text? (:doc param))))
-          (fn [param]
-            (missing-param-doc-diagnostic symbol signature param)))
+     (keep params
+           (fn [param] (when (blank-text? (:doc param))
+                         (missing-param-doc-diagnostic symbol signature param))))
      [])))
 
 (defun signatures-diagnostics [symbol options]

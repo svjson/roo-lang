@@ -30,9 +30,10 @@
        (not= name "&")))
 
 (defun clean-param-name [name]
-  (if (rest-param-name? name)
-    (substr name 1 (count name))
-    name))
+  (cond-> name
+
+          (rest-param-name? name)
+          (substr 1 (count name))))
 
 (defun param-info-step [state raw-param]
   (let [display-name (str raw-param)
@@ -41,13 +42,13 @@
       "&" {:optional? true
            :params (:params state)}
       :default {:optional? (:optional? state)
-                :params (concat (:params state)
-                                [{:name (clean-param-name display-name)
-                                  :display display-name
-                                  :type nil
-                                  :doc nil
-                                  :optional? (or (:optional? state) rest?)
-                                  :rest? rest?}])})))
+                :params (append (:params state)
+                                {:name (clean-param-name display-name)
+                                 :display display-name
+                                 :type nil
+                                 :doc nil
+                                 :optional? (or (:optional? state) rest?)
+                                 :rest? rest?})})))
 
 (defun params-info [raw-params]
   (:params (reduce raw-params {:optional? false :params []} param-info-step)))
@@ -81,35 +82,28 @@
   [name raw-params]
   (let [params (params-info raw-params)]
     {:display (signature-display name raw-params)
-     :params (map params
-                  (fn [param]
-                    (assoc {}
-                           :name (:name param)
-                           :type (:type param)
-                           :doc (:doc param)
-                           :optional? (:optional? param)
-                           :rest? (:rest? param))))
+     :params (for [p params]
+               (select-keys p [:name :type :doc :optional? :rest?]))
      :returns {:type nil
                :doc nil}
      :arity (signature-arity params)}))
 
-(defun function-signature-with-doc [name raw-params doc]
-  (let [signature (function-signature name raw-params)
-        param-docs (:params doc)
-        return-doc (:returns doc)]
-    (assoc signature
-           :params
-           (map (:params signature)
-                (fn [param]
-                  (if-let [param-doc (get param-docs (:name param))]
-                    (assoc param
-                           :type (:type param-doc)
-                           :doc (:doc param-doc))
-                    param)))
-           :returns
-           (if (nil? return-doc)
-             (:returns signature)
-             return-doc))))
+(defun function-signature-with-doc [name raw-params {:keys [signature
+                                                            params
+                                                            returns] :as doc}]
+  (let [signature (function-signature name raw-params)]
+    (assoc signature :params
+                     (for [p (:params signature)]
+                       (if-let [param-doc (get params (:name p))]
+                         (assoc p
+                                :type (:type param-doc)
+                                :doc (:doc param-doc))
+                         p))
+
+                     :returns
+                     (if (nil? returns)
+                       (:returns signature)
+                       returns))))
 
 (defun base-symbol-entry [package namespace name kind source]
   (let [qualified-name (str namespace "/" name)]
@@ -155,9 +149,8 @@
                            :source (:source entry)})
             :signatures [(function-signature-with-doc name params doc)]})))
 
-(defun symbol-entry [package namespace entry]
-  (let [form (:form entry)
-        head-name (form-head-name form)]
+(defun symbol-entry [package namespace {:keys [form] :as entry}]
+  (let [head-name (form-head-name form)]
     (cond
 
       (= head-name "def")

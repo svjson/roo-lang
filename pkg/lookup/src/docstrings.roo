@@ -17,22 +17,10 @@
    :since nil
    :deprecated nil})
 
-(defun split-lines [text]
-  (let [state (reduce text
-                      {:lines [] :line ""}
-                      (fn [state ch]
-                        (case (str ch)
-                          "\n" {:lines (concat (:lines state) [(:line state)])
-                                :line ""}
-                          :default (assoc state
-                                          :line
-                                          (str (:line state) ch)))))]
-    (concat (:lines state) [(:line state)])))
-
-(defun finish-paragraph [state]
-  (if (blank? (:line state))
+(defun finish-paragraph [{:keys [paragraphs line] :as state}]
+  (if (blank? line)
     state
-    {:paragraphs (concat (:paragraphs state) [(trim (:line state))])
+    {:paragraphs (append paragraphs (trim line))
      :line ""}))
 
 (defun paragraphs [lines]
@@ -55,11 +43,12 @@
 
 (defun strip-backticks [text]
   (let [value (trim text)]
-    (if (and (string/starts-with? value "`")
-             (string/ends-with? value "`")
-             (> (count value) 1))
-      (substr value 1 (- (count value) 2))
-      value)))
+    (cond-> value
+
+            (and (string/starts-with? value "`")
+                 (string/ends-with? value "`")
+                 (> (count value) 1))
+            (substr 1 (- (count value) 2)))))
 
 (defun section [line]
   (case (trim line)
@@ -73,27 +62,24 @@
 
 (defun arg-line [state line]
   (let [trimmed (trim line)
-        colon (find-index trimmed (fn [ch] (= ":" (str ch))))]
+        colon (index-of trimmed ':')]
     (if (and (string/starts-with? trimmed "- ")
              (some? colon))
       (let [name (strip-backticks (substr trimmed 2 (- colon 2)))
             doc (trim (substr trimmed (+ colon 1)))]
-        (assoc state
-               :params
-               (assoc (:params state) name {:type nil :doc doc})))
+        (assoc-in state [:params name] {:type nil :doc doc}))
       state)))
 
-(defun see-line [state line]
+(defun see-line [{:keys [see] :as state} line]
   (let [trimmed (trim line)]
     (if (blank? trimmed)
       state
       (assoc state
              :see
-             (concat (:see state)
-                     [(strip-backticks
-                        (if (string/starts-with? trimmed "- ")
-                          (substr trimmed 2)
-                          trimmed))])))))
+             (append see
+                     (strip-backticks (cond-> trimmed
+                                              (string/starts-with? trimmed "- ")
+                                              (substr 2))))))))
 
 (defun single-line-section [state key line]
   (if (blank? line)
@@ -104,11 +90,11 @@
              (trim line)
              (str (get state key) " " (trim line))))))
 
-(defun example-line [state line]
+(defun example-line [{:keys [fence examples] :as state} line]
   (let [trimmed (trim line)]
     (cond
 
-      (and (nil? (:fence state))
+      (and (nil? fence)
            (string/starts-with? trimmed "```"))
       (assoc state
              :fence
@@ -118,22 +104,18 @@
                           (keyword language)))
               :lines []})
 
-      (and (:fence state)
+      (and fence
            (string/starts-with? trimmed "```"))
       (assoc state
              :examples
-             (concat (:examples state)
-                     [{:format (:format (:fence state))
-                       :source (apply join
-                                      (concat ["\n"] (:lines (:fence state))))}])
+             (append examples
+                     {:format (:format fence)
+                      :source (apply join
+                                     (concat ["\n"] (:lines fence)))})
              :fence nil)
 
-      (:fence state)
-      (assoc state
-             :fence
-             (assoc (:fence state)
-                    :lines
-                    (concat (:lines (:fence state)) [(trim line)])))
+      fence
+      (assoc-in state [:fence :lines] (append (:lines fence) (trim line)))
 
       true
       state)))
@@ -148,7 +130,7 @@
       :returns
       (if (blank? line)
         state
-        (assoc state :returns (concat (:returns state) [line])))
+        (update state :returns [append line]))
 
       :examples
       (example-line state line)
@@ -163,7 +145,7 @@
       (single-line-section state :deprecated line)
 
       :default
-      (assoc state :prose (concat (:prose state) [line])))))
+      (update state :prose [append line]))))
 
 (defun from-string
   "Parse a Roo docstring into lookup documentation data.
@@ -175,7 +157,7 @@
   A documentation map with summary, body, params, returns, examples, see-also,
   since, and deprecated fields."
   [text]
-  (let [state (reduce (split-lines text)
+  (let [state (reduce (split text "\n")
                       {:section nil
                        :prose []
                        :params {}

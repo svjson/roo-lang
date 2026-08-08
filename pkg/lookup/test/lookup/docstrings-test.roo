@@ -2,6 +2,7 @@
   (:require proof.core
             [lookup.docstrings :as docstrings]))
 
+
 (deftest empty-docstring-doc-has-index-shape
   (is (= {:summary nil
           :body nil
@@ -15,8 +16,8 @@
          (docstrings/empty))))
 
 (deftest parses-structured-docstring-text
-  (let [doc (docstrings/from-string
-              "Build a greeting for `name`.
+  (is (= (docstrings/from-string
+          "Build a greeting for `name`.
 
               Uses a friendly default format.
 
@@ -38,15 +39,17 @@
               0.1.0
 
               Deprecated:
-              Use `welcome` instead.")]
-    (is (= "Build a greeting for `name`." (:summary doc)))
-    (is (= "Uses a friendly default format." (:body doc)))
-    (is (= {:type nil :doc "Person to greet."}
-           (get (:params doc) "name")))
-    (is (= {:type nil :doc "A greeting string."}
-           (:returns doc)))
-    (is (= [{:format :roo :source "(greet \"Ada\")"}]
-           (:examples doc)))
-    (is (= ["str"] (:see doc)))
-    (is (= "0.1.0" (:since doc)))
-    (is (= "Use `welcome` instead." (:deprecated doc)))))
+              Use `welcome` instead.")
+
+         {:summary "Build a greeting for `name`."
+          :body "Uses a friendly default format."
+          :format :markdown
+          :params {"name" {:type nil
+                           :doc "Person to greet."}}
+          :returns {:type nil
+                    :doc "A greeting string."}
+          :examples [{:format :roo
+                      :source "(greet \"Ada\")"}]
+          :see ["str"]
+          :since "0.1.0"
+          :deprecated "Use `welcome` instead."})))
