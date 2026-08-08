@@ -460,7 +460,7 @@ namespace RooTest
 
   void SnippetBenchmark::log_result()
   {
-    const std::string CHANGE_ME = "066_map_access_benchmarks_c257a88";
+    const std::string CHANGE_ME = "067_snapshot_59a52da8";
     const std::string dir = "benchmarks/" + CHANGE_ME;
     const std::string file_name = dir + "/" + case_name + ".csv";
 
