@@ -201,14 +201,16 @@
                                   :package-groups []
                                   :indexes []
                                   :errors []})
-        options (if (nil? (:out options))
-                  (assoc options :errors (append (:errors options)
-                                                 "Missing output directory"))
-                  options)]
-    (if (empty? (:indexes options))
-      (assoc options :errors (append (:errors options)
-                                     "Missing lookup index file"))
-      options)))
+        options (cond-> options
+
+                        (nil? (:out options))
+                        (assoc :errors (append (:errors options)
+                                               "Missing output directory")))]
+    (cond-> options
+
+            (empty? (:indexes options))
+            (assoc :errors (append (:errors options)
+                                   "Missing lookup index file")))))
 
 (defun read-catalog
   "Read lookup indexes into a Boodle catalog.
@@ -260,7 +262,10 @@
   [output-dir package]
   (let [dir (versions-dir output-dir package)]
     (if (io/directory? dir)
-      (sort (map (filter (io/list-directory! dir) directory-entry?) :name) <)
+      (sort (keep (io/list-directory! dir)
+                  (fn [entry] (when (directory-entry? entry)
+                                (:name entry))))
+            <)
       [])))
 
 (defun package-with-known-versions
@@ -296,9 +301,8 @@
   [output-dir catalog]
   (assoc catalog
          :packages
-         (map (:packages catalog)
-              (fn [package]
-                (package-with-known-versions output-dir package)))))
+         (for [package (:packages catalog)]
+           (package-with-known-versions output-dir package))))
 
 (defun catalog-package-ids
   "Return package ids in CATALOG order.
@@ -364,9 +368,10 @@
   Returns:
   GROUP with `*` replaced by remaining catalog package ids."
   [catalog explicit-ids group]
-  (if (contains? (:package-ids group) "*")
-    (assoc group :package-ids (remaining-package-ids catalog explicit-ids))
-    group))
+  (cond-> group
+
+          (contains? (:package-ids group) "*")
+          (assoc :package-ids (remaining-package-ids catalog explicit-ids))))
 
 (defun catalog-with-package-groups
   "Attach expanded package groups to CATALOG.
@@ -383,9 +388,8 @@
     (let [explicit-ids (explicit-package-group-ids groups)]
       (assoc catalog
              :package-groups
-             (map groups
-                  (fn [group]
-                    (expand-package-group catalog explicit-ids group)))))))
+             (for [group groups]
+               (expand-package-group catalog explicit-ids group))))))
 
 (defun catalog-with-navigation-style
   "Attach navigation style metadata to CATALOG.
