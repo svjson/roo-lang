@@ -24,15 +24,45 @@ TEST_F(AssocInFunction, add_key_to_map)
 TEST_F(AssocInFunction, add_key_to_nested_map)
 {
   // Given
-  runtime.eval("(def my-map {:a 1 :b 2 :c {:key1 \"val\"}})");
+  runtime.eval(R"((def my-map {:a 1 :b 2 :c {:key1 "val"}}))");
 
   // When
   auto result = runtime.eval("(assoc-in my-map [:c :key2] 44)");
 
   // Then
-  EXPECT_EQ(*result, *runtime.eval("{:a 1 :b 2 :c {:key1 \"val\" :key2 44}}"));
+  EXPECT_EQ(*result, *runtime.eval(R"({:a 1 :b 2 :c {:key1 "val" :key2 44}})"));
   EXPECT_EQ(runtime.lookup("my-map")->to_string(),
             runtime.eval("{:a 1 :b 2 :c {:key1 \"val\"}}")->to_string());
+}
+
+TEST_F(AssocInFunction, add_string_key_to_nested_map)
+{
+  // Given
+  runtime.eval(R"((def my-map {:a 1 :b 2 :c {:key1 "val"}}))");
+
+  // When
+  auto result = runtime.eval(R"((assoc-in my-map [:c "str-key"] 44))");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval(R"({:a 1 :b 2 :c {:key1 "val" "str-key" 44}})"));
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(),
+            runtime.eval(R"({:a 1 :b 2 :c {:key1 "val"}})")->to_string());
+}
+
+TEST_F(AssocInFunction, add_referenced_string_key_to_nested_map)
+{
+  // Given
+  runtime.eval(R"(
+    (def my-key "str-key")
+    (def my-map {:a 1 :b 2 :c {:key1 "val"}}))");
+
+  // When
+  auto result = runtime.eval(R"((assoc-in my-map [:c my-key] 44))");
+
+  // Then
+  EXPECT_EQ(*result, *runtime.eval(R"({:a 1 :b 2 :c {:key1 "val" "str-key" 44}})"));
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(),
+            runtime.eval(R"({:a 1 :b 2 :c {:key1 "val"}})")->to_string());
 }
 
 TEST_F(AssocInFunction, creates_missing_intermediate_maps)
