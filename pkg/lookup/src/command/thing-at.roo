@@ -1,6 +1,11 @@
 (ns lookup.command.thing-at
-  (require [lookup.analysis :as analysis]
-           [lookup.reader :as reader]))
+  (:require [lookup.analysis :as analysis]
+            [lookup.reader :as reader]))
+
+(def usage-line
+  "Usage line for the `lookup thing-at` command."
+  "       lookup thing-at <package-dir> <file> <line> <column>")
+
 
 (defun run! [args]
   "Run the `lookup thing-at` command.

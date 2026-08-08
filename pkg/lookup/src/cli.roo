@@ -1,15 +1,16 @@
 (ns lookup.cli
   (:require [lookup.analysis :as analysis]
-            [lookup.command.audit :as audit-command]
-            [lookup.command.index :as index-command]
+            [lookup.command.audit :as audit]
+            [lookup.command.index :as index]
+            [lookup.command.thing-at :as thing-at]
             [lookup.system :as system]))
 
 (def usage-lines
   "Command usage lines printed by `lookup --help` and parse errors."
   ["Usage: lookup [--help|--version]"
-   index-command/usage-line
-   audit-command/usage-line
-   "       lookup thing-at <package-dir> <file> <line> <column>"])
+   index/usage-line
+   audit/usage-line
+   thing-at/usage-line])
 
 (def version
   "Lookup command version."
@@ -93,10 +94,10 @@
                    (prn value))))))
 
 (defun print-index! [args]
-  (print-command-result! (index-command/run! (tail args))))
+  (print-command-result! (index/run! (tail args))))
 
 (defun print-audit! [args]
-  (let [result (audit-command/run! (tail args))]
+  (let [result (audit/run! (tail args))]
     (print-command-result! result)
     (if (:failed? result)
       (system/fail! "lookup audit failed")
