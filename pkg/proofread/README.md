@@ -55,6 +55,19 @@ Select the reporter explicitly with `--reporter`:
 proofread --reporter simple src
 ```
 
+Read one source document from standard input while retaining its real path as
+the diagnostic and configuration identity:
+
+```sh
+proofread --reporter simple --stdin-filename /absolute/path/to/src/app.roo
+```
+
+The logical path does not need to exist. Proofread uses it for source
+locations, file-extension and filename checks, package discovery, and nested
+`.proofread.edn` lookup, but always checks the document supplied on standard
+input. `--stdin-filename` cannot be combined with positional files, directories,
+or patterns.
+
 Group warnings with `--group-by`. Criteria are applied in order, so
 `rule,namespace` groups first by rule and then by namespace:
 

@@ -6,6 +6,7 @@ Makefile
 !/Makefile
 **/*.cmake
 !cmake/*.cmake
+!pkg/proofread/cmake_test/*.cmake
 **/CMakeCache.txt
 /compile_commands.json
 libroo.a

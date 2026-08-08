@@ -1,7 +1,8 @@
 (ns proofread.command.check-test
   (:require proof.core
             [proofread.native :as native]
-            [proofread.command.check :as check-command]))
+            [proofread.command.check :as check-command]
+            [proofread.source :as source]))
 
 (deftest parses-reporter-option
   (is (= {:files ["src"]
@@ -41,6 +42,16 @@
           :errors []}
          (check-command/parse-args ["--show-ranges" "src"]))))
 
+(deftest parses-stdin-filename-option
+  (is (= {:files []
+          :reporter :simple
+          :groups []
+          :show-ranges? false
+          :errors []
+          :stdin-filename "/workspace/src/app.roo"}
+         (check-command/parse-args ["--reporter" "simple"
+                                    "--stdin-filename" "/workspace/src/app.roo"]))))
+
 (deftest reports-invalid-check-arguments
   (is (= {:files []
           :reporter :simple
@@ -73,6 +84,13 @@
           :errors ["Unknown group criterion: unknown"]}
          (check-command/parse-args ["--group-by" "rule,unknown" "src"]))))
 
+(deftest rejects-invalid-stdin-filename-combinations
+  (is (= ["Missing path after --stdin-filename"]
+         (:errors (check-command/parse-args ["--stdin-filename"]))))
+  (is (= ["Cannot combine --stdin-filename with files or patterns."]
+         (:errors (check-command/parse-args ["--stdin-filename" "src/app.roo"
+                                             "src/other.roo"])))))
+
 (deftest builds-parse-error-diagnostics
   (is (= {:rule :parse
           :severity :error
@@ -84,8 +102,8 @@
 
 (deftest returns-parse-error-diagnostics-for-unreadable-file
   (let [check-result (native/check-files-result! ["assets/invalid/broken.roo"])
-        diagnostics (check-command/check-file-diagnostics "assets/invalid/broken.roo"
-                                                         check-result)
+        diagnostics (check-command/check-diagnostics "assets/invalid/broken.roo"
+                                                     check-result)
         diagnostic (head diagnostics)]
     (is (= 1 (count diagnostics)))
     (is (= :parse (:rule diagnostic)))
@@ -93,3 +111,46 @@
     (is (= "assets/invalid/broken.roo" (:file diagnostic)))
     (is (= "assets/invalid/broken.roo" (:path (:source diagnostic))))
     (is (= "Unexpected end of input" (:message diagnostic)))))
+
+(deftest checks-valid-malformed-and-empty-in-memory-source
+  (let [path "/missing/project/src/app.roo"
+        valid (native/check-source-result! path "(ns sample.app)")
+        malformed (native/check-source-result! path "(ns sample.app")
+        empty-source (native/check-source-result! path "")]
+    (is (= {:checked 1 :errors 0 :error-details []} valid))
+    (is (= 0 (:checked malformed)))
+    (is (= 1 (:errors malformed)))
+    (is (= path (:path (head (:error-details malformed)))))
+    (is (= "Unexpected end of input"
+           (:message (head (:error-details malformed)))))
+    (is (= {:checked 1 :errors 0 :error-details []} empty-source))
+    (is (= [] (source/diagnostics path {:source ""})))))
+
+(deftest reports-in-memory-diagnostics-with-logical-source-locations
+  (let [path "assets/valid/unsaved_source.roo"
+        diagnostics (source/diagnostics
+                     path
+                     {:source "(ns proofread.unsaved)\n\n(def value\n  (do 42))"})
+        diagnostic (find-first diagnostics
+                               (fn [item]
+                                 (= :redundant-do (:rule item))))]
+    (is (= path (:file diagnostic)))
+    (is (= "proofread-sample" (:package diagnostic)))
+    (is (= path (:path (:source diagnostic))))
+    (is (= 4 (:line (:source diagnostic))))
+    (is (= 3 (:column (:source diagnostic))))
+    (is (= :warning (:severity diagnostic)))
+    (is (= :kebab-case-filename (:rule (head diagnostics))))))
+
+(deftest uses-logical-path-config-for-in-memory-source
+  (let [diagnostics (source/diagnostics
+                     "assets/config/project/not-on-disk.roo"
+                     {:source "(ns proofread.stdin)\n(def first-item (nth items 0))\n(def body (do :ok))"})]
+    (is (= [:use-head] (map diagnostics :rule)))
+    (is (= [:error] (map diagnostics :severity)))))
+
+(deftest in-memory-source-takes-precedence-over-on-disk-content
+  (let [path "assets/valid/sample.roo"]
+    (is (= [] (source/diagnostics path)))
+    (is (= [:redundant-do]
+           (map (source/diagnostics path {:source "(def value (do 42))"}) :rule)))))

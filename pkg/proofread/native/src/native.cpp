@@ -304,6 +304,15 @@ namespace Roo::Proofread
       reader.read_sexps(source, source_id, true);
     }
 
+    void check_source(const std::string& path,
+                      const std::string& source,
+                      SourceMap& source_map)
+    {
+      const uint32_t source_id = source_map.intern_file(path);
+      Reader reader;
+      reader.read_sexps(source, source_id, true);
+    }
+
     std::vector<std::string> string_args(const sptr_val& arg)
     {
       std::vector<std::string> values;
@@ -583,6 +592,65 @@ namespace Roo::Proofread
         return check_result(checked_count, errors);
       }
     };
+
+    class ReadStdinFunction : public Function
+    {
+     public:
+      ReadStdinFunction()
+        : Function(SIG((NO_ARGS, EXEC_DISPATCH(&ReadStdinFunction::exec_read_stdin))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<ReadStdinFunction>());
+      }
+
+      sptr_val exec_read_stdin(Context&, sptr_val_v&)
+      {
+        std::ostringstream contents;
+        contents << std::cin.rdbuf();
+        if (std::cin.bad())
+        {
+          throw RooException("Could not read standard input");
+        }
+        return Value::string(contents.str());
+      }
+    };
+
+    class CheckSourceResultFunction : public Function
+    {
+     public:
+      CheckSourceResultFunction()
+        : Function(
+            SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
+                 EXEC_DISPATCH(&CheckSourceResultFunction::exec_check_source_result))))
+      {
+      }
+
+      static sptr_val make()
+      {
+        return Value::executable(std::make_shared<CheckSourceResultFunction>());
+      }
+
+      sptr_val exec_check_source_result(Context&, sptr_val_v& args)
+      {
+        const std::string path = args[0]->str();
+        SourceMap source_map;
+        std::vector<CheckError> errors;
+        size_t checked_count = 0;
+        try
+        {
+          check_source(path, args[1]->str(), source_map);
+          checked_count = 1;
+        }
+        catch (const std::exception& e)
+        {
+          errors.push_back({path, e.what()});
+        }
+        return check_result(checked_count, errors);
+      }
+    };
   } // namespace
 
   std::unique_ptr<Namespace> make_native_namespace()
@@ -592,8 +660,10 @@ namespace Roo::Proofread
     ns->store("check!", CheckFunction::make());
     ns->store("check-files!", CheckFilesFunction::make());
     ns->store("check-files-result!", CheckFilesResultFunction::make());
+    ns->store("check-source-result!", CheckSourceResultFunction::make());
     ns->store("fail!", FailFunction::make());
     ns->store("files!", FilesFunction::make());
+    ns->store("read-stdin!", ReadStdinFunction::make());
     return ns;
   }
 

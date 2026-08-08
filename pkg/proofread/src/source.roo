@@ -74,12 +74,17 @@
   Args:
   - `file`: Checked input file path.
   - `effective-config`: Proofread config for the file.
+  - `options`: Optional input options. `:source` supplies in-memory source text
+    while retaining `file` as its logical identity.
 
   Returns:
   A vector of diagnostic maps. Non-Roo files return an empty vector."
-  [file effective-config]
+  [file effective-config & options]
   (case (io/extension file)
-    ".roo" (let [roots (ast/slurp! file)
+    ".roo" (let [source-text (:source options)
+                 roots (if (some? source-text)
+                         (ast/read-string source-text {:path file})
+                         (ast/slurp! file))
                  source-context (context file roots)
                  diagnostics (concat (rules/check-file-with-config file effective-config)
                                      (rules/check-with-config roots effective-config))]
@@ -92,8 +97,9 @@
 
   Args:
   - `file`: Checked input file path.
+  - `options`: Optional input options passed to `diagnostics-with-config`.
 
   Returns:
   A vector of diagnostic maps."
-  [file]
-  (diagnostics-with-config file (config/file-config file)))
+  [file & options]
+  (diagnostics-with-config file (config/file-config file) options))
