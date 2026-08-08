@@ -2,10 +2,23 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
+(defun if-empty-then-branch?
+  "Test whether an `if` form has an empty then branch."
+  [{:keys [children] :as node}]
+  (and (= "if" (forms/head-name node))
+       (= 4 (count children))
+       (forms/nil-node? (nth children 2))))
+
+(defun when-negated-condition?
+  "Test whether a `when` form negates its condition."
+  [{:keys [children] :as node}]
+  (and (= "when" (forms/head-name node))
+       (< 2 (count children))
+       (forms/call? (nth children 1) "not" 2)))
+
 (defun check
   "Return a `use-unless` diagnostic for matching nodes."
   [parent {:keys [children] :as node}]
-  (when (and (= "if" (forms/head-name node))
-             (= 4 (count children))
-             (forms/nil-node? (nth children 2)))
+  (when (or (if-empty-then-branch? node)
+            (when-negated-condition? node))
     (diagnostics/make node :use-unless "Use unless")))

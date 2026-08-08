@@ -68,6 +68,17 @@
   [node]
   (str "(not-empty? " (forms/form-string (source-argument node)) ")"))
 
+(defun direct-unless-candidate?
+  "Test whether this negated expression should be handled by `use-unless` instead."
+  [parent node]
+  (and parent
+       (forms/call? node "not" 2)
+       (or (and (= "if" (forms/head-name parent))
+                (= 4 (count (:children parent)))
+                (forms/nil-node? (nth (:children parent) 2)))
+           (and (= "when" (forms/head-name parent))
+                (forms/call? (nth (:children parent) 1) "not" 2)))))
+
 (defun check
   "Report positive count checks and negated `empty?` calls.
 
@@ -79,6 +90,7 @@
   A diagnostic map when `node` should use `not-empty?`, otherwise `nil`."
   [parent node]
   (when (and (forms/predicate-position? parent node)
+             (not (direct-unless-candidate? parent node))
              (or (not-empty-count-comparison? node)
                  (not-empty-negation? node)))
     (diagnostics/make-suggesting

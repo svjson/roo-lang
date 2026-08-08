@@ -1,0 +1,5 @@
+(ns proofread.direct-conditions-use-unless-when)
+
+(def not-when
+  (when (not (ready? children))
+    (save! children)))

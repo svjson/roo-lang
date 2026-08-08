@@ -19,8 +19,16 @@
   (let [field-errors (validate-field value)]
     (assoc errors field-id (not (empty? field-errors)))))
 
+(def empty-when-guard
+  (when (not (empty? children))
+    (save! children)))
+
 (def blank-text
   (not (blank? text)))
+
+(def not-equal-when-guard
+  (when (not (= left right))
+    (save! left)))
 
 (def different-values
   (not= left right))
@@ -71,6 +79,10 @@
 (def explicit-false-option
   (when (some? (:enabled? options))
     (:enabled? options)))
+
+(def not-nil-when-guard
+  (when (not (nil? value))
+    (:value value)))
 
 (def explicit-symbol-presence
   (when (some? enabled?)

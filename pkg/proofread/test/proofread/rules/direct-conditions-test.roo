@@ -19,7 +19,9 @@
 
 (deftest reports-use-unless-for-empty-then-branches
   (is (= [[:use-unless 4]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-unless.roo"))))
+         (diagnostic-summary "assets/rules/direct-conditions/use-unless.roo")))
+  (is (= [[:use-unless 4]]
+         (diagnostic-summary "assets/rules/direct-conditions/use-unless-when.roo"))))
 
 (deftest reports-use-if-let-for-let-wrapped-if-forms
   (is (= [[:use-if-let 4] [:use-if-let 10] [:use-if-let 16]]
