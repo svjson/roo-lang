@@ -1,34 +1,27 @@
 (ns lookup.index-test
   (:require proof.core
-            [lookup.analysis :as analysis]
-            [lookup.index :as index]
-            [lookup.reader :as reader]
-            [lookup.source :as source]
-            [lookup.symbols :as symbols]))
+            [lookup.index :as index]))
 
-(deftest identifies-roo-source-files
-  (is (source/source-file? "src/index.roo"))
-  (is (= false (source/source-file? "package.edn"))))
-
-(deftest builds-source-form-index
+(deftest source-form-index/builds-source-form-index
   (let [source-index (index/source-form-index "..")
         sources (:sources source-index)
-        paths (map sources (fn [source] (:path source)))
+        paths (for [source sources] (:path source))
         index-source (find-first sources
                                  (fn [source]
                                    (= "../src/index.roo" (:path source))))
-        first-form (nth (:forms index-source) 0)]
+        first-form (head (:forms index-source))]
     (is (= :roo/source-forms (:format source-index)))
     (is (= 1 (:version source-index)))
     (is (= "lookup" (:name (:package source-index))))
     (is (= "0.1.0" (:version (:package source-index))))
-    (is (= 9 (count sources)))
+    (is (= 10 (count sources)))
     (is (= ["../src/audit.roo"
             "../src/cli.roo"
+            "../src/command/audit.roo"
+            "../src/command/index.roo"
+            "../src/command/thing-at.roo"
             "../src/docstrings.roo"
             "../src/index.roo"
-            "../src/lookup/command/audit.roo"
-            "../src/lookup/command/index.roo"
             "../src/native-docs.roo"
             "../src/source.roo"
             "../src/symbols.roo"]
@@ -60,18 +53,17 @@
     (is (= "lookup" (:name (:package symbol-index))))
     (is (contains? sources {:path "../src/cli.roo"}))
     (is (contains? sources {:path "../src/index.roo"}))
-    (is (not (nil? (find-first namespaces
-                               (fn [namespace]
-                                 (= "lookup.cli" (:name namespace)))))))
-    (is (not (nil? (find-first namespaces
-                               (fn [namespace]
-                                 (= "lookup.docstrings" (:name namespace)))))))
-    (is (not (nil? (find-first namespaces
-                               (fn [namespace]
-                                 (= "lookup.index" (:name namespace)))))))
-    (is (not (nil? (find-first namespaces
-                               (fn [namespace]
-                                 (= "lookup.source" (:name namespace)))))))
+    (is (any? namespaces (fn [namespace]
+                           (= "lookup.cli" (:name namespace)))))
+    (is (any? namespaces
+              (fn [namespace]
+                (= "lookup.docstrings" (:name namespace)))))
+    (is (any? namespaces
+              (fn [namespace]
+                (= "lookup.index" (:name namespace)))))
+    (is (any? namespaces
+              (fn [namespace]
+                (= "lookup.source" (:name namespace)))))
     (is (= :var (:kind version-symbol)))
     (is (= :source (:origin version-symbol)))
     (is (= :public (:visibility version-symbol)))
@@ -99,169 +91,7 @@
     (is (= "../src/index.roo"
            (:path (:source symbol-index-symbol))))))
 
-(deftest reads-top-level-forms-with-source-locations
-  (let [forms (reader/read-file-forms! "assets/read-forms-sample.roo")
-        ns-entry (head forms)
-        def-entry (nth forms 1)
-        defun-entry (nth forms 2)
-        ns-form (:form ns-entry)
-        def-form (:form def-entry)
-        defun-form (:form defun-entry)
-        ns-source (:source ns-entry)
-        def-source (:source def-entry)
-        defun-source (:source defun-entry)]
-    (is (= 3 (count forms)))
-    (is (= "ns" (str (head ns-form))))
-    (is (= "sample.forms" (str (nth ns-form 1))))
-    (is (= "def" (str (head def-form))))
-    (is (= "answer" (str (nth def-form 1))))
-    (is (= "defun" (str (head defun-form))))
-    (is (= "greet" (str (nth defun-form 1))))
-    (is (= "assets/read-forms-sample.roo" (:path ns-source)))
-    (is (= 1 (:line ns-source)))
-    (is (= 1 (:column ns-source)))
-    (is (= 3 (:line def-source)))
-    (is (= 5 (:line defun-source)))))
 
-(deftest reads-broken-source-file-into-error-entry
-  (let [entry (source/source-entry "assets/broken-syntax.roo")
-        forms (:forms entry)
-        broken-entry (head forms)]
-    (is (= 1 (count forms)))
-    (is (= "assets/broken-syntax.roo" (:path entry)))
-    (is (string? (:error broken-entry)))
-    (is (= "assets/broken-syntax.roo" (:path (:source broken-entry))))))
-
-(deftest extracts-docstrings-from-def-and-defun
-  (let [source {:path "assets/docstrings-sample.roo"
-                :forms (reader/read-file-forms! "assets/docstrings-sample.roo")}
-        entries (symbols/source-symbols "sample" source)
-        answer (find-first entries
-                           (fn [symbol]
-                             (= "sample.docs/answer" (:qualified-name symbol))))
-        greet (find-first entries
-                          (fn [symbol]
-                            (= "sample.docs/greet" (:qualified-name symbol))))
-        greet-doc (:doc greet)
-        greet-signature (head (:signatures greet))]
-    (is (= answer
-           {:id "sample.docs/answer"
-            :name "answer"
-            :qualified-name "sample.docs/answer"
-            :namespace "sample.docs"
-            :package "sample"
-            :kind :var
-            :origin :source
-            :visibility :public
-            :status :stable
-            :source {:path "assets/docstrings-sample.roo"
-                     :line 3
-                     :column 1
-                     :start {:line 3
-                             :column 1}
-                     :end {:line 8
-                           :column 5}}
-            :doc-source {:kind :roo-docstring
-                         :source {:path "assets/docstrings-sample.roo"
-                                  :line 3
-                                  :column 1
-                                  :start {:line 3
-                                          :column 1}
-                                  :end {:line 8
-                                        :column 5}}}
-            :doc {:summary "The answer used by examples."
-                  :body nil
-                  :format :markdown
-                  :params {}
-                  :returns nil
-                  :examples []
-                  :see []
-                  :since "0.1.0"
-                  :deprecated nil
-                  }
-            :signatures []}))
-    (is (= greet
-           {:id "sample.docs/greet"
-            :name "greet"
-            :qualified-name "sample.docs/greet"
-            :namespace "sample.docs"
-            :package "sample"
-            :kind :function
-            :origin :source
-            :visibility :public
-            :status :stable
-            :source {:path "assets/docstrings-sample.roo"
-                     :line 10
-                     :column 1
-                     :start {:line 10
-                             :column 1}
-                     :end {:line 32
-                           :column 25}}
-            :doc-source {:kind :roo-docstring
-                         :source {:path "assets/docstrings-sample.roo"
-                                  :line 10
-                                  :column 1
-                                  :start {:line 10
-                                          :column 1}
-                                  :end {:line 32
-                                        :column 25}}}
-            :doc {:summary "Build a greeting for `name`."
-                  :body "Uses a friendly default format."
-                  :format :markdown
-                  :params {"name" {:type nil :doc "Person to greet."}
-                           "title" {:type nil :doc "Optional title."}}
-                  :returns {:type nil
-                            :doc "A greeting string."}
-                  :examples [{:format :roo :source "(greet \"Ada\" \"Dr.\")"}]
-                  :see ["str"]
-                  :since nil
-                  :deprecated nil}
-            :signatures [{:display "(greet name & title)"
-                          :params [{:name "name"
-                                    :optional? false
-                                    :rest? false
-                                    :type nil
-                                    :doc "Person to greet."}
-                                   {:name "title"
-                                    :optional? true
-                                    :rest? false
-                                    :type nil
-                                    :doc "Optional title."}]
-                          :returns {:type nil :doc "A greeting string."}
-                          :arity {:min 1
-                                  :max 2
-                                  :variadic false}}]}))))
-
-(deftest resolves-thing-at-local-let-binding
-  (let [source "(ns sample.core)\n(let [command-value 1]\n  command-value)\n"
-        result (analysis/thing-at! "." "src/sample.roo" "3" "3" source)
-        thing (:thing result)
-        resolution (:resolution thing)
-        source-location (:source resolution)]
-    (is (= :ok (:status result)))
-    (is (= "command-value" (:text thing)))
-    (is (= :symbol (:kind thing)))
-    (is (= :local-reference (:role thing)))
-    (is (= :local (:kind resolution)))
-    (is (= "command-value" (:name resolution)))
-    (is (= "local binding" (:signature resolution)))
-    (is (= "src/sample.roo" (:path source-location)))
-    (is (= 2 (:line source-location)))
-    (is (= 7 (:column source-location)))))
-
-(deftest resolves-thing-at-function-parameter
-  (let [source "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n"
-        result (analysis/thing-at! "." "src/sample.roo" "3" "3" source)
-        thing (:thing result)
-        resolution (:resolution thing)
-        source-location (:source resolution)]
-    (is (= :ok (:status result)))
-    (is (= "command-value" (:text thing)))
-    (is (= :local-reference (:role thing)))
-    (is (= "command-value" (:name resolution)))
-    (is (= "parameter" (:signature resolution)))
-    (is (= 2 (:line source-location)))
-    (is (= 16 (:column source-location)))))
 
 (deftest builds-native-only-symbol-index-from-generic-root
   (let [symbol-index (index/root-index

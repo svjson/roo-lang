@@ -1,0 +1,27 @@
+(ns lookup.reader-test
+  (:require proof.core
+            [lookup.reader :as reader]))
+
+(deftest read-file-forms!/reads-top-level-forms-with-source-locations
+  (let [forms (reader/read-file-forms! "assets/read-forms-sample.roo")
+        ns-entry (head forms)
+        def-entry (nth forms 1)
+        defun-entry (nth forms 2)
+        ns-form (:form ns-entry)
+        def-form (:form def-entry)
+        defun-form (:form defun-entry)
+        ns-source (:source ns-entry)
+        def-source (:source def-entry)
+        defun-source (:source defun-entry)]
+    (is (= 3 (count forms)))
+    (is (= "ns" (str (head ns-form))))
+    (is (= "sample.forms" (str (nth ns-form 1))))
+    (is (= "def" (str (head def-form))))
+    (is (= "answer" (str (nth def-form 1))))
+    (is (= "defun" (str (head defun-form))))
+    (is (= "greet" (str (nth defun-form 1))))
+    (is (= "assets/read-forms-sample.roo" (:path ns-source)))
+    (is (= 1 (:line ns-source)))
+    (is (= 1 (:column ns-source)))
+    (is (= 3 (:line def-source)))
+    (is (= 5 (:line defun-source)))))

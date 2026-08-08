@@ -1,0 +1,102 @@
+(ns lookup.reader-test
+  (:require proof.core
+            [lookup.reader :as reader]
+            [lookup.symbols :as symbols]))
+
+(deftest extracts-docstrings-from-def-and-defun
+  (let [entries (symbols/source-symbols "sample"
+                                        {:path "assets/docstrings-sample.roo"
+                                         :forms (reader/read-file-forms! "assets/docstrings-sample.roo")})
+        answer (find-first entries
+                           (fn [symbol]
+                             (= "sample.docs/answer" (:qualified-name symbol))))
+        greet (find-first entries
+                          (fn [symbol]
+                            (= "sample.docs/greet" (:qualified-name symbol))))]
+    (is (= answer
+           {:id "sample.docs/answer"
+            :name "answer"
+            :qualified-name "sample.docs/answer"
+            :namespace "sample.docs"
+            :package "sample"
+            :kind :var
+            :origin :source
+            :visibility :public
+            :status :stable
+            :source {:path "assets/docstrings-sample.roo"
+                     :line 3
+                     :column 1
+                     :start {:line 3
+                             :column 1}
+                     :end {:line 8
+                           :column 5}}
+            :doc-source {:kind :roo-docstring
+                         :source {:path "assets/docstrings-sample.roo"
+                                  :line 3
+                                  :column 1
+                                  :start {:line 3
+                                          :column 1}
+                                  :end {:line 8
+                                        :column 5}}}
+            :doc {:summary "The answer used by examples."
+                  :body nil
+                  :format :markdown
+                  :params {}
+                  :returns nil
+                  :examples []
+                  :see []
+                  :since "0.1.0"
+                  :deprecated nil
+                  }
+            :signatures []}))
+    (is (= greet
+           {:id "sample.docs/greet"
+            :name "greet"
+            :qualified-name "sample.docs/greet"
+            :namespace "sample.docs"
+            :package "sample"
+            :kind :function
+            :origin :source
+            :visibility :public
+            :status :stable
+            :source {:path "assets/docstrings-sample.roo"
+                     :line 10
+                     :column 1
+                     :start {:line 10
+                             :column 1}
+                     :end {:line 32
+                           :column 25}}
+            :doc-source {:kind :roo-docstring
+                         :source {:path "assets/docstrings-sample.roo"
+                                  :line 10
+                                  :column 1
+                                  :start {:line 10
+                                          :column 1}
+                                  :end {:line 32
+                                        :column 25}}}
+            :doc {:summary "Build a greeting for `name`."
+                  :body "Uses a friendly default format."
+                  :format :markdown
+                  :params {"name" {:type nil :doc "Person to greet."}
+                           "title" {:type nil :doc "Optional title."}}
+                  :returns {:type nil
+                            :doc "A greeting string."}
+                  :examples [{:format :roo :source "(greet \"Ada\" \"Dr.\")"}]
+                  :see ["str"]
+                  :since nil
+                  :deprecated nil}
+            :signatures [{:display "(greet name & title)"
+                          :params [{:name "name"
+                                    :optional? false
+                                    :rest? false
+                                    :type nil
+                                    :doc "Person to greet."}
+                                   {:name "title"
+                                    :optional? true
+                                    :rest? false
+                                    :type nil
+                                    :doc "Optional title."}]
+                          :returns {:type nil :doc "A greeting string."}
+                          :arity {:min 1
+                                  :max 2
+                                  :variadic false}}]}))))

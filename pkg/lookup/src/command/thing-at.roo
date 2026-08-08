@@ -1,0 +1,28 @@
+(ns lookup.command.thing-at
+  (require [lookup.analysis :as analysis]
+           [lookup.reader :as reader]))
+
+(defun run! [args]
+  "Run the `lookup thing-at` command.
+
+  Args:
+  - `args`: Arguments after the `thing-at` command name.
+
+  Returns:
+  A map containing either `:errors` or the generated `:value`."
+  (let [package-dir (nth args 1)
+        file (nth args 2)
+        line (nth args 3)
+        column (nth args 4)]
+    (if (or (nil? package-dir)
+            (nil? file)
+            (nil? line)
+            (nil? column))
+      {:errors ["Missing argument"]}
+      {:format :default
+       :value (analysis/thing-at! package-dir
+                                  file
+                                  line
+                                  column
+                                  (reader/read-stdin!))
+       :errors []})))

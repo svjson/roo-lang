@@ -1,0 +1,17 @@
+(ns lookup.source-test
+  (:require proof.core
+            [lookup.source :as source]))
+
+(deftest source/identifies-roo-source-files
+  (is (source/source-file? "src/index.roo"))
+  (is (= false (source/source-file? "package.edn"))))
+
+(deftest source-entry/reads-broken-source-file-into-error-entry
+  (is (= {:path "assets/broken-syntax.roo"
+          :forms [{:error
+                   "Could not read Roo forms from assets/broken-syntax.roo: Unexpected end of input"
+                   :path
+                   "assets/broken-syntax.roo"
+                   :source
+                   {:path "assets/broken-syntax.roo"}}]}
+         (source/source-entry "assets/broken-syntax.roo"))))
