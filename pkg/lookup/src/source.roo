@@ -49,11 +49,11 @@
 (defun source-files-in [root]
   (if (io/directory? root)
     (let [entries (io/list-directory! root)
-          files (map (filter entries
-                             (fn [entry]
-                               (and (= (:type entry) :file)
-                                    (source-file? (:path entry)))))
-                     :path)
+          files (keep entries
+                      (fn [entry]
+                        (when (and (= (:type entry) :file)
+                                   (source-file? (:path entry)))
+                          (:path entry))))
           directories (filter entries (fn [entry] (= (:type entry) :directory)))]
       (concat files
               (flat-map directories
@@ -64,11 +64,10 @@
 (defun normalized-path [path]
   (string/replace (str path) "\\" "/"))
 
-(defun normalized-source-location [source]
-  (assoc source :path (normalized-path (:path source))))
-
-(defun source-form-entry [entry]
-  (assoc entry :source (normalized-source-location (:source entry))))
+(defun source-form-entry [{:keys [source] :as entry}]
+  (if source
+    (assoc-in entry [:source :path] (normalized-path (:path source)))
+    (assoc entry :source {:path (normalized-path (:path entry))})))
 
 (defun source-entry
   "Read one source file into a source-form index entry.
