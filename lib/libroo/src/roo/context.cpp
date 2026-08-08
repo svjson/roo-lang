@@ -100,6 +100,11 @@ namespace Roo
     return std::make_shared<Context>(*this);
   }
 
+  std::unique_ptr<Context> Context::isolate() const
+  {
+    return std::make_unique<Context>(runtime);
+  }
+
   std::vector<std::unique_ptr<ContextFrame>>& Context::get_stack_frames()
   {
     return frame_stack;

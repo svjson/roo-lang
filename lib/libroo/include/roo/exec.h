@@ -371,6 +371,8 @@ namespace Roo
     size_t optional_count = 0;
     std::unique_ptr<RestBinding> rest_binding;
 
+    sptr_val exec_body_in_context(Roo::Context& ctx, sptr_val_v& args);
+
    public:
     UserFunction(const std::string& name,
                  const std::string& home_ns,
@@ -386,6 +388,7 @@ namespace Roo
     std::string to_string(int depth = -1) const override;
 
     sptr_val execute(Roo::Context& ctx, sptr_val_v& args) override;
+    sptr_val execute_captured(Roo::Context& ctx, sptr_val_v& args);
     sptr_val exec_body(Roo::Context& ctx, sptr_val_v& args);
   };
 

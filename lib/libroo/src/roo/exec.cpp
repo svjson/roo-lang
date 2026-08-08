@@ -517,13 +517,21 @@ namespace Roo
 
   sptr_val DetachedFunction::dispatch_detached(Context&, sptr_val_v& args)
   {
+    auto execute_captured = [this](sptr_val_v& call_args) {
+      if (auto user_function = std::dynamic_pointer_cast<UserFunction>(fun))
+      {
+        return user_function->execute_captured(*ctx, call_args);
+      }
+      return fun->execute(*ctx, call_args);
+    };
+
     if (bound_args.empty())
     {
-      return fun->execute(*this->ctx, args);
+      return execute_captured(args);
     }
     if (args.empty())
     {
-      return fun->execute(*this->ctx, bound_args);
+      return execute_captured(bound_args);
     }
 
     sptr_val_v merged_args;
@@ -535,7 +543,7 @@ namespace Roo
     {
       merged_args.push_back(arg);
     }
-    return fun->execute(*this->ctx, merged_args);
+    return execute_captured(merged_args);
   }
 
   sptr_val DetachedFunction::execute_bound(sptr_val_v& args)
@@ -590,6 +598,25 @@ namespace Roo
   }
 
   sptr_val UserFunction::exec_body(Context& ctx, sptr_val_v& args)
+  {
+    std::unique_ptr<Context> call_ctx = ctx.isolate();
+    return exec_body_in_context(*call_ctx, args);
+  }
+
+  sptr_val UserFunction::execute_captured(Context& ctx, sptr_val_v& args)
+  {
+    const size_t min_count = required_count;
+    const size_t max_count = arg_binding.size();
+    if (args.size() < min_count || (!rest_binding && args.size() > max_count))
+    {
+      throw InvocationException("No matching signature: " +
+                                Roo::Value::vector(args)->to_string());
+    }
+
+    return exec_body_in_context(ctx, args);
+  }
+
+  sptr_val UserFunction::exec_body_in_context(Context& ctx, sptr_val_v& args)
   {
     user_function_rtval_invocations++;
     const std::string current_namespace = ctx.get_current_namespace()->get_name();

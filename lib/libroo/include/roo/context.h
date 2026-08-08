@@ -52,6 +52,7 @@ namespace Roo
     Context(Runtime& runtime, frame_stack_t& frame_stack);
 
     std::shared_ptr<Context> detach() const;
+    std::unique_ptr<Context> isolate() const;
 
     bool evalp() const;
 
