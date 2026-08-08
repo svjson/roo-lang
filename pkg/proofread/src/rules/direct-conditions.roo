@@ -50,7 +50,7 @@
   Returns:
   A diagnostic map, or `nil` when the node does not match a rule."
   [active-rules parent node]
-  (when (not (covered-child? active-rules parent node))
+  (unless (covered-child? active-rules parent node)
     (registry/node-diagnostic active-rules parent node)))
 
 (defun check-node

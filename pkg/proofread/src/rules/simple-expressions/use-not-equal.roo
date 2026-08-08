@@ -33,7 +33,7 @@
                 (= 4 (count (:children parent)))
                 (forms/nil-node? (nth (:children parent) 2)))
            (and (= "when" (forms/head-name parent))
-                (forms/call? (nth (:children parent) 1) "not" 2))))
+                (forms/call? (nth (:children parent) 1) "not" 2)))))
 
 (defun check
   "Report negated equality checks.
