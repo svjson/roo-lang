@@ -3,10 +3,15 @@
 #define __ROO_EXCEPTION_H_
 
 #include <exception>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace Roo
 {
+  class Executable;
+  struct Value;
+
   class RooException : public std::exception
   {
     const std::string reason;
@@ -39,6 +44,30 @@ namespace Roo
   {
    public:
     InvocationException(const std::string& message);
+
+    /**
+     * @brief Builds an InvocationException for a call that matched none of
+     * `callee`'s signatures, keeping the callee, its accepted signatures and
+     * the received arguments as inspectable data alongside the rendered
+     * message. Only constructed from an already-failed call path, so it adds
+     * no cost on a successful call.
+     */
+    static InvocationException no_matching_signature(
+      const Executable& callee, const std::vector<std::shared_ptr<Value>>& args);
+
+    const std::string& get_callee() const;
+    const std::vector<std::string>& get_expected_signatures() const;
+    const std::vector<std::shared_ptr<Value>>& get_args() const;
+
+   private:
+    InvocationException(const std::string& message,
+                        std::string callee,
+                        std::vector<std::string> expected_signatures,
+                        std::vector<std::shared_ptr<Value>> args);
+
+    const std::string callee;
+    const std::vector<std::string> expected_signatures;
+    const std::vector<std::shared_ptr<Value>> args;
   };
 
   class NamespaceException : public RooException

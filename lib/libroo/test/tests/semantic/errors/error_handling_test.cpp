@@ -185,3 +185,107 @@ TEST_F(Semantic_ErrorHandling,
   // Then
   EXPECT_EQ(message, "42 is not executable.");
 }
+
+TEST_F(Semantic_ErrorHandling,
+       context_call_user_function_arity_mismatch_reports_invocation_exception)
+{
+  // Given
+  runtime.eval("(defun add [a b] (+ a b))");
+  Roo::sptr_val_v args{Roo::Value::number(1), Roo::Value::number(2), Roo::Value::number(3)};
+
+  // When
+  std::string message;
+  try
+  {
+    ctx.call("add", args);
+    FAIL() << "Expected Roo::InvocationException to be thrown.";
+  }
+  catch (const Roo::InvocationException& e)
+  {
+    message = e.what();
+  }
+  catch (const std::exception& e)
+  {
+    FAIL() << "Expected Roo::InvocationException, got a different exception: " << e.what();
+  }
+
+  // Then
+  EXPECT_EQ(message,
+            "Error while calling add:\n"
+            "#'user/add\n"
+            "No matching signature for #'user/add: [1 2 3]\n"
+            "\n"
+            "Expected:\n"
+            "  [<any>, <any>]\n"
+            "Received:\n"
+            "  [<number> <number> <number>]\n");
+}
+
+TEST_F(Semantic_ErrorHandling,
+       context_call_native_function_arity_mismatch_reports_invocation_exception)
+{
+  // Given
+  Roo::sptr_val_v args{Roo::Value::number(1), Roo::Value::number(2)};
+
+  // When
+  std::string message;
+  try
+  {
+    ctx.call("count", args);
+    FAIL() << "Expected Roo::InvocationException to be thrown.";
+  }
+  catch (const Roo::InvocationException& e)
+  {
+    message = e.what();
+  }
+  catch (const std::exception& e)
+  {
+    FAIL() << "Expected Roo::InvocationException, got a different exception: " << e.what();
+  }
+
+  // Then
+  EXPECT_EQ(message,
+            "Error while calling count:\n"
+            "<fn>\n"
+            "No matching signature for <fn>: [1 2]\n"
+            "\n"
+            "Expected:\n"
+            "  [<any>]\n"
+            "Received:\n"
+            "  [<number> <number>]\n");
+}
+
+TEST_F(Semantic_ErrorHandling,
+       context_call_captured_lambda_arity_mismatch_reports_invocation_exception)
+{
+  // Given
+  runtime.eval("(def my-lambda (fn [a b] (+ a b)))");
+  Roo::sptr_val_v args{Roo::Value::number(1)};
+
+  // When
+  std::string message;
+  try
+  {
+    ctx.call("my-lambda", args);
+    FAIL() << "Expected Roo::InvocationException to be thrown.";
+  }
+  catch (const Roo::InvocationException& e)
+  {
+    message = e.what();
+  }
+  catch (const std::exception& e)
+  {
+    FAIL() << "Expected Roo::InvocationException, got a different exception: " << e.what();
+  }
+
+  // Then
+  EXPECT_EQ(message,
+            "Error while calling my-lambda:\n"
+            "<fn>\n"
+            "No matching signature for #'user/<lambda>: [1]\n"
+            "\n"
+            "Expected:\n"
+            "  [<any>, <any>]\n"
+            "Received:\n"
+            "  [<number>]\n");
+}

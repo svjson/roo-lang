@@ -454,8 +454,7 @@ namespace Roo
       }
     }
 
-    throw InvocationException("No matching signature: " +
-                              Roo::Value::vector(args)->to_string());
+    throw InvocationException::no_matching_signature(*this, args);
   }
 
   Function::Function(uptr_sig signature)
@@ -590,8 +589,7 @@ namespace Roo
     const size_t max_count = arg_binding.size();
     if (args.size() < min_count || (!rest_binding && args.size() > max_count))
     {
-      throw InvocationException("No matching signature: " +
-                                Roo::Value::vector(args)->to_string());
+      throw InvocationException::no_matching_signature(*this, args);
     }
 
     return exec_body(ctx, args);
@@ -609,8 +607,7 @@ namespace Roo
     const size_t max_count = arg_binding.size();
     if (args.size() < min_count || (!rest_binding && args.size() > max_count))
     {
-      throw InvocationException("No matching signature: " +
-                                Roo::Value::vector(args)->to_string());
+      throw InvocationException::no_matching_signature(*this, args);
     }
 
     return exec_body_in_context(ctx, args);
