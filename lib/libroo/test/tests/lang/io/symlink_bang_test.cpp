@@ -37,8 +37,8 @@ TEST_F(SymlinkBang, creates_and_reads_symbolic_link)
             "true");
   EXPECT_EQ(linked_runtime.eval(R"((roo.io/slurp! "links/source.txt"))")->to_string(),
             R"("linked contents")");
-  EXPECT_EQ(linked_runtime.eval(R"((roo.io/read-link! "links/source.txt"))")->to_string(),
-            "\"" + source.lexically_normal().string() + "\"");
+  EXPECT_EQ(linked_runtime.eval(R"((roo.io/read-link! "links/source.txt"))")->str(),
+            source.lexically_normal().string());
 
   std::filesystem::remove_all(root);
 }
