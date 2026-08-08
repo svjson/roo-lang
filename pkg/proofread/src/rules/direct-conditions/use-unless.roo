@@ -16,9 +16,28 @@
        (< 2 (count children))
        (forms/call? (nth children 1) "not" 2)))
 
+(defun replacement
+  "Return a rewrite candidate for `use-unless`."
+  [{:keys [children] :as node}]
+  (case (forms/head-name node)
+    "if" (str "(unless "
+               (forms/form-string (nth children 1))
+               " "
+               (forms/form-string (nth children 3))
+               ")")
+    "when" (str "(unless "
+                (forms/form-string (nth (:children (nth children 1)) 1))
+                " "
+                (forms/form-sequence-string (tail (tail children)))
+                ")")))
+
 (defun check
   "Return a `use-unless` diagnostic for matching nodes."
   [parent {:keys [children] :as node}]
   (when (or (if-empty-then-branch? node)
             (when-negated-condition? node))
-    (diagnostics/make node :use-unless "Use unless")))
+    (diagnostics/make-suggesting
+      node
+      :use-unless
+      "Use unless"
+      [(diagnostics/rewrite node "Rewrite as unless" (replacement node))])))

@@ -8,4 +8,12 @@
   (when (and (= "if" (forms/head-name node))
              (or (= 3 (count children))
                  (forms/nil-node? (nth children 3))))
-    (diagnostics/make node :use-when "Use when")))
+    (diagnostics/make-suggesting
+      node
+      :use-when
+      "Use when"
+      [(diagnostics/rewrite node "Rewrite as when" (str "(when "
+                                                        (forms/form-string (nth children 1))
+                                                        " "
+                                                        (forms/form-string (nth children 2))
+                                                        ")"))])))

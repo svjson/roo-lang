@@ -7,6 +7,14 @@
   "Simple-expression candidate fixture path."
   "assets/rules/simple-expressions/candidates.roo")
 
+(def direct-conditions-when-path
+  "Direct-condition use-when candidate fixture path."
+  "assets/rules/direct-conditions/use-when.roo")
+
+(def direct-conditions-unless-path
+  "Direct-condition use-unless candidate fixture path."
+  "assets/rules/direct-conditions/use-unless-when.roo")
+
 (defun suggestion-summary
   [diagnostic]
   [(:rule diagnostic)
@@ -18,6 +26,13 @@
 (defun suggestions-at
   [line column]
   (map (suggest-command/suggestions-at (source/diagnostics candidates-path)
+                                       line
+                                       column)
+       suggestion-summary))
+
+(defun suggestions-at-path
+  [path line column]
+  (map (suggest-command/suggestions-at (source/diagnostics path)
                                        line
                                        column)
        suggestion-summary))
@@ -72,6 +87,15 @@
            ["Rewrite as not-empty?"]
            ["(not-empty? items)"]]]
         (suggestions-at 23 8))))
+
+(deftest reports-suggestions-for-direct-condition-rules
+  (is (= :use-when
+         (head (head (suggestions-at-path direct-conditions-when-path 4 5))))))
+
+(deftest reports-suggestions-for-direct-unless-rules
+  (is (= :use-unless
+         (head (head (suggestions-at-path direct-conditions-unless-path 4 5))))))
+
 
 (deftest ignores-positions-without-suggestions
   (is (= [] (suggestions-at 1 1)))

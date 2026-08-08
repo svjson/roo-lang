@@ -137,6 +137,18 @@
   [node]
   (str (:form node)))
 
+(defun form-sequence-string
+  "Render form nodes as a single space-separated string.
+
+  Args:
+  - `nodes`: A sequence of AST nodes."
+  [nodes]
+  (when (not-empty? nodes)
+    (reduce nodes
+            (form-string (head nodes))
+            (fn [rendered node]
+              (str rendered " " (form-string node))))))
+
 (defun empty-vector?
   "Test whether an AST node is an empty vector literal.
 
