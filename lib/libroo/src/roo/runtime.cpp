@@ -493,7 +493,7 @@ namespace Roo
     sptr_val inv = lookup(function);
     if (inv->type != Value::Type::FUNCTION)
     {
-      throw new InvocationException(inv->to_string() + " is not executable.");
+      throw InvocationException(inv->to_string() + " is not executable.");
     }
 
     Executable& exec = inv->exec();
