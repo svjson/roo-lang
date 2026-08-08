@@ -1,0 +1,6 @@
+{:name voodoo
+ :version "0.1.0"
+ :description "Terminal layout and motion for Roo: session-managed transient output, with progress bars, spinners, and box/rule/banner rendering planned."
+ :dependencies []
+ :load-roots ["src"]
+ :namespace-roots {voodoo "src"}}

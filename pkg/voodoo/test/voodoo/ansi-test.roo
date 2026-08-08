@@ -1,0 +1,27 @@
+(ns voodoo.ansi-test
+  (:require proof.core
+            [voodoo.ansi :as ansi]))
+
+
+
+;; voodoo.ansi/move-up
+
+(deftest move-up/returns-the-cursor-up-escape-sequence
+  (is (= "[3A"
+         (ansi/move-up 3))))
+
+(deftest move-up-returns-empty-string-for-zero
+  ;; A 0 parameter to CUU is clamped to 1 row by the terminal, not a no-op,
+  ;; so zero must be handled here instead of passed through.
+  (is (= "" (ansi/move-up 0))))
+
+(deftest move-up-returns-empty-string-for-negative
+  (is (= "" (ansi/move-up -1))))
+
+
+
+;; voodoo.ansi/clear-line
+
+(deftest clear-line-returns-the-erase-line-escape-sequence
+  (is (= "[2K"
+         (ansi/clear-line))))

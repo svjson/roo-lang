@@ -1,0 +1,39 @@
+(ns voodoo.ansi)
+
+
+
+;; ANSI Constants
+
+(def ESC "")
+
+
+
+;; Cursor Movement
+
+(defun move-up
+  "Return the ANSI sequence to move the cursor up n rows.
+
+  Args:
+  - `n`: Number of rows to move up.
+
+  Returns:
+  The escape sequence, or \"\" when n is not positive - an ANSI parameter
+  of 0 is clamped to 1 row by the terminal, not treated as a no-op, so a
+  non-positive n must be filtered out here instead."
+  [n]
+  (if (> n 0)
+    (str ESC "[" n "A")
+    ""))
+
+
+
+;; Output
+
+(defun clear-line
+  "Return the ANSI sequence that erases the entire current row without
+  moving the cursor.
+
+  Returns:
+  The escape sequence."
+  []
+  (str ESC "[2K"))

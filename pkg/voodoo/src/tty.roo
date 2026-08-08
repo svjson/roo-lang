@@ -1,0 +1,11 @@
+(ns voodoo.tty)
+
+(defun detect
+  "Stub tty auto-detector. No native check exists yet - see the
+  tty / ANSI-capability detection roadmap item in the voodoo docs. Always
+  resolves true until that lands.
+
+  Returns:
+  `true`."
+  []
+  true)

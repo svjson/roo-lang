@@ -1,0 +1,144 @@
+(ns voodoo.session
+  (:require [voodoo.ansi :as ansi]
+            [voodoo.render :as r]
+            [voodoo.tty :as tty]))
+
+
+
+;; Support functions
+
+(defun ids-from
+  "Return the tail of ids starting at (and including) target-id.
+
+  Returns:
+  The matching tail, or [] if target-id is not present."
+  [ids target-id]
+  (cond
+    (empty? ids) []
+    (= (head ids) target-id) ids
+    :default (ids-from (tail ids) target-id)))
+
+
+
+;; Drawing functions
+
+(defun redraw!
+  "Rewrite widgets one row per widget, starting at the current cursor row.
+
+  `prefix` (typically a move-up escape sequence) is attached to the first
+  row only, since every `prn` call carries its own trailing newline - a
+  bare cursor-move `prn` call with no content would be undone by that
+  newline, so any positioning move must always be attached to real
+  content instead of sent on its own."
+  [session ids prefix]
+  (unless (empty? ids)
+    (let [widget (get (:widgets session) (head ids) nil)]
+      (prn (str prefix "\r" (ansi/clear-line) (:text widget)))
+      (redraw! session (tail ids) ""))))
+
+(defun update!
+  "Replace a widget's spec and re-render it in place.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `handle`: Handle returned by `add!`.
+  - `spec`: New widget spec, replacing the widget's current one entirely.
+
+  Returns:
+  `handle`, unchanged.
+
+  In tty mode, the widget (and anything below it) is erased and redrawn in
+  place. In append mode, a new line is only printed when the rendered text
+  actually changed, so a no-op update doesn't spam output."
+  [session handle spec]
+  (let [text (r/render-widget spec)
+        previous (get (:widgets session) handle nil)]
+    (assoc! (:widgets session) handle {:spec spec :text text})
+    (if (:tty? session)
+      (let [ids (ids-from (:order session) handle)]
+        (redraw! session ids (ansi/move-up (count ids))))
+      (unless (= text (:text previous))
+        (prn text)))
+    handle))
+
+
+
+;; Session content managemnt
+
+(defun add!
+  "Register a new widget in a session and render it immediately.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `spec`: Widget spec map. Requires `:type`.
+
+  Returns:
+  A handle to pass into `update!`/`remove!`."
+  [{:keys [id-seq widgets order tty?] :as session} spec]
+  (let [id (inc id-seq)
+        new-id (keyword (str "voodoo/" id))
+        text (r/render-widget spec)]
+    (assoc! session :id-seq id)
+    (assoc! widgets new-id {:id new-id
+                            :spec spec
+                            :text text})
+    (append! order new-id)
+    (if tty?
+      (prn (str "\r" (ansi/clear-line) text))
+      (prn text))
+    new-id))
+
+
+
+(defun remove!
+  "Remove a widget from a session, erasing it from the terminal.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `handle`: Handle returned by `add!`.
+
+  Returns:
+  `handle`, after removing it from the session.
+
+  In tty mode: clears the widget's row, then redraws any widgets below it
+  so they close the gap. If the removed widget was the bottom-most (or
+  only) widget, its row is cleared but the cursor is not moved back up to
+  reclaim it - every `prn` call ends in a newline, so there is no content
+  left to attach a final positioning move to. This leaves one blank row
+  behind in that case; a known, accepted v1 cosmetic limitation, not a
+  correctness issue - the next output just starts one row lower than the
+  tightest possible layout. In append mode, removal has no visible effect,
+  since nothing was redrawn in place to begin with."
+  [session handle]
+  (let [ids (ids-from (:order session) handle)
+        remaining (tail ids)]
+    (when (:tty? session)
+      (if (empty? remaining)
+        (prn (str (ansi/move-up (count ids)) "\r" (ansi/clear-line)))
+        (redraw! session remaining (ansi/move-up (count ids)))))
+    (dissoc! (:widgets session) handle)
+    (roo/update! session :order (fn [order] (remove order (fn [n] (= n handle)))))
+    handle))
+
+
+
+;; Make function
+
+(defun make
+  "Create a new voodoo session.
+
+  Args:
+  - `opts`: Optional map. `:tty?` forces terminal mode on (true) or off
+    (false); when omitted, resolves via `detect-tty`.
+
+  Returns:
+  A fresh session map. Hold onto it and pass it into add!/update!/remove!."
+  [& {:keys [tty?] :as opts} &rest]
+  {:tty? (case tty?
+           nil (tty/detect)
+           :auto (tty/detect)
+           :default tty?)
+   :widgets {}
+   :order []
+   :id-seq 0})
+

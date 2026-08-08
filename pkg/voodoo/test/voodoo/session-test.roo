@@ -1,0 +1,107 @@
+(ns voodoo.session-test
+  (:require proof.core
+            [proof.syntax :as p]
+            [voodoo.session :as session]))
+
+
+
+;; voodoo.session/make
+
+(deftest make/zero-arg-creates-a-fresh-empty-session
+  (is (= {:tty? true
+          :widgets {}
+          :order []
+          :id-seq 0}
+         (session/make))))
+
+(deftest make/empty-map-arg-creates-a-fresh-empty-session
+  (is (= {:tty? true
+          :widgets {}
+          :order []
+          :id-seq 0}
+         (session/make {}))))
+
+(deftest make/provided-tty?-value-is-respected
+  (p/when []
+    {:tty-enabled-session (session/make {:tty? true})
+     :tty-disabled-session (session/make {:tty? false})})
+
+  (p/then [sessions]
+    (is (= true
+           (-> sessions :tty-enabled-session :tty?)))
+    (is (= false
+           (-> sessions :tty-disabled-session :tty?)))))
+
+(deftest make/tty-capability-resolves-via-the-detect-stub-when-omitted
+  ;; No native tty check exists yet - detect-tty is a stub that always
+  ;; resolves true. This test documents today's stub behavior; it should
+  ;; start failing (and get rewritten) once real detection lands.
+  (is (= true (:tty? (session/make)))))
+
+
+
+;; voodoo.session/add!
+
+(deftest add!/returns-a-handle-and-stores-the-rendered-widget
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    {:widget (session/add! session {:type :label
+                                    :text "Discovering proof tests..."})
+     :session session})
+
+  (p/then [{:keys [widget session]}]
+    (is (= {:tty? false
+            :widgets {:voodoo/1 {:id :voodoo/1
+                                 :spec {:type :label
+                                        :text "Discovering proof tests..."}
+                                 :text "Discovering proof tests..."}}
+            :order [:voodoo/1]
+            :id-seq 1}
+           session))))
+
+;;; ---- From here, continue to adapt tests to be readable and serve as docs
+
+
+(deftest add-assigns-distinct-handles-to-successive-widgets
+  (let [s (session/make {:tty? false})
+        h1 (session/add! s {:type :label :text "first"})
+        h2 (session/add! s {:type :label :text "second"})]
+    (is (not= h1 h2))
+    (is (= [h1 h2] (:order s)))))
+
+(deftest update-replaces-a-widgets-spec-and-rendered-text
+  (let [s (session/make {:tty? false})
+        h (session/add! s {:type :label :text "Discovering proof tests..."})
+        new-spec {:type :label :text "Discovering proof tests... (42 found)"}]
+    (session/update! s h new-spec)
+    (is (= {:spec new-spec :text "Discovering proof tests... (42 found)"}
+           (get (:widgets s) h nil)))))
+
+(deftest update-returns-the-handle-unchanged
+  (let [s (session/make {:tty? false})
+        h (session/add! s {:type :label :text "first"})]
+    (is (= h (session/update! s h {:type :label :text "second"})))))
+
+(deftest remove-deletes-the-widget-from-session-state
+  (let [s (session/make {:tty? false})
+        h (session/add! s {:type :label :text "Discovering proof tests..."})]
+    (session/remove! s h)
+    (is (nil? (get (:widgets s) h nil)))
+    (is (= [] (:order s)))))
+
+(deftest remove-preserves-remaining-widgets-and-their-order
+  (let [s (session/make {:tty? false})
+        h1 (session/add! s {:type :label :text "first"})
+        spec2 {:type :label :text "second"}
+        h2 (session/add! s spec2)]
+    (session/remove! s h1)
+    (is (= [h2] (:order s)))
+    (is (nil? (get (:widgets s) h1 nil)))
+    (is (= {:id :voodoo/2 :spec spec2 :text "second"} (get (:widgets s) h2 nil)))))
+
+(deftest remove-returns-the-handle
+  (let [s (session/make {:tty? false})
+        h (session/add! s {:type :label :text "first"})]
+    (is (= h (session/remove! s h)))))

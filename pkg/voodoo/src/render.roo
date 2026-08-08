@@ -1,0 +1,19 @@
+(ns voodoo.render)
+
+
+
+;; Render functions
+
+(defun render-widget
+  "Render a widget spec to its display text.
+
+  Args:
+  - `spec`: Widget spec map. Only `:type :label` is implemented; a label
+    is always a single line - embedded newlines are not supported.
+
+  Returns:
+  The rendered text."
+  [spec]
+  (case (:type spec)
+    :label (:text spec)
+    :default (str spec)))
