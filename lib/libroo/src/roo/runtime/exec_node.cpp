@@ -1,6 +1,7 @@
 
 #include "roo/runtime/exec_node.h"
 
+#include <exception>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -277,7 +278,19 @@ namespace Roo
               {
                 args.push_back(exec(ctx, *arg));
               }
-              auto retval = sig->invoke(ctx, args);
+              sptr_val retval;
+              try
+              {
+                retval = sig->invoke(ctx, args);
+              }
+              catch (const RooException& e)
+              {
+                if (auto enriched = e.with_callee(*x))
+                {
+                  std::rethrow_exception(enriched);
+                }
+                throw;
+              }
 
               return retval;
             }

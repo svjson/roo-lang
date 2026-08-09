@@ -41,7 +41,12 @@ TEST_F(Semantic_ErrorHandling, unmatched_call_arity_reports_invocation_exception
 
   // Then
   EXPECT_EQ(message,
-            "Could not apply args: [1 2 3] to signature expecting: [<any>, <any>].");
+            "No matching signature for #'user/add: [1 2 3]\n"
+            "\n"
+            "Expected:\n"
+            "  [<any>, <any>]\n"
+            "Received:\n"
+            "  [<number> <number> <number>]\n");
 }
 
 TEST_F(Semantic_ErrorHandling, wrong_argument_type_reports_type_error)

@@ -479,7 +479,7 @@ TEST_F(NamespaceLoading,
   // Then
   EXPECT_THAT(message, HasSubstr("Error reading 'app.roo'"));
   EXPECT_THAT(message, HasSubstr("Error while calling + at app/utils.roo:3:3"));
-  EXPECT_THAT(message, HasSubstr("Could not apply args"));
+  EXPECT_THAT(message, HasSubstr("No matching signature"));
 }
 
 TEST_F(NamespaceLoading, loads_required_empty_namespace_and_marks_it_as_file_via_ns)

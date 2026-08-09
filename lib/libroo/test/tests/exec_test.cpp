@@ -43,7 +43,7 @@ TEST_F(Executable, invocation_with_incorrect_argument_types_throws_exception)
   }
 
   // Then
-  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+  EXPECT_THAT(msg, HasSubstr("No matching signature"));
 }
 
 TEST_F(Executable, source_diagnostics_are_disabled_by_default)
@@ -62,7 +62,7 @@ TEST_F(Executable, source_diagnostics_are_disabled_by_default)
   }
 
   // Then
-  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+  EXPECT_THAT(msg, HasSubstr("No matching signature"));
   EXPECT_THAT(msg, Not(HasSubstr("Error while calling +")));
   EXPECT_THAT(msg, Not(HasSubstr("<eval>:1:1")));
 }
@@ -85,7 +85,7 @@ TEST_F(Executable, source_diagnostics_include_callee_and_location)
 
   // Then
   EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:1"));
-  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+  EXPECT_THAT(msg, HasSubstr("No matching signature"));
 }
 
 TEST_F(Executable, call_stack_diagnostics_include_nested_call_context)
@@ -107,7 +107,7 @@ TEST_F(Executable, call_stack_diagnostics_include_nested_call_context)
   // Then
   EXPECT_THAT(msg, HasSubstr("Error while calling broken at <eval>:2:1"));
   EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:18"));
-  EXPECT_THAT(msg, HasSubstr("Could not apply args"));
+  EXPECT_THAT(msg, HasSubstr("No matching signature"));
 }
 
 TEST_F(UserFunction, invocation_of_empty_function_returns_nil)

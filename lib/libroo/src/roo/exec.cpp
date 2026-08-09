@@ -340,9 +340,7 @@ namespace Roo
       }
       else
       {
-        throw InvocationException(
-          "Could not apply args: " + Value::vector(args)->to_string() +
-          " to signature expecting: " + this->to_string() + ".");
+        throw NoMatchingSignatureException::no_matching_signature(*this, args);
       }
     }
     else
@@ -454,7 +452,7 @@ namespace Roo
       }
     }
 
-    throw InvocationException::no_matching_signature(*this, args);
+    throw NoMatchingSignatureException::no_matching_signature(*this, args);
   }
 
   Function::Function(uptr_sig signature)
@@ -589,7 +587,7 @@ namespace Roo
     const size_t max_count = arg_binding.size();
     if (args.size() < min_count || (!rest_binding && args.size() > max_count))
     {
-      throw InvocationException::no_matching_signature(*this, args);
+      throw NoMatchingSignatureException::no_matching_signature(*this, args);
     }
 
     return exec_body(ctx, args);
@@ -607,7 +605,7 @@ namespace Roo
     const size_t max_count = arg_binding.size();
     if (args.size() < min_count || (!rest_binding && args.size() > max_count))
     {
-      throw InvocationException::no_matching_signature(*this, args);
+      throw NoMatchingSignatureException::no_matching_signature(*this, args);
     }
 
     return exec_body_in_context(ctx, args);
