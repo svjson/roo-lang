@@ -80,6 +80,7 @@ namespace Roo
     lang_symbols.emplace("capitalize-first", CapitalizeFirstFunction::make());
     lang_symbols.emplace("ceil", CeilFunction::make());
     lang_symbols.emplace("clamp", ClampFunction::make());
+    lang_symbols.emplace("clamp-between", ClampBetweenFunction::make());
     lang_symbols.emplace("callable?", CallablePFunction::make());
     lang_symbols.emplace("comment", CommentForm::make());
     lang_symbols.emplace("concat", ConcatFunction::make());
@@ -93,6 +94,7 @@ namespace Roo
     lang_symbols.emplace("cos", CosFunction::make());
     lang_symbols.emplace("count", CountFunction::make());
     lang_symbols.emplace("dec", DecFunction::make());
+    lang_symbols.emplace("digit?", DigitPFunction::make());
     lang_symbols.emplace("def", DefForm::make());
     lang_symbols.emplace("defun", DefunForm::make());
     lang_symbols.emplace("dissoc", DissocFunction::make());
@@ -117,6 +119,7 @@ namespace Roo
     lang_symbols.emplace("for", ForForm::make());
     lang_symbols.emplace("for-indexed", ForIndexedForm::make());
     lang_symbols.emplace("float", FloatFunction::make());
+    lang_symbols.emplace("float?", FloatPFunction::make());
     lang_symbols.emplace("floor", FloorFunction::make());
     lang_symbols.emplace("get", GetFunction::make());
     lang_symbols.emplace("get-in", GetInFunction::make());
@@ -128,6 +131,7 @@ namespace Roo
     lang_symbols.emplace("include", IncludeFunction::make());
     lang_symbols.emplace("index-of", IndexOfFunction::make());
     lang_symbols.emplace("int", IntFunction::make());
+    lang_symbols.emplace("int?", IntPFunction::make());
     lang_symbols.emplace("interleave", InterleaveFunction::make());
     lang_symbols.emplace("join", JoinFunction::make());
     lang_symbols.emplace("juxt", JuxtFunction::make());
@@ -148,6 +152,7 @@ namespace Roo
     lang_symbols.emplace("name", NameFunction::make());
     lang_symbols.emplace("nil", Constant::NIL);
     lang_symbols.emplace("nil?", NilPFunction::make());
+    lang_symbols.emplace("number", NumberFunction::make());
     lang_symbols.emplace("not", NotFunction::make());
     lang_symbols.emplace("not=", NotEqualsFunction::make());
     lang_symbols.emplace("not-empty?", NotEmptyPFunction::make());

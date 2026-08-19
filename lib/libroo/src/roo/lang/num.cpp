@@ -1,105 +1,61 @@
-
 #include "roo/lang/num.h"
 
-#include "roo/exception.h"
 #include "roo/exec.h"
-#include "roo/runtime/value.h"
-
-#include <cctype>
-#include <cmath>
-#include <cstdint>
-#include <limits>
-#include <stdexcept>
-#include <string>
+#include "roo/runtime/number.h"
 
 namespace Roo
 {
-  namespace
+  /** ClampFunction - roo/clamp */
+  FUNC_IMPL(ClampFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&ClampFunction::exec_clamp))))
+
+  EXEC_BODY(ClampFunction, exec_clamp)
   {
-    sptr_val integral_number(std::int64_t value)
-    {
-      if (value >= std::numeric_limits<std::int32_t>::min() &&
-          value <= std::numeric_limits<std::int32_t>::max())
-      {
-        return Value::number(static_cast<int>(value));
-      }
+    if (args[0]->type == Value::Type::NIL) return Constant::NIL;
 
-      return Value::number(
-        Value::Number{.num_type = Value::NumberType::LONG, .long_value = value});
+    const float value = args[0]->num().get_float();
+    if (args[1]->type != Value::Type::NIL && value < args[1]->num().get_float())
+    {
+      return args[1];
+    }
+    if (args[2]->type != Value::Type::NIL && value > args[2]->num().get_float())
+    {
+      return args[2];
     }
 
-    sptr_val parse_int_string(const std::string& value)
-    {
-      try
-      {
-        size_t parsed = 0;
-        const std::int64_t result = std::stoll(value, &parsed);
-        while (parsed < value.size() &&
-               std::isspace(static_cast<unsigned char>(value[parsed])))
-        {
-          parsed++;
-        }
-        if (parsed != value.size())
-        {
-          return Constant::NIL;
-        }
-        return integral_number(result);
-      }
-      catch (const std::invalid_argument&)
-      {
-        return Constant::NIL;
-      }
-      catch (const std::out_of_range&)
-      {
-        return Constant::NIL;
-      }
-    }
-
-    sptr_val float_to_integral_number(double value)
-    {
-      if (!std::isfinite(value))
-      {
-        return Constant::NIL;
-      }
-
-      const long double min =
-        static_cast<long double>(std::numeric_limits<std::int64_t>::min());
-      const long double max =
-        static_cast<long double>(std::numeric_limits<std::int64_t>::max());
-      const long double candidate = static_cast<long double>(value);
-      if (candidate < min || candidate > max)
-      {
-        return Constant::NIL;
-      }
-
-      return integral_number(static_cast<std::int64_t>(value));
-    }
-  } // namespace
-
-  /** EvenPFunction - roo/even? */
-  FUNC_IMPL(EvenPFunction,
-            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&EvenPFunction::exec_even))))
-
-  EXEC_BODY(EvenPFunction, exec_even)
-  {
-    return std::get<const Value::Number>(args[0]->value).get_int() % 2 == 0
-             ? Constant::BOOL_TRUE
-             : Constant::BOOL_FALSE;
+    return args[0];
   }
 
-  /** IncFunction - roo/inc */
-  FUNC_IMPL(IncFunction,
-            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&IncFunction::exec_inc))))
+  /** ClampBetweenFunction - roo/clamp-between */
+  FUNC_IMPL(ClampBetweenFunction,
+            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
+                 EXEC_DISPATCH(&ClampBetweenFunction::exec_clamp_between))))
 
-  EXEC_BODY(IncFunction, exec_inc)
+  EXEC_BODY(ClampBetweenFunction, exec_clamp_between)
   {
-    if (args[0]->type == Value::Type::NIL)
+    if (args[0]->type == Value::Type::NIL) return Constant::NIL;
+    if (args[1]->type == Value::Type::NIL || args[2]->type == Value::Type::NIL)
     {
-      return Constant::NIL;
+      return args[0];
     }
 
-    return Value::number(args[0]->num() +
-                         Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
+    const float value = std::get<const Value::Number>(args[0]->value).get_float();
+    float low = std::get<const Value::Number>(args[1]->value).get_float();
+    float high = std::get<const Value::Number>(args[2]->value).get_float();
+
+    if (low < high)
+    {
+      if (value <= low) return args[1];
+      if (value >= high) return args[2];
+    }
+    else
+    {
+      if (value >= low) return args[1];
+      if (value <= high) return args[2];
+    }
+
+    return args[0];
   }
 
   /** DecFunction - roo/dec */
@@ -117,43 +73,29 @@ namespace Roo
                          Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
   }
 
-  /** IntFunction - roo/int */
-  FUNC_IMPL(IntFunction,
-            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&IntFunction::exec_to_int))))
+  /** DigitPFunction - roo/digit? */
+  FUNC_IMPL(DigitPFunction,
+            SIG((FN_ARGS((&Type::ANY), (VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&DigitPFunction::exec_digitp))))
 
-  EXEC_BODY(IntFunction, exec_to_int)
+  EXEC_BODY(DigitPFunction, exec_digitp)
   {
-    sptr_val& obj = args[0];
+    for (const auto& arg : args)
+    {
+      if (!is_digit(*arg)) return Constant::BOOL_FALSE;
+    }
+    return Constant::BOOL_TRUE;
+  }
 
-    if (!obj || obj->type == Value::Type::NIL)
-    {
-      return Constant::NIL;
-    }
+  /** EvenPFunction - roo/even? */
+  FUNC_IMPL(EvenPFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&EvenPFunction::exec_even))))
 
-    if (Type::NUMBER.is_type_of(*obj))
-    {
-      const Value::Number& num = std::get<const Value::Number>(obj->value);
-      switch (num.num_type)
-      {
-      case Value::NumberType::INT:
-        return Value::number(num.int_value);
-      case Value::NumberType::LONG:
-        return integral_number(num.long_value);
-      case Value::NumberType::FLOAT:
-      default:
-        return float_to_integral_number(num.float_value);
-      }
-    }
-    else if (Type::CHAR.is_type_of(*obj))
-    {
-      return integral_number(static_cast<std::int64_t>(std::get<char>(obj->value)));
-    }
-    else if (Type::STRING.is_type_of(*obj))
-    {
-      return parse_int_string(obj->str());
-    }
-
-    throw RooException("Cannot convert " + obj->to_string() + " to integer.");
+  EXEC_BODY(EvenPFunction, exec_even)
+  {
+    return std::get<const Value::Number>(args[0]->value).get_int() % 2 == 0
+             ? Constant::BOOL_TRUE
+             : Constant::BOOL_FALSE;
   }
 
   /** FloatFunction - roo/float */
@@ -162,55 +104,68 @@ namespace Roo
 
   EXEC_BODY(FloatFunction, exec_to_float)
   {
-    sptr_val& obj = args[0];
+    return convert_to_float(args[0]);
+  }
 
-    if (!obj || obj->type == Value::Type::NIL)
+  /** FloatPFunction - roo/float? */
+  FUNC_IMPL(FloatPFunction,
+            SIG((FN_ARGS((&Type::ANY), (VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&FloatPFunction::exec_floatp))))
+
+  EXEC_BODY(FloatPFunction, exec_floatp)
+  {
+    for (const auto& arg : args)
+    {
+      if (arg->type != Value::Type::NUMBER ||
+          arg->num().num_type != Value::NumberType::FLOAT)
+      {
+        return Constant::BOOL_FALSE;
+      }
+    }
+    return Constant::BOOL_TRUE;
+  }
+
+  /** IncFunction - roo/inc */
+  FUNC_IMPL(IncFunction,
+            SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&IncFunction::exec_inc))))
+
+  EXEC_BODY(IncFunction, exec_inc)
+  {
+    if (args[0]->type == Value::Type::NIL)
     {
       return Constant::NIL;
     }
 
-    if (Type::NUMBER.is_type_of(*obj))
-    {
-      return Value::number(
-        Value::Number{.num_type = Value::NumberType::FLOAT,
-                      .float_value = std::get<const Value::Number>(obj->value).get_float()});
-    }
-    else if (Type::CHAR.is_type_of(*obj))
-    {
-      return Value::number(
-        Value::Number{.num_type = Value::NumberType::FLOAT,
-                      .float_value = static_cast<float>(std::get<char>(obj->value))});
-    }
-    else if (Type::STRING.is_type_of(*obj))
-    {
-      try
-      {
-        size_t parsed = 0;
-        const std::string value = obj->str();
-        const float result = std::stof(value, &parsed);
-        while (parsed < value.size() &&
-               std::isspace(static_cast<unsigned char>(value[parsed])))
-        {
-          parsed++;
-        }
-        if (parsed != value.size())
-        {
-          return Constant::NIL;
-        }
-        return Value::number(
-          Value::Number{.num_type = Value::NumberType::FLOAT, .float_value = result});
-      }
-      catch (const std::invalid_argument&)
-      {
-        return Constant::NIL;
-      }
-      catch (const std::out_of_range&)
-      {
-        return Constant::NIL;
-      }
-    }
+    return Value::number(args[0]->num() +
+                         Value::Number{.num_type = Value::NumberType::INT, .int_value = 1});
+  }
 
-    throw RooException("Cannot convert " + obj->to_string() + " to float.");
+  /** IntFunction - roo/int */
+  FUNC_IMPL(IntFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&IntFunction::exec_to_int))))
+
+  EXEC_BODY(IntFunction, exec_to_int)
+  {
+    return convert_to_int(args[0]);
+  }
+
+  /** IntPFunction - roo/int? */
+  FUNC_IMPL(IntPFunction,
+            SIG((FN_ARGS((&Type::ANY), (VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&IntPFunction::exec_intp))))
+
+  EXEC_BODY(IntPFunction, exec_intp)
+  {
+    for (const auto& arg : args)
+    {
+      if (arg->type != Value::Type::NUMBER ||
+          (arg->num().num_type != Value::NumberType::INT &&
+           arg->num().num_type != Value::NumberType::LONG))
+      {
+        return Constant::BOOL_FALSE;
+      }
+    }
+    return Constant::BOOL_TRUE;
   }
 
   /** MaxFunction - roo/max */
@@ -246,37 +201,6 @@ namespace Roo
     return args[result_index];
   }
 
-  /** ClampFunction - roo/clamp */
-  FUNC_IMPL(ClampFunction,
-            SIG((FN_ARGS((&Type::NUMBER), (&Type::NUMBER), (&Type::NUMBER)),
-                 EXEC_DISPATCH(&ClampFunction::exec_clamp))))
-
-  EXEC_BODY(ClampFunction, exec_clamp)
-  {
-    if (args[0]->type == Value::Type::NIL || args[1]->type == Value::Type::NIL ||
-        args[2]->type == Value::Type::NIL)
-    {
-      return Constant::NIL;
-    }
-
-    const float value = std::get<const Value::Number>(args[0]->value).get_float();
-    float low = std::get<const Value::Number>(args[1]->value).get_float();
-    float high = std::get<const Value::Number>(args[2]->value).get_float();
-
-    if (low < high)
-    {
-      if (value <= low) return args[1];
-      if (value >= high) return args[2];
-    }
-    else
-    {
-      if (value >= low) return args[1];
-      if (value <= high) return args[2];
-    }
-
-    return args[0];
-  }
-
   /** MinFunction - roo/min */
   FUNC_IMPL(MinFunction,
             SIG((FN_ARGS((&Type::NUMBER), (VARARG, &Type::NUMBER)),
@@ -310,13 +234,27 @@ namespace Roo
     return args[result_index];
   }
 
+  /** NumberFunction - roo/number */
+  FUNC_IMPL(NumberFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&NumberFunction::exec_number))))
+
+  EXEC_BODY(NumberFunction, exec_number)
+  {
+    return convert_to_number(args[0]);
+  }
+
   /** NumberPFunction - roo/number? */
   FUNC_IMPL(NumberPFunction,
-            SIG((FN_ARGS((&Roo::Type::ANY)), EXEC_DISPATCH(&NumberPFunction::exec_num))))
+            SIG((FN_ARGS((&Type::ANY), (VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&NumberPFunction::exec_num))))
 
   EXEC_BODY(NumberPFunction, exec_num)
   {
-    return args[0]->type == Value::Type::NUMBER ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+    for (const auto& arg : args)
+    {
+      if (arg->type != Value::Type::NUMBER) return Constant::BOOL_FALSE;
+    }
+    return Constant::BOOL_TRUE;
   }
 
   /** OddPFunction - roo/odd? */

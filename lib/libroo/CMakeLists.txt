@@ -18,6 +18,7 @@ set(roo_SOURCES
   src/roo/runtime/file_walk.cpp
   src/roo/runtime/node.cpp
   src/roo/runtime/lower.cpp
+  src/roo/runtime/number.cpp
   src/roo/runtime/pool.cpp
   src/roo/runtime/pretty_print.cpp
   src/roo/runtime/seq.cpp

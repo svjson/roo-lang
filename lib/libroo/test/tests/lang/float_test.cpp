@@ -16,10 +16,10 @@ namespace
   }
 } // namespace
 
-TEST_F(FloatFunction, char_to_float)
+TEST_F(FloatFunction, char_to_float_parses_character_text)
 {
-  expect_float_value(runtime.eval("(float 'c')"), 99.0f);
-  expect_float_value(runtime.eval("(float ' ')"), 32.0f);
+  expect_float_value(runtime.eval("(float '8')"), 8.0f);
+  expect_float_value(runtime.eval("(float '0')"), 0.0f);
 }
 
 TEST_F(FloatFunction, number_to_float)
@@ -32,6 +32,8 @@ TEST_F(FloatFunction, string_to_float)
 {
   expect_float_value(runtime.eval(R"((float "16"))"), 16.0f);
   expect_float_value(runtime.eval(R"((float "-16.5"))"), -16.5f);
+  expect_float_value(runtime.eval(R"((float :1))"), 1.0f);
+  expect_float_value(runtime.eval(R"((float :-1))"), -1.0f);
   expect_float_value(runtime.eval(R"((float " 16.25 "))"), 16.25f);
 }
 

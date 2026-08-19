@@ -902,7 +902,8 @@ namespace Roo
       case AST::NumberType::LONG:
         return Value::number(n.long_value());
       case AST::NumberType::FLOAT:
-        return Value::number(n.float_value());
+        return Value::number(Value::Number{.num_type = Value::NumberType::FLOAT,
+                                           .float_value = n.float_value()});
       };
       throw RooException("to_rt_value: Unsupported AST::NumberType: " + obj.to_string());
     }
@@ -950,7 +951,8 @@ namespace Roo
       case AST::NumberType::LONG:
         return Value::number(n.long_value());
       case AST::NumberType::FLOAT:
-        return Value::number(n.float_value());
+        return Value::number(Value::Number{.num_type = Value::NumberType::FLOAT,
+                                           .float_value = n.float_value()});
       };
       throw RooException("to_rt_value: Unsupported AST::NumberType: " + obj->to_string());
     }

@@ -40,10 +40,10 @@ namespace
   }
 } // namespace
 
-TEST_F(IntFunction, char_to_int)
+TEST_F(IntFunction, char_to_int_parses_character_text)
 {
-  expect_int_value(runtime.eval("(int 'c')"), 99);
-  expect_int_value(runtime.eval("(int ' ')"), 32);
+  expect_int_value(runtime.eval("(int '8')"), 8);
+  expect_int_value(runtime.eval("(int '0')"), 0);
 }
 
 TEST_F(IntFunction, number_to_int)
@@ -117,6 +117,9 @@ TEST_F(IntFunction, string_to_int)
 {
   expect_int_value(runtime.eval(R"((int "16"))"), 16);
   expect_int_value(runtime.eval(R"((int "-16"))"), -16);
+  expect_int_value(runtime.eval(R"((int "48.12"))"), 48);
+  expect_int_value(runtime.eval(R"((int :1))"), 1);
+  expect_int_value(runtime.eval(R"((int :-1))"), -1);
   expect_int_value(runtime.eval(R"((int " 16 "))"), 16);
 }
 

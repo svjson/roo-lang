@@ -27,17 +27,19 @@ TEST_F(ClampFunction, clamps_to_high_when_above_range)
   EXPECT_EQ(*runtime.eval("(clamp 9 3 7)"), *Roo::Value::number(7));
 }
 
-TEST_F(ClampFunction, handles_reversed_range)
+TEST_F(ClampFunction, clamp_uses_fixed_bounds)
 {
-  EXPECT_EQ(*runtime.eval("(clamp 5 10 0)"), *Roo::Value::number(5));
-  EXPECT_EQ(*runtime.eval("(clamp -1 10 0)"), *Roo::Value::number(0));
-  EXPECT_EQ(*runtime.eval("(clamp 11 10 0)"), *Roo::Value::number(10));
-  EXPECT_EQ(*runtime.eval("(clamp 0.5 1 0)"), *Roo::Value::number(0.5f));
+  EXPECT_EQ(*runtime.eval("(clamp 5 10 0)"), *Roo::Value::number(10));
+  EXPECT_EQ(*runtime.eval("(clamp -1 0 10)"), *Roo::Value::number(0));
+  EXPECT_EQ(*runtime.eval("(clamp 11 0 10)"), *Roo::Value::number(10));
 }
 
-TEST_F(ClampFunction, nil_returns_nil)
+TEST_F(ClampFunction, clamp_allows_nil_bounds)
 {
-  EXPECT_EQ(*runtime.eval("(clamp nil 0 10)"), *Roo::Constant::NIL);
-  EXPECT_EQ(*runtime.eval("(clamp 5 nil 10)"), *Roo::Constant::NIL);
-  EXPECT_EQ(*runtime.eval("(clamp 5 0 nil)"), *Roo::Constant::NIL);
+  EXPECT_EQ(*runtime.eval("(clamp 12 nil nil)"), *Roo::Value::number(12));
+  EXPECT_EQ(*runtime.eval("(clamp 12 nil 10)"), *Roo::Value::number(10));
+  EXPECT_EQ(*runtime.eval("(clamp 12 10 nil)"), *Roo::Value::number(12));
+  EXPECT_EQ(*runtime.eval("(clamp 8 10 nil)"), *Roo::Value::number(10));
+  EXPECT_EQ(*runtime.eval("(clamp 8 nil 10)"), *Roo::Value::number(8));
+  EXPECT_EQ(*runtime.eval("(clamp nil nil nil)"), *Roo::Constant::NIL);
 }
