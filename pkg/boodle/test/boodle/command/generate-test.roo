@@ -1,5 +1,6 @@
 (ns boodle.command.generate-test
   (:require proof.core
+            [proof.syntax :as p]
             [boodle.command.generate :as generate]
             [boodle.model :as model]
             [roo.io :as io]))
@@ -26,116 +27,119 @@
                                       :doc "Numbers to add."}]
                             :returns {:doc "The sum."}}]}]})
 
-(deftest parses-generate-options
-  (is (= {:format :github-pages
-          :out "build/docs"
-          :navigation-style :breadcrumbs
-          :package-groups []
-          :indexes ["roo.edn" "zoology.edn"]
-          :errors []}
-         (generate/parse-args ["--format" "github-pages"
-                               "--out" "build/docs"
-                               "roo.edn"
-                               "zoology.edn"]))))
+
+;; boodle.command.generate/parse-package-group
 
-(deftest parses-package-group-options
-  (is (= {:format :github-pages
-          :out "build/docs"
-          :navigation-style :breadcrumbs
-          :package-groups [(model/package-group {:title "The Roo Language"
-                                                :package-ids ["roo"]})
-                           (model/package-group {:title "Packages"
-                                                :package-ids ["*"]})]
-          :indexes ["roo.edn"]
-          :errors []}
-         (generate/parse-args ["--out" "build/docs"
-                               "--package-group" "The Roo Language:roo"
-                               "--package-group" "Packages:*"
-                               "roo.edn"]))))
+(deftest parse-package-group/parses-title-and-package-ids
+  (is (= {:value (model/package-group
+                   {:title "The Roo Language"
+                    :package-ids ["roo" "lookup"]})}
+         (generate/parse-package-group
+          ["The Roo Language:roo" "lookup"]))))
 
-(deftest parses-navigation-options
-  (is (= {:format :github-pages
-          :out "build/docs"
-          :navigation-style :up
-          :package-groups []
-          :indexes ["roo.edn"]
-          :errors []}
-         (generate/parse-args ["--out" "build/docs"
-                               "--navigation" "up"
-                               "roo.edn"]))))
+(deftest parse-package-group/reports-an-invalid-value
+  (is (= {:error {:kind :invalid-package-group
+                  :value "roo,lookup"
+                  :expected "title:id[,id]"}}
+         (generate/parse-package-group ["roo" "lookup"]))))
 
-(deftest reports-generate-argument-errors
-  (is (= {:format :github-pages
-          :out nil
-          :navigation-style :breadcrumbs
-          :package-groups []
-          :indexes []
-          :errors ["Unknown output format: html"
-                   "Missing output directory"
-                   "Missing lookup index file"]}
-         (generate/parse-args ["--format" "html"])))
-  (is (= {:format :github-pages
-          :out "build/docs"
-          :navigation-style :breadcrumbs
-          :package-groups []
-          :indexes ["roo.edn"]
-          :errors ["Unknown navigation style: trail"]}
-         (generate/parse-args ["--out" "build/docs"
-                               "--navigation" "trail"
-                               "roo.edn"]))))
 
-(deftest expands-package-group-wildcards
-  (let [catalog (model/catalog
-                  [(model/package {:id "roo" :name "roo"})
-                   (model/package {:id "loom" :name "loom"})
-                   (model/package {:id "proof" :name "proof"})
-                   (model/package {:id "zoology" :name "zoology"})])
-        grouped (generate/catalog-with-package-groups
-                  catalog
-                  [(model/package-group {:title "The Roo Language"
-                                        :package-ids ["roo"]})
-                   (model/package-group {:title "Core Libraries"
-                                        :package-ids ["loom" "proof"]})
-                   (model/package-group {:title "Packages"
-                                        :package-ids ["*"]})])]
+
+;; boodle.command.generate/catalog-with-package-groups
+
+(deftest catalog-with-package-groups/expands-wildcards
+  (p/when []
+    (generate/catalog-with-package-groups
+     (model/catalog
+      [(model/package {:id "roo" :name "roo"})
+       (model/package {:id "loom" :name "loom"})
+       (model/package {:id "proof" :name "proof"})
+       (model/package {:id "zoology" :name "zoology"})])
+     [(model/package-group {:title "The Roo Language"
+                            :package-ids ["roo"]})
+      (model/package-group {:title "Core Libraries"
+                            :package-ids ["loom" "proof"]})
+      (model/package-group {:title "Packages"
+                            :package-ids ["*"]})]))
+
+  (p/then [catalog]
     (is (= [(model/package-group {:title "The Roo Language"
                                  :package-ids ["roo"]})
             (model/package-group {:title "Core Libraries"
-                                 :package-ids ["loom" "proof"]})
+                                  :package-ids ["loom" "proof"]})
             (model/package-group {:title "Packages"
-                                 :package-ids ["zoology"]})]
-           (:package-groups grouped)))))
+                                  :package-ids ["zoology"]})]
+           (:package-groups catalog)))))
 
-(deftest generates-github-pages-files
-  (let [root "boodle-generate-test"
-        index-file (io/join-path root "roo.edn")
-        output-dir (io/join-path root "docs")]
-    (when (io/exists? root)
-      (io/remove-tree! root))
-    (io/spit-edn! index-file lookup-index)
-    (let [result (generate/run! ["--out" output-dir index-file])]
-      (is (= :text (:format result)))
-      (is (= ["boodle: wrote 8 files to boodle-generate-test/docs"]
-             (:output result)))
-      (is (= "---\nlayout: "
-             (substr (io/slurp! (io/join-path output-dir "packages/roo/versions/0.1.0/index.md"))
-                     0
-                     12))))
+
+
+;; boodle.command.generate/execute!
+
+(deftest execute!/generates-github-pages-files
+  (p/given
+    (let [root "boodle-generate-test"
+          index-file (io/join-path root "roo.edn")]
+      (when (io/exists? root)
+        (io/remove-tree! root))
+      (io/spit-edn! index-file lookup-index)
+      {:root root
+       :index-file index-file
+       :output-dir (io/join-path root "docs")}))
+
+  (p/when [{:keys [root index-file output-dir]}]
+    {:root root
+     :result (select-keys
+              (generate/execute!
+               {:cli-trooper/print! (fn [line] nil)}
+               {:format :github-pages
+                :out output-dir
+                :navigation-style :breadcrumbs
+                :package-groups []
+                :indexes [index-file]})
+              [:format :output])
+     :package-page-prefix
+     (substr (io/slurp! (io/join-path
+                         output-dir
+                         "packages/roo/versions/0.1.0/index.md"))
+             0
+             12)})
+
+  (p/then [{:keys [root result package-page-prefix]}]
+    (is (= {:format :text
+            :output ["boodle: wrote 8 files to boodle-generate-test/docs"]}
+           result))
+    (is (= "---\nlayout: " package-page-prefix))
     (io/remove-tree! root)))
 
-(deftest includes-materialized-package-versions
-  (let [root "boodle-generate-versions-test"
-        index-file (io/join-path root "roo.edn")
-        output-dir (io/join-path root "docs")
-        old-version-page (io/join-path output-dir
-                                       "packages/roo/versions/0.0.9/index.md")
-        package-page (io/join-path output-dir
-                                   "packages/roo/versions/0.1.0/index.md")]
-    (when (io/exists? root)
-      (io/remove-tree! root))
-    (io/spit! old-version-page "old version")
-    (io/spit-edn! index-file lookup-index)
-    (generate/run! ["--out" output-dir index-file])
+(deftest execute!/includes-materialized-package-versions
+  (p/given
+    (let [root "boodle-generate-versions-test"
+          index-file (io/join-path root "roo.edn")
+          output-dir (io/join-path root "docs")]
+      (when (io/exists? root)
+        (io/remove-tree! root))
+      (io/spit! (io/join-path output-dir
+                              "packages/roo/versions/0.0.9/index.md")
+                "old version")
+      (io/spit-edn! index-file lookup-index)
+      {:root root
+       :index-file index-file
+       :output-dir output-dir}))
+
+  (p/when [{:keys [root index-file output-dir]}]
+    (generate/execute!
+     {:cli-trooper/print! (fn [line] nil)}
+     {:format :github-pages
+      :out output-dir
+      :navigation-style :breadcrumbs
+      :package-groups []
+      :indexes [index-file]})
+    {:root root
+     :package-page
+     (io/slurp! (io/join-path output-dir
+                              "packages/roo/versions/0.1.0/index.md"))})
+
+  (p/then [{:keys [root package-page]}]
     (is (= (str "---\n"
                 "layout: reference\n"
                 "title: roo 0.1.0\n"
@@ -159,5 +163,5 @@
                 "| -------------------------- | ------- |\n"
                 "| [roo](namespaces/roo.html) | 1       |"
                 "\n")
-           (io/slurp! package-page)))
+           package-page))
     (io/remove-tree! root)))

@@ -1,0 +1,79 @@
+(ns boodle.scenario-test
+  (:require proof.core
+            [proof.syntax :as p]
+            [boodle.cli :as boodle]
+            [cli-trooper :as cli-trooper]))
+
+
+
+;; cli-trooper/parse -- generate command -- happy path
+
+(deftest generate/parses-the-real-boodle-command
+  (p/when []
+    (cli-trooper/parse
+     boodle/application
+     {:args ["--format"
+             "github-pages"
+             "generate"
+             "roo.edn"
+             "--package-group"
+             "The Roo Language:roo,lookup"
+             "lookup.edn"
+             "--navigation"
+             "up"
+             "-o"
+             "build/docs"
+             "--package-group"
+             "Packages:*"]}))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :navigation-style :up
+                      :package-groups
+                      [{:kind :boodle/package-group
+                        :title "The Roo Language"
+                        :package-ids ["roo" "lookup"]}
+                       {:kind :boodle/package-group
+                        :title "Packages"
+                        :package-ids ["*"]}]
+                      :out "build/docs"
+                      :indexes ["roo.edn" "lookup.edn"]}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper/parse -- generate command -- error handling
+
+(deftest generate/reports-real-boodle-command-errors
+  (p/when []
+    (cli-trooper/parse boodle/application
+                       {:args ["generate"
+                               "--format"
+                               "html"
+                               "--package-group"
+                               "roo,lookup"]}))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:navigation-style :breadcrumbs
+                      :out nil
+                      :indexes []}
+            :errors [{:kind :invalid-enum-value
+                      :command "generate"
+                      :argument "--format"
+                      :value "html"
+                      :expected ["github-pages"]}
+                     {:kind :invalid-package-group
+                      :command "generate"
+                      :argument "--package-group"
+                      :value "roo,lookup"
+                      :expected "title:id[,id]"}
+                     {:kind :missing-required-option
+                      :command "generate"
+                      :argument "--out"}
+                     {:kind :missing-positional
+                      :command "generate"
+                      :argument "index-file"}]}
+           parsed))))

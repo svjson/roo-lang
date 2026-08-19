@@ -3,7 +3,7 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
-PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
 BOODLE_PACKAGE="$PACKAGE_STAGE_ROOT/boodle"
 
 fail()
@@ -43,10 +43,8 @@ if ! HELP_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" --help); then
 fi
 assert_eq "boodle --help output" \
   "boodle: generate reference documentation
-Usage: boodle [--help|--version]
-       boodle generate [-f|--format github-pages] [--navigation breadcrumbs|up|none] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...
 
-Formats: github-pages" \
+Usage: boodle generate <index-file>... [-f,--format <github-pages>] [--navigation <breadcrumbs|up|none>] [--package-group <title:id[,id]>]... -o,--out <dir>" \
   "$HELP_OUTPUT"
 
 if ! VERSION_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" --version); then
@@ -55,6 +53,22 @@ fi
 assert_eq "boodle --version output" \
   "boodle 0.1.0" \
   "$VERSION_OUTPUT"
+
+if INVALID_OUTPUT=$(
+  "$ROO" "$BOODLE_PACKAGE" generate --format html 2>&1
+); then
+  fail "invalid boodle invocation succeeded"
+else
+  INVALID_STATUS=$?
+fi
+assert_eq "boodle invalid invocation exit status" \
+  "2" \
+  "$INVALID_STATUS"
+assert_eq "boodle invalid invocation diagnostics" \
+  "Invalid value for --format: html. Expected: github-pages.
+Missing required option: --out.
+Missing required argument: index-file." \
+  "$INVALID_OUTPUT"
 
 printf '%s\n' "==> Testing boodle generate"
 ROOT="/tmp/boodle-cli-$$"

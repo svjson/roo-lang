@@ -6,211 +6,38 @@
             [boodle.topology.reference :as reference]
             [roo.io :as io]))
 
-(def usage-line
-  "Usage line for the `boodle generate` command."
-  "       boodle generate [-f|--format github-pages] [--navigation breadcrumbs|up|none] [--package-group <title>:<id>[,<id>]] -o|--out <dir> <index-file>...")
-
-(defun split-package-ids
-  "Split a comma-separated package id list.
-
-  Args:
-  - `text`: Comma-separated package ids.
-
-  Returns:
-  A vector of trimmed package ids."
-  [text]
-  (if-let [separator (find-index text
-                                 (fn [ch]
-                                   (= "," (str ch))))]
-    (concat [(trim (substr text 0 separator))]
-            (split-package-ids (substr text (+ separator 1) (count text))))
-    [(trim text)]))
-
 (defun parse-package-group
-  "Parse a package group command line value.
+  "Parse one Boodle package-group option value.
 
   Args:
-  - `text`: Group value formatted as `title:id,id`.
+  - `parts`: Package-group segments split at the configured comma delimiter.
 
   Returns:
-  A Boodle package group, or nil when TEXT is invalid."
-  [text]
-  (when-let [separator (find-index text
+  A cli-trooper conversion result containing a Boodle package-group map, or an
+  `:invalid-package-group` diagnostic."
+  [parts]
+  (let [raw (apply join (concat "," parts))
+        first-part (head parts)]
+    (if-let [separator (find-index first-part
                                    (fn [ch]
                                      (= ":" (str ch))))]
-    (let [title (trim (substr text 0 separator))
-          package-ids (remove (split-package-ids (substr text
-                                                        (+ separator 1)
-                                                        (count text)))
-                              blank?)]
-      (unless (or (blank? title) (empty? package-ids))
-        (model/package-group {:title title
-                              :package-ids package-ids})))))
-
-(defun add-package-group-option
-  "Parse and append a package group option.
-
-  Args:
-  - `args`: Current argument list.
-  - `options`: Accumulated options map.
-
-  Returns:
-  Updated options map after consuming `--package-group` and its value."
-  [args options]
-  (let [spec (nth args 1)
-        group (when spec
-                (parse-package-group spec))]
-    (cond
-      (nil? spec)
-      (assoc options :errors (append (:errors options)
-                                     "Missing package group after --package-group"))
-
-      group
-      (parse-args-step (tail (tail args))
-                       (assoc options
-                              :package-groups
-                              (append (:package-groups options) group)))
-
-      true
-      (parse-args-step (tail (tail args))
-                       (assoc options
-                              :errors
-                              (append (:errors options)
-                                      (str "Invalid package group: " spec)))))))
-
-(defun navigation-style-option
-  "Return the navigation style keyword for TEXT.
-
-  Args:
-  - `text`: Command line navigation style value.
-
-  Returns:
-  Navigation style keyword, or nil when TEXT is unknown."
-  [text]
-  (case text
-    "breadcrumbs" :breadcrumbs
-    "up" :up
-    "none" :none
-    :default nil))
-
-(defun add-navigation-option
-  "Parse and set a navigation style option.
-
-  Args:
-  - `args`: Current argument list.
-  - `options`: Accumulated options map.
-
-  Returns:
-  Updated options map after consuming `--navigation` and its value."
-  [args options]
-  (let [style (nth args 1)
-        navigation-style (when style
-                           (navigation-style-option style))]
-    (cond
-      (nil? style)
-      (assoc options :errors (append (:errors options)
-                                     "Missing navigation style after --navigation"))
-
-      navigation-style
-      (parse-args-step (tail (tail args))
-                       (assoc options :navigation-style navigation-style))
-
-      true
-      (parse-args-step (tail (tail args))
-                       (assoc options
-                              :errors
-                              (append (:errors options)
-                                      (str "Unknown navigation style: " style)))))))
-
-(defun parse-args-step
-  "Parse Boodle generate arguments.
-
-  Args:
-  - `args`: Remaining command arguments.
-  - `options`: Accumulated options map.
-
-  Returns:
-  Updated options map."
-  [args options]
-  (let [arg (head args)]
-    (cond
-
-      (nil? arg)
-      options
-
-      (or (= arg "-f")
-          (= arg "--format"))
-      (let [format (nth args 1)]
-        (cond
-          (nil? format)
-          (assoc options :errors (append (:errors options)
-                                         (str "Missing format after " arg)))
-
-          (= format "github-pages")
-          (parse-args-step (tail (tail args))
-                           (assoc options :format :github-pages))
-
-          true
-          (parse-args-step (tail (tail args))
-                           (assoc options
-                                  :errors
-                                  (append (:errors options)
-                                          (str "Unknown output format: "
-                                               format))))))
-
-      (or (= arg "-o")
-          (= arg "--out"))
-      (if-let [out (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options :out out))
-        (assoc options :errors (append (:errors options)
-                                       (str "Missing directory after " arg))))
-
-      (= arg "--package-group")
-      (add-package-group-option args options)
-
-      (= arg "--navigation")
-      (add-navigation-option args options)
-
-      (= "-" (substr arg 0 1))
-      (parse-args-step (tail args)
-                       (assoc options
-                              :errors
-                              (append (:errors options)
-                                      (str "Unknown generate option: " arg))))
-
-      true
-      (parse-args-step (tail args)
-                       (assoc options
-                              :indexes
-                              (append (:indexes options) arg))))))
-
-(defun parse-args
-  "Parse arguments for the `boodle generate` command.
-
-  Args:
-  - `args`: Arguments after the `generate` command name.
-
-  Returns:
-  An options map containing `:format`, `:out`, `:indexes`, and `:errors`."
-  [args]
-  (let [options (parse-args-step args
-                                 {:format :github-pages
-                                  :out nil
-                                  :navigation-style :breadcrumbs
-                                  :package-groups []
-                                  :indexes []
-                                  :errors []})
-        options (cond-> options
-
-                        (nil? (:out options))
-                        (assoc :errors (append (:errors options)
-                                               "Missing output directory")))]
-    (cond-> options
-
-            (empty? (:indexes options))
-            (assoc :errors (append (:errors options)
-                                   "Missing lookup index file")))))
+      (let [title (trim (substr first-part 0 separator))
+            first-id (trim (substr first-part
+                                   (+ separator 1)
+                                   (count first-part)))
+            package-ids (remove (concat [first-id]
+                                        (for [id (tail parts)]
+                                          (trim id)))
+                                blank?)]
+        (if (or (blank? title) (empty? package-ids))
+          {:error {:kind :invalid-package-group
+                   :value raw
+                   :expected "title:id[,id]"}}
+          {:value (model/package-group {:title title
+                                        :package-ids package-ids})}))
+      {:error {:kind :invalid-package-group
+               :value raw
+               :expected "title:id[,id]"}})))
 
 (defun read-catalog
   "Read lookup indexes into a Boodle catalog.
@@ -421,19 +248,45 @@
     (case (:format options)
       :github-pages (github-pages/files catalog))))
 
-(defun run!
-  "Run the `boodle generate` command.
+(defun execute!
+  "Generate Boodle documentation from fully parsed command options.
 
   Args:
-  - `args`: Arguments after the `generate` command name.
+  - `context`: The cli-trooper invocation context. An optional
+    `:cli-trooper/print!` function replaces the default output printer.
+  - `options`: Parsed Boodle generate options.
 
   Returns:
-  A result map containing parse errors or generated output details."
-  [args]
-  (let [options (parse-args args)]
-    (if (not-empty? (:errors options))
-      {:errors (:errors options)}
-      (let [written (files/write! (:out options) (generated-files options))]
-        {:format :text
-         :output [(str "boodle: wrote " (count written) " files to " (:out options))]
-         :files written}))))
+  A result map containing the output line and written file maps."
+  [context options]
+  (let [written (files/write! (:out options) (generated-files options))
+        output (str "boodle: wrote " (count written) " files to " (:out options))
+        print! (get context :cli-trooper/print! prn!)]
+    (print! output)
+    {:format :text
+     :output [output]
+     :files written}))
+
+(def command
+  "cli-trooper declaration for Boodle's `generate` command."
+  {:description "Generate reference documentation."
+   :execute! execute!
+   :flags {["f" "format"] {:type :enum
+                              :values ["github-pages"]
+                              :default :github-pages}
+           "navigation" {:type :enum
+                          :values ["breadcrumbs" "up" "none"]
+                          :destination :navigation-style
+                          :default :breadcrumbs}
+           "package-group" {:type :package-group
+                            :name "title:id[,id]"
+                            :delimiter ","
+                            :parse parse-package-group
+                            :repeatable? true
+                            :destination :package-groups}
+           ["o" "out"] {:type :dir
+                          :required? true}}
+   :positional [{:type :file
+                 :name "index-file"
+                 :destination :indexes
+                 :repeatable? true}]})
