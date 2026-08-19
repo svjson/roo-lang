@@ -370,6 +370,28 @@ namespace Roo::Dict
     return {nullptr, nullptr};
   }
 
+  void merge_map_content(sptr_val_v& content, const sptr_val_v& other)
+  {
+    for (size_t other_i = 0; other_i < other.size(); other_i += 2)
+    {
+      bool found = false;
+      for (size_t content_i = 0; content_i < content.size(); content_i += 2)
+      {
+        if (*content[content_i] == *other[other_i])
+        {
+          content[content_i + 1] = other[other_i + 1];
+          found = true;
+          break;
+        }
+      }
+      if (!found)
+      {
+        content.push_back(other[other_i]);
+        content.push_back(other[other_i + 1]);
+      }
+    }
+  }
+
   sptr_val shallow_copy(const sptr_val& source)
   {
     if (Type::COMPLEX.is_type_of(*source))

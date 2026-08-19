@@ -33,6 +33,26 @@ TEST_F(UpdateBangFunction, passes_extra_args_to_update_function)
   EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:count 17}");
 }
 
+TEST_F(UpdateBangFunction, vector_shorthand_lowers_special_forms)
+{
+  runtime.eval("(def my-map {:my-key nil})");
+
+  auto result = runtime.eval("(update! my-map :my-key [or 7])");
+
+  EXPECT_EQ(result->to_string(), "{:my-key 7}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:my-key 7}");
+}
+
+TEST_F(UpdateBangFunction, vector_shorthand_works_through_thread_first)
+{
+  runtime.eval("(def my-map {:my-key nil})");
+
+  auto result = runtime.eval("(-> my-map (update! :my-key [or 7]))");
+
+  EXPECT_EQ(result->to_string(), "{:my-key 7}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:my-key 7}");
+}
+
 TEST_F(UpdateBangFunction, mutates_sequence_by_index)
 {
   runtime.eval("(def my-vec [1 2 3])");

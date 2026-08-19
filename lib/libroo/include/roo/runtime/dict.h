@@ -40,6 +40,8 @@ namespace Roo::Dict
                                                       const Value& key);
   std::pair<sptr_val, sptr_val> map_entry(sptr_val_v& map_data, const Value& key);
 
+  void merge_map_content(sptr_val_v& content, const sptr_val_v& other);
+
   sptr_val shallow_copy(const sptr_val& source);
   sptr_val assoc_in(const sptr_val& source, const sptr_val_v& path, const sptr_val& value);
   sptr_val dissoc_in(const sptr_val& source, const sptr_val_v& path);

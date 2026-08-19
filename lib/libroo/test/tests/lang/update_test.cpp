@@ -41,6 +41,40 @@ TEST_F(UpdateFunction, passes_extra_args_to_update_function)
   EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:count 2}");
 }
 
+TEST_F(UpdateFunction, vector_shorthand_lowers_special_forms)
+{
+  auto result = runtime.eval("(let [some-sequence [7]]"
+                             "  (update {:my-key nil} :my-key [or (head some-sequence)]))");
+
+  EXPECT_EQ(result->to_string(), "{:my-key 7}");
+}
+
+TEST_F(UpdateFunction, vector_shorthand_preserves_lazy_evaluation)
+{
+  auto result = runtime.eval("(update {:my-key 9} :my-key [or unresolved-fallback])");
+
+  EXPECT_EQ(result->to_string(), "{:my-key 9}");
+}
+
+TEST_F(UpdateFunction, vector_shorthand_works_through_thread_first)
+{
+  auto result = runtime.eval("(-> {:my-key nil} (update :my-key [or 7]))");
+
+  EXPECT_EQ(result->to_string(), "{:my-key 7}");
+}
+
+TEST_F(UpdateFunction, computed_vector_remains_an_eager_runtime_updater_spec)
+{
+  auto result = runtime.eval("(let [updater [+ 10]] (update {:count 2} :count updater))");
+
+  EXPECT_EQ(result->to_string(), "{:count 12}");
+}
+
+TEST_F(UpdateFunction, rejects_a_key_without_an_updater)
+{
+  EXPECT_THROW(runtime.eval("(update {:count 2} :count)"), Roo::InvalidFormException);
+}
+
 TEST_F(UpdateFunction, update_sequence_by_index)
 {
   // Given

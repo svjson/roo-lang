@@ -2,6 +2,7 @@
 #include "roo/lang/struct.h"
 
 #include <roo/runtime/dict.h>
+#include <roo/runtime/exec_node.h>
 #include <roo/runtime/seq.h>
 #include <roo/runtime/value.h>
 
@@ -16,7 +17,7 @@ namespace Roo
 
     struct UpdateCall
     {
-      Executable* updater = nullptr;
+      sptr_val updater;
       sptr_val_v args;
     };
 
@@ -27,7 +28,7 @@ namespace Roo
       UpdateCall call{nullptr, {current_value}};
       if (updater_spec->type != Value::Type::NIL && Type::EXEC.is_type_of(*updater_spec))
       {
-        call.updater = &updater_spec->exec();
+        call.updater = updater_spec;
       }
       else if (updater_spec->type != Value::Type::NIL &&
                updater_spec->type != Value::Type::MAP && Type::SEQ.is_type_of(*updater_spec))
@@ -43,10 +44,10 @@ namespace Roo
         {
           throw TypeError(
             "Updater spec for " + function_name +
-            " must begin with an executable, got: " + spec_parts[0]->to_string());
+            " must begin with a callable value, got: " + spec_parts[0]->to_string());
         }
 
-        call.updater = &spec_parts[0]->exec();
+        call.updater = spec_parts[0];
         call.args.reserve(spec_parts.size());
         for (size_t spec_i = 1; spec_i < spec_parts.size(); spec_i++)
         {
@@ -57,10 +58,206 @@ namespace Roo
       {
         throw TypeError(
           "Updater spec for " + function_name +
-          " must be executable or a sequence, got: " + updater_spec->to_string());
+          " must be callable or a sequence, got: " + updater_spec->to_string());
       }
 
       return call;
+    }
+
+    enum class UpdateMode
+    {
+      COPY_KEY,
+      MUTATE_KEY,
+      COPY_PATH,
+      MUTATE_PATH
+    };
+
+    uptr_exec_node lower_update_form(const SpecialForm* form,
+                                     LowerContext& ctx,
+                                     const sptr_ast_node& ast_node)
+    {
+      sptr_ast_node_v& elements = ast_node->get_children();
+      if (elements.size() < 3)
+      {
+        throw InvalidFormException("Expected a target and at least one updater pair.");
+      }
+      if (elements.size() % 2 != 0)
+      {
+        throw InvalidFormException("Missing updater for key/path '" +
+                                   elements.back()->to_string() + "'.");
+      }
+
+      const std::string current_name = "$update-current";
+      SymbolBinding current_binding(current_name);
+
+      uptr_exec_node_v exec_nodes;
+      exec_nodes.reserve(elements.size() - 1);
+      exec_nodes.push_back(lower_expr(ctx, elements[1]));
+
+      sptr_val_v values;
+      values.reserve(elements.size() / 2);
+      values.push_back(Value::string(current_name));
+
+      for (size_t element_i = 2; element_i < elements.size(); element_i += 2)
+      {
+        exec_nodes.push_back(lower_expr(ctx, elements[element_i]));
+
+        const sptr_ast_node& updater_form = elements[element_i + 1];
+        const bool inline_updater = updater_form->get_type() == Form::VECTOR;
+        values.push_back(Value::boolean(inline_updater));
+
+        if (!inline_updater)
+        {
+          exec_nodes.push_back(lower_expr(ctx, updater_form));
+          continue;
+        }
+
+        const sptr_ast_node_v& updater_parts = updater_form->get_children();
+        if (updater_parts.empty())
+        {
+          throw InvalidFormException("Updater spec cannot be empty.");
+        }
+        if (updater_parts.front()->get_type() == Form::KEYWORD &&
+            updater_parts.size() != 1)
+        {
+          throw InvalidFormException("Keyword updater expects no additional arguments: " +
+                                     updater_form->to_string());
+        }
+
+        auto current_reference = AST::Symbol::make(current_name);
+        current_reference->set_source(updater_form->get_source());
+
+        sptr_ast_node_v call_parts;
+        call_parts.reserve(updater_parts.size() + 1);
+        call_parts.push_back(updater_parts.front());
+        call_parts.push_back(current_reference);
+        call_parts.insert(call_parts.end(), updater_parts.begin() + 1, updater_parts.end());
+
+        auto updater_call = AST::List::make(call_parts);
+        updater_call->set_source(updater_form->get_source());
+
+        ctx.push({});
+        ctx.add_lexical_binding(current_binding);
+        try
+        {
+          exec_nodes.push_back(lower_expr(ctx, updater_call));
+        }
+        catch (...)
+        {
+          ctx.pop();
+          throw;
+        }
+        ctx.pop();
+      }
+
+      return std::make_unique<ExecNode>(
+        ast_node,
+        SpecialFormNode(form, values, std::move(exec_nodes)));
+    }
+
+    sptr_val execute_update_body(Context& ctx,
+                                 SpecialFormNode& snode,
+                                 size_t pair_index,
+                                 const sptr_val& current_value,
+                                 const std::string& function_name)
+    {
+      const size_t updater_node_index = 2 + pair_index * 2;
+      const bool inline_updater = Roo::is_truthy(*snode.values[pair_index + 1]);
+
+      if (!inline_updater)
+      {
+        sptr_val updater_spec = exec(ctx, *snode.exec_nodes[updater_node_index]);
+        UpdateCall call = make_update_call(current_value, updater_spec, function_name);
+        return invoke_callable(ctx, call.updater, call.args);
+      }
+
+      const std::string current_name = snode.values.front()->str();
+      Scope current_scope;
+      current_scope.store(current_name, current_value);
+      ctx.push_context(true, current_scope);
+      try
+      {
+        sptr_val result = exec(ctx, *snode.exec_nodes[updater_node_index]);
+        ctx.pop_context();
+        return result;
+      }
+      catch (...)
+      {
+        ctx.pop_context();
+        throw;
+      }
+    }
+
+    sptr_val_v require_update_path(const sptr_val& path_value,
+                                   const std::string& function_name)
+    {
+      if (path_value->type == Value::Type::NIL || !Type::SEQ.is_type_of(*path_value))
+      {
+        throw TypeError("Path for " + function_name +
+                        " must be a sequence, got: " + path_value->to_string());
+      }
+
+      sptr_val_v path = Roo::get_children(*path_value);
+      if (path.empty())
+      {
+        throw InvocationException("Path for " + function_name + " cannot be empty.");
+      }
+      return path;
+    }
+
+    sptr_val execute_update_form(Context& ctx,
+                                 SpecialFormNode& snode,
+                                 UpdateMode mode,
+                                 const std::string& function_name)
+    {
+      sptr_val result = exec(ctx, *snode.exec_nodes.front());
+      const size_t pair_count = snode.values.size() - 1;
+
+      for (size_t pair_i = 0; pair_i < pair_count; pair_i++)
+      {
+        const size_t key_node_index = 1 + pair_i * 2;
+        sptr_val key_or_path = exec(ctx, *snode.exec_nodes[key_node_index]);
+
+        if (mode == UpdateMode::COPY_PATH || mode == UpdateMode::MUTATE_PATH)
+        {
+          sptr_val_v path = require_update_path(key_or_path, function_name);
+          sptr_val current_value = Dict::get_property_path(result, path);
+          sptr_val updated_value =
+            execute_update_body(ctx, snode, pair_i, current_value, function_name);
+
+          if (mode == UpdateMode::COPY_PATH)
+          {
+            result = Dict::assoc_in(result, path, updated_value);
+          }
+          else
+          {
+            sptr_val target = result;
+            for (size_t path_i = 0; path_i + 1 < path.size(); path_i++)
+            {
+              target = Dict::get_property(target, *path[path_i]);
+            }
+            Dict::set_property(target, path.back(), updated_value);
+          }
+          continue;
+        }
+
+        sptr_val current_value = Dict::get_property(result, key_or_path);
+        sptr_val updated_value =
+          execute_update_body(ctx, snode, pair_i, current_value, function_name);
+
+        if (mode == UpdateMode::COPY_KEY)
+        {
+          sptr_val new_result = Dict::shallow_copy(result);
+          Dict::set_property(new_result, key_or_path, updated_value);
+          result = new_result;
+        }
+        else
+        {
+          Dict::set_property(result, key_or_path, updated_value);
+        }
+      }
+
+      return result;
     }
   } // namespace
 
@@ -226,159 +423,76 @@ namespace Roo
     return args[0];
   }
 
-  /** UpdateFunction - roo/update */
-  FUNC_IMPL(
-    UpdateFunction,
-    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateFunction::exec_update)),
-              (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateFunction::exec_update))))
+  /** UpdateForm - roo/update */
+  SPECIAL_FORM_IMPL(UpdateForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&UpdateForm::execnode_update))))
 
-  EXEC_BODY(UpdateFunction, exec_update)
+  SFORM_LOWER_IMPL(UpdateForm)
   {
-    if (args.size() % 2 == 0)
-    {
-      throw Roo::InvocationException("No updater given for key '" +
-                                     args.back()->to_string() + " '");
-    }
-
-    sptr_val result = args[0];
-    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
-    {
-      sptr_val current_value = Dict::get_property(result, args[update_arg_i]);
-      const sptr_val& updater_spec = args[update_arg_i + 1];
-
-      UpdateCall call = make_update_call(current_value, updater_spec, "update");
-      sptr_val updated_value = call.updater->execute(ctx, call.args);
-      sptr_val new_result = Dict::shallow_copy(result);
-      Dict::set_property(new_result, args[update_arg_i], updated_value);
-      result = new_result;
-    }
-
-    return result;
+    return lower_update_form(this, ctx, ast_node);
   }
 
-  /** UpdateBangFunction - roo/update! */
-  FUNC_IMPL(
-    UpdateBangFunction,
-    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateBangFunction::exec_update_bang)),
-              (FN_ARGS((&Type::SEQ), (&Type::NUMBER), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateBangFunction::exec_update_bang))))
-
-  EXEC_BODY(UpdateBangFunction, exec_update_bang)
+  EXECNODE_BODY(UpdateForm, execnode_update)
   {
-    if (args.size() % 2 == 0)
-    {
-      throw Roo::InvocationException("No updater given for key '" +
-                                     args.back()->to_string() + " '");
-    }
-
-    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
-    {
-      sptr_val current_value = Dict::get_property(args[0], args[update_arg_i]);
-      const sptr_val& updater_spec = args[update_arg_i + 1];
-
-      UpdateCall call = make_update_call(current_value, updater_spec, "update!");
-      sptr_val updated_value = call.updater->execute(ctx, call.args);
-      Dict::set_property(args[0], args[update_arg_i], updated_value);
-    }
-
-    return args[0];
+    return execute_update_form(ctx, snode, UpdateMode::COPY_KEY, "update");
   }
 
-  /** UpdateInFunction - roo/update-in */
-  FUNC_IMPL(
-    UpdateInFunction,
-    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateInFunction::exec_update_in)),
-              (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateInFunction::exec_update_in))))
+  /** UpdateBangForm - roo/update! */
+  SPECIAL_FORM_IMPL(UpdateBangForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&UpdateBangForm::execnode_update_bang))))
 
-  EXEC_BODY(UpdateInFunction, exec_update_in)
+  SFORM_LOWER_IMPL(UpdateBangForm)
   {
-    if (args.size() % 2 == 0)
-    {
-      throw Roo::InvocationException("No updater given for path '" +
-                                     args.back()->to_string() + " '");
-    }
-
-    sptr_val result = args[0];
-    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
-    {
-      const sptr_val& assoc_path_value = args[update_arg_i];
-      if (assoc_path_value->type == Value::Type::NIL ||
-          !Type::SEQ.is_type_of(*assoc_path_value))
-      {
-        throw TypeError("Path for update-in must be a sequence, got: " +
-                        assoc_path_value->to_string());
-      }
-
-      const sptr_val_v assoc_path = Roo::get_children(*assoc_path_value);
-      if (assoc_path.empty())
-      {
-        throw InvocationException("Path for update-in cannot be empty.");
-      }
-
-      sptr_val current_value = Dict::get_property_path(result, assoc_path);
-      const sptr_val& updater_spec = args[update_arg_i + 1];
-
-      UpdateCall call = make_update_call(current_value, updater_spec, "update-in");
-      sptr_val updated_value = call.updater->execute(ctx, call.args);
-      result = Dict::assoc_in(result, assoc_path, updated_value);
-    }
-
-    return result;
+    return lower_update_form(this, ctx, ast_node);
   }
 
-  /** UpdateInBangFunction - roo/update-in! */
-  FUNC_IMPL(
-    UpdateInBangFunction,
-    MULTI_SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateInBangFunction::exec_update_in_bang)),
-              (FN_ARGS((&Type::SEQ), (&Type::ANY), (&Type::ANY), (&VARARG, &Type::ANY)),
-               EXEC_DISPATCH(&UpdateInBangFunction::exec_update_in_bang))))
-
-  EXEC_BODY(UpdateInBangFunction, exec_update_in_bang)
+  EXECNODE_BODY(UpdateBangForm, execnode_update_bang)
   {
-    if (args.size() % 2 == 0)
-    {
-      throw Roo::InvocationException("No updater given for path '" +
-                                     args.back()->to_string() + " '");
-    }
+    return execute_update_form(ctx, snode, UpdateMode::MUTATE_KEY, "update!");
+  }
 
-    for (size_t update_arg_i = 1; update_arg_i < args.size() - 1; update_arg_i += 2)
-    {
-      const sptr_val& assoc_path_value = args[update_arg_i];
-      if (assoc_path_value->type == Value::Type::NIL ||
-          !Type::SEQ.is_type_of(*assoc_path_value))
-      {
-        throw TypeError("Path for update-in! must be a sequence, got: " +
-                        assoc_path_value->to_string());
-      }
+  /** UpdateInForm - roo/update-in */
+  SPECIAL_FORM_IMPL(UpdateInForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&UpdateInForm::execnode_update_in))))
 
-      const sptr_val_v assoc_path = Roo::get_children(*assoc_path_value);
-      if (assoc_path.empty())
-      {
-        throw InvocationException("Path for update-in! cannot be empty.");
-      }
+  SFORM_LOWER_IMPL(UpdateInForm)
+  {
+    return lower_update_form(this, ctx, ast_node);
+  }
 
-      sptr_val current_value = Dict::get_property_path(args[0], assoc_path);
-      const sptr_val& updater_spec = args[update_arg_i + 1];
+  EXECNODE_BODY(UpdateInForm, execnode_update_in)
+  {
+    return execute_update_form(ctx, snode, UpdateMode::COPY_PATH, "update-in");
+  }
 
-      UpdateCall call = make_update_call(current_value, updater_spec, "update-in!");
-      sptr_val updated_value = call.updater->execute(ctx, call.args);
+  /** UpdateInBangForm - roo/update-in! */
+  SPECIAL_FORM_IMPL(UpdateInBangForm,
+                    SIG((FN_ARGS((&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&Type::ANY, NO_EVAL),
+                                 (&VARARG, &Type::ANY, NO_EVAL)),
+                         EXEC_DISPATCH(&UpdateInBangForm::execnode_update_in_bang))))
 
-      sptr_val target = args[0];
-      for (size_t i = 0; i < assoc_path.size() - 1; i++)
-      {
-        target = Dict::get_property(target, *assoc_path[i]);
-      }
+  SFORM_LOWER_IMPL(UpdateInBangForm)
+  {
+    return lower_update_form(this, ctx, ast_node);
+  }
 
-      Dict::set_property(target, assoc_path.back(), updated_value);
-    }
-
-    return args[0];
+  EXECNODE_BODY(UpdateInBangForm, execnode_update_in_bang)
+  {
+    return execute_update_form(ctx, snode, UpdateMode::MUTATE_PATH, "update-in!");
   }
 
   /** GetFunction - roo/get */
@@ -569,28 +683,37 @@ namespace Roo
     for (size_t i = 1; i < args.size(); i++)
     {
       if (args[i]->type == Value::Type::NIL) continue;
-      const sptr_val_v& other = Roo::get_children(*args[i]);
-      for (size_t j = 0; j < other.size(); j += 2)
-      {
-        bool found = false;
-        for (size_t k = 0; k < new_content.size(); k += 2)
-        {
-          if (*new_content[k] == *other[j])
-          {
-            new_content[k + 1] = other[j + 1];
-            found = true;
-            break;
-          }
-        }
-        if (!found)
-        {
-          new_content.push_back(other[j]);
-          new_content.push_back(other[j + 1]);
-        }
-      }
+      Dict::merge_map_content(new_content, Roo::get_children(*args[i]));
     }
 
     return Value::map(std::move(new_content));
+  }
+
+  /** MergeBangFunction - roo/merge! */
+  FUNC_IMPL(MergeBangFunction,
+            SIG((FN_ARGS((&Type::COMPLEX), (&VARARG, &Type::COMPLEX)),
+                 EXEC_DISPATCH(&MergeBangFunction::exec_merge_bang))))
+
+  EXEC_BODY(MergeBangFunction, exec_merge_bang)
+  {
+    sptr_val_v merged_content;
+    if (args.size() > 1)
+    {
+      merged_content = Roo::get_children(*args[1]);
+      for (size_t i = 2; i < args.size(); i++)
+      {
+        if (args[i]->type == Value::Type::NIL) continue;
+        Dict::merge_map_content(merged_content, Roo::get_children(*args[i]));
+      }
+    }
+
+    sptr_val result = args[0]->type == Value::Type::NIL ? Value::map({}) : args[0];
+    for (size_t i = 0; i < merged_content.size(); i += 2)
+    {
+      Dict::set_property(result, merged_content[i], merged_content[i + 1]);
+    }
+
+    return result;
   }
 
   /** ReduceKeyValueFunction - roo/reduce-kv */
@@ -605,13 +728,13 @@ namespace Roo
     bool reducer_first = is_exec_arg(args[0]);
     sptr_val map_arg = reducer_first ? args[1] : args[0];
     sptr_val result = reducer_first ? args[2] : args[1];
-    Executable& reducer = (reducer_first ? args[0] : args[2])->exec();
+    sptr_val reducer = reducer_first ? args[0] : args[2];
 
     for (auto key : Dict::map_sptr_keys(map_arg))
     {
       sptr_val_v reducer_args{result, key, Dict::get_property(map_arg, *key)};
 
-      sptr_val new_result = reducer.execute(ctx, reducer_args);
+      sptr_val new_result = invoke_callable(ctx, reducer, reducer_args);
       if (new_result.get() != result.get())
       {
         result.swap(new_result);

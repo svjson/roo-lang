@@ -27,6 +27,26 @@ TEST_F(UpdateInBangFunction, passes_extra_args_to_update_function)
   EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:nested {:count 17}}");
 }
 
+TEST_F(UpdateInBangFunction, vector_shorthand_lowers_special_forms)
+{
+  runtime.eval("(def my-map {:nested {:value nil}})");
+
+  auto result = runtime.eval("(update-in! my-map [:nested :value] [or 7])");
+
+  EXPECT_EQ(result->to_string(), "{:nested {:value 7}}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:nested {:value 7}}");
+}
+
+TEST_F(UpdateInBangFunction, vector_shorthand_works_through_thread_first)
+{
+  runtime.eval("(def my-map {:nested {:value nil}})");
+
+  auto result = runtime.eval("(-> my-map (update-in! [:nested :value] [or 7]))");
+
+  EXPECT_EQ(result->to_string(), "{:nested {:value 7}}");
+  EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:nested {:value 7}}");
+}
+
 TEST_F(UpdateInBangFunction, mutates_nested_sequence_by_index)
 {
   runtime.eval("(def my-map {:vec [1 2 3]})");
