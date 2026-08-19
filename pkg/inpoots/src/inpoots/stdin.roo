@@ -1,0 +1,20 @@
+(ns inpoots.stdin
+  (:require [inpoots.input :as input]))
+
+(def with!
+  "Run CALLBACK with scoped access to standard input.
+
+  OPTIONS accepts `:mode :cooked`, `:mode :cbreak`, or `:mode :raw`; raw is
+  the default. The callback receives an input value accepted by `read-event!`.
+  The original input mode is restored and the input becomes inactive when the
+  callback exits.
+
+  Returns the callback's result."
+  input/with-stdin!)
+
+(def read-event!
+  "Block until INPUT yields a portable terminal event.
+
+  INPUT is the scoped value supplied to a `with!` callback. Returns a text,
+  key, paste, resize, EOF, or interrupt event map."
+  input/read!)

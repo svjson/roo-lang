@@ -1,0 +1,6 @@
+{:name inpoots-tests
+ :version "0.1.0"
+ :dependencies {inpoots "file:.."
+                proof "file:../../proof"}
+ :load-roots ["inpoots"]
+ :config {proof {:test-roots ["inpoots"]}}}

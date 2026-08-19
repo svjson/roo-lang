@@ -1,0 +1,9 @@
+{:name inpoots
+ :version "0.1.0"
+ :description "Terminal input and event handling for Roo."
+ :dependencies []
+ :load-roots ["src"]
+ :native-libraries [{:name "inpoots-native"
+                     :version "0.1.0"
+                     :path "native"
+                     :namespaces [inpoots.input]}]}

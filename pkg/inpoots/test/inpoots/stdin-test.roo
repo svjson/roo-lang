@@ -1,0 +1,31 @@
+(ns inpoots.stdin-test
+  (:require proof.core
+            [inpoots.stdin :as stdin]))
+
+(deftest with!/returns-the-callback-result
+  (is (= :called
+         (stdin/with! {:mode :cooked}
+           (fn [input]
+             :called)))))
+
+(deftest read-event!/rejects-an-input-retained-after-its-scope
+  (let [retained-input {}
+        callback-result (stdin/with! {:mode :cooked}
+                          (fn [input]
+                            (assoc! retained-input :value input)
+                            :called))
+        read-result (proof.core/run-test-body
+                      (fn []
+                        (stdin/read-event! (:value retained-input))))]
+    (is (= :called callback-result))
+    (is (= :error (:status read-result)))
+    (is (contains-all? (:message read-result) "Terminal input is no longer active."))))
+
+(deftest with!/rejects-an-unknown-mode
+  (let [result (proof.core/run-test-body
+                 (fn []
+                   (stdin/with! {:mode :turbo}
+                     (fn [input]
+                       input))))]
+    (is (= :error (:status result)))
+    (is (contains-all? (:message result) "Unknown terminal input mode: :turbo"))))
