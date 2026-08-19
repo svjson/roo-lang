@@ -161,6 +161,115 @@ TEST_F(FileSystemNamespaceSource, dotted_namespace_maps_to_directory_path)
   ASSERT_TRUE(result.has_value());
 }
 
+TEST_F(FileSystemNamespaceSource, namespace_leaf_can_define_its_containing_directory)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("foo/bar/baz/_baz.roo", "(ns foo.bar.baz)");
+  Roo::FileSystemNamespaceSource source(&fs);
+
+  // When
+  auto result = source.fetch("foo.bar.baz", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "(ns foo.bar.baz)");
+  EXPECT_EQ(result->resolved_path, "foo/bar/baz/_baz.roo");
+}
+
+TEST_F(FileSystemNamespaceSource, namespace_entry_uses_namespace_leaf_with_mapped_root)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("source/_my-app.roo", "(ns my-app)");
+  Roo::FileSystemNamespaceSource source(&fs,
+                                        {".roo"},
+                                        {Roo::NamespaceRoot{"my-app", "source"}});
+
+  // When
+  auto result = source.fetch("my-app", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "(ns my-app)");
+  EXPECT_EQ(result->resolved_path, "source/_my-app.roo");
+}
+
+TEST_F(FileSystemNamespaceSource,
+       namespace_entry_accepts_mapped_root_with_trailing_separator)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("src/_my-namespace.roo", "(ns my-namespace)");
+  Roo::FileSystemNamespaceSource source(&fs,
+                                        {".roo"},
+                                        {Roo::NamespaceRoot{"my-namespace", "src/"}});
+
+  // When
+  auto result = source.fetch("my-namespace", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "(ns my-namespace)");
+  EXPECT_EQ(result->resolved_path, "src/_my-namespace.roo");
+}
+
+TEST_F(FileSystemNamespaceSource, namespace_entry_preserves_extension_priority)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("foo/bar/_bar.roo", "preferred");
+  fs.add("foo/bar.lisp", "fallback");
+  Roo::FileSystemNamespaceSource source(&fs, {".roo", ".lisp"});
+
+  // When
+  auto result = source.fetch("foo.bar", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "preferred");
+  EXPECT_EQ(result->resolved_path, "foo/bar/_bar.roo");
+}
+
+TEST_F(FileSystemNamespaceSource, compact_and_directory_entries_are_ambiguous)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("foo/bar/baz.roo", "compact");
+  fs.add("foo/bar/baz/_baz.roo", "directory");
+  Roo::FileSystemNamespaceSource source(&fs);
+
+  // When / Then
+  try
+  {
+    source.fetch("foo.bar.baz", {});
+    FAIL() << "Expected ambiguous namespace resolution";
+  }
+  catch (const Roo::NamespaceException& e)
+  {
+    EXPECT_THAT(e.what(), HasSubstr("foo.bar.baz"));
+    EXPECT_THAT(e.what(), HasSubstr("foo/bar/baz.roo"));
+    EXPECT_THAT(e.what(), HasSubstr("foo/bar/baz/_baz.roo"));
+  }
+}
+
+TEST_F(FileSystemNamespaceSource, namespace_entry_is_not_resolved_as_a_child)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("foo/bar/_bar.roo", "(ns foo.bar)");
+  Roo::FileSystemNamespaceSource source(&fs);
+
+  // When
+  auto parent = source.fetch("foo.bar", {});
+  auto child = source.fetch("foo.bar._bar", {});
+
+  // Then
+  ASSERT_TRUE(parent.has_value());
+  EXPECT_EQ(parent->resolved_path, "foo/bar/_bar.roo");
+  EXPECT_FALSE(child.has_value());
+}
+
 TEST_F(FileSystemNamespaceSource, dashes_are_preserved_in_path)
 {
   // Given
@@ -348,6 +457,25 @@ TEST_F(FileSystemNamespaceSource,
   EXPECT_EQ(result->resolved_path, "minesweeper/core.roo");
 }
 
+TEST_F(FileSystemNamespaceSource, infer_path_resolves_child_from_namespace_entry)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("categories/taxidermy/adapters.roo", "(ns my-app.categories.taxidermy.adapters)");
+  Roo::FileSystemNamespaceSource source(&fs);
+
+  Roo::NamespaceResolutionContext ctx;
+  ctx.current_ns_name = "my-app.categories.taxidermy";
+  ctx.current_source_path = "categories/taxidermy/_taxidermy.roo";
+
+  // When
+  auto result = source.fetch("my-app.categories.taxidermy.adapters", ctx);
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->resolved_path, "categories/taxidermy/adapters.roo");
+}
+
 TEST_F(FileSystemNamespaceSource,
        infer_path_resolves_sibling_when_current_filename_is_arbitrary)
 {
@@ -404,6 +532,38 @@ TEST_F(NamespaceLoading, loads_required_namespace_on_demand)
   // Then
   auto result = runtime.eval("(double 21)");
   EXPECT_EQ(result->to_string(), "42");
+}
+
+TEST_F(NamespaceLoading, directory_entry_becomes_namespace_origin)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app/utils/_utils.roo", "(ns app.utils)");
+  auto& runtime = use_runtime_with(fs);
+
+  // When
+  runtime.eval("(ns app (:require app.utils))");
+
+  // Then
+  auto* required_namespace = runtime.ns("app.utils", false);
+  ASSERT_NE(required_namespace, nullptr);
+  ASSERT_TRUE(required_namespace->get_origin().source_path.has_value());
+  EXPECT_EQ(*required_namespace->get_origin().source_path, "app/utils/_utils.roo");
+}
+
+TEST_F(NamespaceLoading, loading_child_does_not_evaluate_parent_entry)
+{
+  // Given
+  InMemoryFileSystem fs;
+  fs.add("app/feature/_feature.roo", R"((ns app.feature) (+ "not" 1))");
+  fs.add("app/feature/child.roo", "(ns app.feature.child) (def value 42)");
+  auto& runtime = use_runtime_with(fs);
+
+  // When
+  runtime.eval("(ns app (:require [app.feature.child :as child]))");
+
+  // Then
+  EXPECT_EQ(runtime.eval("child/value")->to_string(), "42");
 }
 
 TEST_F(NamespaceLoading, read_file_parse_exception_includes_file_name)

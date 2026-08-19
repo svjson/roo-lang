@@ -189,6 +189,55 @@ namespace Roo
     return paths;
   }
 
+  std::optional<NamespaceFetchResult> FileSystemNamespaceSource::fetch_from_base_path(
+    const std::string& ns_name,
+    const std::string& base_path) const
+  {
+    const auto leaf_separator = ns_name.find_last_of('.');
+    const std::string leaf =
+      leaf_separator == std::string::npos ? ns_name : ns_name.substr(leaf_separator + 1);
+
+    for (const auto& ext : extensions)
+    {
+      const std::string compact_path = base_path + ext;
+      const std::string directory_path = join_path(base_path, "_" + leaf + ext);
+      std::optional<std::string> compact_source;
+      std::optional<std::string> directory_source;
+
+      try
+      {
+        compact_source = fs->read(compact_path);
+      }
+      catch (const RooException&)
+      {
+      }
+
+      try
+      {
+        directory_source = fs->read(directory_path);
+      }
+      catch (const RooException&)
+      {
+      }
+
+      if (compact_source && directory_source)
+      {
+        throw NamespaceException("Ambiguous namespace '" + ns_name + "': both '" +
+                                 compact_path + "' and '" + directory_path + "' define it.");
+      }
+      if (compact_source)
+      {
+        return NamespaceFetchResult{std::move(*compact_source), compact_path};
+      }
+      if (directory_source)
+      {
+        return NamespaceFetchResult{std::move(*directory_source), directory_path};
+      }
+    }
+
+    return std::nullopt;
+  }
+
   std::string FileSystemNamespaceSource::infer_path(
     const std::string& ns_name,
     const std::string& current_ns_name,
@@ -251,18 +300,18 @@ namespace Roo
     const std::string& ns_name,
     const NamespaceResolutionContext& ctx)
   {
+    const std::vector<std::string> ns_segments = split(ns_name, '.');
+    if (ns_segments.size() > 1 &&
+        ns_segments.back() == "_" + ns_segments[ns_segments.size() - 2])
+    {
+      return std::nullopt;
+    }
+
     for (const auto& rooted_path : namespace_root_paths(ns_name))
     {
-      for (const auto& ext : extensions)
+      if (auto result = fetch_from_base_path(ns_name, rooted_path))
       {
-        try
-        {
-          auto source = fs->read(rooted_path + ext);
-          return NamespaceFetchResult{std::move(source), rooted_path + ext};
-        }
-        catch (const RooException&)
-        {
-        }
+        return result;
       }
     }
 
@@ -273,31 +322,17 @@ namespace Roo
 
       if (!inferred_path.empty())
       {
-        for (const auto& ext : extensions)
+        if (auto result = fetch_from_base_path(ns_name, inferred_path))
         {
-          try
-          {
-            auto source = fs->read(inferred_path + ext);
-            return NamespaceFetchResult{std::move(source), inferred_path + ext};
-          }
-          catch (const RooException&)
-          {
-          }
+          return result;
         }
       }
     }
 
     const std::string full_path = ns_to_path(ns_name);
-    for (const auto& ext : extensions)
+    if (auto result = fetch_from_base_path(ns_name, full_path))
     {
-      try
-      {
-        auto source = fs->read(full_path + ext);
-        return NamespaceFetchResult{std::move(source), full_path + ext};
-      }
-      catch (const RooException&)
-      {
-      }
+      return result;
     }
     return std::nullopt;
   }

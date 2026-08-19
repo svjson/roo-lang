@@ -15,6 +15,8 @@ namespace Roo
   /**
    * Resolves namespace names to source files under a FileSystem.
    * Dots in namespace names map to path separators; dashes are preserved as-is.
+   * A namespace can use either <path>.roo or <path>/_<leaf>.roo. Defining both
+   * forms for the same base path is an error.
    * Extensions are tried in priority order (default: .roo).
    */
   class FileSystemNamespaceSource : public NamespaceSource, public NamespaceRootConfigurable
@@ -25,6 +27,9 @@ namespace Roo
 
     std::string ns_to_path(const std::string& ns_name) const;
     std::vector<std::string> namespace_root_paths(const std::string& ns_name) const;
+    std::optional<NamespaceFetchResult> fetch_from_base_path(
+      const std::string& ns_name,
+      const std::string& base_path) const;
 
     /**
      * @brief Resolve the expected disk path of a namespace in relation to
