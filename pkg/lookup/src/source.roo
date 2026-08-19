@@ -46,19 +46,15 @@
   [path]
   (= ".roo" (io/extension path)))
 
+(defun source-entry?
+  [entry metadata]
+  (and (= (:type entry) :file)
+       (source-file? (:relative-path metadata))))
+
 (defun source-files-in [root]
   (if (io/directory? root)
-    (let [entries (io/list-directory! root)
-          files (keep entries
-                      (fn [entry]
-                        (when (and (= (:type entry) :file)
-                                   (source-file? (:path entry)))
-                          (:path entry))))
-          directories (filter entries (fn [entry] (= (:type entry) :directory)))]
-      (concat files
-              (flat-map directories
-                        (fn [entry]
-                          (source-files-in (:path entry))))))
+    (for [result (io/walk! root {:keep? source-entry?})]
+      (:path (:entry result)))
     []))
 
 (defun normalized-path [path]
