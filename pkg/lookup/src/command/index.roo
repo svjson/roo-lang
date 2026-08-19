@@ -1,10 +1,11 @@
 (ns lookup.command.index
   (:require [roo.io :as io]
-            [lookup.index :as index]))
+            [lookup.index :as index]
+            [lookup.incremental :as incremental]))
 
 (def usage-line
   "Usage line for the `lookup index` command."
-  "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [-o <file>] [<package-dir>]")
+  "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta edn] [-o <file>] [<package-dir>]")
 
 (defun parse-args-step [args options]
   (let [arg (head args)]
@@ -66,6 +67,35 @@
         (assoc options :errors (concat (:errors options)
                                        ["Missing path after --exclude"])))
 
+      (= arg "--state")
+      (if-let [state (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options :state state))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing directory after --state"])))
+
+      (= arg "--update")
+      (if-let [path (nth args 1)]
+        (parse-args-step (tail (tail args))
+                         (assoc options
+                                :updates
+                                (concat (or (:updates options) []) [path])))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing file after --update"])))
+
+      (= arg "--emit-delta")
+      (if-let [format (nth args 1)]
+        (parse-args-step
+          (tail (tail args))
+          (if (= format "edn")
+            (assoc options :emit-delta :edn)
+            (assoc options
+                   :errors
+                   (concat (:errors options)
+                           [(str "Unknown delta format: " format)]))))
+        (assoc options :errors (concat (:errors options)
+                                       ["Missing format after --emit-delta"])))
+
       (or (= arg "-o")
           (= arg "--out"))
       (if-let [out (nth args 1)]
@@ -109,6 +139,9 @@
                                   :package-dir nil
                                   :roots []
                                   :excludes []
+                                  :state nil
+                                  :updates []
+                                  :emit-delta nil
                                   :package-name nil
                                   :package-version nil
                                   :package-description nil
@@ -122,6 +155,9 @@
                                   options)
         forms? (contains? (:extractors with-default-extractors) :forms)
         native? (contains? (:extractors with-default-extractors) :native)
+        state? (some? (:state with-default-extractors))
+        updates? (not-empty? (:updates with-default-extractors))
+        emit-delta? (some? (:emit-delta with-default-extractors))
         has-package-metadata? (or (:package-version with-default-extractors)
                                   (:package-description with-default-extractors))]
     (cond
@@ -150,6 +186,27 @@
              (concat (:errors with-default-extractors)
                      ["Root required for native extractor"]))
 
+      (and updates? (not state?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["--update requires --state"]))
+
+      (and emit-delta? (not state?))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["--emit-delta requires --state"]))
+
+      (and state?
+           (or (not has-package?)
+               has-roots?
+               (not= [:symbols] (:extractors with-default-extractors))))
+      (assoc with-default-extractors
+             :errors
+             (concat (:errors with-default-extractors)
+                     ["Incremental state currently requires one package directory and the symbols extractor"]))
+
       true
       with-default-extractors)))
 
@@ -165,9 +222,18 @@
   (let [options (parse-args args)]
     (if (not-empty? (:errors options))
       {:errors (:errors options)}
-      (let [value (index/index-with-options options)]
-        (if (nil? (:out options))
-          {:value value}
-          (do
-            (io/spit! (:out options) (str value "\n"))
-            {:value nil}))))))
+      (if (:state options)
+        (let [result (incremental/index-with-state options)
+              snapshot (:snapshot result)
+              value (if (:emit-delta options) (:delta result) snapshot)]
+          (when-let [out (:out options)]
+            (io/spit! out (str snapshot "\n")))
+          {:value (if (and (:out options) (nil? (:emit-delta options)))
+                    nil
+                    value)})
+        (let [value (index/index-with-options options)]
+          (if (nil? (:out options))
+            {:value value}
+            (do
+              (io/spit! (:out options) (str value "\n"))
+              {:value nil})))))))

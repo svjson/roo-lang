@@ -2,5 +2,5 @@
  :version "0.1.0"
  :dependencies {lookup "file:.."
                 proof "file:../../proof"}
- :load-roots ["."]
+ :load-roots ["lookup"]
  :config {proof {:test-roots ["lookup"]}}}

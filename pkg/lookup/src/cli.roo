@@ -69,7 +69,7 @@
       :usage)))
 
 (defun print-lines! [lines]
-  (map lines prn))
+  (map lines prn!))
 
 (defun print-usage! []
   (print-lines! usage-lines))
@@ -78,10 +78,10 @@
   (print-lines! (help-lines)))
 
 (defun print-version! []
-  (prn (version-text)))
+  (prn! (version-text)))
 
 (defun print-errors-and-usage! [errors]
-  (map errors prn)
+  (map errors prn!)
   (print-usage!))
 
 (defun print-command-result! [result]
@@ -91,10 +91,17 @@
       (case (:format result)
         :text (print-lines! (:output result))
         :default (when-let [value (:value result)]
-                   (prn value))))))
+                   (prn! value))))))
 
 (defun print-index! [args]
-  (print-command-result! (index/run! (tail args))))
+  (let [result (index/run! (tail args))
+        errors (:errors result)]
+    (if (not-empty? errors)
+      (system/fail!
+        (str (apply join (concat ["\n"] errors))
+             "\n"
+             index/usage-line))
+      (print-command-result! result))))
 
 (defun print-audit! [args]
   (let [result (audit/run! (tail args))]

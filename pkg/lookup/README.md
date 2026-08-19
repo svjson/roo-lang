@@ -75,6 +75,43 @@ lookup index -x symbols -o build/lookup.edn ./path/to/package
 lookup index --root ./path/to/native/src -x native -o build/native.edn
 ```
 
+## Incremental Index State
+
+Maintain a dynamic symbol index as a manifest and independently replaceable
+source contributions with `--state`:
+
+```sh
+lookup index ./path/to/package --state .lookup/index
+```
+
+The first invocation builds the complete state. Later invocations without an
+explicit update reconcile source modification times. For an editor save, name
+the known-dirty source and request a machine-readable delta on stdout:
+
+```sh
+lookup index ./path/to/package \
+  --state .lookup/index \
+  --update ./path/to/package/src/foo.roo \
+  --emit-delta edn
+```
+
+`--update` is repeatable. Roo sources are replaced independently. A changed
+native source currently causes a complete state rebuild because native symbol
+extraction may join declarations and documentation across files. Diagnostics go
+to stderr through the normal CLI error path; stdout contains the EDN delta.
+
+Use `-o` together with state mode when a complete compatibility snapshot is
+also required. The snapshot is not otherwise reconstructed during a delta-only
+editor update:
+
+```sh
+lookup index ./path/to/package \
+  --state .lookup/index \
+  --update ./path/to/package/src/foo.roo \
+  --emit-delta edn \
+  -o build/lookup.edn
+```
+
 ## Roo Docstrings
 
 `lookup` reads Roo docstrings from `def` and `defun` forms. A docstring is a
@@ -116,6 +153,96 @@ for Args, Returns, Examples, See Also, Since, and Deprecated.
 `lookup` does not yet extract namespace (`ns`) docstrings in the current
 implementation. That backlog item is tracked in
 `docs/lookup/backlog.md`.
+
+## Native Implementation Documentation
+
+Documentation for native-implementations of Roo symbols can be provided via doc
+comments detailing the Roo API exposed by C++ code. Descriptions, parameters,
+return values, and examples should use Roo names and calling conventions.
+
+### Comments on `FUNC` and `SPECIAL_FORM_DECL`
+
+Place the documentation block immediately before the declaration:
+
+```cpp
+/*!
+ * @brief Read the complete contents of a text file as a string.
+ * @since 0.1.0
+ * @see roo.io/spit!
+ *
+ * Usage:
+ * @code
+ * (roo.io/slurp! "notes.txt")
+ * => "file contents"
+ * @endcode
+ *
+ * | Arg  | Description                   |
+ * | ---- | ----------------------------- |
+ * | path | Path of the file to read.     |
+ *
+ * @return The file contents.
+ */
+FUNC(SlurpBangFunction, slurp)
+```
+
+No symbol or kind annotations are needed here. `FUNC` identifies a function and
+`SPECIAL_FORM_DECL` identifies a special form. Lookup joins the declaration to
+its exported Roo name through the implementation identity:
+
+```cpp
+/** SlurpBangFunction - roo.io/slurp! */
+FUNC_IMPL(SlurpBangFunction, ...)
+```
+
+The class name in the identity must match the class name in the documented
+declaration.
+
+### Comments on non-identifiable C++ symbol.
+
+For a comment that is not attached to `FUNC` or `SPECIAL_FORM_DECL`, add
+`@roo.symbol` and `@roo.kind`.
+
+These can occur at any level and is not in any way tied to the C++ syntax
+that follow it.
+
+```cpp
+/*!
+ * @roo.symbol proof.syntax/given
+ * @roo.kind special-form
+ * @brief Seed the current state of a test scenario.
+ * @since 0.1.0
+ * @see proof.syntax/when
+ * @see proof.syntax/then
+ *
+ * | Arg     | Description                 |
+ * | ------- | --------------------------- |
+ * | body... | State-producing body forms. |
+ *
+ * @return The final scenario state.
+ */
+ns->store("given", PhaseForm::make("given"));
+```
+
+`@roo.symbol` is the qualified Roo name.
+`@roo.kind` accepts `function`, `special-form`, `macro`, `var`, or `constant`.
+
+Put a separate documentation block on each exported Roo symbol when several
+symbols share a native implementation.
+
+### Supported fields
+
+Lookup extracts the following content from either form:
+
+- `@brief` supplies the summary. Separate prose paragraphs supply the body.
+- `@code`/`@endcode` blocks supply examples. A format after `@code` overrides
+  the default `:roo` example format.
+- Markdown-style argument tables supply parameter names and documentation.
+  Multiple argument tables describe multiple signatures.
+- `@return` or `@returns` supplies return documentation.
+- Repeated `@see` annotations supply related Roo symbols.
+- `@since` records the version in which the Roo API appeared.
+- `@deprecated` marks the Roo API as deprecated and may include replacement
+  guidance on the same line.
 
 ## Current Status
 

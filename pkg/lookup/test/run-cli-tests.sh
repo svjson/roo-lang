@@ -3,7 +3,7 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
-PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
 LOOKUP_PACKAGE="$PACKAGE_STAGE_ROOT/lookup"
 
 fail()
@@ -40,7 +40,7 @@ fi
 assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
 Usage: lookup [--help|--version]
-       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [-o <file>] [<package-dir>]
+       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta edn] [-o <file>] [<package-dir>]
        lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>
        lookup thing-at <package-dir> <file> <line> <column>
 
