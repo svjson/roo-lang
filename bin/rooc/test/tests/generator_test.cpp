@@ -195,8 +195,6 @@ TEST(RoocGenerator, writes_generated_project_files)
   // Then
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "CMakeLists.txt"));
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/main.cpp"));
-  EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_file_system.h"));
-  EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_file_system.cpp"));
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_sources.h"));
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_sources.cpp"));
 }
@@ -214,15 +212,13 @@ TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sour
   // Then
   const std::string main_cpp = read_file(build_dir / "src/main.cpp");
   const std::string embedded_sources_cpp = read_file(build_dir / "src/embedded_sources.cpp");
-  const std::string embedded_file_system_cpp =
-    read_file(build_dir / "src/embedded_file_system.cpp");
 
-  EXPECT_THAT(main_cpp, HasSubstr("RoocGenerated::EmbeddedFileSystem namespace_fs"));
+  EXPECT_THAT(main_cpp, HasSubstr("Roo::EmbeddedFileSystem namespace_fs"));
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
   EXPECT_THAT(main_cpp,
               HasSubstr("LoadedNativePackages native_packages;\n"
                         "    Roo::Runtime runtime"));
-  EXPECT_THAT(embedded_file_system_cpp, HasSubstr("EmbeddedFileSystem::read"));
+  EXPECT_THAT(embedded_sources_cpp, HasSubstr("std::array<Roo::EmbeddedFile"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.roo"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.roo"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("embedded_native_libraries"));

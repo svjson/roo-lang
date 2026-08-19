@@ -2,12 +2,16 @@
 #include "roo/runtime/value.h"
 
 #include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include <roo/exception.h>
+#include <roo/io/embedded_file_system.h>
 #include <roo/io/file_system.h>
 #include <roo/io/file_system_namespace_source.h>
 #include <roo/namespace_source.h>
+#include <roo/ordered_namespace_source.h>
 
 #include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
@@ -295,6 +299,68 @@ TEST_F(FileSystemNamespaceSource, returns_nullopt_when_no_file_found)
 
   // Then
   EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(FileSystemNamespaceSource, embedded_files_are_read_through_normalized_paths)
+{
+  // Given
+  const Roo::EmbeddedFile files[] = {
+    {"example/core.roo", "(ns example.core)"},
+  };
+  Roo::EmbeddedFileSystem fs(files);
+
+  // When / Then
+  EXPECT_EQ(fs.read("example/./core.roo"), "(ns example.core)");
+  EXPECT_THROW(fs.read("example/missing.roo"), Roo::IOException);
+}
+
+TEST_F(NamespaceLoading, ordered_source_uses_the_first_source_that_resolves)
+{
+  // Given
+  const Roo::EmbeddedFile primary_files[] = {
+    {"example/core.roo", "primary"},
+  };
+  const Roo::EmbeddedFile fallback_files[] = {
+    {"example/core.roo", "fallback"},
+    {"example/other.roo", "other"},
+  };
+  Roo::EmbeddedFileSystem primary_fs(primary_files);
+  Roo::EmbeddedFileSystem fallback_fs(fallback_files);
+
+  std::vector<std::unique_ptr<Roo::NamespaceSource>> sources;
+  sources.push_back(std::make_unique<Roo::FileSystemNamespaceSource>(&primary_fs));
+  sources.push_back(std::make_unique<Roo::FileSystemNamespaceSource>(&fallback_fs));
+  Roo::OrderedNamespaceSource source(std::move(sources));
+
+  // When
+  auto primary = source.fetch("example.core", {});
+  auto fallback = source.fetch("example.other", {});
+
+  // Then
+  ASSERT_TRUE(primary.has_value());
+  ASSERT_TRUE(fallback.has_value());
+  EXPECT_EQ(primary->source, "primary");
+  EXPECT_EQ(fallback->source, "other");
+}
+
+TEST_F(NamespaceLoading, ordered_source_configures_roots_on_eligible_sources)
+{
+  // Given
+  const Roo::EmbeddedFile files[] = {
+    {"mapped/core.roo", "mapped"},
+  };
+  Roo::EmbeddedFileSystem fs(files);
+  std::vector<std::unique_ptr<Roo::NamespaceSource>> sources;
+  sources.push_back(std::make_unique<Roo::FileSystemNamespaceSource>(&fs));
+  Roo::OrderedNamespaceSource source(std::move(sources));
+
+  // When
+  source.set_namespace_roots({Roo::NamespaceRoot{"example", "mapped"}});
+  auto result = source.fetch("example.core", {});
+
+  // Then
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->source, "mapped");
 }
 
 TEST_F(FileSystemNamespaceSource, namespace_root_resolves_prefix_before_full_path)

@@ -187,78 +187,20 @@ namespace Rooc
       return path.lexically_normal().generic_string();
     }
 
-    std::string generated_embedded_file_system_h()
-    {
-      std::ostringstream out;
-      out << "#ifndef ROOC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n"
-             "#define ROOC_GENERATED_EMBEDDED_FILE_SYSTEM_H\n\n"
-             "#include <map>\n"
-             "#include <string>\n\n"
-             "#include <roo/io/file_system.h>\n\n"
-             "namespace RoocGenerated\n"
-             "{\n"
-             "  class EmbeddedFileSystem : public Roo::FileSystem\n"
-             "  {\n"
-             "    std::map<std::string, std::string> files_;\n\n"
-             "   public:\n"
-             "    explicit EmbeddedFileSystem(std::map<std::string, std::string> files);\n\n"
-             "    const std::string read(const std::string& file_name) override;\n"
-             "  };\n"
-             "} // namespace RoocGenerated\n\n"
-             "#endif\n";
-      return out.str();
-    }
-
-    std::string generated_embedded_file_system_cpp()
-    {
-      std::ostringstream out;
-      out << "#include \"embedded_file_system.h\"\n\n"
-             "#include <filesystem>\n"
-             "#include <utility>\n"
-             "\n"
-             "#include <roo/exception.h>\n\n"
-             "namespace\n"
-             "{\n"
-             "  std::string normalize_path(const std::string& path)\n"
-             "  {\n"
-             "    return std::filesystem::path(path).lexically_normal().generic_string();\n"
-             "  }\n\n"
-             "} // namespace\n\n"
-             "namespace RoocGenerated\n"
-             "{\n"
-             "  EmbeddedFileSystem::EmbeddedFileSystem(std::map<std::string, std::string> "
-             "files)\n"
-             "    : files_(std::move(files))\n"
-             "  {\n"
-             "  }\n\n"
-             "  const std::string EmbeddedFileSystem::read(const std::string& file_name)\n"
-             "  {\n"
-             "    const auto key = normalize_path(file_name);\n"
-             "    auto it = files_.find(key);\n"
-             "    if (it == files_.end())\n"
-             "    {\n"
-             "      throw Roo::RooException(\"Embedded namespace source not found: \" + "
-             "file_name);\n"
-             "    }\n"
-             "    return it->second;\n"
-             "  }\n"
-             "} // namespace RoocGenerated\n";
-      return out.str();
-    }
-
     std::string generated_embedded_sources_h()
     {
       std::ostringstream out;
       out << "#ifndef ROOC_GENERATED_EMBEDDED_SOURCES_H\n"
              "#define ROOC_GENERATED_EMBEDDED_SOURCES_H\n\n"
-             "#include <map>\n"
+             "#include <span>\n"
              "#include <string>\n"
              "#include <vector>\n\n"
+             "#include <roo/io/embedded_file_system.h>\n"
              "#include <roo/namespace_source.h>\n"
              "#include <roo-package/manifest.h>\n\n"
              "namespace RoocGenerated\n"
              "{\n"
-             "  std::map<std::string, std::string> embedded_files();\n"
+             "  std::span<const Roo::EmbeddedFile> embedded_files();\n"
              "  std::vector<Roo::NamespaceRoot> embedded_namespace_roots();\n"
              "  std::vector<std::string> embedded_autoloads();\n"
              "  std::vector<std::string> embedded_entry_points();\n"
@@ -274,20 +216,26 @@ namespace Rooc
     {
       std::ostringstream out;
       out << "#include \"embedded_sources.h\"\n\n"
+             "#include <array>\n"
              "#include <utility>\n\n"
-             "namespace RoocGenerated\n"
+             "namespace\n"
              "{\n"
-             "  std::map<std::string, std::string> embedded_files()\n"
-             "  {\n"
-             "    return {\n";
+             "  constexpr std::array<Roo::EmbeddedFile, "
+          << project.files.size() << "> EMBEDDED_FILES = {{\n";
 
       for (const auto& file : project.files)
       {
-        out << "      {" << cpp_string_literal(file.key) << ", "
+        out << "    {" << cpp_string_literal(file.key) << ", "
             << cpp_string_literal(file.source) << "},\n";
       }
 
-      out << "    };\n"
+      out << "  }};\n"
+             "} // namespace\n\n"
+             "namespace RoocGenerated\n"
+             "{\n"
+             "  std::span<const Roo::EmbeddedFile> embedded_files()\n"
+             "  {\n"
+             "    return EMBEDDED_FILES;\n"
              "  }\n\n"
              "  std::vector<Roo::NamespaceRoot> embedded_namespace_roots()\n"
              "  {\n"
@@ -481,11 +429,11 @@ namespace Rooc
              "#include <vector>\n\n"
              "#include <roo/exception.h>\n"
              "#include <roo/io/dir_root_file_system.h>\n"
+             "#include <roo/io/embedded_file_system.h>\n"
              "#include <roo/io/file_system_namespace_source.h>\n"
              "#include <roo/runtime.h>\n"
              "#include <roo-package/application.h>\n\n"
              "#include <roo-package/native_loader.h>\n\n"
-             "#include \"embedded_file_system.h\"\n"
              "#include \"embedded_sources.h\"\n\n"
              "namespace\n"
              "{\n"
@@ -507,7 +455,7 @@ namespace Rooc
              "  {\n"
              "    Roo::DirRootFileSystem app_fs({std::filesystem::current_path().string(), "
              "\"/\"});\n"
-             "    RoocGenerated::EmbeddedFileSystem namespace_fs(\n"
+             "    Roo::EmbeddedFileSystem namespace_fs(\n"
              "      RoocGenerated::embedded_files());\n"
              "    auto namespace_source = "
              "std::make_unique<Roo::FileSystemNamespaceSource>(&namespace_fs);\n"
@@ -587,7 +535,6 @@ namespace Rooc
           << project.executable_name
           << "\n"
              "  src/main.cpp\n"
-             "  src/embedded_file_system.cpp\n"
              "  src/embedded_sources.cpp\n"
              ")\n\n"
              "add_library(roo_shared_imported SHARED IMPORTED)\n"
@@ -675,10 +622,6 @@ namespace Rooc
   {
     write_file(options.build_dir / "CMakeLists.txt", generated_cmake(options, project));
     write_file(options.build_dir / "src/main.cpp", generated_main_cpp());
-    write_file(options.build_dir / "src/embedded_file_system.h",
-               generated_embedded_file_system_h());
-    write_file(options.build_dir / "src/embedded_file_system.cpp",
-               generated_embedded_file_system_cpp());
     write_file(options.build_dir / "src/embedded_sources.h", generated_embedded_sources_h());
     write_file(options.build_dir / "src/embedded_sources.cpp",
                generated_embedded_sources_cpp(project));

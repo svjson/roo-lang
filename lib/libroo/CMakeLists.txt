@@ -5,10 +5,12 @@ set(roo_SOURCES
   src/roo/bind.cpp
   src/roo/context.cpp
   src/roo/io/dir_root_file_system.cpp
+  src/roo/io/embedded_file_system.cpp
   src/roo/io/file_system.cpp
   src/roo/io/file_system_namespace_source.cpp
   src/roo/io/null_file_system.cpp
   src/roo/namespace_loader.cpp
+  src/roo/ordered_namespace_source.cpp
   src/roo/exec.cpp
   src/roo/runtime/dict.cpp
   src/roo/runtime/eval_plan.cpp
