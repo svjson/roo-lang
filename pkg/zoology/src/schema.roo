@@ -95,7 +95,7 @@
   (let [discriminator-path (if (sequential? discriminator)
                              discriminator
                              [discriminator])]
-    (reduce-kv (or fields {})
+    (reduce-kv fields
                nil
                (fn [matched field-id field-schema]
                  (or matched
@@ -174,7 +174,7 @@
     (contains? schema-node :ref)
     (let [ref-id (:ref schema-node)
           definition (get (schema-definitions schema) ref-id)
-          next-seen-refs (concat (or seen-refs []) [ref-id])]
+          next-seen-refs (append seen-refs ref-id)]
       (if (or (nil? definition)
               (contains? seen-refs ref-id))
         schema-node
@@ -239,11 +239,11 @@
 
 (defun schema-fields [schema]
   (let [root (resolved-root-schema schema)]
-    (cond
-      (= (:type root) :object)
+    (case (:type root)
+      :object
       (get root :fields {})
 
-      (= (:type root) :union)
+      :union
       (union-fields schema root)
 
       :default
@@ -259,7 +259,7 @@
   (keys (schema-fields schema)))
 
 (defun union-fields [schema union-schema]
-  (reduce-kv (get union-schema :variants {})
+  (reduce-kv (:variants union-schema)
              (schema-fields (schema-document-with-root
                              schema
                              (:base union-schema)))
@@ -277,11 +277,11 @@
 
 (defun active-schema-fields [schema value]
   (let [root (resolved-root-schema schema)]
-    (cond
-      (= (:type root) :object)
+    (case (:type root)
+      :object
       (get root :fields {})
 
-      (= (:type root) :union)
+      :union
       (let [base-fields (schema-fields
                          (schema-document-with-root schema (:base root)))
             variant (union-variant-schema root value)]

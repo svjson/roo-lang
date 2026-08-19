@@ -15,9 +15,9 @@
 
 (defun keyword-input-text [value]
   (let [text (text-value value)]
-    (case (substr text 0 1)
-      ":" (substr text 1)
-      :default text)))
+    (cond-> text
+            (roo.string/starts-with? text ":")
+            (substr 1))))
 
 (defun canonical-keyword [value]
   (cond
@@ -31,32 +31,6 @@
     (let [text (keyword-input-text value)]
       (unless (blank? text)
         (keyword text)))))
-
-(defun canonical-number [value integer?]
-  (cond
-    (nil? value)
-    nil
-
-    (number? value)
-    value
-
-    (string? value)
-    (let [text (text-value value)]
-      (cond
-        (blank? text)
-        nil
-
-        integer?
-        (unless (text-contains? text ".")
-          (int text))
-
-        :default
-        (if (text-contains? text ".")
-          (float text)
-          (int text))))
-
-    :default
-    nil))
 
 (defun canonical-field [schema value field-id field-schema]
   (let [path (schema/field-path field-id field-schema)]
@@ -112,10 +86,12 @@
       (canonical-keyword value)
 
       :number
-      (canonical-number value false)
+      (number value)
 
       :integer
-      (canonical-number value true)
+      (when-let [num (number value)
+                 eq (= num (int value))]
+        num)
 
       :default
       (if (schema/root-field-map? root)

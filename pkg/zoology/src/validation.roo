@@ -13,23 +13,19 @@
                       (blank? value))))
     {:rule :required}))
 
-(defun min-error [value field-schema]
-  (let [min-value (:min field-schema)]
-    (when (and (some? min-value)
-               (number? value)
-               (< value min-value))
-      {:rule :min
-       :min min-value
-       :actual value})))
+(defun min-error [value {:keys [min]}]
+  (when (and (number? value min)
+             (< value min))
+    {:rule :min
+     :min min
+     :actual value}))
 
-(defun max-error [value field-schema]
-  (let [max-value (:max field-schema)]
-    (when (and (some? max-value)
-               (number? value)
-               (> value max-value))
-      {:rule :max
-       :max max-value
-       :actual value})))
+(defun max-error [value {:keys [max]}]
+  (when (and (number? value max)
+             (> value max))
+    {:rule :max
+     :max max
+     :actual value}))
 
 (defun valid-value-error [context parent-value value {:keys [valid-values] :as field-schema}]
   (let [allowed (valid-values/valid-value-values context field-schema parent-value)]
