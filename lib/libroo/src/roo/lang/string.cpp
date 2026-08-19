@@ -11,6 +11,7 @@
 #include <roo/impl.h>
 #include <roo/lang/string.h>
 #include <roo/runtime/pretty_print.h>
+#include <roo/runtime/str.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
 
@@ -509,9 +510,9 @@ namespace Roo
       if (delim.empty())
       {
         result.reserve(str.size());
-        for (char c : str)
+        for (const auto& scalar : utf8_scalars(str))
         {
-          result.push_back(Value::string(std::string(1, c)));
+          result.push_back(Value::string(scalar));
         }
         return Value::vector(std::move(result));
       }

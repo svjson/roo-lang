@@ -83,6 +83,19 @@ TEST_F(SplitFunction, empty_delimiter_splits_into_characters)
   EXPECT_EQ(result->elements().at(2)->str(), "c");
 }
 
+TEST_F(SplitFunction, EmptyDelimiterSplitsUnicodeScalars)
+{
+  // When
+  auto result = runtime.eval(R"((split "ä猫🙂" ""))");
+
+  // Then
+  ASSERT_EQ(Roo::count(*result), 4);
+  EXPECT_EQ(result->elements().at(0)->str(), "a");
+  EXPECT_EQ(result->elements().at(1)->str(), "̈");
+  EXPECT_EQ(result->elements().at(2)->str(), "猫");
+  EXPECT_EQ(result->elements().at(3)->str(), "🙂");
+}
+
 TEST_F(SplitFunction, empty_string_with_empty_delimiter_returns_empty_vector)
 {
   // When
