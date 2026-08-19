@@ -1,0 +1,126 @@
+(ns voodoo.text.buffer)
+
+(defun make
+  "Create an editable text buffer with its cursor after TEXT.
+
+  Args:
+  - `text`: Initial string value.
+
+  Returns:
+  A buffer map storing complete Unicode scalar strings on either side of the
+  cursor. `:before` contains the scalars before the cursor and `:after` the
+  scalars after it:
+
+  ```roo
+  {:before [\"a\" \"猫\"]
+   :after []}
+  ```"
+  [text]
+  {:before (split text "")
+   :after []})
+
+(defun text
+  "Return BUFFER's complete text.
+
+  Args:
+  - `buffer`: Buffer returned by `make` or another operation in this namespace.
+
+  Returns:
+  A string containing the scalars before and after the cursor."
+  [buffer]
+  (apply str (concat (:before buffer) (:after buffer))))
+
+(defun insert
+  "Insert TEXT at BUFFER's cursor.
+
+  Args:
+  - `buffer`: Buffer to edit.
+  - `text`: String to insert. It may contain multiple Unicode scalars or
+    newlines.
+
+  Returns:
+  A buffer with TEXT inserted and the cursor immediately after it."
+  [buffer text]
+  (update buffer :before (fn [before]
+                           (concat before (split text "")))))
+
+(defun move-left
+  "Move BUFFER's cursor left by one Unicode scalar.
+
+  Args:
+  - `buffer`: Buffer whose cursor should move.
+
+  Returns:
+  The moved buffer, or BUFFER unchanged when its cursor is already at the
+  start."
+  [{:keys [before after] :as buffer}]
+  (if (empty? before)
+    buffer
+    {:before (slice before 0 (dec (count before)))
+     :after (concat [(last before)] after)}))
+
+(defun move-right
+  "Move BUFFER's cursor right by one Unicode scalar.
+
+  Args:
+  - `buffer`: Buffer whose cursor should move.
+
+  Returns:
+  The moved buffer, or BUFFER unchanged when its cursor is already at the end."
+  [{:keys [before after] :as buffer}]
+  (if (empty? after)
+    buffer
+    {:before (append before (head after))
+     :after (tail after)}))
+
+(defun move-start
+  "Move BUFFER's cursor to the start of its text.
+
+  Args:
+  - `buffer`: Buffer whose cursor should move.
+
+  Returns:
+  A buffer with an empty `:before` sequence and all text in `:after`."
+  [{:keys [before after]}]
+  {:before []
+   :after (concat before after)})
+
+(defun move-end
+  "Move BUFFER's cursor to the end of its text.
+
+  Args:
+  - `buffer`: Buffer whose cursor should move.
+
+  Returns:
+  A buffer with all text in `:before` and an empty `:after` sequence."
+  [{:keys [before after]}]
+  {:before (concat before after)
+   :after []})
+
+(defun backspace
+  "Delete the Unicode scalar before BUFFER's cursor.
+
+  Args:
+  - `buffer`: Buffer to edit.
+
+  Returns:
+  The edited buffer, or BUFFER unchanged when its cursor is at the start."
+  [{:keys [before after] :as buffer}]
+  (if (empty? before)
+    buffer
+    {:before (slice before 0 (dec (count before)))
+     :after after}))
+
+(defun delete
+  "Delete the Unicode scalar after BUFFER's cursor.
+
+  Args:
+  - `buffer`: Buffer to edit.
+
+  Returns:
+  The edited buffer, or BUFFER unchanged when its cursor is at the end."
+  [{:keys [before after] :as buffer}]
+  (if (empty? after)
+    buffer
+    {:before before
+     :after (tail after)}))

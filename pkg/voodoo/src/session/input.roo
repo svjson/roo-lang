@@ -1,0 +1,29 @@
+(ns voodoo.session.input
+  (:require [inpoots.stdin :as stdin]
+            [voodoo.session :as session]))
+
+(defun dispatch-next!
+  "Read one portable terminal event from INPUT and dispatch it through
+  WIDGET-SESSION.
+
+  The caller retains ownership of the surrounding input loop and can therefore
+  handle EOF, interruption, resize, and widget actions without Voodoo imposing
+  application policy.
+
+  Args:
+  - `widget-session`: Session whose focused widget receives the event.
+  - `input`: Scoped terminal input supplied by `inpoots.stdin/with!`.
+
+  Returns:
+  A map containing the original portable `:event` and the generic widget
+  `:actions` returned by `voodoo.session/dispatch!`:
+
+  ```roo
+  {:event {:type :text
+           :text \"a\"}
+   :actions []}
+  ```"
+  [widget-session input]
+  (let [event (stdin/read-event! input)]
+    {:event event
+     :actions (session/dispatch! widget-session event)}))

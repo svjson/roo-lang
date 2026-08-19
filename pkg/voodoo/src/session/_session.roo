@@ -1,0 +1,308 @@
+(ns voodoo.session
+  (:require [roo.tty :as tty]
+            [voodoo.ansi :as ansi]
+            [voodoo.widget :as widget]))
+
+
+
+;; Dimensions
+
+(defun total-height [session ids]
+  "Sum of `voodoo.widget/line-count` across the widgets named by IDS -
+  the number of terminal rows they currently occupy together, since a
+  widget isn't always a single row. Used instead of `(count ids)` for
+  every cursor-movement computation in this namespace."
+  [session ids]
+  (reduce ids
+          0
+          (fn [total id]
+            (+ total (widget/line-count (:text (get (:widgets session) id)))))))
+
+
+
+;; Drawing functions
+
+(defun print-lines!
+  "Print TEXT one physical row at a time, each preceded by `\\r` and a
+  clear-line escape so it correctly overwrites whatever was on that row
+  before - necessary because TEXT may span multiple lines (see
+  `voodoo.widget/line-count`), and clearing only the first row would
+  leave stale trailing content behind on the rest when the new text is
+  shorter than what it's replacing.
+
+  PREFIX (typically a move-up escape sequence) is attached to the first
+  row only, since every `prn!` call carries its own trailing newline - a
+  bare cursor-move `prn!` call with no content would be undone by that
+  newline, so any positioning move must always be attached to real
+  content instead of sent on its own."
+  [prefix text]
+  (if-let [newline-index (index-of text '\n')]
+    (do
+      (prn! (str prefix "\r" (ansi/clear-line) (substr text 0 newline-index)))
+      (print-lines! "" (substr text (+ newline-index 1))))
+    (prn! (str prefix "\r" (ansi/clear-line) text))))
+
+(defun redraw!
+  "Rewrite widgets one at a time, starting at the current cursor row.
+
+  `prefix` (typically a move-up escape sequence) is attached to the very
+  first row of the very first widget only - see `print-lines!`."
+  [session ids prefix]
+  (unless (empty? ids)
+    (let [widget (get (:widgets session) (head ids))]
+      (print-lines! prefix (:text widget))
+      (redraw! session (tail ids) ""))))
+
+(defun clear-rows-upward
+  "Return an escape sequence that clears N rows, moving up one row at a
+  time from the cursor's current position, ending at the top of that
+  block. Built from repeated move-up + clear-line since there's no
+  move-down primitive - none is needed here, since erasing bottom-to-top
+  only ever moves in one direction."
+  [n]
+  (apply str (repeat n (str (ansi/move-up 1) "\r" (ansi/clear-line)))))
+
+(defun cursor-baseline-distance
+  "Return the rows between a tracked widget cursor and the render baseline.
+
+  SESSION's render baseline is the row immediately below its last widget.
+  HANDLE identifies the widget containing the zero-based CURSOR row."
+  [session handle cursor]
+  (let [ids (slice (:order session) (index-of (:order session) handle))]
+    (+ (- (widget/line-count (get-in session [:widgets handle :text]))
+          (:row cursor))
+       (total-height session (tail ids)))))
+
+(defun reset-terminal-cursor!
+  "Move a focused widget cursor back to SESSION's render baseline.
+
+  Returns SESSION. Sessions without a live focused widget cursor are unchanged."
+  [session]
+  (when-let [cursor (get-in session [:widgets (:focus session) :spec :cursor])]
+    (when (:tty? session)
+      (pr! (str (ansi/move-down (cursor-baseline-distance session
+                                                           (:focus session)
+                                                           cursor))
+                "\r"))))
+  session)
+
+(defun restore-terminal-cursor!
+  "Place the terminal cursor at SESSION's focused widget cursor.
+
+  The terminal must currently be at SESSION's render baseline. Returns SESSION.
+  Sessions without a live focused widget cursor are unchanged."
+  [session]
+  (when-let [cursor (get-in session [:widgets (:focus session) :spec :cursor])]
+    (when (:tty? session)
+      (pr! (str (ansi/move-up (cursor-baseline-distance session
+                                                         (:focus session)
+                                                         cursor))
+                "\r"
+                (:text-before cursor)))))
+  session)
+
+(defun update!
+  "Replace a widget's spec and re-render it in place.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `handle`: Handle returned by `add!`.
+  - `spec`: New widget spec, replacing the widget's current one entirely.
+
+  Returns:
+  `handle`. A no-op (beyond returning `handle`) if `handle` isn't
+  currently tracked by `session` - e.g. a widget added with an
+  append-mode `:on-add :untracked` policy while not in a tty.
+
+  In tty mode, the widget (and anything below it) is erased and redrawn
+  in place - accounting for the widget's height changing (e.g. a test
+  going from a one-line \"RUNNING\" to a multi-line failure result), by
+  measuring how far to move up *before* replacing its text. In append
+  mode, whether the new text is printed is read straight off `spec`'s
+  `:degrade` policy (`:on-update`) - see `voodoo.widget/make`."
+  [{:keys [order widgets tty?] :as session} handle spec]
+  (when (contains? widgets handle)
+    (reset-terminal-cursor! session)
+    (let [text (:text spec)]
+      (if tty?
+        (let [ids (slice order (index-of order handle))
+              old-height (total-height session ids)]
+          (assoc! widgets handle {:spec spec :text text})
+          (redraw! session ids (ansi/move-up old-height)))
+        (do
+          (assoc! widgets handle {:spec spec :text text})
+          (when (= :visible (get-in spec [:degrade :on-update]))
+            (prn! text)))))
+    (restore-terminal-cursor! session))
+  handle)
+
+
+
+;; Interaction
+
+(defun focus!
+  "Give keyboard focus to a tracked widget.
+
+  SESSION is returned by `make` and HANDLE by `add!`. Returns HANDLE. An
+  untracked handle leaves the current focus unchanged."
+  [session handle]
+  (when (contains? (:widgets session) handle)
+    (reset-terminal-cursor! session)
+    (assoc! session :focus handle)
+    (restore-terminal-cursor! session))
+  handle)
+
+(defun dispatch!
+  "Dispatch EVENT to the focused widget and apply its event result.
+
+  A widget participates by storing an `:on-event` function in its spec. That
+  function receives the current spec and EVENT and returns a map which may
+  contain a replacement `:widget` and an `:actions` vector. The replacement is
+  rendered through `update!`; actions are returned to the caller. Widgets with
+  no event function, and sessions with no focused widget, return `[]`."
+  [session event]
+  (let [tracked-widget (get (:widgets session) (:focus session))
+        on-event (get-in tracked-widget [:spec :on-event])]
+    (if on-event
+      (let [result (on-event (:spec tracked-widget) event)]
+        (when-let [next-widget (:widget result)]
+          (update! session (:focus session) next-widget))
+        (get result :actions []))
+      [])))
+
+
+
+;; Session content managemnt
+
+(defun add!
+  "Register a new widget in a session and render it immediately.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `spec`: Widget spec map. Built via `voodoo.widget/make`.
+
+  Returns:
+  A handle to pass into `update!`/`remove!`.
+
+  In tty mode, the widget is always shown and tracked, regardless of
+  `spec`'s `:degrade` policy - a live terminal is exactly what the policy
+  degrades *for*. In append mode, whether the widget is registered at all
+  is read off `:on-add` first: `:untracked` means it never enters
+  `:widgets`/`:order`, so later `update!`/`remove!` calls against its
+  handle are no-ops - the caller never has to know whether it's running
+  in a tty to make that true. Otherwise the widget is registered, and
+  `:on-add` (`:visible`/`:hidden`) decides whether its text is printed.
+  See `voodoo.widget/make`."
+  [{:keys [id-seq widgets order tty?] :as session} spec]
+  (let [id (inc id-seq)
+        new-id (keyword (str "voodoo/" id))
+        text (:text spec)
+        track? (or tty? (not= :untracked (get-in spec [:degrade :on-add])))]
+    (reset-terminal-cursor! session)
+    (assoc! session :id-seq id)
+    (when track?
+      (assoc! widgets new-id {:id new-id
+                              :spec spec
+                              :text text})
+      (append! order new-id))
+    (if tty?
+      (print-lines! "" text)
+      (when (= :visible (get-in spec [:degrade :on-add]))
+        (prn! text)))
+    (restore-terminal-cursor! session)
+    new-id))
+
+
+
+(defun evict!
+  "Drop a widget from session bookkeeping without altering rendered content.
+
+  Use once a widget's last `update!` has already given it its permanent,
+  final text: the widget stays on screen exactly as drawn - this only
+  stops `session` from including it in future `:widgets`/`:order`
+  redraws (e.g. of other widgets below it), so a long-lived block of many
+  widgets doesn't keep re-touching everything that's already finished as
+  more of them finalize. Particularly relevant for a widget with
+  multi-line `:text` (e.g. a failing test's result line folded together
+  with its failure-detail lines - see `voodoo.widget/line-count`): left
+  tracked, every later widget's `update!` would keep redrawing all of
+  that content too.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `handle`: Handle returned by `add!`.
+
+  Returns:
+  `handle`, after removing it from the session's bookkeeping."
+  [session handle]
+  (when (= handle (:focus session))
+    (reset-terminal-cursor! session))
+  (dissoc! (:widgets session) handle)
+  (roo/update! session :order (fn [order] (remove order (fn [n] (= n handle)))))
+  (when (= handle (:focus session))
+    (assoc! session :focus nil))
+  handle)
+
+(defun remove!
+  "Remove a widget from a session, erasing it from the terminal.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `handle`: Handle returned by `add!`.
+
+  Returns:
+  `handle`. A no-op (beyond returning `handle`) if `handle` isn't
+  currently tracked by `session` - e.g. a widget added with an
+  append-mode `:on-add :untracked` policy while not in a tty.
+
+  In tty mode: clears the widget's row(s) - it may span more than one,
+  see `voodoo.widget/line-count` - then redraws any widgets below it so
+  they close the gap. If the removed widget was the bottom-most (or
+  only) one, its rows are cleared using `pr!`, not `prn!` - a
+  positioning-only escape sequence has no content that a trailing newline
+  should follow, so the cursor is left exactly at the start of the first
+  (now blank) row, where the widget used to be. Whatever prints next - by
+  this session, or, as `pkg/proof` does, by the caller once it removes an
+  in-progress widget and prints its own final line - lands exactly there
+  instead of one row too low. In append mode, whether the widget's last
+  text is printed on its way out is read straight off its `:degrade`
+  policy (`:on-remove`) - see `voodoo.widget/make`. Either way, bookkeeping
+  cleanup is delegated to `evict!`."
+  [{:keys [order widgets] :as session} handle]
+  (when (contains? widgets handle)
+    (reset-terminal-cursor! session)
+    (let [ids (slice order (index-of order handle))
+          remaining (tail ids)
+          widget (get widgets handle)]
+      (if (:tty? session)
+        (if (empty? remaining)
+          (pr! (clear-rows-upward (total-height session ids)))
+          (redraw! session remaining (ansi/move-up (total-height session ids))))
+        (when (= :visible (get-in (:spec widget) [:degrade :on-remove]))
+          (prn! (:text widget))))
+      (evict! session handle)
+      (restore-terminal-cursor! session)))
+  handle)
+
+
+
+;; Make function
+
+(defun make
+  "Create a new voodoo session.
+
+  Args:
+  - `opts`: Optional map. `:tty?` forces terminal mode on (true) or off
+    (false); when omitted, resolves via `roo.tty/tty?`.
+
+  Returns:
+  A fresh session map. Hold onto it and pass it into add!/update!/remove!."
+  [& {:keys [tty?] :as opts} &rest]
+  {:tty? (case tty?
+           nil (tty/tty?)
+           :auto (tty/tty?)
+           :default tty?)
+   :widgets {}
+   :order []
+   :focus nil
+   :id-seq 0})

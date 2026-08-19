@@ -10,18 +10,30 @@
   (is (= "[3A"
          (ansi/move-up 3))))
 
-(deftest move-up-returns-empty-string-for-zero
-  ;; A 0 parameter to CUU is clamped to 1 row by the terminal, not a no-op,
+(deftest move-up/returns-empty-string-for-zero
+  ;; A zero-parameter to CUU is clamped to 1 row by the terminal, not a no-op,
   ;; so zero must be handled here instead of passed through.
   (is (= "" (ansi/move-up 0))))
 
-(deftest move-up-returns-empty-string-for-negative
+(deftest move-up/returns-empty-string-for-negative
   (is (= "" (ansi/move-up -1))))
+
+
+
+;; voodoo.ansi/move-down
+
+(deftest move-down/returns-the-cursor-down-escape-sequence
+  (is (= "[3B"
+         (ansi/move-down 3))))
+
+(deftest move-down/returns-empty-string-for-non-positive-values
+  (is (= "" (ansi/move-down 0)))
+  (is (= "" (ansi/move-down -1))))
 
 
 
 ;; voodoo.ansi/clear-line
 
-(deftest clear-line-returns-the-erase-line-escape-sequence
+(deftest clear-line/returns-the-erase-line-escape-sequence
   (is (= "[2K"
          (ansi/clear-line))))

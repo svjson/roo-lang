@@ -1,0 +1,107 @@
+(ns voodoo.widget)
+
+
+
+;; Dimensions
+
+(defun count-char
+  "Count occurrences of the single character CH in TEXT."
+  [text ch]
+  (if-let [found (index-of text ch)]
+    (+ 1 (count-char (substr text (+ found 1)) ch))
+    0))
+
+(defun line-count
+  "Number of terminal rows TEXT occupies: its embedded newline count, plus
+  one. `:text` isn't always a single line - a failing test's result line
+  folded together with its failure-detail lines, as one widget, is a
+  multi-line example - so callers that compute cursor movement (see
+  `voodoo.session`) measure a widget's height with this instead of
+  assuming one row per widget."
+  [text]
+  (+ 1 (count-char text '\n')))
+
+
+
+;; no-TTY degration policy presets
+
+(def visible-once
+  "Default append-mode degrade policy: shown once when added, silent on
+  every update or removal after that. What a one-off transient status
+  line (e.g. \"Discovering proof tests...\") needs - worth a single line
+  in a static log, not a scrolling transcript of every change made to it
+  while a tty was watching."
+  {:on-add :visible
+   :on-update :hidden
+   :on-remove :hidden})
+
+(def silent
+  "Append-mode degrade policy for a widget that never prints anything on
+  its own in append mode, at any lifecycle point. For a widget with no
+  textual form worth logging at all - e.g. a spinner frame, meaningless
+  outside a live tty."
+  {:on-add :hidden
+   :on-update :hidden
+   :on-remove :hidden})
+
+(def replaced
+  "Append-mode degrade policy for a widget whose `add!`-time text is a
+  placeholder not worth logging (e.g. \"RUNNING x\"), but whose first
+  `update!` carries its real, final content (e.g. \"PASS x\") - the one
+  line append mode should see. For a widget that starts in-progress and
+  is updated exactly once, to its finished state."
+  {:on-add :hidden
+   :on-update :visible
+   :on-remove :hidden})
+
+(def tty-only
+  "Append-mode degrade policy for a widget that doesn't exist outside a
+  live tty at all: not shown, and not even registered in the session, so
+  `update!`/`remove!` calls against its handle are no-ops in append mode
+  - there's nothing there to find, not a policy decision either of them
+  has to consult. For an in-progress indicator (e.g. \"RUNNING x\") whose
+  caller prints its own separate, final line once the widget is removed
+  - the in-progress line itself has no place in a static log, and the
+  caller never has to ask whether it's running in a tty to make that
+  true."
+  {:on-add :untracked
+   :on-update :hidden
+   :on-remove :hidden})
+
+
+
+;; Make function
+
+(defun make
+  "Build a widget spec with a complete append-mode degrade policy.
+
+  Every widget needs a `:degrade` policy telling the session what to do
+  in append (non-tty) mode at each lifecycle point, but most widgets only
+  differ from `visible-once` at one or two of those points. `make` lets a
+  caller state just the difference: any `:degrade` keys given in `opts`
+  override `visible-once` for those keys only, so
+  `{:degrade {:on-update :visible}}` yields a full policy identical to
+  `visible-once` except for `:on-update`. Omitting `:degrade` entirely
+  yields `visible-once` unchanged.
+
+  Args:
+  - `opts`: Widget fields, e.g. `{:type :status :text \"RUNNING x\"}`.
+    An interactive widget may provide
+    `:cursor {:row row :text-before text}` within its rendered `:text`, where
+    `:row` is zero-based and `:text-before` is the rendered part of that row
+    preceding the cursor. A focused widget's session places the terminal cursor
+    there after rendering. Replaying the rendered prefix lets the terminal
+    account for Unicode display width and ANSI sequences itself.
+    `:degrade`, if given, is a partial or full policy map with
+    `:on-add`/`:on-update`/`:on-remove` keys, each `:visible` or
+    `:hidden` (`:on-add` also accepts `:untracked` - see `tty-only`) -
+    see `visible-once`, `silent`, `replaced`, and `tty-only` for
+    ready-made policies.
+
+  Returns:
+  A widget, with a complete `:degrade` policy. The session and reporters
+  read `:text` and `:degrade` straight off it via plain keyword access -
+  no widget-aware accessor functions needed downstream."
+  [opts]
+  (update opts :degrade (fn [widget-opts]
+                          (merge visible-once widget-opts))))

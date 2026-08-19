@@ -1,0 +1,63 @@
+(ns voodoo.text.buffer-test
+  (:require proof.core
+            [voodoo.text.buffer :as buffer]))
+
+
+
+;; voodoo.text.buffer/make and text
+
+(deftest make/places-the-cursor-after-complete-unicode-scalars
+  (let [text-buffer (buffer/make "ä猫🙂")]
+    (is (= ["a" "̈" "猫" "🙂"] (:before text-buffer)))
+    (is (= [] (:after text-buffer)))
+    (is (= "ä猫🙂" (buffer/text text-buffer)))))
+
+
+
+;; Editing
+
+(deftest insert/adds-text-at-the-cursor
+  (is (= "a猫b"
+         (-> (buffer/make "ab")
+             buffer/move-left
+             (buffer/insert "猫")
+             buffer/text))))
+
+(deftest backspace/removes-the-scalar-before-the-cursor
+  (is (= "a🙂"
+         (-> (buffer/make "a猫🙂")
+             buffer/move-left
+             buffer/backspace
+             buffer/text))))
+
+(deftest delete/removes-the-scalar-after-the-cursor
+  (is (= "a🙂"
+         (-> (buffer/make "a猫🙂")
+             buffer/move-start
+             buffer/move-right
+             buffer/delete
+             buffer/text))))
+
+(deftest editing/does-nothing-past-the-buffer-boundaries
+  (is (= (buffer/make "")
+         (-> (buffer/make "")
+             buffer/move-left
+             buffer/move-right
+             buffer/backspace
+             buffer/delete))))
+
+
+
+;; Cursor movement
+
+(deftest move-left-and-right/move-one-complete-scalar
+  (let [moved-left (buffer/move-left (buffer/make "a🙂"))]
+    (is (= ["a"] (:before moved-left)))
+    (is (= ["🙂"] (:after moved-left)))
+    (is (= (buffer/make "a🙂") (buffer/move-right moved-left)))))
+
+(deftest move-start-and-end/preserve-text
+  (let [at-start (buffer/move-start (buffer/make "abc"))]
+    (is (= [] (:before at-start)))
+    (is (= ["a" "b" "c"] (:after at-start)))
+    (is (= (buffer/make "abc") (buffer/move-end at-start)))))

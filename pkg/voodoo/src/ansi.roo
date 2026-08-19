@@ -25,6 +25,14 @@
     (str ESC "[" n "A")
     ""))
 
+(defun move-down
+  "Return the ANSI sequence to move the cursor down N rows.
+
+  Returns the empty string when N is not positive."
+  [n]
+  (if (> n 0)
+    (str ESC "[" n "B")
+    ""))
 
 
 ;; Output

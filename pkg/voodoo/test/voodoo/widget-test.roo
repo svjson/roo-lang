@@ -1,0 +1,64 @@
+(ns voodoo.widget-test
+  (:require proof.core
+            [voodoo.widget :as widget]))
+
+
+
+;; voodoo.widget/make
+
+(deftest make/fills-in-the-default-degrade-policy-when-none-given
+  (is (= {:type :label
+          :text "Discovering proof tests..."
+          :degrade widget/visible-once}
+         (widget/make {:type :label
+                       :text "Discovering proof tests..."}))))
+
+(deftest make/keeps-an-explicit-degrade-policy
+  (is (= {:type :status
+          :text "RUNNING checkout-total"
+          :degrade widget/silent}
+         (widget/make {:type :status
+                       :text "RUNNING checkout-total"
+                       :degrade widget/silent}))))
+
+(deftest make/overlays-a-partial-degrade-policy-on-visible-once
+  (is (= {:type :status
+          :text "RUNNING checkout-total"
+          :degrade {:on-add :visible :on-update :visible :on-remove :hidden}}
+         (widget/make {:type :status
+                       :text "RUNNING checkout-total"
+                       :degrade {:on-update :visible}}))))
+
+
+
+;; voodoo.widget/visible-once and voodoo.widget/silent
+
+(deftest visible-once/shows-on-add-and-stays-quiet-after
+  (is (= {:on-add :visible :on-update :hidden :on-remove :hidden}
+         widget/visible-once)))
+
+(deftest silent/never-shows-on-its-own
+  (is (= {:on-add :hidden :on-update :hidden :on-remove :hidden}
+         widget/silent)))
+
+(deftest replaced/hides-the-placeholder-and-shows-the-first-update
+  (is (= {:on-add :hidden :on-update :visible :on-remove :hidden}
+         widget/replaced)))
+
+(deftest tty-only/is-untracked-on-add-and-hidden-otherwise
+  (is (= {:on-add :untracked :on-update :hidden :on-remove :hidden}
+         widget/tty-only)))
+
+
+
+;; voodoo.widget/line-count
+
+(deftest line-count/is-one-for-a-single-line
+  (is (= 1 (widget/line-count "RUNNING checkout-total"))))
+
+(deftest line-count/is-one-for-an-empty-string
+  (is (= 1 (widget/line-count ""))))
+
+(deftest line-count/counts-embedded-newlines-plus-one
+  (is (= 2 (widget/line-count "FAIL - checkout-total\n    - Expected 1, got 2.")))
+  (is (= 3 (widget/line-count "FAIL - checkout-total\n    - detail one\n    - detail two"))))

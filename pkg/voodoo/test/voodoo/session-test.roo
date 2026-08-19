@@ -1,23 +1,72 @@
 (ns voodoo.session-test
   (:require proof.core
             [proof.syntax :as p]
+            [roo.tty :as tty]
             [voodoo.session :as session]))
+
+
+
+;; voodoo.session/total-height
+
+(deftest total-height/sums-single-line-widgets-as-one-each
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [widget-session]
+    {:h1 (session/add! widget-session {:type :label :text "first"})
+     :h2 (session/add! widget-session {:type :label :text "second"})
+     :session widget-session})
+
+  (p/then [{:keys [h1 h2 session]}]
+    (is (= 2 (session/total-height session [h1 h2])))))
+
+(deftest total-height/counts-a-multi-line-widgets-embedded-rows
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [widget-session]
+    {:h1 (session/add! widget-session
+                       {:type :status
+                        :text "FAIL - checkout-total\n    - Expected 1, got 2."})
+     :h2 (session/add! widget-session {:type :label :text "second"})
+     :session widget-session})
+
+  (p/then [{:keys [h1 h2 session]}]
+    (is (= 3 (session/total-height session [h1 h2])))))
+
+(deftest cursor-baseline-distance/counts-the-focused-row-and-later-widgets
+  (let [widget-session (session/make {:tty? false})
+        handle (session/add! widget-session
+                             {:type :field
+                              :text "first\nsecond"
+                              :cursor {:row 1
+                                       :text-before "sec"}})]
+    (session/add! widget-session
+                  {:type :label
+                   :text "below\nlast"})
+    (is (= 3
+           (session/cursor-baseline-distance widget-session
+                                             handle
+                                             {:row 1
+                                              :text-before "sec"})))))
 
 
 
 ;; voodoo.session/make
 
 (deftest make/zero-arg-creates-a-fresh-empty-session
-  (is (= {:tty? true
+  (is (= {:tty? (tty/tty?)
           :widgets {}
           :order []
+          :focus nil
           :id-seq 0}
          (session/make))))
 
 (deftest make/empty-map-arg-creates-a-fresh-empty-session
-  (is (= {:tty? true
+  (is (= {:tty? (tty/tty?)
           :widgets {}
           :order []
+          :focus nil
           :id-seq 0}
          (session/make {}))))
 
@@ -32,11 +81,8 @@
     (is (= false
            (-> sessions :tty-disabled-session :tty?)))))
 
-(deftest make/tty-capability-resolves-via-the-detect-stub-when-omitted
-  ;; No native tty check exists yet - detect-tty is a stub that always
-  ;; resolves true. This test documents today's stub behavior; it should
-  ;; start failing (and get rewritten) once real detection lands.
-  (is (= true (:tty? (session/make)))))
+(deftest make/tty-capability-auto-detects-via-roo-tty-when-omitted
+  (is (= (tty/tty?) (:tty? (session/make)))))
 
 
 
@@ -58,50 +104,332 @@
                                         :text "Discovering proof tests..."}
                                  :text "Discovering proof tests..."}}
             :order [:voodoo/1]
+            :focus nil
             :id-seq 1}
            session))))
 
-;;; ---- From here, continue to adapt tests to be readable and serve as docs
+(deftest add!/stores-a-widgets-degrade-policy-like-any-other-spec-field
+  (p/given
+    (session/make {:tty? false}))
 
+  (p/when [session]
+    {:widget (session/add! session {:type :status
+                                    :text "RUNNING checkout-total"
+                                    :degrade {:on-add :hidden
+                                              :on-update :hidden
+                                              :on-remove :hidden}})
+     :session session})
 
-(deftest add-assigns-distinct-handles-to-successive-widgets
-  (let [s (session/make {:tty? false})
-        h1 (session/add! s {:type :label :text "first"})
-        h2 (session/add! s {:type :label :text "second"})]
+  (p/then [{:keys [widget session]}]
+    (is (= {:tty? false
+            :widgets {:voodoo/1 {:id :voodoo/1
+                                 :spec {:type :status
+                                        :text "RUNNING checkout-total"
+                                        :degrade {:on-add :hidden
+                                                  :on-update :hidden
+                                                  :on-remove :hidden}}
+                                 :text "RUNNING checkout-total"}}
+            :order [:voodoo/1]
+            :focus nil
+            :id-seq 1}
+           session))))
+
+(deftest add!/does-not-track-an-untracked-widget-in-append-mode
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    {:widget (session/add! session {:type :status
+                                    :text "RUNNING checkout-total"
+                                    :degrade {:on-add :untracked
+                                              :on-update :hidden
+                                              :on-remove :hidden}})
+     :session session})
+
+  (p/then [{:keys [widget session]}]
+    (is (= {:tty? false
+            :widgets {}
+            :order []
+            :focus nil
+            :id-seq 1}
+           session))
+    (is (some? widget))))
+
+(deftest add!/always-tracks-an-untracked-widget-in-tty-mode
+  (p/given
+    (session/make {:tty? true}))
+
+  (p/when [session]
+    {:widget (session/add! session {:type :status
+                                    :text "RUNNING checkout-total"
+                                    :degrade {:on-add :untracked
+                                              :on-update :hidden
+                                              :on-remove :hidden}})
+     :session session})
+
+  (p/then [{:keys [widget session]}]
+    (is (contains? (:widgets session) widget))
+    (is (= [widget] (:order session)))))
+
+(deftest add!/assigns-distinct-handles-to-successive-widgets
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    {:h1 (session/add! session {:type :label :text "first"})
+     :h2 (session/add! session {:type :label :text "second"})
+     :session session})
+
+  (p/then [{:keys [h1 h2 session]}]
     (is (not= h1 h2))
-    (is (= [h1 h2] (:order s)))))
+    (is (= [h1 h2] (:order session)))))
 
-(deftest update-replaces-a-widgets-spec-and-rendered-text
-  (let [s (session/make {:tty? false})
-        h (session/add! s {:type :label :text "Discovering proof tests..."})
-        new-spec {:type :label :text "Discovering proof tests... (42 found)"}]
-    (session/update! s h new-spec)
-    (is (= {:spec new-spec :text "Discovering proof tests... (42 found)"}
-           (get (:widgets s) h nil)))))
 
-(deftest update-returns-the-handle-unchanged
-  (let [s (session/make {:tty? false})
-        h (session/add! s {:type :label :text "first"})]
-    (is (= h (session/update! s h {:type :label :text "second"})))))
+
+;; voodoo.session/update!
 
-(deftest remove-deletes-the-widget-from-session-state
-  (let [s (session/make {:tty? false})
-        h (session/add! s {:type :label :text "Discovering proof tests..."})]
-    (session/remove! s h)
-    (is (nil? (get (:widgets s) h nil)))
-    (is (= [] (:order s)))))
+(deftest update!/replaces-a-widgets-spec-and-rendered-text
+  (p/given
+    (session/make {:tty? false}))
 
-(deftest remove-preserves-remaining-widgets-and-their-order
-  (let [s (session/make {:tty? false})
-        h1 (session/add! s {:type :label :text "first"})
-        spec2 {:type :label :text "second"}
-        h2 (session/add! s spec2)]
-    (session/remove! s h1)
-    (is (= [h2] (:order s)))
-    (is (nil? (get (:widgets s) h1 nil)))
-    (is (= {:id :voodoo/2 :spec spec2 :text "second"} (get (:widgets s) h2 nil)))))
+  (p/when [session]
+    (session/add! session {:type :label :text "Discovering proof tests..."})
+    (session/update! session :voodoo/1 {:type :label :text "Discovering proof tests... (42 found)"})
+    session)
 
-(deftest remove-returns-the-handle
-  (let [s (session/make {:tty? false})
-        h (session/add! s {:type :label :text "first"})]
-    (is (= h (session/remove! s h)))))
+  (p/then [session]
+    (is (= {:spec {:type :label :text "Discovering proof tests... (42 found)"}
+            :text "Discovering proof tests... (42 found)"}
+           (get (:widgets session) :voodoo/1 nil)))))
+
+(deftest update!/is-a-no-op-for-an-untracked-handle
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    {:widget (session/add! session {:type :status
+                                    :text "RUNNING checkout-total"
+                                    :degrade {:on-add :untracked
+                                              :on-update :hidden
+                                              :on-remove :hidden}})
+     :session session})
+
+  (p/then [{:keys [widget session]}]
+    (is (= widget (session/update! session widget {:text "PASS checkout-total"})))
+    (is (= {:tty? false
+            :widgets {}
+            :order []
+            :focus nil
+            :id-seq 1}
+           session))))
+
+(deftest update!/replaces-a-single-line-widget-with-a-multi-line-one
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :status :text "RUNNING checkout-total"})
+    (session/update! session
+                     :voodoo/1
+                     {:type :status
+                      :text "FAIL - checkout-total\n    - Expected 1, got 2."})
+    session)
+
+  (p/then [session]
+    (is (= {:spec {:type :status
+                   :text "FAIL - checkout-total\n    - Expected 1, got 2."}
+            :text "FAIL - checkout-total\n    - Expected 1, got 2."}
+           (get (:widgets session) :voodoo/1 nil)))))
+
+(deftest update!/returns-the-handle-unchanged
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "first"})
+    (session/update! session :voodoo/1 {:type :label :text "second"}))
+
+  (p/then [result]
+    (is (= :voodoo/1 result))))
+
+
+
+;; voodoo.session/focus! and dispatch!
+
+(deftest focus!/focuses-only-a-tracked-widget
+  (let [widget-session (session/make {:tty? false})
+        handle (session/add! widget-session
+                             {:type :field
+                              :text "before"})]
+    (session/focus! widget-session handle)
+    (is (= handle (:focus widget-session)))
+    (session/focus! widget-session :voodoo/missing)
+    (is (= handle (:focus widget-session)))))
+
+(deftest dispatch!/updates-the-focused-widget-and-returns-its-actions
+  (let [widget-session (session/make {:tty? false})
+        handle (session/add! widget-session
+                             {:type :field
+                              :text "before"
+                              :degrade {:on-add :hidden
+                                        :on-update :hidden
+                                        :on-remove :hidden}
+                              :on-event (fn [widget event]
+                                          {:widget (assoc widget :text (:text event))
+                                           :actions
+                                           [{:type :changed
+                                             :value (:text event)}]})})]
+    (session/focus! widget-session handle)
+    (is (= [{:type :changed
+             :value "after"}]
+           (session/dispatch! widget-session
+                              {:type :text
+                               :text "after"})))
+    (is (= "after" (get-in widget-session [:widgets handle :text])))))
+
+(deftest dispatch!/does-nothing-without-a-focused-event-widget
+  (let [widget-session (session/make {:tty? false})
+        handle (session/add! widget-session
+                             {:type :label
+                              :text "label"})]
+    (is (= [] (session/dispatch! widget-session
+                                 {:type :text
+                                  :text "ignored"})))
+    (session/focus! widget-session handle)
+    (is (= [] (session/dispatch! widget-session
+                                 {:type :text
+                                  :text "ignored"})))))
+
+
+
+;; voodoo.session/remove!
+
+(deftest remove!/deletes-the-widget-from-session-state
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "Discovering proof tests..."})
+    (session/remove! session :voodoo/1)
+    session)
+
+  (p/then [session]
+    (is (= {:tty? false
+            :widgets {}
+            :order []
+            :focus nil
+            :id-seq 1}
+           session))))
+
+(deftest remove!/preserves-remaining-widgets-and-their-order
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "first"})
+    (session/add! session {:type :label :text "second"})
+    (session/remove! session :voodoo/1)
+    session)
+
+  (p/then [session]
+    (is (= {:tty? false
+            :widgets {:voodoo/2 {:id :voodoo/2
+                                 :spec {:type :label :text "second"}
+                                 :text "second"}}
+            :order [:voodoo/2]
+            :focus nil
+            :id-seq 2}
+           session))))
+
+(deftest remove!/is-a-no-op-for-an-untracked-handle
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    {:widget (session/add! session {:type :status
+                                    :text "RUNNING checkout-total"
+                                    :degrade {:on-add :untracked
+                                              :on-update :hidden
+                                              :on-remove :hidden}})
+     :session session})
+
+  (p/then [{:keys [widget session]}]
+    (is (= widget (session/remove! session widget)))
+    (is (= {:tty? false
+            :widgets {}
+            :order []
+            :focus nil
+            :id-seq 1}
+           session))))
+
+(deftest remove!/returns-the-handle
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "first"})
+    (session/remove! session :voodoo/1))
+
+  (p/then [result]
+    (is (= :voodoo/1 result))))
+
+
+
+;; voodoo.session/evict!
+
+(deftest evict!/deletes-the-widget-from-session-state
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "Discovering proof tests..."})
+    (session/evict! session :voodoo/1)
+    session)
+
+  (p/then [session]
+    (is (= {:tty? false
+            :widgets {}
+            :order []
+            :focus nil
+            :id-seq 1}
+           session))))
+
+(deftest evict!/clears-focus-when-evicting-the-focused-widget
+  (let [widget-session (session/make {:tty? false})
+        handle (session/add! widget-session
+                             {:type :label
+                              :text "first"})]
+    (session/focus! widget-session handle)
+    (session/evict! widget-session handle)
+    (is (nil? (:focus widget-session)))))
+
+(deftest evict!/preserves-remaining-widgets-and-their-order
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "first"})
+    (session/add! session {:type :label :text "second"})
+    (session/evict! session :voodoo/1)
+    session)
+
+  (p/then [session]
+    (is (= {:tty? false
+            :widgets {:voodoo/2 {:id :voodoo/2
+                                 :spec {:type :label :text "second"}
+                                 :text "second"}}
+            :order [:voodoo/2]
+            :focus nil
+            :id-seq 2}
+           session))))
+
+(deftest evict!/returns-the-handle
+  (p/given
+    (session/make {:tty? false}))
+
+  (p/when [session]
+    (session/add! session {:type :label :text "first"})
+    (session/evict! session :voodoo/1))
+
+  (p/then [result]
+    (is (= :voodoo/1 result))))

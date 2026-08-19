@@ -1,0 +1,251 @@
+(ns voodoo.widget.prompt-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [voodoo.widget :as widget]
+            [voodoo.widget.prompt :as prompt]))
+
+
+
+;; voodoo.widget.prompt/make
+
+(deftest make/builds-a-terminal-only-prompt-widget
+  (is (= {:prompt "roo> "
+          :type :prompt
+          :history ["(+ 1 2)"]
+          :history-position 0
+          :buffer {:before ["(" "+" " " "1" " " "2" ")"]
+                   :after []}
+          :text "roo> (+ 1 2)"
+          :cursor {:row 0
+                   :text-before "roo> (+ 1 2)"}
+          :on-event prompt/on-event
+          :degrade widget/tty-only}
+         (prompt/make {:prompt "roo> "
+                       :value "(+ 1 2)"}))))
+
+(deftest make/preserves-other-widget-options
+  (is (= {:name :search
+          :degrade {:on-add :visible
+                    :on-update :hidden
+                    :on-remove :hidden}}
+         (select-keys (prompt/make {:name :search
+                                    :degrade {:on-add :visible}})
+                      [:name :degrade]))))
+
+
+
+;; voodoo.widget.prompt/on-event
+
+(deftest on-event/inserts-text-and-paste-at-the-cursor
+  (p/when []
+    (let [moved (:widget (prompt/on-event (prompt/make {:prompt "> "
+                                                        :value "ac"})
+                                          {:type :key
+                                           :key :left}))
+          typed (:widget (prompt/on-event moved
+                                          {:type :text
+                                           :text "猫"}))]
+      (for [widget [moved
+                    typed
+                    (:widget (prompt/on-event typed
+                                              {:type :paste
+                                               :text "🙂b"}))]]
+        (select-keys widget
+                     [:history
+                      :history-position
+                      :buffer
+                      :text
+                      :cursor]))))
+
+  (p/then [widgets]
+    (is (= [{:history ["ac"]
+             :history-position 0
+             :buffer {:before ["a"]
+                      :after ["c"]}
+             :text "> ac"
+             :cursor {:row 0
+                      :text-before "> a"}}
+            {:history ["a猫c"]
+             :history-position 0
+             :buffer {:before ["a" "猫"]
+                      :after ["c"]}
+             :text "> a猫c"
+             :cursor {:row 0
+                      :text-before "> a猫"}}
+            {:history ["a猫🙂bc"]
+             :history-position 0
+             :buffer {:before ["a" "猫" "🙂" "b"]
+                      :after ["c"]}
+             :text "> a猫🙂bc"
+             :cursor {:row 0
+                      :text-before "> a猫🙂b"}}]
+           widgets))))
+
+(deftest on-event/moves-and-edits-with-named-keys
+  (p/when []
+    (let [at-start (:widget (prompt/on-event (prompt/make {:value "a猫🙂"})
+                                             {:type :key
+                                              :key :home}))
+          after-a (:widget (prompt/on-event at-start
+                                            {:type :key
+                                             :key :right}))
+          deleted (:widget (prompt/on-event after-a
+                                            {:type :key
+                                             :key :delete}))
+          at-end (:widget (prompt/on-event deleted
+                                           {:type :key
+                                            :key :end}))]
+      (for [widget [at-start
+                    after-a
+                    deleted
+                    at-end
+                    (:widget (prompt/on-event at-end
+                                              {:type :key
+                                               :key :backspace}))]]
+        (select-keys widget
+                     [:history
+                      :history-position
+                      :buffer
+                      :text
+                      :cursor]))))
+
+  (p/then [widgets]
+    (is (= [{:history ["a猫🙂"]
+             :history-position 0
+             :buffer {:before []
+                      :after ["a" "猫" "🙂"]}
+             :text "a猫🙂"
+             :cursor {:row 0
+                      :text-before ""}}
+            {:history ["a猫🙂"]
+             :history-position 0
+             :buffer {:before ["a"]
+                      :after ["猫" "🙂"]}
+             :text "a猫🙂"
+             :cursor {:row 0
+                      :text-before "a"}}
+            {:history ["a🙂"]
+             :history-position 0
+             :buffer {:before ["a"]
+                      :after ["🙂"]}
+             :text "a🙂"
+             :cursor {:row 0
+                      :text-before "a"}}
+            {:history ["a🙂"]
+             :history-position 0
+             :buffer {:before ["a" "🙂"]
+                      :after []}
+             :text "a🙂"
+             :cursor {:row 0
+                      :text-before "a🙂"}}
+            {:history ["a"]
+             :history-position 0
+             :buffer {:before ["a"]
+                      :after []}
+             :text "a"
+             :cursor {:row 0
+                      :text-before "a"}}]
+           widgets))))
+
+(deftest on-event/emits-a-submit-action-for-enter
+  (is (= {:actions
+          [{:type :submit
+            :value "(+ 1 2)"}]}
+         (prompt/on-event (prompt/make {:value "(+ 1 2)"})
+                          {:type :key
+                           :key :enter}))))
+
+(deftest on-event/browses-history-and-restores-current-input
+  (p/given
+    (prompt/make {:history ["one" "two"]}))
+
+  (p/when [widget]
+    (let [typed (:widget (prompt/on-event widget
+                                          {:type :paste
+                                           :text "(ran"}))
+          newest (:widget (prompt/on-event typed
+                                           {:type :key
+                                            :key :up}))
+          oldest (:widget (prompt/on-event newest
+                                           {:type :key
+                                            :key :up}))
+          newer (:widget (prompt/on-event oldest
+                                          {:type :key
+                                           :key :down}))
+          current (:widget (prompt/on-event newer
+                                            {:type :key
+                                             :key :down}))]
+      {:widgets
+       (for [widget [typed newest oldest newer current]]
+         (select-keys widget
+                      [:history
+                       :history-position
+                       :buffer
+                       :text
+                       :cursor]))
+       :above-oldest (prompt/on-event oldest
+                                      {:type :key
+                                       :key :up})
+       :below-current (prompt/on-event current
+                                       {:type :key
+                                        :key :down})}))
+
+  (p/then [result]
+    (is (= {:widgets
+            [{:history ["one" "two" "(ran"]
+              :history-position 2
+              :buffer {:before ["(" "r" "a" "n"]
+                       :after []}
+              :text "(ran"
+              :cursor {:row 0
+                       :text-before "(ran"}}
+             {:history ["one" "two" "(ran"]
+              :history-position 1
+              :buffer {:before ["t" "w" "o"]
+                       :after []}
+              :text "two"
+              :cursor {:row 0
+                       :text-before "two"}}
+             {:history ["one" "two" "(ran"]
+              :history-position 0
+              :buffer {:before ["o" "n" "e"]
+                       :after []}
+              :text "one"
+              :cursor {:row 0
+                       :text-before "one"}}
+             {:history ["one" "two" "(ran"]
+              :history-position 1
+              :buffer {:before ["t" "w" "o"]
+                       :after []}
+              :text "two"
+              :cursor {:row 0
+                       :text-before "two"}}
+             {:history ["one" "two" "(ran"]
+              :history-position 2
+              :buffer {:before ["(" "r" "a" "n"]
+                       :after []}
+              :text "(ran"
+              :cursor {:row 0
+                       :text-before "(ran"}}]
+            :above-oldest {}
+            :below-current {}}
+           result))))
+
+(deftest on-event/leaves-modified-and-unrecognized-input-unhandled
+  (p/when []
+    (let [widget (prompt/make {:value "abc"})]
+      [(prompt/on-event widget
+                        {:type :text
+                         :text "x"
+                         :modifiers [:alt]})
+       (prompt/on-event widget
+                        {:type :key
+                         :key :left
+                         :modifiers [:control]})
+       (prompt/on-event widget
+                        {:type :resize
+                         :columns 80
+                         :rows 24})]))
+
+  (p/then [results]
+    (is (= [{} {} {}] results))))

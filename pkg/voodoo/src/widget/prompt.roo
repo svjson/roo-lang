@@ -1,0 +1,105 @@
+(ns voodoo.widget.prompt
+  (:require [voodoo.text.buffer :as buffer]
+            [voodoo.widget :as widget]))
+
+(defun on-event
+  "Apply a portable terminal EVENT to PROMPT.
+
+  Args:
+  - `prompt`: Prompt widget returned by `make`.
+  - `event`: Portable terminal event to apply.
+
+  Returns:
+  A widget event result. Editing and history navigation events return
+  `{:widget prompt}`. Enter returns a generic submit action containing the
+  current value:
+
+  ```roo
+  {:actions
+   [{:type :submit
+     :value \"(+ 1 2)\"}]}
+  ```
+
+  Unrecognized events and modified key combinations return an empty result so
+  another interaction layer may give them meaning later."
+  [prompt event]
+  (let [next-widget (fn [next-prompt next-buffer]
+                      (let [next-value (buffer/text next-buffer)]
+                        {:widget (assoc next-prompt
+                                        :history (assoc (:history next-prompt)
+                                                        (:history-position next-prompt)
+                                                        next-value)
+                                        :buffer next-buffer
+                                        :text (str (:prompt next-prompt)
+                                                   next-value)
+                                        :cursor {:row 0
+                                                 :text-before
+                                                 (str (:prompt next-prompt)
+                                                      (apply str (:before next-buffer)))})}))
+        navigate (fn [position]
+                   (next-widget (assoc prompt :history-position position)
+                                (buffer/make (nth (:history prompt) position))))]
+    (case (:type event)
+      :text (if (empty? (:modifiers event))
+              (next-widget prompt
+                           (buffer/insert (:buffer prompt) (:text event)))
+              {})
+      :paste (next-widget prompt
+                          (buffer/insert (:buffer prompt) (:text event)))
+      :key (if (empty? (:modifiers event))
+             (case (:key event)
+               :left (next-widget prompt (buffer/move-left (:buffer prompt)))
+               :right (next-widget prompt (buffer/move-right (:buffer prompt)))
+               :up (if (> (:history-position prompt) 0)
+                     (navigate (dec (:history-position prompt)))
+                     {})
+               :down (if (< (:history-position prompt)
+                            (dec (count (:history prompt))))
+                       (navigate (inc (:history-position prompt)))
+                       {})
+               :home (next-widget prompt (buffer/move-start (:buffer prompt)))
+               :end (next-widget prompt (buffer/move-end (:buffer prompt)))
+               :backspace (next-widget prompt (buffer/backspace (:buffer prompt)))
+               :delete (next-widget prompt (buffer/delete (:buffer prompt)))
+               :enter {:actions
+                       [{:type :submit
+                         :value (buffer/text (:buffer prompt))}]}
+               :default {})
+             {})
+      :default {})))
+
+(defun make
+  "Create a focusable prompt widget.
+
+  Args:
+  - `opts`: Widget option map. `:prompt` sets the displayed prefix, `:value`
+    sets the initial editable text, and `:history` supplies earlier values for
+    Up and Down navigation. Other widget fields are preserved.
+
+  Returns:
+  A focusable prompt widget. Its history ends with the current editable value,
+  and its history position starts at that final entry. The prompt defaults to
+  `voodoo.widget/tty-only` degradation.
+
+  ```roo
+  (prompt/make {:prompt \"roo> \"
+                :value \"(+ 1 2)\"})
+  ```"
+  [opts]
+  (let [prompt-text (get opts :prompt "")
+        initial-value (get opts :value "")
+        initial-buffer (buffer/make initial-value)
+        history (append (get opts :history []) initial-value)]
+    (widget/make
+      (merge (dissoc opts :value)
+             {:type :prompt
+              :prompt prompt-text
+              :history history
+              :history-position (dec (count history))
+              :buffer initial-buffer
+              :text (str prompt-text (buffer/text initial-buffer))
+              :cursor {:row 0
+                       :text-before (str prompt-text
+                                         (apply str (:before initial-buffer)))}
+              :on-event on-event
+              :degrade (merge widget/tty-only (:degrade opts))}))))
