@@ -35,7 +35,12 @@ namespace Roo
    * | -------- | ------------------------------------------------------------------ |
    * | path     | The path of the file to write.                                     |
    * | contents | The text contents to write to the file.                            |
-   * | options  | Optional map with :atomic? boolean.                                 |
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | path     | The path of the file to write.                                     |
+   * | contents | The text contents to write to the file.                            |
+   * | options  | Map with an optional `:atomic?` boolean.                           |
    */
   FUNC(SpitBangFunction, spit)
 
@@ -148,7 +153,12 @@ namespace Roo
    * | ------- | ------------------------------------------------------------------ |
    * | path    | The path of the EDN file to write.                                 |
    * | value   | The value to serialize with to_string().                           |
-   * | options | Optional map with :pretty?, :indent, and :atomic? values.           |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | path    | The path of the EDN file to write.                                 |
+   * | value   | The value to serialize with to_string().                           |
+   * | options | Map with optional `:pretty?`, `:indent`, and `:atomic?` values.    |
    */
   FUNC(SpitEdnBangFunction, spit_edn)
 } // namespace Roo

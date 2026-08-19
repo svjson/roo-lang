@@ -36,7 +36,11 @@ namespace Roo
    * | Arg #      | Description                                                      |
    * |------------|------------------------------------------------------------------|
    * | source-str | The source text to read.                                         |
-   * | opts        | Optional map with :path used in source locations.               |
+   *
+   * | Arg #      | Description                                                      |
+   * |------------|------------------------------------------------------------------|
+   * | source-str | The source text to read.                                         |
+   * | opts       | Map with optional :path used in source locations.                |
    */
   FUNC(AstReadStringFunction, read_string)
 } // namespace Roo

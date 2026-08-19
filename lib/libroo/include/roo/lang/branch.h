@@ -68,7 +68,12 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | condition | Conditional form tested for truthiness                             |
    * | then      | Form evaluated when the condition is truthy                        |
-   * | else      | Optional form evaluated when the condition is falsy                |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | condition | Conditional form tested for truthiness                             |
+   * | then      | Form evaluated when the condition is truthy                        |
+   * | else      | Form evaluated when the condition is falsy                         |
    */
   SPECIAL_FORM_DECL(IfForm, if)
 

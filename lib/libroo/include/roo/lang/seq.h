@@ -178,7 +178,12 @@ namespace Roo
    * | ----- | ------------------------------------------------------------------ |
    * | seq   | Sequential value or string to read from.                           |
    * | start | Inclusive start index. Negative indexes count from the end.        |
-   * | end   | Optional exclusive end index. Negative indexes count from the end. |
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | seq   | Sequential value or string to read from.                           |
+   * | start | Inclusive start index. Negative indexes count from the end.        |
+   * | end   | Exclusive end index. Negative indexes count from the end.          |
    *
    * @return A string for string input; otherwise a new vector.
    */
@@ -239,9 +244,15 @@ namespace Roo
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
-   * | seq    | Sequential value or string to copy.                               |
+   * | seq    | Sequential value to copy.                                          |
    * | pos    | Insertion boundary. Negative positions count from the end.         |
-   * | values | Values to insert. Must be sequential for sequence targets.         |
+   * | values | Sequential values to insert.                                       |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to copy.                                                    |
+   * | pos    | Insertion boundary. Negative positions count from the end.         |
+   * | values | Value or sequential values to convert to text and insert.          |
    *
    * For string targets, sequential values are expanded and each element is
    * converted to text. A non-sequential value is converted to text and inserted
@@ -314,9 +325,15 @@ namespace Roo
    *
    * | Arg   | Description                                                         |
    * | ----- | ------------------------------------------------------------------- |
-   * | seq   | Sequential value or string to copy. Nil is an empty sequence.       |
+   * | seq   | Sequential value to copy. Nil is an empty sequence.                 |
    * | pos   | Insertion boundary. Negative positions count from the end.          |
-   * | value | Complete value to insert as one element or string representation.   |
+   * | value | Complete value to insert as one element.                            |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to copy.                                                    |
+   * | pos    | Insertion boundary. Negative positions count from the end.         |
+   * | value  | Complete value to convert to text and insert.                      |
    *
    * @return A new vector or string with `value` inserted at `pos`.
    */
@@ -380,10 +397,17 @@ namespace Roo
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
-   * | seq    | Sequential value or string to copy.                               |
-   * | start  | Inclusive start index. Negative indexes count from the end.       |
-   * | end    | Exclusive end index. Negative indexes count from the end.         |
-   * | values | Values to splice into the replaced range.                         |
+   * | seq    | Sequential value to copy.                                          |
+   * | start  | Inclusive start index. Negative indexes count from the end.        |
+   * | end    | Exclusive end index. Negative indexes count from the end.          |
+   * | values | Sequential values to splice into the replaced range.               |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to copy.                                                    |
+   * | start  | Inclusive start index. Negative indexes count from the end.        |
+   * | end    | Exclusive end index. Negative indexes count from the end.          |
+   * | values | Value or sequential values to convert to replacement text.         |
    *
    * @return A new vector or string with the range replaced.
    */
@@ -405,10 +429,10 @@ namespace Roo
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
-   * | seq    | Sequential value to mutate.                                       |
-   * | start  | Inclusive start index. Negative indexes count from the end.       |
-   * | end    | Exclusive end index. Negative indexes count from the end.         |
-   * | values | Sequential values to splice into the replaced range.              |
+   * | seq    | Sequential value to mutate.                                        |
+   * | start  | Inclusive start index. Negative indexes count from the end.        |
+   * | end    | Exclusive end index. Negative indexes count from the end.          |
+   * | values | Sequential values to splice into the replaced range.               |
    *
    * @return The mutated `seq`, or a new vector if `seq` is nil.
    */
@@ -437,7 +461,13 @@ namespace Roo
    * | ------------ | -------------------------------------------------------------- |
    * | seq          | Sequential value to copy.                                      |
    * | from-index   | Index of the element to move.                                  |
-   * | placement    | Optional :final, :before, or :after placement mode.            |
+   * | target-index | Final index for the moved element.                             |
+   *
+   * | Arg          | Description                                                    |
+   * | ------------ | -------------------------------------------------------------- |
+   * | seq          | Sequential value to copy.                                      |
+   * | from-index   | Index of the element to move.                                  |
+   * | placement    | `:final`, `:before`, or `:after` placement mode.               |
    * | target-index | Final index, or target index in the input ordering.            |
    *
    * @return A new vector with the selected element at the requested placement.
@@ -461,7 +491,13 @@ namespace Roo
    * | ------------ | -------------------------------------------------------------- |
    * | seq          | Sequential value to mutate.                                    |
    * | from-index   | Index of the element to move.                                  |
-   * | placement    | Optional :final, :before, or :after placement mode.            |
+   * | target-index | Final index for the moved element.                             |
+   *
+   * | Arg          | Description                                                    |
+   * | ------------ | -------------------------------------------------------------- |
+   * | seq          | Sequential value to mutate.                                    |
+   * | from-index   | Index of the element to move.                                  |
+   * | placement    | `:final`, `:before`, or `:after` placement mode.               |
    * | target-index | Final index, or target index in the input ordering.            |
    *
    * @return The mutated sequence, or a new empty vector for nil.
@@ -583,12 +619,14 @@ namespace Roo
    * => [-2 -1 0 1 2]
    * @endcode
    *
+   * | Arg | Description                                                          |
+   * | --- | -------------------------------------------------------------------- |
+   * | end | The end number, exclusive. The start number is assumed to be 0.      |
+   *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | start | The start number, inclusive. If only one argument is provided,     |
-   * |       | this is treated as the end number, and the start number is         |
-   * |       | assumed to be 0.                                                   |
-   * | end   | The end number, exclusive. (Optional)                              |
+   * | start | The start number, inclusive.                                       |
+   * | end   | The end number, exclusive.                                         |
    *
    * @return A new vector containing the numbers in the requested range.
    */
@@ -694,7 +732,12 @@ namespace Roo
    * | -------- | ------------------------------------------------------------------ |
    * | seq      | Sequential value or string to read from.                           |
    * | start    | Inclusive start index. Negative indexes count from the end.        |
-   * | end      | Optional exclusive end index. Negative indexes count from the end. |
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | seq   | Sequential value or string to read from.                           |
+   * | start | Inclusive start index. Negative indexes count from the end.        |
+   * | end   | Exclusive end index. Negative indexes count from the end.          |
    *
    * @return A string for string input; otherwise a new vector.
    */

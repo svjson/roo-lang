@@ -29,6 +29,12 @@ namespace Roo
    * | pairs... | Optional repetitions of key and value arguments, passed as         |
    * |          | complete pairs                                                     |
    *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | Sequential value to copy.                                          |
+   * | index  | Numeric index to associate.                                        |
+   * | value  | Value to store at the index.                                       |
+   *
    * @return A new map containing the original entries and the given associations.
    */
   FUNC(AssocFunction, assoc, assoc_seq)
@@ -47,6 +53,13 @@ namespace Roo
    * | target | The map/object to mutate                                           |
    * | key    | The key to set                                                     |
    * | value  | The value to associate with the key                                |
+   * | pairs... | Optional repetitions of key and value arguments.                 |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | Sequential value to mutate.                                        |
+   * | index  | Numeric index to associate.                                        |
+   * | value  | Value to store at the index.                                       |
    *
    * @return The mutated target.
    */
@@ -203,7 +216,12 @@ namespace Roo
    * | ------- | ------------------------------------------------------------------ |
    * | target  | The map or complex object                                          |
    * | key     | The property value, usually a key.                                 |
-   * | default | Optional default value to return when the property is missing.     |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | target  | The map or complex object.                                         |
+   * | key     | The property value, usually a key.                                 |
+   * | default | Default value to return when the property is missing.              |
    *
    * @return The property value, or the supplied default when the property is
    * missing.
@@ -225,7 +243,12 @@ namespace Roo
    * | ------- | ------------------------------------------------------------------ |
    * | target  | The map or complex object                                          |
    * | path    | The property path as vector.                                       |
-   * | default | Optional default value to return when the path is missing.         |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | target  | The map or complex object.                                         |
+   * | path    | The property path as vector.                                       |
+   * | default | Default value to return when the path is missing.                  |
    *
    * @return The nested property value, or the supplied default when the path is
    * missing.

@@ -312,8 +312,13 @@ namespace Roo
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | left  | Left hand side number or string.                                   |
-   * | right | Right hand side number or string.                                  |
+   * | left  | Left hand side number.                                             |
+   * | right | Right hand side number.                                            |
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side string.                                             |
+   * | right | Right hand side string.                                            |
    */
   FUNC(LessThanFunction, lt_num, lt_str)
 
@@ -334,8 +339,13 @@ namespace Roo
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | left  | Left hand side number or string.                                   |
-   * | right | Right hand side number or string.                                  |
+   * | left  | Left hand side number.                                             |
+   * | right | Right hand side number.                                            |
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side string.                                             |
+   * | right | Right hand side string.                                            |
    */
   FUNC(LessThanOrEqualsFunction, lte_num, lte_str)
 
@@ -360,8 +370,13 @@ namespace Roo
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | left  | Left hand side number or string.                                   |
-   * | right | Right hand side number or string.                                  |
+   * | left  | Left hand side number.                                             |
+   * | right | Right hand side number.                                            |
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side string.                                             |
+   * | right | Right hand side string.                                            |
    */
   FUNC(GreaterThanFunction, gt_num, gt_str)
 
@@ -382,8 +397,13 @@ namespace Roo
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | left  | Left hand side number or string.                                   |
-   * | right | Right hand side number or string.                                  |
+   * | left  | Left hand side number.                                             |
+   * | right | Right hand side number.                                            |
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | left  | Left hand side string.                                             |
+   * | right | Right hand side string.                                            |
    */
   FUNC(GreaterThanOrEqualsFunction, gte_num, gte_str)
 

@@ -37,7 +37,11 @@ namespace Roo
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | value   | The value to format.                                               |
-   * | options | Optional map with :indent number.                                  |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | value   | The value to format.                                               |
+   * | options | Pretty-print options map.                                          |
    */
   FUNC(PrettyStrFunction, pretty_str)
 
@@ -69,7 +73,12 @@ namespace Roo
    * | ------ | ------------------------------------------------------------------ |
    * | string | String to read from.                                               |
    * | start  | Zero-based start index.                                            |
-   * | end    | Optional zero-based end index, exclusive.                          |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | string | String to read from.                                               |
+   * | start  | Zero-based start index.                                            |
+   * | length | Number of bytes to return.                                         |
    */
   FUNC(SubstrFunction, substr)
 
@@ -99,7 +108,11 @@ namespace Roo
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
-   * | string | String to test. Nil is considered blank.                           |
+   * | string | String to test.                                                    |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | value  | `nil` value, which is considered blank.                            |
    */
   FUNC(BlankPFunction, blank_p)
 
@@ -114,7 +127,7 @@ namespace Roo
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | value | Value to convert through its string representation.                 |
+   * | value | Value to convert through its string representation.                |
    */
   FUNC(UpperCaseFunction, upper_case)
 
@@ -129,7 +142,7 @@ namespace Roo
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
-   * | value | Value to convert through its string representation.                 |
+   * | value | Value to convert through its string representation.                |
    */
   FUNC(LowerCaseFunction, lower_case)
 
@@ -151,10 +164,19 @@ namespace Roo
    * => "a brown Fox Ate A bug today"
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | text     | String to capitalize.                                              |
-   * | selector | Optional word count, or `[start end]` inclusive word range.        |
+   * | Arg  | Description                                                          |
+   * | ---- | -------------------------------------------------------------------- |
+   * | text | String whose words are all capitalized.                              |
+   *
+   * | Arg   | Description                                                         |
+   * | ----- | ------------------------------------------------------------------- |
+   * | text  | String to capitalize.                                               |
+   * | count | Number of words to capitalize from the start.                       |
+   *
+   * | Arg   | Description                                                         |
+   * | ----- | ------------------------------------------------------------------- |
+   * | text  | String to capitalize.                                               |
+   * | range | Inclusive word-index range `[start end]` to capitalize.             |
    */
   FUNC(CapitalizeFunction, capitalize_all, capitalize_count, capitalize_range)
 

@@ -26,7 +26,13 @@ namespace Roo
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
    * | name  | Symbol to bind in the current namespace.                           |
-   * | value | Optional value assigned to the symbol.                             |
+   * | value | Value assigned to the symbol.                                      |
+   *
+   * | Arg       | Description                                                    |
+   * | --------- | -------------------------------------------------------------- |
+   * | name      | Symbol to bind in the current namespace.                       |
+   * | docstring | Documentation string for the symbol.                           |
+   * | value     | Value assigned to the symbol.                                  |
    */
   SPECIAL_FORM_DECL(DefForm, def, def_docstring)
 
@@ -61,9 +67,13 @@ namespace Roo
    * (eval "(+ 1 1)") => 2
    * @endcode
    *
+   * | Arg    | Description                                                      |
+   * | ------ | ---------------------------------------------------------------- |
+   * | source | String containing Roo source to evaluate.                        |
+   *
    * | Arg  | Description                                                        |
    * | ---- | ------------------------------------------------------------------ |
-   * | form | A Roo form or source string to evaluate.                           |
+   * | form | Roo form to evaluate.                                              |
    */
   FUNC(EvalFunction, eval_string, eval_form)
 
@@ -164,11 +174,25 @@ namespace Roo
    *   (:require [roo.string :as string]))
    * @endcode
    *
-   * | Arg       | Description                                                      |
-   * | --------- | ---------------------------------------------------------------- |
-   * | name      | Namespace name for the current source file.                      |
-   * | docstring | Optional namespace documentation string.                         |
-   * | clauses   | Optional namespace clauses such as :require.                     |
+   * | Arg  | Description                                                          |
+   * | ---- | -------------------------------------------------------------------- |
+   * | name | Namespace name for the current source file.                          |
+   *
+   * | Arg       | Description                                                     |
+   * | --------- | --------------------------------------------------------------- |
+   * | name      | Namespace name for the current source file.                     |
+   * | docstring | Namespace documentation string.                                 |
+   *
+   * | Arg     | Description                                                       |
+   * | ------- | ----------------------------------------------------------------- |
+   * | name    | Namespace name for the current source file.                       |
+   * | clauses | Namespace clauses such as `:require`.                             |
+   *
+   * | Arg       | Description                                                     |
+   * | --------- | --------------------------------------------------------------- |
+   * | name      | Namespace name for the current source file.                     |
+   * | docstring | Namespace documentation string.                                 |
+   * | clauses   | Namespace clauses such as `:require`.                           |
    */
   SPECIAL_FORM_DECL(NsForm, ns);
 
@@ -270,7 +294,11 @@ namespace Roo
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
-   * | symbol | Symbol to resolve.                                                 |
+   * | symbol | Quoted symbol to resolve.                                          |
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | symbol | Symbol value to resolve.                                           |
    */
   FUNC(ResolveFunction, resolve)
 
@@ -299,6 +327,11 @@ namespace Roo
    *
    * | Arg         | Description                                                        |
    * | ----------- | ------------------------------------------------------------------ |
+   * | upper-bound | Exclusive upper bound for the generated integer.                   |
+   *
+   * | Arg         | Description                                                        |
+   * | ----------- | ------------------------------------------------------------------ |
+   * | lower-bound | Inclusive lower bound for the generated integer.                   |
    * | upper-bound | Exclusive upper bound for the generated integer.                   |
    */
   FUNC(RndFunction, rnd)

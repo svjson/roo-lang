@@ -48,6 +48,13 @@ namespace Roo
    * | name    | Symbol to bind to the function.                                    |
    * | params  | Vector of argument declarations.                                   |
    * | body... | One or more forms that make up the function body.                  |
+   *
+   * | Arg       | Description                                                      |
+   * | --------- | ---------------------------------------------------------------- |
+   * | name      | Symbol to bind to the function.                                  |
+   * | docstring | Documentation string for the function.                           |
+   * | params    | Vector of argument declarations.                                 |
+   * | body...   | One or more forms that make up the function body.                |
    */
   SPECIAL_FORM_DECL(DefunForm, decl, decl_docstring)
 

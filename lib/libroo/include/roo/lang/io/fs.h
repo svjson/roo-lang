@@ -25,7 +25,11 @@ namespace Roo
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | path    | The directory path to list.                                        |
-   * | options | Optional map with :files?, :directories?, :hidden?, :dotfiles?,    |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | path    | The directory path to list.                                        |
+   * | options | Map with :files?, :directories?, :hidden?, :dotfiles?,             |
    * |         | and :filter options. :filter is a string or vector of strings.     |
    */
   FUNC(ListDirectoryBangFunction, list_directory, list_directory_with_options)
@@ -57,7 +61,11 @@ namespace Roo
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | root    | Existing file or directory at which traversal starts.              |
-   * | options | Optional :descend?, :keep?, and :hidden? values.                   |
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | root    | Existing file or directory at which traversal starts.              |
+   * | options | Map with optional :descend?, :keep?, and :hidden? values.          |
    */
   FUNC(WalkBangFunction, walk, walk_with_options)
 
