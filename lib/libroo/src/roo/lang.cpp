@@ -83,6 +83,7 @@ namespace Roo
     lang_symbols.emplace("clamp", ClampFunction::make());
     lang_symbols.emplace("clamp-between", ClampBetweenFunction::make());
     lang_symbols.emplace("callable?", CallablePFunction::make());
+    lang_symbols.emplace("codepoint", CodepointFunction::make());
     lang_symbols.emplace("comment", CommentForm::make());
     lang_symbols.emplace("concat", ConcatFunction::make());
     lang_symbols.emplace("concat!", ConcatBangFunction::make());

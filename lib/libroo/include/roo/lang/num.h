@@ -87,6 +87,31 @@ namespace Roo
   FUNC(ClampBetweenFunction, clamp_between)
 
   /*!
+   * @brief Return the integer code point of a character.
+   * @since 0.1.0
+   * @see roo/int
+   *
+   * `codepoint` reads the character value directly rather than parsing its
+   * textual representation as a number.
+   *
+   * Usage:
+   * @code
+   * (codepoint 'g')
+   * => 103
+   *
+   * (codepoint '8')
+   * => 56
+   * @endcode
+   *
+   * | Arg       | Description                               |
+   * | --------- | ----------------------------------------- |
+   * | character | The character whose code point to return. |
+   *
+   * @return The character's code point as an integer.
+   */
+  FUNC(CodepointFunction, codepoint)
+
+  /*!
    * @brief Decrement a number by one.
    * @since 0.1.0
    * @see roo/inc

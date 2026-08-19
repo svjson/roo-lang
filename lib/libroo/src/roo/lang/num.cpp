@@ -58,6 +58,20 @@ namespace Roo
     return args[0];
   }
 
+  /** CodepointFunction - roo/codepoint */
+  FUNC_IMPL(CodepointFunction,
+            SIG((FN_ARGS((&Type::CHAR)), EXEC_DISPATCH(&CodepointFunction::exec_codepoint))))
+
+  EXEC_BODY(CodepointFunction, exec_codepoint)
+  {
+    if (args[0]->type == Value::Type::NIL)
+    {
+      return Constant::NIL;
+    }
+
+    return Value::number(static_cast<unsigned char>(args[0]->ch()));
+  }
+
   /** DecFunction - roo/dec */
   FUNC_IMPL(DecFunction,
             SIG((FN_ARGS((&Type::NUMBER)), EXEC_DISPATCH(&DecFunction::exec_dec))))
