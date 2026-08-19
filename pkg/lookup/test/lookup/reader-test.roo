@@ -10,9 +10,7 @@
         ns-form (:form ns-entry)
         def-form (:form def-entry)
         defun-form (:form defun-entry)
-        ns-source (:source ns-entry)
-        def-source (:source def-entry)
-        defun-source (:source defun-entry)]
+        ns-source (:source ns-entry)]
     (is (= 3 (count forms)))
     (is (= "ns" (str (head ns-form))))
     (is (= "sample.forms" (str (nth ns-form 1))))
@@ -23,5 +21,5 @@
     (is (= "assets/read-forms-sample.roo" (:path ns-source)))
     (is (= 1 (:line ns-source)))
     (is (= 1 (:column ns-source)))
-    (is (= 3 (:line def-source)))
-    (is (= 5 (:line defun-source)))))
+    (is (= 3 (:line (:source def-entry))))
+    (is (= 5 (:line (:source defun-entry))))))

@@ -1,0 +1,237 @@
+(ns lookup.source.native.parse.entries
+  (:require [lookup.source.native.parse.comment :as comment]
+            [lookup.source :as lookup-source]
+            [roo.io :as io]
+            [roo.string :as string]))
+
+
+
+;; Source Discovery
+
+(defun source-file? [path]
+  (contains? [".c" ".cc" ".cpp" ".cxx" ".h" ".hh" ".hpp" ".hxx"]
+             (io/extension path)))
+
+(defun excluded-path? [path excludes]
+  (let [normalized-path (lookup-source/normalized-path path)]
+    (any? excludes
+          (fn [exclude]
+            (let [normalized-exclude (lookup-source/normalized-path exclude)]
+              (or (= normalized-path normalized-exclude)
+                  (string/starts-with?
+                    normalized-path
+                    (str normalized-exclude "/"))))))))
+
+(defun files-under-excluding [root excludes]
+  (cond
+    (excluded-path? root excludes)
+    []
+
+    (io/directory? root)
+    (let [entries (io/list-directory! root)
+          files (keep entries
+                      (fn [{:keys [type path]}]
+                        (when (and (= type :file)
+                                   (source-file? path)
+                                   (not (excluded-path? path excludes)))
+                          path)))
+          directories (filter entries
+                              (fn [{:keys [type path]}]
+                                (and (= type :directory)
+                                     (not (excluded-path? path excludes)))))]
+      (concat files
+              (flat-map directories
+                        (fn [entry]
+                          (files-under-excluding (:path entry) excludes)))))
+
+    true
+    []))
+
+(defun package-files
+  "Find native source and header files declared by a package."
+  [package-dir]
+  (let [manifest (lookup-source/read-manifest! package-dir)]
+    (sort
+      (map
+        (flat-map (:native-libraries manifest)
+                  (fn [native-library]
+                    (files-under-excluding
+                      (io/join-path package-dir (:path native-library))
+                      [])))
+        lookup-source/normalized-path)
+      <)))
+
+(defun root-files
+  "Find native source and header files beneath ROOT, excluding EXCLUDES."
+  [root excludes]
+  (sort (map (files-under-excluding root excludes)
+             lookup-source/normalized-path)
+        <))
+
+
+
+;; Comment Extraction
+
+(defun indexed-lines [text]
+  (:entries
+    (reduce (split text "\n")
+            {:line 1 :entries []}
+            (fn [state line]
+              {:line (+ (:line state) 1)
+               :entries (append (:entries state)
+                                {:line (:line state)
+                                 :text line})}))))
+
+(defun block-comment-start? [line]
+  (string/starts-with? (trim line) "/*"))
+
+(defun block-comment-end? [line]
+  (string/ends-with? (trim line) "*/"))
+
+(defun declaration-kind [line]
+  (let [trimmed (trim line)]
+    (cond
+      (string/starts-with? trimmed "FUNC(")
+      :function
+
+      (string/starts-with? trimmed "SPECIAL_FORM_DECL(")
+      :special-form
+
+      true
+      nil)))
+
+(defun declaration-class [line]
+  (when-let [trimmed (trim line)
+             open (find-index trimmed
+                              (fn [character]
+                                (= "(" (str character))))]
+    (let [tail (substr trimmed (+ open 1) (count trimmed))
+          separator (find-index tail
+                                (fn [character]
+                                  (or (= "," (str character))
+                                      (= ")" (str character)))))]
+      (trim
+        (if (nil? separator)
+          tail
+          (substr tail 0 separator))))))
+
+(defun location [path line]
+  {:path (lookup-source/normalized-path path)
+   :line line
+   :column 1})
+
+(defun comment-text [comment]
+  (unless (empty? (:lines comment))
+    (apply join (concat ["\n"] (:lines comment)))))
+
+(defun finish-comment [state native-comment]
+  (let [text (comment-text native-comment)
+        identity (comment/identity text)
+        annotation (comment/annotation text)
+        entries (cond-> (:entries state)
+
+                        identity
+                        (append
+                          (merge {:kind :native-identity-comment
+                                  :source (location (:path state)
+                                                    (:start-line native-comment))}
+                                 identity))
+
+                        annotation
+                        (append
+                          (merge {:kind :native-annotated-symbol
+                                  :doc (comment/parse text)
+                                  :source (location (:path state)
+                                                    (:start-line native-comment))}
+                                 annotation)))]
+    (assoc state
+           :comment nil
+           :pending-comment native-comment
+           :entries entries)))
+
+(defun start-comment [state line-entry]
+  (let [native-comment {:start-line (:line line-entry)
+                        :lines [(:text line-entry)]}]
+    (if (block-comment-end? (:text line-entry))
+      (finish-comment state native-comment)
+      (assoc state :comment native-comment))))
+
+(defun append-comment-line [state line-entry]
+  (let [native-comment (assoc (:comment state)
+                              :lines
+                              (append (:lines (:comment state))
+                                      (:text line-entry)))]
+    (if (block-comment-end? (:text line-entry))
+      (finish-comment state native-comment)
+      (assoc state :comment native-comment))))
+
+(defun documentation-entry [path native-comment declaration]
+  {:kind :native-doc-comment
+   :native-class (declaration-class (:text declaration))
+   :native-kind (declaration-kind (:text declaration))
+   :doc (comment/parse (comment-text native-comment))
+   :source (location path (:start-line native-comment))
+   :declaration-source (location path (:line declaration))})
+
+(defun step [state line-entry]
+  (let [line (:text line-entry)
+        pending-comment (:pending-comment state)
+        line-identity (comment/line-identity line)
+        kind (declaration-kind line)]
+    (cond
+      (:comment state)
+      (append-comment-line state line-entry)
+
+      line-identity
+      (assoc state
+             :pending-comment nil
+             :entries (append (:entries state)
+                              (merge {:kind :native-identity-comment
+                                      :source (location (:path state)
+                                                        (:line line-entry))}
+                                     line-identity)))
+
+      (block-comment-start? line)
+      (start-comment state line-entry)
+
+      (and pending-comment (blank? line))
+      state
+
+      (and pending-comment kind)
+      (assoc state
+             :pending-comment nil
+             :entries (append (:entries state)
+                              (documentation-entry (:path state)
+                                                   pending-comment
+                                                   line-entry)))
+
+      true
+      (assoc state :pending-comment nil))))
+
+(defun entries
+  "Extract native documentation and identity entries from source text."
+  [path text]
+  (:entries
+    (reduce (indexed-lines text)
+            {:path path
+             :entries []
+             :comment nil
+             :pending-comment nil}
+            step)))
+
+(defun entries!
+  "Read one native source file and extract its documentation entries."
+  [path]
+  (entries path (io/slurp! path)))
+
+(defun package-entries!
+  "Extract native documentation entries from a package."
+  [package-dir]
+  (flat-map (package-files package-dir) entries!))
+
+(defun root-entries!
+  "Extract native documentation entries from generic source roots."
+  [roots excludes]
+  (flat-map roots
+            (fn [root]
+              (flat-map (root-files root excludes) entries!))))

@@ -1,7 +1,8 @@
 (ns lookup.index
-  (:require [lookup.native-docs :as native-docs]
+  (:require [lookup.source.native.parse.entries :as native-entries]
+            [lookup.source.native.symbols :as native-symbols]
             [lookup.source :as source]
-            [lookup.symbols :as symbols]))
+            [lookup.source.docstring.symbols :as docstring-symbols]))
 
 (defun source-form-index
   "Build a source-form index for a package.
@@ -30,16 +31,17 @@
      :version 1
      :package (:package source-index)
      :sources (for [source sources] {:path (:path source)})
-     :namespaces (keep sources symbols/source-namespace-entry)
+     :namespaces (keep sources docstring-symbols/source-namespace-entry)
      :symbols (concat
                 (flat-map sources
                           (fn [source]
-                            (symbols/source-symbols package-name source)))
-                (native-docs/package-native-symbol-entries! package-dir package-name)
-                (native-docs/native-source-root-symbol-entries!
+                            (docstring-symbols/source-symbols package-name source)))
+                (native-symbols/entries
                   package-name
-                  roots
-                  excludes))}))
+                  (native-entries/package-entries! package-dir))
+                (native-symbols/entries
+                  package-name
+                  (native-entries/root-entries! roots excludes)))}))
 
 (defun symbol-index
   "Build a symbol index for a package.
@@ -76,15 +78,12 @@
         native-files (sort
                        (flat-map roots
                                  (fn [root]
-                                   (native-docs/native-source-root-files
-                                     root
-                                     excludes)))
+                                   (native-entries/root-files root excludes)))
                        <)
         native-symbols (if (contains? extractors :native)
-                         (native-docs/native-source-root-symbol-entries!
+                         (native-symbols/entries
                            (:name package)
-                           roots
-                           excludes)
+                           (native-entries/root-entries! roots excludes))
                          [])]
     {:format :roo/symbol-index
      :version 1

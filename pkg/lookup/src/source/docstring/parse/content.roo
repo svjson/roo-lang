@@ -1,54 +1,10 @@
-(ns lookup.docstrings
-  (:require [roo.string :as string]))
+(ns lookup.source.docstring.parse.content
+  (:require [lookup.doc :as doc]
+            [roo.string :as string]))
 
-(defun empty
-  "Build an empty lookup documentation map.
 
-  Returns:
-  A documentation map with plain format and no extracted content."
-  []
-  {:summary nil
-   :body nil
-   :format :plain
-   :params {}
-   :returns nil
-   :examples []
-   :see []
-   :since nil
-   :deprecated nil})
-
-(defun finish-paragraph [{:keys [paragraphs line] :as state}]
-  (if (blank? line)
-    state
-    {:paragraphs (append paragraphs (trim line))
-     :line ""}))
-
-(defun paragraphs [lines]
-  (-> lines
-      (reduce {:paragraphs [] :line ""}
-              (fn [state line]
-                (if (blank? line)
-                  (finish-paragraph state)
-                  (assoc state
-                         :line
-                         (if (blank? (:line state))
-                           (trim line)
-                           (str (:line state) "\n" (trim line)))))))
-      finish-paragraph
-      :paragraphs))
-
-(defun paragraph-text [paragraphs]
-  (unless (empty? paragraphs)
-    (apply join (concat ["\n\n"] paragraphs))))
-
-(defun strip-backticks [text]
-  (let [value (trim text)]
-    (cond-> value
-
-            (and (string/starts-with? value "`")
-                 (string/ends-with? value "`")
-                 (> (count value) 1))
-            (substr 1 (- (count value) 2)))))
+
+;; Docstring Parsing
 
 (defun section [line]
   (case (trim line)
@@ -65,7 +21,7 @@
         colon (index-of trimmed ':')]
     (if (and (string/starts-with? trimmed "- ")
              (some? colon))
-      (let [name (strip-backticks (substr trimmed 2 (- colon 2)))
+      (let [name (doc/strip-backticks (substr trimmed 2 (- colon 2)))
             doc (trim (substr trimmed (+ colon 1)))]
         (assoc-in state [:params name] {:type nil :doc doc}))
       state)))
@@ -77,9 +33,10 @@
       (assoc state
              :see
              (append see
-                     (strip-backticks (cond-> trimmed
-                                              (string/starts-with? trimmed "- ")
-                                              (substr 2))))))))
+                     (doc/strip-backticks
+                       (cond-> trimmed
+                               (string/starts-with? trimmed "- ")
+                               (substr 2))))))))
 
 (defun single-line-section [state key line]
   (if (blank? line)
@@ -147,15 +104,15 @@
       :default
       (update state :prose [append line]))))
 
-(defun from-string
+(defun parse
   "Parse a Roo docstring into lookup documentation data.
 
   Args:
   - `text`: Docstring text from a `def` or `defun` form.
 
   Returns:
-  A documentation map with summary, body, params, returns, examples, see-also,
-  since, and deprecated fields."
+  A documentation map with summary, body, params, returns,
+  examples, see-also, since, and deprecated fields."
   [text]
   (let [state (reduce (split text "\n")
                       {:section nil
@@ -168,14 +125,15 @@
                        :deprecated nil
                        :fence nil}
                       step)
-        prose (paragraphs (:prose state))]
+        prose (doc/paragraphs (:prose state))]
     {:summary (head prose)
-     :body (paragraph-text (tail prose))
+     :body (doc/paragraph-text (tail prose))
      :format :markdown
      :params (:params state)
      :returns (unless (empty? (:returns state))
                 {:type nil
-                 :doc (paragraph-text (paragraphs (:returns state)))})
+                 :doc (doc/paragraph-text
+                        (doc/paragraphs (:returns state)))})
      :examples (:examples state)
      :see (:see state)
      :since (:since state)

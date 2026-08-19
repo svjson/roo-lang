@@ -1,0 +1,208 @@
+(ns lookup.source.native.symbols
+  (:require [lookup.doc :as doc]
+            [roo.string :as string]))
+
+
+
+;; Native Signatures
+
+(defun param-key-base [key]
+  (cond-> key
+          (string/ends-with? key "...")
+          (substr 0 (- (count key) 3))))
+
+(defun param-group-text [key]
+  (let [base (param-key-base key)]
+    (when (and (string/starts-with? base "(")
+               (string/ends-with? base ")"))
+      (trim (substr base 1 (- (count base) 2))))))
+
+(defun numbered-param? [key]
+  (let [base (param-key-base key)]
+    (and (not (blank? base))
+         (not (any? base
+                    (fn [character]
+                      (not (contains? ["0" "1" "2" "3" "4"
+                                       "5" "6" "7" "8" "9"]
+                                      (str character)))))))))
+
+(defun param-name [key]
+  (let [base (param-key-base key)
+        group (param-group-text key)
+        numbered? (numbered-param? key)]
+    (cond
+      group
+      group
+
+      (blank? base)
+      "args"
+
+      (and numbered? (string/ends-with? key "..."))
+      "args"
+
+      numbered?
+      (str "arg" base)
+
+      true
+      base)))
+
+(defun param-display [key]
+  (if (param-group-text key)
+    key
+    (cond-> (param-name key)
+            (string/ends-with? key "...")
+            (str "..."))))
+
+(defun param-group-members [key]
+  (when-let [text (param-group-text key)]
+    (let [members []
+          token ""
+          index 0]
+      (while (< index (count text))
+        (let [character (str (nth text index))]
+          (if (contains? [" " "\t" "\n" "\r"] character)
+            (do
+              (unless (blank? token)
+                (append! members token))
+              (set! [token] ""))
+            (set! [token] (str token character))))
+        (set! [index] (+ index 1)))
+      (unless (blank? token)
+        (append! members token))
+      members)))
+
+(defun signature-param [key param-doc]
+  (let [rest? (string/ends-with? key "...")
+        group (param-group-text key)]
+    (cond-> {:name (param-name key)
+             :display (param-display key)
+             :type (:type param-doc)
+             :doc (:doc param-doc)
+             :optional? rest?
+             :rest? rest?
+             :group? (some? group)}
+
+            group
+            (assoc :group {:params (param-group-members key)}))))
+
+(defun signature-params [{:keys [params] :as doc}]
+  (for [key (or (:param-order doc) (sort (keys params) <))]
+    (signature-param key (get params key))))
+
+(defun signature-display [name params]
+  (let [names (for [param params] (or (:display param) (:name param)))]
+    (if (empty? names)
+      (str "(" name ")")
+      (str "(" name " " (apply join (concat [" "] names)) ")"))))
+
+(defun signature-arity [params]
+  (let [variadic? (any? params (fn [param] (:rest? param)))
+        required (filter params
+                         (fn [param]
+                           (and (not (:optional? param))
+                                (not (:rest? param)))))]
+    {:min (count required)
+     :max (unless variadic? (count params))
+     :variadic variadic?}))
+
+(defun signature [name doc]
+  (let [params (signature-params doc)]
+    {:display (signature-display name params)
+     :params params
+     :returns (or (:returns doc) {:type nil :doc nil})
+     :arity (signature-arity params)}))
+
+(defun signatures
+  "Build lookup signatures for a native symbol from parsed documentation."
+  [name {:keys [signature-docs] :as doc}]
+  (if (empty? signature-docs)
+    [(signature name doc)]
+    (for [signature-doc signature-docs]
+      (signature name (assoc signature-doc :returns (:returns doc))))))
+
+
+
+;; Symbol Entries
+
+(defun symbol-entry [package native-entries native-entry]
+  (let [annotated? (= :native-annotated-symbol (:kind native-entry))
+        doc-entry (unless annotated?
+                    (find-first native-entries
+                                (fn [entry]
+                                  (and (= :native-doc-comment (:kind entry))
+                                       (= (:native-class native-entry)
+                                          (:native-class entry))))))
+        qualified-name (:qualified-name native-entry)
+        separator (find-index qualified-name
+                              (fn [character]
+                                (= "/" (str character))))
+        doc (cond
+              annotated? (:doc native-entry)
+              doc-entry (:doc doc-entry)
+              true (doc/empty))]
+    (unless (nil? separator)
+      (let [name (substr qualified-name (+ separator 1) (count qualified-name))
+            public-doc (dissoc (dissoc doc :param-order) :signature-docs)
+            entry {:id qualified-name
+                   :name name
+                   :qualified-name qualified-name
+                   :namespace (substr qualified-name 0 separator)
+                   :kind (if annotated?
+                           (:native-kind native-entry)
+                           (case (:native-kind doc-entry)
+                             :special-form :special-form
+                             :default :function))
+                   :origin :native
+                   :visibility :public
+                   :status :stable
+                   :source (:source native-entry)
+                   :declaration-source (unless annotated?
+                                         (:declaration-source doc-entry))
+                   :doc-source (cond
+                                 annotated?
+                                 {:kind :native-cpp-comment
+                                  :source (:source native-entry)}
+
+                                 doc-entry
+                                 {:kind :native-cpp-comment
+                                  :source (:source doc-entry)}
+
+                                 true
+                                 nil)
+                   :doc public-doc
+                   :signatures (signatures name doc)}]
+        (if (nil? package)
+          entry
+          (assoc entry :package package))))))
+
+(defun entries
+  "Build lookup symbol entries from extracted native comment entries."
+  [package native-entries]
+  (let [annotated-names
+        (keep native-entries
+              (fn [entry]
+                (when (= :native-annotated-symbol (:kind entry))
+                  (:qualified-name entry))))]
+    (:symbols
+      (reduce native-entries
+              {:qualified-names []
+               :symbols []}
+              (fn [state native-entry]
+                (let [symbol (case (:kind native-entry)
+                               :native-identity-comment
+                               (unless (contains? annotated-names
+                                                  (:qualified-name native-entry))
+                                 (symbol-entry package native-entries native-entry))
+
+                               :native-annotated-symbol
+                               (symbol-entry package native-entries native-entry)
+
+                               :default
+                               nil)
+                      qualified-name (:qualified-name symbol)]
+                  (if (or (nil? symbol)
+                          (contains? (:qualified-names state) qualified-name))
+                    state
+                    {:qualified-names (append (:qualified-names state)
+                                              qualified-name)
+                     :symbols (append (:symbols state) symbol)})))))))

@@ -1,0 +1,330 @@
+(ns lookup.source.native.parse.comment
+  (:require [lookup.doc :as doc]
+            [roo.string :as string]))
+
+
+
+;; Comment Text
+
+(defun strip-suffix [text suffix]
+  (cond-> text
+
+          (string/ends-with? text suffix)
+          (substr 0 (- (count text) (count suffix)))))
+
+(defun strip-first-prefix [text prefixes]
+  (if-let [prefix (find-first prefixes
+                              (fn [candidate]
+                                (string/starts-with? text candidate)))]
+    (trim (substr text (count prefix)))
+    text))
+
+(defun strip-line [line]
+  (-> (trim line)
+      (strip-first-prefix ["/**" "/*!" "/*"])
+      (strip-suffix "*/")
+      (strip-first-prefix ["*"])))
+
+(defun lines [text]
+  (map (split text "\n") strip-line))
+
+
+
+;; Symbol Annotations
+
+(defun directive-value [line directive]
+  (let [trimmed (trim line)
+        prefix (str directive " ")]
+    (when (string/starts-with? trimmed prefix)
+      (trim (substr trimmed (count prefix) (count trimmed))))))
+
+(defun append-annotation-text [current value]
+  (cond
+    (nil? current) value
+    (blank? value) current
+    (blank? current) value
+    true (str current " " value)))
+
+(defun annotation
+  "Parse an explicit Roo symbol annotation from a native block comment.
+
+  A recognized comment contains both `@roo.symbol namespace/name` and
+  `@roo.kind kind`. Returns nil when either directive is missing, empty, or the
+  kind is unsupported."
+  [text]
+  (let [comment-lines (lines text)
+        qualified-name (find-first
+                         (keep comment-lines
+                               (fn [line]
+                                 (directive-value line "@roo.symbol")))
+                         not-empty?)
+        kind-name (find-first
+                    (keep comment-lines
+                          (fn [line]
+                            (directive-value line "@roo.kind")))
+                    not-empty?)
+        native-kind (when kind-name (keyword kind-name))
+        separator (when qualified-name
+                    (find-index qualified-name
+                                (fn [character]
+                                  (= "/" (str character)))))]
+    (when (and separator
+               (< 0 separator)
+               (< separator (- (count qualified-name) 1))
+               (contains? [:function :special-form :macro :var :constant]
+                          native-kind))
+      {:qualified-name qualified-name
+       :native-kind native-kind})))
+
+
+
+;; Documentation
+
+(defun join-lines [separator values]
+  (unless (empty? values)
+    (apply join (concat [separator] values))))
+
+(defun body-line? [line]
+  (let [trimmed (trim line)]
+    (not (or (string/starts-with? trimmed "@")
+             (= "Usage:" trimmed)
+             (string/starts-with? trimmed "|")))))
+
+(defun brief-text [line]
+  (let [trimmed (trim line)]
+    (when (string/starts-with? trimmed "@brief")
+      (trim (substr trimmed 6 (count trimmed))))))
+
+(defun start-code [state line]
+  (let [trimmed (trim line)
+        format-name (trim (substr trimmed 5 (count trimmed)))]
+    (assoc state
+           :section :code
+           :code-format (if (blank? format-name) :roo (keyword format-name))
+           :code-lines [])))
+
+(defun finish-code [state]
+  (assoc state
+         :section nil
+         :examples (append (:examples state)
+                           {:format (or (:code-format state) :roo)
+                            :source (join-lines "\n" (:code-lines state))})
+         :code-format nil
+         :code-lines []))
+
+(defun arg-row [line]
+  (let [trimmed (trim line)]
+    (when (string/starts-with? trimmed "|")
+      (let [content (strip-suffix (substr trimmed 1 (count trimmed)) "|")
+            separator (find-index content
+                                  (fn [character]
+                                    (= "|" (str character))))]
+        (unless (nil? separator)
+          (let [arg (trim (substr content 0 separator))
+                doc (trim (substr content (+ separator 1) (count content)))]
+            (cond
+              (contains? ["Arg #" "Arg" "Param" "Parameter" "Name"] arg)
+              {:header? true}
+
+              (string/starts-with? arg "---")
+              {:separator? true}
+
+              (blank? arg)
+              (unless (blank? doc)
+                {:continuation? true
+                 :doc doc})
+
+              true
+              {:key arg
+               :doc {:type nil :doc doc}})))))))
+
+(defun return-text [line]
+  (let [trimmed (trim line)]
+    (cond
+      (string/starts-with? trimmed "@returns")
+      (trim (substr trimmed 8 (count trimmed)))
+
+      (string/starts-with? trimmed "@return")
+      (trim (substr trimmed 7 (count trimmed)))
+
+      true
+      nil)))
+
+(defun finish-signature [state]
+  (if (empty? (:param-order state))
+    state
+    (assoc state
+           :signature-docs
+           (append (:signature-docs state)
+                   {:params (:params state)
+                    :param-order (:param-order state)})
+           :params {}
+           :param-order []
+           :last-param-key nil)))
+
+(defun step [{:keys [body
+                     section
+                     code-lines
+                     summary
+                     params
+                     param-order
+                     returns
+                     see
+                     since
+                     deprecated] :as state}
+             line]
+  (let [trimmed (trim line)
+        brief (brief-text trimmed)
+        return (return-text trimmed)
+        see-reference (directive-value trimmed "@see")
+        since-value (directive-value trimmed "@since")
+        deprecated-value (directive-value trimmed "@deprecated")
+        deprecated? (or (= trimmed "@deprecated")
+                        (some? deprecated-value))
+        row (arg-row trimmed)]
+    (cond
+      (= :code section)
+      (case trimmed
+        "@endcode" (finish-code state)
+        :default (assoc state :code-lines (append code-lines trimmed)))
+
+      (string/starts-with? trimmed "@code")
+      (start-code state trimmed)
+
+      brief
+      (assoc state
+             :summary (append summary brief)
+             :brief? true)
+
+      (and (:brief? state)
+           (not (blank? trimmed))
+           (body-line? trimmed))
+      (assoc state :summary (append summary trimmed))
+
+      (:brief? state)
+      (step (assoc state :brief? false) line)
+
+      return
+      (assoc state :returns (append returns return))
+
+      see-reference
+      (assoc state :see (append see (doc/strip-backticks see-reference)))
+
+      since-value
+      (assoc state :since (append-annotation-text since since-value))
+
+      deprecated?
+      (assoc state
+             :deprecated
+             (append-annotation-text deprecated (or deprecated-value "")))
+
+      row
+      (let [key (:key row)]
+        (cond
+          (:header? row)
+          (finish-signature state)
+
+          (:separator? row)
+          state
+
+          (:continuation? row)
+          (if-let [last-key (:last-param-key state)]
+            (let [param-doc (get params last-key)]
+              (assoc state
+                     :params
+                     (assoc params
+                            last-key
+                            (assoc param-doc
+                                   :doc
+                                   (trim
+                                     (str (or (:doc param-doc) "")
+                                          " "
+                                          (:doc row)))))))
+            state)
+
+          true
+          (assoc-in state
+                    [:params key] (:doc row)
+                    [:param-order] (if (contains? param-order key)
+                                     param-order
+                                     (append param-order key))
+                    [:last-param-key] key)))
+
+      (body-line? trimmed)
+      (assoc state :body (append body line))
+
+      true
+      state)))
+
+(defun parse
+  "Parse a Roo native C++ documentation comment.
+
+  Argument table rows may use numeric keys such as `0` and `1`, or named
+  keys such as `path` and `contents`."
+  [text]
+  (let [state (reduce (lines text)
+                      {:summary []
+                       :body []
+                       :params {}
+                       :param-order []
+                       :signature-docs []
+                       :last-param-key nil
+                       :returns []
+                       :examples []
+                       :see []
+                       :since nil
+                       :deprecated nil
+                       :section nil
+                       :code-format nil
+                       :code-lines []
+                       :brief? false}
+                      step)
+        state (finish-signature state)
+        first-signature (head (:signature-docs state))]
+    {:summary (join-lines " " (:summary state))
+     :body (doc/paragraph-text
+             (doc/paragraphs (:body state)))
+     :format :markdown
+     :params (or (:params first-signature) {})
+     :param-order (or (:param-order first-signature) [])
+     :signature-docs (:signature-docs state)
+     :returns (unless (empty? (:returns state))
+                {:type nil
+                 :doc (doc/paragraph-text
+                        (doc/paragraphs (:returns state)))})
+     :examples (:examples state)
+     :see (:see state)
+     :since (:since state)
+     :deprecated (:deprecated state)}))
+
+
+
+;; Legacy Identities
+
+(defun identity
+  "Parse `ClassName - roo.namespace/exported-symbol` from a native comment."
+  [text]
+  (let [comment-lines (filter (lines text) (fn [line] (not (blank? line))))
+        line (head comment-lines)
+        separator (when line
+                    (find-index line
+                                (fn [character]
+                                  (= "-" (str character)))))]
+    (unless (or (nil? separator)
+                (string/starts-with? line "@"))
+      {:native-class (trim (substr line 0 separator))
+       :qualified-name (trim (substr line (+ separator 1) (count line)))})))
+
+(defun line-identity [line]
+  (let [trimmed (trim line)
+        text (cond
+               (string/starts-with? trimmed "///")
+               (trim (substr trimmed 3 (count trimmed)))
+
+               (string/starts-with? trimmed "//")
+               (trim (substr trimmed 2 (count trimmed)))
+
+               true
+               nil)]
+    (when text
+      (identity text))))

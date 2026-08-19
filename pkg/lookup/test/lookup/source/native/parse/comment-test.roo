@@ -1,0 +1,186 @@
+(ns lookup.source.native.parse.comment-test
+  (:require proof.core
+            [lookup.source.native.parse.comment :as comment]))
+
+
+
+;; lookup.source.native.parse.comment/parse
+
+(deftest parse/returns-the-complete-documentation-model
+  (is (= {:summary "Read the complete contents of a text file as a string."
+          :body nil
+          :format :markdown
+          :params {"0" {:type nil
+                        :doc "The path of the file to read."}}
+          :param-order ["0"]
+          :signature-docs
+          [{:params {"0" {:type nil
+                          :doc "The path of the file to read."}}
+            :param-order ["0"]}]
+          :returns nil
+          :examples
+          [{:format :roo
+            :source "(roo.io/slurp! \"notes.txt\") => \"file contents\""}]
+          :see []
+          :since nil
+          :deprecated nil}
+         (comment/parse
+           "/*!
+            * @brief Read the complete contents of a text file as a string.
+            *
+            * Usage:
+            * @code
+            * (roo.io/slurp! \"notes.txt\") => \"file contents\"
+            * @endcode
+            *
+            * | Arg # | Description                                                        |
+            * | ----- | ------------------------------------------------------------------ |
+            * | 0     | The path of the file to read.                                      |
+            */"))))
+
+(deftest parse/retains-body-brief-continuations-and-multiple-parameters
+  (is (= {:summary
+          "Shifts an integer value right by one bit, or by the given number of bits."
+          :body
+          "`>>` is the signed/arithmetic right shift operator. Negative values\nkeep their sign through the shift."
+          :format :markdown
+          :params {"0" {:type nil :doc "Integer value to shift."}
+                   "1" {:type nil
+                        :doc
+                        "Optional integer number of bits to shift by. Defaults to 1."}}
+          :param-order ["0" "1"]
+          :signature-docs
+          [{:params {"0" {:type nil :doc "Integer value to shift."}
+                     "1" {:type nil
+                          :doc
+                          "Optional integer number of bits to shift by. Defaults to 1."}}
+            :param-order ["0" "1"]}]
+          :returns nil
+          :examples [{:format :roo :source "(>> 8)\n=> 4"}]
+          :see []
+          :since nil
+          :deprecated nil}
+         (comment/parse
+           "/**
+            * @brief Shifts an integer value right by one bit, or by the given
+            * number of bits.
+            *
+            * `>>` is the signed/arithmetic right shift operator. Negative values
+            * keep their sign through the shift.
+            *
+            * Usage:
+            * @code
+            * (>> 8)
+            * => 4
+            * @endcode
+            *
+            * | Arg # | Description                                                        |
+            * | ----- | ------------------------------------------------------------------ |
+            * | 0     | Integer value to shift.                                            |
+            * | 1     | Optional integer number of bits to shift by. Defaults to 1.        |
+            */"))))
+
+(deftest parse/appends-argument-table-continuation-lines
+  (is (= {:summary "Read a path."
+          :body nil
+          :format :markdown
+          :params {"path" {:type nil
+                           :doc "Path to read from. a fixture."}}
+          :param-order ["path"]
+          :signature-docs
+          [{:params {"path" {:type nil
+                             :doc "Path to read from. a fixture."}}
+            :param-order ["path"]}]
+          :returns nil
+          :examples []
+          :see []
+          :since nil
+          :deprecated nil}
+         (comment/parse
+           "/**
+            * @brief Read a path.
+            *
+            * | Arg   | Description                                                        |
+            * | ----- | ------------------------------------------------------------------ |
+            * | path  | Path to read from.                                                 |
+            * |       | a fixture.                                                        |
+            */"))))
+
+(deftest parse/extracts-native-roo-symbol-annotations
+  (is (= {:summary "Read a legacy value."
+          :body nil
+          :format :markdown
+          :params {}
+          :param-order []
+          :signature-docs []
+          :returns {:type nil :doc "The migrated value."}
+          :examples []
+          :see ["sample.native/read" "sample.native/migrate"]
+          :since "0.2.0"
+          :deprecated "Use `sample.native/read` instead."}
+         (comment/parse
+           "/*!
+            * @brief Read a legacy value.
+            * @return The migrated value.
+            * @see `sample.native/read`
+            * @see sample.native/migrate
+            * @since 0.2.0
+            * @deprecated Use `sample.native/read` instead.
+            */"))))
+
+(deftest parse/retains-marker-only-deprecation
+  (is (= ""
+         (:deprecated
+           (comment/parse
+             "/*!
+              * @brief Read a legacy value.
+              * @deprecated
+              */")))))
+
+
+
+;; lookup.source.native.parse.comment/annotation
+
+(deftest annotation/returns-the-declared-native-symbol
+  (is (= {:qualified-name "proof.syntax/given"
+          :native-kind :special-form}
+         (comment/annotation
+           "/*!
+            * @roo.symbol proof.syntax/given
+            * @roo.kind special-form
+            * @brief Seed scenario state.
+            */"))))
+
+(deftest annotation/rejects-incomplete-or-invalid-directives
+  (is (nil? (comment/annotation
+              "/*!
+               * @roo.symbol proof.syntax/given
+               * @brief Missing kind.
+               */")))
+  (is (nil? (comment/annotation
+              "/*!
+               * @roo.symbol proof.syntax/given
+               * @roo.kind procedure
+               */")))
+  (is (nil? (comment/annotation
+              "/*!
+               * @roo.symbol given
+               * @roo.kind special-form
+               */"))))
+
+
+
+;; lookup.source.native.parse.comment/identity
+
+(deftest identity/parses-native-implementation-identities
+  (is (= {:native-class "SlurpBangFunction"
+          :qualified-name "roo.io/slurp!"}
+         (comment/identity
+           "/** SlurpBangFunction - roo.io/slurp! */")))
+  (is (= {:native-class "PlusFunction"
+          :qualified-name "roo/+"}
+         (comment/identity "/** PlusFunction - roo/+ */")))
+  (is (= {:native-class "MultiplyFunction"
+          :qualified-name "roo/*"}
+         (comment/identity "/** MultiplyFunction - roo/* */")))
+  (is (nil? (comment/identity "/* just a note */"))))

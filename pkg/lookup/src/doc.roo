@@ -1,0 +1,65 @@
+(ns lookup.doc
+  (:require [roo.string :as string]))
+
+
+
+;; Documentation Model
+
+(defun empty
+  "Build an empty lookup documentation map.
+
+  Returns:
+  A documentation map with plain format and no extracted content."
+  []
+  {:summary nil
+   :body nil
+   :format :plain
+   :params {}
+   :returns nil
+   :examples []
+   :see []
+   :since nil
+   :deprecated nil})
+
+
+
+;; Documentation Text
+
+(defun strip-backticks
+  "Trim TEXT and remove one surrounding pair of backticks."
+  [text]
+  (let [value (trim text)]
+    (cond-> value
+
+            (and (string/starts-with? value "`")
+                 (string/ends-with? value "`")
+                 (> (count value) 1))
+            (substr 1 (- (count value) 2)))))
+
+
+
+;; Paragraphs
+
+(defun finish-paragraph [{:keys [paragraphs line] :as state}]
+  (if (blank? line)
+    state
+    {:paragraphs (append paragraphs (trim line))
+     :line ""}))
+
+(defun paragraphs [lines]
+  (-> lines
+      (reduce {:paragraphs [] :line ""}
+              (fn [state line]
+                (if (blank? line)
+                  (finish-paragraph state)
+                  (assoc state
+                         :line
+                         (if (blank? (:line state))
+                           (trim line)
+                           (str (:line state) "\n" (trim line)))))))
+      finish-paragraph
+      :paragraphs))
+
+(defun paragraph-text [paragraphs]
+  (unless (empty? paragraphs)
+    (apply join (concat ["\n\n"] paragraphs))))

@@ -1,0 +1,45 @@
+(ns lookup.source.docstring.parse.content-test
+  (:require proof.core
+            [lookup.source.docstring.parse.content :as content]))
+
+
+
+;; lookup.source.docstring.parse.content/parse
+
+(deftest parse/returns-the-complete-documentation-model
+  (is (= {:summary "Build a greeting for `name`."
+          :body "Uses a friendly default format."
+          :format :markdown
+          :params {"name" {:type nil
+                           :doc "Person to greet."}}
+          :returns {:type nil
+                    :doc "A greeting string."}
+          :examples [{:format :roo
+                      :source "(greet \"Ada\")"}]
+          :see ["str"]
+          :since "0.1.0"
+          :deprecated "Use `welcome` instead."}
+         (content/parse
+           "Build a greeting for `name`.
+
+              Uses a friendly default format.
+
+              Args:
+              - `name`: Person to greet.
+
+              Returns:
+              A greeting string.
+
+              Examples:
+              ```roo
+              (greet \"Ada\")
+              ```
+
+              See Also:
+              - `str`
+
+              Since:
+              0.1.0
+
+              Deprecated:
+              Use `welcome` instead."))))

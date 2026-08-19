@@ -1,6 +1,11 @@
-(ns lookup.symbols
-  (:require [lookup.docstrings :as docstrings]
+(ns lookup.source.docstring.symbols
+  (:require [lookup.doc :as doc]
+            [lookup.source.docstring.parse.content :as content]
             [roo.string :as string]))
+
+
+
+;; Namespace Entries
 
 (defun form-head-name [form]
   (when (= "list" (type-of form))
@@ -19,11 +24,15 @@
                                (fn [entry]
                                  (= "ns" (form-head-name (:form entry)))))]
     {:name (str (nth (:form entry) 1))
-     :doc (docstrings/empty)
+     :doc (doc/empty)
      :source (:source entry)}))
 
 (defun source-namespace-name [source]
   (or (:name (source-namespace-entry source)) "user"))
+
+
+
+;; Signatures
 
 (defun rest-param-name? [name]
   (and (string/starts-with? name "&")
@@ -88,9 +97,7 @@
                :doc nil}
      :arity (signature-arity params)}))
 
-(defun function-signature-with-doc [name raw-params {:keys [signature
-                                                            params
-                                                            returns] :as doc}]
+(defun function-signature-with-doc [name raw-params {:keys [params returns]}]
   (let [signature (function-signature name raw-params)]
     (assoc signature :params
                      (for [p (:params signature)]
@@ -105,6 +112,10 @@
                        (:returns signature)
                        returns))))
 
+
+
+;; Symbol Entries
+
 (defun base-symbol-entry [package namespace name kind source]
   (let [qualified-name (str namespace "/" name)]
     {:id qualified-name
@@ -118,15 +129,15 @@
      :status :stable
      :source source
      :doc-source nil
-     :doc (docstrings/empty)}))
+     :doc (doc/empty)}))
 
 (defun def-symbol-entry [package namespace entry]
   (let [form (:form entry)
         name (str (nth form 1))
         docstring (when (string? (nth form 2)) (nth form 2))
         doc (if (nil? docstring)
-              (docstrings/empty)
-              (docstrings/from-string docstring))]
+              (doc/empty)
+              (content/parse docstring))]
     (merge (base-symbol-entry package namespace name :var (:source entry))
            {:doc doc
             :doc-source (when docstring
@@ -140,8 +151,8 @@
         docstring (when (string? (nth form 2)) (nth form 2))
         params (if (nil? docstring) (nth form 2) (nth form 3))
         doc (if (nil? docstring)
-              (docstrings/empty)
-              (docstrings/from-string docstring))]
+              (doc/empty)
+              (content/parse docstring))]
     (merge (base-symbol-entry package namespace name :function (:source entry))
            {:doc doc
             :doc-source (when docstring

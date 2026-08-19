@@ -1,178 +1,300 @@
 (ns lookup.index-test
   (:require proof.core
+            [proof.syntax :as p]
             [lookup.index :as index]))
 
+
+
+;; lookup.index/source-form-index
+
 (deftest source-form-index/builds-source-form-index
-  (let [source-index (index/source-form-index "..")
-        sources (:sources source-index)
-        paths (for [source sources] (:path source))
-        index-source (find-first sources
-                                 (fn [source]
-                                   (= "../src/index.roo" (:path source))))
-        first-form (head (:forms index-source))]
-    (is (= :roo/source-forms (:format source-index)))
-    (is (= 1 (:version source-index)))
-    (is (= "lookup" (:name (:package source-index))))
-    (is (= "0.1.0" (:version (:package source-index))))
-    (is (= 10 (count sources)))
-    (is (= ["../src/audit.roo"
-            "../src/cli.roo"
-            "../src/command/audit.roo"
-            "../src/command/index.roo"
-            "../src/command/thing-at.roo"
-            "../src/docstrings.roo"
-            "../src/index.roo"
-            "../src/native-docs.roo"
-            "../src/source.roo"
-            "../src/symbols.roo"]
-           paths))
-    (is (= "../src/index.roo" (:path index-source)))
-    (is (= "ns" (str (head (:form first-form)))))
-    (is (= "lookup.index" (str (nth (:form first-form) 1))))))
+  (p/when []
+    (index/source-form-index ".."))
 
-(deftest builds-symbol-index-v1
-  (let [symbol-index (index/symbol-index "..")
-        sources (:sources symbol-index)
-        namespaces (:namespaces symbol-index)
-        symbols (:symbols symbol-index)
-        version-symbol (find-first symbols
-                                   (fn [symbol]
-                                     (= "lookup.cli/version"
-                                        (:qualified-name symbol))))
-        symbol-index-symbol (find-first symbols
-                                        (fn [symbol]
-                                          (= "lookup.index/symbol-index"
-                                             (:qualified-name symbol))))
-        command-symbol (find-first symbols
-                                   (fn [symbol]
-                                     (= "lookup.cli/command"
-                                        (:qualified-name symbol))))
-        symbol-index-signature (nth (:signatures symbol-index-symbol) 0)]
-    (is (= :roo/symbol-index (:format symbol-index)))
-    (is (= 1 (:version symbol-index)))
-    (is (= "lookup" (:name (:package symbol-index))))
-    (is (contains? sources {:path "../src/cli.roo"}))
-    (is (contains? sources {:path "../src/index.roo"}))
-    (is (any? namespaces (fn [namespace]
-                           (= "lookup.cli" (:name namespace)))))
-    (is (any? namespaces
-              (fn [namespace]
-                (= "lookup.docstrings" (:name namespace)))))
-    (is (any? namespaces
-              (fn [namespace]
-                (= "lookup.index" (:name namespace)))))
-    (is (any? namespaces
-              (fn [namespace]
-                (= "lookup.source" (:name namespace)))))
-    (is (= :var (:kind version-symbol)))
-    (is (= :source (:origin version-symbol)))
-    (is (= :public (:visibility version-symbol)))
-    (is (= [] (:signatures version-symbol)))
-    (is (= "Lookup command version." (:summary (:doc version-symbol))))
-    (is (= :function (:kind symbol-index-symbol)))
-    (is (= "Build a symbol index for a package."
-           (:summary (:doc symbol-index-symbol))))
-    (is (= "(symbol-index package-dir)" (:display symbol-index-signature)))
-    (is (= [{:name "args"
-             :optional? false
-             :rest? false
-             :type nil
-             :doc "Command line argument vector."}]
-           (:params (head (:signatures command-symbol)))))
-    (is (= [{:name "package-dir"
-             :optional? false
-             :rest? false
-             :type nil
-             :doc "Package root containing `package.edn`."}]
-           (:params symbol-index-signature)))
-    (is (= {:min 1 :max 1 :variadic false}
-           (:arity symbol-index-signature)))
-    (is (= :markdown (:format (:doc symbol-index-symbol))))
-    (is (= "../src/index.roo"
-           (:path (:source symbol-index-symbol))))))
+  (p/then [source-index]
+    (let [sources (:sources source-index)
+          paths (for [source sources] (:path source))
+          index-source (find-first sources
+                                   (fn [source]
+                                     (= "../src/index.roo" (:path source))))
+          first-form (head (:forms index-source))]
+      (is (= :roo/source-forms (:format source-index)))
+      (is (= 1 (:version source-index)))
+      (is (= "lookup" (:name (:package source-index))))
+      (is (= "0.1.0" (:version (:package source-index))))
+      (is (= 14 (count sources)))
+      (is (= ["../src/audit.roo"
+              "../src/cli.roo"
+              "../src/command/audit.roo"
+              "../src/command/index.roo"
+              "../src/command/thing-at.roo"
+              "../src/doc.roo"
+              "../src/incremental.roo"
+              "../src/index.roo"
+              "../src/source.roo"
+              "../src/source/docstring/parse/content.roo"
+              "../src/source/docstring/symbols.roo"
+              "../src/source/native/parse/comment.roo"
+              "../src/source/native/parse/entries.roo"
+              "../src/source/native/symbols.roo"]
+             paths))
+      (is (= "../src/index.roo" (:path index-source)))
+      (is (= "ns" (str (head (:form first-form)))))
+      (is (= "lookup.index" (str (nth (:form first-form) 1)))))))
 
 
+
+;; lookup.index/symbol-index
 
-(deftest builds-native-only-symbol-index-from-generic-root
-  (let [symbol-index (index/root-index
-                      {:roots ["assets/native-root-only"]
-                       :excludes []
-                       :extractors [:native]})
-        symbols (:symbols symbol-index)
-        native-symbol (head symbols)]
-    (is (= :roo/symbol-index (:format symbol-index)))
-    (is (= {:kind :roots
-            :roots ["assets/native-root-only"]
-            :excludes []
-            :extractors [:native]}
-           (:origin symbol-index)))
-    (is (= nil (:package symbol-index)))
-    (is (= [{:path "assets/native-root-only/include/extra.h"}
-            {:path "assets/native-root-only/src/extra.cpp"}]
-           (:sources symbol-index)))
-    (is (= "extra.native/read!" (:id native-symbol)))
-    (is (= nil (:package native-symbol)))
-    (is (= "Read data from an external native source root."
-           (:summary (:doc native-symbol))))))
+(deftest symbol-index/builds-symbol-index-v1
+  (p/when []
+    (index/symbol-index ".."))
 
-(deftest builds-native-only-symbol-index-with-package-metadata
-  (let [symbol-index (index/root-index
-                       {:roots ["assets/native-root-only"]
-                        :excludes []
-                        :extractors [:native]
-                        :package {:name "roo"
-                                  :version "0.1.0"
-                                  :description "Roo standard library."}})
-        native-symbol (head (:symbols symbol-index))]
+  (p/then [symbol-index]
+    (let [sources (:sources symbol-index)
+          namespaces (:namespaces symbol-index)
+          symbols (:symbols symbol-index)
+          version-symbol (find-first symbols
+                                     (fn [symbol]
+                                       (= "lookup.cli/version"
+                                          (:qualified-name symbol))))
+          symbol-index-symbol (find-first symbols
+                                          (fn [symbol]
+                                            (= "lookup.index/symbol-index"
+                                               (:qualified-name symbol))))
+          command-symbol (find-first symbols
+                                     (fn [symbol]
+                                       (= "lookup.cli/command"
+                                          (:qualified-name symbol))))
+          symbol-index-signature (head (:signatures symbol-index-symbol))]
+      (is (= :roo/symbol-index (:format symbol-index)))
+      (is (= 1 (:version symbol-index)))
+      (is (= "lookup" (:name (:package symbol-index))))
+      (is (contains? sources {:path "../src/cli.roo"}))
+      (is (contains? sources {:path "../src/index.roo"}))
+      (is (any? namespaces (fn [namespace]
+                             (= "lookup.cli" (:name namespace)))))
+      (is (any? namespaces
+                (fn [namespace]
+                  (= "lookup.source.docstring.parse.content"
+                     (:name namespace)))))
+      (is (any? namespaces
+                (fn [namespace]
+                  (= "lookup.index" (:name namespace)))))
+      (is (any? namespaces
+                (fn [namespace]
+                  (= "lookup.source" (:name namespace)))))
+      (is (= :var (:kind version-symbol)))
+      (is (= :source (:origin version-symbol)))
+      (is (= :public (:visibility version-symbol)))
+      (is (= [] (:signatures version-symbol)))
+      (is (= "Lookup command version." (:summary (:doc version-symbol))))
+      (is (= :function (:kind symbol-index-symbol)))
+      (is (= "Build a symbol index for a package."
+             (:summary (:doc symbol-index-symbol))))
+      (is (= "(symbol-index package-dir)" (:display symbol-index-signature)))
+      (is (= [{:name "args"
+               :optional? false
+               :rest? false
+               :type nil
+               :doc "Command line argument vector."}]
+             (:params (head (:signatures command-symbol)))))
+      (is (= [{:name "package-dir"
+               :optional? false
+               :rest? false
+               :type nil
+               :doc "Package root containing `package.edn`."}]
+             (:params symbol-index-signature)))
+      (is (= {:min 1 :max 1 :variadic false}
+             (:arity symbol-index-signature)))
+      (is (= :markdown (:format (:doc symbol-index-symbol))))
+      (is (= "../src/index.roo"
+             (:path (:source symbol-index-symbol)))))))
+
+
+
+(deftest symbol-index/builds-native-symbols
+  (p/when []
+    (index/symbol-index "assets/native-package"))
+
+  (p/then [symbol-index]
+    (let [symbols (:symbols symbol-index)
+          native-symbol (find-first symbols
+                                    (fn [symbol]
+                                      (= "sample.native/read!"
+                                         (:qualified-name symbol))))
+          annotated-symbol (find-first symbols
+                                       (fn [symbol]
+                                         (= "sample.native/write!"
+                                            (:qualified-name symbol))))]
+      (is (= :roo/symbol-index (:format symbol-index)))
+      (is (= "native-fixture" (:name (:package symbol-index))))
+      (is (= [{:id "sample.native/read!"
+               :name "read!"
+               :qualified-name "sample.native/read!"
+               :namespace "sample.native"
+               :kind :function
+               :origin :native
+               :visibility :public
+               :status :stable
+               :source
+               {:path "assets/native-package/native/src/sample.cpp"
+                :line 5
+                :column 1}
+               :declaration-source
+               {:path "assets/native-package/native/include/sample.h"
+                :line 21
+                :column 1}
+               :doc-source
+               {:kind :native-cpp-comment
+                :source
+                {:path "assets/native-package/native/include/sample.h"
+                 :line 6
+                 :column 1}}
+               :doc {:summary "Read fixture data from a path."
+                     :body "The fixture keeps this as a separate paragraph."
+                     :format :markdown
+                     :params {"path" {:type nil :doc "Path to read."}}
+                     :returns nil
+                     :examples
+                     [{:format :roo
+                       :source
+                       "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}]
+                     :see []
+                     :since nil
+                     :deprecated nil}
+               :signatures
+               [{:display "(read! path)"
+                 :params [{:name "path"
+                           :display "path"
+                           :type nil
+                           :doc "Path to read."
+                           :optional? false
+                           :rest? false
+                           :group? false}]
+                 :returns {:type nil :doc nil}
+                 :arity {:min 1 :max 1 :variadic false}}]
+               :package "native-fixture"}
+              {:id "sample.native/write!"
+               :name "write!"
+               :qualified-name "sample.native/write!"
+               :namespace "sample.native"
+               :kind :function
+               :origin :native
+               :visibility :public
+               :status :stable
+               :source
+               {:path "assets/native-package/native/src/sample.cpp"
+                :line 8
+                :column 1}
+               :declaration-source nil
+               :doc-source
+               {:kind :native-cpp-comment
+                :source
+                {:path "assets/native-package/native/src/sample.cpp"
+                 :line 8
+                 :column 1}}
+               :doc {:summary "Write fixture data to a path."
+                     :body nil
+                     :format :markdown
+                     :params {"path" {:type nil :doc "Path to write."}}
+                     :returns nil
+                     :examples []
+                     :see []
+                     :since nil
+                     :deprecated nil}
+               :signatures
+               [{:display "(write! path)"
+                 :params [{:name "path"
+                           :display "path"
+                           :type nil
+                           :doc "Path to write."
+                           :optional? false
+                           :rest? false
+                           :group? false}]
+                 :returns {:type nil :doc nil}
+                 :arity {:min 1 :max 1 :variadic false}}]
+               :package "native-fixture"}]
+             [native-symbol annotated-symbol])))))
+
+
+
+;; lookup.index/root-index
+
+(deftest root-index/builds-native-only-symbol-index-from-generic-root
+  (p/when []
+    (index/root-index
+      {:roots ["assets/native-root-only"]
+       :excludes []
+       :extractors [:native]}))
+
+  (p/then [symbol-index]
+    (let [native-symbol (head (:symbols symbol-index))]
+      (is (= :roo/symbol-index (:format symbol-index)))
+      (is (= {:kind :roots
+              :roots ["assets/native-root-only"]
+              :excludes []
+              :extractors [:native]}
+             (:origin symbol-index)))
+      (is (nil? (:package symbol-index)))
+      (is (= [{:path "assets/native-root-only/include/extra.h"}
+              {:path "assets/native-root-only/src/extra.cpp"}]
+             (:sources symbol-index)))
+      (is (= "extra.native/read!" (:id native-symbol)))
+      (is (nil? (:package native-symbol)))
+      (is (= "Read data from an external native source root."
+             (:summary (:doc native-symbol)))))))
+
+(deftest root-index/includes-package-metadata
+  (p/when []
+    (index/root-index
+      {:roots ["assets/native-root-only"]
+       :excludes []
+       :extractors [:native]
+       :package {:name "roo"
+                 :version "0.1.0"
+                 :description "Roo standard library."}}))
+
+  (p/then [symbol-index]
     (is (= {:name "roo"
             :version "0.1.0"
             :description "Roo standard library."}
            (:package symbol-index)))
-    (is (= "roo" (:package native-symbol)))))
+    (is (= "roo" (:package (head (:symbols symbol-index)))))))
 
-(deftest builds-native-only-symbol-index-with-excludes
-  (let [symbol-index (index/root-index
-                      {:roots ["assets"]
-                       :excludes ["assets/native-package"]
-                       :extractors [:native]})
-        symbols (:symbols symbol-index)
-        native-symbol (head symbols)]
+(deftest root-index/honors-native-source-excludes
+  (p/when []
+    (index/root-index
+      {:roots ["assets"]
+       :excludes ["assets/native-package"]
+       :extractors [:native]}))
+
+  (p/then [symbol-index]
     (is (= {:kind :roots
             :roots ["assets"]
             :excludes ["assets/native-package"]
             :extractors [:native]}
            (:origin symbol-index)))
-    (is (= 1 (count symbols)))
-    (is (= "extra.native/read!" (:id native-symbol)))))
+    (is (= ["extra.native/read!"]
+           (map (:symbols symbol-index) :id)))))
 
-(deftest builds-symbol-index-with-generic-root
-  (let [symbol-index (index/symbol-index-with-roots
-                      "assets/native-package"
-                      ["assets/native-root-only"]
-                      [])
-        symbols (:symbols symbol-index)
-        native-symbol (find-first symbols
-                                  (fn [symbol]
-                                    (= "extra.native/read!"
-                                       (:qualified-name symbol))))]
-    (is (= :roo/symbol-index (:format symbol-index)))
-    (is (= "extra.native/read!" (:id native-symbol)))
-    (is (= "Read data from an external native source root."
-           (:summary (:doc native-symbol))))))
 
-(deftest builds-native-symbols-in-symbol-index
-  (let [symbol-index (index/symbol-index "assets/native-package")
-        symbols (:symbols symbol-index)
-        native-symbol (find-first symbols
-                                  (fn [symbol]
-                                    (= "sample.native/read!"
-                                       (:qualified-name symbol))))
-        signature (head (:signatures native-symbol))]
-    (is (= :roo/symbol-index (:format symbol-index)))
-    (is (= "native-fixture" (:name (:package symbol-index))))
-    (is (= "sample.native/read!" (:id native-symbol)))
-    (is (= :native (:origin native-symbol)))
-    (is (= "Read fixture data from a path."
-           (:summary (:doc native-symbol))))
-    (is (= "(read! path)" (:display signature)))
-    (is (= "Path to read." (:doc (head (:params signature)))))))
+
+;; lookup.index/symbol-index-with-roots
+
+(deftest symbol-index-with-roots/includes-symbols-from-generic-roots
+  (p/when []
+    (index/symbol-index-with-roots
+      "assets/native-package"
+      ["assets/native-root-only"]
+      []))
+
+  (p/then [symbol-index]
+    (let [native-symbol (find-first (:symbols symbol-index)
+                                    (fn [symbol]
+                                      (= "extra.native/read!"
+                                         (:qualified-name symbol))))]
+      (is (= :roo/symbol-index (:format symbol-index)))
+      (is (= "extra.native/read!" (:id native-symbol)))
+      (is (= "Read data from an external native source root."
+             (:summary (:doc native-symbol)))))))

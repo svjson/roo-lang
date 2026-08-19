@@ -1,0 +1,19 @@
+(ns lookup.doc-test
+  (:require proof.core
+            [lookup.doc :as doc]))
+
+
+
+;; lookup.doc/empty
+
+(deftest empty/returns-the-empty-documentation-model
+  (is (= {:summary nil
+          :body nil
+          :format :plain
+          :params {}
+          :returns nil
+          :examples []
+          :see []
+          :since nil
+          :deprecated nil}
+         (doc/empty))))
