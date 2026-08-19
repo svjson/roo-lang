@@ -1,0 +1,51 @@
+(ns cli-trooper.config
+  (:require [cli-trooper.config.command :as command]
+            [cli-trooper.config.feature :as feature]
+            [cli-trooper.config.feature.version :as version]
+            [cli-trooper.config.flag :as flag]
+            [cli-trooper.config.validate :as validate]))
+
+(defun normalize
+  "Normalize ergonomic CLI configuration into the canonical public model.
+
+  Args:
+  - `config`: The supplied cli-trooper configuration map.
+
+  Returns:
+  The normalized public configuration model. Configuration diagnostics are not
+  included; use `normalize-result` when they are required."
+  [config]
+  (feature/apply
+   (-> config
+       (dissoc :mixins)
+       (assoc :flags (flag/normalize-flags (:flags config))
+              :commands (reduce-kv (:commands config)
+                                   {}
+                                   (fn [commands name spec]
+                                     (assoc commands
+                                            name
+                                            (command/normalize config
+                                                               name
+                                                               spec))))))))
+
+(defun normalize-result
+  "Normalize configuration and collect structured configuration diagnostics.
+
+  Args:
+  - `config`: The supplied cli-trooper configuration map.
+
+  Returns:
+  A map containing the normalized model under `:config` and a vector of
+  diagnostics under `:errors`."
+  [config]
+  (let [model (normalize config)
+        errors (concat (version/errors config)
+                       (validate/input-errors config)
+                       (validate/model-errors model))]
+    {:config model
+     :errors (reduce errors
+                     []
+                     (fn [result error]
+                       (if (contains? result error)
+                         result
+                         (append result error))))}))

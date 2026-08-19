@@ -1,0 +1,81 @@
+(ns cli-trooper.feature.help
+  (:require [cli-trooper.usage :as usage]))
+
+
+
+;; Help output
+
+(defun lines
+  "Build help output for one command level.
+
+  Args:
+  - `config`: A canonical cli-trooper configuration model.
+  - `command-path`: The ordinary command path whose attached help declaration
+    was selected. Use an empty sequence for application-level help. The current
+    parser supports at most one command in this path.
+
+  Returns:
+  A sequence of help lines from the selected level's configured `:before`,
+  generated or custom `:output`, and `:after` sections. Returns an empty
+  sequence when help is not attached at that level."
+  [config command-path]
+  (let [command-name (head command-path)
+        command (get-in config [:commands command-name])
+        flags (if command-name (:flags command) (:flags config))
+        settings
+        (reduce-kv flags
+                   nil
+                   (fn [selected _names spec]
+                     (if (or selected
+                             (not= :command (:type spec))
+                             (not= :cli-trooper/help (:command spec)))
+                       selected
+                       (:config spec))))]
+    (if settings
+      (let [generated
+            (cond
+              (contains? settings :output)
+              (let [output (:output settings)]
+                (if (string? output) [output] output))
+
+              command-name
+              (append
+               (if-let [description (:description command)]
+                 [(str (:application config)
+                       " "
+                       command-name
+                       ": "
+                       description)
+                  ""]
+                 [])
+               (str "Usage: "
+                    (usage/command-string (:application config) command)))
+
+              true
+              (usage/usage-string config))]
+        (concat (or (:before settings) [])
+                generated
+                (or (:after settings) [])))
+      [])))
+
+(defun run!
+  "Print help for a command-shaped help invocation.
+
+  Args:
+  - `context`: The invocation context augmented with the canonical model under
+    `:cli-trooper/config` and selected command identity under
+    `:cli-trooper/command`. An optional `:cli-trooper/print!` function replaces
+    the default line printer.
+  - `options`: The fully resolved invocation options; help output does not use
+    them directly.
+
+  Returns:
+  The help lines after printing them."
+  [context options]
+  (let [command (:cli-trooper/command context)
+        command-path (if (sequential? command)
+                       (slice command 0 (- (count command) 1))
+                       [])
+        output (lines (:cli-trooper/config context) command-path)]
+    (map output (get context :cli-trooper/print! prn!))
+    output))

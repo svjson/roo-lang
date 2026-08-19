@@ -1,0 +1,30 @@
+(ns cli-trooper.parse.default-test
+  (:require proof.core
+            [cli-trooper.parse.default :as default]))
+
+
+
+;; cli-trooper.parse.default/resolve
+
+(deftest resolve/uses-captured-values-and-only-unclaimed-defaults
+  (is (= {:first "supplied"
+          :third []}
+         (default/resolve
+          {:flags {["--first"] {:destination :first}
+                   ["--second"] {:destination :second}}
+           :positional [{:destination :third}]}
+          {:first "supplied"}
+          {:third []}))))
+
+(deftest resolve/evaluates-default-resolvers-against-available-options
+  (is (= {:first "supplied"
+          :second ["supplied" nil]
+          :third nil}
+         (default/resolve
+          {:flags {["--first"] {:destination :first}
+                   ["--second"] {:destination :second}}
+           :positional [{:destination :third}]}
+          {:first "supplied"}
+          {:second (fn [options]
+                     [(:first options) (:third options)])
+           :third nil}))))

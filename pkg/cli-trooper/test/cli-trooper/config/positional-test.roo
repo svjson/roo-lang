@@ -1,0 +1,46 @@
+(ns cli-trooper.config.positional-test
+  (:require proof.core
+            [cli-trooper.config.positional :as positional]))
+
+
+
+;; cli-trooper.config.positional/normalize
+
+(deftest normalize/expands-string-shorthand
+  (is (= {:type :string
+          :optional? false
+          :repeatable? false
+          :default nil
+          :name "file"
+          :destination :file}
+         (positional/normalize "file"))))
+
+(deftest normalize/retains-explicit-fields-and-fills-defaults
+  (is (= {:type :dir
+          :optional? true
+          :repeatable? false
+          :default nil
+          :name "package-dir"
+          :destination :package-dir}
+         (positional/normalize {:type :dir
+                                :name "package-dir"
+                                :optional? true}))))
+
+(deftest normalize/does-not-invent-destination-for-unnamed-enum
+  (is (= {:type :enum
+          :optional? false
+          :repeatable? false
+          :default nil
+          :values ["one" "two"]}
+         (positional/normalize {:type :enum
+                                :values ["one" "two"]}))))
+
+(deftest normalize/infers-a-repeatable-default
+  (is (= {:type :string
+          :optional? false
+          :repeatable? true
+          :default []
+          :name "file"
+          :destination :file}
+         (positional/normalize {:name "file"
+                                :repeatable? true}))))

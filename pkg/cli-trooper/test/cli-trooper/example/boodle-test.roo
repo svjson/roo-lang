@@ -1,0 +1,291 @@
+(ns cli-trooper.example.boodle-test
+  (:require proof.core
+            [proof.fixture :as fixture]
+            [proof.syntax :as p]
+            [cli-trooper :as cli]
+            [cli-trooper.config :as config]
+            [cli-trooper.feature.help :as help]
+            [cli-trooper.feature.version :as version]
+            [cli-trooper.parse :as parse]
+            [cli-trooper.usage :as usage]))
+
+
+
+;; Test Fixture
+
+(defun parse-package-group
+  "Parse one Boodle package-group option value.
+
+  Args:
+  - `parts`: Package-group segments split at the configured comma delimiter.
+
+  Returns:
+  A cli-trooper conversion result containing a Boodle package-group map, or an
+  `:invalid-package-group` diagnostic."
+  [parts]
+  (let [raw (apply join (concat "," parts))
+        first-part (head parts)]
+    (if-let [separator (find-index first-part
+                                   (fn [ch]
+                                     (= ":" (str ch))))]
+      (let [title (trim (substr first-part 0 separator))
+            first-id (trim (substr first-part
+                                   (+ separator 1)
+                                   (count first-part)))
+            package-ids (remove (concat [first-id]
+                                        (for [id (tail parts)]
+                                          (trim id)))
+                                blank?)]
+        (if (or (blank? title) (empty? package-ids))
+          {:error {:kind :invalid-package-group
+                   :value raw
+                   :expected "title:id[,id]"}}
+          {:value {:kind :boodle/package-group
+                   :title title
+                   :package-ids package-ids}}))
+      {:error {:kind :invalid-package-group
+               :value raw
+               :expected "title:id[,id]"}})))
+
+(defun generate-command!
+  "Return observable Boodle command output for the cli-trooper example.
+
+  Args:
+  - `context`: The example invocation context.
+  - `options`: The fully parsed Boodle generate options.
+
+  Returns:
+  A result map summarizing the selected output directory and index files."
+  [context options]
+  {:request-id (:request-id context)
+   :out (:out options)
+   :indexes (:indexes options)})
+
+(def boodle-config
+  "Supplied cli-trooper declaration of Boodle's current command interface."
+  {:application "boodle"
+   :version "0.1.0"
+   :description "generate reference documentation"
+   :commands
+   {"generate"
+    {:description "Generate reference documentation."
+     :execute! generate-command!
+     :flags {["f" "format"] {:type :enum
+                               :values ["github-pages"]
+                               :default :github-pages}
+             "navigation" {:type :enum
+                            :values ["breadcrumbs" "up" "none"]
+                            :destination :navigation-style
+                            :default :breadcrumbs}
+             "package-group" {:type :package-group
+                              :name "title:id[,id]"
+                              :delimiter ","
+                              :parse parse-package-group
+                              :repeatable? true
+                              :destination :package-groups}
+             ["o" "out"] {:type :dir
+                            :required? true}}
+     :positional [{:type :file
+                   :name "index-file"
+                   :destination :indexes
+                   :repeatable? true}]}}})
+
+(fixture/deffixture boodle-app-config
+  {}
+  (config/normalize boodle-config))
+
+
+
+;; cli-trooper.usage/usage-string
+
+(deftest usage-string/formats-the-current-boodle-interface [boodle-app-config]
+  (is (= ["boodle: generate reference documentation"
+          ""
+          "Usage: boodle generate <index-file>... [-f,--format <github-pages>] [--navigation <breadcrumbs|up|none>] [--package-group <title:id[,id]>]... -o,--out <dir>"]
+         (usage/usage-string boodle-app-config))))
+
+
+
+;; cli-trooper features -- output
+
+(deftest application/renders-root-help [boodle-app-config]
+  (is (= ["boodle: generate reference documentation"
+          ""
+          "Usage: boodle generate <index-file>... [-f,--format <github-pages>] [--navigation <breadcrumbs|up|none>] [--package-group <title:id[,id]>]... -o,--out <dir>"]
+         (help/lines boodle-app-config []))))
+
+(deftest application/renders-version [boodle-app-config]
+  (is (= ["boodle 0.1.0"]
+         (version/lines boodle-app-config))))
+
+
+
+;; cli-trooper.parse/parse -- generate command -- happy path
+
+(deftest generate/parses-the-current-boodle-interface [boodle-app-config]
+  (p/when []
+    (parse/parse boodle-app-config
+                 ["--format"
+                  "github-pages"
+                  "generate"
+                  "roo.edn"
+                  "--package-group"
+                  "The Roo Language:roo,lookup"
+                  "lookup.edn"
+                  "--navigation"
+                  "up"
+                  "-o"
+                  "build/docs"
+                  "--package-group"
+                  "Packages:*"]))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :navigation-style :up
+                      :package-groups
+                      [{:kind :boodle/package-group
+                        :title "The Roo Language"
+                        :package-ids ["roo" "lookup"]}
+                       {:kind :boodle/package-group
+                        :title "Packages"
+                        :package-ids ["*"]}]
+                      :out "build/docs"
+                      :indexes ["roo.edn" "lookup.edn"]}
+            :errors []}
+           parsed))))
+
+(deftest generate/applies-current-boodle-defaults [boodle-app-config]
+  (p/when []
+    (parse/parse boodle-app-config
+                 ["generate"
+                  "-o"
+                  "build/docs"
+                  "roo.edn"]))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :navigation-style :breadcrumbs
+                      :package-groups []
+                      :out "build/docs"
+                      :indexes ["roo.edn"]}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper/run -- generate command -- happy path
+
+(deftest generate/invokes-the-declared-command
+  (p/when []
+    (cli/run boodle-config
+             {:request-id "boodle-1"
+              :args ["generate"
+                     "-o"
+                     "build/docs"
+                     "roo.edn"]}))
+
+  (p/then [invocation]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :navigation-style :breadcrumbs
+                      :package-groups []
+                      :out "build/docs"
+                      :indexes ["roo.edn"]}
+            :errors []
+            :result {:request-id "boodle-1"
+                     :out "build/docs"
+                     :indexes ["roo.edn"]}}
+           invocation))))
+
+
+
+;; cli-trooper/run -- application -- feature commands
+
+(deftest application/invokes-help-for-empty-arguments
+  (p/when []
+    (cli/run boodle-config
+             {:args []
+              :cli-trooper/print! (fn [line] nil)}))
+
+  (p/then [invocation]
+    (is (= {:command :cli-trooper/help
+            :options {}
+            :errors []
+            :result
+            ["boodle: generate reference documentation"
+             ""
+             "Usage: boodle generate <index-file>... [-f,--format <github-pages>] [--navigation <breadcrumbs|up|none>] [--package-group <title:id[,id]>]... -o,--out <dir>"]}
+           invocation))))
+
+
+
+;; cli-trooper.parse/parse -- generate command -- feature commands
+
+(deftest generate/selects-command-help-without-required-input
+  [boodle-app-config]
+  (p/when []
+    (parse/parse boodle-app-config ["generate" "--help"]))
+
+  (p/then [parsed]
+    (is (= {:command ["generate" :cli-trooper/help]
+            :options {:format :github-pages
+                      :navigation-style :breadcrumbs
+                      :package-groups []
+                      :out nil
+                      :indexes []}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper.parse/parse -- generate command -- error handling
+
+(deftest generate/requires-output-and-at-least-one-index [boodle-app-config]
+  (p/when []
+    (parse/parse boodle-app-config ["generate"]))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :navigation-style :breadcrumbs
+                      :package-groups []
+                      :out nil
+                      :indexes []}
+            :errors [{:kind :missing-required-option
+                      :command "generate"
+                      :argument "--out"}
+                     {:kind :missing-positional
+                      :command "generate"
+                      :argument "index-file"}]}
+           parsed))))
+
+(deftest generate/reports-invalid-enums-and-package-groups [boodle-app-config]
+  (p/when []
+    (parse/parse boodle-app-config
+                 ["generate"
+                  "--navigation"
+                  "sideways"
+                  "--package-group"
+                  "roo,lookup"
+                  "--out"
+                  "build/docs"
+                  "roo.edn"]))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :out "build/docs"
+                      :indexes ["roo.edn"]}
+            :errors [{:kind :invalid-enum-value
+                      :command "generate"
+                      :argument "--navigation"
+                      :value "sideways"
+                      :expected ["breadcrumbs" "up" "none"]}
+                     {:kind :invalid-package-group
+                      :command "generate"
+                      :argument "--package-group"
+                      :value "roo,lookup"
+                      :expected "title:id[,id]"}]}
+           parsed))))

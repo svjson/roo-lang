@@ -1,0 +1,22 @@
+(ns cli-trooper.parse.validation)
+
+
+
+;; Command validation
+
+(defun errors
+  "Evaluate a command's semantic validator.
+
+  Args:
+  - `command`: The selected command identity.
+  - `spec`: The selected canonical command specification.
+  - `options`: The fully resolved options map.
+
+  Returns:
+  A sequence of structured diagnostics carrying the selected command identity,
+  or an empty sequence when the command has no validator."
+  [command spec options]
+  (if-let [validator (:validate spec)]
+    (for [error (validator options)]
+      (assoc error :command command))
+    []))

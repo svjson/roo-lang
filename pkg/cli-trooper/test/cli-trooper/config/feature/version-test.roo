@@ -1,0 +1,46 @@
+(ns cli-trooper.config.feature.version-test
+  (:require proof.core
+            [cli-trooper.config.feature.version :as version-config]
+            [cli-trooper.feature.version :as version]))
+
+
+
+;; cli-trooper.config.feature.version/apply
+
+(deftest apply/attaches-version-at-the-root-when-metadata-is-available
+  (is (= {:version "1.2.3"
+          :flags
+          {["--version"]
+           {:type :command
+            :inherited? true
+            :command :cli-trooper/version
+            :execute! version/run!
+            :config {:version "1.2.3"}}}}
+         (version-config/apply {:version "1.2.3"
+                                :flags {}}))))
+
+(deftest apply/does-not-attach-the-default-feature-without-version-metadata
+  (is (= {:flags {}}
+         (version-config/apply {:flags {}}))))
+
+(deftest apply/accepts-custom-configuration-without-version-metadata
+  (is (= {:features {:version {:output ["development"]}}
+          :flags
+          {["--version"]
+           {:type :command
+            :inherited? true
+            :command :cli-trooper/version
+            :execute! version/run!
+            :config {:version nil
+                     :output ["development"]}}}}
+         (version-config/apply
+          {:features {:version {:output ["development"]}}
+           :flags {}}))))
+
+
+;; cli-trooper.config.feature.version/errors
+
+(deftest errors/reports-explicit-default-version-without-metadata
+  (is (= [{:kind :missing-application-version
+           :feature :version}]
+         (version-config/errors {:features {:version true}}))))

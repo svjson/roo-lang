@@ -1,0 +1,82 @@
+(ns cli-trooper.invoke)
+
+
+
+;; Command execution resolution and invocation
+
+(defun command-flag-execution
+  "Resolve a command-shaped flag execution function by command identity.
+
+  Args:
+  - `flags`: A canonical flag map.
+  - `command`: The command identity selected by a command-shaped flag.
+
+  Returns:
+  The declared `:execute!` function, or `nil` when no matching command-shaped
+  flag carries one."
+  [flags command]
+  (reduce-kv flags
+             nil
+             (fn [execute! _names spec]
+               (if (or execute!
+                       (not= :command (:type spec))
+                       (not= command (:command spec)))
+                 execute!
+                 (:execute! spec)))))
+
+(defun resolve-execution
+  "Resolve the execution function for a selected command identity.
+
+  Args:
+  - `config`: A canonical cli-trooper configuration model.
+  - `command`: An ordinary command identity, a root command-shaped flag
+    identity, or a command path ending in a command-shaped flag identity.
+
+  Returns:
+  The selected `:execute!` function, or `nil` when the declaration has none."
+  [config command]
+  (cond
+    (string? command)
+    (get-in config
+            [:commands command :execute!]
+            (command-flag-execution (:flags config) command))
+
+    (sequential? command)
+    (command-flag-execution (get-in config
+                                    [:commands (head command) :flags])
+                            (last command))
+
+    true
+    (command-flag-execution (:flags config) command)))
+
+(defun run
+  "Invoke the execution function selected by a successful parse result.
+
+  The function receives the caller context augmented with the canonical model
+  under `:cli-trooper/config` and the selected identity under
+  `:cli-trooper/command`, followed by the resolved options map. Parse failures
+  are returned unchanged and never execute a command.
+
+  Args:
+  - `config`: A canonical cli-trooper configuration model.
+  - `context`: The CLI invocation context.
+  - `parsed`: A cli-trooper parse result.
+
+  Returns:
+  The parse result with the execution value under `:result`, or with a
+  `:missing-command-execution` diagnostic when the selected command has no
+  `:execute!` function."
+  [config context parsed]
+  (if (not-empty? (:errors parsed))
+    parsed
+    (if-let [execute! (resolve-execution config (:command parsed))]
+      (assoc parsed
+             :result
+             (execute! (assoc context
+                              :cli-trooper/config config
+                              :cli-trooper/command (:command parsed))
+                       (:options parsed)))
+      (update parsed
+              :errors
+              [append {:kind :missing-command-execution
+                       :command (:command parsed)}]))))

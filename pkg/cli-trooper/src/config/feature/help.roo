@@ -1,0 +1,87 @@
+(ns cli-trooper.config.feature.help
+  (:require [cli-trooper.config.flag :as flag]
+            [cli-trooper.feature.help :as help]))
+
+
+
+;; Help feature
+
+(defun declaration
+  "Build one canonical help command flag declaration.
+
+  Args:
+  - `config`: Effective help configuration for the attachment level.
+  - `inherited?`: Whether descendant command states may inherit the flag.
+
+  Returns:
+  A map containing normalized help flag names under `:names` and the canonical
+  command-shaped flag specification under `:spec`."
+  [config inherited?]
+  (let [names (flag/normalize-names (or (:names config) ["h" "help"]))]
+    {:names names
+     :spec (flag/normalize-spec
+            names
+            {:type :command
+             :command :cli-trooper/help
+             :inherited? inherited?
+             :execute! (or (:execute! config) help/run!)
+             :config config})}))
+
+(defun apply
+  "Attach configured help command flags to a canonical CLI model.
+
+  Args:
+  - `config`: A canonical CLI model whose `:features :help` entry optionally
+    configures help attachment and whose commands may carry local `:help`
+    configuration.
+
+  Returns:
+  The canonical model with help command flags attached at the root and,
+  by default, every command level. Existing declarations with the exact same
+  canonical name vector take precedence."
+  [config]
+  (let [configured (get-in config [:features :help])]
+    (if (= false configured)
+      config
+      (let [settings (if (map? configured) configured {})
+            attach (or (:attach settings) :all)
+            root-declaration (declaration settings
+                                          (and (= :root attach)
+                                               (if (contains? settings :inherited?)
+                                                 (:inherited? settings)
+                                                 true)))
+            with-root
+            (cond-> (assoc config
+                           :flags
+                           (merge {(:names root-declaration)
+                                   (:spec root-declaration)}
+                                  (:flags config)))
+              (and (not (contains? config :default-args))
+                   (if (contains? settings :default?)
+                     (:default? settings)
+                     true))
+              (assoc :default-args [(last (:names root-declaration))]))]
+        (case attach
+          :all
+          (update with-root
+                  :commands
+                  [reduce-kv
+                   {}
+                   (fn [commands name command]
+                     (let [local (:help command)
+                           effective (cond-> settings
+                                             (map? local) (merge local))
+                           command (dissoc command :help)]
+                       (assoc commands
+                              name
+                              (if (= false local)
+                                command
+                                (let [attached (declaration effective false)]
+                                  (assoc command
+                                         :flags
+                                         (merge {(:names attached)
+                                                 (:spec attached)}
+                                                (:flags command))))))))])
+
+          :default
+          with-root)))))

@@ -1,0 +1,60 @@
+(ns cli-trooper.usage-test
+  (:require proof.core
+            [cli-trooper.usage :as usage]))
+
+
+
+;; cli-trooper.usage/command-string
+
+(deftest command-string/positional-with-flag
+  (is (= "find-all files <path> [-f]"
+         (usage/command-string "find-all"
+                               {:command "files"
+                                :flags {"-f" :flag}
+                                :positional [:path]}))))
+
+(deftest command-string/positional-with-multiple-flags
+  (is (= "lookup index <index-file|source-root|package-dir> [--root <dir>]... [--exclude <dir>]... [--require-summary]"
+         (usage/command-string "lookup"
+                               {:command "index"
+                                :positional [{:type :enum
+                                              :values ["index-file"
+                                                       "source-root"
+                                                       "package-dir"]}]
+                                :flags {"--root" {:type :dir
+                                                  :repeatable? true}
+                                        "--exclude" {:type :dir
+                                                     :repeatable? true}
+                                        "--require-summary" :flag}}))))
+
+(deftest command-string/positional-strings
+  (is (= "lookup thing-at <file> <line> <column>"
+         (usage/command-string "lookup"
+                               {:command "thing-at"
+                                :positional ["file"
+                                             "line"
+                                             "column"]}))))
+
+(deftest command-string/formats-required-options-and-one-or-more-positionals
+  (is (= "boodle generate <index-file>... -o,--out <dir>"
+         (usage/command-string
+          "boodle"
+          {:command "generate"
+           :positional [{:type :file
+                         :name "index-file"
+                         :repeatable? true}]
+           :flags {["-o" "--out"] {:type :dir
+                                   :required? true}}}))))
+
+
+
+;; cli-trooper.usage/format-flag-name
+
+
+(deftest format-flag-name/single-char
+  (is (= "-f"
+         (usage/format-flag-name "f"))))
+
+(deftest format-flag-name/vector
+  (is (= "-f,--file"
+         (usage/format-flag-name ["f" "--file"]))))

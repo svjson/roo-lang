@@ -1,0 +1,38 @@
+(ns cli-trooper.parse.value-test
+  (:require proof.core
+            [cli-trooper.parse.value :as value]))
+
+
+
+;; cli-trooper.parse.value/convert
+
+(deftest convert/splits-delimited-values
+  (is (= {:value ["roo" "lookup" "proof"]}
+         (value/convert {:type :string
+                         :delimiter ","}
+                        "roo,lookup,proof"))))
+
+(deftest convert/converts-every-delimited-value
+  (is (= {:value [:breadcrumbs :up]}
+         (value/convert {:type :enum
+                         :values ["breadcrumbs" "up" "none"]
+                         :delimiter ","}
+                        "breadcrumbs,up"))))
+
+(deftest convert/returns-an-application-defined-parse-result
+  (is (= {:value {:name "roo"}}
+         (value/convert {:type :package
+                         :parse (fn [raw]
+                                  {:value {:name raw}})}
+                        "roo"))))
+
+(deftest convert/passes-delimited-values-to-an-application-parser
+  (is (= {:value {:title "Packages"
+                  :ids ["roo" "lookup"]}}
+         (value/convert
+          {:type :string
+           :delimiter ","
+           :parse (fn [parts]
+                    {:value {:title "Packages"
+                             :ids parts}})}
+          "roo,lookup"))))

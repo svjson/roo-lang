@@ -1,0 +1,47 @@
+(ns cli-trooper.parse.value)
+
+
+
+;; Value validation and conversion
+
+(defun convert
+  "Validate and convert one raw argument according to a canonical value spec.
+
+  A `:delimiter` converts every separated part independently and returns their
+  values as a vector. When the specification also has an application-defined
+  `:parse` function, that function receives the converted vector; without a
+  delimiter it receives the raw argument. It must return the same
+  `{:value ...}` or `{:error ...}` result shape as this function.
+
+  Args:
+  - `spec`: A canonical flag or positional value specification.
+  - `raw`: The raw CLI argument value.
+
+  Returns:
+  A map containing the converted `:value`, or an `:error` describing why the
+  raw value is invalid."
+  [{:keys [delimiter parse] :as spec} raw]
+  (cond
+    delimiter
+    (let [converted (for [part (split raw delimiter)]
+                      (convert (dissoc spec :delimiter :parse) part))]
+
+      (cond-let
+        [invalid (find-first converted :error)] invalid
+        :default (let [values (for [result converted]
+                                (:value result))]
+                   (if parse
+                     (parse values)
+                     {:value values}))))
+
+    (:parse spec)
+    ((:parse spec) raw)
+
+    true
+    (case (:type spec)
+      :enum (if (contains? (:values spec) raw)
+              {:value (keyword raw)}
+              {:error {:kind :invalid-enum-value
+                       :value raw
+                       :expected (:values spec)}})
+      :default {:value raw})))

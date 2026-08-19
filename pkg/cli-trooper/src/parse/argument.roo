@@ -1,0 +1,55 @@
+(ns cli-trooper.parse.argument
+  (:require [cli-trooper.parse.flag :as flag]
+            [cli-trooper.parse.positional :as positional]))
+
+
+
+;; Argument state transitions
+
+(defun consume
+  "Apply one argument to the current parser state.
+
+  Args:
+  - `selection`: The selected command, literal, and argument index.
+  - `state`: The current argument parser state.
+  - `arg`: The raw argument to interpret.
+
+  Returns:
+  Parser state with the argument interpreted and `:arg-index` advanced."
+  [selection state arg]
+  (let [command (or (:source-command selection)
+                    (:command selection))
+        spec (:spec selection)
+        next-state
+        (cond
+          (= (:arg-index state) (:terminal-index selection))
+          (assoc state :terminated? true)
+
+          (contains? (:transition-indexes selection) (:arg-index state))
+          state
+
+          (:terminated? state)
+          (update state :errors [append {:kind :unexpected-terminal-argument
+                                         :command (:command selection)
+                                         :argument arg}])
+
+          (-> state :ctx :flag)
+          (flag/consume-value state command arg)
+
+          (and (flag/flag? arg)
+               (not (:ctx state)))
+          (flag/consume state command (:flags spec) arg)
+
+          (and (positional/positional? arg)
+               (< (:arg-index state) (:index selection)))
+          (update state :errors [append {:kind :unknown-command
+                                         :argument arg
+                                         :expected (:commands selection)}])
+
+          (and (positional/positional? arg)
+               (> (:arg-index state) (:index selection)))
+          (positional/consume state command spec arg)
+
+          true
+          state)]
+    (update next-state :arg-index inc)))

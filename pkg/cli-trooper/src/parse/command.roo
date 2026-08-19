@@ -1,0 +1,155 @@
+(ns cli-trooper.parse.command
+  (:require [cli-trooper.parse.flag :as flag]
+            [cli-trooper.parse.positional :as positional]))
+
+
+
+;; Command selection and initialization
+
+(defun command-flag
+  "Find a command-shaped flag declaration matching one argument.
+
+   Args:
+   - `flags`: An applicable canonical flag map.
+   - `arg`: The raw argument to match.
+
+   Returns:
+   A map containing the matched canonical `:names` and `:spec`, or `nil` when
+   the argument does not select a command-shaped flag."
+  [flags arg]
+  (reduce-kv flags
+             nil
+             (fn [selected names spec]
+               (if (or selected
+                       (not= :command (:type spec))
+                       (not (flag/flag= arg names)))
+                 selected
+                 {:names names
+                  :spec spec}))))
+
+(defun select
+  "Resolve positional or command-shaped flag selection from an argument sequence.
+
+   Args:
+   - `config`: A normalized cli-trooper configuration model.
+   - `args`: The CLI argument sequence to inspect.
+
+   Returns:
+   A map describing the selected command, source command specification, argument
+   transition indexes, and declared command names, or a map containing selection
+   `:errors` when no command is selected. A command-shaped flag attached to a
+   child extends the command path; an inherited root flag selects its root
+   command identity."
+  [config args]
+  (let [commands (reduce-kv (:commands config)
+                            []
+                            (fn [result literal spec]
+                              (append result literal)))
+        arguments (for-indexed [index arg args]
+                    {:index index
+                     :argument arg})
+        command-entry
+        (find-first arguments
+                    (fn [{:keys [argument]}]
+                      (and (positional/positional? argument)
+                           (get-in config [:commands argument]))))
+        root-terminal-entry
+        (find-first arguments
+                    (fn [{:keys [index argument]}]
+                      (and (or (nil? command-entry)
+                               (< index (:index command-entry)))
+                           (command-flag (:flags config) argument))))]
+    (cond
+      root-terminal-entry
+      (let [terminal (command-flag (:flags config)
+                                   (:argument root-terminal-entry))]
+        {:index (:index root-terminal-entry)
+         :terminal-index (:index root-terminal-entry)
+         :transition-indexes [(:index root-terminal-entry)]
+         :terminal? true
+         :command (-> terminal :spec :command)
+         :source-command nil
+         :spec {:command nil
+                :flags (:flags config)
+                :positional []}
+         :commands commands})
+
+      command-entry
+      (let [index (:index command-entry)
+            command (:argument command-entry)
+            spec (get-in config [:commands command])
+            terminal-entry
+            (find-first arguments
+                        (fn [entry]
+                          (when (> (:index entry) index)
+                            (or (command-flag (:flags spec) (:argument entry))
+                                (let [root-terminal
+                                      (command-flag (:flags config)
+                                                    (:argument entry))]
+                                  (and (-> root-terminal :spec :inherited?)
+                                       root-terminal))))))
+            local-terminal (when terminal-entry
+                             (command-flag (:flags spec)
+                                           (:argument terminal-entry)))
+            root-terminal (when (and terminal-entry
+                                     (nil? local-terminal))
+                            (command-flag (:flags config)
+                                          (:argument terminal-entry)))
+            terminal (or local-terminal root-terminal)]
+        (if terminal
+          {:index index
+           :terminal-index (:index terminal-entry)
+           :transition-indexes [index (:index terminal-entry)]
+           :terminal? true
+           :command (if local-terminal
+                      [command (-> terminal :spec :command)]
+                      (-> terminal :spec :command))
+           :source-command command
+           :spec spec
+           :commands commands}
+          {:index index
+           :transition-indexes [index]
+           :terminal? false
+           :command command
+           :source-command command
+           :spec spec
+           :commands commands}))
+
+      true
+      {:index nil
+       :command nil
+       :source-command nil
+       :spec nil
+       :commands commands
+       :errors
+       [(if-let [arg (find-first args positional/positional?)]
+          {:kind :unknown-command
+           :argument arg
+           :expected commands}
+          {:kind :missing-command
+           :expected commands})]})))
+
+(defun pending-defaults
+  "Collect one command's unresolved canonical defaults.
+
+   Args:
+   - `spec`: A canonical command specification containing flags and primitive
+     positionals.
+
+   Returns:
+   A flat map from every declared destination to its unresolved literal default
+   or default resolver function."
+  [spec]
+  (let [flag-defaults
+        (reduce-kv (:flags spec)
+                   {}
+                   (fn [options names spec]
+                     (if-let [destination (:destination spec)]
+                       (assoc options destination (:default spec))
+                       options)))]
+    (reduce (:positional spec)
+            flag-defaults
+            (fn [options positional]
+              (if-let [destination (:destination positional)]
+                (assoc options destination (:default positional))
+                options)))))

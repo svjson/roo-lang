@@ -1,0 +1,19 @@
+(ns cli-trooper.config.feature-test
+  (:require proof.core
+            [cli-trooper.config.feature :as feature]))
+
+
+
+;; cli-trooper.config.feature/apply
+
+(deftest apply/runs-userspace-processors-after-default-features
+  (is (= {:flags {}
+          :custom-feature true}
+         (select-keys
+          (feature/apply
+           {:features {:help false
+                       :version false
+                       :processors [(fn [config]
+                                      (assoc config :custom-feature true))]}
+            :flags {}})
+          [:flags :custom-feature]))))

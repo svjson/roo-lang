@@ -1,0 +1,34 @@
+(ns cli-trooper.feature.version-test
+  (:require proof.core
+            [cli-trooper.config :as config]
+            [cli-trooper.feature.version :as version]))
+
+
+
+;; cli-trooper.feature.version/lines
+
+(deftest lines/renders-the-application-version
+  (is (= ["demo 1.2.3"]
+         (version/lines
+          (config/normalize
+           {:application "demo"
+            :version "1.2.3"
+            :features {:help false}})))))
+
+(deftest lines/uses-custom-output
+  (is (= ["development build"
+          "revision abc123"]
+         (version/lines
+          (config/normalize
+           {:application "demo"
+            :features {:help false
+                       :version {:output ["development build"
+                                          "revision abc123"]}}})))))
+
+(deftest lines/returns-no-output-without-an-attached-command
+  (is (= []
+         (version/lines
+          (config/normalize
+           {:application "demo"
+            :features {:help false
+                       :version false}})))))

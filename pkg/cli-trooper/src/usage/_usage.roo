@@ -1,0 +1,153 @@
+(ns cli-trooper.usage
+  (:require [roo.string :as string]))
+
+
+
+;; Formatting function primitives
+
+(defun format-flag-name
+  "Format one or more flag spellings for usage output.
+
+  Args:
+  - `flag`: A flag spelling string or a sequence of alias spellings.
+
+  Returns:
+  A dashed flag string, or a comma-separated string for multiple aliases."
+  [flag]
+  (cond
+    (and (string? flag) (not (string/starts-with? flag "-")))
+    (str "-" flag)
+
+    (sequential? flag)
+    (apply join (flatten ["," (map flag format-flag-name)]))
+
+    true
+    flag))
+
+(defun format-flag-arg
+  "Resolve the value label displayed for a flag specification.
+
+  Args:
+  - `flag-spec`: A canonical flag specification, or supported prototype
+    shorthand.
+
+  Returns:
+  The value label string, or `nil` for a boolean flag."
+  [flag-spec]
+  (cond
+    (= :flag flag-spec)
+    nil
+
+    (:name flag-spec)
+    (:name flag-spec)
+
+    (keyword? flag-spec)
+    (name flag-spec)
+
+    (map? flag-spec)
+    (case (:type flag-spec)
+      :flag nil
+      :command nil
+      :enum (apply join (concat "|" (:values flag-spec)))
+      :default (format-flag-arg (:type flag-spec)))))
+
+(defun format-positional
+  "Format a primitive positional declaration for usage output.
+
+  Args:
+  - `pos`: A canonical positional specification, or supported prototype
+    shorthand.
+
+  Returns:
+  A usage string using angle brackets and, when optional, square brackets."
+  [pos]
+  (let [pos-arg (str "<"
+                     (cond
+                       (= :enum (:type pos))
+                       (apply join (concat "|" (:values pos)))
+
+                       (string? pos)
+                       pos
+
+                       (keyword? pos)
+                       (name pos)
+
+                       (:name pos)
+                       (:name pos)
+
+                       (keyword? (:type pos))
+                       (name (:type pos)))
+                     ">"
+                     (if (:repeatable? pos) "..." ""))]
+    (if (:optional? pos)
+      (str "[" pos-arg "]")
+      pos-arg)))
+
+(defun format-flag
+  "Format a complete flag declaration for usage output.
+
+  Args:
+  - `flag`: A canonical sequence of flag spellings.
+  - `spec`: The canonical flag specification for those spellings.
+
+  Returns:
+  A usage fragment including aliases, value label, requiredness, and
+  repeatability."
+  [flag spec]
+  (let [f (format-flag-name flag)
+        f-arg (format-flag-arg spec)
+        formatted (str f
+                       (if f-arg (str " <" f-arg ">") ""))]
+    (if (:required? spec)
+      (str formatted
+           (if (:repeatable? spec) "..." ""))
+      (str "[" formatted "]"
+           (if (:repeatable? spec) "..." "")))))
+
+
+
+;; Command formatting
+
+(defun command-string
+  "Build the one-line usage form for a command.
+
+  Args:
+  - `application`: The application name shown at the start of the line.
+  - `cmd`: A normalized command map containing its name, positionals, and flags.
+
+  Returns:
+  A single usage string for the command."
+  [application cmd]
+  (apply join
+         (flatten [" "
+                   (concat
+                    [(str application " " (:command cmd))]
+                    (for [pos (:positional cmd)]
+                      (format-positional pos))
+                    (reduce-kv (:flags cmd)
+                               []
+                               (fn [result flag spec]
+                                 (case (:type spec)
+                                   :command result
+                                   :default (append result
+                                                    (format-flag flag spec))))))])))
+
+(defun usage-string
+  "Build application usage lines from canonical configuration.
+
+  Args:
+  - `config`: A canonical cli-trooper configuration model.
+
+  Returns:
+  A sequence containing the application description, a blank line, and command
+  usage lines prefixed with `Usage: ` and its continuation indentation."
+  [{:keys [application description commands]}]
+  (concat
+   [(str application ": " description)]
+   [""]
+   (reduce-kv commands
+              []
+              (fn [lines name command]
+                (append lines
+                        (str (if (empty? lines) "Usage: " "       ")
+                             (command-string application command)))))))

@@ -1,0 +1,22 @@
+(ns cli-trooper.config.feature
+  (:require [cli-trooper.config.feature.help :as help]
+            [cli-trooper.config.feature.version :as version]))
+
+
+
+;; Feature processing
+
+(defun apply
+  "Apply built-in and userspace feature processors to a canonical CLI model.
+
+  Args:
+  - `config`: The canonical model before feature-generated declarations.
+
+  Returns:
+  The canonical model after help, version, and every function in
+  `:features :processors` has transformed it in declaration order."
+  [config]
+  (reduce (get-in config [:features :processors])
+          (version/apply (help/apply config))
+          (fn [model processor]
+            (processor model))))

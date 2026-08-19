@@ -1,0 +1,92 @@
+(ns cli-trooper.parse.positional
+  (:require [roo.string :as string]
+            [cli-trooper.parse.value :as value]))
+
+
+
+;; Positional recognition and consumption
+
+(defun positional?
+  "Determine whether an argument has the prototype's positional token shape.
+
+  Args:
+  - `arg`: The CLI argument value to inspect.
+
+  Returns:
+  A boolean indicating that `arg` is a string without a leading dash."
+  [arg]
+  (and (string? arg)
+       (not (string/starts-with? arg "-"))))
+
+(defun consume
+  "Capture one raw argument for the current primitive positional declaration.
+
+  Args:
+  - `state`: The current argument parser state.
+  - `command`: The selected command literal.
+  - `spec`: The selected canonical command specification.
+  - `arg`: The raw argument value to capture.
+
+  Returns:
+  Parser state with the value or conversion diagnostic recorded and the
+  positional cursor advanced according to repetition."
+  [state command spec arg]
+  (if-let [positional (nth (:positional spec) (:positional-index state))]
+    (let [destination (:destination positional)
+          claimed (update state :defaults [dissoc destination])
+          converted (value/convert positional arg)
+          captured (cond
+                     (:error converted)
+                     (update claimed
+                             :errors
+                             [append (merge {:kind (-> converted :error :kind)
+                                             :command command
+                                             :argument (:name positional)}
+                                            (dissoc (:error converted) :kind))])
+
+                     destination
+                     (assoc-in claimed
+                               [:options destination]
+                               (if (:repeatable? positional)
+                                 (append (get-in claimed
+                                                 [:options destination]
+                                                 [])
+                                         (:value converted))
+                                 (:value converted)))
+
+                     true
+                     claimed)]
+      (if (:repeatable? positional)
+        captured
+        (update captured :positional-index inc)))
+    (update state :errors [append {:kind :unexpected-positional
+                                   :command command
+                                   :argument arg}])))
+
+(defun finalize
+  "Record required primitive positionals not reached before input ended.
+
+  Args:
+  - `state`: Parser state after every supplied argument has been consumed.
+  - `command`: The selected command literal.
+  - `spec`: The selected canonical command specification.
+
+  Returns:
+  Parser state with one missing-positional diagnostic for each remaining
+  required positional declaration, including a required repeatable declaration
+  that captured no values."
+  [state command spec]
+  (reduce (slice (:positional spec) (:positional-index state))
+          state
+          (fn [result positional]
+            (if (or (:optional? positional)
+                    (and (:repeatable? positional)
+                         (not (contains? (:defaults result)
+                                         (:destination positional)))))
+              result
+              (update result
+                      :errors
+                      [append
+                       {:kind :missing-positional
+                        :command command
+                        :argument (:name positional)}])))))

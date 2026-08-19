@@ -1,0 +1,21 @@
+(ns cli-trooper.parse.validation-test
+  (:require proof.core
+            [cli-trooper.parse.validation :as validation]))
+
+
+
+;; cli-trooper.parse.validation/errors
+
+(deftest errors/qualifies-command-diagnostics
+  (is (= [{:kind :unsupported-mode
+           :value :brief
+           :command "inspect"}]
+         (validation/errors
+          "inspect"
+          {:validate (fn [options]
+                       [{:kind :unsupported-mode
+                         :value (:mode options)}])}
+          {:mode :brief}))))
+
+(deftest errors/returns-empty-for-a-command-without-a-validator
+  (is (= [] (validation/errors "inspect" {} {:mode :brief}))))

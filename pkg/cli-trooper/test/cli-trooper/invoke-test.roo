@@ -1,0 +1,89 @@
+(ns cli-trooper.invoke-test
+  (:require proof.core
+            [cli-trooper.config :as config]
+            [cli-trooper.invoke :as invoke]))
+
+(defun inspect-command!
+  "Return observable command input for invocation tests.
+
+  Args:
+  - `context`: The cli-trooper invocation context.
+  - `options`: The fully resolved command options.
+
+  Returns:
+  A map containing the caller request id and options."
+  [context options]
+  {:request-id (:request-id context)
+   :options options})
+
+
+
+;; cli-trooper.invoke/resolve-execution
+
+(deftest resolve-execution/resolves-ordinary-and-command-shaped-functions
+  (let [canonical
+        (config/normalize
+         {:application "tool"
+          :features {:help false
+                     :version false}
+          :flags {"print-config" {:type :command
+                                   :command :app/print-config
+                                   :execute! inspect-command!}}
+          :commands
+          {"inspect"
+           {:execute! inspect-command!
+            :flags {"explain" {:type :command
+                                :command :app/explain
+                                :execute! inspect-command!}}}}})]
+    (is (= {:ordinary inspect-command!
+            :root inspect-command!
+            :local inspect-command!}
+           {:ordinary (invoke/resolve-execution canonical "inspect")
+            :root (invoke/resolve-execution canonical :app/print-config)
+            :local (invoke/resolve-execution canonical
+                                             ["inspect" :app/explain])}))))
+
+
+
+;; cli-trooper.invoke/run
+
+(deftest run/invokes-a-successfully-selected-command
+  (let [canonical
+        (config/normalize
+         {:application "tool"
+          :features {:help false
+                     :version false}
+          :commands {"inspect" {:execute! inspect-command!}}})]
+    (is (= {:command "inspect"
+            :options {:verbose true}
+            :errors []
+            :result {:request-id "request-1"
+                     :options {:verbose true}}}
+           (invoke/run canonical
+                       {:request-id "request-1"}
+                       {:command "inspect"
+                        :options {:verbose true}
+                        :errors []})))))
+
+(deftest run/does-not-invoke-after-parse-errors
+  (is (= {:command "inspect"
+          :options {}
+          :errors [{:kind :unknown-option
+                    :argument "--wat"}]}
+         (invoke/run {}
+                     {}
+                     {:command "inspect"
+                      :options {}
+                      :errors [{:kind :unknown-option
+                                :argument "--wat"}]}))))
+
+(deftest run/reports-missing-command-execution
+  (is (= {:command "inspect"
+          :options {}
+          :errors [{:kind :missing-command-execution
+                    :command "inspect"}]}
+         (invoke/run {:commands {"inspect" {}}}
+                     {}
+                     {:command "inspect"
+                      :options {}
+                      :errors []}))))

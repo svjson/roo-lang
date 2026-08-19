@@ -1,0 +1,22 @@
+(ns cli-trooper.parse.command-test
+  (:require proof.core
+            [cli-trooper.parse.command :as command]))
+
+
+
+;; cli-trooper.parse.command/command-flag
+
+(deftest command-flag/selects-only-command-shaped-flags
+  (is (= {:names ["--print-config"]
+          :spec {:type :command
+                 :command :app/print-config}}
+         (command/command-flag
+          {["--verbose"] {:type :flag
+                           :destination :verbose}
+           ["--print-config"] {:type :command
+                               :command :app/print-config}}
+          "--print-config")))
+  (is (nil? (command/command-flag
+             {["--verbose"] {:type :flag
+                              :destination :verbose}}
+             "--verbose"))))

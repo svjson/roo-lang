@@ -1,0 +1,126 @@
+(ns cli-trooper.config.flag
+  (:require [roo.string :as string]))
+
+(defun normalize-name
+  "Normalize one flag spelling.
+
+   Single-character names receive one dash and longer names receive two. An
+   already dashed name is retained.
+
+   Args:
+   - `value`: The supplied flag spelling.
+
+   Returns:
+   The normalized flag spelling, `nil` for an empty string, or a non-string input
+   unchanged."
+  [value]
+  (cond
+    (not (string? value)) value
+    (string/starts-with? value "-") value
+    (empty? value) nil
+    (= 1 (count value)) (str "-" value)
+    true (str "--" value)))
+
+(defun normalize-names
+  "Normalize all spellings of a flag into an explicit vector.
+
+   Args:
+   - `value`: One flag spelling or a sequence of alias spellings.
+
+   Returns:
+   A vector containing every normalized spelling in declaration order."
+  [value]
+  (let [names (if (sequential? value) value [value])]
+    (for [name names]
+      (normalize-name name))))
+
+(defun normalize-spec
+  "Expand a flag specification to the current canonical flag shape.
+
+   Args:
+   - `names`: The flag's normalized spellings.
+   - `spec`: The supplied flag specification or supported shorthand.
+
+   Returns:
+   A canonical value-producing flag specification with explicit `:type`,
+   `:required?`, `:repeatable?`, `:default`, and `:destination` entries, or a
+   canonical command-shaped flag specification without value storage fields. An
+   explicit default may be a literal value or a resolver function accepting the
+   available options map."
+  [names spec]
+  (let [expanded (cond
+                   (= :flag spec) {:type :flag}
+                   (keyword? spec) {:type spec}
+                   (map? spec) spec
+                   true {:type spec})
+        type (or (:type expanded) :string)]
+    (case type
+      :command
+      (merge {:type :command
+              :inherited? false}
+             (dissoc expanded
+                     :type
+                     :repeatable?
+                     :default
+                     :destination))
+
+      :default
+      (let [required? (or (:required? expanded) false)
+            repeatable? (or (:repeatable? expanded) false)
+            default (cond
+                      (contains? expanded :default) (:default expanded)
+                      repeatable? []
+                      (= :flag type) false
+                      true nil)
+            long-name (reduce names
+                              nil
+                              (fn [selected candidate]
+                                (if (and (string? candidate)
+                                         (string/starts-with? candidate "--")
+                                         (or (nil? selected)
+                                             (> (count candidate)
+                                                (count selected))))
+                                  candidate
+                                  selected)))
+            supplied-destination (:destination expanded)
+            destination-name (if (string? supplied-destination)
+                               supplied-destination
+                               (or long-name (last names)))
+            destination (if (keyword? supplied-destination)
+                          supplied-destination
+                          (keyword
+                           (cond
+                             (string/starts-with? destination-name "--")
+                             (substr destination-name 2)
+
+                             (string/starts-with? destination-name "-")
+                             (substr destination-name 1)
+
+                             true
+                             destination-name)))]
+        (assoc (merge {:type type
+                       :required? required?
+                       :repeatable? repeatable?
+                       :default default}
+                      (dissoc expanded
+                              :type
+                              :required?
+                              :repeatable?
+                              :default
+                              :destination))
+               :destination destination)))))
+
+(defun normalize-flags
+  "Normalize a map of ergonomic flag declarations.
+
+   Args:
+   - `flags`: A supplied flag map, or `nil` when no flags are declared.
+
+   Returns:
+   A canonical flag map keyed by vectors of normalized spellings."
+  [flags]
+  (reduce-kv flags
+             {}
+             (fn [result flag spec]
+               (let [names (normalize-names flag)]
+                 (assoc result names (normalize-spec names spec))))))

@@ -1,0 +1,54 @@
+(ns cli-trooper.parse.flag-test
+  (:require proof.core
+            [cli-trooper.parse.flag :as flag]))
+
+
+
+;; cli-trooper.parse.flag/flag?
+
+(deftest flag?/truthy-for-dash-prefixed-strings
+  (is (flag/flag? "-o"))
+  (is (flag/flag? "-p")))
+
+(deftest flag=/exact-match
+  (is (flag/flag= "-o" "-o")))
+
+(deftest flag=/alias-match
+  (is (flag/flag= "--output-format" ["-o" "--output-format"])))
+
+
+
+;; cli-trooper.parse.flag/finalize
+
+(deftest finalize/reports-required-options-that-were-not-supplied
+  (is (= {:defaults {:out nil}
+          :errors [{:kind :missing-required-option
+                    :command "generate"
+                    :argument "--out"}]
+          :ctx nil}
+         (flag/finalize
+          {:defaults {:out nil}
+           :errors []
+           :ctx nil}
+          "generate"
+          {["-o" "--out"] {:type :dir
+                           :required? true
+                           :destination :out}}))))
+
+(deftest finalize/does-not-repeat-a-required-error-for-an-unfinished-occurrence
+  (is (= {:defaults {}
+          :errors [{:kind :missing-option-value
+                    :command "generate"
+                    :argument "--out"}]
+          :ctx nil}
+         (flag/finalize
+          {:defaults {}
+           :errors []
+           :ctx {:name "--out"
+                 :flag {:type :dir
+                        :required? true
+                        :destination :out}}}
+          "generate"
+          {["-o" "--out"] {:type :dir
+                           :required? true
+                           :destination :out}}))))

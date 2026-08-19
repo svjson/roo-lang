@@ -1,0 +1,62 @@
+(ns cli-trooper.parse
+  (:require [cli-trooper.parse.argument :as argument]
+            [cli-trooper.parse.command :as command]
+            [cli-trooper.parse.default :as default]
+            [cli-trooper.parse.flag :as flag]
+            [cli-trooper.parse.positional :as positional]
+            [cli-trooper.parse.validation :as validation]))
+
+
+
+;; Parsing
+
+(defun parse
+  "Parse an argument sequence against a normalized cli-trooper configuration.
+
+  Args:
+  - `config`: A normalized cli-trooper configuration model.
+  - `args`: The CLI argument sequence to parse.
+
+  Returns:
+  A map containing the selected `:command` identity, parsed `:options`, and
+  structured `:errors`. The command is `nil` and options are empty when command
+  selection fails."
+  [config args]
+  (let [selection (command/select config args)
+        command (:command selection)
+        spec (:spec selection)
+        parsed (if spec
+                 (let [consumed
+                       (reduce args
+                               {:options {}
+                                :defaults (command/pending-defaults spec)
+                                :errors []
+                                :ctx nil
+                                :arg-index 0
+                                :positional-index 0}
+                               (fn [state arg]
+                                 (argument/consume selection state arg)))
+                       finalized
+                       (flag/finalize consumed
+                                      (or (:source-command selection)
+                                          command)
+                                      (if (:terminal? selection)
+                                        {}
+                                        (:flags spec)))]
+                   (if (:terminal? selection)
+                     finalized
+                     (positional/finalize finalized command spec)))
+                 {:errors (:errors selection)})
+        options (if spec
+                  (default/resolve spec
+                                   (:options parsed)
+                                   (:defaults parsed))
+                  {})
+        semantic-errors (if (and spec
+                                 (not (:terminal? selection))
+                                 (empty? (:errors parsed)))
+                          (validation/errors command spec options)
+                          [])]
+    {:command command
+     :options options
+     :errors (concat (:errors parsed) semantic-errors)}))

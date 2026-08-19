@@ -1,0 +1,69 @@
+(ns cli-trooper.diagnostic-test
+  (:require proof.core
+            [cli-trooper.diagnostic :as diagnostic]))
+
+
+
+;; cli-trooper.diagnostic/line
+
+(deftest line/renders-parser-diagnostics
+  (is (= ["Missing command. Expected: generate, inspect."
+          "Unknown command: build. Expected: generate, inspect."
+          "Unknown option: --wat."
+          "Missing value after --out."
+          "Missing required option: --out."
+          "Invalid value for --format: html. Expected: github-pages."
+          "Missing required argument: index-file."
+          "Unexpected argument: extra.edn."
+          "Unexpected argument after :cli-trooper/help: trailing."]
+         (diagnostic/lines
+          [{:kind :missing-command
+            :expected ["generate" "inspect"]}
+           {:kind :unknown-command
+            :argument "build"
+            :expected ["generate" "inspect"]}
+           {:kind :unknown-option
+            :argument "--wat"}
+           {:kind :missing-option-value
+            :argument "--out"}
+           {:kind :missing-required-option
+            :argument "--out"}
+           {:kind :invalid-enum-value
+            :argument "--format"
+            :value "html"
+            :expected ["github-pages"]}
+           {:kind :missing-positional
+            :argument "index-file"}
+           {:kind :unexpected-positional
+            :argument "extra.edn"}
+           {:kind :unexpected-terminal-argument
+            :command :cli-trooper/help
+            :argument "trailing"}]))))
+
+(deftest line/renders-configuration-and-invocation-diagnostics
+  (is (= ["The version feature requires an application version."
+          "Unknown option mixin :paths for command generate."
+          "Duplicate option name --out for command generate."
+          "No execution function is declared for command generate."]
+         (diagnostic/lines
+          [{:kind :missing-application-version}
+           {:kind :unknown-mixin
+            :command "generate"
+            :mixin :paths}
+           {:kind :duplicate-flag-name
+            :command "generate"
+            :name "--out"}
+           {:kind :missing-command-execution
+            :command "generate"}]))))
+
+(deftest line/uses-an-explicit-application-message
+  (is (= "Choose a source or a root."
+         (diagnostic/line {:kind :index-input-required
+                           :message "Choose a source or a root."}))))
+
+(deftest line/renders-an-application-defined-diagnostic-from-common-fields
+  (is (= "Invalid package group for --package-group: roo,lookup. Expected: title:id[,id]."
+         (diagnostic/line {:kind :invalid-package-group
+                           :argument "--package-group"
+                           :value "roo,lookup"
+                           :expected "title:id[,id]"}))))

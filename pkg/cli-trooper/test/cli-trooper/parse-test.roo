@@ -1,0 +1,260 @@
+(ns cli-trooper.parse-test
+  (:require proof.core
+            [cli-trooper.config :as config]
+            [cli-trooper.parse :as parse]))
+
+
+(def test-config
+  "Command declaration covering inferred and explicitly supplied defaults."
+  {:application "tool"
+   :commands
+   {"inspect"
+    {:flags {"verbose" :flag
+             "tag" {:type :string
+                    :repeatable? true
+                    :delimiter ","}
+             "format" {:type :enum
+                       :values ["edn" "text"]
+                       :default :text}
+             "out" :file}
+     :positional [{:name "input"
+                   :optional? true}
+                  {:name "labels"
+                   :optional? true
+                   :repeatable? true}]}}})
+
+
+
+;; cli-trooper.parse/parse
+
+(deftest parse/materializes-the-complete-default-options-map
+  (is (= {:verbose false
+          :tag []
+          :format :text
+          :out nil
+          :input nil
+          :labels []}
+         (:options
+          (parse/parse (config/normalize test-config)
+                       ["inspect"])))))
+
+(deftest parse/sets-a-boolean-switch-without-consuming-the-next-option
+  (is (= {:verbose true
+          :tag []
+          :format :edn
+          :out nil
+          :input nil
+          :labels []}
+         (:options
+          (parse/parse (config/normalize test-config)
+                       ["inspect"
+                        "--verbose"
+                        "--format"
+                        "edn"])))))
+
+(deftest parse/combines-repeated-and-delimited-option-values
+  (is (= {:verbose false
+          :tag ["one" "two" "three"]
+          :format :text
+          :out nil
+          :input nil
+          :labels []}
+         (:options
+          (parse/parse (config/normalize test-config)
+                       ["inspect"
+                        "--tag"
+                        "one,two"
+                        "--tag"
+                        "three"])))))
+
+(deftest parse/captures-positionals-with-interspersed-options
+  (is (= {:verbose false
+          :tag ["one" "two"]
+          :format :edn
+          :out nil
+          :input "source.roo"
+          :labels ["first" "second"]}
+         (:options
+          (parse/parse (config/normalize test-config)
+                       ["inspect"
+                        "source.roo"
+                        "--tag"
+                        "one"
+                        "first"
+                        "--format"
+                        "edn"
+                        "--tag"
+                        "two"
+                        "second"])))))
+
+(deftest parse/accepts-a-dash-prefixed-option-value
+  (is (= {:verbose false
+          :tag []
+          :format :text
+          :out "-"
+          :input nil
+          :labels []}
+         (:options
+          (parse/parse (config/normalize test-config)
+                       ["inspect" "--out" "-"])))))
+
+(deftest parse/reports-a-missing-command
+  (is (= {:command nil
+          :options {}
+          :errors [{:kind :missing-command
+                    :expected ["inspect"]}]}
+         (parse/parse (config/normalize test-config) []))))
+
+(deftest parse/reports-an-unknown-command
+  (is (= {:command nil
+          :options {}
+          :errors [{:kind :unknown-command
+                    :argument "wat"
+                    :expected ["inspect"]}]}
+         (parse/parse (config/normalize test-config) ["wat"]))))
+
+(deftest parse/reports-an-unknown-command-before-a-selected-command
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag []
+                    :format :text
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors [{:kind :unknown-command
+                    :argument "wat"
+                    :expected ["inspect"]}]}
+         (parse/parse (config/normalize test-config) ["wat" "inspect"]))))
+
+(deftest parse/continues-after-unknown-and-incomplete-options
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag []
+                    :format :text
+                    :input nil
+                    :labels []}
+          :errors [{:kind :unknown-option
+                    :command "inspect"
+                    :argument "--wat"}
+                   {:kind :missing-option-value
+                    :command "inspect"
+                    :argument "--out"}]}
+         (parse/parse (config/normalize test-config)
+                      ["inspect" "--wat" "--out"]))))
+
+(deftest parse/does-not-default-an-invalidly-supplied-option
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag []
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors [{:kind :invalid-enum-value
+                    :command "inspect"
+                    :argument "--format"
+                    :value "json"
+                    :expected ["edn" "text"]}]}
+         (parse/parse (config/normalize test-config)
+                      ["inspect" "--format" "json"]))))
+
+(deftest parse/accepts-an-option-value-before-the-command
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag ["before"]
+                    :format :text
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors []}
+         (parse/parse (config/normalize test-config)
+                      ["--tag" "before" "inspect"]))))
+
+(deftest parse/selects-root-help-without-an-ordinary-command
+  (is (= {:command :cli-trooper/help
+          :options {}
+          :errors []}
+         (parse/parse (config/normalize test-config)
+                      ["--help"]))))
+
+(deftest parse/selects-help-attached-to-the-current-command
+  (is (= {:command ["run" :cli-trooper/help]
+          :options {:file nil}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           {:application "tool"
+            :commands
+            {"run"
+             {:positional ["file"]
+              :validate (fn [options]
+                          [{:kind :must-not-run}])}}})
+          ["run" "--help"]))))
+
+(deftest parse/treats-arguments-after-a-terminal-transition-as-unexpected
+  (is (= {:command :cli-trooper/help
+          :options {}
+          :errors [{:kind :unexpected-terminal-argument
+                    :command :cli-trooper/help
+                    :argument "inspect"}]}
+         (parse/parse (config/normalize test-config)
+                      ["--help" "inspect"]))))
+
+(deftest parse/selects-the-root-version-command
+  (is (= {:command :cli-trooper/version
+          :options {}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           {:application "tool"
+            :version "1.2.3"
+            :commands {"inspect" {}}})
+          ["--version"]))))
+
+(deftest parse/supports-inherited-root-only-help
+  (is (= {:command :cli-trooper/help
+          :options {:verbose false
+                    :tag []
+                    :format :text
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           (assoc test-config
+                  :features {:help {:attach :root}}))
+          ["inspect" "--help"]))))
+
+(deftest parse/supports-non-inherited-root-only-help
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag []
+                    :format :text
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors [{:kind :unknown-option
+                    :command "inspect"
+                    :argument "--help"}]}
+         (parse/parse
+          (config/normalize
+           (assoc test-config
+                  :features {:help {:attach :root
+                                    :inherited? false}}))
+          ["inspect" "--help"]))))
+
+(deftest parse/selects-a-userspace-command-shaped-flag
+  (is (= {:command ["inspect" :app/print-config]
+          :options {:verbose false}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           {:application "tool"
+            :features {:help false
+                       :version false}
+            :commands
+            {"inspect"
+             {:flags {"verbose" :flag
+                      "print-config" {:type :command
+                                      :command :app/print-config}}}}})
+          ["inspect" "--print-config"]))))

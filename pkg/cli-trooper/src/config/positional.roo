@@ -1,0 +1,54 @@
+(ns cli-trooper.config.positional)
+
+(defun normalize
+  "Expand one primitive positional declaration to the canonical shape.
+
+  Args:
+  - `positional`: A supplied primitive positional declaration.
+
+  Returns:
+  A canonical positional map with explicit type, cardinality, and default,
+  plus a destination when one can be inferred. An explicit default may be a
+  literal value or a resolver function accepting the available options map."
+  [positional]
+  (let [expanded (cond
+                   (string? positional) {:type :string
+                                         :name positional}
+                   (keyword? positional) {:type positional
+                                          :name (name positional)}
+                   (map? positional) positional
+                   true {:type positional})
+        type (or (:type expanded) :string)
+        repeatable? (or (:repeatable? expanded) false)
+        default (cond
+                  (contains? expanded :default) (:default expanded)
+                  repeatable? []
+                  true nil)
+        destination (cond
+                      (keyword? (:destination expanded))
+                      (:destination expanded)
+
+                      (string? (:destination expanded))
+                      (keyword (:destination expanded))
+
+                      (keyword? (:name expanded))
+                      (:name expanded)
+
+                      (string? (:name expanded))
+                      (keyword (:name expanded))
+
+                      true
+                      nil)]
+    (cond-> (merge {:type type
+                    :optional? (or (:optional? expanded) false)
+                    :repeatable? repeatable?
+                    :default default}
+                   (dissoc expanded
+                           :type
+                           :optional?
+                           :repeatable?
+                           :default
+                           :destination))
+
+            destination
+            (assoc :destination destination))))

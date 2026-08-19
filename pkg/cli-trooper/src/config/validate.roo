@@ -1,0 +1,122 @@
+(ns cli-trooper.config.validate
+  (:require [cli-trooper.config.flag :as flag]))
+
+(defun validate-flag-entry
+  "Validate every spelling in one canonical flag entry.
+
+  Args:
+  - `state`: Validation state for one root or command flag map.
+  - `names`: The canonical spellings declared by the flag.
+  - `spec`: The canonical flag specification containing its destination.
+
+  Returns:
+  Validation state with the spellings recorded and collisions appended."
+  [state names spec]
+  (reduce names
+          state
+          (fn [result name]
+            (if-let [owner (get (:seen result) name)]
+              (update result
+                      :errors
+                      [append {:kind :duplicate-flag-name
+                               :command (:command result)
+                               :name name
+                               :destinations [owner (:destination spec)]}])
+              (assoc-in result [:seen name] (:destination spec))))))
+
+(defun flag-errors
+  "Find spelling collisions in a canonical flag map.
+
+  Args:
+  - `command`: The owning command literal, or `nil` for root flags.
+  - `flags`: A canonical flag map.
+
+  Returns:
+  A vector of structured `:duplicate-flag-name` diagnostics."
+  [command flags]
+  (:errors
+   (reduce-kv flags
+              {:command command
+               :seen {}
+               :errors []}
+              validate-flag-entry)))
+
+(defun input-flag-errors
+  "Find flag collisions that would be hidden by canonical map association.
+
+  Args:
+  - `command`: The owning command literal, or `nil` for root flags.
+  - `flags`: A supplied flag declaration map.
+
+  Returns:
+  A vector of structured `:duplicate-flag-name` diagnostics."
+  [command flags]
+  (:errors
+   (reduce-kv flags
+              {:command command
+               :seen {}
+               :errors []}
+              (fn [state declared-names spec]
+                (let [names (flag/normalize-names declared-names)]
+                  (validate-flag-entry state
+                                       names
+                                       (flag/normalize-spec names spec)))))))
+
+(defun missing-mixin-errors
+  "Find commands that reference undeclared mixins.
+
+  Args:
+  - `config`: The supplied application configuration.
+
+  Returns:
+  A vector of structured `:unknown-mixin` diagnostics."
+  [config]
+  (reduce-kv (:commands config)
+             []
+             (fn [errors command spec]
+               (reduce (let [mixins (:mixin spec)]
+                         (cond
+                           (nil? mixins) []
+                           (sequential? mixins) mixins
+                           true [mixins]))
+                       errors
+                       (fn [result mixin]
+                         (if (get (:mixins config) mixin)
+                           result
+                           (append result
+                                   {:kind :unknown-mixin
+                                    :command command
+                                    :mixin mixin})))))))
+
+(defun input-errors
+  "Validate concerns that must be detected before shorthand is discarded.
+
+  Args:
+  - `config`: The supplied application configuration.
+
+  Returns:
+  A sequence of unknown-mixin and supplied flag-collision diagnostics."
+  [config]
+  (concat (missing-mixin-errors config)
+          (input-flag-errors nil (:flags config))
+          (reduce-kv (:commands config)
+                     []
+                     (fn [errors command spec]
+                       (concat errors
+                               (input-flag-errors command (:flags spec)))))))
+
+(defun model-errors
+  "Validate flag-name ownership in a normalized configuration model.
+
+  Args:
+  - `config`: The canonical application configuration.
+
+  Returns:
+  A sequence of root and command flag-collision diagnostics."
+  [config]
+  (concat (flag-errors nil (:flags config))
+          (reduce-kv (:commands config)
+                     []
+                     (fn [errors command spec]
+                       (concat errors
+                               (flag-errors command (:flags spec)))))))

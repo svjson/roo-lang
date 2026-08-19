@@ -1,90 +1,632 @@
 (ns cli-trooper.example.lookup-test
   (:require proof.core
-            [cli-trooper.core :as ct]
-            [cli-trooper.command.core :as cmd]
-            [cli-trooper.command.parse :as cmdp]
-            [cli-trooper.config.core :as cfg]))
+            [proof.fixture :as fixture]
+            [proof.syntax :as p]
+            [cli-trooper.config :as config]
+            [cli-trooper.feature.help :as help]
+            [cli-trooper.feature.version :as version]
+            [cli-trooper.parse :as parse]
+            [cli-trooper.usage :as usage]))
 
 
 
 ;; Test Fixture
 
-(def lookup-config {:application "lookup"
-                    :description "build Roo symbol index artifacts"
-                    :mixins {:recur-dir {:flags {"--root" {:repeatable? true
-                                                           :type :path}
-                                                 "--exclude" {:repeatable? true
-                                                              :type :path}}}}
-                    :commands {"index"
-                               {:mixin :recur-dir
-                                :flags {"x" {:repeatable? true
-                                             :type :enum
-                                             :values ["forms" "symbols" "native"]}
-                                        ["o"] :path-or-file
-                                        "--package-name" {:type :string
-                                                          :name "name"}
-                                        "--package-version" {:type :string
-                                                             :name "version"}
-                                        "--package-description" :text}
-                                :positional [{:type :dir
-                                              :name "package-dir"
-                                              :optional? true}]}
-                               "audit"
-                               {:mixin :recur-dir
-                                :positional [{:type :enum
-                                              :values ["index-file"
-                                                       "source-root"
-                                                       "package-dir"]}]
-                                :flags {["o" "output-format"] {:type :enum
-                                                               :values ["edn" "text"]}
-                                        "--require-summary" :flag
-                                        "--require-param-docs" :flag
-                                        "--require-signatures" :flag
-                                        "--allow-zero-arity" {:repeatable? true
-                                                              :type :symbol}
-                                        "--fail-on" {:type :enum
-                                                     :values ["warning" "error"]}}}
+(def lookup-config
+  "Supplied cli-trooper declaration of lookup's current command interface."
+  {:application "lookup"
+   :version "0.1.0"
+   :description "build Roo symbol index artifacts"
+   :mixins {:recur-dir {:flags {"root" {:type :dir
+                                        :name "dir"
+                                        :repeatable? true
+                                        :destination :roots
+                                        :default []}
+                                "exclude" {:type :path
+                                           :repeatable? true
+                                           :destination :excludes
+                                           :default []}}}}
+   :commands
+   {"index"
+    {:description "Build a Roo index artifact."
+     :mixin :recur-dir
+     :validate (fn [options]
+                 (let [has-package? (some? (:package-dir options))
+                       has-roots? (not-empty? (:roots options))
+                       state? (some? (:state options))]
+                   (cond
+                     (and (or (:package-version options)
+                              (:package-description options))
+                          (nil? (:package-name options)))
+                     [{:kind :package-name-required}]
 
-                               "thing-at"
-                               {:positional ["file"
-                                             "line"
-                                             "column"]}}})
+                     (and (not has-package?) (not has-roots?))
+                     [{:kind :index-input-required}]
+
+                     (and (contains? (:extractors options) :forms)
+                          (not has-package?))
+                     [{:kind :package-dir-required
+                       :extractor :forms}]
+
+                     (and (contains? (:extractors options) :native)
+                          (not has-roots?))
+                     [{:kind :root-required
+                       :extractor :native}]
+
+                     (and (not-empty? (:updates options)) (not state?))
+                     [{:kind :state-required
+                       :argument "--update"}]
+
+                     (and (some? (:emit-delta options)) (not state?))
+                     [{:kind :state-required
+                       :argument "--emit-delta"}]
+
+                     (and state?
+                          (or (not has-package?)
+                              has-roots?
+                              (not= [:symbols] (:extractors options))))
+                     [{:kind :invalid-incremental-options}]
+
+                     true
+                     [])))
+     :flags {"x" {:type :enum
+                  :name "extractor"
+                  :values ["forms" "symbols" "native"]
+                  :repeatable? true
+                  :destination :extractors
+                  :default (fn [options]
+                             (if (:package-dir options)
+                               [:symbols]
+                               [:native]))}
+             ["o" "out"] {:type :file
+                          :default nil}
+             "package-name" {:type :string
+                             :name "name"
+                             :default nil}
+             "package-version" {:type :string
+                                :name "version"
+                                :default nil}
+             "package-description" {:type :text
+                                    :default nil}
+             "state" {:type :dir
+                      :default nil}
+             "update" {:type :file
+                       :repeatable? true
+                       :destination :updates
+                       :default []}
+             "emit-delta" {:type :enum
+                           :values ["edn"]
+                           :default nil}}
+     :positional [{:type :dir
+                   :name "package-dir"
+                   :optional? true
+                   :default nil}]}
+
+    "audit"
+    {:description "Audit documentation in a Roo index or source tree."
+     :mixin :recur-dir
+     :flags {["o" "output-format"] {:type :enum
+                                    :values ["edn" "text"]
+                                    :default :edn}
+             "require-summary" {:type :flag
+                                :destination :require-summary?
+                                :default false}
+             "require-param-docs" {:type :flag
+                                   :destination :require-param-docs?
+                                   :default false}
+             "require-signatures" {:type :flag
+                                   :destination :require-signatures?
+                                   :default false}
+             "allow-zero-arity" {:type :symbol
+                                 :repeatable? true
+                                 :default []}
+             "fail-on" {:type :enum
+                        :values ["warning" "error"]
+                        :default nil}}
+     :positional [{:type :path
+                   :name "index-file|source-root|package-dir"
+                   :destination :input}]}
+
+    "thing-at"
+    {:description "Resolve the Roo entity at a source position."
+     :positional [{:type :dir
+                   :name "package-dir"}
+                  {:type :file
+                   :name "file"}
+                  {:type :string
+                   :name "line"}
+                  {:type :string
+                   :name "column"}]}}})
+
+(fixture/deffixture app-config
+  {}
+  (config/normalize lookup-config))
 
 
 
-;; Usage Tests
+;; cli-trooper.usage/usage-string
 
-(deftest print-usage--default-formatter
+(deftest usage-string/formats-the-current-lookup-interface [app-config]
   (is (= ["lookup: build Roo symbol index artifacts"
           ""
-          "lookup index [<package-dir>] [--root <path>]... [--exclude <path>]... [-x <forms|symbols|native>]... [-o <path-or-file>] [--package-name <name>] [--package-version <version>] [--package-description <text>]"
-          "lookup audit <index-file|source-root|package-dir> [--root <path>]... [--exclude <path>]... [-o,--output-format <edn|text>] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--fail-on <warning|error>]"
-          "lookup thing-at <file> <line> <column>"]
+          "Usage: lookup index [<package-dir>] [--root <dir>]... [--exclude <path>]... [-x <extractor>]... [-o,--out <file>] [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta <edn>]"
+          "       lookup audit <index-file|source-root|package-dir> [--root <dir>]... [--exclude <path>]... [-o,--output-format <edn|text>] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--fail-on <warning|error>]"
+          "       lookup thing-at <package-dir> <file> <line> <column>"]
 
-         (ct/usage-string lookup-config))))
+         (usage/usage-string app-config))))
 
-;; Argparse Tests
 
-(deftest parse-command--index-with-executor-and-output-file
-  (is (= {:command {:command "index"
-                    :positional [{:type :dir
-                                  :name "package-dir"
-                                  :optional? true}]
-                    :flags {"--root" {:repeatable? true
-                                      :type :path}
-                            "--exclude" {:repeatable? true
-                                         :type :path}
-                            "-x" {:repeatable? true
-                                  :type :enum
-                                  :values ["forms" "symbols" "native"]}
-                            "-o" :path-or-file
-                            "--package-name" {:type :string
-                                              :name "name"}
-                            "--package-version" {:type :string
-                                                 :name "version"}
-                            "--package-description" :text}
-                    :doc-line "lookup index [<package-dir>] [--root <path>]... [--exclude <path>]... [-x <forms|symbols|native>]... [-o <path-or-file>] [--package-name <name>] [--package-version <version>] [--package-description <text>]"}
-          :options {:x [:symbols :native]
-                    :o "/build/index.edn"}}
-         (cmdp/parse (cfg/build-config lookup-config)
-                     ["index" "-x" "symbols" "-x" "native" "-o" "/build/index.edn"]))))
+
+;; cli-trooper features -- output
+
+(deftest application/renders-root-help [app-config]
+  (is (= ["lookup: build Roo symbol index artifacts"
+          ""
+          "Usage: lookup index [<package-dir>] [--root <dir>]... [--exclude <path>]... [-x <extractor>]... [-o,--out <file>] [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta <edn>]"
+          "       lookup audit <index-file|source-root|package-dir> [--root <dir>]... [--exclude <path>]... [-o,--output-format <edn|text>] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--fail-on <warning|error>]"
+          "       lookup thing-at <package-dir> <file> <line> <column>"]
+         (help/lines app-config []))))
+
+(deftest index/renders-command-help [app-config]
+  (is (= ["lookup index: Build a Roo index artifact."
+          ""
+          "Usage: lookup index [<package-dir>] [--root <dir>]... [--exclude <path>]... [-x <extractor>]... [-o,--out <file>] [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta <edn>]"]
+         (help/lines app-config ["index"]))))
+
+(deftest application/renders-version [app-config]
+  (is (= ["lookup 0.1.0"]
+         (version/lines app-config))))
+
+
+
+;; cli-trooper.parse/parse -- feature commands
+
+(deftest application/selects-root-help [app-config]
+  (p/when []
+    (parse/parse app-config ["--help"]))
+
+  (p/then [parsed]
+    (is (= {:command :cli-trooper/help
+            :options {}
+            :errors []}
+           parsed))))
+
+(deftest application/selects-version [app-config]
+  (p/when []
+    (parse/parse app-config ["--version"]))
+
+  (p/then [parsed]
+    (is (= {:command :cli-trooper/version
+            :options {}
+            :errors []}
+           parsed))))
+
+(deftest index/selects-command-help-without-requiring-index-input [app-config]
+  (p/when []
+    (parse/parse app-config ["index" "--help"]))
+
+  (p/then [parsed]
+    (is (= {:command ["index" :cli-trooper/help]
+            :options {:roots []
+                      :excludes []
+                      :extractors [:native]
+                      :out nil
+                      :package-name nil
+                      :package-version nil
+                      :package-description nil
+                      :state nil
+                      :updates []
+                      :emit-delta nil
+                      :package-dir nil}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper.parse/parse -- index command -- happy path
+
+(deftest index/returns-complete-result-for-happy-path [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "-x"
+                  "symbols"
+                  "-o"
+                  "/build/index.edn"
+                  "pkg/lookup"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :options {:roots []
+                      :excludes []
+                      :extractors [:symbols]
+                      :out "/build/index.edn"
+                      :package-name nil
+                      :package-version nil
+                      :package-description nil
+                      :state nil
+                      :updates []
+                      :emit-delta nil
+                      :package-dir "pkg/lookup"}
+            :errors []}
+           parsed))))
+
+(deftest index/captures-index-scalar-options [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "pkg/lookup"
+                  "--package-name"
+                  "lookup"
+                  "--package-version"
+                  "0.1.0"
+                  "--package-description"
+                  "Roo symbol index generator."
+                  "--state"
+                  ".lookup/index"
+                  "--emit-delta"
+                  "edn"
+                  "--out"
+                  "-"]))
+
+  (p/then [parsed]
+    (is (= {:roots []
+            :excludes []
+            :extractors [:symbols]
+            :out "-"
+            :package-name "lookup"
+            :package-version "0.1.0"
+            :package-description "Roo symbol index generator."
+            :state ".lookup/index"
+            :updates []
+            :emit-delta :edn
+            :package-dir "pkg/lookup"}
+           (:options parsed)))))
+
+(deftest index/defaults-to-native-extraction-for-roots [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "--root"
+                  "lib/libroo/include"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :options {:roots ["lib/libroo/include"]
+                      :excludes []
+                      :extractors [:native]
+                      :out nil
+                      :package-name nil
+                      :package-version nil
+                      :package-description nil
+                      :state nil
+                      :updates []
+                      :emit-delta nil
+                      :package-dir nil}
+            :errors []}
+           parsed))))
+
+(deftest index/accumulates-repeated-options-in-occurrence-order [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "--root"
+                  "lib/include"
+                  "-x"
+                  "forms"
+                  "--exclude"
+                  "test"
+                  "pkg/lookup"
+                  "--root"
+                  "lib/src"
+                  "-x"
+                  "symbols"
+                  "--exclude"
+                  "build"]))
+
+  (p/then [parsed]
+    (is (= {:roots ["lib/include" "lib/src"]
+            :excludes ["test" "build"]
+            :extractors [:forms :symbols]
+            :out nil
+            :package-name nil
+            :package-version nil
+            :package-description nil
+            :state nil
+            :updates []
+            :emit-delta nil
+            :package-dir "pkg/lookup"}
+           (:options parsed)))))
+
+
+
+;; cli-trooper.parse/parse -- index command -- error handling
+
+(deftest index/requires-package-name-for-package-metadata [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "--root"
+                  "lib/libroo/include"
+                  "--package-version"
+                  "0.1.0"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :package-name-required
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/requires-a-package-directory-or-root [app-config]
+  (p/when []
+    (parse/parse app-config ["index"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :index-input-required
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/requires-a-package-directory-for-forms [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "-x"
+                  "forms"
+                  "--root"
+                  "lib/libroo/include"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :package-dir-required
+                      :extractor :forms
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/requires-a-root-for-native-extraction [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "-x"
+                  "native"
+                  "pkg/lookup"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :root-required
+                      :extractor :native
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/requires-state-for-updates [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "pkg/lookup"
+                  "--update"
+                  "src/lookup.roo"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :state-required
+                      :argument "--update"
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/requires-state-for-delta-output [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "pkg/lookup"
+                  "--emit-delta"
+                  "edn"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :state-required
+                      :argument "--emit-delta"
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/restricts-incremental-indexing [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["index"
+                  "pkg/lookup"
+                  "--root"
+                  "lib/libroo/include"
+                  "--state"
+                  ".lookup/index"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :invalid-incremental-options
+                      :command "index"}]}
+           (select-keys parsed [:command :errors])))))
+
+(deftest index/does-not-run-semantic-validation-after-parse-errors [app-config]
+  (p/when []
+    (parse/parse app-config ["index" "--root"]))
+
+  (p/then [parsed]
+    (is (= {:command "index"
+            :errors [{:kind :missing-option-value
+                      :command "index"
+                      :argument "--root"}]}
+           (select-keys parsed [:command :errors])))))
+
+
+
+;; cli-trooper.parse/parse -- audit command -- happy path
+
+(deftest audit/returns-complete-result-for-happy-path [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["audit"
+                  "--require-summary"
+                  "--output-format"
+                  "text"
+                  "--require-param-docs"
+                  "--require-signatures"
+                  "--allow-zero-arity"
+                  "roo/epoch-ms"
+                  "--root"
+                  "lib/libroo/include"
+                  "--exclude"
+                  "lib/libroo/test"
+                  "--fail-on"
+                  "warning"
+                  "build/index.edn"]))
+
+  (p/then [parsed]
+    (is (= {:command "audit"
+            :options {:roots ["lib/libroo/include"]
+                      :excludes ["lib/libroo/test"]
+                      :output-format :text
+                      :require-summary? true
+                      :require-param-docs? true
+                      :require-signatures? true
+                      :allow-zero-arity ["roo/epoch-ms"]
+                      :fail-on :warning
+                      :input "build/index.edn"}
+            :errors []}
+           parsed))))
+
+(deftest audit/accepts-long-flag-alias [app-config]
+  (p/when []
+    (parse/parse app-config ["audit" "--output-format" "text"]))
+
+  (p/then [parsed]
+    (is (= {:roots []
+            :excludes []
+            :output-format :text
+            :require-summary? false
+            :require-param-docs? false
+            :require-signatures? false
+            :allow-zero-arity []
+            :fail-on nil
+            :input nil}
+           (:options parsed)))))
+
+
+
+;; cli-trooper.parse/parse -- audit command -- error handling
+
+(deftest audit/reports-invalid-enum-option-values [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["audit"
+                  "--output-format"
+                  "json"
+                  "--fail-on"
+                  "notice"
+                  "build/index.edn"]))
+
+  (p/then [parsed]
+    (is (= {:command "audit"
+            :options {:roots []
+                      :excludes []
+                      :require-summary? false
+                      :require-param-docs? false
+                      :require-signatures? false
+                      :allow-zero-arity []
+                      :input "build/index.edn"}
+            :errors [{:kind :invalid-enum-value
+                      :command "audit"
+                      :argument "--output-format"
+                      :value "json"
+                      :expected ["edn" "text"]}
+                     {:kind :invalid-enum-value
+                      :command "audit"
+                      :argument "--fail-on"
+                      :value "notice"
+                      :expected ["warning" "error"]}]}
+           parsed))))
+
+(deftest audit/accumulates-structural-errors [app-config]
+  (p/when []
+    (parse/parse app-config ["audit" "--wat" "--fail-on"]))
+
+  (p/then [parsed]
+    (is (= {:command "audit"
+            :options {:roots []
+                      :excludes []
+                      :output-format :edn
+                      :require-summary? false
+                      :require-param-docs? false
+                      :require-signatures? false
+                      :allow-zero-arity []
+                      :input nil}
+            :errors [{:kind :unknown-option
+                      :command "audit"
+                      :argument "--wat"}
+                     {:kind :missing-option-value
+                      :command "audit"
+                      :argument "--fail-on"}
+                     {:kind :missing-positional
+                      :command "audit"
+                      :argument "index-file|source-root|package-dir"}]}
+           parsed))))
+
+
+
+;; cli-trooper.parse/parse -- thing-at command -- happy path
+
+(deftest thing-at/returns-complete-result-for-happy-path [app-config]
+  (p/when []
+    (parse/parse app-config
+                 ["thing-at"
+                  "."
+                  "src/sample.roo"
+                  "3"
+                  "3"]))
+
+  (p/then [parsed]
+    (is (= {:command "thing-at"
+            :options {:package-dir "."
+                      :file "src/sample.roo"
+                      :line "3"
+                      :column "3"}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper.parse/parse -- thing-at command -- error handling
+
+(deftest thing-at/reports-missing-and-extra-positionals [app-config]
+  (p/when []
+    {:missing (parse/parse app-config ["thing-at" "."])
+     :extra (parse/parse app-config
+                         ["thing-at"
+                          "."
+                          "src/sample.roo"
+                          "3"
+                          "3"
+                          "extra"])})
+
+  (p/then [{:keys [missing extra]}]
+    (is (= {:command "thing-at"
+            :options {:package-dir "."
+                      :file nil
+                      :line nil
+                      :column nil}
+            :errors [{:kind :missing-positional
+                      :command "thing-at"
+                      :argument "file"}
+                     {:kind :missing-positional
+                      :command "thing-at"
+                      :argument "line"}
+                     {:kind :missing-positional
+                      :command "thing-at"
+                      :argument "column"}]}
+           missing))
+    (is (= {:command "thing-at"
+            :options {:package-dir "."
+                      :file "src/sample.roo"
+                      :line "3"
+                      :column "3"}
+            :errors [{:kind :unexpected-positional
+                      :command "thing-at"
+                      :argument "extra"}]}
+           extra))))

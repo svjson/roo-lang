@@ -1,0 +1,88 @@
+(ns cli-trooper.config.flag-test
+  (:require proof.core
+            [cli-trooper.config.flag :as flag]))
+
+
+
+;; cli-trooper.config.flag/normalize-names
+
+(deftest normalize-names/makes-all-spellings-explicit
+  (is (= ["-o" "--output-format"]
+         (flag/normalize-names ["o" "output-format"]))))
+
+
+
+;; cli-trooper.config.flag/normalize-name
+
+
+(deftest normalize-name/infers-dash-count
+  (is (= "-o" (flag/normalize-name "o")))
+  (is (= "--output-file" (flag/normalize-name "output-file"))))
+
+
+
+;; cli-trooper.config.flag/normalize-spec
+
+
+(deftest normalize-spec/infers-long-destination
+  (is (= {:type :enum
+          :required? false
+          :repeatable? false
+          :default nil
+          :values ["edn" "text"]
+          :destination :output-format}
+         (flag/normalize-spec ["-o" "--output-format"]
+                              {:type :enum
+                               :values ["edn" "text"]}))))
+
+(deftest normalize-spec/explicit-destination-wins
+  (is (= {:type :string
+          :required? false
+          :repeatable? false
+          :default nil
+          :destination :format}
+         (flag/normalize-spec ["-o" "--output-format"]
+                              {:type :string
+                               :destination :format}))))
+
+(deftest normalize-spec/expands-keyword-shorthand
+  (is (= {:type :path
+          :required? false
+          :repeatable? false
+          :default nil
+          :destination :output}
+         (flag/normalize-spec ["--output"] :path))))
+
+(deftest normalize-spec/infers-switch-and-repeatable-defaults
+  (is (= false
+         (:default (flag/normalize-spec ["--verbose"] :flag))))
+  (is (= []
+         (:default
+          (flag/normalize-spec ["--root"] {:type :dir
+                                            :repeatable? true})))))
+
+(deftest normalize-spec/retains-an-explicit-default
+  (is (= :text
+         (:default
+          (flag/normalize-spec ["--format"] {:type :enum
+                                              :values ["edn" "text"]
+                                              :default :text})))))
+
+(deftest normalize-spec/retains-required-cardinality
+  (is (= true
+         (:required?
+          (flag/normalize-spec ["--out"] {:type :dir
+                                          :required? true})))))
+
+(deftest normalize-spec/normalizes-a-command-shaped-flag-without-storage
+  (is (= {:type :command
+          :inherited? true
+          :command :app/print-config
+          :config {:format :edn}}
+         (flag/normalize-spec ["--print-config"]
+                              {:type :command
+                               :command :app/print-config
+                               :inherited? true
+                               :config {:format :edn}
+                               :destination :ignored
+                               :default false}))))

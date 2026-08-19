@@ -1,0 +1,102 @@
+(ns cli-trooper.config.feature.help-test
+  (:require proof.core
+            [cli-trooper.config.feature.help :as help-config]
+            [cli-trooper.feature.help :as help]))
+
+
+
+;; cli-trooper.config.feature.help/apply
+
+(deftest apply/attaches-effective-help-configuration-at-every-level
+  (is (= {:features {:help {:before ["Application prose."]}}
+          :flags
+          {["-h" "--help"]
+           {:type :command
+            :inherited? false
+            :command :cli-trooper/help
+            :execute! help/run!
+            :config {:before ["Application prose."]}}}
+          :commands
+          {"inspect"
+           {:flags
+            {["-h" "--help"]
+             {:type :command
+              :inherited? false
+              :command :cli-trooper/help
+              :execute! help/run!
+              :config {:before ["Application prose."]
+                       :after ["Command prose."]}}}}}
+          :default-args ["--help"]}
+         (help-config/apply
+          {:features {:help {:before ["Application prose."]}}
+           :flags {}
+           :commands
+           {"inspect" {:help {:after ["Command prose."]}
+                       :flags {}}}}))))
+
+(deftest apply/supports-inherited-root-only-help
+  (is (= {:features {:help {:attach :root}}
+          :flags
+          {["-h" "--help"]
+           {:type :command
+            :inherited? true
+            :command :cli-trooper/help
+            :execute! help/run!
+            :config {:attach :root}}}
+          :commands {"inspect" {:flags {}}}
+          :default-args ["--help"]}
+         (help-config/apply
+          {:features {:help {:attach :root}}
+           :flags {}
+           :commands {"inspect" {:flags {}}}}))))
+
+(deftest apply/supports-non-inherited-root-only-help
+  (is (= {:features {:help {:attach :root
+                            :inherited? false}}
+          :flags
+          {["-h" "--help"]
+           {:type :command
+            :inherited? false
+            :command :cli-trooper/help
+            :execute! help/run!
+            :config {:attach :root
+                     :inherited? false}}}
+          :commands {"inspect" {:flags {}}}
+          :default-args ["--help"]}
+         (help-config/apply
+          {:features {:help {:attach :root
+                             :inherited? false}}
+           :flags {}
+           :commands {"inspect" {:flags {}}}}))))
+
+(deftest apply/allows-a-command-to-opt-out
+  (is (= {:features {}
+          :flags
+          {["-h" "--help"]
+           {:type :command
+            :inherited? false
+            :command :cli-trooper/help
+            :execute! help/run!
+            :config {}}}
+          :commands {"inspect" {:flags {}}}
+          :default-args ["--help"]}
+         (help-config/apply
+          {:features {}
+           :flags {}
+           :commands {"inspect" {:help false
+                                  :flags {}}}}))))
+
+(deftest apply/allows-default-invocation-to-be-disabled
+  (is (= {:features {:help {:default? false}}
+          :flags
+          {["-h" "--help"]
+           {:type :command
+            :inherited? false
+            :command :cli-trooper/help
+            :execute! help/run!
+            :config {:default? false}}}
+          :commands {}}
+         (help-config/apply
+          {:features {:help {:default? false}}
+           :flags {}
+           :commands {}}))))

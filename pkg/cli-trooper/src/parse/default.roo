@@ -1,0 +1,54 @@
+(ns cli-trooper.parse.default)
+
+
+
+;; Default resolution
+
+(defun resolve
+  "Resolve pending defaults into canonical command option order.
+
+  Args:
+  - `spec`: The selected canonical command specification.
+  - `options`: Values successfully captured from the argument sequence.
+  - `defaults`: Literal values or resolver functions whose destinations were
+    not claimed by supplied arguments. Resolver functions receive the captured
+    options and every pending literal default.
+
+  Returns:
+  A flat options map containing captured values and resolved defaults in
+  canonical declaration order. A claimed destination without a captured value
+  is omitted."
+  [spec options defaults]
+  (let [declarations
+        (concat (reduce-kv (:flags spec)
+                           []
+                           (fn [result names declaration]
+                             (append result declaration)))
+                (:positional spec))
+        available-options
+        (reduce-kv defaults
+                   options
+                   (fn [result destination candidate]
+                     (if (fn? candidate)
+                       result
+                       (assoc result destination candidate))))]
+    (reduce declarations
+            {}
+            (fn [result {:keys [destination]}]
+              (cond
+                (nil? destination)
+                result
+
+                (contains? options destination)
+                (assoc result destination (get options destination))
+
+                (contains? defaults destination)
+                (let [candidate (get defaults destination)]
+                  (assoc result
+                         destination
+                         (if (fn? candidate)
+                           (candidate (merge available-options result))
+                           candidate)))
+
+                true
+                result)))))

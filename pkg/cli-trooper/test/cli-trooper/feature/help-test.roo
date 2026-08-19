@@ -1,0 +1,70 @@
+(ns cli-trooper.feature.help-test
+  (:require proof.core
+            [cli-trooper.config :as config]
+            [cli-trooper.feature.help :as help]))
+
+
+
+;; cli-trooper.feature.help/lines
+
+(deftest lines/renders-application-help
+  (is (= ["Application preface."
+          "demo: inspect files"
+          ""
+          "Usage: demo inspect <file> [--format <text|edn>]"
+          "Application notes."]
+         (help/lines
+          (config/normalize
+           {:application "demo"
+            :description "inspect files"
+            :features {:help {:before ["Application preface."]
+                              :after ["Application notes."]}
+                       :version false}
+            :commands
+            {"inspect"
+             {:positional ["file"]
+              :flags {"format" {:type :enum
+                                 :values ["text" "edn"]}}}}})
+          []))))
+
+(deftest lines/renders-command-help-with-effective-local-configuration
+  (is (= ["Application preface."
+          "demo inspect: Inspect one file."
+          ""
+          "Usage: demo inspect <file>"
+          "Command notes."]
+         (help/lines
+          (config/normalize
+           {:application "demo"
+            :features {:help {:before ["Application preface."]}
+                       :version false}
+            :commands
+            {"inspect"
+             {:description "Inspect one file."
+              :help {:after ["Command notes."]}
+              :positional ["file"]}}})
+          ["inspect"]))))
+
+(deftest lines/uses-custom-output-between-prose-sections
+  (is (= ["Before."
+          "Custom help."
+          "After."]
+         (help/lines
+          (config/normalize
+           {:application "demo"
+            :features {:help {:before ["Before."]
+                              :output "Custom help."
+                              :after ["After."]}
+                       :version false}})
+          []))))
+
+(deftest lines/returns-no-output-where-help-is-not-attached
+  (is (= []
+         (help/lines
+          (config/normalize
+           {:application "demo"
+            :features {:help {:attach :root
+                              :inherited? false}
+                       :version false}
+            :commands {"inspect" {}}})
+          ["inspect"]))))

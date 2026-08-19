@@ -1,0 +1,107 @@
+(ns cli-trooper.config-test
+  (:require proof.core
+            [cli-trooper.config :as config]
+            [cli-trooper.feature.help :as help]))
+
+
+(def supplied-config
+  {:application "tool"
+   :description "does things"
+   :mixins {:paths {:flags {"root" {:type :path
+                                    :repeatable? true}}}
+            :output {:flags {["o" "output-format"] {:type :enum
+                                                    :values ["edn" "text"]}}}}
+   :commands {"convert" {:mixin [:paths :output]
+                         :flags {"v" :flag}
+                         :positional ["file"]}}})
+
+
+
+;; cli-trooper.config/normalize
+
+(deftest normalize/expands-mixins-flags-and-positionals
+  (let [normalized (config/normalize supplied-config)
+        command (get-in normalized [:commands "convert"])]
+    (is (nil? (:mixins normalized)))
+    (is (= {:type :path
+            :required? false
+            :repeatable? true
+            :default []
+            :destination :root}
+           (get-in command [:flags ["--root"]])))
+    (is (= {:type :enum
+            :required? false
+            :repeatable? false
+            :default nil
+            :values ["edn" "text"]
+            :destination :output-format}
+           (get-in command [:flags ["-o" "--output-format"]])))
+    (is (= {:type :flag
+            :required? false
+            :repeatable? false
+            :default false
+            :destination :v}
+           (get-in command [:flags ["-v"]])))
+    (is (= [{:type :string
+             :optional? false
+             :repeatable? false
+             :default nil
+             :name "file"
+             :destination :file}]
+           (:positional command)))))
+
+
+(deftest normalize/is-idempotent
+  (let [normalized (config/normalize supplied-config)]
+    (is (= normalized (config/normalize normalized)))))
+
+
+
+;; cli-trooper.config/normalize-result
+
+(deftest normalize-result/reports-unknown-mixins
+  (is (= [{:kind :unknown-mixin
+           :command "convert"
+           :mixin :missing}]
+         (:errors
+          (config/normalize-result
+           {:application "tool"
+            :commands {"convert" {:mixin :missing}}})))))
+
+(deftest normalize-result/reports-colliding-normalized-flag-names
+  (is (= :duplicate-flag-name
+         (-> (config/normalize-result
+              {:application "tool"
+               :commands {"convert" {:flags {"o" :flag
+                                               "-o" :path}}}})
+             :errors
+             head
+             :kind))))
+
+(deftest normalize-result/does-not-duplicate-collision-diagnostics
+  (is (= 1
+         (count
+          (:errors
+           (config/normalize-result
+            {:application "tool"
+             :commands {"convert" {:flags {["o" "out"] :flag
+                                             "--out" :path}}}}))))))
+
+(deftest normalize-result/rejects-default-version-without-application-metadata
+  (is (= {:config
+          {:application "tool"
+           :features {:version true}
+           :flags
+           {["-h" "--help"]
+            {:type :command
+             :inherited? false
+             :command :cli-trooper/help
+             :execute! help/run!
+             :config {}}}
+           :commands {}
+           :default-args ["--help"]}
+          :errors [{:kind :missing-application-version
+                    :feature :version}]}
+         (config/normalize-result
+          {:application "tool"
+           :features {:version true}}))))

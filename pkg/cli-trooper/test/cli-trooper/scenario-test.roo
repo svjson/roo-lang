@@ -1,0 +1,104 @@
+(ns cli-trooper.scenario-test
+  (:require proof.core
+            [cli-trooper :as cli]))
+
+(defun execute-command!
+  "Return the caller context and parsed options for runtime tests.
+
+  Args:
+  - `context`: The cli-trooper invocation context.
+  - `options`: The fully resolved command options.
+
+  Returns:
+  A map containing the caller identity and options."
+  [context options]
+  {:caller (:caller context)
+   :options options})
+
+(def runtime-config
+  "CLI declaration used to exercise normalization, parsing, and invocation."
+  {:application "tool"
+   :features {:help false
+              :version false}
+   :commands
+   {"inspect"
+    {:execute! execute-command!
+     :flags {"verbose" :flag}
+     :positional ["file"]}}})
+
+
+
+;; cli-trooper/parse
+
+(deftest parse/normalizes-and-parses-without-executing-a-command
+  (is (= {:command "inspect"
+          :options {:verbose true
+                    :file "source.roo"}
+          :errors []}
+         (cli/parse runtime-config
+                    {:args ["inspect" "--verbose" "source.roo"]}))))
+
+(deftest parse/resolves-default-arguments
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :file "default.roo"}
+          :errors []}
+         (cli/parse (assoc runtime-config
+                           :default-args ["inspect" "default.roo"])
+                    {:args []}))))
+
+(deftest parse/returns-configuration-errors-without-parsing
+  (is (= {:command nil
+          :options {}
+          :errors [{:kind :unknown-mixin
+                    :command "inspect"
+                    :mixin :missing}]}
+         (cli/parse {:application "tool"
+                     :features {:help false
+                                :version false}
+                     :commands {"inspect" {:mixin :missing}}}
+                    {:args ["inspect"]}))))
+
+
+
+;; cli-trooper/run
+
+(deftest run/normalizes-parses-and-invokes-a-command
+  (is (= {:command "inspect"
+          :options {:verbose true
+                    :file "source.roo"}
+          :errors []
+          :result {:caller :test
+                   :options {:verbose true
+                             :file "source.roo"}}}
+         (cli/run runtime-config
+                  {:caller :test
+                   :args ["inspect" "--verbose" "source.roo"]}))))
+
+(deftest run/returns-configuration-errors-without-parsing
+  (is (= {:command nil
+          :options {}
+          :errors [{:kind :unknown-mixin
+                    :command "inspect"
+                    :mixin :missing}]}
+         (cli/run {:application "tool"
+                   :features {:help false
+                              :version false}
+                   :commands {"inspect" {:mixin :missing
+                                          :execute! execute-command!}}}
+                  {:args ["inspect"]}))))
+
+
+
+;; cli-trooper/run!
+
+(deftest run!/returns-success-after-command-execution
+  (is (= 0
+         (cli/run! runtime-config
+                   {:args ["inspect" "source.roo"]}))))
+
+(deftest run!/returns-a-command-line-error-code
+  (is (= 2
+         (cli/run! runtime-config
+                   {:args ["inspect"]
+                    :cli-trooper/print! (fn [line] nil)}))))

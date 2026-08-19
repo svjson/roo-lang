@@ -1,0 +1,60 @@
+(ns cli-trooper.config.feature.version
+  (:require [cli-trooper.config.flag :as flag]
+            [cli-trooper.feature.version :as version]))
+
+
+
+;; Version feature
+
+(defun apply
+  "Attach the configured version command flag to a canonical CLI model.
+
+  Args:
+  - `config`: A canonical CLI model containing optional application `:version`
+    metadata and `:features :version` configuration.
+
+  Returns:
+  The canonical model with a root version command flag when application version
+  metadata or custom version configuration makes the feature available."
+  [config]
+  (let [configured (get-in config [:features :version])
+        enabled? (cond
+                   (= false configured) false
+                   (map? configured) true
+                   (= true configured) (some? (:version config))
+                   true (some? (:version config)))]
+    (if enabled?
+      (let [settings (if (map? configured) configured {})
+            names (flag/normalize-names (or (:names settings) ["version"]))]
+        (assoc config
+               :flags
+               (merge {names (flag/normalize-spec
+                              names
+                              {:type :command
+                               :command :cli-trooper/version
+                               :inherited? (if (contains? settings :inherited?)
+                                             (:inherited? settings)
+                                             true)
+                               :execute! (or (:execute! settings) version/run!)
+                               :config (merge {:version (:version config)}
+                                              settings)})}
+                      (:flags config))))
+      config)))
+
+(defun errors
+  "Validate explicit use of the default version feature.
+
+  Args:
+  - `config`: A supplied or canonical CLI configuration map.
+
+  Returns:
+  A sequence containing a missing-application-version diagnostic when the
+  default version feature is explicitly enabled without version metadata, or an
+  empty sequence. Custom map configuration is accepted without application
+  version metadata."
+  [config]
+  (if (and (= true (get-in config [:features :version]))
+           (nil? (:version config)))
+    [{:kind :missing-application-version
+      :feature :version}]
+    []))

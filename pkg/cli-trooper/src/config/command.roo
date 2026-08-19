@@ -1,0 +1,46 @@
+(ns cli-trooper.config.command
+  (:require [cli-trooper.config.flag :as flag]
+            [cli-trooper.config.positional :as positional]))
+
+(defun mixed-flags
+  "Compose inherited and command-local flag declarations.
+
+  Args:
+  - `config`: The supplied application configuration containing `:mixins`.
+  - `mixin`: The command's optional mixin identifier or sequence of identifiers.
+  - `flags`: The command-local supplied flag map.
+
+  Returns:
+  A supplied-shape flag map with mixins applied in declaration order and local
+  flags applied last."
+  [config {:keys [mixin flags]}]
+  (let [mixin-names (cond
+                      (nil? mixin) []
+                      (sequential? mixin) mixin
+                      true [mixin])
+        inherited (reduce mixin-names
+                          {}
+                          (fn [inherited-flags mixin-name]
+                            (merge inherited-flags
+                                   (get-in config
+                                           [:mixins mixin-name :flags]))))]
+    (merge inherited flags)))
+
+(defun normalize
+  "Normalize one command while retaining unrecognized prototype metadata.
+
+  Args:
+  - `config`: The supplied application configuration.
+  - `name`: The command's literal name.
+  - `spec`: The supplied command specification.
+
+  Returns:
+  A canonical command map with expanded flags and positionals and no `:mixin`."
+  [config name spec]
+  (-> spec
+      (dissoc :mixin)
+      (assoc :command name
+             :positional (for [positional (:positional spec)]
+                           (positional/normalize positional))
+             :flags (flag/normalize-flags
+                     (mixed-flags config spec)))))

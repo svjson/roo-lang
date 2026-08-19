@@ -1,0 +1,48 @@
+(ns cli-trooper.feature.version)
+
+
+
+;; Version output
+
+(defun lines
+  "Build output for the attached application version command.
+
+  Args:
+  - `config`: A canonical cli-trooper configuration model.
+
+  Returns:
+  The configured version `:output` as a sequence of lines, or one generated
+  `<application> <version>` line. Returns an empty sequence when the version
+  feature did not attach a command."
+  [config]
+  (if-let [settings
+           (reduce-kv (:flags config)
+                      nil
+                      (fn [selected _names spec]
+                        (if (or selected
+                                (not= :command (:type spec))
+                                (not= :cli-trooper/version (:command spec)))
+                          selected
+                          (:config spec))))]
+    (if (contains? settings :output)
+      (let [output (:output settings)]
+        (if (string? output) [output] output))
+      [(str (:application config) " " (:version settings))])
+    []))
+
+(defun run!
+  "Print output for a command-shaped version invocation.
+
+  Args:
+  - `context`: The invocation context augmented with the canonical model under
+    `:cli-trooper/config`. An optional `:cli-trooper/print!` function replaces
+    the default line printer.
+  - `options`: The fully resolved invocation options; version output does not
+    use them directly.
+
+  Returns:
+  The version lines after printing them."
+  [context options]
+  (let [output (lines (:cli-trooper/config context))]
+    (map output (get context :cli-trooper/print! prn!))
+    output))

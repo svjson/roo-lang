@@ -1,0 +1,160 @@
+(ns cli-trooper.parse.flag
+  (:require [roo.string :as string]
+            [cli-trooper.parse.value :as value]))
+
+
+
+;; Flag recognition
+
+(defun flag?
+  "Determine if an argument is a flag-shaped string.
+
+   Args:
+   - `arg`: The argument to inspect.
+
+   Returns:
+   A boolean indicating that the argument is a string beginning with a dash."
+  [arg]
+  (and (string? arg)
+       (string/starts-with? arg "-")))
+
+(defun flag=
+  "Determine whether an argument matches a canonical flag key.
+
+   Args:
+   - `arg`: The raw argument to compare.
+   - `key`: One canonical spelling or a sequence of alias spellings.
+
+   Returns:
+   A boolean indicating that the argument exactly matches a canonical spelling."
+  [arg key]
+  (cond
+    (string? key)
+    (= arg key)
+
+    (sequential? key)
+    (any? key (fn [spelling]
+                (flag= arg spelling)))))
+
+
+
+;; Flag state transitions
+
+(defun consume
+  "Apply one flag-shaped argument to parser state.
+
+   Args:
+   - `state`: The current argument parser state.
+   - `command`: The selected command literal.
+   - `flags`: The applicable canonical flag map.
+   - `arg`: The raw flag argument.
+
+   Returns:
+   Parser state with a boolean destination enabled, a pending value context, or
+   an unknown-option diagnostic."
+  [state command flags arg]
+  (let [flag-key (find-first (keys flags)
+                             (fn [key]
+                               (flag= arg key)))
+        spec (get flags flag-key)]
+    (case (:type spec)
+      nil
+      (update state :errors [append {:kind :unknown-option
+                                     :command command
+                                     :argument arg}])
+
+      :command
+      (update state :errors [append {:kind :unknown-option
+                                     :command command
+                                     :argument arg}])
+
+      :flag
+      (-> state
+          (update :defaults [dissoc (:destination spec)])
+          (assoc-in [:options (:destination spec)] true))
+
+      :default
+      (-> state
+          (update :defaults [dissoc (:destination spec)])
+          (assoc :ctx
+                 {:name arg
+                  :flag spec})))))
+
+(defun consume-value
+  "Capture a raw argument for the pending value-taking flag.
+
+   Args:
+   - `state`: Parser state containing a pending flag under `:ctx`.
+   - `command`: The selected command literal.
+   - `arg`: The raw argument value to capture.
+
+   Returns:
+   Parser state with the converted value or conversion diagnostic recorded and
+   the pending context cleared."
+  [state command arg]
+  (let [spec (-> state :ctx :flag)
+        destination (:destination spec)
+        converted (value/convert spec arg)]
+    (assoc
+     (if-let [error (:error converted)]
+       (update state
+               :errors
+               [append
+                (merge {:kind (:kind error)
+                        :command command
+                        :argument (-> state :ctx :name)}
+                       (dissoc error :kind))])
+       (assoc-in state
+                 [:options destination]
+                 (if (:repeatable? spec)
+                   (if (and (:delimiter spec)
+                            (nil? (:parse spec)))
+                     (concat (get-in state [:options destination] [])
+                             (:value converted))
+                     (append (get-in state [:options destination] [])
+                             (:value converted)))
+                   (:value converted))))
+     :ctx
+     nil)))
+
+(defun finalize
+  "Record unfinished and absent required flag values.
+
+  Args:
+  - `state`: Parser state after every supplied argument has been consumed.
+  - `command`: The selected command literal.
+  - `flags`: The applicable canonical flag declarations.
+
+  Returns:
+  Parser state with a missing-option-value diagnostic for an unfinished
+  occurrence and one missing-required-option diagnostic for each required flag
+  that was never supplied."
+  [state command flags]
+  (let [pending? (-> state :ctx :flag)
+        finalized (cond-> state
+                    pending?
+                    (update :errors
+                            [append
+                             {:kind :missing-option-value
+                              :command command
+                              :argument (-> state :ctx :name)}])
+
+                    pending?
+                    (assoc :ctx nil))]
+    (reduce-kv flags
+               finalized
+               (fn [result names spec]
+                 (cond-> result
+                   (and (:required? spec)
+                        (contains? (:defaults result)
+                                   (:destination spec)))
+                   (update :errors
+                           [append
+                            {:kind :missing-required-option
+                             :command command
+                             :argument (or (find-first names
+                                                       (fn [name]
+                                                         (string/starts-with?
+                                                          name
+                                                          "--")))
+                                           (head names))}]))))))

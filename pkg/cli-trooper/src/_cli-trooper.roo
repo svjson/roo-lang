@@ -1,0 +1,92 @@
+(ns cli-trooper
+  (:require [cli-trooper.config :as config]
+            [cli-trooper.diagnostic :as diagnostic]
+            [cli-trooper.invoke :as invoke]
+            [cli-trooper.parse :as parser]))
+
+(defun prepare
+  "Normalize configuration and parse invocation arguments for public entrypoints.
+
+  The canonical model is retained beside the public parse result so execution
+  can use the exact model that parsing used.
+
+  Args:
+  - `supplied`: The supplied cli-trooper application configuration.
+  - `context`: The CLI invocation context containing arguments under `:args`.
+
+  Returns:
+  A map containing the canonical model under `:config` and the public parse
+  result under `:parsed`."
+  [supplied context]
+  (let [normalized (config/normalize-result supplied)
+        canonical (:config normalized)]
+    {:config canonical
+     :parsed
+     (if (not-empty? (:errors normalized))
+       {:command nil
+        :options {}
+        :errors (:errors normalized)}
+       (let [args (if (not-empty? (:args context))
+                    (:args context)
+                    (if-let [default-args (:default-args canonical)]
+                      default-args
+                      []))]
+         (parser/parse canonical args)))}))
+
+(defun parse
+  "Normalize configuration and parse arguments without executing a command.
+
+  Args:
+  - `supplied`: The supplied cli-trooper application configuration.
+  - `context`: The CLI invocation context containing arguments under `:args`.
+
+  Returns:
+  A map containing the selected `:command`, fully resolved `:options`, and
+  structured `:errors`."
+  [supplied context]
+  (:parsed (prepare supplied context)))
+
+(defun run
+  "Normalize configuration, parse arguments, and invoke the selected command.
+
+  Args:
+  - `supplied`: The supplied cli-trooper application configuration.
+  - `context`: The CLI invocation context containing arguments under `:args`.
+    An optional `:cli-trooper/print!` function replaces the default diagnostic
+    line printer.
+
+  Returns:
+  A parse result with the command execution value under `:result`.
+  Configuration, parsing, conversion, validation, or execution-resolution
+  failures are returned under `:errors` and do not execute an application
+  command."
+  [supplied context]
+  (let [prepared (prepare supplied context)
+        parsed (:parsed prepared)]
+    (if (not-empty? (:errors parsed))
+      parsed
+      (invoke/run (:config prepared) context parsed))))
+
+(defun run!
+  "Run a declared CLI command and return a process-compatible exit code.
+
+  Structured invocation diagnostics are rendered and printed when parsing or
+  dispatch fails. Ordinary command output and result interpretation remain
+  application-owned.
+
+  Args:
+  - `supplied`: The supplied cli-trooper application configuration.
+  - `context`: The CLI invocation context containing arguments under `:args`.
+
+  Returns:
+  Exit code `0` after successful command execution, or `2` after a
+  configuration, argument, conversion, validation, or execution-resolution
+  failure."
+  [supplied context]
+  (let [result (run supplied context)]
+    (if (not-empty? (:errors result))
+      (do
+        (map (diagnostic/lines (:errors result))
+             (get context :cli-trooper/print! prn!))
+        2)
+      0)))

@@ -1,0 +1,130 @@
+(ns cli-trooper.diagnostic
+  (:require [roo.string :as string]))
+
+
+
+;; Diagnostic rendering
+
+(defun expected-text
+  "Format an expected diagnostic value for human-readable output.
+
+  Args:
+  - `expected`: One expected value or a sequence of alternatives.
+
+  Returns:
+  A comma-separated string for a sequence, or the string representation of one
+  value."
+  [expected]
+  (if (sequential? expected)
+    (apply join (flatten [", " expected]))
+    (str expected)))
+
+(defun line
+  "Render one structured cli-trooper diagnostic as text.
+
+  A diagnostic carrying an explicit `:message` uses that text unchanged.
+  Unknown application-defined kinds are rendered from their keyword name and
+  the common `:argument`, `:value`, and `:expected` fields.
+
+  Args:
+  - `diagnostic`: A structured configuration, parsing, conversion, validation,
+    or invocation diagnostic map.
+
+  Returns:
+  One human-readable diagnostic line."
+  [diagnostic]
+  (if-let [message (:message diagnostic)]
+    message
+    (case (:kind diagnostic)
+      :missing-command
+      (str "Missing command. Expected: "
+           (expected-text (:expected diagnostic))
+           ".")
+
+      :unknown-command
+      (str "Unknown command: "
+           (:argument diagnostic)
+           ". Expected: "
+           (expected-text (:expected diagnostic))
+           ".")
+
+      :unknown-option
+      (str "Unknown option: " (:argument diagnostic) ".")
+
+      :missing-option-value
+      (str "Missing value after " (:argument diagnostic) ".")
+
+      :missing-required-option
+      (str "Missing required option: " (:argument diagnostic) ".")
+
+      :invalid-enum-value
+      (str "Invalid value for "
+           (:argument diagnostic)
+           ": "
+           (:value diagnostic)
+           ". Expected: "
+           (expected-text (:expected diagnostic))
+           ".")
+
+      :missing-positional
+      (str "Missing required argument: " (:argument diagnostic) ".")
+
+      :unexpected-positional
+      (str "Unexpected argument: " (:argument diagnostic) ".")
+
+      :unexpected-terminal-argument
+      (str "Unexpected argument after "
+           (:command diagnostic)
+           ": "
+           (:argument diagnostic)
+           ".")
+
+      :missing-application-version
+      "The version feature requires an application version."
+
+      :unknown-mixin
+      (str "Unknown option mixin "
+           (:mixin diagnostic)
+           " for command "
+           (:command diagnostic)
+           ".")
+
+      :duplicate-flag-name
+      (str "Duplicate option name "
+           (:name diagnostic)
+           (if-let [command (:command diagnostic)]
+             (str " for command " command)
+             "")
+           ".")
+
+      :missing-command-execution
+      (str "No execution function is declared for command "
+           (:command diagnostic)
+           ".")
+
+      :default
+      (let [label (string/replace (name (:kind diagnostic)) "-" " ")]
+        (str (upper-case (substr label 0 1))
+             (substr label 1)
+             (if-let [argument (:argument diagnostic)]
+               (str " for " argument)
+               "")
+             (if (contains? diagnostic :value)
+               (str ": " (:value diagnostic))
+               "")
+             (if (contains? diagnostic :expected)
+               (str ". Expected: "
+                    (expected-text (:expected diagnostic)))
+               "")
+             ".")))))
+
+(defun lines
+  "Render structured cli-trooper diagnostics as text.
+
+  Args:
+  - `diagnostics`: A sequence of structured diagnostic maps.
+
+  Returns:
+  A sequence containing one human-readable line per diagnostic."
+  [diagnostics]
+  (map diagnostics line))
