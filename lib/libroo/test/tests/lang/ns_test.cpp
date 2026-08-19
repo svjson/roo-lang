@@ -20,6 +20,41 @@ TEST_F(NsForm, switches_namespace)
   EXPECT_EQ(runtime.get_current_namespace().get_name(), "lets.switch.to.a.new.one");
 }
 
+TEST_F(NsForm, accepts_namespace_docstring)
+{
+  auto result = runtime.eval(R"((ns documented.core "A documented namespace."))");
+
+  EXPECT_EQ(*result, *Roo::Constant::NIL);
+  EXPECT_EQ(runtime.get_current_namespace().get_name(), "documented.core");
+}
+
+TEST_F(NsForm, accepts_docstring_before_require_clause)
+{
+  runtime.eval("(ns documented.util)");
+  runtime.eval("(def answer 42)");
+
+  runtime.eval(R"((ns documented.core
+                    "A documented namespace."
+                    (:require [documented.util :as util])))");
+
+  EXPECT_EQ(*runtime.eval("util/answer"), *Roo::Value::number(42));
+}
+
+TEST_F(NsForm, exposes_all_four_source_signatures)
+{
+  const Roo::sptr_val ns = runtime.eval("ns");
+
+  EXPECT_EQ(ns->exec().get_signatures().size(), 4);
+}
+
+TEST_F(NsForm, rejects_require_before_docstring)
+{
+  EXPECT_THROW(runtime.eval(R"((ns invalid.core
+                                (:require invalid.util)
+                                "Too late."))"),
+               Roo::NamespaceException);
+}
+
 TEST_F(NsForm, does_not_allow_incomplete_req_list)
 {
   // Given

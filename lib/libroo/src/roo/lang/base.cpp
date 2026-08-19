@@ -174,37 +174,56 @@ namespace Roo
   }
 
   /** NsForm - roo/ns */
-  SPECIAL_FORM_IMPL(NsForm,
-                    MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA)),
-                               EXEC_DISPATCH(&NsForm::execnode_ns)),
-                              (FN_ARGS((&Type::SYMBOL, DATA), (&Type::LIST, DATA)),
-                               EXEC_DISPATCH(&NsForm::execnode_ns))))
+  SPECIAL_FORM_IMPL(
+    NsForm,
+    MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA)), EXEC_DISPATCH(&NsForm::execnode_ns)),
+              (FN_ARGS((&Type::SYMBOL, DATA), (&Type::STRING, DATA)),
+               EXEC_DISPATCH(&NsForm::execnode_ns)),
+              (FN_ARGS((&Type::SYMBOL, DATA), (&Type::LIST, DATA)),
+               EXEC_DISPATCH(&NsForm::execnode_ns)),
+              (FN_ARGS((&Type::SYMBOL, DATA), (&Type::STRING, DATA), (&Type::LIST, DATA)),
+               EXEC_DISPATCH(&NsForm::execnode_ns))))
 
   AST::Keyword KEY_REQUIRE("require");
   AST::Keyword KEY_AS("as");
 
-  void throw_ns_exception(AST::Symbol& ns, AST::List& req_list, std::string msg = "")
+  [[noreturn]] void throw_ns_exception(const sptr_ast_node& ns_form,
+                                       const std::string& msg = "")
   {
-    std::string ns_decl = "(ns " + ns.value;
-    ns_decl += " " + req_list.to_string();
-    ns_decl += ")";
-
-    throw NamespaceException("Invalid ns form: " + ns_decl + msg);
+    throw NamespaceException("Invalid ns form: " + ns_form->to_string() + msg);
   }
 
   SFORM_LOWER_IMPL(NsForm)
   {
     sptr_ast_node_v& elements = ast_node->get_children();
+    if (elements.size() < 2 || elements.size() > 4 ||
+        elements[1]->get_type() != Form::SYMBOL)
+    {
+      throw_ns_exception(ast_node);
+    }
+
+    const bool has_docstring =
+      elements.size() >= 3 && elements[2]->get_type() == Form::STRING;
+    if (elements.size() == 4 && !has_docstring)
+    {
+      throw_ns_exception(ast_node);
+    }
 
     AST::Symbol& ns_symbol = elements[1]->as<AST::Symbol>();
 
     Roo::sptr_ast_node_v imports;
-    if (elements.size() == 3)
+    const size_t require_index = has_docstring ? 3 : 2;
+    if (elements.size() > require_index)
     {
-      Roo::AST::List& list = elements.back()->as<AST::List>();
+      if (elements[require_index]->get_type() != Form::LIST)
+      {
+        throw_ns_exception(ast_node);
+      }
+
+      Roo::AST::List& list = elements[require_index]->as<AST::List>();
       if (list.size() < 2 || (list.size() > 0 && *list.get_children()[0] != KEY_REQUIRE))
       {
-        throw_ns_exception(ns_symbol, list);
+        throw_ns_exception(ast_node);
       }
       imports = list.tail();
 
@@ -216,18 +235,14 @@ namespace Roo
         {
           if (imp->as<AST::Symbol>().is_qualified())
           {
-            throw_ns_exception(ns_symbol,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
+            throw_ns_exception(ast_node, ". Invalid require-entry: " + imp->to_string());
           }
         }
         else if (Type::VECTOR.is_type_of(*imp))
         {
           if (imp->get_children().size() != 3)
           {
-            throw_ns_exception(ns_symbol,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
+            throw_ns_exception(ast_node, ". Invalid require-entry: " + imp->to_string());
           }
 
           if (*imp->get_children()[1] == KEY_AS)
@@ -235,23 +250,17 @@ namespace Roo
             if (!Type::SYMBOL.is_type_of(*imp->get_children().back()) ||
                 imp->get_children().back()->as<AST::Symbol>().is_qualified())
             {
-              throw_ns_exception(ns_symbol,
-                                 list,
-                                 ". Invalid require-entry: " + imp->to_string());
+              throw_ns_exception(ast_node, ". Invalid require-entry: " + imp->to_string());
             }
           }
           else
           {
-            throw_ns_exception(ns_symbol,
-                               list,
-                               ". Invalid require-entry: " + imp->to_string());
+            throw_ns_exception(ast_node, ". Invalid require-entry: " + imp->to_string());
           }
         }
         else
         {
-          throw_ns_exception(ns_symbol,
-                             list,
-                             ". Invalid require-entry: " + imp->to_string());
+          throw_ns_exception(ast_node, ". Invalid require-entry: " + imp->to_string());
         }
       }
     }

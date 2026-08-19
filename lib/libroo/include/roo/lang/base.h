@@ -157,13 +157,18 @@ namespace Roo
    * Usage:
    * @code
    * (ns sample.core)
+   * (ns sample.core "Application entry point.")
    * (ns sample.core (:require [roo.string :as string]))
+   * (ns sample.core
+   *   "Application entry point."
+   *   (:require [roo.string :as string]))
    * @endcode
    *
-   * | Arg     | Description                                                        |
-   * | ------- | ------------------------------------------------------------------ |
-   * | name    | Namespace name for the current source file.                        |
-   * | clauses | Optional namespace clauses such as :require.                       |
+   * | Arg       | Description                                                      |
+   * | --------- | ---------------------------------------------------------------- |
+   * | name      | Namespace name for the current source file.                      |
+   * | docstring | Optional namespace documentation string.                         |
+   * | clauses   | Optional namespace clauses such as :require.                     |
    */
   SPECIAL_FORM_DECL(NsForm, ns);
 
