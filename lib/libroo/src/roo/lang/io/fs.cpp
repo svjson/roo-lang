@@ -76,19 +76,43 @@ namespace Roo
                          Value::number(stat.modified_ms)});
     }
 
-    bool option_bool(Value& options, const std::string& name, bool default_value)
+    bool wildcard_class_match(const std::string& pattern,
+                              size_t open_i,
+                              char value,
+                              size_t& next_i)
     {
-      sptr_val value = Dict::get_property(options, name);
-      if (value->type == Value::Type::NIL)
+      const size_t close_i = pattern.find(']', open_i + 1);
+      if (close_i == std::string::npos)
       {
-        return default_value;
+        next_i = open_i + 1;
+        return value == '[';
       }
-      if (value->type != Value::Type::BOOL)
+
+      size_t item_i = open_i + 1;
+      bool negate = false;
+      if (item_i < close_i && (pattern[item_i] == '!' || pattern[item_i] == '^'))
       {
-        throw TypeError("roo.io/list-directory! option :" + name +
-                        " must be a boolean, got: " + value->to_string());
+        negate = true;
+        item_i++;
       }
-      return std::get<bool>(value->value);
+
+      bool matched = false;
+      while (item_i < close_i)
+      {
+        if (item_i + 2 < close_i && pattern[item_i + 1] == '-')
+        {
+          matched = matched || (pattern[item_i] <= value && value <= pattern[item_i + 2]);
+          item_i += 3;
+        }
+        else
+        {
+          matched = matched || pattern[item_i] == value;
+          item_i++;
+        }
+      }
+
+      next_i = close_i + 1;
+      return negate ? !matched : matched;
     }
 
     bool wildcard_match(const std::string& pattern,
@@ -121,6 +145,17 @@ namespace Roo
         if (text_i >= text.size())
         {
           return false;
+        }
+        if (pattern[pattern_i] == '[')
+        {
+          size_t next_pattern_i = pattern_i;
+          if (!wildcard_class_match(pattern, pattern_i, text[text_i], next_pattern_i))
+          {
+            return false;
+          }
+          pattern_i = next_pattern_i;
+          text_i++;
+          continue;
         }
         if (pattern[pattern_i] != '?' && pattern[pattern_i] != text[text_i])
         {
@@ -162,17 +197,6 @@ namespace Roo
       throw TypeError(
         "roo.io/list-directory! option :filter must be a string or vector, got: " +
         value->to_string());
-    }
-
-    ListDirectoryOptions parse_options(Value& options)
-    {
-      ListDirectoryOptions parsed;
-      parsed.files = option_bool(options, "files?", true);
-      parsed.directories = option_bool(options, "directories?", true);
-      parsed.hidden =
-        option_bool(options, "hidden?", option_bool(options, "dotfiles?", false));
-      parsed.filters = option_filters(options);
-      return parsed;
     }
 
     bool matches_options(const DirectoryEntry& entry, const ListDirectoryOptions& options)
@@ -230,7 +254,20 @@ namespace Roo
 
   EXEC_BODY(ListDirectoryBangFunction, exec_list_directory_with_options)
   {
-    return list_directory(ctx, args[0]->str(), parse_options(*args[1]));
+    static MapSchema schema({},
+                            {{"files?", &Type::BOOL},
+                             {"directories?", &Type::BOOL},
+                             {"hidden?", &Type::BOOL},
+                             {"dotfiles?", &Type::BOOL}});
+    MapSchema::Inspector opts = schema.bind(ctx, *args[1]);
+
+    ListDirectoryOptions options;
+    options.files = opts.boolean("files?", true);
+    options.directories = opts.boolean("directories?", true);
+    options.hidden = opts.boolean("hidden?", opts.boolean("dotfiles?", false));
+    options.filters = option_filters(*args[1]);
+
+    return list_directory(ctx, args[0]->str(), options);
   }
 
   /** WalkBangFunction - roo.io/walk! */

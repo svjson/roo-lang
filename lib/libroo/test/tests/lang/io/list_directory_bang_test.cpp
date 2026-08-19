@@ -34,3 +34,20 @@ TEST_F(ListDirectoryBang, filters_by_options)
       ->to_string(),
     R"([{:name ".secret.edn" :path "assets/.secret.edn" :type :file} {:name "logo.png" :path "assets/logo.png" :type :file}])");
 }
+
+TEST_F(ListDirectoryBang, filters_with_character_classes)
+{
+  fs.add_file("assets/a.roo", "");
+  fs.add_file("assets/b.roo", "");
+  fs.add_file("assets/c.roo", "");
+  fs.add_file("assets/1.roo", "");
+
+  EXPECT_EQ(
+    runtime.eval(R"((map (roo.io/list-directory! "assets" {:filter "[a-b].roo"}) :name))")
+      ->to_string(),
+    R"(["a.roo" "b.roo"])");
+  EXPECT_EQ(
+    runtime.eval(R"((map (roo.io/list-directory! "assets" {:filter "[!a-z].roo"}) :name))")
+      ->to_string(),
+    R"(["1.roo"])");
+}
