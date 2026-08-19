@@ -933,10 +933,6 @@ namespace Roo
     case Form::MAP:
     case Form::LIST:
       return to_rt_value(*obj);
-    case Form::HOST_OBJECT:
-      return Value::object(obj);
-    case Form::HOST_SEQ:
-      return Value::object(obj);
     case Form::KEYWORD:
       return Value::keyword(AST::Value<std::string>::value_of(*obj));
     case Form::NIL:
@@ -1021,6 +1017,20 @@ namespace Roo
       }
 
       return Roo::AST::Map::make(std::move(elements));
+    }
+    case Value::Type::NATIVE_OBJECT:
+    {
+      /*!
+       * Native objects and their adapters have no literal source syntax
+       * and cannot exist as AST - convert to their map/vector data
+       * representation instead, per their structural kind.
+       */
+      sptr_native_obj nobj = val.nobj();
+      sptr_val_v children = nobj->native_children();
+      sptr_val replacement = nobj->structural_kind() == NativeObjectStructuralKind::VECTOR
+                               ? Value::vector(std::move(children))
+                               : Value::map(std::move(children));
+      return to_AST(*replacement);
     }
     case Value::Type::NIL:
       return Roo::AST::NIL;

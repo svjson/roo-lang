@@ -28,8 +28,13 @@ TEST(HostTypeRef, is_type__sub_type_is_base_type)
   ASSERT_TRUE(RooTest::Native::PRODUCT.is_type_of(*adapter));
 }
 
-TEST(HostTypeRef, is_type__RTWrapped_native_object)
+TEST(HostTypeRef, is_type__RTWrapped_native_object_loses_its_host_type_identity)
 {
+  // Native objects and their adapters have no literal source syntax and
+  // cannot exist as AST - RuntimeValueWrapper::make() converts one to its
+  // map/vector data representation rather than preserving it, so it no
+  // longer identifies as its specific host type once wrapped.
+
   // Given
   Roo::sptr_val adapter =
     RooTest::Native::VehicleModelAdapter::make_unique("Spruttibangbang", 8);
@@ -37,5 +42,5 @@ TEST(HostTypeRef, is_type__RTWrapped_native_object)
   Roo::sptr_ast_node wrapped = Roo::AST::RuntimeValueWrapper::make(adapter);
 
   // Then
-  EXPECT_TRUE(RooTest::VEHICLE_MODEL_TYPE.is_type_of(*wrapped));
+  EXPECT_FALSE(RooTest::VEHICLE_MODEL_TYPE.is_type_of(*wrapped));
 }
