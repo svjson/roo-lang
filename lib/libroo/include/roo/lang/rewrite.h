@@ -7,31 +7,41 @@
 namespace Roo
 {
   /*!
+   * @brief Invoke a callable stored under a keyword in a map-like target.
+   *
+   * The head symbol of the call form selects the corresponding keyword from
+   * the target and is temporarily rebound to the retrieved callable while the
+   * call is evaluated. A vector target descriptor separates its first element
+   * as the target and uses the remaining elements as a `get-in` path.
+   *
+   * Usage:
+   * @code
+   * (@> handlers (save document))
+   * (@> [application :commands] (save document))
+   * @endcode
+   *
+   * | Arg             | Description                                               |
+   * | --------------- | --------------------------------------------------------- |
+   * | target-or-path  | Target expression, or `[target path-element ...]`.        |
+   * | call            | Call whose head symbol names the keyword-held callable.   |
+   *
+   * @return The value returned by the invoked callable.
+   * @since 0.1.0
+   */
+  SPECIAL_FORM_DECL(CallAtForm, call_at)
+
+  /*!
    * @brief Allows retaining code in a source file without risk of evaluation in
    * runtime.
    *
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | body... | Forms retained without evaluation.                                 |
+   *
+   * @return `nil`.
+   * @since 0.1.0
    */
   SPECIAL_FORM_DECL(CommentForm, comment);
-
-  /*!
-   * @brief Thread a value through a sequence of forms as their first argument.
-   *
-   * Usage:
-   * @code
-   * (-> value
-   *     (first-call)
-   *     (second-call))
-   * @endcode
-   *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | value    | Initial value to thread.                                           |
-   * | forms... | Forms to receive the threaded value as first argument.              |
-   */
-  SPECIAL_FORM_DECL(ThreadFirstForm, thread_first)
 
   /*!
    * @brief Thread a value through a sequence of forms conditionally.
@@ -64,8 +74,32 @@ namespace Roo
    * | ---------------- | ---------------------------------------------------- |
    * | value            | Initial value to thread.                             |
    * | test form ...    | Pairs of condition and form to apply when truthy.    |
+   *
+   * @return The final threaded value, or `nil` when called without arguments.
+   * @since 0.1.0
    */
   SPECIAL_FORM_DECL(CondThreadFirstForm, cond_thread_first)
+
+  /*!
+   * @brief Thread a value through a sequence of forms as their first argument.
+   *
+   * Usage:
+   * @code
+   * (-> value
+   *     (first-call)
+   *     (second-call))
+   * @endcode
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | value    | Initial value to thread.                                           |
+   * | forms... | Forms to receive the threaded value as first argument.             |
+   *
+   * @return The final threaded value, or `nil` when called without arguments.
+   * @since 0.1.0
+   */
+  SPECIAL_FORM_DECL(ThreadFirstForm, thread_first)
+
 } // namespace Roo
 
 #endif /* ROO__LANG__REWRITE_H */

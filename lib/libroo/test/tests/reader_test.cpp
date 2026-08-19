@@ -32,6 +32,29 @@ TEST(Reader, parses_quoted_symbol_with_colon_in_body)
   EXPECT_EQ(*sexps.at(0), QuotedSymbol("window:focus-within"));
 }
 
+TEST(Reader, parses_quoted_symbol_starting_with_a_number)
+{
+  Reader reader;
+
+  auto sexps = reader.read_sexps("'1");
+
+  ASSERT_EQ(sexps.size(), 1);
+  EXPECT_EQ(*sexps.at(0), QuotedSymbol("1"));
+}
+
+TEST(Reader, keeps_numbers_inside_quoted_lists_as_numbers)
+{
+  Reader reader;
+
+  auto sexps = reader.read_sexps("'(1 2 3)");
+
+  ASSERT_EQ(sexps.size(), 1);
+  ASSERT_EQ(sexps.at(0)->size(), 3);
+  EXPECT_EQ(*sexps.at(0)->get_children().at(0), *Number::make("1"));
+  EXPECT_EQ(*sexps.at(0)->get_children().at(1), *Number::make("2"));
+  EXPECT_EQ(*sexps.at(0)->get_children().at(2), *Number::make("3"));
+}
+
 TEST(Reader, parses_keyword_with_namespace_and_colon_in_identifier)
 {
   // Given

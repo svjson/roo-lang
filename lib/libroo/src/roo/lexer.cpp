@@ -276,6 +276,12 @@ namespace Roo
         ct = Token::NUMBER;
         continue;
       }
+      else if (ct == Token::NUMBER && std::regex_match(val + cs, regex_alphanum))
+      {
+        val += c;
+        ct = Token::SYMBOL;
+        continue;
+      }
 
       if (ct == Token::SQUOT)
       {
@@ -391,7 +397,12 @@ namespace Roo
     if (val.size())
     {
       const size_t end = input.empty() ? 0 : input.size() - 1;
-      if (ct == Token::NUMBER && std::regex_match(val, regex_hexnum))
+      if (ct == Token::SQUOT)
+      {
+        tokens.push_back(TokenSymbol(Token::SQUOT, "'", span_for(token_start, token_start)));
+        tokens.push_back(TokenSymbol(Token::SYMBOL, val, span_for(token_start + 1, end)));
+      }
+      else if (ct == Token::NUMBER && std::regex_match(val, regex_hexnum))
       {
         tokens.push_back(
           TokenSymbol(Token::NUMBER, hex_to_int_str(val), span_for(token_start, end)));

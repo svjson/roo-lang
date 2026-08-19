@@ -54,6 +54,7 @@ namespace Roo
     lang_symbols.emplace(">>", ShiftRightFunction::make());
     lang_symbols.emplace(">>>", LogicalShiftRightFunction::make());
     lang_symbols.emplace("->", ThreadFirstForm::make());
+    lang_symbols.emplace("@>", CallAtForm::make());
     lang_symbols.emplace("abs", AbsFunction::make());
     lang_symbols.emplace("and", AndForm::make());
     lang_symbols.emplace("any?", AnyFunction::make());

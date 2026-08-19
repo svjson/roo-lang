@@ -1,4 +1,6 @@
 
+#include <exception>
+
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
 
@@ -135,4 +137,65 @@ TEST_F(CondThreadFirst, false_branch_args_are_not_evaluated)
 
   // Then
   ASSERT_EQ(runtime.eval("eval-count")->i64(), 0);
+}
+
+TEST_F(CondThreadFirst, special_form_step_preserves_keyword_when_condition_is_false)
+{
+  auto result = runtime.eval("(let [items-key :existing state {}] "
+                             "  (cond-> items-key (contains? state :items) (or :items)))");
+
+  EXPECT_EQ(*result, *Roo::Value::keyword("existing"));
+}
+
+TEST_F(CondThreadFirst, special_form_step_preserves_nil_when_condition_is_false)
+{
+  auto result = runtime.eval("(let [items-key nil state {}] "
+                             "  (cond-> items-key (contains? state :items) (or :items)))");
+
+  EXPECT_EQ(*result, *Roo::Constant::NIL);
+}
+
+TEST_F(CondThreadFirst, special_form_step_preserves_keyword_when_condition_is_true)
+{
+  auto result = runtime.eval("(let [items-key :existing state {:items []}] "
+                             "  (cond-> items-key (contains? state :items) (or :items)))");
+
+  EXPECT_EQ(*result, *Roo::Value::keyword("existing"));
+}
+
+TEST_F(CondThreadFirst, special_form_step_uses_fallback_when_condition_is_true)
+{
+  auto result = runtime.eval("(let [items-key nil state {:items []}] "
+                             "  (cond-> items-key (contains? state :items) (or :items)))");
+
+  EXPECT_EQ(*result, *Roo::Value::keyword("items"));
+}
+
+TEST_F(CondThreadFirst, taken_special_form_step_preserves_short_circuiting)
+{
+  runtime.eval("(def eval-count 0)");
+  runtime.eval("(defun counted [v] (set! [eval-count] (inc eval-count)) v)");
+
+  auto result = runtime.eval("(cond-> :existing true (or (counted :fallback)))");
+
+  EXPECT_EQ(*result, *Roo::Value::keyword("existing"));
+  EXPECT_EQ(runtime.eval("eval-count")->i64(), 0);
+}
+
+TEST_F(CondThreadFirst, nested_forms_isolate_their_current_values)
+{
+  auto result = runtime.eval(
+    "(cond-> nil true (cond-> true (or :inner)) true (or :outer))");
+
+  EXPECT_EQ(*result, *Roo::Value::keyword("inner"));
+}
+
+TEST_F(CondThreadFirst, taken_step_exception_restores_context)
+{
+  const size_t stack_size = ctx.stack_size();
+
+  EXPECT_THROW(runtime.eval(ctx, R"((cond-> 1 true (+ "bad")))"), std::exception);
+
+  EXPECT_EQ(ctx.stack_size(), stack_size);
+  EXPECT_EQ(runtime.eval(ctx, "(+ 1 2)")->i64(), 3);
 }

@@ -27,6 +27,21 @@ TEST(Lexer, parse_single_symbol)
   ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "macaroni")));
 }
 
+TEST(Lexer, parse_symbol_starting_with_a_number)
+{
+  auto symbols = lexer.read_symbols("123abc");
+
+  ASSERT_THAT(symbols, ElementsAre(sym(tkn::SYMBOL, "123abc")));
+}
+
+TEST(Lexer, parse_quoted_symbol_starting_with_a_number)
+{
+  auto symbols = lexer.read_symbols("'1");
+
+  ASSERT_THAT(symbols,
+              ElementsAre(sym(tkn::SQUOT, "'"), sym(tkn::SYMBOL, "1")));
+}
+
 TEST(Lexer, parse_single_symbol_with_gt_and_lt)
 {
   // Given
