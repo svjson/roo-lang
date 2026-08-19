@@ -113,15 +113,19 @@
 
   Args:
   - `application`: The application name shown at the start of the line.
-  - `cmd`: A normalized command map containing its name, positionals, and flags.
+  - `cmd`: A normalized root or command state containing positionals and flags,
+    plus `:command` for a named command.
 
   Returns:
-  A single usage string for the command."
+  A single usage string for the root state or command."
   [application cmd]
   (apply join
          (flatten [" "
                    (concat
-                    [(str application " " (:command cmd))]
+                    [(str application
+                          (if-let [command (:command cmd)]
+                            (str " " command)
+                            ""))]
                     (for [pos (:positional cmd)]
                       (format-positional pos))
                     (reduce-kv (:flags cmd)
@@ -141,12 +145,14 @@
   Returns:
   A sequence containing the application description, a blank line, and command
   usage lines prefixed with `Usage: ` and its continuation indentation."
-  [{:keys [application description commands]}]
+  [{:keys [application description commands] :as config}]
   (concat
    [(str application ": " description)]
    [""]
    (reduce-kv commands
-              []
+              (if (:execute! config)
+                [(str "Usage: " (command-string application config))]
+                [])
               (fn [lines name command]
                 (append lines
                         (str (if (empty? lines) "Usage: " "       ")

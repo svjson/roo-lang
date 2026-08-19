@@ -169,12 +169,75 @@
          (parse/parse (config/normalize test-config)
                       ["--tag" "before" "inspect"]))))
 
+(deftest parse/parses-flags-and-variadic-positionals-at-an-executable-root
+  (is (= {:command []
+          :options {:verbose true
+                    :test-path ["test/unit" "test/scenario"]}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           {:application "proof"
+            :features {:help false
+                       :version false}
+            :execute! (fn [_context _options] nil)
+            :flags {"verbose" :flag}
+            :positional [{:name "test-path"
+                          :repeatable? true}]})
+          ["test/unit" "--verbose" "test/scenario"]))))
+
+(deftest parse/reports-missing-required-root-positionals
+  (is (= {:command []
+          :options {:test-path []}
+          :errors [{:kind :missing-positional
+                    :command []
+                    :argument "test-path"}]}
+         (parse/parse
+          (config/normalize
+           {:application "proof"
+            :features {:help false
+                       :version false}
+            :execute! (fn [_context _options] nil)
+            :positional [{:name "test-path"
+                          :repeatable? true}]})
+          []))))
+
+(deftest parse/applies-root-defaults-before-semantic-validation
+  (is (= {:command []
+          :options {:reporter :tree}
+          :errors [{:kind :unsupported-reporter
+                    :value :tree
+                    :command []}]}
+         (parse/parse
+          (config/normalize
+           {:application "proof"
+            :features {:help false
+                       :version false}
+            :execute! (fn [_context _options] nil)
+            :flags {"reporter" {:type :enum
+                                 :values ["simple" "tree"]
+                                 :default :tree}}
+            :validate (fn [options]
+                        [{:kind :unsupported-reporter
+                          :value (:reporter options)}])})
+          []))))
+
 (deftest parse/selects-root-help-without-an-ordinary-command
   (is (= {:command :cli-trooper/help
           :options {}
           :errors []}
          (parse/parse (config/normalize test-config)
                       ["--help"]))))
+
+(deftest parse/root-help-does-not-require-root-positionals
+  (is (= {:command :cli-trooper/help
+          :options {:test-path nil}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           {:application "proof"
+            :execute! (fn [_context _options] nil)
+            :positional ["test-path"]})
+          ["--help"]))))
 
 (deftest parse/selects-help-attached-to-the-current-command
   (is (= {:command ["run" :cli-trooper/help]

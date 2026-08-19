@@ -35,11 +35,11 @@
    - `args`: The CLI argument sequence to inspect.
 
    Returns:
-   A map describing the selected command, source command specification, argument
+   A map describing the selected command path, source specification, argument
    transition indexes, and declared command names, or a map containing selection
-   `:errors` when no command is selected. A command-shaped flag attached to a
-   child extends the command path; an inherited root flag selects its root
-   command identity."
+   `:errors` when no executable state is selected. The empty command path `[]`
+   selects an executable root. A command-shaped flag attached to a child extends
+   the command path; an inherited root flag selects its root command identity."
   [config args]
   (let [commands (reduce-kv (:commands config)
                             []
@@ -63,15 +63,14 @@
       root-terminal-entry
       (let [terminal (command-flag (:flags config)
                                    (:argument root-terminal-entry))]
-        {:index (:index root-terminal-entry)
+        {:index nil
          :terminal-index (:index root-terminal-entry)
          :transition-indexes [(:index root-terminal-entry)]
          :terminal? true
          :command (-> terminal :spec :command)
-         :source-command nil
-         :spec {:command nil
-                :flags (:flags config)
-                :positional []}
+         :source-command []
+         :root? true
+         :spec config
          :commands commands})
 
       command-entry
@@ -114,6 +113,16 @@
            :source-command command
            :spec spec
            :commands commands}))
+
+      (:execute! config)
+      {:index nil
+       :transition-indexes []
+       :terminal? false
+       :command []
+       :source-command []
+       :root? true
+       :spec config
+       :commands commands}
 
       true
       {:index nil

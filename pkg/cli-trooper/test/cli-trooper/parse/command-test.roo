@@ -20,3 +20,26 @@
              {["--verbose"] {:type :flag
                               :destination :verbose}}
              "--verbose"))))
+
+
+
+;; cli-trooper.parse.command/select
+
+(deftest select/selects-an-executable-root-as-the-empty-command-path
+  (is (= {:transition-indexes []
+          :terminal? false
+          :command []
+          :source-command []
+          :root? true}
+         (select-keys
+          (command/select {:application "tool"
+                           :execute! (fn [_context _options] nil)
+                           :flags {}
+                           :positional []
+                          :commands {}}
+                          [])
+          [:transition-indexes
+           :terminal?
+           :command
+           :source-command
+           :root?]))))

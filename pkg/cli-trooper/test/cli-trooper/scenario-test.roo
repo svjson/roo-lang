@@ -26,6 +26,16 @@
      :flags {"verbose" :flag}
      :positional ["file"]}}})
 
+(def root-runtime-config
+  "Root CLI declaration used to exercise parsing and invocation without a subcommand."
+  {:application "root-tool"
+   :features {:help false
+              :version false}
+   :execute! execute-command!
+   :flags {"verbose" :flag}
+   :positional [{:name "file"
+                 :repeatable? true}]})
+
 
 
 ;; cli-trooper/parse
@@ -88,6 +98,18 @@
                                           :execute! execute-command!}}}
                   {:args ["inspect"]}))))
 
+(deftest run/normalizes-parses-and-invokes-an-executable-root
+  (is (= {:command []
+          :options {:verbose true
+                    :file ["one.roo" "two.roo"]}
+          :errors []
+          :result {:caller :test
+                   :options {:verbose true
+                             :file ["one.roo" "two.roo"]}}}
+         (cli/run root-runtime-config
+                  {:caller :test
+                   :args ["one.roo" "--verbose" "two.roo"]}))))
+
 
 
 ;; cli-trooper/run!
@@ -99,10 +121,10 @@
 
 (deftest run!/returns-an-integer-command-result-as-the-exit-code
   (is (= 1
-         (cli/run! (assoc-in runtime-config
-                             [:commands "inspect" :execute!]
-                             (fn [_context _options] 1))
-                   {:args ["inspect" "source.roo"]}))))
+         (cli/run! (assoc root-runtime-config
+                          :execute!
+                          (fn [_context _options] 1))
+                   {:args ["source.roo"]}))))
 
 (deftest run!/returns-a-command-line-error-code
   (is (= 2

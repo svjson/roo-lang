@@ -41,13 +41,15 @@
           (flag/consume state command (:flags spec) arg)
 
           (and (positional/positional? arg)
+               (not (:root? selection))
                (< (:arg-index state) (:index selection)))
           (update state :errors [append {:kind :unknown-command
                                          :argument arg
                                          :expected (:commands selection)}])
 
           (and (positional/positional? arg)
-               (> (:arg-index state) (:index selection)))
+               (or (:root? selection)
+                   (> (:arg-index state) (:index selection))))
           (positional/consume state command spec arg)
 
           true

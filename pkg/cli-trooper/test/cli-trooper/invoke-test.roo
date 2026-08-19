@@ -43,6 +43,10 @@
             :local (invoke/resolve-execution canonical
                                              ["inspect" :app/explain])}))))
 
+(deftest resolve-execution/resolves-the-executable-root
+  (is (= inspect-command!
+         (invoke/resolve-execution {:execute! inspect-command!} []))))
+
 
 
 ;; cli-trooper.invoke/run

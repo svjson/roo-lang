@@ -27,6 +27,23 @@
                                  :values ["text" "edn"]}}}}})
           []))))
 
+(deftest lines/renders-an-executable-root
+  (is (= ["proof: Run tests."
+          ""
+          "Usage: proof [<test-path>...] [--durations]"]
+         (help/lines
+          (config/normalize
+           {:application "proof"
+            :description "Run tests."
+            :features {:help {:default? false}
+                       :version false}
+            :execute! identity
+            :flags {"durations" :flag}
+            :positional [{:name "test-path"
+                          :optional? true
+                          :repeatable? true}]})
+          []))))
+
 (deftest lines/renders-command-help-with-effective-local-configuration
   (is (= ["Application preface."
           "demo inspect: Inspect one file."

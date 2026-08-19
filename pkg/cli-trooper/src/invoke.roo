@@ -29,13 +29,17 @@
 
   Args:
   - `config`: A canonical cli-trooper configuration model.
-  - `command`: An ordinary command identity, a root command-shaped flag
-    identity, or a command path ending in a command-shaped flag identity.
+  - `command`: The empty root path, an ordinary command identity, a root
+    command-shaped flag identity, or a command path ending in a command-shaped
+    flag identity.
 
   Returns:
   The selected `:execute!` function, or `nil` when the declaration has none."
   [config command]
   (cond
+    (and (sequential? command) (empty? command))
+    (:execute! config)
+
     (string? command)
     (get-in config
             [:commands command :execute!]

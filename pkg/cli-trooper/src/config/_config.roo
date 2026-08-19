@@ -3,6 +3,7 @@
             [cli-trooper.config.feature :as feature]
             [cli-trooper.config.feature.version :as version]
             [cli-trooper.config.flag :as flag]
+            [cli-trooper.config.positional :as positional]
             [cli-trooper.config.validate :as validate]))
 
 (defun normalize
@@ -19,6 +20,8 @@
    (-> config
        (dissoc :mixins)
        (assoc :flags (flag/normalize-flags (:flags config))
+              :positional (for [positional (:positional config)]
+                            (positional/normalize positional))
               :commands (reduce-kv (:commands config)
                                    {}
                                    (fn [commands name spec]

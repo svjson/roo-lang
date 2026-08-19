@@ -46,6 +46,35 @@
            :flags {["-o" "--out"] {:type :dir
                                    :required? true}}}))))
 
+(deftest command-string/formats-an-executable-root
+  (is (= "proof <test-path>... [--durations]"
+         (usage/command-string
+          "proof"
+          {:positional [{:name "test-path"
+                         :repeatable? true}]
+           :flags {["--durations"] {:type :flag}}}))))
+
+
+
+;; cli-trooper.usage/usage-string
+
+(deftest usage-string/includes-root-and-command-invocations
+  (is (= ["proof: Run tests."
+          ""
+          "Usage: proof <test-path>... [--durations]"
+          "       proof watch [--durations]"]
+         (usage/usage-string
+          {:application "proof"
+           :description "Run tests."
+           :execute! identity
+           :positional [{:name "test-path"
+                         :repeatable? true}]
+           :flags {["--durations"] {:type :flag}}
+           :commands
+           {"watch" {:command "watch"
+                     :positional []
+                     :flags {["--durations"] {:type :flag}}}}}))))
+
 
 
 ;; cli-trooper.usage/format-flag-name

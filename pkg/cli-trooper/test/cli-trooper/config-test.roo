@@ -50,6 +50,24 @@
              :destination :file}]
            (:positional command)))))
 
+(deftest normalize/normalizes-root-positionals
+  (is (= {:positional
+          [{:type :path
+            :optional? false
+            :repeatable? true
+            :default []
+            :name "test-path"
+            :destination :test-path}]}
+         (select-keys
+          (config/normalize
+           {:application "tool"
+            :features {:help false
+                       :version false}
+            :positional [{:type :path
+                          :name "test-path"
+                          :repeatable? true}]})
+          [:positional]))))
+
 
 (deftest normalize/is-idempotent
   (let [normalized (config/normalize supplied-config)]
@@ -98,6 +116,7 @@
              :command :cli-trooper/help
              :execute! help/run!
              :config {}}}
+           :positional []
            :commands {}
            :default-args ["--help"]}
           :errors [{:kind :missing-application-version

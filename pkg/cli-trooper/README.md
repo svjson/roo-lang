@@ -25,8 +25,10 @@ dispatches to the matching command.
 ```
 
 `cli-trooper/parse` normalizes the supplied declaration and returns the parsed
-command, practical options, and structured errors without invoking the
-declared `:execute!` function.
+command path, practical options, and structured errors without invoking the
+declared `:execute!` function. A root application may declare flags,
+positionals, validation, and `:execute!` directly; a successful root invocation
+uses `[]` as its command path.
 
 `cli-trooper/run` returns the parsed command, practical options, structured
 errors, and the command execution result. `cli-trooper/run!` prints rendered CLI
