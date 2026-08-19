@@ -270,6 +270,49 @@ namespace Roo
                     std::to_string((int)target.type));
   }
 
+  void replace_values(Value& target, size_t start, size_t end, sptr_val_v values)
+  {
+    switch (target.type)
+    {
+    case Value::Type::LIST:
+    case Value::Type::VECTOR:
+    {
+      sptr_val_v& elements = std::get<sptr_val_v>(target.value);
+      const size_t replacement_start = std::min(start, elements.size());
+      const size_t replacement_end =
+        std::max(replacement_start, std::min(end, elements.size()));
+      auto insertion = elements.begin() + static_cast<std::ptrdiff_t>(replacement_start);
+      elements.erase(insertion,
+                     elements.begin() + static_cast<std::ptrdiff_t>(replacement_end));
+      elements.insert(elements.begin() + static_cast<std::ptrdiff_t>(replacement_start),
+                      values.begin(),
+                      values.end());
+      return;
+    }
+    case Value::Type::NATIVE_OBJECT:
+    {
+      if (target.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR)
+      {
+        const size_t replacement_start = std::min(start, target.nobj()->size());
+        const size_t replacement_end =
+          std::max(replacement_start, std::min(end, target.nobj()->size()));
+        target.nobj()->erase_children(replacement_start, replacement_end);
+        for (size_t i = 0; i < values.size(); i++)
+        {
+          target.nobj()->insert_child(replacement_start + i, values[i]);
+        }
+        return;
+      }
+      break;
+    }
+    default:
+      break;
+    }
+
+    throw TypeError("replace_values is not implemented for type: " +
+                    std::to_string((int)target.type));
+  }
+
   sptr_val pop_child(Value& seq)
   {
     switch (seq.type)

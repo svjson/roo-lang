@@ -104,6 +104,11 @@ namespace Roo
     throw TypeError(to_string() + " is not a valid mutable sequence.");
   }
 
+  void NativeObjectBase::erase_children(size_t, size_t)
+  {
+    throw TypeError(to_string() + " is not a valid mutable sequence.");
+  }
+
   void NativeObjectBase::move_child(size_t, size_t)
   {
     throw TypeError(to_string() + " is not a valid mutable sequence.");

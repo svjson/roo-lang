@@ -66,6 +66,28 @@ namespace Roo
       elements.insert(elements.begin() + static_cast<std::ptrdiff_t>(indices.to),
                       std::move(moved));
     }
+
+    std::string string_value(const Value& value)
+    {
+      if (value.type == Value::Type::STRING) return value.str();
+      if (value.type == Value::Type::CHAR) return std::string(1, value.ch());
+      return value.to_string();
+    }
+
+    std::string string_values(const sptr_val& values)
+    {
+      if (values->type == Value::Type::NIL || !Type::STRICT_SEQ.is_type_of(*values))
+      {
+        return string_value(*values);
+      }
+
+      std::string result;
+      for (const sptr_val& value : Roo::get_children(*values))
+      {
+        result += string_value(*value);
+      }
+      return result;
+    }
   } // namespace
 
   /** AppendFunction - roo/append */
@@ -482,43 +504,11 @@ namespace Roo
   {
     if (args[0]->type == Value::Type::NIL) return Constant::NIL;
 
-    std::string insertion;
-    if (args[2]->type != Value::Type::NIL && Type::STRICT_SEQ.is_type_of(*args[2]))
-    {
-      for (const sptr_val& value : Roo::get_children(*args[2]))
-      {
-        if (value->type == Value::Type::STRING)
-        {
-          insertion += value->str();
-        }
-        else if (value->type == Value::Type::CHAR)
-        {
-          insertion += value->ch();
-        }
-        else
-        {
-          insertion += value->to_string();
-        }
-      }
-    }
-    else if (args[2]->type == Value::Type::STRING)
-    {
-      insertion = args[2]->str();
-    }
-    else if (args[2]->type == Value::Type::CHAR)
-    {
-      insertion = std::string(1, args[2]->ch());
-    }
-    else
-    {
-      insertion = args[2]->to_string();
-    }
-
     std::string result = args[0]->str();
     const size_t index =
       normalized_sequence_index(checked_sequence_index(*args[1], "insert position"),
                                 result.size());
-    result.insert(index, insertion);
+    result.insert(index, string_values(args[2]));
     return Value::string(result);
   }
 
@@ -558,25 +548,11 @@ namespace Roo
 
   EXEC_BODY(InsertOneFunction, exec_insert_one_string)
   {
-    std::string insertion;
-    if (args[2]->type == Value::Type::STRING)
-    {
-      insertion = args[2]->str();
-    }
-    else if (args[2]->type == Value::Type::CHAR)
-    {
-      insertion = std::string(1, args[2]->ch());
-    }
-    else
-    {
-      insertion = args[2]->to_string();
-    }
-
     const size_t index =
       normalized_sequence_index(checked_sequence_index(*args[1], "insert-one position"),
                                 args[0]->str().size());
     std::string result = args[0]->str();
-    result.insert(index, insertion);
+    result.insert(index, string_value(*args[2]));
     return Value::string(result);
   }
 
@@ -593,6 +569,61 @@ namespace Roo
                                 Roo::child_count(*target));
 
     Roo::insert_values(*target, index, {args[2]});
+    return target;
+  }
+
+  /** ReplaceFunction - roo/replace */
+  FUNC_IMPL(
+    ReplaceFunction,
+    MULTI_SIG(
+      (FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::NUMBER), (&Type::STRICT_SEQ)),
+       EXEC_DISPATCH(&ReplaceFunction::exec_replace_seq)),
+      (FN_ARGS((&Type::STRING), (&Type::NUMBER), (&Type::NUMBER), (&Type::ANY)),
+       EXEC_DISPATCH(&ReplaceFunction::exec_replace_string))))
+
+  EXEC_BODY(ReplaceFunction, exec_replace_seq)
+  {
+    sptr_val result = Value::vector(Roo::get_children(*args[0]));
+    const size_t size = Roo::child_count(*result);
+    const size_t start =
+      normalized_sequence_index(checked_sequence_index(*args[1], "replace start"), size);
+    const size_t end =
+      normalized_sequence_index(checked_sequence_index(*args[2], "replace end"), size);
+
+    Roo::replace_values(*result, start, end, Roo::get_children(*args[3]));
+    return result;
+  }
+
+  EXEC_BODY(ReplaceFunction, exec_replace_string)
+  {
+    std::string result = args[0]->str();
+    const size_t start =
+      normalized_sequence_index(checked_sequence_index(*args[1], "replace start"),
+                                result.size());
+    const size_t end =
+      normalized_sequence_index(checked_sequence_index(*args[2], "replace end"),
+                                result.size());
+
+    result.replace(start, std::max(start, end) - start, string_values(args[3]));
+    return Value::string(result);
+  }
+
+  /** ReplaceBangFunction - roo/replace! */
+  FUNC_IMPL(
+    ReplaceBangFunction,
+    SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::NUMBER), (&Type::STRICT_SEQ)),
+         EXEC_DISPATCH(&ReplaceBangFunction::exec_replace_bang))))
+
+  EXEC_BODY(ReplaceBangFunction, exec_replace_bang)
+  {
+    sptr_val target = args[0]->type == Value::Type::NIL ? Value::vector({}) : args[0];
+    const size_t size = Roo::child_count(*target);
+    const size_t start =
+      normalized_sequence_index(checked_sequence_index(*args[1], "replace! start"), size);
+    const size_t end =
+      normalized_sequence_index(checked_sequence_index(*args[2], "replace! end"), size);
+
+    Roo::replace_values(*target, start, end, Roo::get_children(*args[3]));
     return target;
   }
 

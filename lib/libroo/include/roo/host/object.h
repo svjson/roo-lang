@@ -750,6 +750,7 @@ namespace Roo
     virtual sptr_val_v native_children() const;
     virtual sptr_val native_child(size_t index) const;
     virtual void insert_child(size_t index, const sptr_val& value);
+    virtual void erase_children(size_t start, size_t end);
     virtual void move_child(size_t from_index, size_t to_index);
     virtual size_t size() const;
     virtual NativeObjectStructuralKind structural_kind() const;

@@ -184,6 +184,8 @@ namespace Roo
     lang_symbols.emplace("range", RangeFunction::make());
     lang_symbols.emplace("reduce", ReduceFunction::make());
     lang_symbols.emplace("reduce-kv", ReduceKeyValueFunction::make());
+    lang_symbols.emplace("replace", ReplaceFunction::make());
+    lang_symbols.emplace("replace!", ReplaceBangFunction::make());
     lang_symbols.emplace("remove", RemoveFunction::make());
     lang_symbols.emplace("remove-first", RemoveFirstFunction::make());
     lang_symbols.emplace("remove!", RemoveBangFunction::make());

@@ -354,6 +354,67 @@ namespace Roo
   FUNC(InsertOneBangFunction, insert_one_bang)
 
   /*!
+   * @brief Replace a half-open range in a sequence or string without mutation.
+   * @since 0.1.0
+   * @see roo/drop
+   * @see roo/insert
+   * @see roo/replace!
+   *
+   * The start index is inclusive and the end index is exclusive. Negative
+   * indexes count from the end and bounds are clamped. An empty range inserts
+   * `values` at `start`; empty replacement values only remove the range.
+   *
+   * Sequence targets require sequential replacement values and return a new
+   * vector. String targets use the same conversion rules as `insert`: a
+   * sequential value is expanded and each element is converted to text, while
+   * a non-sequential value is converted and inserted once. String indexes are
+   * byte boundaries under the current text model.
+   *
+   * Usage:
+   * @code
+   * (replace [1 2 3 4 5] 2 4 [:a :b :c])
+   * => [1 2 :a :b :c 5]
+   * (replace "abcdef" 2 4 "XYZ")
+   * => "abXYZef"
+   * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | seq    | Sequential value or string to copy.                               |
+   * | start  | Inclusive start index. Negative indexes count from the end.       |
+   * | end    | Exclusive end index. Negative indexes count from the end.         |
+   * | values | Values to splice into the replaced range.                         |
+   *
+   * @return A new vector or string with the range replaced.
+   */
+  FUNC(ReplaceFunction, replace_seq, replace_string)
+
+  /*!
+   * @brief Replace a half-open range by mutating a sequence.
+   * @since 0.1.0
+   * @see roo/replace
+   *
+   * Vector, list, and mutable host-sequence targets are mutated in place and
+   * returned. Replacement values are captured before mutation, so the source
+   * and target may be the same sequence. Strings are immutable and rejected.
+   *
+   * Usage:
+   * @code
+   * (replace! values 2 4 [:a :b :c])
+   * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | seq    | Sequential value to mutate.                                       |
+   * | start  | Inclusive start index. Negative indexes count from the end.       |
+   * | end    | Exclusive end index. Negative indexes count from the end.         |
+   * | values | Sequential values to splice into the replaced range.              |
+   *
+   * @return The mutated `seq`, or a new vector if `seq` is nil.
+   */
+  FUNC(ReplaceBangFunction, replace_bang)
+
+  /*!
    * @brief Move an element by index, returning a new vector.
    * @since 0.1.0
    *

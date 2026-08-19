@@ -38,6 +38,7 @@ namespace Roo
   sptr_val_v get_child_range(Value& sequence, size_t start, size_t end);
   void set_child(Value& seq, size_t index, const sptr_val& value);
   void insert_values(Value& target, size_t position, sptr_val_v values);
+  void replace_values(Value& target, size_t start, size_t end, sptr_val_v values);
   sptr_val pop_child(Value& seq);
   sptr_val peek_child(Value& seq);
   size_t count(const Value& v);

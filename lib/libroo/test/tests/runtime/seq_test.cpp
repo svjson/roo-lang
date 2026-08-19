@@ -112,3 +112,34 @@ TEST(RuntimeSeq, insert_values_snapshots_an_aliased_values_vector)
 
   EXPECT_EQ(sequence->to_string(), "[1 1 2 2]");
 }
+
+TEST(RuntimeSeq, replace_values_mutates_vectors_lists_and_host_sequences)
+{
+  const Roo::sptr_val_v replacements = {Roo::Value::number(8), Roo::Value::number(9)};
+
+  Roo::sptr_val vector = Roo::Value::vector(
+    {Roo::Value::number(1), Roo::Value::number(2), Roo::Value::number(3)});
+  Roo::replace_values(*vector, 1, 3, replacements);
+  EXPECT_EQ(vector->to_string(), "[1 8 9]");
+
+  Roo::sptr_val list =
+    Roo::Value::list({Roo::Value::number(1), Roo::Value::number(2), Roo::Value::number(3)});
+  Roo::replace_values(*list, 1, 2, replacements);
+  EXPECT_EQ(list->to_string(), "(1 8 9 3)");
+
+  std::vector<int> native_values = {1, 2, 3, 4};
+  Roo::sptr_val host_sequence = Roo::NativeStdVectorAdapter<int>::make_ref(native_values);
+  Roo::replace_values(*host_sequence, 1, 3, replacements);
+  EXPECT_EQ(native_values, (std::vector<int>{1, 8, 9, 4}));
+}
+
+TEST(RuntimeSeq, replace_values_snapshots_an_aliased_values_vector)
+{
+  Roo::sptr_val sequence = Roo::Value::vector(
+    {Roo::Value::number(1), Roo::Value::number(2), Roo::Value::number(3)});
+  Roo::sptr_val_v& values = std::get<Roo::sptr_val_v>(sequence->value);
+
+  Roo::replace_values(*sequence, 1, 2, values);
+
+  EXPECT_EQ(sequence->to_string(), "[1 1 2 3 3]");
+}

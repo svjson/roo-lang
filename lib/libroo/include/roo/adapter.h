@@ -544,6 +544,14 @@ namespace Roo
         std::move(native_value));
     }
 
+    void erase_children(size_t start, size_t end) override
+    {
+      auto& values = get_self_object();
+      using difference_type = typename std::vector<V>::difference_type;
+      values.erase(values.begin() + static_cast<difference_type>(start),
+                   values.begin() + static_cast<difference_type>(end));
+    }
+
     void move_child(size_t from_index, size_t to_index) override
     {
       auto& values = get_self_object();
