@@ -1,0 +1,47 @@
+(ns proofread.redundant-empty-default-candidates)
+
+(def slot-keys
+  (reduce keys
+          (or (keys slots) [])))
+
+(def entry-keys
+  (reduce (or (keys entries) [])
+          rest-handler))
+
+(def merged-flags
+  (merge inherited
+         (or (:flags spec) {})))
+
+(def merged-options
+  (merge (get config :base {})
+         (get-in config [:command :options] {})))
+
+(def updated-flags
+  (merge! inherited
+          (or (:flags spec) {})))
+
+(def projected-positionals
+  (for [positional (or positionals [])]
+    (normalize positional)))
+
+(def projected-items
+  (for [item items
+        option (get config :options [])]
+    (project item option)))
+
+(def printed-positionals
+  (doseq [positional (get-in config [:positionals] [])]
+    (prn positional)))
+
+(def printed-items
+  (doseq [item (or items [])]
+    (prn item)))
+
+(def normalized-commands
+  (reduce-kv (or (:commands config) {})
+             {}
+             normalize-command))
+
+(def selected-options
+  (select-keys (or options {})
+               [:print-width]))

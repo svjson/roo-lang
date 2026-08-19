@@ -1,9 +1,0 @@
-(ns proofread.redundant-empty-fallback-candidates)
-
-(def slot-keys
-  (reduce keys
-          (or (keys slots) [])))
-
-(def entry-keys
-  (reduce (or (keys entries) [])
-          rest-handler))

@@ -14,3 +14,25 @@
   (if (= 0 exit-code)
     :ok
     :failed))
+
+(def keyboard-dispatch
+  (cond
+    (= :key/up (:key event))
+    (do
+      (ui/stop-propagation! event)
+      (step-number-input ui-state 1 ctx))
+
+    (= :key/down (:key event))
+    (do
+      (ui/stop-propagation! event)
+      (step-number-input ui-state -1 ctx))
+
+    (= :key/enter (:key event))
+    (do
+      (ui/stop-propagation! event)
+      (case (:commit-on ui-state)
+        :blur (finalize-number-input-text ui-state ctx)
+        :default ui-state))
+
+    :default
+    ui-state))

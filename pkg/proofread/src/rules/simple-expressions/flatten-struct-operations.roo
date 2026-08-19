@@ -1,0 +1,67 @@
+(ns proofread.rules.simple-expressions.flatten-struct-operations
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun operation-chain
+  "Describe a chain of nested calls to one variadic struct operation.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A map containing the `:operation`, base `:target`, ordered `:arguments`, and
+  chain `:depth`, or `nil` when `node` is not a supported struct operation."
+  [{:keys [children] :as node}]
+  (let [operation (forms/head-name node)]
+    (when (case operation
+            "assoc" (and (< 3 (count children))
+                         (even? (count children)))
+            "assoc-in" (and (< 3 (count children))
+                            (even? (count children)))
+            "dissoc" (< 2 (count children))
+            "dissoc-in" (< 2 (count children))
+            "update" (and (< 3 (count children))
+                          (even? (count children)))
+            "update-in" (and (< 3 (count children))
+                             (even? (count children)))
+            :default false)
+      (let [target (nth children 1)
+            arguments (slice children 2)
+            nested (operation-chain target)]
+        (if (= operation (:operation nested))
+          {:operation operation
+           :target (:target nested)
+           :arguments (concat (:arguments nested) arguments)
+           :depth (inc (:depth nested))}
+          {:operation operation
+           :target target
+           :arguments arguments
+           :depth 1})))))
+
+(defun check
+  "Report nested struct operations that should be one variadic call.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map with a flattened rewrite for a maximal same-operation chain,
+  otherwise `nil`."
+  [parent node]
+  (when-let [{:keys [operation target arguments depth]} (operation-chain node)]
+    (when (and (< 1 depth)
+               (not (and (= operation (:operation (operation-chain parent)))
+                         (= node (nth (:children parent) 1)))))
+      (diagnostics/make-suggesting
+        node
+        :flatten-struct-operations
+        "Flatten struct operations"
+        [(diagnostics/rewrite
+           node
+           (str "Rewrite as one " operation " call")
+           (str "(" operation " "
+                (forms/form-string target)
+                " "
+                (forms/form-sequence-string arguments)
+                ")"))]))))

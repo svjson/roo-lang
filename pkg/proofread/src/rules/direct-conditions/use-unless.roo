@@ -28,7 +28,7 @@
     "when" (str "(unless "
                 (forms/form-string (nth (:children (nth children 1)) 1))
                 " "
-                (forms/form-sequence-string (tail (tail children)))
+                (forms/form-sequence-string (slice children 2))
                 ")")))
 
 (defun check

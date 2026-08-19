@@ -1,0 +1,60 @@
+(ns proofread.inspect.namespaces
+  (:require [proofread.inspect.packages :as packages]
+            [roo.io :as io]))
+
+(defun directory-entry-leaves
+  "Return the namespace leaves valid for a directory entry source file.
+
+  Namespace-root mappings replace the physical directory name at the mapped
+  root. Below that root, the physical directory hierarchy resumes. A load root
+  without a namespace-root mapping represents no namespace of its own.
+
+  Args:
+  - `file`: Roo source file path.
+
+  Returns:
+  A sequence of namespace leaf strings valid for an underscore-prefixed source
+  file in the containing directory."
+  [file]
+  (let [directory (io/dirname (io/absolute-path! file))]
+    (if-let [package-dir (packages/root directory)]
+      (let [manifest (io/slurp-edn! (io/join-path package-dir "package.edn"))
+            mapped-leaves (reduce-kv (:namespace-roots manifest)
+                                     []
+                                     (fn [leaves prefix paths]
+                                       (reduce (if (sequential? paths) paths [paths])
+                                               leaves
+                                               (fn [result path]
+                                                 (cond-> result
+                                                         (= directory
+                                                            (io/absolute-path!
+                                                              (io/join-path package-dir
+                                                                            (str path))))
+                                                         (append
+                                                           (last (split (str prefix) "."))))))))
+            load-root? (any? (:load-roots manifest)
+                             (fn [path]
+                               (= directory
+                                  (io/absolute-path!
+                                    (io/join-path package-dir (str path))))))]
+        (cond
+          (not-empty? mapped-leaves) mapped-leaves
+          load-root? []
+          true [(io/basename directory)]))
+      [(io/basename directory)])))
+
+(defun directory-entry-source?
+  "Test whether a source path is a namespace directory entry file.
+
+  Args:
+  - `file`: Roo source file path.
+
+  Returns:
+  `true` when the basename is the underscore-prefixed logical namespace leaf
+  for its directory, otherwise `false`."
+  [file]
+  (let [basename (io/basename file)
+        extension (io/extension file)]
+    (any? (directory-entry-leaves file)
+          (fn [leaf]
+            (= basename (str "_" leaf extension))))))

@@ -1,0 +1,39 @@
+(ns proofread.simple-expressions-flatten-struct-operations)
+
+(def configured-game
+  (assoc (assoc (assoc (assoc (static-game)
+                             :scheduler
+                             {:time 100})
+                      :food-pressure
+                      2)
+               :amulet-appeared?
+               true)
+         :area-generation
+         1))
+
+(def configured-options
+  (assoc (assoc options :width 80 :height 24)
+         :color? true
+         :format :compact))
+
+(def configured-profile
+  (assoc-in (assoc-in profile [:name] "Ada")
+            [:preferences :theme] :dark))
+
+(def cleaned-state
+  (dissoc (dissoc state :temporary) :cache :debug))
+
+(def cleaned-profile
+  (dissoc-in (dissoc-in profile [:session :token])
+             [:preferences :legacy]
+             [:debug]))
+
+(def updated-state
+  (update (update state :count inc)
+          :items
+          [append item]))
+
+(def updated-profile
+  (update-in (update-in profile [:stats :count] inc)
+             [:items]
+             [append item]))

@@ -1,186 +1,527 @@
 (ns proofread.rules.simple-expressions-test
   (:require proof.core
-            [proofread.rules.simple-expressions :as simple-expressions]
-            [roo.ast :as ast]))
+            [proofread.rules.support :as support]
+            [proofread.rules.simple-expressions :as simple-expressions]))
 
-(defun diagnostics
+
+
+;;; Fixtures
+
+(defun produce-summary
   [path]
-  (flat-map (ast/slurp! path) simple-expressions/check))
+  (support/produce-rule-start-summary path simple-expressions/check))
 
-(defun diagnostic-summary
-  [path]
-  (map (diagnostics path)
-       (fn [diagnostic]
-         [(:rule diagnostic) (:line (:source diagnostic))])))
 
-(defun diagnostic-for-rule
-  [path rule]
-  (find-first (diagnostics path)
-              (fn [diagnostic]
-                (= rule (:rule diagnostic)))))
+
+;;; proofread.rules.simple-expressions/check
 
-(defun suggestion-summary
-  [path rule]
-  (map (:suggestions (diagnostic-for-rule path rule))
-       (fn [suggestion]
-         [(:title suggestion)
-          (:kind suggestion)
-          (map (:edits suggestion) :replacement)])))
+(deftest simple-expressions/reports-simple-expression-rewrites
+  (is (= [{:rule :use-head
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-empty?
+           :start {:line 7
+                   :column 3}}
+          {:rule :use-empty?
+           :start {:line 10
+                   :column 3}}
+          {:rule :use-not-empty?
+           :start {:line 13
+                   :column 7}}
+          {:rule :use-not-empty?
+           :start {:line 18
+                   :column 9}}
+          {:rule :use-not-empty?
+           :start {:line 23
+                   :column 8}}
+          {:rule :use-not=
+           :start {:line 26
+                   :column 3}}
+          {:rule :use-nil?
+           :start {:line 29
+                   :column 3}}
+          {:rule :use-nil?
+           :start {:line 32
+                   :column 3}}
+          {:rule :use-some?
+           :start {:line 35
+                   :column 3}}
+          {:rule :use-some?
+           :start {:line 38
+                   :column 3}}
+          {:rule :use-any?
+           :start {:line 38
+                   :column 14}}
+          {:rule :use-some?
+           :start {:line 41
+                   :column 3}}
+          {:rule :use-any?
+           :start {:line 41
+                   :column 14}}
+          {:rule :use-some?
+           :start {:line 44
+                   :column 3}}
+          {:rule :use-contains?
+           :start {:line 44
+                   :column 14}}
+          {:rule :redundant-empty-default
+           :start {:line 47
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 50
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 53
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 56
+                   :column 3}}
+          {:rule :use-keyword-lookup
+           :start {:line 59
+                   :column 3}}
+          {:rule :use-get-with-default
+           :start {:line 62
+                   :column 3}}
+          {:rule :use-get-with-default
+           :start {:line 66
+                   :column 3}}
+          {:rule :use-get-in-with-default
+           :start {:line 70
+                   :column 3}}
+          {:rule :use-any?
+           :start {:line 75
+                   :column 10}}
+          {:rule :redundant-some?
+           :start {:line 78
+                   :column 9}}
+          {:rule :redundant-some?
+           :start {:line 83
+                   :column 5}}
+          {:rule :use-string?
+           :start {:line 87
+                   :column 8}}
+          {:rule :use-contains?
+           :start {:line 91
+                   :column 3}}
+          {:rule :use-contains?
+           :start {:line 96
+                   :column 3}}
+          {:rule :use-clamp
+           :start {:line 101
+                   :column 3}}
+          {:rule :use-clamp
+           :start {:line 104
+                   :column 3}}
+          {:rule :use-clamp
+           :start {:line 107
+                   :column 3}}
+          {:rule :use-clamp
+           :start {:line 110
+                   :column 3}}
+          {:rule :use-type-predicate
+           :start {:line 113
+                   :column 3}}
+          {:rule :use-type-predicate
+           :start {:line 116
+                   :column 3}}
+          {:rule :use-update
+           :start {:line 119
+                   :column 3}}
+          {:rule :use-update
+           :start {:line 124
+                   :column 11}}]
+         (produce-summary "assets/rules/simple-expressions/candidates.roo"))))
 
-(deftest reports-simple-expression-rewrites
-  (is (= [[:use-head 4]
-          [:use-empty? 7]
-          [:use-empty? 10]
-          [:use-not-empty? 13]
-          [:use-not-empty? 18]
-          [:use-not-empty? 23]
-          [:use-not= 26]
-          [:use-nil? 29]
-          [:use-nil? 32]
-          [:use-some? 35]
-          [:use-some? 38]
-          [:use-any? 38]
-          [:use-some? 41]
-          [:use-any? 41]
-          [:use-some? 44]
-          [:use-contains? 44]
-          [:redundant-empty-fallback 47]
-          [:redundant-empty-fallback 50]
-          [:redundant-empty-fallback 53]
-          [:redundant-empty-fallback 56]
-          [:use-keyword-lookup 59]
-          [:use-get-with-default 62]
-          [:use-get-with-default 66]
-          [:use-get-in-with-default 70]
-          [:use-any? 75]
-          [:redundant-some? 78]
-          [:redundant-some? 83]
-          [:use-string? 87]
-          [:use-contains? 91]
-          [:use-contains? 96]
-          [:use-clamp 101]
-          [:use-clamp 104]
-          [:use-clamp 107]
-          [:use-clamp 110]
-          [:use-type-predicate 113]
-          [:use-type-predicate 116]
-          [:use-update 119]
-          [:use-update 124]]
-         (diagnostic-summary "assets/rules/simple-expressions/candidates.roo"))))
-
-(deftest ignores-simple-expression-non-candidates
+(deftest simple-expressions/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/simple-expressions/non-candidates.roo"))))
+         (produce-summary "assets/rules/simple-expressions/non-candidates.roo"))))
 
-(deftest reports-structured-suggestions
-  (is (= [["Rewrite as head" :rewrite ["(head items)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-head)))
-  (is (= [["Rewrite as empty?" :rewrite ["(empty? items)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-empty?)))
-  (is (= [["Rewrite as not-empty?" :rewrite ["(not-empty? items)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-not-empty?)))
-  (is (= [["Rewrite as not=" :rewrite ["(not= left right)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-not=)))
-  (is (= [["Rewrite as nil?" :rewrite ["(nil? value)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-nil?)))
-  (is (= [["Rewrite as some?" :rewrite ["(some? value)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-some?)))
-  (is (= [["Rewrite as any?" :rewrite ["(any? name (fn [ch] (= \"_\" (str ch))))"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-any?)))
-  (is (= [["Rewrite as get with default" :rewrite ["(get values key default-value)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-get-with-default)))
-  (is (= [["Rewrite as get-in with default"
-           :rewrite
-           ["(get-in game-state (concat obligations-path [:groups group-id]) [])"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-get-in-with-default)))
-  (is (= [["Rewrite as keyword lookup" :rewrite ["(:name symbol)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-keyword-lookup)))
-  (is (= [["Rewrite as type predicate" :rewrite ["(map? patch)"]]]
-         (suggestion-summary "assets/rules/simple-expressions/candidates.roo"
-                             :use-type-predicate)))
-  (is (= [["Rewrite as starts-with?" :rewrite ["(string/starts-with? text \":\")"]]]
-         (suggestion-summary "assets/rules/simple-expressions/use-string-starts-with.roo"
-                             :use-string-starts-with?)))
-)
 
-(deftest reports-use-append-candidates
-  (is (= [[:use-append 4]]
-         (diagnostic-summary "assets/rules/simple-expressions/use-append.roo"))))
+(deftest use-append/reports-candidates
+  (is (= [{:rule :use-append
+           :start {:line 4
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-append.roo"))))
 
-(deftest ignores-use-append-non-candidates
+
+(deftest use-append/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/simple-expressions/use-append-non-candidates.roo"))))
+         (produce-summary "assets/rules/simple-expressions/use-append-non-candidates.roo"))))
 
-(deftest reports-contains-and-append-candidates
-  (let [path "assets/rules/simple-expressions/use-contains-and-append.roo"]
-    (is (= 2 (count (diagnostics path))))
-    (is (some? (diagnostic-for-rule path :use-contains?)))
-    (is (some? (diagnostic-for-rule path :use-append)))))
 
-(deftest reports-redundant-map-checks
-  (is (= [[:redundant-map-check 4]
-          [:redundant-map-check 9]
-          [:redundant-map-check 13]
-          [:redundant-map-check 18]
-          [:redundant-map-check 23]]
-         (diagnostic-summary "assets/rules/simple-expressions/redundant-map-check.roo"))))
+(deftest use-slice/reports-candidates
+  (is (= [{:rule :use-slice
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-slice
+           :start {:line 7
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-slice.roo"))))
 
-(deftest reports-select-keys-candidates
-  (is (= [[:use-select-keys 4]
-          [:use-select-keys 9]]
-         (diagnostic-summary "assets/rules/simple-expressions/use-select-keys.roo"))))
 
-(deftest ignores-select-keys-non-candidates
+(deftest use-slice/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/simple-expressions/select-keys-non-candidates.roo"))))
+         (produce-summary "assets/rules/simple-expressions/use-slice-non-candidates.roo"))))
 
-(deftest reports-redundant-empty-fallback-candidates
-  (is (= [[:redundant-empty-fallback 4]
-          [:redundant-empty-fallback 8]]
-         (diagnostic-summary "assets/rules/simple-expressions/redundant-empty-fallback.roo"))))
 
-(deftest reports-for-candidates
-  (is (= [[:use-for 4]
-          [:use-for 9]]
-         (diagnostic-summary "assets/rules/simple-expressions/use-for.roo"))))
+(deftest flatten-struct-operations/reports-candidates
+  (is (= [{:rule :flatten-struct-operations
+           :start {:line 4
+                   :column 3}}
+          {:rule :flatten-struct-operations
+           :start {:line 15
+                   :column 3}}
+          {:rule :flatten-struct-operations
+           :start {:line 20
+                   :column 3}}
+          {:rule :flatten-struct-operations
+           :start {:line 24
+                   :column 3}}
+          {:rule :flatten-struct-operations
+           :start {:line 27
+                   :column 3}}
+          {:rule :flatten-struct-operations
+           :start {:line 32
+                   :column 3}}
+          {:rule :flatten-struct-operations
+           :start {:line 37
+                   :column 3}}]
+         (produce-summary
+           "assets/rules/simple-expressions/flatten-struct-operations.roo"))))
 
-(deftest reports-string-starts-with-candidates
-  (is (= [[:use-string-starts-with? 4]
-          [:use-string-starts-with? 7]]
-         (diagnostic-summary "assets/rules/simple-expressions/use-string-starts-with.roo"))))
 
-(deftest reports-argument-destructuring-candidates
-  (is (= [[:use-argument-destructuring 5]
-          [:use-argument-destructuring 17]
-          [:use-argument-destructuring 21]]
-         (diagnostic-summary "assets/rules/simple-expressions/use-argument-destructuring.roo"))))
-
-(deftest reports-argument-destructuring-renamed-candidates
-  (is (= [[:use-argument-destructuring 5]]
-         (diagnostic-summary "assets/rules/simple-expressions/use-argument-destructuring-renamed.roo"))))
-
-(deftest ignores-argument-destructuring-non-candidates
-  (is (= [[:use-argument-destructuring 5]
-          [:use-argument-destructuring 30]]
-         (diagnostic-summary "assets/rules/simple-expressions/argument-destructuring-non-candidates.roo"))))
-
-(deftest reports-redundant-let-candidates
-  (is (= [[:redundant-let 4]
-          [:redundant-let-binding 8]
-          [:redundant-let-binding 15]
-          [:redundant-let-rebind 19]]
-         (diagnostic-summary "assets/rules/simple-expressions/redundant-let.roo"))))
-
-(deftest ignores-redundant-let-non-candidates
+(deftest flatten-struct-operations/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/simple-expressions/redundant-let-non-candidates.roo"))))
+         (produce-summary
+           "assets/rules/simple-expressions/flatten-struct-operations-non-candidates.roo"))))
+
+
+(deftest use-contains?/reports-contains-and-append-candidates
+  (is (= [{:rule :use-contains?
+           :start {:line 3
+                   :column 5}}
+          {:rule :use-append
+           :start {:line 5
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-contains-and-append.roo"))))
+
+
+(deftest redundant-map-check/reports-candidates
+  (is (= [{:rule :redundant-map-check
+           :start {:line 4
+                   :column 9}}
+          {:rule :redundant-map-check
+           :start {:line 9
+                   :column 3}}
+          {:rule :redundant-map-check
+           :start {:line 13
+                   :column 3}}
+          {:rule :redundant-map-check
+           :start {:line 18
+                   :column 3}}
+          {:rule :redundant-map-check
+           :start {:line 23
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/redundant-map-check.roo"))))
+
+(deftest use-select-keys/reports-candidates
+  (is (= [{:rule :use-select-keys
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-select-keys
+           :start {:line 9
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-select-keys.roo"))))
+
+(deftest use-select-keys/ignores-non-candidates
+  (is (= []
+         (produce-summary "assets/rules/simple-expressions/select-keys-non-candidates.roo"))))
+
+(deftest redundant-empty-default/reports-candidates
+  (is (= [{:rule :redundant-empty-default
+           :start {:line 4
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 8
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 12
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 16
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 20
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 24
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 28
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 33
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 37
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 41
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 46
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/redundant-empty-default.roo"))))
+
+(deftest redundant-empty-default/ignores-non-candidates
+  (is (= []
+         (produce-summary
+           "assets/rules/simple-expressions/redundant-empty-default-non-candidates.roo"))))
+
+(deftest use-for/reports-candidates
+  (is (= [{:rule :use-for
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-for
+           :start {:line 9
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-for.roo"))))
+
+(deftest use-string-starts-with?/reports-candidates
+  (is (= [{:rule :use-string-starts-with?
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-string-starts-with?
+           :start {:line 7
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-string-starts-with.roo"))))
+
+(deftest use-argument-destructuring/reports-candidates
+  (is (= [{:rule :use-argument-destructuring
+           :start {:line 5
+                   :column 5}}
+          {:rule :use-argument-destructuring
+           :start {:line 17
+                   :column 5}}
+          {:rule :use-argument-destructuring
+           :start {:line 21
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-argument-destructuring.roo"))))
+
+(deftest use-argument-destructuring/reports-renamed-candidates
+  (is (= [{:rule :use-argument-destructuring
+           :start {:line 5
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/use-argument-destructuring-renamed.roo"))))
+
+(deftest use-argument-destructuring/ignores-non-candidates
+  (is (= [{:rule :use-argument-destructuring
+           :start {:line 5
+                   :column 5}}
+          {:rule :use-argument-destructuring
+           :start {:line 30
+                   :column 3}}]
+          (produce-summary "assets/rules/simple-expressions/argument-destructuring-non-candidates.roo"))))
+
+(deftest redundant-let/reports-candidates
+  (is (= [{:rule :redundant-let
+           :start {:line 4
+                   :column 3}}
+          {:rule :redundant-let-binding
+           :start {:line 8
+                   :column 9}}
+          {:rule :redundant-let-binding
+           :start {:line 15
+                   :column 9}}
+          {:rule :redundant-let-rebind
+           :start {:line 19
+                   :column 3}}]
+         (produce-summary "assets/rules/simple-expressions/redundant-let.roo"))))
+
+(deftest redundant-let/ignores-non-candidates
+  (is (= []
+         (produce-summary "assets/rules/simple-expressions/redundant-let-non-candidates.roo"))))
+
+
+
+;; Suggestions
+
+(deftest flatten-struct-operations/reports-structured-suggestions
+  (is (= [{:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one assoc call"
+                          :edits [{:replacement
+                                   "(assoc (static-game) :scheduler {:time 100} :food-pressure 2 :amulet-appeared? true :area-generation 1)"}]}]}
+          {:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one assoc call"
+                          :edits [{:replacement
+                                   "(assoc options :width 80 :height 24 :color? true :format :compact)"}]}]}
+          {:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one assoc-in call"
+                          :edits [{:replacement
+                                   "(assoc-in profile [:name] \"Ada\" [:preferences :theme] :dark)"}]}]}
+          {:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one dissoc call"
+                          :edits [{:replacement
+                                   "(dissoc state :temporary :cache :debug)"}]}]}
+          {:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one dissoc-in call"
+                          :edits [{:replacement
+                                   "(dissoc-in profile [:session :token] [:preferences :legacy] [:debug])"}]}]}
+          {:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one update call"
+                          :edits [{:replacement
+                                   "(update state :count inc :items [append item])"}]}]}
+          {:rule :flatten-struct-operations
+           :suggestions [{:title "Rewrite as one update-in call"
+                          :edits [{:replacement
+                                   "(update-in profile [:stats :count] inc [:items] [append item])"}]}]}]
+         (support/produce-suggestion-summary
+           "assets/rules/simple-expressions/flatten-struct-operations.roo"
+           simple-expressions/check
+           :flatten-struct-operations))))
+
+
+(deftest use-slice/reports-structured-suggestions
+  (is (= [{:rule :use-slice
+           :suggestions [{:title "Rewrite as slice"
+                          :edits [{:replacement "(slice args 2)"}]}]}
+          {:rule :use-slice
+           :suggestions [{:title "Rewrite as slice"
+                          :edits [{:replacement "(slice values 3)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/use-slice.roo"
+                                             simple-expressions/check
+                                             :use-slice))))
+
+
+(deftest use-head/reports-structured-suggestions
+  (is (= [{:rule :use-head
+           :suggestions [{:title "Rewrite as head"
+                          :edits [{:replacement "(head items)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-head))))
+
+(deftest use-empty?/reports-structured-suggestions
+  (is (= [{:rule :use-empty?
+           :suggestions [{:title "Rewrite as empty?"
+                          :edits [{:replacement "(empty? items)"}]}]}
+          {:rule :use-empty?
+           :suggestions [{:title "Rewrite as empty?"
+                          :edits [{:replacement "(empty? items)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-empty?))))
+
+(deftest use-not-empty?/reports-structured-suggestions
+  (is (= [{:rule :use-not-empty?
+           :suggestions [{:title "Rewrite as not-empty?"
+                          :edits [{:replacement "(not-empty? items)"}]}]}
+          {:rule :use-not-empty?
+           :suggestions [{:title "Rewrite as not-empty?"
+                          :edits [{:replacement "(not-empty? items)"}]}]}
+          {:rule :use-not-empty?
+           :suggestions [{:title "Rewrite as not-empty?"
+                          :edits [{:replacement "(not-empty? items)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-not-empty?))))
+
+(deftest use-not=/reports-structured-suggestions
+  (is (= [{:rule :use-not=
+           :suggestions [{:title "Rewrite as not="
+                          :edits [{:replacement "(not= left right)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-not=))))
+
+(deftest use-nil?/reports-structured-suggestions
+  (is (= [{:rule :use-nil?
+           :suggestions [{:title "Rewrite as nil?"
+                          :edits [{:replacement "(nil? value)"}]}]}
+          {:rule :use-nil?
+           :suggestions [{:title "Rewrite as nil?"
+                          :edits [{:replacement "(nil? value)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-nil?))))
+
+(deftest use-some?/reports-structured-suggestions
+  (is (= [{:rule :use-some?
+           :suggestions [{:title "Rewrite as some?"
+                          :edits [{:replacement "(some? value)"}]}]}
+          {:rule :use-some?
+           :suggestions [{:title "Rewrite as some?"
+                          :edits [{:replacement "(some? (find-index name (fn [ch] (= \"_\" (str ch)))))"}]}]}
+          {:rule :use-some?
+           :suggestions [{:title "Rewrite as some?"
+                          :edits [{:replacement "(some? (find-first names (fn [name] (= name target))))"}]}]}
+          {:rule :use-some?
+           :suggestions [{:title "Rewrite as some?"
+                          :edits [{:replacement "(some? (index-of name '-'))"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-some?))))
+
+(deftest use-any?/reports-structured-suggestions
+  (is (= [{:rule :use-any?
+           :suggestions [{:title "Rewrite as any?"
+                          :edits [{:replacement "(any? name (fn [ch] (= \"_\" (str ch))))"}]}]}
+          {:rule :use-any?
+           :suggestions [{:title "Rewrite as any?"
+                          :edits [{:replacement "(any? names (fn [name] (= name target)))"}]}]}
+          {:rule :use-any?
+           :suggestions [{:title "Rewrite as any?"
+                          :edits [{:replacement "(any? diagnostics failing?)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-any?))))
+
+(deftest use-get-with-default/reports-structured-suggestions
+  (is (= [{:rule :use-get-with-default
+           :suggestions [{:title "Rewrite as get with default"
+                          :edits [{:replacement "(get values key default-value)"}]}]}
+          {:rule :use-get-with-default
+           :suggestions [{:title "Rewrite as get with default"
+                          :edits [{:replacement "(get values :name \"Missing\")"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-get-with-default))))
+
+(deftest use-get-in-with-default/reports-structured-suggestions
+  (is (= [{:rule :use-get-in-with-default
+           :suggestions [{:title "Rewrite as get-in with default"
+                          :edits [{:replacement
+                                   "(get-in game-state (concat obligations-path [:groups group-id]) [])"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-get-in-with-default))))
+
+(deftest use-keyword-lookup/reports-structured-suggestions
+  (is (= [{:rule :use-keyword-lookup
+           :suggestions [{:title "Rewrite as keyword lookup"
+                          :edits [{:replacement "(:name symbol)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-keyword-lookup))))
+
+(deftest use-type-predicate/reports-structured-suggestions
+  (is (= [{:rule :use-type-predicate
+           :suggestions [{:title "Rewrite as type predicate"
+                          :edits [{:replacement "(map? patch)"}]}]}
+          {:rule :use-type-predicate
+           :suggestions [{:title "Rewrite as type predicate"
+                          :edits [{:replacement "(string? name)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
+                                             simple-expressions/check
+                                             :use-type-predicate))))
+
+(deftest use-string-starts-with?/reports-structured-suggestions
+  (is (= [{:rule :use-string-starts-with?
+           :suggestions [{:title "Rewrite as starts-with?"
+                          :edits [{:replacement "(string/starts-with? text \":\")"}]}]}
+          {:rule :use-string-starts-with?
+           :suggestions [{:title "Rewrite as starts-with?"
+                          :edits [{:replacement "(if (string/starts-with? text \":\") (substr text 1) text)"}]}]}]
+         (support/produce-suggestion-summary "assets/rules/simple-expressions/use-string-starts-with.roo"
+                                             simple-expressions/check
+                                             :use-string-starts-with?))))

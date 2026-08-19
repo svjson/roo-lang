@@ -1,0 +1,23 @@
+(ns proofread.inspect.packages
+  (:require [roo.io :as io]))
+
+(defun root
+  "Find the nearest package root at or above a directory.
+
+  Args:
+  - `dir`: Absolute or relative directory path.
+
+  Returns:
+  The nearest directory containing `package.edn`, or `nil` when none exists."
+  [dir]
+  (cond
+    (empty? dir)
+    nil
+
+    (io/exists? (io/join-path dir "package.edn"))
+    dir
+
+    true
+    (let [parent (io/dirname dir)]
+      (unless (= parent dir)
+        (root parent)))))

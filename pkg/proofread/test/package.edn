@@ -3,5 +3,5 @@
  :dependencies {proofread "file:.."
                 proof "file:../../proof"
                 soot "file:../../soot"}
- :load-roots ["."]
+ :load-roots ["proofread"]
  :config {proof {:test-roots ["proofread"]}}}

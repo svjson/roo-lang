@@ -26,10 +26,10 @@
   [args options key label]
   (if-let [value (nth args 1)]
     (parse-args-step
-      (tail (tail args))
-      (if-let [number (positive-int value)]
-        (assoc options key number)
-        (update options :errors [append! (str "Invalid " label ": " value)])))
+     (slice args 2)
+     (if-let [number (positive-int value)]
+       (assoc options key number)
+       (update options :errors [append! (str "Invalid " label ": " value)])))
     (update options :errors [append! (str "Missing value after --" label)])))
 
 (defun parse-args-step

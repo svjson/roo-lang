@@ -5,23 +5,22 @@
             [proofread.rules.registry :as registry]
             [proofread.source :as source]))
 
-(def parent-config
-  {:rules {:redundant-do {:severity :error}
-           :use-head :off}})
 
-(def child-config
-  {:rules {:redundant-do :off
-           :use-head {:severity :error}}})
-
-(defun diagnostic-summary [file]
-  (map (source/diagnostics file)
-       (fn [diagnostic]
-         [(:rule diagnostic) (:severity diagnostic)])))
+
+;;; proofread.config/merge-config
 
 (deftest merges-config-maps-recursively
   (is (= {:rules {:redundant-do :off
                   :use-head {:severity :error}}}
-         (config/merge-config parent-config child-config))))
+         (config/merge-config {:rules {:redundant-do {:severity :error}
+                                       :use-head :off}}
+                              {:rules {:redundant-do :off
+                                       :use-head {:severity :error}}}))))
+
+
+
+;;; proofread.config/apply-diagnostics
+
 
 (deftest applies-rule-config-to-diagnostics
   (is (= [{:rule :use-head
@@ -33,27 +32,13 @@
                                     {:rule :use-head
                                      :severity :warning}]))))
 
+
+
+;;; proofread.config/unknown-rules
+
+
 (deftest reports-unknown-configured-rules
   (is (= [:missing-rule]
          (config/unknown-rules {:rules {:use-head :off
                                         :missing-rule :off}}
                                (registry/rule-ids rules/rules)))))
-
-(deftest discovers-and-applies-nested-config
-  (is (= [[:redundant-do :error]]
-         (diagnostic-summary "assets/config/root.roo")))
-  (is (= [[:use-head :error]]
-         (diagnostic-summary "assets/config/project/nested.roo"))))
-
-(deftest applies-rule-options
-  (is (= [[:redundant-let :warning]]
-         (diagnostic-summary "assets/config/options/redundant-let.roo"))))
-
-(deftest applies-nested-rule-option-overlays
-  (is (= [[:redundant-let :warning]
-          [:redundant-let :warning]]
-         (diagnostic-summary "assets/config/options/nested/redundant-let.roo"))))
-
-(deftest applies-argument-destructuring-options
-  (is (= []
-         (diagnostic-summary "assets/config/options/argument-destructuring/use-argument-destructuring-renamed.roo"))))

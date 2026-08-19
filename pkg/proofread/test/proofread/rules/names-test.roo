@@ -1,35 +1,74 @@
 (ns proofread.rules.names-test
   (:require proof.core
             [proofread.rules.names :as names]
-            [roo.ast :as ast]))
+            [proofread.rules.support :as support]))
 
-(defun diagnostics
+
+
+;;; Fixtures
+
+(defun produce-summary
   [path]
-  (flatten
-    (map (ast/slurp! path) names/check)))
+  (support/produce-rule-start-summary path names/check))
 
-(defun diagnostic-lines
-  [path]
-  (map (diagnostics path)
-       (fn [diagnostic]
-         (:line (:source diagnostic)))))
 
-(defun file-diagnostics
-  [path]
-  (names/check-file names/rules path))
+
+;;; proofread.rules.names/check
 
-(deftest reports-underscore-identifiers
-  (is (= [3 6 11]
-         (diagnostic-lines "assets/rules/names/candidates.roo"))))
+(deftest kebab-case-name/reports-underscore-identifiers
+  (is (= [{:rule :kebab-case-name
+           :start {:line 3
+                   :column 6}}
+          {:rule :kebab-case-name
+           :start {:line 6
+                   :column 8}}
+          {:rule :kebab-case-name
+           :start {:line 11
+                   :column 3}}]
+         (produce-summary "assets/rules/names/candidates.roo"))))
 
-(deftest ignores-kebab-case-identifiers
+
+(deftest kebab-case-name/ignores-kebab-case-identifiers
   (is (= []
-         (diagnostics "assets/rules/names/non-candidates.roo"))))
+         (produce-summary "assets/rules/names/non-candidates.roo"))))
 
-(deftest reports-underscore-filenames
-  (is (= [:kebab-case-filename]
-         (map (file-diagnostics "assets/rules/names/bad_filename.roo") :rule))))
 
-(deftest ignores-kebab-case-filenames
+(deftest kebab-case-filename/reports-underscore-filenames
+  (is (= [{:rule :kebab-case-filename
+           :severity :warning
+           :source {:path "assets/rules/names/bad_filename.roo"}
+           :message "Use kebab-case filenames"}]
+         (support/produce-file-diagnostics names/check-file
+                                           names/rules
+                                           "assets/rules/names/bad_filename.roo"))))
+
+
+(deftest kebab-case-filename/ignores-kebab-case-filenames
   (is (= []
-         (file-diagnostics "assets/rules/names/good-filename.roo"))))
+         (support/produce-file-diagnostics names/check-file
+                                           names/rules
+                                           "assets/rules/names/good-filename.roo"))))
+
+
+(deftest kebab-case-filename/ignores-namespace-directory-entry-filenames
+  (is (= []
+         (support/produce-file-diagnostics
+           names/check-file
+           names/rules
+           "assets/rules/names/default-layout/src/my-app/infra/_infra.roo")))
+  (is (= []
+         (support/produce-file-diagnostics
+           names/check-file
+           names/rules
+           "assets/rules/names/namespace-root-layout/src/_my-app.roo"))))
+
+
+(deftest kebab-case-filename/reports-mismatched-directory-entry-filenames
+  (is (= [{:rule :kebab-case-filename
+           :severity :warning
+           :source {:path "assets/rules/names/default-layout/src/my-app/infra/_cowabunga.roo"}
+           :message "Use kebab-case filenames"}]
+         (support/produce-file-diagnostics
+           names/check-file
+           names/rules
+           "assets/rules/names/default-layout/src/my-app/infra/_cowabunga.roo"))))

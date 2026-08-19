@@ -99,11 +99,11 @@
                   [concat ["Missing reporter after --reporter"]])
 
           (reporter/known? (keyword reporter-name))
-          (parse-args-step (tail (tail args))
+          (parse-args-step (slice args 2)
                            (assoc options :reporter (keyword reporter-name)))
 
           true
-          (parse-args-step (tail (tail args))
+          (parse-args-step (slice args 2)
                            (update options
                                    :errors
                                    [concat [(str "Unknown reporter: "
@@ -112,7 +112,7 @@
       (= arg "--group-by")
       (if-let [group-text (nth args 1)]
         (let [result (parse-groups group-text)]
-          (parse-args-step (tail (tail args))
+          (parse-args-step (slice args 2)
                            (assoc options
                                   :groups (concat (:groups options)
                                                   (:groups result))
@@ -128,7 +128,7 @@
 
       (= arg "--stdin-filename")
       (if-let [path (nth args 1)]
-        (parse-args-step (tail (tail args))
+        (parse-args-step (slice args 2)
                          (assoc options :stdin-filename path))
         (update options
                 :errors

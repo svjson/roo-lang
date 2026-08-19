@@ -3,8 +3,12 @@
             [proofread.rules :as rules]
             [proofread.rules.registry :as registry]))
 
-(deftest exposes-registered-rule-ids
+
+
+;;; proofread.rules.registry/known-rule?
+
+(deftest known-rule?/exposes-registered-rule-ids
   (is (registry/known-rule? rules/rules :use-head))
   (is (registry/known-rule? rules/rules :use-for-indexed))
   (is (registry/known-rule? rules/rules :redundant-do))
-  (is (= false (registry/known-rule? rules/rules :missing-rule))))
+  (is (not (registry/known-rule? rules/rules :missing-rule))))

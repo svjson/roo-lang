@@ -1,6 +1,7 @@
 (ns proofread.source
   (:require [proofread.config :as config]
             [proofread.inspect.forms :as forms]
+            [proofread.inspect.packages :as packages]
             [proofread.rules :as rules]
             [roo.ast :as ast]
             [roo.io :as io]))
@@ -20,27 +21,6 @@
     (or (forms/symbol-name (nth (:children namespace-node) 1)) "user")
     "user"))
 
-(defun package-root
-  "Find the nearest package root at or above a directory.
-
-  Args:
-  - `dir`: Absolute or relative directory path.
-
-  Returns:
-  The nearest directory containing `package.edn`, or `nil` when none exists."
-  [dir]
-  (cond
-    (empty? dir)
-    nil
-
-    (io/exists? (io/join-path dir "package.edn"))
-    dir
-
-    true
-    (let [parent (io/dirname dir)]
-      (unless (= parent dir)
-        (package-root parent)))))
-
 (defun package-name
   "Return the package name for a source file.
 
@@ -51,7 +31,7 @@
   The nearest enclosing package name, or `nil` when the file is outside a Roo
   package."
   [file]
-  (when-let [root (package-root (io/dirname (io/absolute-path! file)))]
+  (when-let [root (packages/root (io/dirname (io/absolute-path! file)))]
     (str (:name (io/slurp-edn! (io/join-path root "package.edn"))))))
 
 (defun context
@@ -82,7 +62,7 @@
   [file effective-config & options]
   (case (io/extension file)
     ".roo" (let [source-text (:source options)
-                 roots (if (some? source-text)
+                 roots (if source-text
                          (ast/read-string source-text {:path file})
                          (ast/slurp! file))
                  source-context (context file roots)

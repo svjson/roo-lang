@@ -1,14 +1,66 @@
 (ns proofread.source-test
   (:require proof.core
+            [proof.syntax :as s]
             [proofread.source :as source]))
 
-(deftest annotates-diagnostics-with-source-context
-  (let [diagnostic (head (source/diagnostics "assets/style/redundant-do.roo"))]
-    (is (= "assets/style/redundant-do.roo" (:file diagnostic)))
-    (is (= "proofread.style-sample" (:namespace diagnostic)))
-    (is (= "proofread-tests" (:package diagnostic)))))
 
-(deftest keeps-diagnostic-source-ranges
-  (let [source (:source (head (source/diagnostics "assets/style/redundant-do.roo")))]
-    (is (= {:line 4 :column 3} (:start source)))
-    (is (= {:line 4 :column 9} (:end source)))))
+
+;; proofread.source/diagnostics
+
+(deftest diagnostics/contains-source-context-annotations
+  (when []
+    (head (source/diagnostics "assets/style/redundant-do.roo")))
+  (then [diagnostic]
+    (is (= {:file "assets/style/redundant-do.roo"
+            :namespace "proofread.style-sample"
+            :package "proofread-tests"}
+           (select-keys diagnostic [:file
+                                    :namespace
+                                    :package])))))
+
+(deftest diagnostics/contains-full-source-reference
+  (when []
+    (head (source/diagnostics "assets/style/redundant-do.roo")))
+  (then [diagnostic]
+    (is (= {:path "assets/style/redundant-do.roo"
+            :line 4
+            :column 3
+            :start {:line 4
+                    :column 3}
+            :end {:line 4
+                  :column 9}}
+           (:source diagnostic)))))
+
+
+(deftest diagnostics/discovers-and-applies-nested-config
+  (is (= [{:rule :redundant-do
+           :severity :error}]
+         (for [d (source/diagnostics "assets/config/root.roo")]
+           (select-keys d [:rule :severity]))))
+
+  (is (= [{:rule :use-head
+           :severity :error}]
+         (for [d (source/diagnostics "assets/config/project/nested.roo")]
+           (select-keys d [:rule :severity])))))
+
+
+(deftest diagnostics/applies-rule-options
+  (is (= [{:rule :redundant-let
+           :severity :warning}]
+         (for [d (source/diagnostics "assets/config/options/redundant-let.roo")]
+           (select-keys d [:rule :severity])))))
+
+
+(deftest diagnostics/applies-nested-rule-option-overlays
+  (is (= [{:rule :redundant-let
+           :severity :warning}
+          {:rule :redundant-let
+           :severity :warning}]
+         (for [d (source/diagnostics "assets/config/options/nested/redundant-let.roo")]
+           (select-keys d [:rule :severity])))))
+
+
+(deftest diagnostics/applies-argument-destructuring-options
+  (is (= []
+         (for [d (source/diagnostics "assets/config/options/argument-destructuring/use-argument-destructuring-renamed.roo")]
+           (select-keys d [:rule :severity])))))

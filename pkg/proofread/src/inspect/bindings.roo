@@ -25,7 +25,7 @@
   A sequence of `let` body forms, otherwise `nil`."
   [{:keys [children] :as node}]
   (when (= "let" (forms/head-name node))
-    (tail (tail children))))
+    (slice children 2)))
 
 (defun symbol-use-count
   "Count direct symbol uses in an AST subtree.

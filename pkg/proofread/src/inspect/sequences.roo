@@ -2,7 +2,14 @@
   (:require [proofread.inspect.forms :as forms]))
 
 (defun not-nil-param?
-  "Test whether an AST node rejects nil values for `param-name`."
+  "Test whether an AST node rejects nil values for a parameter.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+  - `param-name`: Parameter symbol name expected in the nil check.
+
+  Returns:
+  `true` when `node` rejects nil values for `param-name`; otherwise `false`."
   [{:keys [children] :as node} param-name]
   (case (forms/head-name node)
     "some?"
@@ -18,15 +25,88 @@
     :default false))
 
 (defun nil-filter?
-  "Test whether a filter predicate keeps non-nil values."
+  "Test whether a filter predicate keeps non-nil values.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is a predicate that rejects nil values; otherwise
+  `false`."
   [node]
   (or (forms/direct-symbol? node "some?")
       (when-let [param-name (forms/fn-single-param-name node)]
         (not-nil-param? (nth (:children node) 2) param-name))))
 
 (defun filter-mapped-nil-results?
-  "Test whether a filter discards nil results from a map."
+  "Test whether a filter discards nil results from a map.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for a filter over mapped values that rejects nil results; otherwise
+  `false`."
   [{:keys [children] :as node}]
   (and (forms/call? node "filter" 3)
        (forms/map-form? (nth children 1))
        (nil-filter? (nth children 2))))
+
+(defun nil-tolerant-seq-call?
+  "Test whether a call treats nil input as an empty sequence.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for sequence calls whose first argument can be `nil`; otherwise
+  `false`."
+  [{:keys [children] :as node}]
+  (and (< 1 (count children))
+       (contains? ["any?"
+                   "count"
+                   "empty?"
+                   "filter"
+                   "find-first"
+                   "find-index"
+                   "flat-map"
+                   "keep"
+                   "map"
+                   "not-empty?"
+                   "reduce"
+                   "remove"]
+                  (forms/head-name node))))
+
+(defun nil-tolerant-map-call?
+  "Test whether a call treats nil input as an empty map.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for map calls whose first argument can be `nil`; otherwise `false`."
+  [{:keys [children] :as node}]
+  (and (< 1 (count children))
+       (contains? ["keys"
+                   "reduce-kv"
+                   "select-keys"]
+                  (forms/head-name node))))
+
+(defun nil-tolerant-seq-binding-values
+  "Return collection expressions from nil-tolerant sequence bindings.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  Collection expression nodes from a `for` or `doseq` binding vector, or `nil`
+  when `node` is not such a binding form."
+  [{:keys [children] :as node}]
+  (when (and (contains? ["for" "doseq"] (forms/head-name node))
+             (< 1 (count children)))
+    (let [bindings (nth children 1)]
+      (when (= :vector (:type bindings))
+        (keep (range 1 (count (:children bindings)))
+              (fn [index]
+                (when (odd? index)
+                  (nth (:children bindings) index))))))))

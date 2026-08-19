@@ -1,0 +1,60 @@
+(ns proofread.rules.simple-expressions.redundant-empty-default
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.inspect.sequences :as sequences]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun empty-seq-default?
+  "Test whether an AST node supplies an empty sequence default.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(or value [])`, `(get value key [])`, and
+  `(get-in value path [])`; otherwise `false`."
+  [{:keys [children] :as node}]
+  (or (and (forms/call? node "or" 3)
+           (forms/empty-vector? (nth children 2)))
+      (and (or (forms/call? node "get" 4)
+               (forms/call? node "get-in" 4))
+           (forms/empty-vector? (nth children 3)))))
+
+(defun empty-map-default?
+  "Test whether an AST node supplies an empty map default.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for `(or value {})`, `(get value key {})`, and
+  `(get-in value path {})`; otherwise `false`."
+  [{:keys [children] :as node}]
+  (or (and (forms/call? node "or" 3)
+           (forms/empty-map? (nth children 2)))
+      (and (or (forms/call? node "get" 4)
+               (forms/call? node "get-in" 4))
+           (forms/empty-map? (nth children 3)))))
+
+(defun check
+  "Report redundant empty collection defaults.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` contains an empty default ignored by its
+  collection consumer, otherwise `nil`."
+  [parent {:keys [children] :as node}]
+  (when (or (and (sequences/nil-tolerant-seq-call? node)
+                 (empty-seq-default? (nth children 1)))
+            (and (= "reduce" (forms/head-name node))
+                 (= 3 (count children))
+                 (empty-seq-default? (nth children 2)))
+            (and (sequences/nil-tolerant-map-call? node)
+                 (empty-map-default? (nth children 1)))
+            (and (contains? ["merge" "merge!"] (forms/head-name node))
+                 (any? (tail children) empty-map-default?))
+            (any? (sequences/nil-tolerant-seq-binding-values node)
+                  empty-seq-default?))
+    (diagnostics/make node :redundant-empty-default "Remove redundant empty default")))

@@ -62,7 +62,7 @@
     :step step}))
 
 (def nil-comparison
-  (if (= value nil)
+  (if (nil? value)
     :missing
     :present))
 
@@ -99,3 +99,19 @@
   (if-let [{:keys [value]} option]
     value
     (:id option)))
+
+(def different-cond-dispatch-expressions
+  (cond
+    (= :ready status) (start!)
+    (= :paused phase) (pause!)
+    :default (skip!)))
+
+(def conditional-cond-fallback
+  (cond
+    (= :ready status) (start!)
+    fallback? (skip!)))
+
+(def cond-without-fallback
+  (cond
+    (= :ready status) (start!)
+    (= :paused status) (pause!)))

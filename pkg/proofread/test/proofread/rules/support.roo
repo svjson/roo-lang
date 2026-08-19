@@ -1,0 +1,29 @@
+(ns proofread.rules.support)
+
+
+
+;;; Re-usable test support functions/fixtures
+
+(defun produce-rule-start-summary
+  "Produces a summary triggered rules and their start locations
+   for a specific path/file and a check-function."
+  [path check-fn]
+  (for [d (-> path
+              roo.ast/slurp!
+              (flat-map check-fn))]
+    {:rule (:rule d)
+     :start (-> d :source :start)}))
+
+(defun produce-suggestion-summary
+  [path check-fn rule]
+  (keep (-> path roo.ast/slurp! (flat-map check-fn))
+        (fn [d]
+          (when (= (:rule d) rule)
+            {:rule (:rule d)
+             :suggestions (for [s (:suggestions d)]
+                            {:title (:title s)
+                             :edits (for [e (:edits s)] {:replacement (:replacement e)})})}))))
+
+(defun produce-file-diagnostics
+  [checker-fn rules path]
+  (apply checker-fn [rules path]))

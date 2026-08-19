@@ -1,9 +1,18 @@
 (ns proofread.rules.names.kebab-case-filename
-  (:require [proofread.rules.diagnostics :as diagnostics]
+  (:require [proofread.inspect.namespaces :as namespaces]
+            [proofread.rules.diagnostics :as diagnostics]
             [roo.io :as io]))
 
 (defun check
-  "Return a `kebab-case-filename` diagnostic for matching files."
+  "Check a source path for underscores outside the directory-entry convention.
+
+  Args:
+  - `file`: Roo source file path.
+
+  Returns:
+  A `kebab-case-filename` diagnostic when the basename contains a disallowed
+  underscore, otherwise `nil`."
   [file]
-  (when (contains? (io/basename file) '_')
+  (when (and (contains? (io/basename file) '_')
+             (not (namespaces/directory-entry-source? file)))
     (diagnostics/make-file file :kebab-case-filename "Use kebab-case filenames")))

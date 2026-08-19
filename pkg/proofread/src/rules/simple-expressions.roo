@@ -1,6 +1,6 @@
 (ns proofread.rules.simple-expressions
   (:require [proofread.inspect.expressions :as expressions]
-            [proofread.rules.simple-expressions.redundant-empty-fallback :as redundant-empty-fallback]
+            [proofread.rules.simple-expressions.redundant-empty-default :as redundant-empty-default]
             [proofread.rules.simple-expressions.redundant-let :as redundant-let]
             [proofread.rules.simple-expressions.redundant-let-binding :as redundant-let-binding]
             [proofread.rules.simple-expressions.redundant-let-rebind :as redundant-let-rebind]
@@ -21,6 +21,8 @@
             [proofread.rules.simple-expressions.use-not-empty :as use-not-empty]
             [proofread.rules.simple-expressions.use-not-equal :as use-not-equal]
             [proofread.rules.simple-expressions.use-select-keys :as use-select-keys]
+            [proofread.rules.simple-expressions.flatten-struct-operations :as flatten-struct-operations]
+            [proofread.rules.simple-expressions.use-slice :as use-slice]
             [proofread.rules.simple-expressions.use-some :as use-some]
             [proofread.rules.simple-expressions.use-string-starts-with :as use-string-starts-with]
             [proofread.rules.simple-expressions.use-string :as use-string]
@@ -33,6 +35,8 @@
   (registry/descriptors
     :simple-expressions
     [[:use-head use-head/check]
+     [:use-slice use-slice/check]
+     [:flatten-struct-operations flatten-struct-operations/check]
      [:use-clamp use-clamp/check]
      [:use-for use-for/check]
      [:use-empty? use-empty/check]
@@ -60,7 +64,7 @@
       {:default-options expressions/default-options
        :check-with-options redundant-let-binding/check-with-options}]
      [:redundant-let-rebind redundant-let-rebind/check]
-     [:redundant-empty-fallback redundant-empty-fallback/check]
+     [:redundant-empty-default redundant-empty-default/check]
      [:use-get-with-default use-get-with-default/check]
      [:use-get-in-with-default use-get-in-with-default/check]
      [:use-keyword-lookup use-keyword-lookup/check]

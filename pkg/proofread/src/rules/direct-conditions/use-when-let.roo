@@ -30,7 +30,7 @@
   (and (= "when" (forms/head-name node))
        (< 2 (count children))
        (forms/keyword-lookup-key-name (nth children 1))
-       (any? (tail (tail children))
+       (any? (slice children 2)
              (fn [body]
                (contains-form? body (nth children 1))))))
 

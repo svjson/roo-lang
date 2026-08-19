@@ -1,0 +1,28 @@
+(ns proofread.simple-expressions-flatten-struct-operations-non-candidates)
+
+(def configured-options
+  (assoc options :width 80 :height 24))
+
+(def nested-value
+  (assoc options :defaults (assoc defaults :width 80)))
+
+(def namespaced-assoc
+  (maps/assoc (maps/assoc options :width 80) :height 24))
+
+(def associated-paths
+  (assoc-in options [:display :width] 80 [:display :height] 24))
+
+(def removed-keys
+  (dissoc options :width :height))
+
+(def removed-paths
+  (dissoc-in options [:display :width] [:display :height]))
+
+(def updated-keys
+  (update options :width inc :height dec))
+
+(def updated-paths
+  (update-in options [:display :width] inc [:display :height] dec))
+
+(def mixed-operations
+  (assoc (dissoc options :legacy) :enabled? true))

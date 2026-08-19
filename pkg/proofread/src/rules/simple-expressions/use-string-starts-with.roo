@@ -88,9 +88,8 @@
   (if replacement-body
     (str "(if (string/starts-with? "
          (forms/form-string source)
-         " \""
+         " "
          (forms/form-string prefix)
-         "\""
          ") "
          (forms/form-string replacement-body)
          " "
@@ -98,9 +97,8 @@
          ")")
     (str "(string/starts-with? "
          (forms/form-string source)
-         " \""
+         " "
          (forms/form-string prefix)
-         "\""
          ")")))
 
 (defun check

@@ -1,28 +1,41 @@
 (ns proofread.rules.loops-test
   (:require proof.core
             [proofread.rules.loops :as loops]
-            [roo.ast :as ast]))
+            [proofread.rules.support :as support]))
 
-(defun diagnostics
+
+
+;;; Fixtures
+
+(defun produce-summary
   [path]
-  (flat-map (ast/slurp! path) loops/check))
+  (support/produce-rule-start-summary path loops/check))
 
-(defun diagnostic-summary
-  [path]
-  (for [diagnostic (diagnostics path)]
-    [(:rule diagnostic) (:line (:source diagnostic))]))
 
-(deftest reports-indexed-while-loops
-  (is (= [[:use-for-indexed 4]
-          [:use-for-indexed 15]]
-         (diagnostic-summary "assets/rules/loops/use-for-indexed.roo"))))
+
+;;; proofread.rules.loops/check
 
-(deftest reports-use-reduce-candidates
-  (is (= [[:use-reduce 4]
-          [:use-reduce 15]
-          [:use-reduce 21]]
-         (diagnostic-summary "assets/rules/loops/use-reduce.roo"))))
+(deftest use-for-indexed/reports-indexed-while-loops
+  (is (= [{:rule :use-for-indexed
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-for-indexed
+           :start {:line 15
+                   :column 3}}]
+         (produce-summary "assets/rules/loops/use-for-indexed.roo"))))
 
-(deftest ignores-loop-non-candidates
+(deftest use-reduce/reports-while-candidates
+  (is (= [{:rule :use-reduce
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-reduce
+           :start {:line 15
+                   :column 3}}
+          {:rule :use-reduce
+           :start {:line 21
+                   :column 3}}]
+         (produce-summary "assets/rules/loops/use-reduce.roo"))))
+
+(deftest loops/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/loops/non-candidates.roo"))))
+         (produce-summary "assets/rules/loops/non-candidates.roo"))))

@@ -1,73 +1,145 @@
 (ns proofread.rules.direct-conditions-test
   (:require proof.core
             [proofread.rules.direct-conditions :as direct-conditions]
-            [roo.ast :as ast]))
+            [proofread.rules.support :as support]))
 
-(defun diagnostics
+
+
+;;; Fixtures
+
+(defun produce-summary
   [path]
-  (flat-map (ast/slurp! path) direct-conditions/check))
+  (support/produce-rule-start-summary path direct-conditions/check))
 
-(defun diagnostic-summary
-  [path]
-  (map (diagnostics path)
-       (fn [diagnostic]
-         [(:rule diagnostic) (:line (:source diagnostic))])))
 
-(deftest reports-use-when-for-empty-else-branches
-  (is (= [[:use-when 4] [:use-when 9]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-when.roo"))))
+
+;;; proofread.rules.direct-conditions/check
 
-(deftest reports-use-unless-for-empty-then-branches
-  (is (= [[:use-unless 4]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-unless.roo")))
-  (is (= [[:use-unless 4]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-unless-when.roo"))))
+(deftest use-when/reports-for-empty-else-branches []
+  (is (= [{:rule :use-when
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-when
+           :start {:line 9
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-when.roo"))))
 
-(deftest reports-use-if-let-for-let-wrapped-if-forms
-  (is (= [[:use-if-let 4] [:use-if-let 10] [:use-if-let 16]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-if-let.roo"))))
 
-(deftest reports-use-when-let-for-let-wrapped-when-forms
-  (is (= [[:use-when-let 4]
-          [:use-when-let 9]
-          [:use-when-let 13]
-          [:use-when-let 20]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-when-let.roo"))))
+(deftest use-unless/reports-for-empty-then-branches
+  (is (= [{:rule :use-unless
+           :start {:line 4
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-unless.roo")))
+  (is (= [{:rule :use-unless
+           :start {:line 4
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-unless-when.roo"))))
 
-(deftest reports-redundant-self-bindings
-  (is (= [[:redundant-self-binding 4]
-          [:redundant-self-binding 9]]
-         (diagnostic-summary "assets/rules/direct-conditions/redundant-self-binding.roo"))))
 
-(deftest reports-use-case-for-literal-equality-dispatch
-  (is (= [[:use-case 4]
-          [:use-case 9]
-          [:use-case 14]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-case.roo"))))
+(deftest use-if-let/reports-let-wrapped-if-forms
+  (is (= [{:rule :use-if-let
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-if-let
+           :start {:line 10
+                   :column 3}}
+          {:rule :use-if-let
+           :start {:line 16
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-if-let.roo"))))
 
-(deftest reports-use-case-for-literal-equality-dispatch-pyramids
-  (is (= [[:use-case 4]
-          [:use-case 13]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-case-pyramid.roo"))))
 
-(deftest reports-use-cond-for-if-pyramids
-  (is (= [[:use-cond 4]
-          [:use-cond 11]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-cond.roo"))))
+(deftest use-when-let/reports-let-wrapped-when-forms
+  (is (= [{:rule :use-when-let
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-when-let
+           :start {:line 9
+                   :column 3}}
+          {:rule :use-when-let
+           :start {:line 13
+                   :column 3}}
+          {:rule :use-when-let
+           :start {:line 20
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-when-let.roo"))))
 
-(deftest reports-use-cond-thread-first-candidates
-  (is (= [[:use-cond-thread-first 4]
-          [:use-cond-thread-first 9]
-          [:use-cond-thread-first 16]]
-         (diagnostic-summary "assets/rules/direct-conditions/use-cond-thread-first.roo"))))
 
-(deftest reports-flatten-if-pyramid-candidates
-  (is (= [[:flatten-if-pyramid 4]
-          [:flatten-if-pyramid 11]
-          [:flatten-if-pyramid 18]
-          [:flatten-if-pyramid 25]]
-         (diagnostic-summary "assets/rules/direct-conditions/flatten-if-pyramid.roo"))))
+(deftest redundant-self-binding/reports-redundant-bindings
+  (is (= [{:rule :redundant-self-binding
+           :start {:line 4
+                   :column 3}}
+          {:rule :redundant-self-binding
+           :start {:line 9
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/redundant-self-binding.roo"))))
 
-(deftest ignores-direct-condition-non-candidates
+
+(deftest use-case/reports-literal-equality-dispatch
+  (is (= [{:rule :use-case
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-case
+           :start {:line 9
+                   :column 3}}
+          {:rule :use-case
+           :start {:line 14
+                   :column 3}}
+          {:rule :use-case
+           :start {:line 19
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-case.roo"))))
+
+
+(deftest use-case/reports-literal-equality-dispatch-pyramids
+  (is (= [{:rule :use-case
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-case
+           :start {:line 13
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-case-pyramid.roo"))))
+
+
+(deftest use-cond/reports-if-pyramids
+  (is (= [{:rule :use-cond
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-cond
+           :start {:line 11
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-cond.roo"))))
+
+
+(deftest use-cond-thread-first/reports-if-expressions-in-thread-first-context
+  (is (= [{:rule :use-cond-thread-first
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-cond-thread-first
+           :start {:line 9
+                   :column 3}}
+          {:rule :use-cond-thread-first
+           :start {:line 16
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/use-cond-thread-first.roo"))))
+
+
+(deftest flatten-if-pyramid/reports-if-pyramids
+  (is (= [{:rule :flatten-if-pyramid
+           :start {:line 4
+                   :column 3}}
+          {:rule :flatten-if-pyramid
+           :start {:line 11
+                   :column 3}}
+          {:rule :flatten-if-pyramid
+           :start {:line 18
+                   :column 3}}
+          {:rule :flatten-if-pyramid
+           :start {:line 25
+                   :column 3}}]
+         (produce-summary "assets/rules/direct-conditions/flatten-if-pyramid.roo"))))
+
+
+(deftest direct-conditions/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/direct-conditions/non-candidates.roo"))))
+         (produce-summary "assets/rules/direct-conditions/non-candidates.roo"))))

@@ -1,43 +1,85 @@
 (ns proofread.rules.redundant-do-test
   (:require proof.core
             [proofread.rules.redundant-do :as redundant-do]
-            [roo.ast :as ast]))
+            [proofread.rules.support :as support]))
 
-(defun diagnostics
+
+
+;;; Fixtures
+
+(defun produce-summary
   [path]
-  (flatten
-    (map (ast/slurp! path) redundant-do/check)))
+  (support/produce-rule-start-summary path redundant-do/check))
 
-(defun diagnostic-lines
-  [path]
-  (map (diagnostics path)
-       (fn [diagnostic]
-         (:line (:source diagnostic)))))
 
-(deftest reports-single-expression-do-forms
-  (is (= [4]
-         (diagnostic-lines "assets/rules/redundant-do/single-expression.roo"))))
+
+;;; proofread.rules.redundant-do/check
 
-(deftest reports-do-forms-that-wrap-implicit-bodies
-  (is (= [4 10 16 22 28 34]
-         (diagnostic-lines "assets/rules/redundant-do/body-wrappers.roo"))))
+(deftest redundant-do/reports-single-expression-do-forms
+  (is (= [{:rule :redundant-do
+           :start {:line 4
+                   :column 3}}]
+         (produce-summary "assets/rules/redundant-do/single-expression.roo"))))
 
-(deftest reports-do-forms-that-wrap-loop-bodies
-  (is (= [5 11 17 23 29 35]
-         (diagnostic-lines "assets/rules/redundant-do/loop-body-wrappers.roo"))))
+(deftest redundant-do/reports-do-forms-that-wrap-implicit-bodies
+  (is (= [{:rule :redundant-do
+           :start {:line 4
+                   :column 3}}
+          {:rule :redundant-do
+           :start {:line 10
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 16
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 22
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 28
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 34
+                   :column 5}}]
+         (produce-summary "assets/rules/redundant-do/body-wrappers.roo"))))
 
-(deftest reports-nested-do-body-wrappers
-  (is (= [4 5]
-         (diagnostic-lines "assets/rules/redundant-do/nested-do.roo"))))
+(deftest redundant-do/reports-do-forms-that-wrap-loop-bodies
+  (is (= [{:rule :redundant-do
+           :start {:line 5
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 11
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 17
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 23
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 29
+                   :column 5}}
+          {:rule :redundant-do
+           :start {:line 35
+                   :column 5}}]
+         (produce-summary "assets/rules/redundant-do/loop-body-wrappers.roo"))))
 
-(deftest does-not-report-required-branch-do-forms
+(deftest redundant-do/reports-nested-do-body-wrappers
+  (is (= [{:rule :redundant-do
+           :start {:line 4
+                   :column 3}}
+          {:rule :redundant-do
+           :start {:line 5
+                   :column 5}}]
+         (produce-summary "assets/rules/redundant-do/nested-do.roo"))))
+
+(deftest redundant-do/ignores-required-branch-do-forms
   (is (= []
-         (diagnostics "assets/rules/redundant-do/required-branch-do.roo"))))
+         (produce-summary "assets/rules/redundant-do/required-branch-do.roo"))))
 
-(deftest does-not-report-required-value-do-forms
+(deftest redundant-do/ignores-required-value-do-forms
   (is (= []
-         (diagnostics "assets/rules/redundant-do/required-value-do.roo"))))
+         (produce-summary "assets/rules/redundant-do/required-value-do.roo"))))
 
-(deftest ignores-dynamic-call-heads
+(deftest redundant-do/ignores-dynamic-call-heads
   (is (= []
-         (diagnostics "assets/rules/redundant-do/dynamic-call-head.roo"))))
+         (produce-summary "assets/rules/redundant-do/dynamic-call-head.roo"))))

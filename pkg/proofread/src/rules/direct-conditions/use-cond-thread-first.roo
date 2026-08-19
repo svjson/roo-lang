@@ -21,7 +21,7 @@
   [{:keys [children] :as node}]
   (and (= "merge" (forms/head-name node))
        (< 2 (count children))
-       (any? (tail (tail children)) conditional-empty-map?)))
+       (any? (slice children 2) conditional-empty-map?)))
 
 (defun conditional-transform?
   "Test whether an `if` form should use `cond->`.

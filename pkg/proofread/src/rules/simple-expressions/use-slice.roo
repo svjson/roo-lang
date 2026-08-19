@@ -1,0 +1,46 @@
+(ns proofread.rules.simple-expressions.use-slice
+  (:require [proofread.inspect.forms :as forms]
+            [proofread.rules.diagnostics :as diagnostics]))
+
+(defun tail-chain
+  "Describe a chain of nested `tail` calls.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  A map containing the base `:target` node and nested `:count`, or `nil` when
+  `node` is not a `tail` call."
+  [{:keys [children] :as node}]
+  (when (forms/call? node "tail" 2)
+    (if-let [nested (tail-chain (nth children 1))]
+      (update nested :count inc)
+      {:target (nth children 1)
+       :count 1})))
+
+(defun check
+  "Report nested `tail` calls that should use `slice`.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map with a `slice` rewrite for a maximal chain of two or more
+  `tail` calls, otherwise `nil`."
+  [parent node]
+  (when-let [{:keys [target count]} (tail-chain node)]
+    (when (and (< 1 count)
+               (not (forms/call? parent "tail" 2))
+               (not (contains? [:string :map] (:type target))))
+      (diagnostics/make-suggesting
+        node
+        :use-slice
+        "Use slice"
+        [(diagnostics/rewrite node
+                              "Rewrite as slice"
+                              (str "(slice "
+                                   (forms/form-string target)
+                                   " "
+                                   count
+                                   ")"))]))))

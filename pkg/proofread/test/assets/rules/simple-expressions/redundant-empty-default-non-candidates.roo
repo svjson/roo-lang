@@ -1,0 +1,20 @@
+(ns proofread.redundant-empty-default-non-candidates)
+
+(def retained-map-default
+  (get config key {}))
+
+(def retained-seq-default
+  (get-in config path []))
+
+(def retained-merge-default
+  (merge inherited
+         (or supplied {:enabled? true})))
+
+(def retained-for-default
+  (for [item (or items [:default])]
+    (project item)))
+
+(def retained-reduce-kv-initial-value
+  (reduce-kv commands
+             (or initial {})
+             normalize-command))

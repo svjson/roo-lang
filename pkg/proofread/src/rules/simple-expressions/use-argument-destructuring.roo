@@ -68,12 +68,10 @@
   Returns:
   A diagnostic map when `node` should use argument destructuring, otherwise `nil`."
   [parent node options]
-  (let [effective-options (merge default-options
-                                (or options {}))]
-    (when (candidate? parent node effective-options)
-      (diagnostics/make node
-                        :use-argument-destructuring
-                        "Use argument destructuring"))))
+  (when (candidate? parent node (merge default-options options))
+    (diagnostics/make node
+                      :use-argument-destructuring
+                      "Use argument destructuring")))
 
 (defun check
   "Return a `use-argument-destructuring` diagnostic for matching nodes."

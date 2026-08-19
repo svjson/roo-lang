@@ -71,7 +71,7 @@
     "and"
     (when (< 1 (count children))
       (when-let [target-name (map-check? (nth children 1))]
-        (when (any? (tail (tail children))
+        (when (any? (slice children 2)
                     (fn [child]
                       (lookup-access? child target-name)))
           (diagnostics/make node :redundant-map-check "Remove redundant map? check"))))

@@ -135,16 +135,21 @@
   Returns:
   The string representation of `node`'s parsed form."
   [node]
-  (str (:form node)))
+  (case (:type node)
+    :string (str "\"" (:form node) "\"")
+    :default (str (:form node))))
 
 (defun form-sequence-string
   "Render form nodes as a single space-separated string.
 
   Args:
-  - `nodes`: A sequence of AST nodes."
+  - `nodes`: A sequence of AST nodes.
+
+  Returns:
+  The node forms joined by spaces, or `nil` when `nodes` is empty."
   [nodes]
   (when (not-empty? nodes)
-    (reduce nodes
+    (reduce (tail nodes)
             (form-string (head nodes))
             (fn [rendered node]
               (str rendered " " (form-string node))))))

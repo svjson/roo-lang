@@ -1,0 +1,7 @@
+(ns proofread.simple-expressions-use-slice)
+
+(def remaining-args
+  (tail (tail args)))
+
+(def remaining-values
+  (tail (tail (tail values))))

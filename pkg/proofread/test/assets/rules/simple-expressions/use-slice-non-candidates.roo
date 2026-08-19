@@ -1,0 +1,10 @@
+(ns proofread.simple-expressions-use-slice-non-candidates)
+
+(def remaining-after-one
+  (tail args))
+
+(def string-tail
+  (tail (tail "abc")))
+
+(def map-tail
+  (tail (tail {:a 1 :b 2})))

@@ -102,12 +102,15 @@ Supported style warnings:
 - `use-if-let`: reports `let` plus `if` forms that can be written as `if-let`.
 - `use-when-let`: reports `let` plus `when` forms and repeated keyword lookup
   conditions that can be written as `when-let`.
-- `use-case`: reports `if` forms that dispatch on equality against a literal
-  and `if` chains that dispatch on equality against literals for the same
-  expression, which can be written as `case`.
+- `use-case`: reports `if` chains and `cond` forms that dispatch on equality
+  against literals for the same expression, which can be written as `case`.
 - `use-cond`: reports nested predicate `if` chains that can be written as
   `cond`.
 - `use-head`: reports `(nth value 0)` forms that can be written as `head`.
+- `use-slice`: reports nested `tail` calls that can be written as one `slice`.
+- `flatten-struct-operations`: reports nested `assoc`, `assoc-in`, `dissoc`,
+  `dissoc-in`, `update`, and `update-in` calls that can be written as one
+  variadic call.
 - `use-empty?`: reports count comparisons to zero that can be written as
   `empty?`.
 - `use-not-empty?`: reports positive count checks and negated `empty?` calls
@@ -124,8 +127,9 @@ Supported style warnings:
   keyword lookups in predicate positions.
 - `use-string?`: reports `some?` checks that guard string operations and can
   be written as `string?`.
-- `redundant-empty-fallback`: reports nil-tolerant sequence calls that
-  defensively wrap input in `(or value [])`.
+- `redundant-empty-default`: reports empty collection defaults around values
+  consumed by nil-tolerant sequence calls, map calls, merges, and collection
+  binding forms.
 - `use-get-with-default`: reports `(or (get value key) default)` forms that
   can be written as `(get value key default)`.
 - `use-keyword-lookup`: reports `(get value :key)` forms that can be written as

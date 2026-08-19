@@ -1,37 +1,62 @@
 (ns proofread.rules.higher-order-test
   (:require proof.core
             [proofread.rules.higher-order :as higher-order]
-            [roo.ast :as ast]))
+            [proofread.rules.support :as support]))
 
-(defun diagnostics [path]
-  (flat-map (ast/slurp! path) higher-order/check))
 
-(defun diagnostic-lines [path]
-  (map (diagnostics path)
-       (fn [diagnostic]
-         (:line (:source diagnostic)))))
+
+;;; Fixtures
 
-(defun diagnostic-rules [path]
-  (map (diagnostics path)
-       (fn [diagnostic]
-         (:rule diagnostic))))
+(defun produce-summary
+  [path]
+  (support/produce-rule-start-summary path higher-order/check))
 
-(deftest reports-flat-map-candidates
-  (is (= [4 8]
-         (diagnostic-lines "assets/rules/higher-order/use-flat-map.roo"))))
 
-(deftest reports-find-first-candidates
-  (is (= [:use-find-first :use-find-first]
-         (diagnostic-rules "assets/rules/higher-order/use-find-first.roo")))
-  (is (= [4 7]
-         (diagnostic-lines "assets/rules/higher-order/use-find-first.roo"))))
+
+;;; proofread.rules.higher-order/check
 
-(deftest reports-keep-candidates
-  (is (= [:use-keep :use-keep :use-keep :use-keep :use-keep :use-keep]
-         (diagnostic-rules "assets/rules/higher-order/use-keep.roo")))
-  (is (= [4 10 16 21 28 35]
-         (diagnostic-lines "assets/rules/higher-order/use-keep.roo"))))
+(deftest use-flat-map/reports-candidates
+  (is (= [{:rule :use-flat-map
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-flat-map
+           :start {:line 8
+                   :column 3}}]
+         (produce-summary "assets/rules/higher-order/use-flat-map.roo"))))
 
-(deftest ignores-higher-order-non-candidates
+
+(deftest use-find-first/reports-candidates
+  (is (= [{:rule :use-find-first
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-find-first
+           :start {:line 7
+                   :column 3}}]
+         (produce-summary "assets/rules/higher-order/use-find-first.roo"))))
+
+
+(deftest use-keep/reports-candidates
+  (is (= [{:rule :use-keep
+           :start {:line 4
+                   :column 3}}
+          {:rule :use-keep
+           :start {:line 10
+                   :column 3}}
+          {:rule :use-keep
+           :start {:line 16
+                   :column 3}}
+          {:rule :use-keep
+           :start {:line 21
+                   :column 3}}
+          {:rule :use-keep
+           :start {:line 28
+                   :column 3}}
+          {:rule :use-keep
+           :start {:line 35
+                   :column 3}}]
+         (produce-summary "assets/rules/higher-order/use-keep.roo"))))
+
+
+(deftest higher-order/ignores-non-candidates
   (is (= []
-         (diagnostics "assets/rules/higher-order/non-candidates.roo"))))
+         (produce-summary "assets/rules/higher-order/non-candidates.roo"))))

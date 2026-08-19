@@ -3,12 +3,26 @@
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun case-literal?
-  "Test whether an AST node is a literal suitable for `case` dispatch."
+  "Test whether an AST node is a literal suitable for `case` dispatch.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` when `node` is a string, keyword, number, or character literal;
+  otherwise `false`."
   [node]
   (contains? [:string :keyword :number :char] (:type node)))
 
 (defun equality-dispatch?
-  "Test whether an AST node compares one expression to one literal."
+  "Test whether an AST node compares one expression to one literal.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for an equality call with exactly one `case` literal operand;
+  otherwise `false`."
   [{:keys [children] :as node}]
   (and (= "=" (forms/head-name node))
        (= 3 (count children))
@@ -18,7 +32,14 @@
                 (case-literal? (nth children 2))))))
 
 (defun equality-dispatch-expression
-  "Return the non-literal expression in an equality dispatch condition."
+  "Return the non-literal expression in an equality dispatch condition.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  The parsed form of the non-literal operand, or `nil` when `node` is not an
+  equality dispatch condition."
   [{:keys [children] :as node}]
   (when (equality-dispatch? node)
     (if (case-literal? (nth children 1))
@@ -26,7 +47,15 @@
       (:form (nth children 1)))))
 
 (defun same-case-chain?
-  "Test whether an `if` chain dispatches on one expression."
+  "Test whether an `if` chain dispatches on one expression.
+
+  Args:
+  - `dispatch-expression`: Parsed form expected in every equality condition.
+  - `node`: Current `if` AST node map in the chain.
+
+  Returns:
+  `true` when every condition dispatches on `dispatch-expression` and every
+  branch has a non-`nil` value; otherwise `false`."
   [dispatch-expression {:keys [children] :as node}]
   (and (forms/full-if? node)
        (= dispatch-expression
@@ -37,15 +66,61 @@
            (same-case-chain? dispatch-expression else)
            (not (forms/nil-node? else))))))
 
+(defun same-cond-case-chain?
+  "Test whether a `cond` chain dispatches on one expression.
+
+  Args:
+  - `dispatch-expression`: Parsed form expected in every equality condition.
+  - `children`: Children of a `cond` AST node.
+  - `index`: Index of the current condition in `children`.
+
+  Returns:
+  `true` when every condition before the final condition dispatches on
+  `dispatch-expression`, the final condition is statically truthy and
+  side-effect-free, and every branch has a non-`nil` value; otherwise `false`."
+  [dispatch-expression children index]
+  (let [condition (nth children index)]
+    (and (not (forms/nil-node? (nth children (+ index 1))))
+         (if (= index (- (count children) 2))
+           (or (case-literal? condition)
+               (= :quoted-symbol (:type condition)))
+           (and (= dispatch-expression
+                   (equality-dispatch-expression condition))
+                (same-cond-case-chain? dispatch-expression children (+ index 2)))))))
+
 (defun candidate?
-  "Test whether an `if` form should be `case`."
+  "Test whether a conditional form should be `case`.
+
+  Args:
+  - `node`: A `roo.ast` node map.
+
+  Returns:
+  `true` for an `if` chain or `cond` form that dispatches on one expression;
+  otherwise `false`."
   [{:keys [children] :as node}]
-  (when (forms/full-if? node)
-    (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
-      (same-case-chain? dispatch-expression node))))
+  (case (forms/head-name node)
+    "if"
+    (when (forms/full-if? node)
+      (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
+        (same-case-chain? dispatch-expression node)))
+
+    "cond"
+    (when (and (<= 5 (count children))
+               (odd? (count children)))
+      (when-let [dispatch-expression (equality-dispatch-expression (nth children 1))]
+        (same-cond-case-chain? dispatch-expression children 1)))
+
+    :default false))
 
 (defun check
-  "Return a `use-case` diagnostic for matching nodes."
+  "Return a `use-case` diagnostic for matching nodes.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+
+  Returns:
+  A diagnostic map when `node` should use `case`, otherwise `nil`."
   [parent node]
   (when (candidate? node)
     (diagnostics/make node :use-case "Use case")))
