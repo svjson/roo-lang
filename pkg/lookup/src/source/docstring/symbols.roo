@@ -23,9 +23,16 @@
   (when-let [entry (find-first (:forms source)
                                (fn [entry]
                                  (= "ns" (form-head-name (:form entry)))))]
-    {:name (str (nth (:form entry) 1))
-     :doc (doc/empty)
-     :source (:source entry)}))
+    (let [form (:form entry)
+          docstring (when (string? (nth form 2)) (nth form 2))]
+      {:name (str (nth form 1))
+       :doc (if (nil? docstring)
+              (doc/empty)
+              (content/parse docstring))
+       :doc-source (when docstring
+                     {:kind :roo-docstring
+                      :source (:source entry)})
+       :source (:source entry)})))
 
 (defun source-namespace-name [source]
   (or (:name (source-namespace-entry source)) "user"))

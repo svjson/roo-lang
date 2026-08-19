@@ -6,6 +6,23 @@
 
 
 
+;; lookup.source.docstring.symbols/source-namespace-entry
+
+(deftest source-namespace-entry/extracts-namespace-docstrings
+  (let [source-location {:path "src/sample/docs.roo"
+                         :line 1
+                         :column 1}
+        entry (docstring-symbols/source-namespace-entry
+                {:forms [{:form '(ns sample.docs "Sample namespace.")
+                          :source source-location}]})]
+    (is (= "sample.docs" (:name entry)))
+    (is (= "Sample namespace." (:summary (:doc entry))))
+    (is (= {:kind :roo-docstring
+            :source source-location}
+           (:doc-source entry)))))
+
+
+
 ;; lookup.source.docstring.symbols/source-symbols
 
 (deftest source-symbols/extracts-docstrings-from-def-and-defun
