@@ -2,10 +2,10 @@ if(ROO_BUILD_TESTS)
   enable_testing()
 endif()
 
-set(ROO_NATIVE_PACKAGE_STAGE_DIR
-  "${CMAKE_BINARY_DIR}/native-package-stage/pkg"
+set(ROO_PACKAGE_STAGE_DIR
+  "${CMAKE_BINARY_DIR}/package-stage/pkg"
   CACHE PATH
-  "Directory used to stage Roo packages with their built native libraries."
+  "Directory used to stage Roo packages for testing and cross-package dependency resolution, including their built native libraries where present."
 )
 
 add_subdirectory(proof)
@@ -20,6 +20,10 @@ add_subdirectory(workbook)
 add_subdirectory(footsteps)
 add_subdirectory(zoology)
 add_subdirectory(soot)
+add_subdirectory(voodoo)
+add_subdirectory(inpoots)
+add_subdirectory(roopl)
+add_subdirectory(cli-trooper)
 
 function(roo_add_stage_package_target package_name)
   set(options)
@@ -33,7 +37,7 @@ function(roo_add_stage_package_target package_name)
   )
 
   set(package_source_dir "${CMAKE_CURRENT_SOURCE_DIR}/${package_name}")
-  set(package_stage_dir "${ROO_NATIVE_PACKAGE_STAGE_DIR}/${package_name}")
+  set(package_stage_dir "${ROO_PACKAGE_STAGE_DIR}/${package_name}")
   set(package_target "stage_${package_name}_package")
 
   add_custom_target(${package_target}
@@ -45,11 +49,17 @@ function(roo_add_stage_package_target package_name)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${package_source_dir}/README.md"
             "${package_stage_dir}/README.md"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${package_source_dir}/src"
-            "${package_stage_dir}/src"
     VERBATIM
   )
+
+  if(EXISTS "${package_source_dir}/src")
+    add_custom_command(TARGET ${package_target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+              "${package_source_dir}/src"
+              "${package_stage_dir}/src"
+      VERBATIM
+    )
+  endif()
 
   if(EXISTS "${package_source_dir}/test")
     add_custom_command(TARGET ${package_target} POST_BUILD
@@ -83,8 +93,14 @@ roo_add_stage_package_target(workbook)
 roo_add_stage_package_target(footsteps)
 roo_add_stage_package_target(zoology)
 roo_add_stage_package_target(soot)
+roo_add_stage_package_target(voodoo)
+roo_add_stage_package_target(inpoots NATIVE_TARGET inpoots_native)
+roo_add_stage_package_target(roopl NATIVE_TARGET roopl_native)
+roo_add_stage_package_target(i18n)
+roo_add_stage_package_target(spool)
+roo_add_stage_package_target(cli-trooper)
 
-add_custom_target(stage_native_packages
+add_custom_target(stage_packages
   DEPENDS
     stage_proof_package
     stage_boodle_package
@@ -96,8 +112,18 @@ add_custom_target(stage_native_packages
     stage_footsteps_package
     stage_zoology_package
     stage_soot_package
+    stage_voodoo_package
+    stage_inpoots_package
+    stage_roopl_package
+    stage_i18n_package
+    stage_spool_package
+    stage_cli-trooper_package
 )
 
 if(TARGET testproof)
-  add_dependencies(testproof stage_proof_package stage_soot_package)
+  add_dependencies(testproof stage_proof_package stage_soot_package stage_voodoo_package)
+endif()
+
+if(TARGET testinpoots)
+  add_dependencies(testinpoots stage_inpoots_package stage_proof_package)
 endif()

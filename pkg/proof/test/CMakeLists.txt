@@ -29,7 +29,7 @@ roo_copy_runtime_dlls(testproof
 )
 
 target_compile_definitions(testproof
-  PRIVATE PROOF_PACKAGE_DIR="${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof"
+  PRIVATE PROOF_PACKAGE_DIR="${ROO_PACKAGE_STAGE_DIR}/proof"
 )
 
 gtest_discover_tests(testproof)

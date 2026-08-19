@@ -1,7 +1,7 @@
 enable_testing()
 
 set(PROOFREAD_TEST_ASSETS "${CMAKE_CURRENT_SOURCE_DIR}/../test/assets")
-set(PROOFREAD_TEST_PACKAGE "${ROO_NATIVE_PACKAGE_STAGE_DIR}/proofread")
+set(PROOFREAD_TEST_PACKAGE "${ROO_PACKAGE_STAGE_DIR}/proofread")
 
 add_test(
   NAME proofread_cli_checks_single_roo_file

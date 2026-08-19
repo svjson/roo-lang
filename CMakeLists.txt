@@ -23,11 +23,6 @@ else()
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-set(ROO_NATIVE_PACKAGE_STAGE_DIR
-  "${CMAKE_BINARY_DIR}/native-package-stage/pkg"
-  CACHE PATH
-  "Directory used to stage Roo packages with their built native libraries."
-)
 
 #set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_STANDARD 20)
@@ -148,7 +143,7 @@ if(ROO_BUILD_TESTS)
     roo_cli_runs_package_with_dynamic_proof_dependency
     PROPERTIES
       WORKING_DIRECTORY
-        ${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
+        ${ROO_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
   )
   add_test(
     NAME roo_cli_runs_package_tool_from_dependency
@@ -158,7 +153,7 @@ if(ROO_BUILD_TESTS)
     roo_cli_runs_package_tool_from_dependency
     PROPERTIES
       WORKING_DIRECTORY
-        ${ROO_NATIVE_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
+        ${ROO_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
   )
   add_test(
     NAME roo_cli_runs_package_with_namespace_roots
