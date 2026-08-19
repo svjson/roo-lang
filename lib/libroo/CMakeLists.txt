@@ -4,7 +4,6 @@ set(roo_SOURCES
   src/roo/adapter.cpp
   src/roo/bind.cpp
   src/roo/context.cpp
-  src/roo/data/string_literal.cpp
   src/roo/io/dir_root_file_system.cpp
   src/roo/io/file_system.cpp
   src/roo/io/file_system_namespace_source.cpp
@@ -17,7 +16,10 @@ set(roo_SOURCES
   src/roo/runtime/node.cpp
   src/roo/runtime/lower.cpp
   src/roo/runtime/pool.cpp
+  src/roo/runtime/pretty_print.cpp
   src/roo/runtime/seq.cpp
+  src/roo/runtime/str.cpp
+  src/roo/runtime/walk.cpp
   src/roo/runtime/value.cpp
   src/roo/form.cpp
   src/roo/host/object.cpp

@@ -1,5 +1,4 @@
-
-#include <roo/data/string_literal.h>
+#include <roo/runtime/str.h>
 
 namespace Roo
 {

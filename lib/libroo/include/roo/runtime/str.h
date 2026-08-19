@@ -1,6 +1,5 @@
-
-#ifndef ROO__DATA__STRING_LITERAL_H
-#define ROO__DATA__STRING_LITERAL_H
+#ifndef ROO__RUNTIME_STR_H
+#define ROO__RUNTIME_STR_H
 
 #include <string>
 
@@ -9,4 +8,4 @@ namespace Roo
   std::string escaped_string_literal(const std::string& value);
 } // namespace Roo
 
-#endif /* ROO__DATA__STRING_LITERAL_H */
+#endif /* ROO__RUNTIME_STR_H */

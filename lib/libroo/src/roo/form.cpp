@@ -12,8 +12,8 @@
 #include <roo/impl.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
+#include <roo/runtime/str.h>
 #include <roo/runtime/value.h>
-#include <roo/data/string_literal.h>
 #include <roo/type.h>
 
 namespace Roo::AST

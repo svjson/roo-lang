@@ -5,9 +5,10 @@
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/form.h>
+#include <roo/host/schema.h>
 #include <roo/io/file_system.h>
 #include <roo/reader.h>
-#include <roo/runtime/dict.h>
+#include <roo/runtime/pretty_print.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
 
@@ -21,49 +22,18 @@ namespace Roo
       int indent = 2;
     };
 
-    bool option_bool(Value& options,
-                     const std::string& option_name,
-                     bool default_value,
-                     const std::string& function_name)
+    EdnWriteOptions parse_edn_write_options(Context& ctx, Value& options)
     {
-      sptr_val value = Dict::get_property(options, option_name);
-      if (value->type == Value::Type::NIL)
-      {
-        return default_value;
-      }
-      if (value->type != Value::Type::BOOL)
-      {
-        throw TypeError(function_name + " option :" + option_name +
-                        " must be a boolean, got: " + value->to_string());
-      }
-      return std::get<bool>(value->value);
-    }
+      static MapSchema schema({}, {{"pretty?", &Type::BOOL}, {"indent", &Type::NUMBER}});
+      MapSchema::Inspector opts = schema.bind(ctx, options);
 
-    int option_indent_width(Value& options, const std::string& function_name)
-    {
-      sptr_val value = Dict::get_property(options, "indent");
-      if (value->type == Value::Type::NIL)
+      const int indent = opts.i32("indent", 2);
+      if (indent < 0)
       {
-        return 2;
-      }
-      if (value->type != Value::Type::NUMBER)
-      {
-        throw TypeError(function_name +
-                        " option :indent must be a number, got: " + value->to_string());
+        throw TypeError("roo.io/spit-edn! option :indent must not be negative.");
       }
 
-      const int indent = value->num().get_int();
-      if (indent < 1)
-      {
-        throw TypeError(function_name + " option :indent must be greater than zero.");
-      }
-      return indent;
-    }
-
-    EdnWriteOptions parse_edn_write_options(Value& options)
-    {
-      return {option_bool(options, "pretty?", false, "roo.io/spit-edn!"),
-              option_indent_width(options, "roo.io/spit-edn!")};
+      return {opts.boolean("pretty?", false), indent};
     }
 
     sptr_val edn_to_rt_value(const AST::ASTNode& obj)
@@ -238,17 +208,12 @@ namespace Roo
 
   EXEC_BODY(SpitEdnBangFunction, exec_spit_edn)
   {
-    if (args.size() > 2)
-    {
-      const EdnWriteOptions options = parse_edn_write_options(*args[2]);
-      ctx.file_system().write(
-        args[0]->str(),
-        options.pretty ? args[1]->to_pretty_string(options.indent) : args[1]->to_string());
-    }
-    else
-    {
-      ctx.file_system().write(args[0]->str(), args[1]->to_string());
-    }
+    const EdnWriteOptions options =
+      args.size() > 2 ? parse_edn_write_options(ctx, *args[2]) : EdnWriteOptions{};
+    ctx.file_system().write(
+      args[0]->str(),
+      options.pretty ? Pretty::print(*args[1], Pretty::PrintOptions{options.indent})
+                     : args[1]->to_string());
     return Constant::NIL;
   }
 

@@ -7,9 +7,10 @@
 #include <vector>
 
 #include <roo/exception.h>
+#include <roo/host/schema.h>
 #include <roo/impl.h>
 #include <roo/lang/string.h>
-#include <roo/runtime/dict.h>
+#include <roo/runtime/pretty_print.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
 
@@ -32,27 +33,6 @@ namespace Roo
       }
 
       return str.substr(start, end - start);
-    }
-
-    int option_indent_width(Value& options, const std::string& function_name)
-    {
-      sptr_val value = Dict::get_property(options, "indent");
-      if (value->type == Value::Type::NIL)
-      {
-        return 2;
-      }
-      if (value->type != Value::Type::NUMBER)
-      {
-        throw TypeError(function_name +
-                        " option :indent must be a number, got: " + value->to_string());
-      }
-
-      const int indent = value->num().get_int();
-      if (indent < 1)
-      {
-        throw TypeError(function_name + " option :indent must be greater than zero.");
-      }
-      return indent;
     }
 
     char lower_ascii(char c)
@@ -292,9 +272,42 @@ namespace Roo
 
   EXEC_BODY(PrettyStrFunction, exec_pretty_str)
   {
-    const int indent_width =
-      args.size() > 1 ? option_indent_width(*args[1], "pretty-str") : 2;
-    return Value::string(args[0]->to_pretty_string(indent_width));
+    Pretty::PrintOptions options;
+    if (args.size() > 1)
+    {
+      static MapSchema schema({},
+                              {{"indent", &Type::NUMBER},
+                               {"width", &Type::NUMBER},
+                               {"max-depth", &Type::NUMBER},
+                               {"max-elements", &Type::NUMBER}});
+      MapSchema::Inspector opts = schema.bind(ctx, *args[1]);
+
+      options.indent_width = opts.i32("indent", 2);
+      if (options.indent_width < 0)
+      {
+        throw TypeError("pretty-str option :indent must not be negative.");
+      }
+
+      const int width = opts.i32("width", 0);
+      if (width < 0)
+      {
+        throw TypeError("pretty-str option :width must not be negative.");
+      }
+      options.width = static_cast<size_t>(width);
+
+      options.max_depth = opts.i32("max-depth", -1);
+      if (opts.val("max-depth")->type != Value::Type::NIL && options.max_depth < 0)
+      {
+        throw TypeError("pretty-str option :max-depth must not be negative.");
+      }
+
+      options.max_elements = opts.i32("max-elements", -1);
+      if (opts.val("max-elements")->type != Value::Type::NIL && options.max_elements < 0)
+      {
+        throw TypeError("pretty-str option :max-elements must not be negative.");
+      }
+    }
+    return Value::string(Pretty::print(*args[0], options));
   }
 
   /** JoinFunction - roo/join */
