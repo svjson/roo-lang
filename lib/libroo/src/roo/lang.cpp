@@ -104,6 +104,7 @@ namespace Roo
     lang_symbols.emplace("do", DoForm::make());
     lang_symbols.emplace("doseq", DoseqForm::make());
     lang_symbols.emplace("dotimes", DoTimesForm::make());
+    lang_symbols.emplace("drop", DropFunction::make());
     lang_symbols.emplace("empty?", EmptyPFunction::make());
     lang_symbols.emplace("epoch-ms", EpochMsFunction::make());
     lang_symbols.emplace("eval", EvalFunction::make());
@@ -130,6 +131,10 @@ namespace Roo
     lang_symbols.emplace("inc", IncFunction::make());
     lang_symbols.emplace("include", IncludeFunction::make());
     lang_symbols.emplace("index-of", IndexOfFunction::make());
+    lang_symbols.emplace("insert", InsertFunction::make());
+    lang_symbols.emplace("insert!", InsertBangFunction::make());
+    lang_symbols.emplace("insert-one", InsertOneFunction::make());
+    lang_symbols.emplace("insert-one!", InsertOneBangFunction::make());
     lang_symbols.emplace("int", IntFunction::make());
     lang_symbols.emplace("int?", IntPFunction::make());
     lang_symbols.emplace("interleave", InterleaveFunction::make());
@@ -147,6 +152,8 @@ namespace Roo
     lang_symbols.emplace("map?", MapPFunction::make());
     lang_symbols.emplace("max", MaxFunction::make());
     lang_symbols.emplace("merge", MergeFunction::make());
+    lang_symbols.emplace("move-nth", MoveNthFunction::make());
+    lang_symbols.emplace("move-nth!", MoveNthBangFunction::make());
     lang_symbols.emplace("min", MinFunction::make());
     lang_symbols.emplace("mod", ModulusFunction::make());
     lang_symbols.emplace("name", NameFunction::make());
@@ -191,6 +198,7 @@ namespace Roo
     lang_symbols.emplace("sequential?", SequentialPFunction::make());
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());
+    lang_symbols.emplace("slice", SliceFunction::make());
     lang_symbols.emplace("some?", SomePFunction::make());
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("split", SplitFunction::make());

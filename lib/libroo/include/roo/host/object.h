@@ -749,6 +749,8 @@ namespace Roo
     virtual std::string to_string() const;
     virtual sptr_val_v native_children() const;
     virtual sptr_val native_child(size_t index) const;
+    virtual void insert_child(size_t index, const sptr_val& value);
+    virtual void move_child(size_t from_index, size_t to_index);
     virtual size_t size() const;
     virtual NativeObjectStructuralKind structural_kind() const;
     virtual bool equals_value(const Value& other) const;

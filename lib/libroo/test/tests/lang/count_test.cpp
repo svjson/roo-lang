@@ -32,3 +32,9 @@ TEST_F(CountFunction, count_str_length)
   EXPECT_EQ(*runtime.eval("(count \"0123456789\")"), *Roo::Value::number(10));
   EXPECT_EQ(*runtime.eval("(count {:a 1 :b 2})"), *Roo::Value::number(2));
 }
+
+TEST_F(CountFunction, nil_is_empty_and_other_scalars_remain_one)
+{
+  EXPECT_EQ(*runtime.eval("(count nil)"), *Roo::Value::number(0));
+  EXPECT_EQ(*runtime.eval("(count :hey-joe)"), *Roo::Value::number(1));
+}

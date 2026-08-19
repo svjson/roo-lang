@@ -99,6 +99,16 @@ namespace Roo
     return elements[index];
   }
 
+  void NativeObjectBase::insert_child(size_t, const sptr_val&)
+  {
+    throw TypeError(to_string() + " is not a valid mutable sequence.");
+  }
+
+  void NativeObjectBase::move_child(size_t, size_t)
+  {
+    throw TypeError(to_string() + " is not a valid mutable sequence.");
+  }
+
   size_t NativeObjectBase::size() const
   {
     return this->accessor_table().keys.size();

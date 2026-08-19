@@ -1,6 +1,9 @@
 
 #include "roo/runtime/seq.h"
 
+#include <algorithm>
+#include <cstdint>
+
 #include <roo/exception.h>
 #include <roo/form.h>
 #include <roo/host/object.h>
@@ -34,20 +37,6 @@ namespace Roo
     case Value::Type::LIST:
     case Value::Type::VECTOR:
       return std::get<sptr_val_v>(v.value);
-    case Value::Type::OBJECT:
-    {
-      sptr_ast_node& val = std::get<sptr_ast_node>(v.value);
-      sptr_val_v elements;
-      if (val->get_type() == Form::HOST_OBJECT || val->get_type() == Form::HOST_SEQ)
-      {
-        for (auto& child : val->get_children())
-        {
-          elements.push_back(to_rt_value(child));
-        }
-
-        return elements;
-      }
-    }
     default:
       break;
     }
@@ -170,6 +159,61 @@ namespace Roo
     }
   }
 
+  std::int64_t checked_sequence_index(const Value& value, const std::string& description)
+  {
+    const Value::Number& index = value.num();
+    if (index.num_type == Value::NumberType::FLOAT)
+    {
+      throw TypeError(description + " must be an integer.");
+    }
+
+    return index.num_type == Value::NumberType::INT ? index.int_value : index.long_value;
+  }
+
+  size_t normalized_sequence_index(std::int64_t index, size_t size)
+  {
+    if (index >= 0)
+    {
+      const std::uint64_t offset = static_cast<std::uint64_t>(index);
+      return offset >= size ? size : static_cast<size_t>(offset);
+    }
+
+    const std::uint64_t distance = static_cast<std::uint64_t>(-(index + 1)) + 1;
+    return distance >= size ? 0 : size - static_cast<size_t>(distance);
+  }
+
+  sptr_val_v get_child_range(Value& sequence, size_t start, size_t end)
+  {
+    sptr_val_v result;
+
+    if (has_indexed_children(sequence))
+    {
+      const size_t size = child_count(sequence);
+      const size_t first = std::min(start, size);
+      const size_t last = std::min(end, size);
+      if (last <= first) return result;
+
+      result.reserve(last - first);
+      for (size_t i = first; i < last; i++)
+      {
+        result.push_back(get_child(sequence, i));
+      }
+      return result;
+    }
+
+    sptr_val_v elements = get_children(sequence);
+    const size_t first = std::min(start, elements.size());
+    const size_t last = std::min(end, elements.size());
+    if (last <= first) return result;
+
+    result.reserve(last - first);
+    for (size_t i = first; i < last; i++)
+    {
+      result.push_back(elements[i]);
+    }
+    return result;
+  }
+
   void set_child(Value& seq, size_t index, const sptr_val& value)
   {
     switch (seq.type)
@@ -189,6 +233,41 @@ namespace Roo
       throw TypeError("set_child is not implemented for type: " +
                       std::to_string((int)seq.type));
     }
+  }
+
+  void insert_values(Value& target, size_t position, sptr_val_v values)
+  {
+    switch (target.type)
+    {
+    case Value::Type::LIST:
+    case Value::Type::VECTOR:
+    {
+      sptr_val_v& elements = std::get<sptr_val_v>(target.value);
+      const size_t insertion_position = std::min(position, elements.size());
+      elements.insert(elements.begin() + static_cast<std::ptrdiff_t>(insertion_position),
+                      values.begin(),
+                      values.end());
+      return;
+    }
+    case Value::Type::NATIVE_OBJECT:
+    {
+      if (target.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR)
+      {
+        const size_t insertion_position = std::min(position, target.nobj()->size());
+        for (size_t i = 0; i < values.size(); i++)
+        {
+          target.nobj()->insert_child(insertion_position + i, values[i]);
+        }
+        return;
+      }
+      break;
+    }
+    default:
+      break;
+    }
+
+    throw TypeError("insert_values is not implemented for type: " +
+                    std::to_string((int)target.type));
   }
 
   sptr_val pop_child(Value& seq)
@@ -253,6 +332,8 @@ namespace Roo
   {
     switch (v.type)
     {
+    case Value::Type::NIL:
+      return 0;
     case Value::Type::STRING:
       return std::get<std::string>(v.value).size();
     case Value::Type::VECTOR:

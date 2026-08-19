@@ -28,7 +28,7 @@ namespace Roo
   FUNC(BetweenPredicateFunction, between);
 
   /*!
-   * @brief Tests a seq or string(sequence of characters) for the presence of
+   * @brief Tests a seq or string (sequence of characters) for the presence of
    * any elements.
    *
    * The inverse of @code not-empty? @endcode.
@@ -45,7 +45,10 @@ namespace Roo
    * => true
    *
    * (empty? "content")
-   * => false)
+   * => false
+   *
+   * (empty? nil)
+   * => true
    * @endcode
    *
    * | Arg   | Description                                                        |
@@ -99,8 +102,8 @@ namespace Roo
   FUNC(FnPFunction, fn)
 
   /*!
-   * @brief Tests a seq or string(sequence of characters) for the presence of any
-   * elements.
+   * @brief Tests a seq or string (sequence of characters) for the presence of
+   * any elements.
    *
    * The inverse of @code empty? @endcode
    *
@@ -115,8 +118,11 @@ namespace Roo
    * (not-empty? "")
    * => false
    *
-   * (not-empty? "content"
-   * => true)
+   * (not-empty? "content")
+   * => true
+   *
+   * (not-empty? nil)
+   * => false
    * @endcode
    *
    * | Arg   | Description                                                        |

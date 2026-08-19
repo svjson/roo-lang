@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include <roo/host/object.h>
 #include <roo/lang/seq.h>
 #include <roo/runtime/seq.h>
 
@@ -12,25 +13,59 @@ namespace Roo
 {
   namespace
   {
-    template <typename Fn> void for_each_child(Value& seq, Fn&& fn)
+    struct MoveNthIndices
     {
-      if (Roo::has_indexed_children(seq))
+      size_t from;
+      size_t to;
+      bool has_source;
+    };
+
+    MoveNthIndices resolve_move_nth_indices(const sptr_val_v& args,
+                                            size_t size,
+                                            const std::string& operation)
+    {
+      const std::string placement = args.size() == 3 ? "final" : args[2]->str();
+      if (placement != "final" && placement != "before" && placement != "after")
       {
-        const size_t n_children = Roo::child_count(seq);
-        for (size_t i = 0; i < n_children; i++)
-        {
-          fn(Roo::get_child(seq, i));
-        }
-        return;
+        throw InvocationException(operation +
+                                  " placement must be :final, :before, or :after, got " +
+                                  args[2]->to_string() + ".");
       }
 
-      sptr_val_v children = Roo::get_children(seq);
-      for (auto& child : children)
+      const std::int64_t from =
+        checked_sequence_index(*args[1], operation + " source index");
+      const std::int64_t target =
+        checked_sequence_index(*args.back(), operation + " target index");
+      if (size == 0) return {0, 0, false};
+
+      const size_t from_index = normalized_sequence_index(from, size);
+      const size_t target_index =
+        std::min(normalized_sequence_index(target, size), size - 1);
+      if (from_index == size) return {from_index, target_index, false};
+
+      size_t to_index = target_index;
+      if (from_index != target_index && placement == "before" && from_index < target_index)
       {
-        fn(child);
+        to_index--;
       }
+      else if (from_index != target_index && placement == "after" &&
+               from_index > target_index)
+      {
+        to_index++;
+      }
+
+      return {from_index, to_index, true};
     }
 
+    void move_nth_elements(sptr_val_v& elements, const MoveNthIndices& indices)
+    {
+      if (!indices.has_source || indices.from == indices.to) return;
+
+      sptr_val moved = elements[indices.from];
+      elements.erase(elements.begin() + static_cast<std::ptrdiff_t>(indices.from));
+      elements.insert(elements.begin() + static_cast<std::ptrdiff_t>(indices.to),
+                      std::move(moved));
+    }
   } // namespace
 
   /** AppendFunction - roo/append */
@@ -95,15 +130,7 @@ namespace Roo
       }
       else if (vec->type != Value::Type::MAP && Type::SEQ.is_type_of(*vec))
       {
-        if (vec->type == Value::Type::OBJECT &&
-            std::get<sptr_ast_node>(vec->value)->get_type() != Form::HOST_SEQ)
-        {
-          result.push_back(vec);
-        }
-        else
-        {
-          for_each_child(*vec, [&](const sptr_val& element) { result.push_back(element); });
-        }
+        for_each_child(*vec, [&](const sptr_val& element) { result.push_back(element); });
       }
       else
       {
@@ -300,6 +327,37 @@ namespace Roo
     return Value::number((int)Roo::count(*args[0]));
   }
 
+  /** DropFunction - roo/drop */
+  FUNC_IMPL(
+    DropFunction,
+    MULTI_SIG((FN_ARGS((&Type::STRICT_SEQ_OR_STRING), (&Type::NUMBER)),
+               EXEC_DISPATCH(&DropFunction::exec_drop)),
+              (FN_ARGS((&Type::STRICT_SEQ_OR_STRING), (&Type::NUMBER), (&Type::NUMBER)),
+               EXEC_DISPATCH(&DropFunction::exec_drop))))
+
+  EXEC_BODY(DropFunction, exec_drop)
+  {
+    const size_t size = Roo::child_count(*args[0]);
+    const size_t start =
+      normalized_sequence_index(checked_sequence_index(*args[1], "drop start"), size);
+    const size_t end =
+      args.size() == 2
+        ? size
+        : normalized_sequence_index(checked_sequence_index(*args[2], "drop end"), size);
+
+    if (args[0]->type == Value::Type::STRING)
+    {
+      const std::string& string = args[0]->str();
+      return Value::string(string.substr(0, start) + string.substr(std::max(start, end)));
+    }
+
+    sptr_val_v result = get_child_range(*args[0], 0, start);
+    sptr_val_v suffix = get_child_range(*args[0], std::max(start, end), size);
+    result.reserve(result.size() + suffix.size());
+    result.insert(result.end(), suffix.begin(), suffix.end());
+    return Value::vector(std::move(result));
+  }
+
   /** NthFunction - roo/nth */
   FUNC_IMPL(NthFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::NUMBER)),
@@ -402,6 +460,192 @@ namespace Roo
     return Value::vector(std::move(result));
   }
 
+  /** InsertFunction - roo/insert */
+  FUNC_IMPL(InsertFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::STRICT_SEQ)),
+                       EXEC_DISPATCH(&InsertFunction::exec_insert_seq)),
+                      (FN_ARGS((&Type::STRING), (&Type::NUMBER), (&Type::ANY)),
+                       EXEC_DISPATCH(&InsertFunction::exec_insert_string))))
+
+  EXEC_BODY(InsertFunction, exec_insert_seq)
+  {
+    sptr_val result = Value::vector(Roo::get_children(*args[0]));
+    const size_t index =
+      normalized_sequence_index(checked_sequence_index(*args[1], "insert position"),
+                                std::get<sptr_val_v>(result->value).size());
+
+    Roo::insert_values(*result, index, Roo::get_children(*args[2]));
+    return result;
+  }
+
+  EXEC_BODY(InsertFunction, exec_insert_string)
+  {
+    if (args[0]->type == Value::Type::NIL) return Constant::NIL;
+
+    std::string insertion;
+    if (args[2]->type != Value::Type::NIL && Type::STRICT_SEQ.is_type_of(*args[2]))
+    {
+      for (const sptr_val& value : Roo::get_children(*args[2]))
+      {
+        if (value->type == Value::Type::STRING)
+        {
+          insertion += value->str();
+        }
+        else if (value->type == Value::Type::CHAR)
+        {
+          insertion += value->ch();
+        }
+        else
+        {
+          insertion += value->to_string();
+        }
+      }
+    }
+    else if (args[2]->type == Value::Type::STRING)
+    {
+      insertion = args[2]->str();
+    }
+    else if (args[2]->type == Value::Type::CHAR)
+    {
+      insertion = std::string(1, args[2]->ch());
+    }
+    else
+    {
+      insertion = args[2]->to_string();
+    }
+
+    std::string result = args[0]->str();
+    const size_t index =
+      normalized_sequence_index(checked_sequence_index(*args[1], "insert position"),
+                                result.size());
+    result.insert(index, insertion);
+    return Value::string(result);
+  }
+
+  /** InsertBangFunction - roo/insert! */
+  FUNC_IMPL(InsertBangFunction,
+            SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::STRICT_SEQ)),
+                 EXEC_DISPATCH(&InsertBangFunction::exec_insert_bang))))
+
+  EXEC_BODY(InsertBangFunction, exec_insert_bang)
+  {
+    sptr_val target = args[0]->type == Value::Type::NIL ? Value::vector({}) : args[0];
+    const size_t index =
+      normalized_sequence_index(checked_sequence_index(*args[1], "insert! position"),
+                                Roo::child_count(*target));
+
+    Roo::insert_values(*target, index, Roo::get_children(*args[2]));
+    return target;
+  }
+
+  /** InsertOneFunction - roo/insert-one */
+  FUNC_IMPL(InsertOneFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::ANY)),
+                       EXEC_DISPATCH(&InsertOneFunction::exec_insert_one_seq)),
+                      (FN_ARGS((&Type::STRING), (&Type::NUMBER), (&Type::ANY)),
+                       EXEC_DISPATCH(&InsertOneFunction::exec_insert_one_string))))
+
+  EXEC_BODY(InsertOneFunction, exec_insert_one_seq)
+  {
+    sptr_val result = Value::vector(Roo::get_children(*args[0]));
+    const size_t index =
+      normalized_sequence_index(checked_sequence_index(*args[1], "insert-one position"),
+                                std::get<sptr_val_v>(result->value).size());
+
+    Roo::insert_values(*result, index, {args[2]});
+    return result;
+  }
+
+  EXEC_BODY(InsertOneFunction, exec_insert_one_string)
+  {
+    std::string insertion;
+    if (args[2]->type == Value::Type::STRING)
+    {
+      insertion = args[2]->str();
+    }
+    else if (args[2]->type == Value::Type::CHAR)
+    {
+      insertion = std::string(1, args[2]->ch());
+    }
+    else
+    {
+      insertion = args[2]->to_string();
+    }
+
+    const size_t index =
+      normalized_sequence_index(checked_sequence_index(*args[1], "insert-one position"),
+                                args[0]->str().size());
+    std::string result = args[0]->str();
+    result.insert(index, insertion);
+    return Value::string(result);
+  }
+
+  /** InsertOneBangFunction - roo/insert-one! */
+  FUNC_IMPL(InsertOneBangFunction,
+            SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::ANY)),
+                 EXEC_DISPATCH(&InsertOneBangFunction::exec_insert_one_bang))))
+
+  EXEC_BODY(InsertOneBangFunction, exec_insert_one_bang)
+  {
+    sptr_val target = args[0]->type == Value::Type::NIL ? Value::vector({}) : args[0];
+    const size_t index =
+      normalized_sequence_index(checked_sequence_index(*args[1], "insert-one! position"),
+                                Roo::child_count(*target));
+
+    Roo::insert_values(*target, index, {args[2]});
+    return target;
+  }
+
+  /** MoveNthFunction - roo/move-nth */
+  FUNC_IMPL(MoveNthFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::NUMBER)),
+                       EXEC_DISPATCH(&MoveNthFunction::exec_move_nth)),
+                      (FN_ARGS((&Type::STRICT_SEQ),
+                               (&Type::NUMBER),
+                               (&Type::KEYWORD),
+                               (&Type::NUMBER)),
+                       EXEC_DISPATCH(&MoveNthFunction::exec_move_nth))))
+
+  EXEC_BODY(MoveNthFunction, exec_move_nth)
+  {
+    sptr_val_v result = Roo::get_children(*args[0]);
+    move_nth_elements(result, resolve_move_nth_indices(args, result.size(), "move-nth"));
+    return Value::vector(std::move(result));
+  }
+
+  /** MoveNthBangFunction - roo/move-nth! */
+  FUNC_IMPL(MoveNthBangFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRICT_SEQ), (&Type::NUMBER), (&Type::NUMBER)),
+                       EXEC_DISPATCH(&MoveNthBangFunction::exec_move_nth_bang)),
+                      (FN_ARGS((&Type::STRICT_SEQ),
+                               (&Type::NUMBER),
+                               (&Type::KEYWORD),
+                               (&Type::NUMBER)),
+                       EXEC_DISPATCH(&MoveNthBangFunction::exec_move_nth_bang))))
+
+  EXEC_BODY(MoveNthBangFunction, exec_move_nth_bang)
+  {
+    sptr_val target = args[0]->type == Value::Type::NIL ? Value::vector({}) : args[0];
+    const MoveNthIndices indices =
+      resolve_move_nth_indices(args, Roo::child_count(*target), "move-nth!");
+
+    if (!indices.has_source || indices.from == indices.to) return target;
+
+    if (target->type == Value::Type::VECTOR || target->type == Value::Type::LIST)
+    {
+      move_nth_elements(std::get<sptr_val_v>(target->value), indices);
+      return target;
+    }
+
+    if (target->type == Value::Type::NATIVE_OBJECT)
+    {
+      target->nobj()->move_child(indices.from, indices.to);
+      return target;
+    }
+
+    throw TypeError(target->to_string() + " is not a valid mutable sequence for move-nth!.");
+  }
+
   /** LastFunction - roo/last */
   FUNC_IMPL(LastFunction,
             SIG((FN_ARGS((&Type::SEQ_OR_STRING)), EXEC_DISPATCH(&LastFunction::exec_last))))
@@ -499,24 +743,6 @@ namespace Roo
     auto& seq = *args[0];
     int n = std::get<const Value::Number>(args[1]->value).get_int();
 
-    if (seq.type == Value::Type::OBJECT && Type::HOST_SEQ.is_type_of(seq))
-    {
-      auto obj = seq.obj();
-      sptr_ast_node_v& children = obj->get_children();
-
-      if (n < 0 || n >= static_cast<int>(children.size()))
-      {
-        return Roo::Constant::NIL;
-      }
-
-      sptr_ast_node to_delete = children[n];
-
-      children.erase(children.begin() + n);
-
-      obj->as<AST::Seq>().replace_children(children);
-
-      return to_rt_value(to_delete);
-    }
     if (seq.type == Value::Type::NATIVE_OBJECT)
     {
       throw TypeError("remove-nth! not implemented for native host sequences.");
@@ -573,6 +799,32 @@ namespace Roo
     result = Roo::get_children(*args[0]);
     std::reverse(result.begin(), result.end());
     return Value::vector(std::move(result));
+  }
+
+  /** SliceFunction - roo/slice */
+  FUNC_IMPL(
+    SliceFunction,
+    MULTI_SIG((FN_ARGS((&Type::STRICT_SEQ_OR_STRING), (&Type::NUMBER)),
+               EXEC_DISPATCH(&SliceFunction::exec_slice)),
+              (FN_ARGS((&Type::STRICT_SEQ_OR_STRING), (&Type::NUMBER), (&Type::NUMBER)),
+               EXEC_DISPATCH(&SliceFunction::exec_slice))))
+
+  EXEC_BODY(SliceFunction, exec_slice)
+  {
+    const size_t size = Roo::child_count(*args[0]);
+    const size_t start =
+      normalized_sequence_index(checked_sequence_index(*args[1], "slice start"), size);
+    const size_t end =
+      args.size() == 2
+        ? size
+        : normalized_sequence_index(checked_sequence_index(*args[2], "slice end"), size);
+
+    if (args[0]->type == Value::Type::STRING)
+    {
+      if (end <= start) return Value::string("");
+      return Value::string(args[0]->str().substr(start, end - start));
+    }
+    return Value::vector(get_child_range(*args[0], start, end));
   }
 
   /** TailFunction - roo/tail */

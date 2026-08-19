@@ -8,6 +8,7 @@ namespace Roo
 {
   /*!
    * @brief Appends one or more elements to a vector, returning a new vector.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -20,11 +21,14 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | vector    | The vector to append to (nil = empty)                              |
    * | values... | Elements to append                                                 |
+   *
+   * @return A new vector containing the original elements followed by `values`.
    */
   FUNC(AppendFunction, append)
 
   /*!
    * @brief Appends one or more elements to the back of a vector, modifying it in place.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -36,6 +40,8 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | vector    | The vector to mutate                                               |
    * | values... | Elements to append                                                 |
+   *
+   * @return The mutated vector.
    */
   FUNC(AppendBangFunction, append_bang)
 
@@ -43,6 +49,7 @@ namespace Roo
    * @brief ConcatFunction - splice two or more forms together
    * into an vector. Any non sequence arguments will be treated
    * as vectors of that argument
+   * @since 0.1.0
    *
    * Usage: (concat [1 2] [3 4]) => [1 2 3 4]
    *        (concat 1 2 [3 4]) => [1 2 3 4]
@@ -50,6 +57,8 @@ namespace Roo
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | seqs... | The seqs to splice together.                                       |
+   *
+   * @return A new vector containing the spliced values.
    */
   FUNC(ConcatFunction, concat)
 
@@ -57,6 +66,7 @@ namespace Roo
    * @brief ConcatBangFunction - splice two or more forms together
    * into an the first argument vector. Any subsequent non-sequence arguments
    * will be treated as vectors of that argument.
+   * @since 0.1.0
    *
    * Usage: (concat! [1 2] [3 4]) => [1 2 3 4]
    *        (concat! [1] 2 [3 4]) => [1 2 3 4]
@@ -64,11 +74,14 @@ namespace Roo
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | seqs... | The seqs to splice into the first argument.                        |
+   *
+   * @return The mutated first vector.
    */
   FUNC(ConcatBangFunction, concat_bang)
 
   /*!
    * @brief Tests if a Seq contains a specific value
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -79,11 +92,14 @@ namespace Roo
    * | ----- | ------------------------------------------------------------------ |
    * | seq   | The seq to test.                                                   |
    * | value | The value to test for.                                             |
+   *
+   * @return `true` when `seq` contains `value`, otherwise `false`.
    */
   FUNC(ContainsPFunction, contains)
 
   /*!
    * @brief Tests if a Seq contains at least one element from another Seq.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -94,11 +110,15 @@ namespace Roo
    * | ------ | ------------------------------------------------------------------ |
    * | seq    | The seq to test.                                                   |
    * | values | The seq of values to test for.                                     |
+   *
+   * @return `true` when `seq` contains any element from `values`, otherwise
+   * `false`.
    */
   FUNC(ContainsAnyPFunction, contains_any)
 
   /*!
    * @brief Tests if a Seq contains all elements from another Seq.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -109,32 +129,79 @@ namespace Roo
    * | ------ | ------------------------------------------------------------------ |
    * | seq    | The seq to test.                                                   |
    * | values | The seq of values to test for.                                     |
+   *
+   * @return `true` when `seq` contains every element from `values`, otherwise
+   * `false`.
    */
   FUNC(ContainsAllPFunction, contains_all)
 
   /*!
    * @brief Return the number of elements in a sequence or map.
+   * @since 0.1.0
+   *
+   * Usage:
+   * @code
+   * (count [1 2 3])
+   * => 3
+   *
+   * (count {:name "Gonzo" :age 8})
+   * => 2
+   *
+   * (count nil)
+   * => 0
+   * @endcode
    *
    * | Arg   | Description                                                        |
    * | ----- | ------------------------------------------------------------------ |
    * | value | Seq or map to count.                                               |
+   *
+   * @return The number of elements in `value`.
    */
   FUNC(CountFunction, count)
 
   /*!
+   * @brief Exclude a half-open range from a sequence or string.
+   * @since 0.1.0
+   *
+   * The start index is inclusive and the optional end index is exclusive. If
+   * end is omitted, elements from start onward are omitted. Negative indexes
+   * are offsets from the end of the sequence. Bounds are clamped.
+   *
+   * Usage:
+   * @code
+   * (drop [1 2 3 4 5] 1 4) => [1 5]
+   * (drop [1 2 3 4 5] -1) => [1 2 3 4]
+   * (drop "abcde" 1 4) => "ae"
+   * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | seq   | Sequential value or string to read from.                           |
+   * | start | Inclusive start index. Negative indexes count from the end.        |
+   * | end   | Optional exclusive end index. Negative indexes count from the end. |
+   *
+   * @return A string for string input; otherwise a new vector.
+   */
+  FUNC(DropFunction, drop)
+
+  /*!
    * @brief FlattenFunction - flatten one or more sequences objects
    * into a single level vector
+   * @since 0.1.0
    *
    * Usage: (flatten [[1 2 3] [4 5 6]]) => [1 2 3 4 5 6]
    *
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | seqs... | Seqs to flatten into a single vector.                              |
+   *
+   * @return A new vector containing the flattened elements.
    */
   FUNC(FlattenFunction, flatten)
 
   /*!
    * @brief Get the first element of a sequence
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -142,14 +209,207 @@ namespace Roo
    * (head []) => nil
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The sequence to retrieve the head element from                     |
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | seq  | The sequence to retrieve the head element from                     |
+   *
+   * @return The first element of `seq`, or `nil` when it is empty.
    */
   FUNC(HeadFunction, head)
 
   /*!
+   * @brief Insert values at a sequence or string boundary without mutation.
+   * @since 0.1.0
+   * @see roo/insert-one
+   * @see roo/insert!
+   *
+   * The position is clamped to the sequence bounds. Negative positions count from
+   * the end, so -1 inserts before the last element. The original sequence is
+   * not mutated.
+   *
+   * Usage:
+   * @code
+   * (insert [:a :d] 1 [:b :c])
+   * => [:a :b :c :d]
+   * (insert "abcd" 2 [8 true])
+   * => "ab8truecd"
+   * (insert "abcd" 2 8)
+   * => "ab8cd"
+   * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | seq    | Sequential value or string to copy.                               |
+   * | pos    | Insertion boundary. Negative positions count from the end.         |
+   * | values | Values to insert. Must be sequential for sequence targets.         |
+   *
+   * For string targets, sequential values are expanded and each element is
+   * converted to text. A non-sequential value is converted to text and inserted
+   * once. A nil target is an empty sequence when `values` is sequential; with a
+   * non-sequential `values` argument it produces nil.
+   *
+   * @return A new vector or string with `values` inserted at `pos`, or nil for a
+   *         nil target and non-sequential `values`.
+   */
+  FUNC(InsertFunction, insert_seq, insert_string)
+
+  /*!
+   * @brief Insert sequential values by mutating a sequence.
+   * @since 0.1.0
+   * @see roo/insert
+   * @see roo/insert-one!
+   *
+   * Each element of `values` is inserted into the target in order. The source
+   * values are captured before mutation, so the source and target may be the
+   * same sequence.
+   *
+   * The position is clamped to the target bounds. Negative positions count
+   * from the end, so -1 inserts before the final element. Vector, list, and
+   * mutable host-sequence targets are mutated in place and returned. A `nil`
+   * target produces and returns a new vector because there is no collection
+   * identity to mutate. Maps and immutable strings are rejected.
+   *
+   * Usage:
+   * @code
+   * (insert! values 1 [:b :c])
+   * @endcode
+   *
+   * | Arg    | Description                                                         |
+   * | ------ | ------------------------------------------------------------------- |
+   * | seq    | Sequential value to mutate.                                         |
+   * | pos    | Insertion boundary. Negative positions count from the end.          |
+   * | values | Sequential values to insert.                                        |
+   *
+   * @return The mutated `seq`, or a new vector if `seq` was passed with a `nil` value.
+   */
+  FUNC(InsertBangFunction, insert_bang)
+
+  /*!
+   * @brief Insert one value at a sequence or string boundary without mutation.
+   * @since 0.1.0
+   * @see roo/insert
+   * @see roo/insert-one!
+   * @see roo/str
+   *
+   * The value is inserted as exactly one element when the target is a sequence,
+   * even when the value is itself sequential. A `nil` target is treated as an
+   * empty sequence. The operation returns a new vector and does not mutate the
+   * target.
+   *
+   * For a string target, the value is converted once using its `str`
+   * representation and inserted into a new string. Under the current text
+   * model, string positions are byte boundaries.
+   *
+   * The position is clamped to the target bounds. Negative positions count
+   * from the end, so -1 inserts before the final element or byte. Maps are not
+   * valid targets.
+   *
+   * Usage:
+   * @code
+   * (insert-one [:a :c] 1 :b)
+   * => [:a :b :c]
+   * (insert-one "abcd" 2 true)
+   * => "abtruecd"
+   * @endcode
+   *
+   * | Arg   | Description                                                         |
+   * | ----- | ------------------------------------------------------------------- |
+   * | seq   | Sequential value or string to copy. Nil is an empty sequence.       |
+   * | pos   | Insertion boundary. Negative positions count from the end.          |
+   * | value | Complete value to insert as one element or string representation.   |
+   *
+   * @return A new vector or string with `value` inserted at `pos`.
+   */
+  FUNC(InsertOneFunction, insert_one_seq, insert_one_string)
+
+  /*!
+   * @brief Insert one value by mutating a sequence.
+   * @since 0.1.0
+   * @see roo/insert-one
+   * @see roo/insert!
+   *
+   * The value is inserted as exactly one element, even when it is itself
+   * sequential. The position is clamped to the target bounds. Negative
+   * positions count from the end, so -1 inserts before the final element.
+   *
+   * Vector, list, and mutable host-sequence targets are mutated in place and
+   * returned. A `nil` target produces and returns a new vector because there is
+   * no collection identity to mutate. Maps and immutable strings are rejected.
+   *
+   * Usage:
+   * @code
+   * (def values [:a :c])
+   * (insert-one! values 1 :b)
+   * => [:a :b :c]
+   * @endcode
+   *
+   * | Arg   | Description                                                         |
+   * | ----- | ------------------------------------------------------------------- |
+   * | seq   | Mutable sequential target. Nil produces a new vector.               |
+   * | pos   | Insertion boundary. Negative positions count from the end.          |
+   * | value | Complete value to insert as one element.                            |
+   *
+   * @return The mutated `seq`, or a new vector for a `nil` target.
+   */
+  FUNC(InsertOneBangFunction, insert_one_bang)
+
+  /*!
+   * @brief Move an element by index, returning a new vector.
+   * @since 0.1.0
+   *
+   * The three-argument form places the element at a final index. The optional
+   * placement form accepts :final, :before, or :after. Relative placements
+   * identify the target in the input ordering and account for the source
+   * removal. All indexes use clamped, end-relative normalization. The original
+   * sequence is not mutated.
+   *
+   * Usage:
+   * @code
+   * (move-nth [:a :b :c :d] 1 3)
+   * => [:a :c :d :b]
+   *
+   * (move-nth [:a :b :c :d] 1 :before 3)
+   * => [:a :c :b :d]
+   * @endcode
+   *
+   * | Arg          | Description                                                    |
+   * | ------------ | -------------------------------------------------------------- |
+   * | seq          | Sequential value to copy.                                      |
+   * | from-index   | Index of the element to move.                                  |
+   * | placement    | Optional :final, :before, or :after placement mode.            |
+   * | target-index | Final index, or target index in the input ordering.            |
+   *
+   * @return A new vector with the selected element at the requested placement.
+   */
+  FUNC(MoveNthFunction, move_nth)
+
+  /*!
+   * @brief Move an element by index by mutating a sequence.
+   * @since 0.1.0
+   *
+   * Uses the same final, :final, :before, and :after placement semantics as
+   * move-nth. Nil is treated as an empty sequence and produces a new vector
+   * because there is no collection identity to mutate.
+   *
+   * Usage:
+   * @code
+   * (move-nth! values 1 :before 3)
+   * @endcode
+   *
+   * | Arg          | Description                                                    |
+   * | ------------ | -------------------------------------------------------------- |
+   * | seq          | Sequential value to mutate.                                    |
+   * | from-index   | Index of the element to move.                                  |
+   * | placement    | Optional :final, :before, or :after placement mode.            |
+   * | target-index | Final index, or target index in the input ordering.            |
+   *
+   * @return The mutated sequence, or a new empty vector for nil.
+   */
+  FUNC(MoveNthBangFunction, move_nth_bang)
+
+  /*!
    * @brief Interleave elements from sequences into one vector.
+   * @since 0.1.0
    *
    * Takes one element from each sequence in order, then repeats at the next
    * index until all sequences are exhausted. Shorter sequences are skipped
@@ -167,35 +427,44 @@ namespace Roo
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | seqs... | Seqs or strings to interleave.                                     |
+   *
+   * @return A new vector with the interleaved contents of `seqs`...
    */
   FUNC(InterleaveFunction, interleave)
 
   /*!
    * @brief Get the last element of a sequence
+   * @since 0.1.0
    *
    * Usage:
    * @code
-   * (last [1 2 3]) => 1
+   * (last [1 2 3]) => 3
    * (last []) => nil
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The sequence to retrieve the last element from                     |
+   * | Arg | Description                                                            |
+   * | ----| ---------------------------------------------------------------------- |
+   * | seq | The sequence to retrieve the last element from                         |
+   *
+   * @return The last element of `seq`, or `nil` when it is empty.
    */
   FUNC(LastFunction, last);
 
   /*!
    * @brief Return the element at an index in a sequence.
+   * @since 0.1.0
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | Sequence to read from.                                             |
-   * | index    | Zero-based index to retrieve.                                      |
+   * | Arg      | Description                                                       |
+   * | -------- | ----------------------------------------------------------------- |
+   * | seq      | Sequence to read from.                                            |
+   * | index    | Zero-based index to retrieve.                                     |
+   *
+   * @return The element at `index`, or `nil` when the index is out of bounds.
    */
   FUNC(NthFunction, nth);
 
   /*! @brief Partition a sequence into an vector of equally sized vectors.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -210,27 +479,33 @@ namespace Roo
    * | ---- | ------------------------------------------------------------------ |
    * | size | Partition size.                                                    |
    * | seq  | Seq to partition.                                                  |
+   *
+   * @return A new vector containing the partitions.
    */
   FUNC(PartitionFunction, partition)
 
   /*!
    * @brief Select a random element from a sequence.
    * Returns nil if the sequence is empty
+   * @since 0.1.0
    *
    * Usage:
    * @code
    * (rand-nth [0 1 2 3 4])
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The sequence to retrieve a random element from.                    |
+   * | Arg  | Description                                                        |
+   * | ---- | ------------------------------------------------------------------ |
+   * | seq  | The sequence to retrieve a random element from.                    |
+   *
+   * @return A random element from `seq`, or `nil` when it is empty.
    */
   FUNC(RandNthFunction, rand_nth)
 
   /**
    * @brief Returns a vector containing all between two numbers, from the the first number
    * (inclusive) to the last number(exclusive)
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -253,11 +528,14 @@ namespace Roo
    * |       | this is treated as the end number, and the start number is         |
    * |       | assumed to be 0.                                                   |
    * | end   | The end number, exclusive. (Optional)                              |
+   *
+   * @return A new vector containing the numbers in the requested range.
    */
   FUNC(RangeFunction, range)
 
   /*!
    * @brief Yield a copy of a sequence, omitting element n
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -267,15 +545,18 @@ namespace Roo
    * => [1 3]
    * @endcode
    *
-   * | Arg      | Description                                                        |
-   * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The seq to copy                                                    |
-   * | index    | The index of the element to omit                                   |
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | seq   | The seq to copy                                                    |
+   * | index | The index of the element to omit                                   |
+   *
+   * @return A new vector without the element at `index`.
    */
   FUNC(RemoveNthFunction, remove_nth)
 
   /*!
    * @brief Remove the nth value of a Seq
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -287,13 +568,16 @@ namespace Roo
    *
    * | Arg      | Description                                                        |
    * | -------- | ------------------------------------------------------------------ |
-   * | sequence | The seq to mutate                                                  |
+   * | seq      | The seq to mutate                                                  |
    * | index    | The index of the element to remove                                 |
+   *
+   * @return The removed element.
    */
   FUNC(RemoveNthBangFunction, remove_nth_bang)
 
   /*!
    * @brief Repeat a value or series of values n times into an vector.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -307,11 +591,14 @@ namespace Roo
    * | --------- | ------------------------------------------------------------------ |
    * | count     | Number of repetitions.                                             |
    * | values... | Values to repeat.                                                  |
+   *
+   * @return A new vector containing the repeated values.
    */
   FUNC(RepeatFunction, repeat)
 
   /*!
    * @brief Creates a new vector containing the elements of a sequence in reverse order.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -322,21 +609,52 @@ namespace Roo
    * | Arg | Description                                                        |
    * | --- | ------------------------------------------------------------------ |
    * | seq | Seq to reverse.                                                    |
+   *
+   * @return A new vector containing the elements in reverse order.
    */
   FUNC(ReverseFunction, reverse)
 
   /*!
-   * @brief Return a sequence without its first element.
+   * @brief Extract a half-open range from a sequence or string.
+   * @since 0.1.0
+   *
+   * The start index is inclusive and the optional end index is exclusive. If
+   * end is omitted, all elements from start onward are returned. Negative
+   * indexes are offsets from the end of the sequence. Bounds are clamped.
+   *
+   * Usage:
+   * @code
+   * (slice [1 2 3 4 5] 1 4) => [2 3 4]
+   * (slice [1 2 3 4 5] -1) => [5]
+   * (slice "abcde" 1 4) => "bcd"
+   * @endcode
    *
    * | Arg      | Description                                                        |
    * | -------- | ------------------------------------------------------------------ |
-   * | sequence | Sequence to read from.                                             |
+   * | seq      | Sequential value or string to read from.                           |
+   * | start    | Inclusive start index. Negative indexes count from the end.        |
+   * | end      | Optional exclusive end index. Negative indexes count from the end. |
+   *
+   * @return A string for string input; otherwise a new vector.
+   */
+  FUNC(SliceFunction, slice)
+
+  /*!
+   * @brief Return a sequence without its first element.
+   * @since 0.1.0
+   *
+   * | Arg      | Description                                                        |
+   * | -------- | ------------------------------------------------------------------ |
+   * | seq      | Sequence to read from.                                             |
+   *
+   * @return A new vector containing every element after the first.
    */
   FUNC(TailFunction, tail)
 
   /*!
    * @brief Creates a new sequence from the n first elements of a sequence.
    * If n is larger than the size of the sequence, all elements are kept.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -351,11 +669,15 @@ namespace Roo
    * | ----- | ------------------------------------------------------------------ |
    * | count | Maximum number of elements to keep.                                |
    * | seq   | Seq to read from.                                                  |
+   *
+   * @return A new vector containing up to `count` elements from the start of
+   * `seq`.
    */
   FUNC(TakeFunction, take)
 
   /*!
    * @brief Creates a vector from its arguments.
+   * @since 0.1.0
    *
    * Usage:
    * @code
@@ -365,6 +687,8 @@ namespace Roo
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | values... | Values to place in the new vector.                                 |
+   *
+   * @return A new vector containing `values`.
    */
   FUNC(VectorFunction, vector)
 

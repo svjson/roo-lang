@@ -23,3 +23,8 @@ TEST_F(EmptyPFunction, emptyp_strings)
   EXPECT_EQ(*runtime.eval("(empty? \" \")"), *Roo::Constant::BOOL_FALSE);
   EXPECT_EQ(*runtime.eval("(empty? \"\")"), *Roo::Constant::BOOL_TRUE);
 }
+
+TEST_F(EmptyPFunction, nil_is_empty)
+{
+  EXPECT_EQ(*runtime.eval("(empty? nil)"), *Roo::Constant::BOOL_TRUE);
+}

@@ -535,6 +535,26 @@ namespace Roo
       return native_to_rtval<V, A>(values[index]);
     }
 
+    void insert_child(size_t index, const sptr_val& value) override
+    {
+      auto& values = get_self_object();
+      V native_value = rtval_to_native<V>(*value);
+      values.insert(
+        values.begin() + static_cast<typename std::vector<V>::difference_type>(index),
+        std::move(native_value));
+    }
+
+    void move_child(size_t from_index, size_t to_index) override
+    {
+      auto& values = get_self_object();
+      V moved = std::move(values[from_index]);
+      values.erase(values.begin() +
+                   static_cast<typename std::vector<V>::difference_type>(from_index));
+      values.insert(
+        values.begin() + static_cast<typename std::vector<V>::difference_type>(to_index),
+        std::move(moved));
+    }
+
     size_t size() const override { return get_self_object().size(); }
 
     NativeObjectStructuralKind structural_kind() const override
