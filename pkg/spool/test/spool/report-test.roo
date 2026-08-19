@@ -1,0 +1,129 @@
+(ns spool.report-test
+  (:require proof.core
+            [proof.syntax :as p]
+            [spool.report :as report]))
+
+
+;; spool.report/lines
+
+(deftest lines/renders-context-tree
+  (p/given
+    {:contexts [{:key :frame
+                 :metadata {:command-count 1}
+                 :elapsed-ms 10
+                 :children [{:key :command
+                             :metadata {}
+                             :elapsed-ms 4
+                             :children []}
+                            {:key "messages"
+                             :metadata {:message-count 2}
+                             :elapsed-ms nil
+                             :children []}]}]})
+
+  (p/when [tree]
+    (report/lines tree))
+
+  (p/then [lines]
+    (is (= ["spool"
+            "└── :frame 10ms {:command-count 1}"
+            "    ├── :command 4ms"
+            "    └── messages open {:message-count 2}"]
+           lines))))
+
+(deftest lines/collapses-configured-context-children
+  (p/given
+    {:contexts [{:key :frame
+                 :metadata {}
+                 :elapsed-ms 10
+                 :children [{:key :visibility
+                             :metadata {:cells 3}
+                             :elapsed-ms 4
+                             :children [{:key :ray
+                                         :metadata {}
+                                         :elapsed-ms 1
+                                         :children []}]}]}]})
+
+  (p/when [tree]
+    (report/lines tree {:collapse-keys [:visibility]}))
+
+  (p/then [lines]
+    (is (= ["spool"
+            "└── :frame 10ms"
+            "    └── :visibility 4ms {:cells 3}"]
+           lines))))
+
+(deftest lines/collapses-context-children-below-elapsed-threshold
+  (p/given
+    {:contexts [{:key :frame
+                 :metadata {}
+                 :elapsed-ms 25
+                 :children [{:key :visibility
+                             :metadata {:cells 3}
+                             :elapsed-ms 8
+                             :children [{:key :ray
+                                         :metadata {}
+                                         :elapsed-ms 1
+                                         :children []}]}
+                            {:key :messages
+                             :metadata {:message-count 2}
+                             :elapsed-ms 12
+                             :children [{:key :format
+                                         :metadata {}
+                                         :elapsed-ms 2
+                                         :children []}]}]}]})
+
+  (p/when [tree]
+    (report/lines tree {:collapse-below-ms 10}))
+
+  (p/then [lines]
+    (is (= ["spool"
+            "└── :frame 25ms"
+            "    ├── :visibility 8ms {:cells 3}"
+            "    └── :messages 12ms {:message-count 2}"
+            "        └── :format 2ms"]
+           lines))))
+
+(deftest lines/does-not-collapse-open-contexts-below-elapsed-threshold
+  (p/given
+    {:contexts [{:key :frame
+                 :metadata {}
+                 :elapsed-ms nil
+                 :children [{:key :child
+                             :metadata {}
+                             :elapsed-ms 1
+                             :children []}]}]})
+
+  (p/when [tree]
+    (report/lines tree {:collapse-below-ms 10}))
+
+  (p/then [lines]
+    (is (= ["spool"
+            "└── :frame open"
+            "    └── :child 1ms"]
+           lines))))
+
+(deftest lines/keeps-matching-nodes-and-ancestors-for-only-keys
+  (p/given
+    {:contexts [{:key :frame
+                 :metadata {}
+                 :elapsed-ms 10
+                 :children [{:key :visibility
+                             :metadata {:cells 3}
+                             :elapsed-ms 4
+                             :children [{:key :ray
+                                         :metadata {}
+                                         :elapsed-ms 1
+                                         :children []}]}
+                            {:key :messages
+                             :metadata {:message-count 2}
+                             :elapsed-ms 2
+                             :children []}]}]})
+
+  (p/when [tree]
+    (report/lines tree {:only-keys [:visibility]}))
+
+  (p/then [lines]
+    (is (= ["spool"
+            "└── :frame 10ms"
+            "    └── :visibility 4ms {:cells 3}"]
+           lines))))

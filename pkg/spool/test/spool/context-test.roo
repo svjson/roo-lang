@@ -1,0 +1,67 @@
+(ns spool.context-test
+  (:require proof.core
+            [proof.syntax :as p]
+            [spool.context :as context]))
+
+
+
+;; spool.context/metadata-map
+
+(deftest metadata-map/merges-non-nil-metadata
+  (is (= {:frame 1 :changed? true}
+         (context/metadata-map {:frame 1} [nil {:changed? true}]))))
+
+
+
+;; spool.context/add-child-at-path
+
+(deftest add-child-at-path/appends-child-below-selected-context
+  (p/given
+    [{:key :frame :children []}])
+
+  (p/when [contexts]
+    (context/add-child-at-path contexts [0] {:key :visibility :children []}))
+
+  (p/then [contexts]
+    (is (= [{:key :frame
+             :children [{:key :visibility :children []}]}]
+           contexts))))
+
+
+
+;; spool.context/update-node-at-path
+
+(deftest update-node-at-path/updates-selected-context
+  (p/given
+    [{:key :frame
+      :metadata {}
+      :children [{:key :visibility :metadata {} :children []}]}])
+
+  (p/when [contexts]
+    (context/update-node-at-path contexts
+                                 [0 0]
+                                 (fn [node]
+                                   (assoc node :metadata {:cells 3}))))
+
+  (p/then [contexts]
+    (is (= [{:key :frame
+             :metadata {}
+             :children [{:key :visibility
+                         :metadata {:cells 3}
+                         :children []}]}]
+           contexts))))
+
+
+
+;; spool.context/snapshot
+
+(deftest snapshot/returns-collected-context-tree
+  (p/when []
+    (assoc! context/state
+            :roots [{:key :frame :children []}]
+            :stack [])
+    (context/snapshot))
+
+  (p/then [tree]
+    (is (= {:contexts [{:key :frame :children []}]}
+           tree))))

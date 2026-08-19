@@ -1,14 +1,145 @@
 (ns spool
-  (:require [spool.core :as core]))
+  (:require [spool.context :as context]
+            [spool.report :as report]))
 
-(defun enter! [context-key & metadata &rest]
-  (apply core/enter! (concat [context-key metadata] rest)))
 
-(defun leave! [context-key & metadata &rest]
-  (apply core/leave! (concat [context-key metadata] rest)))
+
+;; Telemetry Context Control
 
-(defun reset! []
-  (core/reset!))
+(defun enter!
+  "Open a timed context.
 
-(defun report! [& report-arg &rest]
-  (apply core/report! (concat [report-arg] rest)))
+  Args:
+  - `context-key`: Value identifying the context.
+  - `metadata`: Optional metadata map recorded when the context opens.
+  - `rest`: Additional metadata maps to merge.
+
+  Returns:
+  The new context's path in the report tree."
+  [context-key & metadata &rest]
+  (let [metadata (context/metadata-map metadata rest)
+        node {:key context-key
+              :metadata metadata
+              :start-ms (epoch-ms)
+              :end-ms nil
+              :elapsed-ms nil
+              :children []}
+        parent-path (or (head (:stack context/state)) [])
+        node-path (append parent-path
+                          (context/child-count-at-path (:roots context/state)
+                                                       parent-path))]
+    (assoc! context/state
+            :roots
+            (context/add-child-at-path (:roots context/state) parent-path node)
+            :stack
+            (concat [node-path] (:stack context/state)))
+    node-path))
+
+(defun leave!
+  "Close the current timed context when its key matches.
+
+  Args:
+  - `context-key`: Value expected on the current context.
+  - `metadata`: Optional metadata map merged into the context.
+  - `rest`: Additional metadata maps to merge.
+
+  Returns:
+  The closed context's path, or `nil` when no current context matches."
+  [context-key & metadata &rest]
+  (let [metadata (context/metadata-map metadata rest)
+        path (head (:stack context/state))
+        end-ms (epoch-ms)]
+    (when (and path
+               (= context-key
+                  (:key (context/node-at-path (:roots context/state) path))))
+      (assoc! context/state
+              :roots
+              (context/update-node-at-path
+               (:roots context/state)
+               path
+               (fn [node]
+                 (assoc node
+                        :metadata
+                        (merge (or (:metadata node) {}) metadata)
+                        :end-ms end-ms
+                        :elapsed-ms (- end-ms (:start-ms node)))))
+              :stack
+              (tail (:stack context/state)))
+      path)))
+
+(defun reset!
+  "Discard every recorded and open context.
+
+  Returns:
+  The reset spool state."
+  []
+  (assoc! context/state
+          :metadata {}
+          :roots []
+          :stack []))
+
+
+
+;; Metadata
+
+(defun record!
+  "Record a map of metadata, durable until the next `reset!`
+
+  Args:
+  - `metadata`: A map of arbitrary key/values
+
+  Returns:
+  `nil`"
+  [metadata]
+  (merge! (:metadata context/state) metadata))
+
+
+
+;; Convenience functions
+
+(defun wrap
+  "Return a function that records each call inside a timed context.
+
+  Args:
+  - `wrapped-fn`: Function to invoke when the returned function is called.
+  - `opts`: Options map. `:frame` identifies the context, `:metadata` is
+    recorded when it opens, and `:exit-metadata` is an optional function that
+    receives the return value and produces metadata for the closing context.
+
+  Returns:
+  A function that forwards its arguments and returns `wrapped-fn`'s result."
+  [wrapped-fn opts]
+  (let [frame (:frame opts)
+        metadata (or (:metadata opts) {})
+        exit-metadata (:exit-metadata opts)]
+    (fn [&rest]
+      (enter! frame metadata)
+      (let [result (apply wrapped-fn rest)]
+        (leave! frame (when exit-metadata (exit-metadata result)))
+        result))))
+
+
+
+;; Reporting
+
+(defun report!
+  "Return the collected context tree and optionally print it.
+
+  Args:
+  - `report-arg`: Optional print predicate or report options map.
+  - `rest`: Optional options map following a print predicate.
+
+  Returns:
+  The complete, unprojected context tree."
+  [& report-arg &rest]
+  (let [options? (map? report-arg)
+        report? (if options?
+                  (fn [_tree] true)
+                  (or report-arg (fn [_tree] true)))
+        options (if options?
+                  report-arg
+                  (or (head rest) {}))
+        tree (context/snapshot)]
+    (when (report? tree)
+      (map (report/lines tree options) prn))
+    tree))

@@ -1,0 +1,183 @@
+(ns spool-test
+  (:require proof.core
+            [proof.syntax :as p]
+            [spool :as spool]
+            [spool.context :as context]))
+
+
+
+;; spool/reset!
+
+(deftest reset!/clears-report-tree
+  (p/given
+    (spool/reset!)
+    (spool/enter! :frame))
+
+  (p/when [_]
+    (spool/reset!)
+    (context/snapshot))
+
+  (p/then [tree]
+    (is (= {:contexts []} tree))))
+
+
+
+;; spool/enter!
+
+(deftest enter!/builds-nested-contexts
+  (p/when []
+    (spool/reset!)
+    (spool/enter! :frame)
+    (spool/enter! "visibility")
+    (spool/leave! "visibility" {:cells 3})
+    (spool/leave! :frame)
+    (context/snapshot))
+
+  (p/then [tree]
+    (let [frame (-> tree :contexts head)
+          visibility (-> frame :children head)]
+      (is (= {:key :frame
+              :metadata {}}
+             (dissoc frame :start-ms :end-ms :elapsed-ms :children)))
+      (is (= {:key "visibility"
+              :metadata {:cells 3}
+              :children []}
+             (dissoc visibility :start-ms :end-ms :elapsed-ms)))
+      (is (number? (:start-ms frame)))
+      (is (number? (:end-ms frame)))
+      (is (number? (:elapsed-ms frame)))
+      (is (number? (:start-ms visibility)))
+      (is (number? (:end-ms visibility)))
+      (is (number? (:elapsed-ms visibility))))))
+
+
+
+;; spool/leave!
+
+(deftest leave!/closes-context-and-merges-metadata
+  (p/given
+    (spool/reset!)
+    (spool/enter! :frame {:frame 1}))
+
+  (p/when [_]
+    (spool/leave! :frame {:changed? true})
+    (-> (context/snapshot) :contexts head))
+
+  (p/then [context]
+    (is (= {:key :frame
+            :metadata {:frame 1
+                       :changed? true}
+            :children []}
+           (dissoc context :start-ms :end-ms :elapsed-ms)))
+    (is (number? (:start-ms context)))
+    (is (number? (:end-ms context)))
+    (is (number? (:elapsed-ms context)))))
+
+(deftest leave!/ignores-mismatched-context-key
+  (p/given
+    (spool/reset!)
+    (spool/enter! :frame))
+
+  (p/when [_]
+    {:result (spool/leave! :wrong)
+     :context (-> (context/snapshot) :contexts head)})
+
+  (p/then [{:keys [result context]}]
+    (is (nil? result))
+    (is (= {:key :frame
+            :metadata {}
+            :end-ms nil
+            :elapsed-ms nil
+            :children []}
+           (dissoc context :start-ms)))
+    (is (number? (:start-ms context)))))
+
+
+
+;; spool/wrap
+
+(deftest wrap/defers-collection-until-the-returned-function-is-called
+  (p/when []
+    (spool/reset!)
+    (spool/wrap (fn [value] value) {:frame :visibility})
+    (context/snapshot))
+
+  (p/then [tree]
+    (is (= {:contexts []} tree))))
+
+(deftest wrap/forwards-arguments-returns-result-and-closes-context
+  (p/when []
+    (spool/reset!)
+    (let [wrapped (spool/wrap
+                   (fn [stuff more-stuff opts]
+                     {:stuff stuff
+                      :more-stuff more-stuff
+                      :opts opts})
+                   {:frame :visibility})]
+      {:result (wrapped :my-stuff :my-other-stuff {:my-opt true})
+       :context (-> (context/snapshot) :contexts head)}))
+
+  (p/then [{:keys [result context]}]
+    (is (= {:stuff :my-stuff
+            :more-stuff :my-other-stuff
+            :opts {:my-opt true}}
+           result))
+    (is (= {:key :visibility
+            :metadata {}
+            :children []}
+           (dissoc context :start-ms :end-ms :elapsed-ms)))
+    (is (number? (:start-ms context)))
+    (is (number? (:end-ms context)))
+    (is (number? (:elapsed-ms context)))))
+
+(deftest wrap/records-entry-and-exit-metadata
+  (p/when []
+    (spool/reset!)
+    (let [wrapped (spool/wrap
+                   (fn [items] (append items :processed))
+                   {:frame :batch
+                    :metadata {:source :inbox}
+                    :exit-metadata
+                    (fn [result]
+                      {:processed-count (count result)})})]
+      {:result (wrapped [:first :second])
+       :context (-> (context/snapshot) :contexts head)}))
+
+  (p/then [{:keys [result context]}]
+    (is (= [:first :second :processed] result))
+    (is (= {:source :inbox
+            :processed-count 3}
+           (:metadata context)))))
+
+(deftest wrap/records-each-call-to-the-returned-function
+  (p/when []
+    (spool/reset!)
+    (let [wrapped (spool/wrap (fn [value] value)
+                              {:frame :visibility})]
+      {:results [(wrapped :first) (wrapped :second)]
+       :tree (context/snapshot)}))
+
+  (p/then [{:keys [results tree]}]
+    (let [contexts (:contexts tree)]
+      (is (= [:first :second] results))
+      (is (= :visibility (:key (head contexts))))
+      (is (= :visibility (:key (last contexts))))
+      (is (number? (:elapsed-ms (head contexts))))
+      (is (number? (:elapsed-ms (last contexts)))))))
+
+
+
+;; spool/report!
+
+(deftest report!/predicate-controls-output-without-changing-return-value
+  (p/given
+    (spool/reset!)
+    (spool/enter! :frame)
+    (spool/leave! :frame))
+
+  (p/when [_]
+    (spool/report! (fn [tree]
+                     (> (count (:contexts tree)) 10))))
+
+  (p/then [tree]
+    (is (= :frame (-> tree :contexts head :key)))))

@@ -1,0 +1,105 @@
+(ns spool.report)
+
+
+
+;; Context Projection
+
+(defun project-context
+  "Apply report selection and collapsing options to one context.
+
+  Args:
+  - `context`: Context node to project.
+  - `options`: Report rendering options.
+
+  Returns:
+  The projected context, or `nil` when it is not selected."
+  [context options]
+  (let [only-keys (or (:only-keys options)
+                      (:include-keys options)
+                      [])
+        collapse-keys (or (:collapse-keys options)
+                          (:collapsed-keys options)
+                          [])
+        collapse-below-ms (or (:collapse-below-ms options)
+                              (:collapse-elapsed-below-ms options)
+                              (:leaf-below-ms options))
+        collapsed? (or (contains? collapse-keys (:key context))
+                       (and (some? collapse-below-ms)
+                            (:elapsed-ms context)
+                            (< (:elapsed-ms context) collapse-below-ms)))
+        projected-children
+        (if collapsed?
+          []
+          (project-contexts (:children context) options))
+        include-self?
+        (or (empty? only-keys)
+            (contains? only-keys (:key context)))]
+    (when (or include-self? (not-empty? projected-children))
+      (assoc context :children projected-children))))
+
+(defun project-contexts
+  "Apply report selection and collapsing options to context nodes.
+
+  Args:
+  - `contexts`: Context nodes to project.
+  - `options`: Report rendering options.
+
+  Returns:
+  Selected and projected context nodes."
+  [contexts options]
+  (keep contexts
+        (fn [context]
+          (project-context context options))))
+
+
+
+;; Output
+
+(defun append-context-lines!
+  "Append rendered context lines depth-first.
+
+  Args:
+  - `lines`: Mutable output line vector.
+  - `contexts`: Context nodes at the current tree level.
+  - `prefix`: Tree indentation inherited from parent contexts.
+
+  Returns:
+  `nil` after appending the context lines."
+  [lines contexts prefix]
+  (let [index 0
+        contexts (or contexts [])]
+    (while (< index (count contexts))
+      (let [context (nth contexts index)
+            last? (= index (- (count contexts) 1))]
+        (append! lines
+                 (str prefix
+                      (if last? "└── " "├── ")
+                      (:key context)
+                      " "
+                      (if (nil? (:elapsed-ms context))
+                        "open"
+                        (str (:elapsed-ms context) "ms"))
+                      (if (empty? (:metadata context))
+                        ""
+                        (str " " (:metadata context)))))
+        (append-context-lines! lines
+                               (:children context)
+                               (str prefix (if last? "    " "│   ")))
+        (set! [index] (+ index 1))))))
+
+(defun lines
+  "Render a report tree as text lines.
+
+  Args:
+  - `tree`: Report tree containing `:contexts`.
+  - `options`: Optional selection and collapsing options.
+
+  Returns:
+  Rendered lines beginning with the `spool` heading."
+  [tree & options]
+  (let [tree (update tree
+                     :contexts
+                     [project-contexts (or options {})])
+        lines ["spool"]]
+    (append-context-lines! lines (:contexts tree) "")
+    lines))

@@ -1,0 +1,118 @@
+(ns spool.context)
+
+
+
+;; Global state
+
+(def state
+  "Mutable context collection state.
+
+  `:roots` contains recorded root contexts.
+  `:stack` contains paths to open contexts, with the current context first.
+  `:metadata` contains metadata recorded since the last `reset!`"
+  {:metadata {}
+   :roots []
+   :stack []})
+
+
+
+;; Context mutation
+
+(defun metadata-map
+  "Merge optional context metadata maps.
+
+  Args:
+  - `metadata`: The first optional metadata map.
+  - `rest`: Additional metadata maps.
+
+  Returns:
+  One map containing every non-nil metadata map."
+  [metadata rest]
+  (apply merge
+         (concat [{}]
+                 (filter (concat [metadata] rest)
+                         some?))))
+
+(defun add-child-at-path
+  "Append a context below a path in a context tree.
+
+  Args:
+  - `nodes`: Context nodes at the current tree level.
+  - `path`: Child indexes leading to the parent context.
+  - `child`: Context node to append.
+
+  Returns:
+  A context tree containing the appended child."
+  [nodes path child]
+  (if (empty? path)
+    (append nodes child)
+    (let [index (head path)
+          node (nth nodes index)]
+      (assoc nodes
+             index
+             (update node
+                     :children
+                     [add-child-at-path (tail path) child])))))
+
+(defun update-node-at-path
+  "Update a context node at a path.
+
+  Args:
+  - `nodes`: Context nodes at the current tree level.
+  - `path`: Child indexes leading to the context.
+  - `update-fn`: Function receiving and returning the selected context.
+
+  Returns:
+  A context tree containing the updated context."
+  [nodes path update-fn]
+  (let [index (head path)
+        node (nth nodes index)]
+    (if (empty? (tail path))
+      (assoc nodes index (update-fn node))
+      (assoc nodes
+             index
+             (update node
+                     :children
+                     [update-node-at-path (tail path) update-fn])))))
+
+
+
+;; Context query functions
+
+(defun node-at-path
+  "Return the context node at a path.
+
+  Args:
+  - `nodes`: Context nodes at the current tree level.
+  - `path`: Child indexes leading to the context.
+
+  Returns:
+  The selected context node."
+  [nodes path]
+  (let [node (nth nodes (head path))]
+    (if (empty? (tail path))
+      node
+      (node-at-path (:children node) (tail path)))))
+
+(defun child-count-at-path
+  "Return the number of children below a context path.
+
+  Args:
+  - `nodes`: Context nodes at the current tree level.
+  - `path`: Child indexes leading to the parent context.
+
+  Returns:
+  The number of direct children below the path."
+  [nodes path]
+  (if (empty? path)
+    (count nodes)
+    (let [node (nth nodes (head path))]
+      (child-count-at-path (:children node) (tail path)))))
+
+(defun snapshot
+  "Return the collected context tree.
+
+  Returns:
+  A map containing all root contexts."
+  []
+  {:contexts (:roots state)})
