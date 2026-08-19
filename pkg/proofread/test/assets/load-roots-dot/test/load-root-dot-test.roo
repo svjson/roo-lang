@@ -1,0 +1,3 @@
+(ns proofread.load-root-dot-test)
+
+(def test-value 42)

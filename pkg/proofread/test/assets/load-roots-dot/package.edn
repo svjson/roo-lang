@@ -1,0 +1,4 @@
+{:name proofread-load-roots-dot
+ :version "0.1.0"
+ :load-roots ["."]
+ :dependencies {}}

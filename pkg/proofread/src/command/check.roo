@@ -1,5 +1,6 @@
 (ns proofread.command.check
   (:require [proofread.native :as native]
+            [proofread.source.walk :as walk]
             [proofread.reporter :as reporter]
             [proofread.source :as source]
             [roo.string :as string]))
@@ -236,41 +237,46 @@
       (let [stdin-filename (:stdin-filename options)
             source-text (when stdin-filename (native/read-stdin!))
             source-options (when stdin-filename {:source source-text})
+            collection (unless stdin-filename (walk/collect (:files options)))
             files-to-check (if stdin-filename
                              [stdin-filename]
-                             (native/files! (:files options)))
-            run-result (reduce files-to-check
-                                {:summary {:files 0
-                                          :warnings 0
-                                          :errors 0}
-                                :reporter (reporter/make options files-to-check)}
-                               (fn [{:keys [summary reporter]} file]
-                                 (let [check-result (if stdin-filename
-                                                      (native/check-source-result! file source-text)
-                                                      (native/check-files-result! [file]))
-                                       file-errors (:errors check-result)
-                                       diagnostics (check-diagnostics file
-                                                                      check-result
-                                                                      source-options)
-                                       file-result {:file file
-                                                    :checked (:checked check-result)
-                                                    :errors file-errors
-                                                    :diagnostics diagnostics}]
-                                   {:summary {:files (+ (:files summary)
-                                                       (:checked check-result)
-                                                       file-errors)
-                                              :warnings (+ (:warnings summary)
-                                                           (diagnostic-count diagnostics
-                                                                             :warning))
-                                              :errors (+ (:errors summary)
-                                                        (case file-errors
-                                                          0 (diagnostic-count diagnostics
-                                                                              :error)
-                                                          :default file-errors))}
-                                    :reporter (reporter/report-file! reporter
-                                                                    file-result)})))
-            summary (:summary run-result)]
-        (reporter/report-summary! (:reporter run-result) summary)
-        (case (:errors summary)
-          0 summary
-          :default (native/fail! "proofread: checks failed"))))))
+                             (:files collection))
+            collection-errors (or (:errors collection) [])]
+        (when (not-empty? collection-errors)
+          (map collection-errors prn)
+          (native/fail! "proofread: checks failed"))
+        (let [run-result (reduce files-to-check
+                                 {:summary {:files 0
+                                            :warnings 0
+                                            :errors 0}
+                                  :reporter (reporter/make options files-to-check)}
+                                 (fn [{:keys [summary reporter]} file]
+                                   (let [check-result (if stdin-filename
+                                                        (native/check-source-result! file source-text)
+                                                        (native/check-files-result! [file]))
+                                         file-errors (:errors check-result)
+                                         diagnostics (check-diagnostics file
+                                                                        check-result
+                                                                        source-options)
+                                         file-result {:file file
+                                                      :checked (:checked check-result)
+                                                      :errors file-errors
+                                                      :diagnostics diagnostics}]
+                                     {:summary {:files (+ (:files summary)
+                                                         (:checked check-result)
+                                                         file-errors)
+                                                :warnings (+ (:warnings summary)
+                                                             (diagnostic-count diagnostics
+                                                                               :warning))
+                                                :errors (+ (:errors summary)
+                                                          (case file-errors
+                                                            0 (diagnostic-count diagnostics
+                                                                                :error)
+                                                            :default file-errors))}
+                                      :reporter (reporter/report-file! reporter
+                                                                      file-result)})))
+              summary (:summary run-result)]
+          (reporter/report-summary! (:reporter run-result) summary)
+          (case (:errors summary)
+            0 summary
+            :default (native/fail! "proofread: checks failed")))))))

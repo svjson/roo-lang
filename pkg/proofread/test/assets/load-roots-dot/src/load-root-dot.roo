@@ -1,0 +1,3 @@
+(ns proofread.load-root-dot)
+
+(def sample-config "dot-root")

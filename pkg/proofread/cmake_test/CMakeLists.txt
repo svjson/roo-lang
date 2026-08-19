@@ -26,7 +26,7 @@ add_test(
 set_tests_properties(
   proofread_cli_checks_directory_recursively
   PROPERTIES
-    PASS_REGULAR_EXPRESSION "proofread: 2 files, 0 warnings, 0 errors"
+    PASS_REGULAR_EXPRESSION "proofread: 3 files, 0 warnings, 0 errors"
 )
 
 add_test(
@@ -39,6 +39,18 @@ set_tests_properties(
   proofread_cli_checks_package_root_sources
   PROPERTIES
     PASS_REGULAR_EXPRESSION "proofread: 2 files, 0 warnings, 0 errors"
+)
+
+add_test(
+  NAME proofread_cli_checks_package_root_load_roots_dot
+  COMMAND $<TARGET_FILE:roo_cli>
+          ${PROOFREAD_TEST_PACKAGE}
+          ${PROOFREAD_TEST_ASSETS}/load-roots-dot
+)
+set_tests_properties(
+  proofread_cli_checks_package_root_load_roots_dot
+  PROPERTIES
+    PASS_REGULAR_EXPRESSION "proofread: 3 files, 0 warnings, 0 errors"
 )
 
 add_test(

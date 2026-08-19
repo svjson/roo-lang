@@ -1,0 +1,197 @@
+(ns proofread.source.walk
+  (:require [roo.io :as io]
+            [roo.string :as string]))
+
+(def package-file
+  "Roo package manifest filename."
+  "package.edn")
+
+(defun proofread-file?
+  "Return true when an entry is a Roo or EDN source file."
+  [entry metadata]
+  (and (= :file (:type entry))
+       (contains? [".roo" ".edn"]
+                  (io/extension (:relative-path metadata)))))
+
+(defun package-root?
+  "Return true when a directory contains a Roo package manifest."
+  [entry metadata]
+  (and (= :directory (:type entry))
+       (io/exists? (io/join-path (:path entry) package-file))))
+
+(defun ignored-directory?
+  "Return true when proofread should not enter a directory."
+  [{:keys [name] :as entry} metadata]
+  (and (= :directory (:type entry))
+       (or (and (not (:root? metadata))
+                (string/starts-with? name "."))
+           (= name "build")
+           (string/starts-with? name "build-")
+           (= name "dist"))))
+
+(defun traversable-directory?
+  [entry metadata]
+  (and (= :directory (:type entry))
+       (not (ignored-directory? entry metadata))))
+
+(defun source-walk-descend?
+  [entry metadata]
+  (and (traversable-directory? entry metadata)
+       (or (:root? metadata)
+           (not (package-root? entry metadata)))))
+
+(defun result-path
+  [result]
+  (:path (:entry result)))
+
+(defun source-files-under
+  "Find source files under ROOT while treating nested packages as boundaries."
+  [root]
+  (if (io/directory? root)
+    (map (io/walk! root
+                   {:keep? proofread-file?
+                    :descend? source-walk-descend?})
+         result-path)
+    []))
+
+(defun package-roots-under
+  "Find package directories under ROOT without interpreting their manifests."
+  [root]
+  (if (io/directory? root)
+    (map (io/walk! root
+                   {:keep? package-root?
+                    :descend? traversable-directory?})
+         result-path)
+    []))
+
+(defun default-load-roots
+  [package-dir]
+  (if (io/directory? (io/join-path package-dir "src"))
+    ["src"]
+    ["."]))
+
+(defun package-load-roots
+  [package-dir {:keys [load-roots] :as manifest}]
+  (if (or (nil? load-roots)
+          (empty? load-roots))
+    (default-load-roots package-dir)
+    load-roots))
+
+(defun nested-package-files
+  [root excluded-root]
+  (flat-map (remove (package-roots-under root)
+                    (fn [package-root]
+                      (= package-root excluded-root)))
+            package-files))
+
+(defun package-load-root-files
+  [root package-root]
+  (cond
+    (io/directory? root)
+    (concat (source-files-under root)
+            (nested-package-files root package-root))
+
+    (io/file? root)
+    [root]
+
+    true
+    [root]))
+
+(defun package-files
+  "Find files selected by the package manifest rooted at PACKAGE-DIR."
+  [package-dir]
+  (let [manifest-path (io/join-path package-dir package-file)
+        manifest (io/slurp-edn! manifest-path)
+        load-roots (package-load-roots package-dir manifest)]
+    (concat [manifest-path]
+            (flat-map load-roots
+                      (fn [load-root]
+                        (let [configured-root (io/join-path package-dir
+                                                            (str load-root))
+                              source-root (if (and (= "src" (str load-root))
+                                                   (not (io/directory? configured-root)))
+                                            package-dir
+                                            configured-root)]
+                          (package-load-root-files source-root package-dir)))))))
+
+(defun directory-files
+  "Find proofread inputs below a directory using package-aware policy."
+  [root]
+  (if (io/exists? (io/join-path root package-file))
+    (concat (package-files root)
+            (nested-package-files root root))
+    (concat (source-files-under root)
+            (nested-package-files root nil))))
+
+(defun glob-meta?
+  [path]
+  (any? path
+        (fn [ch]
+          (contains? ["*" "?" "["] (str ch)))))
+
+(defun expand-home
+  [path]
+  (cond
+    (= path "~")
+    (io/home-directory!)
+
+    (or (string/starts-with? path "~/")
+        (string/starts-with? path "~\\"))
+    (io/join-path (io/home-directory!) (substr path 2))
+
+    true
+    path))
+
+(defun expand-pattern
+  "Expand one non-recursive path pattern using roo.io directory filters."
+  [input-pattern]
+  (let [pattern (expand-home input-pattern)]
+    (if (not (glob-meta? pattern))
+      [pattern]
+      (let [parent-pattern (io/dirname pattern)
+            name-pattern (io/basename pattern)
+            parents (if (empty? parent-pattern)
+                      ["."]
+                      (expand-pattern parent-pattern))]
+        (flat-map parents
+                  (fn [parent]
+                    (if (io/directory? parent)
+                      (map (io/list-directory! parent
+                                               {:hidden? true
+                                                :filter name-pattern})
+                           :path)
+                      [])))))))
+
+(defun append-file-if-new
+  [files path]
+  (if (contains? files path)
+    files
+    (append! files path)))
+
+(defun append-files
+  [files paths]
+  (reduce paths files append-file-if-new))
+
+(defun expand-input
+  [path]
+  (if (io/directory? path)
+    (directory-files path)
+    [path]))
+
+(defun collect-pattern
+  [result pattern]
+  (let [matches (expand-pattern pattern)]
+    (if (empty? matches)
+      (update result :errors [append! (str "No files matched pattern: " pattern)])
+      (update result
+              :files
+              [append-files (flat-map matches expand-input)]))))
+
+(defun collect
+  "Resolve CLI paths and patterns into sorted, distinct proofread inputs."
+  [patterns]
+  (let [result (reduce patterns {:files [] :errors []} collect-pattern)]
+    (cond-> (update result :files [sort <])
+            (and (empty? (:files result))
+                 (empty? (:errors result)))
+            (assoc :errors ["No files matched."]))))

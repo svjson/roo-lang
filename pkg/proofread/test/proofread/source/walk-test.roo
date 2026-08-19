@@ -1,0 +1,21 @@
+(ns proofread.source.walk-test
+  (:require proof.core
+            [proofread.source.walk :as walk]))
+
+
+
+;;; proofread.source.walk/collect
+
+(deftest collect/discovers-source-files-and-package-boundaries
+  (is (= ["assets/directory/nested/package.edn"
+          "assets/directory/nested/sample.roo"
+          "assets/directory/root.roo"]
+         (:files (walk/collect ["assets/directory"])))))
+
+(deftest collect/expands-portable-path-patterns
+  (is (= ["assets/valid/sample.roo"]
+         (:files (walk/collect ["assets/valid/[s-z]*.roo"])))))
+
+(deftest collect/reports-unmatched-patterns
+  (is (= ["No files matched pattern: assets/valid/*.missing"]
+         (:errors (walk/collect ["assets/valid/*.missing"])))))
