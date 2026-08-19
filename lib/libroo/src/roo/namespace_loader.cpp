@@ -14,15 +14,6 @@
 
 namespace Roo
 {
-  namespace
-  {
-    bool has_parse_file_context(const Roo::ParseException& e)
-    {
-      const std::string message = e.what();
-      return message.compare(0, 15, "Error parsing '") == 0;
-    }
-  } // namespace
-
   NamespaceLoader::NamespaceLoader(NamespaceSource* source)
     : sources({source})
   {
@@ -117,16 +108,15 @@ namespace Roo
     {
       runtime.eval(fetch_result->source, fetch_result->resolved_path);
     }
-    catch (const Roo::ParseException& e)
+    catch (Roo::ParseException& e)
     {
       loading_stack.pop_back();
       runtime.switch_namespace(current_ns);
-      if (has_parse_file_context(e))
+      if (!e.has_resource_context("parsing"))
       {
-        throw;
+        e.add_resource_context("parsing", fetch_result->resolved_path);
       }
-      throw Roo::ParseException("Error parsing '" + fetch_result->resolved_path +
-                                "': " + e.what());
+      throw;
     }
     catch (...)
     {

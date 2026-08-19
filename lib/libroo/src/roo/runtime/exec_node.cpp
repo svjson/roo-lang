@@ -2,7 +2,6 @@
 #include "roo/runtime/exec_node.h"
 
 #include <exception>
-#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -23,42 +22,26 @@ namespace Roo
 
   namespace
   {
-    bool has_call_context(const std::exception& e)
-    {
-      const std::string message = e.what();
-      return message.compare(0, 20, "Error while calling ") == 0;
-    }
-
-    std::string call_error_message(Context& ctx,
-                                   const ExecNode& node,
-                                   const CallNode& call,
-                                   const std::exception& e)
-    {
-      std::string callee_name = call.callee_name.empty() ? "<anonymous>" : call.callee_name;
-      std::string message = "Error while calling " + callee_name;
-      if (node.source.valid())
-      {
-        message += " at " + ctx.describe_source(node.source);
-      }
-      message += ":\n";
-      message += e.what();
-      return message;
-    }
-
     void rethrow_with_call_context(Context& ctx,
                                    const ExecNode& node,
                                    const CallNode& call,
-                                   const std::exception& e)
+                                   std::exception& e)
     {
-      if (!ctx.source_diagnostics_enabled())
+      const std::string source = node.source.valid() ? ctx.describe_source(node.source) : "";
+      if (auto* roo_exception = dynamic_cast<RooException*>(&e))
       {
+        roo_exception->set_diagnostic_options(ctx.source_diagnostics_enabled(),
+                                              ctx.call_stack_diagnostics_enabled());
+        roo_exception->add_call_context("calling", call.callee_name, source, true);
         throw;
       }
-      if (!ctx.call_stack_diagnostics_enabled() && has_call_context(e))
-      {
-        throw;
-      }
-      throw InvocationException(call_error_message(ctx, node, call, e));
+
+      InvocationException wrapped(e.what());
+      wrapped.set_cause(std::current_exception());
+      wrapped.set_diagnostic_options(ctx.source_diagnostics_enabled(),
+                                     ctx.call_stack_diagnostics_enabled());
+      wrapped.add_call_context("calling", call.callee_name, source, true);
+      throw wrapped;
     }
   } // namespace
 
@@ -245,18 +228,15 @@ namespace Roo
         else if constexpr (std::is_same_v<T, CallNode>)
         {
           sptr_executable fn = n.static_callee;
+          sptr_val dynamic_callee;
 
           if (!fn)
           {
-            sptr_val fn_val = exec(ctx, *n.callee);
-            if (sptr_executable* executable = std::get_if<sptr_executable>(&fn_val->value))
+            dynamic_callee = exec(ctx, *n.callee);
+            if (sptr_executable* executable =
+                  std::get_if<sptr_executable>(&dynamic_callee->value))
             {
               fn = *executable;
-            }
-            else
-            {
-              std::cout << "Node: " << fn_val->to_string() << std::endl;
-              throw RooException("Node is not callable");
             }
           }
 
@@ -270,7 +250,7 @@ namespace Roo
 
           try
           {
-            if (sig)
+            if (dynamic_callee && dynamic_callee->type != Value::Type::FUNCTION)
             {
               sptr_val_v args;
               args.reserve(n.args.size());
@@ -278,21 +258,17 @@ namespace Roo
               {
                 args.push_back(exec(ctx, *arg));
               }
-              sptr_val retval;
-              try
+              return invoke_callable(ctx, dynamic_callee, args);
+            }
+            else if (sig)
+            {
+              sptr_val_v args;
+              args.reserve(n.args.size());
+              for (auto& arg : n.args)
               {
-                retval = sig->invoke(ctx, args);
+                args.push_back(exec(ctx, *arg));
               }
-              catch (const RooException& e)
-              {
-                if (auto enriched = e.with_callee(*x))
-                {
-                  std::rethrow_exception(enriched);
-                }
-                throw;
-              }
-
-              return retval;
+              return sig->invoke(ctx, args);
             }
             else if (x)
             {
@@ -305,7 +281,7 @@ namespace Roo
               return x->execute(ctx, val_args);
             }
           }
-          catch (const std::exception& e)
+          catch (std::exception& e)
           {
             rethrow_with_call_context(ctx, node, n, e);
           }

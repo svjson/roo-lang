@@ -76,8 +76,8 @@ namespace Roo
 
   struct RuntimeOptions
   {
-    bool source_diagnostics = false;
-    bool call_stack_diagnostics = false;
+    bool source_diagnostics = true;
+    bool call_stack_diagnostics = true;
   };
 } // namespace Roo
 

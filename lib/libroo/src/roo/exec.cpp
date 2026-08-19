@@ -1,6 +1,7 @@
 
 #include "roo/exec.h"
 
+#include <exception>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -45,6 +46,33 @@ namespace Roo
     }
 
     throw InvocationException::not_callable(callable, args);
+  }
+
+  sptr_val invoke_indirect_callable(Context& ctx,
+                                    const sptr_val& callable,
+                                    sptr_val_v& args,
+                                    const std::string& operation)
+  {
+    try
+    {
+      return invoke_callable(ctx, callable, args);
+    }
+    catch (RooException& e)
+    {
+      e.set_diagnostic_options(ctx.source_diagnostics_enabled(),
+                               ctx.call_stack_diagnostics_enabled());
+      e.add_indirect_call_context(operation, callable, args, true);
+      throw;
+    }
+    catch (std::exception& e)
+    {
+      InvocationException wrapped(e.what());
+      wrapped.set_cause(std::current_exception());
+      wrapped.set_diagnostic_options(ctx.source_diagnostics_enabled(),
+                                     ctx.call_stack_diagnostics_enabled());
+      wrapped.add_indirect_call_context(operation, callable, args, true);
+      throw wrapped;
+    }
   }
 
   Argument::Argument(const TypeRef* type)

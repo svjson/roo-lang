@@ -6,7 +6,6 @@
 #include <roo/exec.h>
 #include <roo/impl.h>
 #include <roo/lang/func.h>
-#include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
 #include <roo/runtime/value.h>
 
@@ -29,14 +28,8 @@ namespace Roo
 
   EXEC_BODY(ApplyFunction, exec_apply)
   {
-    if (args[0]->type == Value::Type::NIL)
-    {
-      throw InvocationException("Cannot apply nil.");
-    }
-
-    auto& fn = args[0]->exec();
     sptr_val_v fn_args = Roo::get_children(*args.back());
-    return fn.execute(ctx, fn_args);
+    return invoke_indirect_callable(ctx, args[0], fn_args, "applying");
   }
 
   /** DefunForm - roo/defun */
@@ -176,14 +169,7 @@ namespace Roo
     results.reserve(fns.size());
     for (auto& fn_val : fns)
     {
-      if (fn_val->type == Value::Type::KEYWORD)
-      {
-        results.push_back(Dict::get_property(args[0], fn_val));
-      }
-      else
-      {
-        results.push_back(fn_val->exec().execute(ctx, args));
-      }
+      results.push_back(invoke_callable(ctx, fn_val, args));
     }
     return Value::vector(std::move(results));
   }

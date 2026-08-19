@@ -1,12 +1,14 @@
-
 #ifndef __ROO_EXCEPTION_H_
 #define __ROO_EXCEPTION_H_
 
+#include <cstddef>
 #include <exception>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include <roo/runtime/pretty_print.h>
 
 namespace Roo
 {
@@ -14,112 +16,175 @@ namespace Roo
   class Signature;
   struct Value;
 
+  const Pretty::PrintOptions& invocation_args_print_options();
+
+  enum class ErrorCategory
+  {
+    GENERAL,
+    PARSE,
+    IDENTIFIER,
+    INVOCATION,
+    NAMESPACE,
+    TYPE,
+    IO,
+    FORM,
+  };
+
+  enum class ErrorCondition
+  {
+    MESSAGE,
+    NOT_CALLABLE,
+    ARGUMENT_MISMATCH,
+    NO_MATCHING_SIGNATURE,
+  };
+
+  enum class DiagnosticFrameKind
+  {
+    CALL,
+    RESOURCE,
+  };
+
+  struct DiagnosticFacts
+  {
+    std::string detail;
+    std::shared_ptr<Value> target;
+    std::vector<std::shared_ptr<Value>> arguments;
+    std::optional<std::size_t> expected_arity;
+    std::vector<std::string> expected_signatures;
+    std::string callee;
+  };
+
+  struct DiagnosticFrame
+  {
+    DiagnosticFrameKind kind = DiagnosticFrameKind::CALL;
+    std::string operation;
+    std::string subject;
+    std::string source;
+    bool controlled_by_diagnostics = false;
+    std::shared_ptr<Value> target;
+    std::optional<std::vector<std::shared_ptr<Value>>> arguments;
+  };
+
+  struct DiagnosticSite
+  {
+    std::string subject;
+    std::string source;
+  };
+
+  struct Diagnostic
+  {
+    ErrorCategory category = ErrorCategory::GENERAL;
+    ErrorCondition condition = ErrorCondition::MESSAGE;
+    DiagnosticFacts facts;
+    std::optional<DiagnosticSite> site;
+    std::vector<DiagnosticFrame> frames;
+    std::exception_ptr cause;
+    bool source_diagnostics = true;
+    bool call_stack_diagnostics = true;
+  };
+
   class RooException : public std::exception
   {
-    const std::string reason;
-
    public:
-    RooException(const std::string& reason);
+    explicit RooException(const std::string& reason);
 
-    virtual const char* what() const throw() override;
+    const char* what() const noexcept override;
 
-    /**
-     * @brief Gives this exception a chance to rebuild itself now that more
-     * context (the callee being invoked) is available at a catch site. The
-     * default returns an empty exception_ptr, meaning "propagate me
-     * unchanged" - only subclasses that know how to use a callee need to
-     * override this.
-     */
-    virtual std::exception_ptr with_callee(const Executable& callee) const;
+    const Diagnostic& get_diagnostic() const;
+
+    void add_context(DiagnosticFrame frame);
+    void add_call_context(const std::string& operation,
+                          const std::string& binding_name,
+                          const std::string& source = "",
+                          bool controlled_by_diagnostics = false);
+    void add_indirect_call_context(const std::string& operation,
+                                   const std::shared_ptr<Value>& target,
+                                   const std::vector<std::shared_ptr<Value>>& arguments,
+                                   bool controlled_by_diagnostics = false);
+    void add_resource_context(const std::string& operation, const std::string& resource);
+    bool has_resource_context(const std::string& operation) const;
+    void set_form_site(const std::string& form_name, const std::string& source = "");
+    void set_diagnostic_options(bool source_diagnostics, bool call_stack_diagnostics);
+    void set_cause(std::exception_ptr cause);
+
+   protected:
+    RooException(ErrorCategory category, const std::string& reason);
+    explicit RooException(Diagnostic diagnostic);
+
+   private:
+    Diagnostic diagnostic;
+    mutable std::optional<std::string> message;
   };
 
   class ParseException : public RooException
   {
    public:
-    ParseException(const std::string& message);
+    explicit ParseException(const std::string& message);
+  };
+
+  class InvalidFormException : public RooException
+  {
+   public:
+    explicit InvalidFormException(const std::string& message);
   };
 
   class IdentifierException : public RooException
   {
    public:
-    IdentifierException(const std::string& message);
-  };
-
-  class OutOfBoundsException : public RooException
-  {
-   public:
-    OutOfBoundsException(const std::string& message);
+    explicit IdentifierException(const std::string& message);
   };
 
   class InvocationException : public RooException
   {
    public:
-    InvocationException(const std::string& message);
+    explicit InvocationException(const std::string& message);
+
+    static InvocationException not_callable(
+      const std::shared_ptr<Value>& target,
+      const std::vector<std::shared_ptr<Value>>& arguments);
+    static InvocationException argument_mismatch(
+      const std::shared_ptr<Value>& target,
+      const std::vector<std::shared_ptr<Value>>& arguments,
+      std::size_t expected_arity);
+
+   protected:
+    explicit InvocationException(Diagnostic diagnostic);
   };
 
-  /**
-   * @brief Thrown when a call matched none of a callee's signatures.
-   * Message text is assembled lazily on first what()/get_* access rather
-   * than at construction, since it is only ever needed once the exception
-   * actually surfaces.
-   */
   class NoMatchingSignatureException : public InvocationException
   {
    public:
-    /**
-     * @brief Builds the exception with full context: the callee, all of its
-     * accepted signatures, and the received arguments.
-     */
     static NoMatchingSignatureException no_matching_signature(
-      const Executable& callee, const std::vector<std::shared_ptr<Value>>& args);
-
-    /**
-     * @brief Builds the exception from a single Signature that failed to
-     * accept `args`, without knowledge of the owning callee. Used where only
-     * the Signature itself is in scope; prefer the Executable-based overload
-     * above when the callee is available. A caller that later learns the
-     * callee can enrich this via with_callee().
-     */
+      const Executable& callee,
+      const std::vector<std::shared_ptr<Value>>& args);
     static NoMatchingSignatureException no_matching_signature(
-      const Signature& signature, const std::vector<std::shared_ptr<Value>>& args);
-
-    const char* what() const throw() override;
-
-    std::exception_ptr with_callee(const Executable& callee) const override;
+      const Signature& signature,
+      const std::vector<std::shared_ptr<Value>>& args);
 
     const std::string& get_callee() const;
     const std::vector<std::string>& get_expected_signatures() const;
     const std::vector<std::shared_ptr<Value>>& get_args() const;
 
    private:
-    NoMatchingSignatureException(std::string callee,
-                                 std::vector<std::string> expected_signatures,
-                                 std::vector<std::shared_ptr<Value>> args);
-
-    std::string render_message() const;
-
-    const std::string callee;
-    const std::vector<std::string> expected_signatures;
-    const std::vector<std::shared_ptr<Value>> args;
-    mutable std::optional<std::string> message;
+    explicit NoMatchingSignatureException(Diagnostic diagnostic);
   };
 
   class NamespaceException : public RooException
   {
    public:
-    NamespaceException(const std::string& message);
+    explicit NamespaceException(const std::string& message);
   };
 
   class CyclicNamespaceException : public NamespaceException
   {
    public:
-    CyclicNamespaceException(const std::string& message);
+    explicit CyclicNamespaceException(const std::string& message);
   };
 
   class TypeError : public RooException
   {
    public:
-    TypeError(const std::string& message);
+    explicit TypeError(const std::string& message);
   };
 
   class IOException : public RooException

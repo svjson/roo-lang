@@ -314,6 +314,18 @@ namespace Roo
    */
   ROO_API sptr_val invoke_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args);
 
+  /**
+   * Invoke a callable reached indirectly through another Roo operation.
+   *
+   * Failures retain a source-less call frame containing the runtime target and
+   * expanded arguments. The enclosing CallNode remains responsible for the
+   * source location of the higher-order operation itself.
+   */
+  ROO_API sptr_val invoke_indirect_callable(Context& ctx,
+                                            const sptr_val& callable,
+                                            sptr_val_v& args,
+                                            const std::string& operation);
+
   typedef Signature sig;
   typedef std::unique_ptr<Signature> uptr_sig;
   typedef std::vector<std::unique_ptr<Signature>> uptr_sig_v;

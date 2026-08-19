@@ -40,12 +40,6 @@ namespace Roo
       return fs;
     }
 
-    bool has_parse_file_context(const Roo::ParseException& e)
-    {
-      const std::string message = e.what();
-      return message.compare(0, 15, "Error parsing '") == 0;
-    }
-
     RandomState make_random_state()
     {
       std::random_device rd;
@@ -417,19 +411,20 @@ namespace Roo
     {
       eval(ctx, raw_file, file_name);
     }
-    catch (const Roo::ParseException& e)
+    catch (Roo::ParseException& e)
     {
       restore_file_context();
-      if (has_parse_file_context(e))
+      if (!e.has_resource_context("parsing"))
       {
-        throw;
+        e.add_resource_context("parsing", file_name);
       }
-      throw Roo::ParseException("Error parsing '" + file_name + "': " + e.what());
+      throw;
     }
-    catch (const Roo::RooException& e)
+    catch (Roo::RooException& e)
     {
       restore_file_context();
-      throw Roo::RooException("Error reading '" + file_name + "': " + e.what());
+      e.add_resource_context("reading", file_name);
+      throw;
     }
     if (namespace_loader)
     {
@@ -496,7 +491,9 @@ namespace Roo
     sptr_val inv = lookup(function);
     if (inv->type != Value::Type::FUNCTION)
     {
-      throw InvocationException(inv->to_string() + " is not executable.");
+      InvocationException error = InvocationException::not_callable(inv, args);
+      error.add_call_context("invoking", function);
+      throw error;
     }
 
     Executable& exec = inv->exec();
@@ -504,10 +501,17 @@ namespace Roo
     {
       return exec.execute(ctx, args);
     }
+    catch (RooException& e)
+    {
+      e.add_call_context("invoking", function);
+      throw;
+    }
     catch (std::exception& e)
     {
-      throw InvocationException("Error while invoking " + function + ":\n" +
-                                inv->to_string() + "\n" + e.what());
+      InvocationException wrapped(e.what());
+      wrapped.set_cause(std::current_exception());
+      wrapped.add_call_context("invoking", function);
+      throw wrapped;
     }
   }
 

@@ -13,6 +13,26 @@
 
 namespace Roo
 {
+  namespace
+  {
+    void rethrow_with_form_site(LowerContext& ctx,
+                                const sptr_ast_node& form,
+                                const std::string& form_name,
+                                InvalidFormException& e)
+    {
+      const SourceRef& source_ref = form->get_source();
+      const std::string source =
+        ctx.ctx && source_ref.valid() ? ctx.ctx->describe_source(source_ref) : "";
+      if (ctx.ctx)
+      {
+        e.set_diagnostic_options(ctx.ctx->source_diagnostics_enabled(),
+                                 ctx.ctx->call_stack_diagnostics_enabled());
+      }
+      e.set_form_site(form_name, source);
+      throw;
+    }
+  } // namespace
+
   int lowered_expressions = 0;
   int lowered_literals = 0;
   int lower_time_exec_resolutions = 0;
@@ -131,7 +151,6 @@ namespace Roo
     case Form::NUMBER:
     case Form::STRING:
     case Form::BOOLEAN:
-    case Form::HOST_OBJECT:
     case Form::KEYWORD:
     case Form::B_TRUE:
     case Form::B_FALSE:
@@ -221,7 +240,15 @@ namespace Roo
           {
             if (auto* sform = dynamic_cast<SpecialForm*>(&literal_callee->value->exec()))
             {
-              uptr_exec_node sform_lowered = sform->lower_form(ctx, obj);
+              uptr_exec_node sform_lowered;
+              try
+              {
+                sform_lowered = sform->lower_form(ctx, obj);
+              }
+              catch (InvalidFormException& e)
+              {
+                rethrow_with_form_site(ctx, obj, children[0]->to_string(), e);
+              }
               if (sform_lowered)
               {
                 sform_lowered->source = obj->get_source();
@@ -321,11 +348,6 @@ namespace Roo
     }
     case Form::NIL:
       return std::make_unique<ExecNode>(Constant::NIL);
-    case Form::HOST_OBJECT:
-    {
-      sptr_ast_node ho = obj;
-      return std::make_unique<ExecNode>(obj, LiteralNode(Value::object(ho), obj));
-    }
     case Form::KEYWORD:
       return std::make_unique<ExecNode>(
         obj,
@@ -347,7 +369,9 @@ namespace Roo
       case Roo::AST::NumberType::FLOAT:
         return std::make_unique<ExecNode>(
           obj,
-          LiteralNode(Value::number(num_obj.float_value()), obj));
+          LiteralNode(Value::number(Value::Number{.num_type = Value::NumberType::FLOAT,
+                                                   .float_value = num_obj.float_value()}),
+                      obj));
       }
 
       throw RooException("Unexpected number type");

@@ -159,7 +159,9 @@ namespace Roo
     sptr_val inv = lookup(fn_name);
     if (inv->type != Value::Type::FUNCTION)
     {
-      throw InvocationException(inv->to_string() + " is not executable.");
+      InvocationException error = InvocationException::not_callable(inv, args);
+      error.add_call_context("calling", fn_name);
+      throw error;
     }
 
     Executable& exec = inv->exec();
@@ -169,10 +171,17 @@ namespace Roo
     {
       return exec.execute(*this, mutable_args);
     }
+    catch (RooException& e)
+    {
+      e.add_call_context("calling", fn_name);
+      throw;
+    }
     catch (std::exception& e)
     {
-      throw InvocationException("Error while calling " + fn_name + ":\n" + inv->to_string() +
-                                "\n" + e.what());
+      InvocationException wrapped(e.what());
+      wrapped.set_cause(std::current_exception());
+      wrapped.add_call_context("calling", fn_name);
+      throw wrapped;
     }
   }
 
