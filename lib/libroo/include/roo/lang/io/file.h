@@ -26,12 +26,16 @@ namespace Roo
    * @code
    * (roo.io/spit! "notes.txt" "file contents")
    * => nil
+   *
+   * (roo.io/spit! "notes.txt" "file contents" {:atomic? true})
+   * => nil
    * @endcode
    *
    * | Arg      | Description                                                        |
    * | -------- | ------------------------------------------------------------------ |
    * | path     | The path of the file to write.                                     |
    * | contents | The text contents to write to the file.                            |
+   * | options  | Optional map with :atomic? boolean.                                 |
    */
   FUNC(SpitBangFunction, spit)
 
@@ -135,13 +139,16 @@ namespace Roo
    *
    * (roo.io/spit-edn! "config.edn" {:name "Roo" :ok true} {:pretty? true})
    * => nil
+   *
+   * (roo.io/spit-edn! "config.edn" {:name "Roo" :ok true} {:atomic? true})
+   * => nil
    * @endcode
    *
    * | Arg     | Description                                                        |
    * | ------- | ------------------------------------------------------------------ |
    * | path    | The path of the EDN file to write.                                 |
    * | value   | The value to serialize with to_string().                           |
-   * | options | Optional map with :pretty? boolean and :indent number.             |
+   * | options | Optional map with :pretty?, :indent, and :atomic? values.           |
    */
   FUNC(SpitEdnBangFunction, spit_edn)
 } // namespace Roo

@@ -10,6 +10,8 @@ namespace Roo
    public:
     const std::string read(const std::string& file_name) override;
     void write(const std::string& file_name, const std::string& contents) override;
+    void write_atomically(const std::string& file_name,
+                          const std::string& contents) override;
     void copy_file(const std::string& source, const std::string& destination) override;
     void remove_tree(const std::string& path) override;
     void create_symlink(const std::string& source, const std::string& link) override;

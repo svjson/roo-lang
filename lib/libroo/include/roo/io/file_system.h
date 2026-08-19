@@ -38,6 +38,8 @@ namespace Roo
 
     virtual const std::string read(const std::string& file_name) = 0;
     virtual void write(const std::string& file_name, const std::string& contents);
+    virtual void write_atomically(const std::string& file_name,
+                                  const std::string& contents);
     virtual void copy_file(const std::string& source, const std::string& destination);
     virtual void remove_tree(const std::string& path);
     virtual void create_symlink(const std::string& source, const std::string& link);

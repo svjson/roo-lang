@@ -1,6 +1,7 @@
 #include "roo/io/dir_root_file_system.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
@@ -90,7 +91,7 @@ namespace Roo
       if (stream.fail())
       {
         stream.close();
-        throw RooException("File not found on load path: '" + path + "'");
+        throw IOException("File not found on load path: '" + path + "'");
       }
       std::stringstream buffer;
       buffer << stream.rdbuf();
@@ -127,6 +128,17 @@ namespace Roo
       }
       return "";
     }
+
+    std::filesystem::path temporary_sibling(const std::filesystem::path& path)
+    {
+      static std::atomic<unsigned long long> sequence{0};
+      const auto timestamp =
+        std::chrono::high_resolution_clock::now().time_since_epoch().count();
+      std::filesystem::path temporary = path;
+      temporary += ".tmp-" + std::to_string(timestamp) + "-" +
+                   std::to_string(sequence.fetch_add(1));
+      return temporary;
+    }
   } // namespace
 
   DirRootFileSystem::DirRootFileSystem(const std::string& dir_root)
@@ -152,7 +164,7 @@ namespace Roo
       {
       }
     }
-    throw RooException("File not found on load path: '" + file_name + "'");
+    throw IOException("File not found on load path: '" + file_name + "'");
   }
 
   void DirRootFileSystem::write(const std::string& file_name, const std::string& contents)
@@ -168,10 +180,48 @@ namespace Roo
     if (stream.fail())
     {
       stream.close();
-      throw RooException("Could not write file: '" + path.string() + "'");
+      throw IOException("Could not write file: '" + path.string() + "'");
     }
     stream << contents;
     stream.close();
+  }
+
+  void DirRootFileSystem::write_atomically(const std::string& file_name,
+                                           const std::string& contents)
+  {
+    const std::filesystem::path path = writable_path(load_paths, file_name);
+    const auto parent_path = path.parent_path();
+    if (!parent_path.empty())
+    {
+      std::filesystem::create_directories(parent_path);
+    }
+
+    const std::filesystem::path temporary = temporary_sibling(path);
+    {
+      std::ofstream stream(temporary);
+      if (stream.fail())
+      {
+        throw IOException("Could not write temporary file: '" + temporary.string() + "'");
+      }
+      stream << contents;
+      stream.flush();
+      if (stream.fail())
+      {
+        stream.close();
+        std::filesystem::remove(temporary);
+        throw IOException("Could not write temporary file: '" + temporary.string() + "'");
+      }
+      stream.close();
+    }
+
+    std::error_code error;
+    std::filesystem::rename(temporary, path, error);
+    if (error)
+    {
+      std::filesystem::remove(temporary);
+      throw IOException("Could not atomically replace file: '" + path.string() +
+                        "': " + error.message());
+    }
   }
 
   void DirRootFileSystem::copy_file(const std::string& source,
@@ -192,8 +242,8 @@ namespace Roo
                                ec);
     if (ec)
     {
-      throw RooException("Could not copy file: '" + source_path.string() + "' -> '" +
-                         destination_path.string() + "': " + ec.message());
+      throw IOException("Could not copy file: '" + source_path.string() + "' -> '" +
+                        destination_path.string() + "': " + ec.message());
     }
   }
 
@@ -204,8 +254,7 @@ namespace Roo
     std::filesystem::remove_all(target, ec);
     if (ec)
     {
-      throw RooException("Could not remove path: '" + target.string() +
-                         "': " + ec.message());
+      throw IOException("Could not remove path: '" + target.string() + "': " + ec.message());
     }
   }
 
@@ -230,8 +279,8 @@ namespace Roo
     }
     if (ec)
     {
-      throw RooException("Could not create symlink: '" + source_path.string() + "' -> '" +
-                         link_path.string() + "': " + ec.message());
+      throw IOException("Could not create symlink: '" + source_path.string() + "' -> '" +
+                        link_path.string() + "': " + ec.message());
     }
   }
 
@@ -249,8 +298,8 @@ namespace Roo
     const std::filesystem::path link_target = std::filesystem::read_symlink(target, ec);
     if (ec)
     {
-      throw RooException("Could not read symlink: '" + target.string() +
-                         "': " + ec.message());
+      throw IOException("Could not read symlink: '" + target.string() +
+                        "': " + ec.message());
     }
     return link_target.lexically_normal().string();
   }
@@ -320,7 +369,7 @@ namespace Roo
     std::error_code ec;
     if (!std::filesystem::is_directory(directory, ec))
     {
-      throw RooException("Directory not found on load path: '" + path + "'");
+      throw IOException("Directory not found on load path: '" + path + "'");
     }
 
     std::vector<DirectoryEntry> entries;
@@ -371,7 +420,7 @@ namespace Roo
     }
     if (home.empty())
     {
-      throw RooException("Could not determine home directory");
+      throw IOException("Could not determine home directory");
     }
     return home;
   }

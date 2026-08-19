@@ -9,6 +9,11 @@ namespace Roo
     throw IOException("File system does not support writing: '" + file_name + "'");
   }
 
+  void FileSystem::write_atomically(const std::string& file_name, const std::string&)
+  {
+    throw IOException("File system does not support atomic writing: '" + file_name + "'");
+  }
+
   void FileSystem::copy_file(const std::string& source, const std::string& destination)
   {
     throw IOException("File system does not support copying files: '" + source + "' -> '" +

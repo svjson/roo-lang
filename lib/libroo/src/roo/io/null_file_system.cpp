@@ -29,6 +29,11 @@ namespace Roo
     throw no_file_system_access("write", file_name);
   }
 
+  void NullFileSystem::write_atomically(const std::string& file_name, const std::string&)
+  {
+    throw no_file_system_access("atomic-write", file_name);
+  }
+
   void NullFileSystem::copy_file(const std::string& source, const std::string&)
   {
     throw no_file_system_access("copy-file", source);

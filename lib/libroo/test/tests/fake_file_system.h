@@ -22,6 +22,8 @@ namespace RooTest
     bool has_file(const std::string& file_name) const;
     const std::string& get_file(const std::string& file_name) const;
     void write(const std::string& file_name, const std::string& contents) override;
+    void write_atomically(const std::string& file_name,
+                          const std::string& contents) override;
     void copy_file(const std::string& source, const std::string& destination) override;
     void remove_tree(const std::string& path) override;
     void create_symlink(const std::string& source, const std::string& link) override;

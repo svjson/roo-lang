@@ -49,6 +49,12 @@ namespace RooTest
     fs_contents[normalize(file_name)] = contents;
   }
 
+  void FakeFileSystem::write_atomically(const std::string& file_name,
+                                        const std::string& contents)
+  {
+    fs_contents[normalize(file_name)] = contents;
+  }
+
   void FakeFileSystem::copy_file(const std::string& source, const std::string& destination)
   {
     fs_contents[normalize(destination)] = fs_contents.at(normalize(source));

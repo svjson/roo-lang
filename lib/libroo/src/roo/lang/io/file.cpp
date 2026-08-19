@@ -16,15 +16,30 @@ namespace Roo
 {
   namespace
   {
+    struct WriteOptions
+    {
+      bool atomic = false;
+    };
+
     struct EdnWriteOptions
     {
       bool pretty = false;
       int indent = 2;
+      bool atomic = false;
     };
+
+    WriteOptions parse_write_options(Context& ctx, Value& options)
+    {
+      static MapSchema schema({}, {{"atomic?", &Type::BOOL}});
+      MapSchema::Inspector opts = schema.bind(ctx, options);
+      return {opts.boolean("atomic?", false)};
+    }
 
     EdnWriteOptions parse_edn_write_options(Context& ctx, Value& options)
     {
-      static MapSchema schema({}, {{"pretty?", &Type::BOOL}, {"indent", &Type::NUMBER}});
+      static MapSchema schema(
+        {},
+        {{"pretty?", &Type::BOOL}, {"indent", &Type::NUMBER}, {"atomic?", &Type::BOOL}});
       MapSchema::Inspector opts = schema.bind(ctx, options);
 
       const int indent = opts.i32("indent", 2);
@@ -33,7 +48,24 @@ namespace Roo
         throw TypeError("roo.io/spit-edn! option :indent must not be negative.");
       }
 
-      return {opts.boolean("pretty?", false), indent};
+      return {opts.boolean("pretty?", false),
+              indent,
+              opts.boolean("atomic?", false)};
+    }
+
+    void write_contents(Context& ctx,
+                        const std::string& path,
+                        const std::string& contents,
+                        bool atomic)
+    {
+      if (atomic)
+      {
+        ctx.file_system().write_atomically(path, contents);
+      }
+      else
+      {
+        ctx.file_system().write(path, contents);
+      }
     }
 
     sptr_val edn_to_rt_value(const AST::ASTNode& obj)
@@ -125,12 +157,16 @@ namespace Roo
 
   /** SpitBangFunction - roo.io/spit! */
   FUNC_IMPL(SpitBangFunction,
-            SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
-                 EXEC_DISPATCH(&SpitBangFunction::exec_spit))))
+            MULTI_SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
+                       EXEC_DISPATCH(&SpitBangFunction::exec_spit)),
+                      (FN_ARGS((&Type::STRING), (&Type::STRING), (&Type::MAP)),
+                       EXEC_DISPATCH(&SpitBangFunction::exec_spit))))
 
   EXEC_BODY(SpitBangFunction, exec_spit)
   {
-    ctx.file_system().write(args[0]->str(), args[1]->str());
+    const WriteOptions options =
+      args.size() > 2 ? parse_write_options(ctx, *args[2]) : WriteOptions{};
+    write_contents(ctx, args[0]->str(), args[1]->str(), options.atomic);
     return Constant::NIL;
   }
 
@@ -210,10 +246,10 @@ namespace Roo
   {
     const EdnWriteOptions options =
       args.size() > 2 ? parse_edn_write_options(ctx, *args[2]) : EdnWriteOptions{};
-    ctx.file_system().write(
-      args[0]->str(),
+    const std::string contents =
       options.pretty ? Pretty::print(*args[1], Pretty::PrintOptions{options.indent})
-                     : args[1]->to_string());
+                     : args[1]->to_string();
+    write_contents(ctx, args[0]->str(), contents, options.atomic);
     return Constant::NIL;
   }
 
