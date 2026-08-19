@@ -92,9 +92,16 @@
 
 ;; cli-trooper/run!
 
-(deftest run!/returns-success-after-command-execution
+(deftest run!/returns-zero-for-a-non-integer-command-result
   (is (= 0
          (cli/run! runtime-config
+                   {:args ["inspect" "source.roo"]}))))
+
+(deftest run!/returns-an-integer-command-result-as-the-exit-code
+  (is (= 1
+         (cli/run! (assoc-in runtime-config
+                             [:commands "inspect" :execute!]
+                             (fn [_context _options] 1))
                    {:args ["inspect" "source.roo"]}))))
 
 (deftest run!/returns-a-command-line-error-code

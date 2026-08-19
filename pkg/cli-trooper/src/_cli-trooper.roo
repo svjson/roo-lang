@@ -79,14 +79,20 @@
   - `context`: The CLI invocation context containing arguments under `:args`.
 
   Returns:
-  Exit code `0` after successful command execution, or `2` after a
-  configuration, argument, conversion, validation, or execution-resolution
-  failure."
+  The integer returned by the command, `0` after a successful command returns
+  any other value, or `2` after a configuration, argument, conversion,
+  validation, or execution-resolution failure."
   [supplied context]
   (let [result (run supplied context)]
-    (if (not-empty? (:errors result))
+    (cond
+      (not-empty? (:errors result))
       (do
         (map (diagnostic/lines (:errors result))
              (get context :cli-trooper/print! prn!))
         2)
+
+      (int? (:result result))
+      (:result result)
+
+      :else
       0)))

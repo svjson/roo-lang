@@ -30,4 +30,5 @@ declared `:execute!` function.
 
 `cli-trooper/run` returns the parsed command, practical options, structured
 errors, and the command execution result. `cli-trooper/run!` prints rendered CLI
-diagnostics and returns `0` after invocation or `2` for CLI failures.
+diagnostics and returns an integer command result as the process status, `0`
+for other successful results, or `2` for CLI failures.
