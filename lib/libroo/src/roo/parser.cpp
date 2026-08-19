@@ -182,7 +182,7 @@ namespace Roo
           ctx.begin_list(Token::SQUOT,
                          source_ref(source_file_id, quoted_list_span, source_diagnostics));
         }
-        else if (sym.token == Token::SYMBOL)
+        else if (sym.token == Token::SYMBOL || sym.token == Token::NUMBER)
         {
           SourceSpan quoted_symbol_span = quote_span;
           quoted_symbol_span.end = sym.span.end;

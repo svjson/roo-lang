@@ -48,5 +48,5 @@ TEST_F(Semantic_FunctionArgumentDestructuring,
   Roo::sptr_val result = runtime.eval("(my-func nil)");
 
   // Then
-  EXPECT_EQ(result->to_string(), "nil");
+  EXPECT_EQ(*result, *Roo::Constant::NIL);
 }

@@ -82,10 +82,6 @@ namespace Roo
         return Value::keyword("function");
       case Form::MACRO:
         return Value::keyword("macro");
-      case Form::HOST_OBJECT:
-        return Value::keyword("host-object");
-      case Form::HOST_SEQ:
-        return Value::keyword("host-seq");
       case Form::ANY:
         return Value::keyword("any");
       }

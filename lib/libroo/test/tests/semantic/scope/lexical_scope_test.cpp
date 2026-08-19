@@ -52,6 +52,25 @@ TEST_F(LexicalScope, lambda_retains_mutated_enclosing_binding_across_calls)
   EXPECT_EQ(*result, *runtime.eval("[1 2]"));
 }
 
+TEST_F(LexicalScope, sibling_lambdas_capture_enclosing_bindings_independently)
+{
+  auto result = runtime.eval(R"(
+    (defun cell [initial]
+      (let [state initial]
+        {:read (fn [] state)
+         :write (fn [new-state] (set! [state] new-state))}))
+    (def c (cell 0))
+    (def read (:read c))
+    (def write (:write c))
+    (write 5)
+    (read)
+  )");
+
+  // set! rebinds the writer's detached capture; it does not rebind the
+  // independently captured state binding used by the reader.
+  EXPECT_EQ(*result, *runtime.eval("0"));
+}
+
 TEST_F(LexicalScope, separately_created_lambdas_have_independent_bindings)
 {
   auto result = runtime.eval(R"(
