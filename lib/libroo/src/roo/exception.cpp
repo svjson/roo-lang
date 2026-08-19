@@ -152,4 +152,9 @@ namespace Roo
   {
   }
 
+  IOException::IOException(const std::string& message)
+    : RooException(message)
+  {
+  }
+
 } // namespace Roo

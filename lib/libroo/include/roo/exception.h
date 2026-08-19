@@ -121,6 +121,12 @@ namespace Roo
    public:
     TypeError(const std::string& message);
   };
+
+  class IOException : public RooException
+  {
+   public:
+    explicit IOException(const std::string& message);
+  };
 } // namespace Roo
 
 #endif

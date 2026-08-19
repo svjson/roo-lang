@@ -6,16 +6,16 @@ namespace Roo
 {
   namespace
   {
-    RooException no_file_system_access(const std::string& operation,
-                                       const std::string& path = "")
+    IOException no_file_system_access(const std::string& operation,
+                                      const std::string& path = "")
     {
       if (path.empty())
       {
-        return RooException("This Roo context does not provide any file system access for " +
-                            operation);
+        return IOException("This Roo context does not provide any file system access for " +
+                           operation);
       }
-      return RooException("This Roo context does not provide any file system access for " +
-                          operation + ": '" + path + "'");
+      return IOException("This Roo context does not provide any file system access for " +
+                         operation + ": '" + path + "'");
     }
   } // namespace
 

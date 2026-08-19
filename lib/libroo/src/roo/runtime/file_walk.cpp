@@ -185,7 +185,7 @@ namespace Roo::FileWalk
       const FileSystemStat stat = file_system.stat(root);
       if (!stat.exists)
       {
-        throw RooException("Filesystem walk root does not exist: '" + root + "'");
+        throw IOException("Filesystem walk root does not exist: '" + root + "'");
       }
 
       const std::filesystem::path root_path(root);
