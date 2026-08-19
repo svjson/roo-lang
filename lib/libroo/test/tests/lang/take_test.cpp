@@ -2,6 +2,7 @@
 #include <vector>
 
 #include <roo/adapter.h>
+#include <roo/exception.h>
 
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
@@ -19,6 +20,12 @@ TEST_F(TakeFunction, take)
   EXPECT_EQ(runtime.eval("(take 5 [1 2 3])")->to_string(), "[1 2 3]");
   EXPECT_EQ(runtime.eval("(take 10 [])")->to_string(), "[]");
   EXPECT_EQ(runtime.eval("(take 0 [1 2 3])")->to_string(), "[]");
+}
+
+TEST_F(TakeFunction, nil_count_throws_type_error)
+{
+  EXPECT_THROW(runtime.eval("(take nil [1 2 3])"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(take nil nil)"), Roo::TypeError);
 }
 
 TEST_F(TakeFunction, take_string_as_char_sequence)

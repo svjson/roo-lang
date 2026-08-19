@@ -741,6 +741,11 @@ namespace Roo
 
   EXEC_BODY(RemoveNthFunction, exec_remove_nth)
   {
+    if (args[1]->type != Value::Type::NUMBER)
+    {
+      throw TypeError("remove-nth: index must be a number.");
+    }
+
     if (*args[0] == *Constant::NIL) return Constant::NIL;
 
     int n = std::get<const Value::Number>(args.back()->value).get_int();
@@ -771,12 +776,17 @@ namespace Roo
 
   EXEC_BODY(RemoveNthBangFunction, exec_remove_nth_bang)
   {
+    if (args[1]->type != Value::Type::NUMBER)
+    {
+      throw TypeError("remove-nth!: index must be a number.");
+    }
+
     auto& seq = *args[0];
     int n = std::get<const Value::Number>(args[1]->value).get_int();
 
     if (seq.type == Value::Type::NATIVE_OBJECT)
     {
-      throw TypeError("remove-nth! not implemented for native host sequences.");
+      throw TypeError("remove-nth!: not implemented for native host sequences.");
     }
 
     sptr_val_v& children = std::get<sptr_val_v>(seq.value);
@@ -929,6 +939,11 @@ namespace Roo
 
   EXEC_BODY(TakeFunction, exec_take)
   {
+    if (args[0]->type != Value::Type::NUMBER)
+    {
+      throw TypeError("take: count must be a number.");
+    }
+
     size_t amount = std::get<const Value::Number>(args[0]->value).get_int();
     sptr_val_v result;
 

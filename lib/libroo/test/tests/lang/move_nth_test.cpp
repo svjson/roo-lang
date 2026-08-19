@@ -73,6 +73,8 @@ TEST_F(MoveNthFunction, does_not_mutate_the_original_sequence)
 
 TEST_F(MoveNthFunction, rejects_fractional_indexes)
 {
+  EXPECT_THROW(runtime.eval("(move-nth [:a :b] nil 1)"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(move-nth [:a :b] 0 nil)"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(move-nth [:a :b] 0.5 1)"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(move-nth [:a :b] 0 1.5)"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(move-nth nil 0.5 1)"), Roo::TypeError);

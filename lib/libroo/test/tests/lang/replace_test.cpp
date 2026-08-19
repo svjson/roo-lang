@@ -66,6 +66,8 @@ TEST_F(ReplaceFunction, accepts_nil_and_native_host_sequences)
 
 TEST_F(ReplaceFunction, requires_integer_boundaries_and_sequence_values_for_sequences)
 {
+  EXPECT_THROW(runtime.eval("(replace [1 2] nil 1 [3])"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(replace [1 2] 0 nil [3])"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(replace [1 2] 0.5 1 [3])"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(replace [1 2] 0 1.5 [3])"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(replace [1 2] 0 1 3)"), Roo::InvocationException);

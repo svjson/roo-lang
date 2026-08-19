@@ -59,6 +59,8 @@ TEST_F(MoveNthBangFunction, resolves_and_clamps_indexes)
 
 TEST_F(MoveNthBangFunction, rejects_invalid_arguments)
 {
+  EXPECT_THROW(runtime.eval("(move-nth! [:a :b] nil 1)"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(move-nth! [:a :b] 0 nil)"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(move-nth! [:a :b] 0.5 1)"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(move-nth! nil 0.5 1)"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(move-nth! [:a :b] 0 :near 1)"), Roo::InvocationException);

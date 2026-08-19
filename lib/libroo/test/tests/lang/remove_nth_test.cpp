@@ -69,6 +69,14 @@ TEST_F(RemoveNthFunction, negative_index_returns_original)
   ASSERT_EQ(Roo::count(*result), 3);
 }
 
+TEST_F(RemoveNthFunction, nil_index_throws_type_error)
+{
+  EXPECT_THROW(runtime.eval("(remove-nth [1 2 3] nil)"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(remove-nth nil nil)"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(remove-nth! [1 2 3] nil)"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(remove-nth! nil nil)"), Roo::TypeError);
+}
+
 TEST_F(RemoveNthFunction, does_not_mutate_original)
 {
   // Given

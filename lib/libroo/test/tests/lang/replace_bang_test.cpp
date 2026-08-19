@@ -61,6 +61,8 @@ TEST_F(ReplaceBangFunction, mutates_native_host_sequences)
 
 TEST_F(ReplaceBangFunction, validates_arguments_and_rejects_immutable_targets)
 {
+  EXPECT_THROW(runtime.eval("(replace! [1 2] nil 1 [3])"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(replace! [1 2] 0 nil [3])"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(replace! [1 2] 0.5 1 [3])"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(replace! [1 2] 0 1.5 [3])"), Roo::TypeError);
   EXPECT_THROW(runtime.eval("(replace! [1 2] 0 1 3)"), Roo::InvocationException);

@@ -161,10 +161,15 @@ namespace Roo
 
   std::int64_t checked_sequence_index(const Value& value, const std::string& description)
   {
+    if (value.type != Value::Type::NUMBER)
+    {
+      throw TypeError(description + ": must be a number.");
+    }
+
     const Value::Number& index = value.num();
     if (index.num_type == Value::NumberType::FLOAT)
     {
-      throw TypeError(description + " must be an integer.");
+      throw TypeError(description + ": must be an integer.");
     }
 
     return index.num_type == Value::NumberType::INT ? index.int_value : index.long_value;
