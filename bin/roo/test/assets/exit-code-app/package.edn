@@ -1,0 +1,4 @@
+{:name roo-exit-code-app
+ :version "0.1.0"
+ :load-roots ["src"]
+ :main exit-code.app/main}

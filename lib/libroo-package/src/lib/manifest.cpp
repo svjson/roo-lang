@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -751,6 +752,38 @@ namespace Roo::Package
       state.visited.insert(package_root);
     }
   } // namespace
+
+  std::optional<std::string> find_package_root(Roo::FileSystem& fs,
+                                               const std::string& path)
+  {
+    std::filesystem::path current(path);
+    if (current.is_relative())
+    {
+      current = std::filesystem::path(fs.current_directory()) / current;
+    }
+    current = current.lexically_normal();
+    if (fs.is_file(current.string()))
+    {
+      current = current.parent_path();
+    }
+
+    while (!current.empty())
+    {
+      if (fs.is_file((current / "package.edn").string()))
+      {
+        return current.lexically_normal().string();
+      }
+
+      const auto parent = current.parent_path();
+      if (parent == current)
+      {
+        break;
+      }
+      current = parent;
+    }
+
+    return std::nullopt;
+  }
 
   Manifest parse_manifest(const std::string& source, const std::string& source_name)
   {

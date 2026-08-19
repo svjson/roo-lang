@@ -6,6 +6,10 @@
 #include <string>
 #include <vector>
 
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <rooc/builder.h>
@@ -110,12 +114,21 @@ namespace
     return shell_arg(path.generic_string());
   }
 
-  void run_command(std::string command)
+  int command_exit_code(std::string command)
   {
 #ifdef _WIN32
     command = "call " + command;
 #endif
-    ASSERT_EQ(std::system(command.c_str()), 0) << command;
+    const int status = std::system(command.c_str());
+#ifdef _WIN32
+    return status;
+#else
+    if (status >= 0 && WIFEXITED(status))
+    {
+      return WEXITSTATUS(status);
+    }
+    return status;
+#endif
   }
 
   void create_main_app_fixture(const std::filesystem::path& package_dir,
@@ -162,11 +175,11 @@ namespace
   void run_generated_executable(const Rooc::GeneratedProject& project,
                                 const std::filesystem::path& build_dir,
                                 const std::filesystem::path& run_dir,
-                                const std::vector<std::string>& args = {})
+                                const std::vector<std::string>& args = {},
+                                int expected_exit_code = 0)
   {
-    auto executable =
-      build_dir / "build" /
-      (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
+    auto executable = build_dir / "build" /
+                      (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
     if (!std::filesystem::exists(executable))
     {
       executable = build_dir / "build" / "Release" /
@@ -178,7 +191,7 @@ namespace
     {
       command += " " + shell_arg(arg);
     }
-    run_command(command);
+    ASSERT_EQ(command_exit_code(command), expected_exit_code) << command;
   }
 } // namespace
 
@@ -327,6 +340,38 @@ TEST(RoocGenerator, generated_executable_pads_main_arity_with_nil_values)
 
   // Then
   EXPECT_EQ(read_file(run_dir / "main-ran.txt"), "1:alpha:nil:nil:nil");
+}
+
+TEST(RoocGenerator, generated_executable_returns_main_integer_as_exit_code)
+{
+  // Given
+  const auto package_dir = build_root() / "rooc-gtest-main-exit-code-package";
+  const auto build_dir = build_root() / "rooc-gtest-main-exit-code-build";
+  const auto run_dir = build_root() / "rooc-gtest-main-exit-code-run";
+  create_main_app_fixture(package_dir,
+                          R"((ns main.app)
+
+(defun main
+  "Return a nonzero process exit code for generator testing.
+
+  Args:
+  - `args`: Command line arguments, which are unused by this fixture.
+
+  Returns:
+  Exit code `7`."
+  [args]
+  7)
+)");
+  auto options = main_app_options_for(build_dir, package_dir);
+  auto project = Rooc::prepare_project(options);
+  std::filesystem::create_directories(run_dir);
+
+  // When
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
+
+  // Then
+  run_generated_executable(project, build_dir, run_dir, {}, 7);
 }
 
 TEST(RoocGenerator, generated_executable_invokes_run_tool)

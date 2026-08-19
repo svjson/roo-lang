@@ -313,7 +313,7 @@ install tree and place the built artifact in that staged `native` directory:
 
 ```cmake
 set(EXAMPLE_PACKAGE_STAGE_DIR
-  "${CMAKE_BINARY_DIR}/native-package-stage/pkg/example"
+  "${CMAKE_BINARY_DIR}/package-stage/pkg/example"
 )
 
 add_custom_target(stage_example_package
@@ -444,7 +444,9 @@ from inside the application package loads the normal package environment, finds
 the `proof` dependency, then invokes its `run` tool with a context map containing
 the application package root, package name, load paths, tool name, and the
 `proof` config block. Arguments after the tool name are forwarded in the context
-as `:args`.
+as `:args`. When a package tool returns an integer from 0 through 255, `roo` uses
+it as the process exit status. Any other return value represents successful tool
+execution and produces exit status 0.
 
 ## Loading From the `roo` Binary
 

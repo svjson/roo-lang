@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -85,6 +86,16 @@ namespace Roo::Package
 
   std::string default_local_repository_root();
   std::vector<std::string> default_package_search_roots();
+
+  /**
+   * Find the nearest package root containing path.
+   *
+   * The search starts at path, or its parent when path names a file, and walks
+   * upward until it finds a directory containing package.edn. Returns no value
+   * when path is not contained by a package.
+   */
+  std::optional<std::string> find_package_root(Roo::FileSystem& fs,
+                                               const std::string& path);
 
   Manifest parse_manifest(const std::string& source,
                           const std::string& source_name = "package.edn");

@@ -46,47 +46,6 @@ namespace
     print_usage();
   }
 
-  std::optional<std::string> find_package_root(const std::filesystem::path& file_path)
-  {
-    std::error_code ec;
-    auto current = std::filesystem::absolute(file_path, ec).lexically_normal();
-    if (ec)
-    {
-      return std::nullopt;
-    }
-
-    if (std::filesystem::is_regular_file(current, ec))
-    {
-      current = current.parent_path();
-    }
-    if (ec)
-    {
-      ec.clear();
-    }
-
-    while (!current.empty())
-    {
-      const auto manifest_path = current / "package.edn";
-      if (std::filesystem::is_regular_file(manifest_path, ec))
-      {
-        return current.string();
-      }
-      if (ec)
-      {
-        ec.clear();
-      }
-
-      const auto parent = current.parent_path();
-      if (parent == current)
-      {
-        break;
-      }
-      current = parent;
-    }
-
-    return std::nullopt;
-  }
-
   bool is_directory_target(const std::string& path)
   {
     std::error_code ec;
@@ -124,11 +83,12 @@ namespace
     }
   }
 
-  void run_package_main(Roo::Runtime& runtime,
-                        const Roo::Package::LoadPlan& package_plan,
-                        const std::vector<std::string>& args)
+  int run_package_main(Roo::Runtime& runtime,
+                       const Roo::Package::LoadPlan& package_plan,
+                       const std::vector<std::string>& args)
   {
-    Roo::Package::Application::invoke_main(runtime, package_plan.main, args);
+    return Roo::Package::Application::exit_code(
+      Roo::Package::Application::invoke_main(runtime, package_plan.main, args));
   }
 
 } // namespace
@@ -213,7 +173,7 @@ int main(int argc, char** argv)
     const bool run_tool =
       !run_package && !path_exists(file_path) && is_bare_tool_target(file_path);
     std::optional<Roo::Package::LoadPlan> package_plan;
-    const auto package_root = find_package_root(file_path);
+    const auto package_root = Roo::Package::find_package_root(manifest_fs, file_path);
     if (package_root)
     {
       package_plan = Roo::Package::resolve_load_plan(manifest_fs, *package_root);
@@ -237,15 +197,16 @@ int main(int argc, char** argv)
     runtime.set_call_stack_diagnostics(true);
     if (run_tool && package_plan)
     {
-      Roo::Package::Application::invoke_tool(runtime,
-                                             *package_plan,
-                                             file_path,
-                                             "run",
-                                             app_args);
+      return Roo::Package::Application::exit_code(
+        Roo::Package::Application::invoke_tool(runtime,
+                                               *package_plan,
+                                               file_path,
+                                               "run",
+                                               app_args));
     }
     else if (run_package && package_plan && !package_plan->main.empty())
     {
-      run_package_main(runtime, *package_plan, app_args);
+      return run_package_main(runtime, *package_plan, app_args);
     }
     else if (run_package)
     {

@@ -4,10 +4,12 @@
 #include <string>
 
 #include <roo/exception.h>
+#include <roo/io/dir_root_file_system.h>
 #include <roo/io/file_system.h>
 #include <roo/runtime.h>
 
 #include <gtest/gtest.h>
+#include <roo-package/application.h>
 #include <roo-package/manifest.h>
 #include <roo-package/native_loader.h>
 
@@ -56,6 +58,28 @@ namespace
   }
 } // namespace
 
+TEST(PackageApplication, uses_integer_results_as_process_exit_codes)
+{
+  EXPECT_EQ(Roo::Package::Application::exit_code(Roo::Value::number(0)), 0);
+  EXPECT_EQ(Roo::Package::Application::exit_code(Roo::Value::number(7L)), 7);
+  EXPECT_EQ(Roo::Package::Application::exit_code(Roo::Value::number(255)), 255);
+}
+
+TEST(PackageApplication, treats_non_integer_results_as_success)
+{
+  EXPECT_EQ(Roo::Package::Application::exit_code(Roo::Constant::NIL), 0);
+  EXPECT_EQ(Roo::Package::Application::exit_code(Roo::Value::string("result")), 0);
+  EXPECT_EQ(Roo::Package::Application::exit_code(Roo::Value::number(1.5)), 0);
+}
+
+TEST(PackageApplication, rejects_exit_codes_outside_the_process_range)
+{
+  EXPECT_THROW(Roo::Package::Application::exit_code(Roo::Value::number(-1)),
+               Roo::RooException);
+  EXPECT_THROW(Roo::Package::Application::exit_code(Roo::Value::number(256)),
+               Roo::RooException);
+}
+
 TEST(PackageManifest, parses_current_package_metadata_shape)
 {
   auto manifest = Roo::Package::parse_manifest(proof_manifest, "proof/package.edn");
@@ -79,6 +103,39 @@ TEST(PackageManifest, parses_current_package_metadata_shape)
   EXPECT_EQ(manifest.entry_points, std::vector<std::string>{"proof.core"});
   EXPECT_EQ(manifest.main, "proof.runner/main");
   EXPECT_EQ(manifest.run, "proof");
+}
+
+TEST(PackageManifest, finds_nearest_package_root_from_a_nested_path)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "roo-package-root-discovery-test";
+  std::filesystem::remove_all(root);
+  write_file(root / "package.edn", "{:name app :dependencies []}");
+  write_file(root / "src/app/main.roo", "(ns app.main)");
+
+  Roo::DirRootFileSystem fs("/");
+
+  EXPECT_EQ(Roo::Package::find_package_root(fs, package_path(root / "src/app/main.roo")),
+            package_path(root));
+  EXPECT_EQ(Roo::Package::find_package_root(fs, package_path(root / "src/app")),
+            package_path(root));
+
+  std::filesystem::remove_all(root);
+}
+
+TEST(PackageManifest, package_root_discovery_returns_no_value_outside_a_package)
+{
+  const auto root =
+    std::filesystem::temp_directory_path() / "roo-no-package-root-discovery-test";
+  std::filesystem::remove_all(root);
+  std::filesystem::create_directories(root / "nested");
+
+  Roo::DirRootFileSystem fs("/");
+
+  EXPECT_EQ(Roo::Package::find_package_root(fs, package_path(root / "nested")),
+            std::nullopt);
+
+  std::filesystem::remove_all(root);
 }
 
 TEST(PackageManifest, parses_namespace_roots_with_single_and_multiple_paths)

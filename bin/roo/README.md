@@ -21,6 +21,10 @@ Arguments after the file or package target are forwarded to that target. Global
 `roo` options such as `--help`, `--version`, and `--load-path` must appear
 before the target.
 
+When a package `:main` returns an integer from `0` through `255`, `roo` uses it
+as the process exit code. Other return values mean success. Generated package
+executables use the same result contract.
+
 `roo proof` is generic package tool dispatch: the current package must depend
 on a package named `proof`, and that package must declare a `run` tool in its
 `package.edn`. Arguments after the tool target are forwarded to that tool:

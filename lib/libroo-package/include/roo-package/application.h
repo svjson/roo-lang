@@ -245,6 +245,28 @@ namespace Roo::Package::Application
     return stream.str();
   }
 
+  /**
+   * @brief Converts an application result into a process exit code.
+   *
+   * Integer results from 0 through 255 are exit codes. Other result types mean success.
+   */
+  inline int exit_code(const sptr_val& result)
+  {
+    if (!result || result->type != Value::Type::NUMBER ||
+        result->num().num_type == Value::NumberType::FLOAT)
+    {
+      return 0;
+    }
+
+    const auto code = result->i64();
+    if (code < 0 || code > 255)
+    {
+      throw RooException("Application returned invalid exit code " + std::to_string(code) +
+                         ". Expected an integer from 0 to 255.");
+    }
+    return static_cast<int>(code);
+  }
+
   inline sptr_val invoke_tool(Runtime& runtime,
                               const LoadPlan& plan,
                               const std::string& tool_package_name,
@@ -281,14 +303,10 @@ namespace Roo::Package::Application
 
     runtime.eval("(ns roo.package.tool (:require " + tool_namespace + "))",
                  "<package-tool>");
-    return runtime.eval("(" + tool_function + " " +
-                          tool_invocation_context(plan,
-                                                  *package,
-                                                  *tool_package,
-                                                  tool_name,
-                                                  args) +
-                          ")",
-                        "<package-tool>");
+    return runtime.eval(
+      "(" + tool_function + " " +
+        tool_invocation_context(plan, *package, *tool_package, tool_name, args) + ")",
+      "<package-tool>");
   }
 
   inline sptr_val invoke_tool(Runtime& runtime,

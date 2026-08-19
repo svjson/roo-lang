@@ -1,0 +1,12 @@
+(ns exit-code.app)
+
+(defun main
+  "Return a nonzero process exit code for CLI integration testing.
+
+  Args:
+  - `args`: Command line arguments, which are unused by this fixture.
+
+  Returns:
+  Exit code `7`."
+  [args]
+  7)

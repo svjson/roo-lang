@@ -3,7 +3,7 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
-PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
 PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"
 OUTPUT_FILE="$RUN_DIR/main-ran.txt"
@@ -78,6 +78,15 @@ assert_eq "roo main app receives positional args" \
 assert_eq "roo main app receives flag-like args" \
   "3:--version:--help:nil:nil:nil" \
   "$(cat "$OUTPUT_FILE")"
+
+if "$ROO" "$ROOT_DIR/bin/roo/test/assets/exit-code-app"; then
+  fail "roo main app ignored its nonzero exit code"
+else
+  MAIN_EXIT_CODE=$?
+fi
+assert_eq "roo main app returns its integer result as the process exit code" \
+  "7" \
+  "$MAIN_EXIT_CODE"
 
 printf '%s\n' "==> Testing roo proof reporter/filter"
 if ! PROOF_OUTPUT="$(
