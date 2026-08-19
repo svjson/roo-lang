@@ -31,6 +31,37 @@ namespace Roo
   FUNC(ListDirectoryBangFunction, list_directory, list_directory_with_options)
 
   /*!
+   * @brief Walk a filesystem tree with userspace keep and descent criteria.
+   *
+   * Returns records containing :entry and :metadata maps in deterministic,
+   * depth-first order. Criteria receive those two maps as arguments. Metadata
+   * initially contains :root, :relative-path, :depth, :root?, and :symlink?.
+   * The root is visited with relative path "." and depth 0.
+   *
+   * By default, regular files are kept, directories are descended, hidden
+   * entries are excluded, and directory symlinks are not descended. Directory
+   * children are listed only after :descend? accepts their parent, and each
+   * listing is completed before traversal continues into a child.
+   *
+   * Usage:
+   * @code
+   * (roo.io/walk! "src")
+   *
+   * (roo.io/walk! "."
+   *   {:descend? (fn [entry metadata]
+   *                (not (= "build" (:relative-path metadata))))
+   *    :keep? (fn [entry metadata]
+   *             (= ".roo" (roo.io/extension (:path entry))))})
+   * @endcode
+   *
+   * | Arg     | Description                                                        |
+   * | ------- | ------------------------------------------------------------------ |
+   * | root    | Existing file or directory at which traversal starts.              |
+   * | options | Optional :descend?, :keep?, and :hidden? values.                   |
+   */
+  FUNC(WalkBangFunction, walk, walk_with_options)
+
+  /*!
    * @brief Query whether any filesystem entry exists at a path.
    *
    * Usage:

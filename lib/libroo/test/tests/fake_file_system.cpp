@@ -165,6 +165,7 @@ namespace RooTest
       entry.type =
         directory ? Roo::FileSystemEntryType::DIRECTORY : Roo::FileSystemEntryType::OTHER;
       entry.hidden = hidden_name(name);
+      entry.symlink = true;
       entries[name] = entry;
     }
 

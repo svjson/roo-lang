@@ -11,6 +11,7 @@
 #include <roo/exception.h>
 #include <roo/form.h>
 #include <roo/namespace.h>
+#include <roo/runtime/dict.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/lower.h>
 #include <roo/runtime/node.h>
@@ -26,6 +27,25 @@ namespace Roo
   int user_function_ast_invocations = 0;
   int user_function_rtval_invocations = 0;
   int user_function_wrong_path_invocations = 0;
+
+  sptr_val invoke_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args)
+  {
+    if (callable->type == Value::Type::FUNCTION)
+    {
+      return callable->exec().execute(ctx, args);
+    }
+
+    if (callable->type == Value::Type::KEYWORD)
+    {
+      if (args.size() != 1)
+      {
+        throw InvocationException::argument_mismatch(callable, args, 1);
+      }
+      return Dict::get_property(args[0], callable);
+    }
+
+    throw InvocationException::not_callable(callable, args);
+  }
 
   Argument::Argument(const TypeRef* type)
     : Argument(false, type, &Eval::DEFAULT)

@@ -6,8 +6,11 @@
 
 #include <roo/context.h>
 #include <roo/exception.h>
+#include <roo/exec.h>
+#include <roo/host/schema.h>
 #include <roo/io/file_system.h>
 #include <roo/runtime/dict.h>
+#include <roo/runtime/file_walk.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
 
@@ -228,6 +231,35 @@ namespace Roo
   EXEC_BODY(ListDirectoryBangFunction, exec_list_directory_with_options)
   {
     return list_directory(ctx, args[0]->str(), parse_options(*args[1]));
+  }
+
+  /** WalkBangFunction - roo.io/walk! */
+  FUNC_IMPL(WalkBangFunction,
+            MULTI_SIG((FN_ARGS((&Type::STRING)),
+                       EXEC_DISPATCH(&WalkBangFunction::exec_walk)),
+                      (FN_ARGS((&Type::STRING), (&Type::MAP)),
+                       EXEC_DISPATCH(&WalkBangFunction::exec_walk_with_options))))
+
+  EXEC_BODY(WalkBangFunction, exec_walk)
+  {
+    return FileWalk::walk(ctx, args[0]->str());
+  }
+
+  EXEC_BODY(WalkBangFunction, exec_walk_with_options)
+  {
+    static MapSchema schema(
+      {},
+      {{"keep?", &Type::FUNCTION}, {"descend?", &Type::FUNCTION}, {"hidden?", &Type::BOOL}});
+    MapSchema::Inspector options = schema.bind(ctx, *args[1]);
+
+    FileWalk::Options walk_options;
+    walk_options.keep = options.val("keep?");
+    if (walk_options.keep->type == Value::Type::NIL) walk_options.keep.reset();
+    walk_options.descend = options.val("descend?");
+    if (walk_options.descend->type == Value::Type::NIL) walk_options.descend.reset();
+    walk_options.hidden = options.boolean("hidden?", false);
+
+    return FileWalk::walk(ctx, args[0]->str(), walk_options);
   }
 
   /** ExistsPFunction - roo.io/exists? */

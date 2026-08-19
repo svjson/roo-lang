@@ -13,6 +13,7 @@ set(roo_SOURCES
   src/roo/runtime/dict.cpp
   src/roo/runtime/eval_plan.cpp
   src/roo/runtime/exec_node.cpp
+  src/roo/runtime/file_walk.cpp
   src/roo/runtime/node.cpp
   src/roo/runtime/lower.cpp
   src/roo/runtime/pool.cpp

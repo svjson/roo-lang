@@ -28,6 +28,7 @@ namespace Roo
     std::string path;
     FileSystemEntryType type = FileSystemEntryType::OTHER;
     bool hidden = false;
+    bool symlink = false;
   };
 
   class FileSystem

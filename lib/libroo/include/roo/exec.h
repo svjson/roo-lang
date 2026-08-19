@@ -308,6 +308,12 @@ namespace Roo
     friend class HostTypeRef;
   };
 
+  /**
+   * Invoke a runtime value according to Roo's callable-value semantics.
+   * Functions execute normally; keywords require one argument and perform a property lookup.
+   */
+  ROO_API sptr_val invoke_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args);
+
   typedef Signature sig;
   typedef std::unique_ptr<Signature> uptr_sig;
   typedef std::vector<std::unique_ptr<Signature>> uptr_sig_v;

@@ -26,6 +26,7 @@ namespace Roo
     symbols.emplace("slurp-edn!", SlurpEdnBangFunction::make());
     symbols.emplace("spit-edn!", SpitEdnBangFunction::make());
     symbols.emplace("list-directory!", ListDirectoryBangFunction::make());
+    symbols.emplace("walk!", WalkBangFunction::make());
     symbols.emplace("exists?", ExistsPFunction::make());
     symbols.emplace("file?", FilePFunction::make());
     symbols.emplace("directory?", DirectoryPFunction::make());

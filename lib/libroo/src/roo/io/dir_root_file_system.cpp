@@ -332,6 +332,7 @@ namespace Roo
       result.path = (std::filesystem::path(path) / result.name).lexically_normal().string();
       result.type = entry_type(entry.status());
       result.hidden = hidden_name(entry.path());
+      result.symlink = std::filesystem::is_symlink(entry.symlink_status());
       entries.push_back(result);
     }
 
