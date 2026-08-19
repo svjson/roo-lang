@@ -202,7 +202,28 @@ namespace Roo
   SPECIAL_FORM_DECL(OrForm, or)
 
   /*!
+   * @brief Print arguments to stdout and flush stdout without a terminating newline.
+   *
+   * Arguments are separated by a single space.
+   *
+   * Usage:
+   * @code
+   * (pr! "Hello" "World")
+   * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Values to print.                                                   |
+   *
+   * @return `nil`
+   */
+  FUNC(PrBangFunction, pr_bang)
+
+  /*!
    * @brief Print arguments to stdout, separated by spaces, followed by a newline.
+   *
+   * @deprecated
+   * @see roo/prn!
    *
    * Usage:
    * @code
@@ -212,8 +233,27 @@ namespace Roo
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
    * | values... | Values to print.                                                   |
+   *
+   * @return `nil`
    */
   FUNC(PrnFunction, prn)
+
+  /*!
+   * @brief Print arguments to stdout, separated by spaces, followed by a
+   * newline.
+   *
+   * Usage:
+   * @code
+   * (prn! "Hello" "World")
+   * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | values... | Values to print.                                                   |
+   *
+   * @return `nil`
+   */
+  FUNC(PrnBangFunction, prn_bang)
 
   /*!
    * @brief Resolve the value of a symbol programmatically.

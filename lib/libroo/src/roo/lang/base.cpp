@@ -3,8 +3,6 @@
 #include "roo/runtime/lower.h"
 #include "roo/runtime/node.h"
 
-#include <algorithm>
-#include <cctype>
 #include <iostream>
 
 #include <roo/lang/base.h>
@@ -333,6 +331,40 @@ namespace Roo
             SIG((FN_ARGS((&VARARG, &Type::ANY)), EXEC_DISPATCH(&PrnFunction::exec_prn))))
 
   EXEC_BODY(PrnFunction, exec_prn)
+  {
+    for (size_t i = 0; i < args.size(); i++)
+    {
+      if (i > 0) std::cout << " ";
+      std::cout << (args[i]->type == Value::Type::STRING ? args[i]->str()
+                                                         : args[i]->to_string());
+    }
+    std::cout << std::endl;
+    return Constant::NIL;
+  }
+
+  /** PrBangFunction - roo/pr! */
+  FUNC_IMPL(PrBangFunction,
+            SIG((FN_ARGS((&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&PrBangFunction::exec_pr_bang))))
+
+  EXEC_BODY(PrBangFunction, exec_pr_bang)
+  {
+    for (size_t i = 0; i < args.size(); i++)
+    {
+      if (i > 0) std::cout << " ";
+      std::cout << (args[i]->type == Value::Type::STRING ? args[i]->str()
+                                                         : args[i]->to_string());
+    }
+    std::cout << std::flush;
+    return Constant::NIL;
+  }
+
+  /** PrnBangFunction - roo/prn! */
+  FUNC_IMPL(PrnBangFunction,
+            SIG((FN_ARGS((&VARARG, &Type::ANY)),
+                 EXEC_DISPATCH(&PrnBangFunction::exec_prn_bang))))
+
+  EXEC_BODY(PrnBangFunction, exec_prn_bang)
   {
     for (size_t i = 0; i < args.size(); i++)
     {

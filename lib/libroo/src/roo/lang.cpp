@@ -159,8 +159,10 @@ namespace Roo
     lang_symbols.emplace("partition", PartitionFunction::make());
     lang_symbols.emplace("pascal-case", PascalCaseFunction::make());
     lang_symbols.emplace("pow", PowFunction::make());
+    lang_symbols.emplace("pr!", PrBangFunction::make());
     lang_symbols.emplace("pretty-str", PrettyStrFunction::make());
     lang_symbols.emplace("prn", PrnFunction::make());
+    lang_symbols.emplace("prn!", PrnBangFunction::make());
     lang_symbols.emplace("qualifier", QualifierFunction::make());
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
     lang_symbols.emplace("random-seed!", RandomSeedBangFunction::make());
