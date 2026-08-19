@@ -101,13 +101,13 @@ registered tests and failures before defining new tests:
 ## Scenarios
 
 Syntactic support for the **given/when/then** idiom is provided by
-`proof.syntax`. Require this namespace aliased to avoid colliding with the
+`proof.scenario`. Require this namespace aliased to avoid colliding with the
 `when` language form.
 
 ```roo
 (ns sample.scenario-tests
   (:require proof.core
-            [proof.syntax :as s]))
+            [proof.scenario :as s]))
 
 (deftest moving-onto-enemy-triggers-attack
   (s/given
@@ -125,13 +125,44 @@ Syntactic support for the **given/when/then** idiom is provided by
     (is (= [:attack] (event/types events)))))
 ```
 
-The phases execute in the order they occur. Each phase returns the value of its
-last expression and the phases feed those values forward:
+The phases execute in the order they occur and thread a current state through
+the scenario:
 
-- `given` takes no arguments and returns the test fixture or precondition.
-- `when` takes an argument vector and receives the `given` result.
-- `then` takes an argument vector and receives the `when` result. It may also
-  receive the `given` result as a second argument.
+- `given` takes no arguments and seeds the current state with its result.
+- `when` receives the current state and replaces it with its result.
+- `then` receives the current state but does not replace it. Consecutive `then`
+  phases therefore observe the same state.
+- After at least one `when`, `then` may receive the original `given` result as a
+  second argument.
+
+Both `when` and `then` may occur repeatedly. A later `when` continues from the
+latest state even when one or more `then` phases appeared in between. A `then`
+may also follow `given` directly:
+
+```roo
+(deftest advancing-a-world
+  (s/given
+    {:revision 1})
+
+  (s/then [{:keys [revision]}]
+    (is (= revision 1)))
+
+  (s/when [{:keys [revision]}]
+    {:revision (+ revision 1)})
+
+  (s/then [{:keys [revision]}]
+    (is (= revision 2)))
+
+  (s/then [state]
+    (is (valid? state)))
+
+  (s/when [{:keys [revision]}]
+    {:revision (+ revision 1)})
+
+  (s/then [{:keys [revision]} original]
+    (is (= revision 3))
+    (is (= original {:revision 1}))))
+```
 
 The argument vectors use normal Roo function binding, including destructuring.
 If a phase does not need a value, omit it from the argument vector:

@@ -1,0 +1,68 @@
+(ns proof.suite
+  (:require [roo.string :as string]))
+
+(defun sub-namespace? [parent namespace]
+  (and (string? namespace)
+       (string/starts-with? namespace (str parent "."))))
+
+(defun qualified-test-name [test]
+  (str (if-let [ns (:namespace test)]
+         (str ns "/")
+         "")
+       (-> test :name str)))
+
+(defun wildcard-match-from? [pattern pattern-index text text-index]
+  (if (= pattern-index (count pattern))
+    (= text-index (count text))
+    (let [pattern-char (str (nth pattern pattern-index))]
+      (case pattern-char
+        "*" (or (wildcard-match-from? pattern (+ pattern-index 1) text text-index)
+                (and (< text-index (count text))
+                     (wildcard-match-from? pattern pattern-index text (+ text-index 1))))
+        :default (and (< text-index (count text))
+                      (= pattern-char (str (nth text text-index)))
+                      (wildcard-match-from? pattern
+                                            (+ pattern-index 1)
+                                            text
+                                            (+ text-index 1)))))))
+
+(defun wildcard-match? [pattern text]
+  (wildcard-match-from? (str pattern) 0 (str text) 0))
+
+(defun test-name-matches? [options test]
+  (if-let [pattern (:filter options)]
+    (or (wildcard-match? pattern (-> test :name str))
+        (wildcard-match? pattern (qualified-test-name test)))
+    true))
+
+(defun test-namespace-matches? [options test]
+  (if-let [namespace (:namespace options)]
+    (let [test-namespace (:namespace test)
+          namespaces (if (sequential? namespace) namespace [namespace])]
+      (any? namespaces
+            (fn [selected-namespace]
+              (let [namespace-text (str selected-namespace)]
+                (cond-> (= namespace-text test-namespace)
+                  (:include-sub-namespaces? options)
+                  (or (sub-namespace? namespace-text test-namespace)))))))
+    true))
+
+(defun test-selected? [options test]
+  (and (test-namespace-matches? options test)
+       (test-name-matches? options test)))
+
+(defun test-display-file [{:keys [display-file file namespace]}]
+  (or display-file
+      file
+      namespace
+      "<inline>"))
+
+(defun tests-by-file
+  "Group TESTS by display file, preserving each file's own test order."
+  [tests]
+  (reduce tests
+          {}
+          (fn [acc test]
+            (update-in acc
+                       [(test-display-file test)]
+                       (fn [existing] (append (or existing []) test))))))

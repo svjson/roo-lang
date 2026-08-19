@@ -1,0 +1,131 @@
+(ns proof.suite-test
+  (:require proof.core
+            [proof.suite :as suite]))
+
+
+
+;; proof.suite/sub-namespace?
+
+(deftest sub-namespace?/true-for-a-direct-child-namespace
+  (is (= true (suite/sub-namespace? "app" "app.checkout"))))
+
+(deftest sub-namespace?/true-for-a-deeper-descendant-namespace
+  (is (= true (suite/sub-namespace? "app" "app.checkout.card"))))
+
+(deftest sub-namespace?/false-for-the-namespace-itself
+  (is (= false (suite/sub-namespace? "app" "app"))))
+
+(deftest sub-namespace?/false-for-an-unrelated-namespace
+  (is (= false (suite/sub-namespace? "app" "other"))))
+
+(deftest sub-namespace?/false-for-a-nil-namespace
+  (is (= false (suite/sub-namespace? "app" nil))))
+
+
+
+;; proof.suite/qualified-test-name
+
+(deftest qualified-test-name/prefixes-the-name-with-its-namespace
+  (is (= "app.checkout/applies-discount"
+         (suite/qualified-test-name {:name 'applies-discount :namespace "app.checkout"}))))
+
+(deftest qualified-test-name/is-just-the-name-when-there-is-no-namespace
+  (is (= "applies-discount"
+         (suite/qualified-test-name {:name 'applies-discount}))))
+
+
+
+;; proof.suite/wildcard-match?
+
+(deftest wildcard-match?/matches-a-literal-pattern-exactly
+  (is (= true (suite/wildcard-match? "checkout-total" "checkout-total"))))
+
+(deftest wildcard-match?/star-matches-any-run-of-characters
+  (is (= true (suite/wildcard-match? "*checkout*" "app.checkout/applies-discount"))))
+
+(deftest wildcard-match?/false-when-the-pattern-does-not-match
+  (is (= false (suite/wildcard-match? "*checkout*" "profile-page"))))
+
+
+
+;; proof.suite/test-name-matches?
+
+(deftest test-name-matches?/true-when-no-filter-is-set
+  (is (= true (suite/test-name-matches? {} {:name 'checkout-total}))))
+
+(deftest test-name-matches?/matches-against-the-bare-name
+  (is (= true (suite/test-name-matches? {:filter "*checkout*"} {:name 'checkout-total}))))
+
+(deftest test-name-matches?/matches-against-the-qualified-name
+  (is (= true (suite/test-name-matches? {:filter "app.checkout/*"}
+                                        {:name 'applies-discount :namespace "app.checkout"}))))
+
+(deftest test-name-matches?/false-when-neither-name-matches
+  (is (= false (suite/test-name-matches? {:filter "*profile*"} {:name 'checkout-total}))))
+
+
+
+;; proof.suite/test-namespace-matches?
+
+(deftest test-namespace-matches?/true-when-no-namespace-filter-is-set
+  (is (= true (suite/test-namespace-matches? {} {:namespace "app.checkout"}))))
+
+(deftest test-namespace-matches?/true-for-an-exact-namespace-match
+  (is (= true (suite/test-namespace-matches? {:namespace "app.checkout"}
+                                             {:namespace "app.checkout"}))))
+
+(deftest test-namespace-matches?/false-for-a-sub-namespace-without-include-sub-namespaces
+  (is (= false (suite/test-namespace-matches? {:namespace "app"}
+                                              {:namespace "app.checkout"}))))
+
+(deftest test-namespace-matches?/true-for-a-sub-namespace-with-include-sub-namespaces
+  (is (= true (suite/test-namespace-matches? {:namespace "app" :include-sub-namespaces? true}
+                                             {:namespace "app.checkout"}))))
+
+(deftest test-namespace-matches?/true-when-any-of-multiple-namespaces-match
+  (is (= true (suite/test-namespace-matches? {:namespace ["app.profile" "app.checkout"]}
+                                             {:namespace "app.checkout"}))))
+
+
+
+;; proof.suite/test-selected?
+
+(deftest test-selected?/true-when-both-name-and-namespace-match
+  (is (= true (suite/test-selected? {:namespace "app.checkout" :filter "*discount*"}
+                                    {:name 'applies-discount :namespace "app.checkout"}))))
+
+(deftest test-selected?/false-when-the-namespace-does-not-match
+  (is (= false (suite/test-selected? {:namespace "app.profile"}
+                                     {:name 'applies-discount :namespace "app.checkout"}))))
+
+(deftest test-selected?/false-when-the-name-does-not-match
+  (is (= false (suite/test-selected? {:filter "*profile*"}
+                                     {:name 'applies-discount :namespace "app.checkout"}))))
+
+
+
+;; proof.suite/test-display-file
+
+(deftest test-display-file/prefers-display-file
+  (is (= "tests/checkout-test.roo"
+         (suite/test-display-file {:display-file "tests/checkout-test.roo" :file "other.roo"}))))
+
+(deftest test-display-file/falls-back-to-file
+  (is (= "other.roo" (suite/test-display-file {:file "other.roo" :namespace "app.checkout"}))))
+
+(deftest test-display-file/falls-back-to-the-namespace
+  (is (= "app.checkout" (suite/test-display-file {:namespace "app.checkout"}))))
+
+(deftest test-display-file/falls-back-to-inline-when-nothing-is-known
+  (is (= "<inline>" (suite/test-display-file {}))))
+
+
+
+;; proof.suite/tests-by-file
+
+(deftest tests-by-file/groups-tests-by-display-file-preserving-order
+  (is (= {"a.roo" [{:name 't1 :display-file "a.roo"} {:name 't2 :display-file "a.roo"}]
+          "b.roo" [{:name 't3 :display-file "b.roo"}]}
+         (suite/tests-by-file [{:name 't1 :display-file "a.roo"}
+                               {:name 't3 :display-file "b.roo"}
+                               {:name 't2 :display-file "a.roo"}]))))

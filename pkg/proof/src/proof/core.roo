@@ -2,13 +2,62 @@
   (:require proof.assertion
             proof.syntax
             [proof.reporter :as reporter]
-            [roo.string :as string]))
+            [proof.suite :as suite]))
 
 (def tests [])
 (def current-failures [])
 
-(def deftest proof.syntax/deftest)
-(def is proof.syntax/is)
+(def deftest
+  "Defines and registers a test.
+
+  The body runs when the test suite selects the test. An optional fixture vector
+  may follow the test name. Scenario tests may use
+  `proof.scenario/given`, `proof.scenario/when`, and `proof.scenario/then` as
+  top-level body phases.
+
+  Args:
+  - `name`: Symbol that identifies the test.
+  - `fixtures`: Optional vector of declared fixture specs.
+  - `body...`: One or more forms evaluated as the test body.
+
+  Returns:
+  The test name.
+
+  Examples:
+  ```roo
+  (deftest addition
+    (is (= 4 (+ 2 2))))
+  ```
+
+  See Also:
+  - `is`
+  - `proof.scenario/given`
+  - `proof.scenario/when`
+  - `proof.scenario/then`"
+  proof.syntax/deftest)
+
+(def is
+  "Asserts that an expression is truthy.
+
+  A passing assertion returns `true`. A failing assertion records the failure
+  and aborts the remaining test body. Equality expressions receive an
+  expected-versus-actual failure message.
+
+  Args:
+  - `expr`: Expression to evaluate and test for truthiness.
+
+  Returns:
+  `true` when the assertion passes.
+
+  Examples:
+  ```roo
+  (is (= 4 (+ 2 2)))
+  ```
+
+  See Also:
+  - `deftest`"
+  proof.syntax/is)
+
 (def should proof.syntax/should)
 (def assert proof.syntax/assert)
 (def expect proof.syntax/expect)
@@ -35,60 +84,9 @@
           (annotate-test metadata-by-namespace test)))
   tests)
 
-(defun sub-namespace? [parent namespace]
-  (and (string? namespace)
-       (string/starts-with? namespace (str parent "."))))
-
-(defun qualified-test-name [test]
-  (str (if-let [ns (:namespace test)]
-         (str ns "/")
-         "")
-       (-> test :name str)))
-
-(defun wildcard-match-from? [pattern pattern-index text text-index]
-  (if (= pattern-index (count pattern))
-    (= text-index (count text))
-    (let [pattern-char (str (nth pattern pattern-index))]
-      (case pattern-char
-        "*" (or (wildcard-match-from? pattern (+ pattern-index 1) text text-index)
-                (and (< text-index (count text))
-                     (wildcard-match-from? pattern pattern-index text (+ text-index 1))))
-        :default (and (< text-index (count text))
-                      (= pattern-char (str (nth text text-index)))
-                      (wildcard-match-from? pattern
-                                            (+ pattern-index 1)
-                                            text
-                                            (+ text-index 1)))))))
-
-(defun wildcard-match? [pattern text]
-  (wildcard-match-from? (str pattern) 0 (str text) 0))
-
-(defun test-name-matches? [options test]
-  (if-let [pattern (:filter options)]
-    (or (wildcard-match? pattern (-> test :name str))
-        (wildcard-match? pattern (qualified-test-name test)))
-    true))
-
-(defun test-namespace-matches? [options test]
-  (if-let [namespace (:namespace options)]
-    (let [test-namespace (:namespace test)
-          namespaces (if (sequential? namespace) namespace [namespace])]
-      (any? namespaces
-            (fn [selected-namespace]
-              (let [namespace-text (str selected-namespace)]
-                (if (:include-sub-namespaces? options)
-                  (or (= namespace-text test-namespace)
-                      (sub-namespace? namespace-text test-namespace))
-                  (= namespace-text test-namespace))))))
-    true))
-
-(defun test-selected? [options test]
-  (and (test-namespace-matches? options test)
-       (test-name-matches? options test)))
-
 (defun selected-tests [options]
   (filter tests
-          (fn [test] (test-selected? options test))))
+          (fn [test] (suite/test-selected? options test))))
 
 (defun record-failure! [message]
   (let [failure {:message message}]
@@ -111,17 +109,49 @@
                     :failures current-failures}
              :error {:message (:message body-result)}))))
 
-(defun report-test-result [reporter test result options]
-  (assoc reporter
-         :state ((:reporter reporter) (:state reporter) test result options)))
+(defun begin-test-report
+  "Ask REPORTER to report that TEST is about to run.
+
+  Args:
+  - `reporter`: Reporter map returned by `proof.reporter/make`.
+  - `test`: Test about to run.
+  - `options`: Run options, e.g. `:tty?`.
+
+  Returns:
+  A map with `:reporter` (REPORTER with its state advanced) and
+  `:context` (an opaque value to pass into `end-test-report` once TEST
+  finishes). How TEST's in-progress state is shown, if at all, is
+  entirely REPORTER's own concern - `proof.core` never touches a display
+  primitive itself."
+  [reporter test options]
+  (let [outcome ((:begin-test reporter) (:state reporter) test options)]
+    {:reporter (assoc reporter :state (:state outcome))
+     :context (:context outcome)}))
+
+(defun end-test-report
+  "Ask REPORTER to report TEST's finished RESULT.
+
+  Args:
+  - `reporter`: Reporter map returned by `proof.reporter/make`.
+  - `context`: Value returned by the matching `begin-test-report` call.
+  - `test`: Test that ran.
+  - `result`: Its result.
+  - `options`: Run options, e.g. `:durations?`.
+
+  Returns:
+  REPORTER with its state advanced. Printing RESULT, in whatever form
+  REPORTER uses, is done as a side effect before this returns."
+  [reporter context test result options]
+  (let [outcome ((:end-test reporter) (:state reporter) context test result options)]
+    (assoc reporter :state (:state outcome))))
 
 (defun run-and-report-selected-test [run-state test]
-  (let [result (run-test test)]
+  (let [begin (begin-test-report (:reporter run-state) test (:options run-state))
+        result (run-test test)
+        reporter (end-test-report (:reporter begin) (:context begin) test result
+                                  (:options run-state))]
     (assoc run-state
-           :reporter (report-test-result (:reporter run-state)
-                                         test
-                                         result
-                                         (:options run-state))
+           :reporter reporter
            :results (append! (:results run-state) result))))
 
 (defun run-selected [options]

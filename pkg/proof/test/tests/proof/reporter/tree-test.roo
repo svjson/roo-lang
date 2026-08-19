@@ -1,0 +1,146 @@
+(ns proof.reporter.tree-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [proof.reporter.tree :as tree]
+            [soot.core :as soot-core]))
+
+(def two-tests
+  [{:name "t1" :display-file "file.roo"}
+   {:name "t2" :display-file "file.roo"}])
+
+
+
+;; proof.reporter.tree/bullet-for-index
+
+(deftest bullet-for-index/is-a-mid-branch-for-any-index-before-the-last
+  (is (= "├──" (tree/bullet-for-index 3 1)))
+  (is (= "├──" (tree/bullet-for-index 3 2))))
+
+(deftest bullet-for-index/is-a-closing-branch-for-the-last-index
+  (is (= "└──" (tree/bullet-for-index 3 3))))
+
+
+
+;; proof.reporter.tree/pending-text
+
+(deftest pending-text/is-entirely-gray-except-the-bullet
+  (is (= (str "├── " soot-core/esc "[90m         - "
+              soot-core/esc "[1mmy-fun" soot-core/esc "[22m/description"
+              soot-core/esc "[39m")
+         (tree/pending-text "├──" {:name "my-fun/description"}))))
+
+
+
+;; proof.reporter.tree/running-text
+
+(deftest running-text/grays-only-the-status-word
+  (is (= (str "├── " soot-core/esc "[90mRUNNING" soot-core/esc "[39m - "
+              soot-core/esc "[1mmy-fun" soot-core/esc "[22m/description")
+         (tree/running-text "├──" {:name "my-fun/description"}))))
+
+
+
+;; proof.reporter.tree/result-text
+
+(deftest result-text/passing-result-is-a-single-line
+  (is (= (str "├── " soot-core/esc "[32mPASS" soot-core/esc "[39m - t1")
+         (tree/result-text "├──" {:name "t1" :status :pass} {}))))
+
+(deftest result-text/appends-durations-when-enabled
+  (is (= (str "├── " soot-core/esc "[32mPASS" soot-core/esc "[39m - t1 (12ms)")
+         (tree/result-text "├──" {:name "t1" :status :pass :elapsed-ms 12} {:durations? true}))))
+
+(deftest result-text/failing-result-folds-in-its-failure-messages
+  (is (= (str "├── " soot-core/esc "[91mFAIL" soot-core/esc "[39m - t1"
+              "\n    - Expected 1, got 2.")
+         (tree/result-text "├──"
+                           {:name "t1"
+                            :status :fail
+                            :failures [{:message "Expected 1, got 2."}]}
+                           {}))))
+
+(deftest result-text/erroring-result-folds-in-its-message
+  (is (= (str "├── " soot-core/esc "[38;5;88mERROR" soot-core/esc "[39m - t1"
+              "\n    - boom")
+         (tree/result-text "├──" {:name "t1" :status :error :message "boom"} {}))))
+
+
+
+;; proof.reporter.tree/begin-test
+
+(deftest begin-test/opens-a-session-and-adds-every-test-in-the-file-as-pending
+  (p/given
+    (:state (tree/make two-tests)))
+
+  (p/when [state]
+    (tree/begin-test state (head two-tests) {:tty? false}))
+
+  (p/then [outcome]
+    (let [state (:state outcome)]
+      (is (= "file.roo" (:current-file state)))
+      (is (= [:voodoo/1 :voodoo/2] (:handles state)))
+      (is (= [:voodoo/1 :voodoo/2] (:order (:session state))))
+      (is (contains? (:widgets (:session state)) :voodoo/2)))))
+
+(deftest begin-test/transitions-only-the-current-tests-widget-to-running
+  (p/given
+    (:state (tree/make two-tests)))
+
+  (p/when [state]
+    (tree/begin-test state (head two-tests) {:tty? false}))
+
+  (p/then [outcome]
+    (let [widgets (:widgets (:session (:state outcome)))]
+      (is (= (tree/running-text "├──" (head two-tests))
+             (:text (:voodoo/1 widgets))))
+      (is (= (tree/pending-text "└──" (nth two-tests 1))
+             (:text (:voodoo/2 widgets)))))))
+
+(deftest begin-test/reuses-the-same-session-for-the-files-second-test
+  (p/given
+    (:state (tree/make two-tests)))
+
+  (p/when [state]
+    (let [begin1 (tree/begin-test state (head two-tests) {:tty? false})
+          end1 (tree/end-test (:state begin1)
+                              (:context begin1)
+                              (head two-tests)
+                              {:name "t1" :status :pass}
+                              {})]
+      {:begin1 begin1
+       :begin2 (tree/begin-test (:state end1) (nth two-tests 1) {:tty? false})}))
+
+  (p/then [{:keys [begin1 begin2]}]
+    (is (= (:session (:state begin1)) (:session (:state begin2))))))
+
+
+
+;; proof.reporter.tree/end-test
+
+(deftest end-test/evicts-the-widget-once-finalized-and-leaves-the-rest-in-order
+  (p/given
+    (:state (tree/make two-tests)))
+
+  (p/when [state]
+    (let [begin (tree/begin-test state (head two-tests) {:tty? false})]
+      (tree/end-test (:state begin) (:context begin) (head two-tests)
+                     {:name "t1" :status :pass} {})
+      (:session (:context begin))))
+
+  (p/then [widget-session]
+    (is (not (contains? (:widgets widget-session) :voodoo/1)))
+    (is (= [:voodoo/2] (:order widget-session)))))
+
+(deftest end-test/leaves-the-later-pending-widget-untouched
+  (p/given
+    (:state (tree/make two-tests)))
+
+  (p/when [state]
+    (let [begin (tree/begin-test state (head two-tests) {:tty? false})]
+      (tree/end-test (:state begin) (:context begin) (head two-tests)
+                     {:name "t1" :status :pass} {})
+      (:session (:context begin))))
+
+  (p/then [widget-session]
+    (is (= (tree/pending-text "└──" (nth two-tests 1))
+           (:text (:voodoo/2 (:widgets widget-session)))))))

@@ -94,14 +94,24 @@ namespace
     return without_elapsed_ms(value)->to_string();
   }
 
+  const Roo::Package::LoadPlan& proof_load_plan()
+  {
+    static const auto plan = []
+    {
+      Roo::DirRootFileSystem manifest_fs("/");
+      return Roo::Package::resolve_load_plan(manifest_fs, PROOF_PACKAGE_DIR);
+    }();
+    return plan;
+  }
+
   std::vector<std::string> proof_load_paths(std::vector<std::string> extra = {})
   {
-    std::vector<std::string> paths{std::string(PROOF_PACKAGE_DIR) + "/src",
-                                   (std::filesystem::path(PROOF_PACKAGE_DIR).parent_path() /
-                                    "soot/src")
-                                     .string()};
-    paths.insert(paths.end(), extra.begin(), extra.end());
-    return paths;
+    return Roo::Package::merge_load_paths(proof_load_plan(), extra);
+  }
+
+  void configure_proof_runtime(Roo::Runtime& runtime)
+  {
+    Roo::Package::configure_runtime_namespace_roots(runtime, proof_load_plan());
   }
 
   std::string sgr(const std::string& code, const std::string& text, const std::string& close)
@@ -122,6 +132,21 @@ namespace
   std::string error_label()
   {
     return sgr("38;5;88", "ERROR", "39");
+  }
+
+  std::string simple_pass_label()
+  {
+    return sgr("32", "    PASS", "39");
+  }
+
+  std::string simple_fail_label()
+  {
+    return sgr("91", "    FAIL", "39");
+  }
+
+  std::string simple_error_label()
+  {
+    return sgr("38;5;88", "   ERROR", "39");
   }
 
   std::string bold_label(const std::string& text)
@@ -195,6 +220,7 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
 {
   Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"(
     (ns proof.package-streaming-test
@@ -218,7 +244,7 @@ TEST(ProofPackage, reports_each_test_result_before_running_the_next_test)
   expect_elapsed_ms_for_results(results);
 
   const auto first_body = output.find("first-body\n");
-  const auto first_result = output.find("  " + pass_label() + " first-stream-marker\n");
+  const auto first_result = output.find(simple_pass_label() + " first-stream-marker\n");
   const auto second_body = output.find("second-body\n");
 
   ASSERT_NE(first_body, std::string::npos);
@@ -232,6 +258,7 @@ TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
 {
   Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"(
     (ns proof.package-simple-durations-test
@@ -256,17 +283,19 @@ TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
             "{:name duration-fail :status :fail "
             ":message \"Expected truthy expression: false.\" "
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
-            "{:name duration-error :status :error :message \"Division by zero\"}]");
+            "{:name duration-error :status :error "
+            ":message \"Error while calling / at <eval>:7:7:\\nDivision by zero\"}]");
   expect_elapsed_ms_for_results(results);
-  expect_duration_output_line(output, "  " + pass_label() + " duration-pass");
-  expect_duration_output_line(output, "  " + fail_label() + " duration-fail");
-  expect_duration_output_line(output, "  " + error_label() + " duration-error");
+  expect_duration_output_line(output, simple_pass_label() + " duration-pass");
+  expect_duration_output_line(output, simple_fail_label() + " duration-fail");
+  expect_duration_output_line(output, simple_error_label() + " duration-error");
 }
 
 TEST(ProofPackage, summary_duration_covers_selected_test_execution)
 {
   Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"(
     (ns proof.package-summary-duration-test
@@ -311,6 +340,7 @@ TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
   auto fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Package::LoadedNativePackages native_packages;
   Roo::Runtime runtime(fs.get());
+  Roo::Package::configure_runtime_namespace_roots(runtime, plan);
   native_packages = Roo::Package::load_native_libraries(runtime, plan);
 
   runtime.eval(R"(
@@ -345,6 +375,7 @@ TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-package-test
     (:require proof.runner)))");
@@ -379,6 +410,7 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-filter-test
     (:require proof.runner)))");
@@ -411,6 +443,7 @@ TEST(ProofPackage, runner_accepts_positional_test_file)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-positional-file-test
     (:require proof.runner)))");
@@ -435,6 +468,7 @@ TEST(ProofPackage, runner_reports_unknown_cli_argument)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-unknown-argument-test
     (:require proof.runner)))");
@@ -446,8 +480,7 @@ TEST(ProofPackage, runner_reports_unknown_cli_argument)
 
   EXPECT_EQ(without_elapsed_ms_string(results), "nil");
   EXPECT_NE(output.find("Unrecognized argument: --wat\n"), std::string::npos);
-  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"),
-            std::string::npos);
+  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"), std::string::npos);
   EXPECT_EQ(output.find("should-not-run"), std::string::npos);
   EXPECT_EQ(output.find("FAIL"), std::string::npos);
 }
@@ -475,6 +508,7 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-tree-reporter-test
     (:require proof.runner)))");
@@ -490,13 +524,13 @@ TEST(ProofPackage, runner_supports_tree_reporter_grouped_by_test_file)
             "{:name checkout-discount :status :fail :message \"Expected 5, got 4.\" "
             ":failures [{:message \"Expected 5, got 4.\"}]} "
             "{:name profile-page :status :pass}]");
-  EXPECT_NE(output.find(bold_label("test/app/checkout-test.roo") + "\n" +
-                        "├── " + pass_label() + " - checkout-total\n" +
-                        "└── " + fail_label() + " - checkout-discount\n"
+  EXPECT_NE(output.find(bold_label("test/app/checkout-test.roo") + "\n" + "├── " +
+                        pass_label() + " - checkout-total\n" + "└── " + fail_label() +
+                        " - checkout-discount\n"
                         "    - Expected 5, got 4.\n"),
             std::string::npos);
-  EXPECT_NE(output.find(bold_label("test/app/profile-test.roo") + "\n" +
-                        "└── " + pass_label() + " - profile-page\n"),
+  EXPECT_NE(output.find(bold_label("test/app/profile-test.roo") + "\n" + "└── " +
+                        pass_label() + " - profile-page\n"),
             std::string::npos);
 }
 
@@ -504,6 +538,7 @@ TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
 {
   Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"(
     (ns proof.package-tree-durations-test
@@ -528,7 +563,8 @@ TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
             "{:name duration-fail :status :fail "
             ":message \"Expected truthy expression: false.\" "
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
-            "{:name duration-error :status :error :message \"Division by zero\"}]");
+            "{:name duration-error :status :error "
+            ":message \"Error while calling / at <eval>:7:7:\\nDivision by zero\"}]");
   expect_elapsed_ms_for_results(results);
   EXPECT_NE(output.find(bold_label("proof.package-tree-durations-test") + "\n"),
             std::string::npos);
@@ -560,6 +596,7 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "spec").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-cli-args-test
     (:require proof.runner)))");
@@ -576,8 +613,8 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-discount :status :pass}]");
-  EXPECT_NE(output.find(bold_label("spec/app/checkout-test.roo") + "\n" +
-                        "└── " + pass_label() + " - checkout-discount\n"),
+  EXPECT_NE(output.find(bold_label("spec/app/checkout-test.roo") + "\n" + "└── " +
+                        pass_label() + " - checkout-discount\n"),
             std::string::npos);
   EXPECT_EQ(output.find("checkout-discount ("), std::string::npos);
 }
@@ -595,6 +632,7 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
 
   Roo::DirRootFileSystem fs(proof_load_paths({(root / "test").string()}));
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"((ns proof.runner-help-test
     (:require proof.runner)))");
@@ -606,8 +644,7 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
   std::string output = testing::internal::GetCapturedStdout();
 
   EXPECT_EQ(without_elapsed_ms_string(results), "nil");
-  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"),
-            std::string::npos);
+  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"), std::string::npos);
   EXPECT_NE(output.find("<test-path>"), std::string::npos);
   EXPECT_NE(output.find("--reporter simple|tree"), std::string::npos);
   EXPECT_NE(output.find("--durations"), std::string::npos);
@@ -625,6 +662,7 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
   auto fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Package::LoadedNativePackages native_packages;
   Roo::Runtime runtime(fs.get());
+  Roo::Package::configure_runtime_namespace_roots(runtime, plan);
   native_packages = Roo::Package::load_native_libraries(runtime, plan);
   Roo::Package::load_autoloads(runtime, plan);
 
@@ -637,7 +675,7 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
     {"--reporter=tree", "--durations", "--filter", "discovered-proof"});
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name discovered-proof :status :pass}]");
+  EXPECT_EQ(without_elapsed_ms_string(results), "0");
   EXPECT_NE(output.find(bold_label("test/smoke/discovered.roo") + "\n"), std::string::npos);
   expect_duration_output_line(output, "└── " + pass_label() + " - discovered-proof");
 }
@@ -646,11 +684,12 @@ TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)
 {
   Roo::DirRootFileSystem fs(proof_load_paths());
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
 
   runtime.eval(R"(
     (ns proof.package-scenario-arg-test
       (:require proof.core
-                [proof.syntax :as s]))
+                [proof.scenario :as s]))
   )");
   runtime.eval("(clear!)");
 

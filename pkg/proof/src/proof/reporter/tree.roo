@@ -1,29 +1,160 @@
 (ns proof.reporter.tree
-  (:require [proof.reporter.common :as rc]))
+  (:require [proof.reporter.common :as rc]
+            [proof.suite :as suite]
+            [soot :as soot]
+            [voodoo.session :as session]
+            [voodoo.widget :as widget]))
 
 (defun increment-file-count [counts test]
   (update-in counts
-             [(rc/test-display-file test)]
+             [(suite/test-display-file test)]
              (fn [count] (inc (or count 0)))))
 
-(defun report-test-result [state test result options]
-  (let [file (rc/test-display-file test)
-        current-index (+ 1 (get (:indexes state) file 0))]
-    (when (not= file (:current-file state))
-      (prn (rc/tree-parent-label file)))
-    (apply prn
-           (concat [(if (= current-index (get (:counts state) file)) "└──" "├──")
-                    (rc/status-label (:status result))
-                    "-"
-                    (:name result)]
-                   (rc/duration-args options result)))
-    (rc/report-result-details result)
-    (assoc state
-           :current-file file
-           :indexes (assoc (:indexes state) file current-index))))
+(defun bullet-for-index
+  "The bullet character for the INDEX'th (1-based) test out of TOTAL in
+  its file."
+  [total index]
+  (if (= index total) "└──" "├──"))
+
+(defun pending-text
+  "Render TEST's placeholder line: BULLET, a blank status-column-width
+  field where its status word will go, and TEST's name - the whole thing
+  (other than BULLET) grayed out to mark it as not started."
+  [bullet test]
+  (str bullet
+       " "
+       (soot/gray (str (rc/pad-status-word "") " - " (rc/highlight-test-name (:name test))))))
+
+(defun running-text
+  "Render TEST's in-progress line: BULLET, a grayed RUNNING status word,
+  and TEST's name."
+  [bullet test]
+  (str bullet " " (rc/status-label :running) " - " (rc/highlight-test-name (:name test))))
+
+(defun detail-lines
+  "Failure/error message lines for RESULT, e.g. '    - Expected 1, got
+  2.' - empty for a passing result."
+  [result]
+  (case (:status result)
+    :fail (for [failure (:failures result)] (str "    - " (:message failure)))
+    :error [(str "    - " (:message result))]
+    :default []))
+
+(defun result-text
+  "Render RESULT's finished line for TEST's BULLET: the same shape as
+  `running-text`'s but with RESULT's real status/duration, folded
+  together with RESULT's own `detail-lines` (if any) into one multi-line
+  string - see `voodoo.widget/line-count` - so they finalize, redraw, and
+  get evicted as a single unit."
+  [bullet result options]
+  (apply join
+         (concat ["\n"]
+                 (concat [(apply join
+                                 (concat [" "]
+                                         (concat [bullet
+                                                 (rc/status-label (:status result))
+                                                 "-"
+                                                 (rc/highlight-test-name (:name result))]
+                                                 (rc/duration-args options result))))]
+                         (detail-lines result)))))
+
+(defun add-pending-widgets!
+  "Add every test in TESTS to WIDGET-SESSION as a pending widget, in file
+  order.
+
+  Returns a vector of handles aligned with TESTS by position - the same
+  1-based index (`:indexes`) already used to pick a test's bullet
+  character locates its handle here too."
+  [widget-session tests]
+  (for-indexed [index test tests]
+    (session/add! widget-session
+                 (widget/make {:type :status
+                               :text (pending-text (bullet-for-index (count tests) (+ index 1)) test)
+                               :degrade widget/silent}))))
+
+(defun begin-test
+  "Report that TEST is about to run.
+
+  When TEST starts a new file: prints the file's header line, opens a
+  fresh voodoo session scoped to that file - the previous file's session,
+  if any, is simply never referenced again, so its rows stay exactly as
+  last drawn - and eagerly adds every test in the file as a pending
+  widget, so the whole file's tree is visible before any of its tests
+  run. Either way, TEST's own widget then transitions from pending (or,
+  for a file's first test, straight from being just added) to running.
+
+  Args:
+  - `state`: Reporter state - `:current-file`, `:indexes`, `:counts`,
+    `:tests-by-file`, `:session` (current file's voodoo session), and
+    `:handles` (that file's widget handles, aligned with its test order).
+  - `test`: Test about to run.
+  - `options`: Run options, e.g. `:tty?`.
+
+  Returns:
+  A map with `:state` (file/index/session bookkeeping advanced for TEST)
+  and `:context` (the bullet character, session, and widget handle
+  TEST's line uses, threaded into `end-test`)."
+  [state test options]
+  (let [file (suite/test-display-file test)
+        new-file? (not= file (:current-file state))
+        widget-session (if new-file?
+                         (session/make (select-keys options [:tty?]))
+                         (:session state))
+        handles (if new-file?
+                  (do
+                    (prn! (rc/tree-parent-label file))
+                    (add-pending-widgets! widget-session (get (:tests-by-file state) file)))
+                  (:handles state))
+        current-index (+ 1 (get (:indexes state) file 0))
+        bullet (bullet-for-index (get (:counts state) file) current-index)
+        handle (nth handles (- current-index 1))]
+    (session/update! widget-session
+                     handle
+                     (widget/make {:type :status
+                                   :text (running-text bullet test)
+                                   :degrade widget/silent}))
+    {:state (assoc state
+                   :current-file file
+                   :session widget-session
+                   :handles handles
+                   :indexes (assoc (:indexes state) file current-index))
+     :context {:bullet bullet :session widget-session :handle handle}}))
+
+(defun end-test
+  "Report TEST's finished RESULT.
+
+  Folds RESULT's failure/error detail lines into the same widget as its
+  main result line, updates it there (the one `:on-update :visible`
+  update - see `voodoo.widget/replaced` for the general shape), then
+  evicts that widget from the session's live tracking: its permanent
+  text has been drawn, and later tests in the file shouldn't keep
+  redrawing (or re-checking) content that will never change again.
+
+  Args:
+  - `state`: Reporter state, unused - already advanced by `begin-test`.
+  - `context`: Value from `begin-test` - the bullet character, session,
+    and handle for TEST's widget.
+  - `test`: Test that ran, unused - `context` already has what's needed.
+  - `result`: Its result.
+  - `options`: Run options, e.g. `:durations?`.
+
+  Returns:
+  A map with `:state` (unchanged)."
+  [state context test result options]
+  (session/update! (:session context)
+                   (:handle context)
+                   (widget/make {:type :status
+                                 :text (result-text (:bullet context) result options)
+                                 :degrade {:on-update :visible}}))
+  (session/evict! (:session context) (:handle context))
+  {:state state})
 
 (defun make [tests]
   {:state {:current-file nil
            :indexes {}
-           :counts (reduce tests {} increment-file-count)}
-   :reporter report-test-result})
+           :counts (reduce tests {} increment-file-count)
+           :tests-by-file (suite/tests-by-file tests)
+           :session nil
+           :handles []}
+   :begin-test begin-test
+   :end-test end-test})

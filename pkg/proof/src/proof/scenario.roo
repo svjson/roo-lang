@@ -1,0 +1,86 @@
+(ns proof.scenario
+  (:require proof.syntax.scenario))
+
+(def given
+  "Seeds the current state of a test scenario.
+
+  `given` may only appear as a top-level `deftest` phase. Its final body value
+  becomes both the original scenario value and the current state.
+
+  Args:
+  - `body...`: Forms whose final value initializes the scenario state.
+
+  Returns:
+  The initial scenario state.
+
+  Examples:
+  ```roo
+  (given
+    {:revision 1})
+  ```
+
+  See Also:
+  - `proof.core/deftest`
+  - `when`
+  - `then`
+
+  Since:
+  0.1.0"
+  proof.syntax.scenario/given)
+
+(def when
+  "Transforms the current state of a test scenario.
+
+  `when` may only appear as a top-level `deftest` phase. Its parameter vector
+  receives the current state using normal Roo function binding. The final body
+  value becomes the current state for later phases.
+
+  Args:
+  - `params`: Argument vector binding the current scenario state.
+  - `body...`: Forms whose final value becomes the next scenario state.
+
+  Returns:
+  The updated scenario state.
+
+  Examples:
+  ```roo
+  (when [{:keys [revision]}]
+    {:revision (+ revision 1)})
+  ```
+
+  See Also:
+  - `given`
+  - `then`
+
+  Since:
+  0.1.0"
+  proof.syntax.scenario/when)
+
+(def then
+  "Observes the current state of a test scenario.
+
+  `then` may only appear as a top-level `deftest` phase. Its parameter vector
+  receives the current state and may also bind the original `given` value. It
+  does not replace the state used by subsequent phases.
+
+  Args:
+  - `params`: Argument vector binding current and optional original state.
+  - `body...`: Observation and assertion forms.
+
+  Returns:
+  The value of the final body form without changing scenario state.
+
+  Examples:
+  ```roo
+  (then [{:keys [revision]} original]
+    (is (= revision 2))
+    (is (= original {:revision 1})))
+  ```
+
+  See Also:
+  - `given`
+  - `when`
+
+  Since:
+  0.1.0"
+  proof.syntax.scenario/then)

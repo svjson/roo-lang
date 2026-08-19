@@ -9,28 +9,62 @@
       :pass (soot/green label)
       :fail (soot/paint :bright-red label)
       :error (soot/paint dark-red label)
+      :running (soot/gray label)
+      :default label)))
+
+(def status-column-width
+  "Width of the status column in the simple reporter's output: every
+  status word (RUNNING, PASS, FAIL, ERROR) right-justified to this width
+  lines up in a single column. Driven by \"RUNNING\", the longest of
+  them, plus one leading space."
+  (+ 1 (count "RUNNING")))
+
+(defun pad-status-word
+  "Right-justify WORD to `status-column-width` with leading spaces."
+  [word]
+  (str (apply str (repeat (max 0 (- status-column-width (count word))) " "))
+       word))
+
+(defun padded-status-label [status]
+  "Like `status-label`, but right-justified to `status-column-width` so
+  RUNNING/PASS/FAIL/ERROR line up in a column. Used by the simple
+  reporter, which has the vertical space to spare now that a widget shows
+  a test's status while it runs; the tree reporter keeps `status-label`
+  unpadded."
+  (let [label (pad-status-word (upper-case (name status)))]
+    (case status
+      :pass (soot/green label)
+      :fail (soot/paint :bright-red label)
+      :error (soot/paint dark-red label)
+      :running (soot/gray label)
       :default label)))
 
 (defun tree-parent-label [label]
   (soot/bold label))
 
+(defun highlight-test-name [name]
+  "Highlight the subject segment of a '<subject>/<description>' test name.
+
+  Args:
+  - `name`: Test name, e.g. from `(:name result)`.
+
+  Returns:
+  `name` converted to text, with the part before the first '/' painted via
+  `soot`. Names with no '/' are returned as plain text, unstyled."
+  [name]
+  (let [text (str name)]
+    (if-let [separator (index-of text '/')]
+      (str (soot/bold (substr text 0 separator)) (substr text separator))
+      text)))
+
 (defun report-result-details [result]
   (case (:status result)
     :fail (for [failure (:failures result)]
-            (prn "    -" (:message failure)))
-    :error (prn "    -" (:message result)))
+            (prn! "    -" (:message failure)))
+    :error (prn! "    -" (:message result)))
   result)
 
 (defun duration-args [options result]
   (if (:durations? options)
     [(str "(" (get result :elapsed-ms 0) "ms)")]
     []))
-
-(defun test-display-file [test]
-  (if (nil? (:display-file test))
-    (if (nil? (:file test))
-      (if (nil? (:namespace test))
-        "<inline>"
-        (str (:namespace test)))
-      (:file test))
-    (:display-file test)))

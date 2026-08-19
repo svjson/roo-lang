@@ -1,23 +1,66 @@
 (ns proof.reporter.simple
-  (:require [proof.reporter.common :as rc]))
+  (:require [proof.reporter.common :as rc]
+            [voodoo.session :as session]
+            [voodoo.widget :as widget]))
 
-(defun report-result [result & options &rest]
-  (apply prn
-         (concat [" "
-                  (rc/status-label (:status result))
-                  (:name result)]
-                 (rc/duration-args options result)))
+(defun result-text [result & options &rest]
+  (apply join
+         (concat [" "]
+                 (concat [(rc/padded-status-label (:status result))
+                         (rc/highlight-test-name (:name result))]
+                         (rc/duration-args options result)))))
+
+(defun running-text [test]
+  (apply join (concat [" "] [(rc/padded-status-label :running)
+                             (rc/highlight-test-name (:name test))])))
+
+(defun begin-test
+  "Report that TEST is about to run.
+
+  Shows TEST's in-progress line as its own single-widget voodoo session
+  (tty only - `voodoo.widget/tty-only` - so append mode never sees it and
+  never tracks it).
+
+  Args:
+  - `state`: Reporter state, unused - the simple reporter is stateless.
+  - `test`: Test about to run.
+  - `options`: Run options, e.g. `:tty?`.
+
+  Returns:
+  A map with `:state` (unchanged) and `:context` (the session and handle
+  backing TEST's in-progress line, threaded into `end-test`)."
+  [state test options]
+  (let [widget-session (session/make (select-keys options [:tty?]))
+        handle (session/add! widget-session
+                             (widget/make {:type :status
+                                           :text (running-text test)
+                                           :degrade widget/tty-only}))]
+    {:state state
+     :context {:session widget-session :handle handle}}))
+
+(defun end-test
+  "Report TEST's finished RESULT.
+
+  Removes TEST's in-progress widget (a no-op in append mode, where it was
+  never tracked) and prints the finished line directly, no voodoo
+  involved - the one line append mode was always going to show.
+
+  Args:
+  - `state`: Reporter state, unused - the simple reporter is stateless.
+  - `context`: Value from `begin-test` - the session/handle to remove.
+  - `test`: Test that ran, unused.
+  - `result`: Its result.
+  - `options`: Run options, e.g. `:durations?`.
+
+  Returns:
+  A map with `:state` (unchanged)."
+  [state context test result options]
+  (session/remove! (:session context) (:handle context))
+  (prn! (result-text result options))
   (rc/report-result-details result)
-  result)
-
-(defun report-results [results & options &rest]
-  (for [result results]
-    (report-result result options)))
-
-(defun report-test-result [state test result options]
-  (report-result result options)
-  state)
+  {:state state})
 
 (defun make [tests]
   {:state {}
-   :reporter report-test-result})
+   :begin-test begin-test
+   :end-test end-test})

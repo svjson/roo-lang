@@ -1,6 +1,6 @@
 (ns proof.core-test
   (:require proof.core
-            [proof.syntax :as s]))
+            [proof.scenario :as s]))
 
 (defun assert-result [result expected-name expected-status]
   (is (= expected-name (str (:name result))))
@@ -165,6 +165,38 @@
       (+ value 1))
     (s/then [result]
       (should (= result 5))))
+  (let [result (head (run))]
+    (clear!)
+    (assert-result result "scenario" :pass)))
+
+(deftest scenario-given-flows-directly-to-then
+  (clear!)
+  (deftest scenario
+    (s/given
+      {:revision 1})
+    (s/then [{:keys [revision]}]
+      (should (= revision 1))))
+  (let [result (head (run))]
+    (clear!)
+    (assert-result result "scenario" :pass)))
+
+(deftest scenario-whens-thread-state-past-observing-thens
+  (clear!)
+  (deftest scenario
+    (s/given
+      {:revision 1})
+    (s/when [{:keys [revision]}]
+      {:revision (+ revision 1)})
+    (s/then [{:keys [revision]}]
+      (should (= revision 2))
+      {:revision 99})
+    (s/then [{:keys [revision]}]
+      (should (= revision 2)))
+    (s/when [{:keys [revision]}]
+      {:revision (+ revision 1)})
+    (s/then [{:keys [revision]} original-given]
+      (should (= revision 3))
+      (should (= original-given {:revision 1}))))
   (let [result (head (run))]
     (clear!)
     (assert-result result "scenario" :pass)))

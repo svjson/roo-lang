@@ -31,7 +31,7 @@
   The printed lines."
   [lines]
   (for [line lines]
-    (prn line)))
+    (prn! line)))
 
 (defun print-help! []
   "Print `roo proof` help.
@@ -51,7 +51,7 @@
   `nil`."
   [errors]
   (print-lines! errors)
-  (prn "")
+  (prn! "")
   (print-help!)
   nil)
 

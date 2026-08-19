@@ -1,5 +1,5 @@
 (ns proof.fixture
-  (:require proof.syntax
+  (:require proof.syntax.fixture
             [proof.fixture.cache :as cache]
             [proof.fixture.persistent :as persistent]))
 
@@ -13,7 +13,7 @@
   Usage:
 
   ```roo
-  (fixture/deffixture commonborn-bootstrap
+  (deffixture commonborn-bootstrap
     {:storage :persistent
      :path \"backend/commonborn-bootstrap.edn\"
      :version 1}
@@ -22,7 +22,7 @@
 
   The options map is required. `:storage` may be `:cache` or `:persistent`, and
   defaults to `:cache`."
-  proof.syntax/deffixture)
+  proof.syntax.fixture/deffixture)
 
 (def using-fixtures
   "Binds declared fixture values for the scope of the body.
@@ -30,14 +30,14 @@
   Usage:
 
   ```roo
-  (fixture/using-fixtures [[bootstrap commonborn-bootstrap]
-                           simple-fixture]
+  (using-fixtures [[bootstrap commonborn-bootstrap]
+                   simple-fixture]
     body...)
   ```
 
   Each fixture spec may be a fixture symbol, `[binding fixture]`, or
   `[binding fixture opts]`."
-  proof.syntax/using-fixtures)
+  proof.syntax.fixture/using-fixtures)
 
 (def using-cache-fixture
   "Binds an in-process cache fixture value for the scope of the body.
@@ -45,13 +45,13 @@
   Usage:
 
   ```roo
-  (fixture/using-cache-fixture [value \"bootstrap/commonborn\" generate]
+  (using-cache-fixture [value \"bootstrap/commonborn\" generate]
     body...)
   ```
 
   The binding vector is `[binding key generator]` or
   `[binding key generator opts]`. `opts` may contain `:paths`."
-  proof.syntax/using-cache-fixture)
+  proof.syntax.fixture/using-cache-fixture)
 
 (def using-persistent-fixture
   "Binds a persistent fixture value for the scope of the body.
@@ -59,14 +59,14 @@
   Usage:
 
   ```roo
-  (fixture/using-persistent-fixture [value \"bootstrap/commonborn.edn\" generate]
+  (using-persistent-fixture [value \"bootstrap/commonborn.edn\" generate]
     body...)
   ```
 
   The binding vector is `[binding relative-path generator]` or
   `[binding relative-path generator opts]`. `opts` may contain `:version`,
   `:refresh?`, and `:paths`."
-  proof.syntax/using-persistent-fixture)
+  proof.syntax.fixture/using-persistent-fixture)
 
 (def cache-fixture-value
   "Returns the value used by `using-cache-fixture`."

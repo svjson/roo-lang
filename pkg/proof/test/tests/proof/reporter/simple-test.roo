@@ -1,0 +1,79 @@
+(ns proof.reporter.simple-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [proof.reporter.simple :as simple]
+            [soot.core :as soot-core]))
+
+
+
+;; proof.reporter.simple/running-text
+
+(deftest running-text/reports-a-padded-gray-running-line
+  (is (= (str soot-core/esc "[90m RUNNING" soot-core/esc "[39m "
+              soot-core/esc "[1mmy-fun" soot-core/esc "[22m/description")
+         (simple/running-text {:name "my-fun/description"}))))
+
+
+
+;; proof.reporter.simple/result-text
+
+(deftest result-text/reports-a-padded-result-line
+  (is (= (str soot-core/esc "[32m    PASS" soot-core/esc "[39m "
+              soot-core/esc "[1mmy-fun" soot-core/esc "[22m/description")
+         (simple/result-text {:name "my-fun/description" :status :pass} {}))))
+
+(deftest result-text/appends-durations-when-enabled
+  (is (= (str soot-core/esc "[32m    PASS" soot-core/esc "[39m name (12ms)")
+         (simple/result-text {:name "name" :status :pass :elapsed-ms 12} {:durations? true}))))
+
+
+
+;; proof.reporter.simple/begin-test
+
+(deftest begin-test/adds-an-untracked-running-widget-in-append-mode
+  (p/when [outcome]
+    (simple/begin-test {} {:name "my-fun/description"} {:tty? false}))
+
+  (p/then [outcome]
+    (is (= {:state {}
+            :context
+            {:session
+             {:tty? false
+              :widgets {}
+              :order []
+              :focus nil
+              :id-seq 1}
+             :handle :voodoo/1}}
+           outcome))))
+
+(deftest begin-test/tracks-the-running-widget-in-tty-mode
+  (p/when [outcome]
+    (simple/begin-test {} {:name "my-fun/description"} {:tty? true}))
+
+  (p/then [outcome]
+    (is (contains? (:widgets (:session (:context outcome))) :voodoo/1))))
+
+
+
+;; proof.reporter.simple/end-test
+
+(deftest end-test/leaves-state-unchanged-and-prints-the-result-line
+  (p/given
+    (simple/begin-test {:seen? true} {:name "x"} {:tty? false}))
+
+  (p/when [begin]
+    (simple/end-test {:seen? true} (:context begin) {:name "x"} {:name "x" :status :pass} {}))
+
+  (p/then [outcome]
+    (is (= {:state {:seen? true}} outcome))))
+
+(deftest end-test/removes-the-widget-in-tty-mode
+  (p/given
+    (simple/begin-test {} {:name "x"} {:tty? true}))
+
+  (p/when [begin]
+    {:begin begin
+     :end (simple/end-test {} (:context begin) {:name "x"} {:name "x" :status :pass} {})})
+
+  (p/then [{:keys [begin]}]
+    (is (= {} (:widgets (:session (:context begin)))))))

@@ -1,5 +1,10 @@
 add_library(proof_native SHARED
   src/native.cpp
+  src/native_package.cpp
+  src/binding/syntax_namespace.cpp
+  src/binding/syntax/fixture_namespace.cpp
+  src/binding/syntax/scenario_namespace.cpp
+  src/scenario.cpp
 )
 
 set_target_properties(proof_native PROPERTIES
@@ -10,6 +15,8 @@ set_target_properties(proof_native PROPERTIES
 target_include_directories(proof_native
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_compile_definitions(proof_native

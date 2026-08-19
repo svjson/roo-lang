@@ -1,0 +1,50 @@
+(ns proof.reporter.common-test
+  (:require proof.core
+            [proof.reporter.common :as common]
+            [soot.core :as soot-core]))
+
+
+;;; proof.reporter.common/highlight-test
+
+(deftest highlight-test-name/returns-plain-text-when-name-has-no-slash
+  (is (= "addition"
+         (common/highlight-test-name "addition"))))
+
+(deftest highlight-test-name/wraps-the-subject-before-the-slash-in-bold
+  (is (= (str soot-core/esc
+              "[1mmake"
+              soot-core/esc
+              "[22m/creates-a-session")
+         (common/highlight-test-name "make/creates-a-session"))))
+
+(deftest highlight-test-name/only-wraps-up-to-the-first-slash
+  (is (= (str soot-core/esc
+              "[1mparse"
+              soot-core/esc
+              "[22m/handles-a/b-paths")
+         (common/highlight-test-name "parse/handles-a/b-paths"))))
+
+
+
+;;; proof.reporter.common/pad-status-word
+
+(deftest pad-status-word/right-justifies-to-the-status-column-width
+  (is (= " RUNNING" (common/pad-status-word "RUNNING")))
+  (is (= "    PASS" (common/pad-status-word "PASS")))
+  (is (= "    FAIL" (common/pad-status-word "FAIL")))
+  (is (= "   ERROR" (common/pad-status-word "ERROR"))))
+
+(deftest pad-status-word/does-not-truncate-a-word-wider-than-the-column
+  (is (= "OVERFLOWING" (common/pad-status-word "OVERFLOWING"))))
+
+
+
+;;; proof.reporter.common/padded-status-label
+
+(deftest padded-status-label/colors-and-pads-pass
+  (is (= (str soot-core/esc "[32m    PASS" soot-core/esc "[39m")
+         (common/padded-status-label :pass))))
+
+(deftest padded-status-label/colors-running-gray-and-pads-it
+  (is (= (str soot-core/esc "[90m RUNNING" soot-core/esc "[39m")
+         (common/padded-status-label :running))))

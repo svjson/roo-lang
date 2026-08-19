@@ -30,27 +30,20 @@
   (string/replace (str path) "\\" "/"))
 
 (defun trim-trailing-slash [path]
-  (if (and (> (count path) 1)
-           (= "/" (str (nth path (- (count path) 1)))))
-    (substr path 0 (- (count path) 1))
-    path))
+  (cond-> path
+    (and (> (count path) 1)
+         (string/ends-with? path "/"))
+    (substr 0 (- (count path) 1))))
 
-(defun roo-file-entry? [entry]
-  (= ".roo" (io/extension (:path entry))))
-
-(defun directory-entry? [entry]
-  (= (:type entry) :directory))
+(defun roo-file-entry? [entry metadata]
+  (and (= (:type entry) :file)
+       (= ".roo" (io/extension (:relative-path metadata)))))
 
 (defun discover-roo-files [root]
   (cond
     (io/directory? root)
-    (let [entries (io/list-directory! root)
-          files (map (filter entries roo-file-entry?) :path)
-          directories (filter entries directory-entry?)]
-      (concat files
-              (flat-map directories
-                        (fn [entry]
-                          (discover-roo-files (:path entry))))))
+    (for [result (io/walk! root {:keep? roo-file-entry?})]
+      (:path (:entry result)))
 
     (and (io/file? root)
          (= ".roo" (io/extension root)))
@@ -69,9 +62,9 @@
     (let [normalized-root (trim-trailing-slash (normalized-path package-root))
           normalized-file (normalized-path path)
           prefix (str normalized-root "/")]
-      (if (string/starts-with? normalized-file prefix)
-        (substr normalized-file (count prefix))
-        normalized-file))
+      (cond-> normalized-file
+        (string/starts-with? normalized-file prefix)
+        (substr (count prefix))))
     (normalized-path path)))
 
 (defun test-file-entry [context path]
