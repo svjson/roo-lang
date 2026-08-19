@@ -34,6 +34,33 @@ namespace Roo
   FUNC(AnyFunction, any)
 
   /*!
+   * @brief Tests if every element in a seq satisfies a predicate function.
+   *
+   * The seq and predicate arguments may be provided in either order. An empty
+   * seq satisfies every predicate.
+   *
+   * Usage:
+   * @code
+   * (every? [2 4 6] even?)
+   * => true
+   *
+   * (every? even? [2 3 4])
+   * => false
+   * @endcode
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | seq       | The seq to test                                                    |
+   * | predicate | The predicate function.                                            |
+   *
+   * | Arg       | Description                                                        |
+   * | --------- | ------------------------------------------------------------------ |
+   * | predicate | The predicate function.                                            |
+   * | seq       | The seq to test                                                    |
+   */
+  FUNC(EveryFunction, every)
+
+  /*!
    * @brief Keep only certain elements of a Seq by applying a function/executable
    * to each element.
    *

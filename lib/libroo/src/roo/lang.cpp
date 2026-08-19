@@ -109,6 +109,7 @@ namespace Roo
     lang_symbols.emplace("epoch-ms", EpochMsFunction::make());
     lang_symbols.emplace("eval", EvalFunction::make());
     lang_symbols.emplace("even?", EvenPFunction::make());
+    lang_symbols.emplace("every?", EveryFunction::make());
     lang_symbols.emplace("false", Constant::BOOL_FALSE);
     lang_symbols.emplace("flatten", FlattenFunction::make());
     lang_symbols.emplace("filter", FilterFunction::make());

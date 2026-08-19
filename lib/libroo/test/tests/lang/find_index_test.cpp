@@ -22,6 +22,11 @@ TEST_F(FindIndexFunction, finds_index_in_map_as_interleaved_sequence)
   EXPECT_EQ(runtime.eval("(find-index {:a 1 :b 2} (fn [x] (= x :b)))")->to_string(), "2");
 }
 
+TEST_F(FindIndexFunction, finds_in_vector_of_map_by_keyword)
+{
+  EXPECT_EQ(runtime.eval("(find-index [{:a nil} {:c 'a'} {:a 8}] :a)")->to_string(), "2");
+}
+
 TEST_F(FindIndexFunction, finds_index_in_native_vector_adapter_as_sequence)
 {
   std::vector<int> values = {1, 2, 3};

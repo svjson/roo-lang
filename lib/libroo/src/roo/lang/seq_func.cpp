@@ -1,6 +1,4 @@
 
-#include "roo/host/object.h"
-
 #include <algorithm>
 
 #include <roo/lang/seq_func.h>
@@ -23,7 +21,7 @@ namespace Roo
     {
       return arg->type == Value::Type::FUNCTION;
     }
-  }
+  } // namespace
 
   /** AnyFunction - roo/any? */
   FUNC_IMPL(AnyFunction,
@@ -38,18 +36,43 @@ namespace Roo
     sptr_val seq_arg = fn_first ? args[1] : args[0];
     sptr_val fn_arg = fn_first ? args[0] : args[1];
     sptr_val_v val_arg = {nullptr};
-    auto& fn = fn_arg->exec();
     sptr_val_v elements = Roo::get_children(*seq_arg);
     for (auto& element : elements)
     {
       val_arg[0] = element;
-      sptr_val result = fn.execute(ctx, val_arg);
+      sptr_val result = invoke_callable(ctx, fn_arg, val_arg);
       if (Roo::is_truthy(*result))
       {
         return Constant::BOOL_TRUE;
       }
     }
     return Constant::BOOL_FALSE;
+  }
+
+  /** EveryFunction - roo/every? */
+  FUNC_IMPL(EveryFunction,
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
+                       EXEC_DISPATCH(&EveryFunction::exec_every)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
+                       EXEC_DISPATCH(&EveryFunction::exec_every))))
+
+  EXEC_BODY(EveryFunction, exec_every)
+  {
+    bool fn_first = is_exec_arg(args[0]);
+    sptr_val seq_arg = fn_first ? args[1] : args[0];
+    sptr_val fn_arg = fn_first ? args[0] : args[1];
+    sptr_val_v val_arg = {nullptr};
+    sptr_val_v elements = Roo::get_children(*seq_arg);
+    for (auto& element : elements)
+    {
+      val_arg[0] = element;
+      sptr_val result = invoke_callable(ctx, fn_arg, val_arg);
+      if (!Roo::is_truthy(*result))
+      {
+        return Constant::BOOL_FALSE;
+      }
+    }
+    return Constant::BOOL_TRUE;
   }
 
   /** FilterFunction - roo/filter */
@@ -79,14 +102,12 @@ namespace Roo
     sptr_val_v result;
     result.reserve(count(*original));
 
-    auto& filter_fn = fn->exec();
-
     sptr_val_v val_args{Constant::NIL};
     sptr_val_v elements = Roo::get_children(*original);
     for (auto val : elements)
     {
       val_args[0] = val;
-      sptr_val pred_result = filter_fn.execute(ctx, val_args);
+      sptr_val pred_result = invoke_callable(ctx, fn, val_args);
       if (Roo::is_truthy(*pred_result))
       {
         result.push_back(val);
@@ -98,24 +119,23 @@ namespace Roo
 
   /** FindFirstFunction - roo/find-first */
   FUNC_IMPL(FindFirstFunction,
-            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&FindFirstFunction::exec_find_first)),
-                      (FN_ARGS((&Type::FUNCTION), (&Type::SEQ_OR_STRING)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&FindFirstFunction::exec_find_first))))
 
   EXEC_BODY(FindFirstFunction, exec_find_first)
   {
-    bool fn_first = is_function_arg(args[0]);
+    bool fn_first = is_exec_arg(args[0]);
     sptr_val seq_arg = fn_first ? args[1] : args[0];
-    sptr_val fn_arg = fn_first ? args[0] : args[1];
-    auto& filter_fn = fn_arg->exec();
+    sptr_val needle_fn = fn_first ? args[0] : args[1];
 
     sptr_val_v val_args{nullptr};
     sptr_val_v children = Roo::get_children(*seq_arg);
     for (auto val : children)
     {
       val_args[0] = val;
-      sptr_val pred_result = filter_fn.execute(ctx, val_args);
+      sptr_val pred_result = invoke_callable(ctx, needle_fn, val_args);
       if (Roo::is_truthy(*pred_result))
       {
         return val;
@@ -127,19 +147,17 @@ namespace Roo
 
   /** FindIndexFunction - roo/find-index */
   FUNC_IMPL(FindIndexFunction,
-            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::FUNCTION)),
+            MULTI_SIG((FN_ARGS((&Type::SEQ_OR_STRING), (&Type::EXEC)),
                        EXEC_DISPATCH(&FindIndexFunction::exec_find_index)),
-                      (FN_ARGS((&Type::FUNCTION), (&Type::SEQ_OR_STRING)),
+                      (FN_ARGS((&Type::EXEC), (&Type::SEQ_OR_STRING)),
                        EXEC_DISPATCH(&FindIndexFunction::exec_find_index))))
 
   EXEC_BODY(FindIndexFunction, exec_find_index)
   {
     bool fn_first = is_function_arg(args[0]);
     sptr_val seq_arg = fn_first ? args[1] : args[0];
-    sptr_val fn_arg = fn_first ? args[0] : args[1];
+    sptr_val needle_fn = fn_first ? args[0] : args[1];
     if (*seq_arg == *Constant::NIL) return Constant::NIL;
-
-    auto& filter_fn = fn_arg->exec();
 
     sptr_val_v children = Roo::get_children(*seq_arg);
 
@@ -148,7 +166,7 @@ namespace Roo
     {
       val_args[0] = children[i];
       auto item = std::make_unique<ExecNode>(children[i]);
-      if (Roo::is_truthy(*filter_fn.execute(ctx, val_args)))
+      if (Roo::is_truthy(*invoke_callable(ctx, needle_fn, val_args)))
       {
         return Value::number(static_cast<int>(i));
       }
@@ -179,25 +197,13 @@ namespace Roo
       fn = args[1];
     }
 
-    // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
-    bool is_kw = fn->type == Value::Type::KEYWORD;
-    Executable* map_fn = is_kw ? nullptr : &fn->exec();
-
     sptr_val_v result;
     sptr_val_v elements = Roo::get_children(*original);
     sptr_val_v map_args{nullptr};
     for (auto& element : elements)
     {
-      sptr_val mapped;
-      if (is_kw)
-      {
-        mapped = Dict::get_property(element, fn);
-      }
-      else
-      {
-        map_args[0] = element;
-        mapped = map_fn->execute(ctx, map_args);
-      }
+      map_args[0] = element;
+      sptr_val mapped = invoke_callable(ctx, fn, map_args);
 
       if (Type::SEQ_OR_STRING.is_type_of(*mapped))
       {
@@ -249,7 +255,6 @@ namespace Roo
     sptr_val seq_arg = fn_first ? args[1] : args[0];
     sptr_val fn_arg = fn_first ? args[0] : args[1];
     sptr_val_v values = Roo::get_children(*seq_arg);
-    Executable& exec = fn_arg->exec();
 
     sptr_val_v result;
 
@@ -257,7 +262,7 @@ namespace Roo
     for (auto& v : values)
     {
       arg[0] = v;
-      sptr_val r = exec.execute(ctx, arg);
+      sptr_val r = invoke_callable(ctx, fn_arg, arg);
       if (*r != *Constant::NIL) result.push_back(r);
     }
 
@@ -293,10 +298,6 @@ namespace Roo
 
     result.reserve((*max_lmnts_it).size());
 
-    // FIXME: is_kw flag MESS until keylookupnode vs callnode gets symmetrical
-    bool is_kw = mapper->type == Value::Type::KEYWORD;
-    Executable* map_fn = is_kw ? nullptr : &mapper->exec();
-
     sptr_val_v map_args;
     for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
     {
@@ -322,26 +323,7 @@ namespace Roo
 
       if (valid)
       {
-        if (is_kw)
-        {
-          if (seqs.size() == 1)
-          {
-            result.push_back(Dict::get_property(map_args[0], mapper));
-          }
-          else
-          {
-            sptr_val_v unit;
-            for (size_t seq_i = 0; seq_i < seqs.size(); seq_i++)
-            {
-              unit.push_back(Dict::get_property(map_args[seq_i], mapper));
-            }
-            result.push_back(Value::vector(std::move(unit)));
-          }
-        }
-        else
-        {
-          result.push_back(map_fn->execute(ctx, map_args));
-        }
+        result.push_back(invoke_callable(ctx, mapper, map_args));
       }
       else
       {
@@ -393,17 +375,17 @@ namespace Roo
   EXEC_BODY(RemoveFunction, exec_remove)
   {
     Value* original;
-    Executable* remove_fn;
+    sptr_val remove_fn;
 
     if (is_exec_arg(args[0]))
     {
       original = args[1].get();
-      remove_fn = &args[0]->exec();
+      remove_fn = args[0];
     }
     else
     {
       original = args[0].get();
-      remove_fn = &args[1]->exec();
+      remove_fn = args[1];
     }
 
     sptr_val_v result;
@@ -413,7 +395,7 @@ namespace Roo
     for (auto val : elements)
     {
       val_args[0] = val;
-      auto pred_result = remove_fn->execute(ctx, val_args);
+      auto pred_result = invoke_callable(ctx, remove_fn, val_args);
       if (!Roo::is_truthy(*pred_result))
       {
         result.push_back(val);
@@ -435,26 +417,8 @@ namespace Roo
     bool fn_first = is_exec_arg(args[0]);
     sptr_val seq_arg = fn_first ? args[1] : args[0];
     sptr_val fn_arg = fn_first ? args[0] : args[1];
-    auto& remove_fn = fn_arg->exec();
 
-    if (seq_arg->type == Value::Type::OBJECT && Type::HOST_SEQ.is_type_of(*seq_arg))
-    {
-      sptr_ast_node obj = seq_arg->obj();
-      AST::Seq& host_seq = obj->as<AST::Seq>();
-      sptr_ast_node_v& children = host_seq.get_children();
-      auto it = std::remove_if(children.begin(),
-                               children.end(),
-                               [&](const Roo::sptr_ast_node& element)
-                               {
-                                 Roo::sptr_ast_node ast_element = element;
-                                 Roo::sptr_val_v val_args{to_rt_value(ast_element)};
-                                 return Roo::is_truthy(*remove_fn.execute(ctx, val_args));
-                               });
-      children.erase(it, children.end());
-
-      host_seq.replace_children(children);
-    }
-    else if (seq_arg->type == Value::Type::NATIVE_OBJECT)
+    if (seq_arg->type == Value::Type::NATIVE_OBJECT)
     {
       throw TypeError("remove! not implemented for native host sequences.");
     }
@@ -467,7 +431,7 @@ namespace Roo
                                [&](const Roo::sptr_val& element)
                                {
                                  Roo::sptr_val_v val_args{element};
-                                 auto pred_result = remove_fn.execute(ctx, val_args);
+                                 auto pred_result = invoke_callable(ctx, fn_arg, val_args);
                                  return Roo::is_truthy(*pred_result);
                                });
 
@@ -487,17 +451,17 @@ namespace Roo
   EXEC_BODY(RemoveFirstFunction, exec_remove_first)
   {
     Value* original;
-    Executable* remove_fn;
+    sptr_val remove_fn;
 
     if (is_exec_arg(args[0]))
     {
       original = args[1].get();
-      remove_fn = &args[0]->exec();
+      remove_fn = args[0];
     }
     else
     {
       original = args[0].get();
-      remove_fn = &args[1]->exec();
+      remove_fn = args[1];
     }
 
     sptr_val_v result;
@@ -508,7 +472,7 @@ namespace Roo
     for (auto val : Roo::get_children(*original))
     {
       val_args[0] = val;
-      auto test_result = remove_fn->execute(ctx, val_args);
+      auto test_result = invoke_callable(ctx, remove_fn, val_args);
       if (removed || !Roo::is_truthy(*test_result))
       {
         result.push_back(val);
@@ -575,17 +539,17 @@ namespace Roo
   EXEC_BODY(SortFunction, exec_sort)
   {
     Value* seq_arg;
-    Executable* comparator;
+    sptr_val comparator;
 
     if (is_exec_arg(args[0]))
     {
       seq_arg = args[1].get();
-      comparator = &args[0]->exec();
+      comparator = args[0];
     }
     else
     {
       seq_arg = args[0].get();
-      comparator = &args[1]->exec();
+      comparator = args[1];
     }
 
     Roo::sptr_val_v elements = Roo::get_children(*seq_arg);
@@ -599,7 +563,7 @@ namespace Roo
                 {
                   cmp_args[0] = a;
                   cmp_args[1] = b;
-                  return Roo::is_truthy(*comparator->execute(ctx, cmp_args));
+                  return Roo::is_truthy(*invoke_callable(ctx, comparator, cmp_args));
                 });
     }
 

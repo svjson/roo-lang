@@ -38,6 +38,12 @@ TEST_F(FindFirstFunction, finds_in_map_as_interleaved_sequence)
   EXPECT_EQ(runtime.eval("(find-first {:a 1 :b 2} keyword?)")->to_string(), ":a");
 }
 
+TEST_F(FindFirstFunction, finds_in_vector_of_map_by_keyword)
+{
+  EXPECT_EQ(runtime.eval("(find-first [{:a nil} {:c 'a'} {:a 8}] :a)")->to_string(),
+            "{:a 8}");
+}
+
 TEST_F(FindFirstFunction, finds_in_native_vector_adapter_as_sequence)
 {
   std::vector<int> values = {1, 2, 3};
