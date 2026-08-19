@@ -1,0 +1,5 @@
+(ns roopl.fixture.project-value)
+
+(def value
+  "Value used to verify that a dedicated target loads the containing package."
+  "loaded from the roopl test package")

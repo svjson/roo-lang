@@ -1,0 +1,6 @@
+{:name roopl-tests
+ :version "0.1.0"
+ :dependencies {roopl "file:.."
+                proof "file:../../proof"}
+ :load-roots ["roopl"]
+ :config {proof {:test-roots ["roopl"]}}}

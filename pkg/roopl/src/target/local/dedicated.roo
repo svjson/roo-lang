@@ -1,0 +1,23 @@
+(ns roopl.target.local.dedicated
+  (:require [roopl.target.runtime :as runtime]))
+
+(defun make
+  "Create a target backed by a dedicated Roo runtime in this process.
+
+  Args:
+  - `options`: Configuration map. `:load-paths` may provide filesystem load
+    roots. `:package-root` may select a package whose dependencies, namespace
+    roots, native libraries, and autoloads configure the runtime. When omitted,
+    the nearest package containing the current directory is used when one
+    exists.
+
+  Returns:
+  A target accepted by `roopl.target/eval!` and `roopl.target/close!`. Its Roo
+  namespaces and definitions are separate from the runtime hosting roopl. This
+  is process-local separation, not a security sandbox."
+  [options]
+  (let [runtime-target (runtime/open! options)]
+    {:eval! (fn [request]
+              (runtime/eval! runtime-target request))
+     :close! (fn []
+               (runtime/close! runtime-target))}))

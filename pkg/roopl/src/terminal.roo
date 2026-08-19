@@ -1,0 +1,61 @@
+(ns roopl.terminal
+  (:require [inpoots.stdin :as stdin]
+            [roo.tty :as tty]
+            [roopl.repl :as repl]
+            [roopl.target.local.dedicated :as dedicated]
+            [voodoo.session :as session]
+            [voodoo.session.input :as input]
+            [voodoo.widget.prompt :as prompt]))
+
+(defun main
+  "Run the interactive roopl terminal frontend.
+
+  Args:
+  - `args`: Command-line argument vector. No arguments are currently accepted.
+
+  Returns:
+  `nil` after the frontend exits on EOF or interruption. Submitted source is
+  evaluated by a dedicated local Roo runtime."
+  [args]
+  (prn! "roopl 0.1.0")
+  (prn! "-----------")
+  (let [repl-state (repl/make (dedicated/make {}))
+        widget-session (session/make)
+        columns (or (:columns (tty/dimensions!)) 80)
+        history []
+        handle (session/add! widget-session
+                             (prompt/make
+                               {:prompt (str (repl/current-namespace repl-state)
+                                             "=> ")
+                                :history history}))
+        running true]
+    (session/focus! widget-session handle)
+    (stdin/with! {:mode :raw}
+                 (fn [terminal-input]
+                   (while running
+                     (let [input-result (input/dispatch-next! widget-session terminal-input)
+                           action (head (:actions input-result))]
+                       (case (:type (:event input-result))
+                         :eof (set! [running] false)
+                         :interrupt (set! [running] false)
+                         :resize (set! [columns] (:columns (:event input-result)))
+                         :default
+                         (when (and (= :submit (:type action))
+                                    (not (blank? (:value action))))
+                           (session/evict! widget-session handle)
+                           (append! history (:value action))
+                           (let [response (repl/submit! repl-state
+                                                        (:value action)
+                                                        {:print-width columns})]
+                             (case (:status response)
+                               :ok (prn! (:display response))
+                               :error (prn! (:message response))))
+                           (set! [handle]
+                             (session/add! widget-session
+                                           (prompt/make
+                                             {:prompt (str (repl/current-namespace repl-state)
+                                                           "=> ")
+                                              :history history})))
+                           (session/focus! widget-session handle)))))))
+    (session/remove! widget-session handle)
+    (repl/close! repl-state)))

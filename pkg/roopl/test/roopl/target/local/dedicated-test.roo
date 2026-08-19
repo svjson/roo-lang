@@ -1,0 +1,70 @@
+(ns roopl.target.local.dedicated-test
+  (:require proof.core
+            [roopl.target :as target]
+            [roopl.target.local.dedicated :as dedicated]))
+
+(deftest eval!/preserves-definitions-inside-the-dedicated-runtime
+  (let [evaluation-target (dedicated/make {})]
+    (target/eval! evaluation-target
+                  {:source "(def answer 42)"
+                   :namespace "user"
+                   :source-name "<dedicated-test:1>"})
+    (is (= {:status :ok
+            :namespace "user"
+            :display "42"}
+           (target/eval! evaluation-target
+                         {:source "answer"
+                          :namespace "user"
+                          :source-name "<dedicated-test:2>"})))
+    (target/close! evaluation-target)))
+
+(deftest eval!/reports-namespace-changes
+  (let [evaluation-target (dedicated/make {})]
+    (is (= "scratch"
+           (:namespace
+             (target/eval! evaluation-target
+                           {:source "(ns scratch)"
+                            :namespace "user"
+                            :source-name "<dedicated-test:namespace>"}))))
+    (target/close! evaluation-target)))
+
+(deftest eval!/returns-errors-and-keeps-the-runtime-usable
+  (let [evaluation-target (dedicated/make {})
+        error-response
+        (target/eval! evaluation-target
+                      {:source "(+ 1 \"two\")"
+                       :namespace "user"
+                       :source-name "<dedicated-test:error>"})]
+    (is (= :error (:status error-response)))
+    (is (= :invocation (:kind error-response)))
+    (is (some? (:message error-response)))
+    (is (= "3"
+           (:display
+             (target/eval! evaluation-target
+                           {:source "(+ 1 2)"
+                            :namespace "user"
+                            :source-name "<dedicated-test:recovery>"}))))
+    (target/close! evaluation-target)))
+
+(deftest eval!/loads-namespaces-from-the-containing-package
+  (let [evaluation-target (dedicated/make {})]
+    (is (= "\"loaded from the roopl test package\""
+           (:display
+             (target/eval!
+               evaluation-target
+               {:source
+                "(ns project-check (:require [roopl.fixture.project-value :as project])) project/value"
+                :namespace "user"
+                :source-name "<dedicated-test:project-package>"}))))
+    (target/close! evaluation-target)))
+
+(deftest eval!/compacts-results-that-fit-the-print-width
+  (let [evaluation-target (dedicated/make {})]
+    (is (= "[1 2 3 4 5 6 7 8 9 10]"
+           (:display
+             (target/eval! evaluation-target
+                           {:source "(range 1 10)"
+                            :namespace "user"
+                            :source-name "<dedicated-test:print-width>"
+                            :print-width 80}))))
+    (target/close! evaluation-target)))

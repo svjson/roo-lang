@@ -1,0 +1,29 @@
+(ns roopl.target)
+
+(defun eval!
+  "Evaluate one request through TARGET.
+
+  Args:
+  - `target`: Target returned by a concrete target namespace.
+  - `request`: Map containing string `:source`, `:namespace`, and
+    `:source-name` fields. Optional `:print-width` sets the column budget for
+    formatting a successful result.
+
+  Returns:
+  A synchronous response. Success responses contain `:status :ok`, the
+  resulting `:namespace`, and printable `:display` text. Error responses
+  contain `:status :error`, the resulting `:namespace`, an error `:kind`, and
+  a human-readable `:message`."
+  [target request]
+  ((:eval! target) request))
+
+(defun close!
+  "Release TARGET's execution resources.
+
+  Args:
+  - `target`: Target returned by a concrete target namespace.
+
+  Returns:
+  The concrete target's close result, normally `nil`."
+  [target]
+  ((:close! target)))

@@ -1,0 +1,61 @@
+(ns roopl.repl
+  (:require [roopl.target :as target]))
+
+(defun make
+  "Create REPL state for TARGET.
+
+  Args:
+  - `target`: Evaluation target accepted by `roopl.target/eval!`.
+
+  Returns:
+  Mutable REPL state beginning in the `user` namespace."
+  [target]
+  {:target target
+   :namespace "user"
+   :next-submission 1})
+
+(defun current-namespace
+  "Return the namespace used for the next submission.
+
+  Args:
+  - `repl`: Mutable state returned by `make`.
+
+  Returns:
+  The current namespace name as a string. New REPL state starts in `user`."
+  [repl]
+  (:namespace repl))
+
+(defun submit!
+  "Evaluate SOURCE and advance REPL submission and namespace state.
+
+  Args:
+  - `repl`: Mutable state returned by `make`.
+  - `source`: Roo source string to evaluate.
+  - `options`: Optional map. `:print-width` sets the column budget used to
+    format the evaluated value.
+
+  Returns:
+  The target response. Each request receives a stable source name such as
+  `<repl:1>`, and the next request uses the namespace reported by this one."
+  [repl source & options &rest]
+  (let [submission (:next-submission repl)
+        response (target/eval! (:target repl)
+                               (merge
+                                 {:source source
+                                  :namespace (:namespace repl)
+                                  :source-name (str "<repl:" submission ">")}
+                                 (select-keys options [:print-width])))]
+    (assoc! repl :next-submission (inc submission))
+    (assoc! repl :namespace (:namespace response))
+    response))
+
+(defun close!
+  "Release the evaluation target owned by REPL.
+
+  Args:
+  - `repl`: Mutable state returned by `make`.
+
+  Returns:
+  The target close result, normally `nil`."
+  [repl]
+  (target/close! (:target repl)))

@@ -1,0 +1,32 @@
+(ns roopl.target-test
+  (:require proof.core
+            [roopl.target :as target]))
+
+(deftest eval!/dispatches-the-request-through-the-target
+  (let [received {:request nil}
+        evaluation-target
+        {:eval! (fn [request]
+                  (assoc! received :request request)
+                  {:status :ok
+                   :namespace "user"
+                   :display "3"})
+         :close! (fn []
+                   nil)}
+        request {:source "(+ 1 2)"
+                 :namespace "user"
+                 :source-name "<test>"}]
+    (is (= {:status :ok
+            :namespace "user"
+            :display "3"}
+           (target/eval! evaluation-target request)))
+    (is (= request (:request received)))))
+
+(deftest close!/dispatches-through-the-target
+  (let [closed {:value false}
+        evaluation-target
+        {:eval! (fn [_request]
+                  nil)
+         :close! (fn []
+                   (assoc! closed :value true))}]
+    (target/close! evaluation-target)
+    (is (= true (:value closed)))))

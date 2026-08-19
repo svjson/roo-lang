@@ -1,0 +1,81 @@
+(ns roopl.repl-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [roopl.repl :as repl]))
+
+
+
+;; roopl.repl/current-namespace
+
+(deftest current-namespace/starts-in-user
+  (is (= "user"
+         (repl/current-namespace (repl/make {})))))
+
+
+
+;; roopl.repl/submit!
+
+(deftest submit!/numbers-sources-and-carries-the-resulting-namespace-forward
+  (p/given
+    (let [requests []
+          responses [{:status :ok
+                      :namespace "scratch"
+                      :display "nil"}
+                     {:status :ok
+                      :namespace "scratch"
+                      :display "42"}]]
+      {:requests requests
+       :repl-state
+       (repl/make
+        {:eval! (fn [request]
+                  (append! requests request)
+                  (nth responses (- (count requests) 1)))
+         :close! (fn []
+                   nil)})}))
+
+  (p/when [{:keys [repl-state]}]
+    (repl/submit! repl-state "(ns scratch)")
+    (repl/submit! repl-state "answer"))
+
+  (p/then [response {:keys [repl-state requests]}]
+    (is (= {:status :ok
+            :namespace "scratch"
+            :display "42"}
+           response))
+    (is (= "scratch" (repl/current-namespace repl-state)))
+    (is (= [{:source "(ns scratch)"
+             :namespace "user"
+             :source-name "<repl:1>"}
+            {:source "answer"
+             :namespace "scratch"
+             :source-name "<repl:2>"}]
+           requests))))
+
+(deftest submit!/forwards-the-print-width
+  (let [requests []
+        repl-state
+        (repl/make
+          {:eval! (fn [request]
+                    (append! requests request)
+                    {:status :ok
+                     :namespace "user"
+                     :display "[1 2 3]"})
+           :close! (fn []
+                     nil)})]
+    (repl/submit! repl-state "(range 1 4)" {:print-width 80})
+    (is (= 80 (:print-width (head requests))))))
+
+
+
+;; roopl.repl/close!
+
+(deftest close!/closes-the-repls-target
+  (let [closed {:value false}
+        repl-state
+        (repl/make
+         {:eval! (fn [_request]
+                   nil)
+          :close! (fn []
+                    (assoc! closed :value true))})]
+    (repl/close! repl-state)
+    (is (= true (:value closed)))))
