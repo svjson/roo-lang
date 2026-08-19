@@ -55,6 +55,7 @@ cmake --build "$build_dir" --config "$config" --parallel "$jobs" \
     testpackage \
     testserver \
     testproof \
+    testinpoots \
     testrooc
 
 roo=$(find_built_executable roo)
@@ -64,6 +65,7 @@ testroo=$(find_built_executable testroo)
 testpackage=$(find_built_executable testpackage)
 testserver=$(find_built_executable testserver)
 testproof=$(find_built_executable testproof)
+testinpoots=$(find_built_executable testinpoots)
 testrooc=$(find_built_executable testrooc)
 stage_root="$build_dir/native-package-stage/pkg"
 
@@ -73,6 +75,7 @@ printf '%s\n' "==> Running C++ test suites"
 "$testpackage"
 "$testserver"
 "$testproof"
+"$testinpoots"
 "$testrooc"
 
 printf '%s\n' "==> Running package proof suites"

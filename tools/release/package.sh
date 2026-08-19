@@ -59,6 +59,7 @@ roo-server_static
 roo-server_shared
 roo-server-exec
 proof_native
+inpoots_native
 lookup_native
 proofread_native
 "}

@@ -17,6 +17,8 @@ index_path=$2
   --require-signatures \
   --allow-zero-arity roo.io/current-directory! \
   --allow-zero-arity roo.io/home-directory! \
+  --allow-zero-arity roo.tty/tty? \
+  --allow-zero-arity roo.tty/dimensions! \
   --allow-zero-arity roo/epoch-ms \
   --fail-on warning \
   "$index_path"

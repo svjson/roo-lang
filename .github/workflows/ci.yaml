@@ -406,8 +406,8 @@ jobs:
           path: build-tools-${{ matrix.platform }}.tar.gz
           retention-days: 3
 
-  build-native-packages:
-    name: Build native packages ${{ matrix.platform }}
+  build-packages:
+    name: Build packages ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
     needs:
       - platform-matrix
@@ -444,26 +444,26 @@ jobs:
           cmake --build build
           --config "$ROO_CI_CONFIG"
           --parallel "$ROO_CI_JOBS"
-          --target stage_native_packages
+          --target stage_packages
 
       - name: Pack native package build tree
-        run: cmake -E tar czf "build-native-packages-${{ matrix.platform }}.tar.gz" build
+        run: cmake -E tar czf "build-packages-${{ matrix.platform }}.tar.gz" build
 
       - name: Upload native package build tree
         uses: actions/upload-artifact@v7
         with:
-          name: build-native-packages-${{ matrix.platform }}
-          path: build-native-packages-${{ matrix.platform }}.tar.gz
+          name: build-packages-${{ matrix.platform }}
+          path: build-packages-${{ matrix.platform }}.tar.gz
           retention-days: 3
 
       - name: Pack native package stage
-        run: cmake -E tar czf "native-package-stage-${{ matrix.platform }}.tar.gz" build/native-package-stage
+        run: cmake -E tar czf "package-stage-${{ matrix.platform }}.tar.gz" build/package-stage
 
       - name: Upload native package stage
         uses: actions/upload-artifact@v7
         with:
-          name: native-package-stage-${{ matrix.platform }}
-          path: native-package-stage-${{ matrix.platform }}.tar.gz
+          name: package-stage-${{ matrix.platform }}
+          path: package-stage-${{ matrix.platform }}.tar.gz
           retention-days: 3
 
   test-proof:
@@ -471,7 +471,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     needs:
       - platform-matrix
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -493,16 +493,56 @@ jobs:
       - name: Download native package build tree
         uses: actions/download-artifact@v8
         with:
-          name: build-native-packages-${{ matrix.platform }}
+          name: build-packages-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack native package build tree
-        run: cmake -E tar xzf "artifacts/build-native-packages-${{ matrix.platform }}.tar.gz"
+        run: cmake -E tar xzf "artifacts/build-packages-${{ matrix.platform }}.tar.gz"
 
       - name: Build and run proof tests
         run: |
           cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target testproof
           ./build/pkg/proof/test/testproof${{ runner.os == 'Windows' && '.exe' || '' }}
+
+  test-inpoots:
+    name: Test inpoots ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download native package build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-packages-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack native package build tree
+        run: cmake -E tar xzf "artifacts/build-packages-${{ matrix.platform }}.tar.gz"
+
+      - name: Build and run inpoots tests
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target roo_cli testinpoots
+          ./build/pkg/inpoots/test/testinpoots${{ runner.os == 'Windows' && '.exe' || '' }}
+          cd build/package-stage/pkg/inpoots/test
+          "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
   test-workbook:
     name: Test workbook ${{ matrix.platform }}
@@ -510,7 +550,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -538,16 +578,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run workbook tests
-        run: cd build/native-package-stage/pkg/workbook/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+        run: cd build/package-stage/pkg/workbook/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
   test-boodle:
     name: Test boodle ${{ matrix.platform }}
@@ -555,7 +595,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -583,16 +623,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run boodle tests
-        run: cd build/native-package-stage/pkg/boodle/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+        run: cd build/package-stage/pkg/boodle/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
   test-moordown:
     name: Test moordown ${{ matrix.platform }}
@@ -600,7 +640,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -628,16 +668,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run moordown tests
-        run: cd build/native-package-stage/pkg/moordown/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+        run: cd build/package-stage/pkg/moordown/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
   test-footsteps:
     name: Test footsteps ${{ matrix.platform }}
@@ -645,7 +685,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -673,16 +713,376 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run footsteps tests
-        run: cd build/native-package-stage/pkg/footsteps/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+        run: cd build/package-stage/pkg/footsteps/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-soot:
+    name: Test soot ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run soot tests
+        run: cd build/package-stage/pkg/soot/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-voodoo:
+    name: Test voodoo ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run voodoo tests
+        run: cd build/package-stage/pkg/voodoo/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-i18n:
+    name: Test i18n ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run i18n tests
+        run: cd build/package-stage/pkg/i18n/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-spool:
+    name: Test spool ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run spool tests
+        run: cd build/package-stage/pkg/spool/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-zoology:
+    name: Test zoology ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run zoology tests
+        run: cd build/package-stage/pkg/zoology/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-cli-trooper:
+    name: Test cli-trooper ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run cli-trooper tests
+        run: cd build/package-stage/pkg/cli-trooper/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-lookup:
+    name: Test lookup ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run lookup tests
+        run: cd build/package-stage/pkg/lookup/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+
+  test-loom:
+    name: Test loom ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - platform-matrix
+      - build-tools
+      - build-packages
+    if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.platform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Configure MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Download tools build tree
+        uses: actions/download-artifact@v8
+        with:
+          name: build-tools-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Download native package stage
+        uses: actions/download-artifact@v8
+        with:
+          name: package-stage-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Unpack tool and native package artifacts
+        run: |
+          cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
+
+      - name: Run loom tests
+        run: cd build/package-stage/pkg/loom/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
   test-rooc:
     name: Test rooc ${{ matrix.platform }}
@@ -690,7 +1090,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -718,13 +1118,13 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Build and run rooc tests
         env:
@@ -741,7 +1141,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -769,16 +1169,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run roo CLI tests
-        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh bin/roo/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/package-stage/pkg" sh bin/roo/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
 
   test-loom-cli:
     name: Test loom CLI ${{ matrix.platform }}
@@ -786,7 +1186,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -814,16 +1214,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run loom CLI tests
-        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/loom/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/package-stage/pkg" sh pkg/loom/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
 
   test-lookup-cli:
     name: Test lookup CLI ${{ matrix.platform }}
@@ -831,7 +1231,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -859,16 +1259,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run lookup CLI tests
-        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/lookup/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/package-stage/pkg" sh pkg/lookup/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
 
   test-boodle-cli:
     name: Test boodle CLI ${{ matrix.platform }}
@@ -876,7 +1276,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -904,16 +1304,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run boodle CLI tests
-        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/native-package-stage/pkg" sh pkg/boodle/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/package-stage/pkg" sh pkg/boodle/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
 
   test-proofread:
     name: Test proofread ${{ matrix.platform }}
@@ -921,7 +1321,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -949,13 +1349,13 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run proofread tests
         run: ctest --test-dir build -C "$ROO_CI_CONFIG" -R proofread --output-on-failure
@@ -966,7 +1366,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
     strategy:
       fail-fast: false
@@ -998,28 +1398,28 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Build Loom binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/loom --build-dir build/loom-build --name loom
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/loom --build-dir build/loom-build --name loom
 
       - name: Build Lookup binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/lookup --build-dir build/lookup-build --name lookup
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/lookup --build-dir build/lookup-build --name lookup
 
       - name: Build Boodle binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/boodle --build-dir build/boodle-build --name boodle
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/boodle --build-dir build/boodle-build --name boodle
 
       - name: Build Proof binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/proof --build-dir build/proof-build --name proof
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/proof --build-dir build/proof-build --name proof
 
       - name: Build Proofread binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/proofread --build-dir build/proofread-build --name proofread
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/proofread --build-dir build/proofread-build --name proofread
 
   audit-roo-lang-index:
     name: Audit roo-lang index ${{ matrix.platform }}
@@ -1027,7 +1427,7 @@ jobs:
     needs:
       - platform-matrix
       - build-tools
-      - build-native-packages
+      - build-packages
       - test-lookup-cli
       - build-package-binaries
     if: ${{ needs.platform-matrix.result == 'success' && !cancelled() }}
@@ -1061,16 +1461,16 @@ jobs:
       - name: Download native package stage
         uses: actions/download-artifact@v8
         with:
-          name: native-package-stage-${{ matrix.platform }}
+          name: package-stage-${{ matrix.platform }}
           path: artifacts
 
       - name: Unpack tool and native package artifacts
         run: |
           cmake -E tar xzf "artifacts/build-tools-${{ matrix.platform }}.tar.gz"
-          cmake -E tar xzf "artifacts/native-package-stage-${{ matrix.platform }}.tar.gz"
+          cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Build Lookup binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/native-package-stage/pkg/lookup --build-dir build/lookup-audit --name lookup
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/lookup --build-dir build/lookup-audit --name lookup
 
       - name: Build Roo language index
         run: |

@@ -3,7 +3,7 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
-PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/native-package-stage/pkg}"
+PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
 LOOM_PACKAGE="$PACKAGE_STAGE_ROOT/loom"
 LOOM_REPO="$ROOT_DIR/build/loom-test-repo"
 LOOM_LINK_REPO="$ROOT_DIR/build/loom-link-test-repo"

@@ -19,21 +19,28 @@ It lowers forms to an executable IR for evaluation rather than interpreting the 
 ## Repository Overview
 
 - bin/
-  - **[roo](bin/roo/README.md)** - Command-line executable for running Roo files and packages.
+  - **[roo](bin/roo/)** - Command-line executable for running Roo files and packages.
   - **[rooc](bin/rooc/)** - Compiler executable for generating bundled Roo application builds.
 - lib/
-  - **[libroo](lib/libroo/README.md)** - Core embeddable Roo runtime.
-  - **[roo-server](lib/libroo-server/README.md)** - Small server layer for remote Roo message parsing and dispatch experiments.
-  - **[roo-package](lib/libroo-package/README.md)** Package manifest, dependency load paths, and native package loading.
+  - **[libroo](lib/libroo/)** - Core embeddable Roo runtime.
+  - **[roo-server](lib/libroo-server/)** - Small server layer for remote Roo message parsing and dispatch experiments.
+  - **[roo-package](lib/libroo-package/)** Package manifest, dependency load paths, and native package loading.
 - pkg/
-  - **[lookup](pkg/lookup/README.md)** - Roo indexing for tool-support.
-  - **[loom](pkg/loom/README.md)** - Roo package manager.
-  - **[proof](pkg/proof/README.md)** - Roo test framework package.
-  - **[proofread](pkg/proofread/README.md)** - Roo syntax checker.
-  - **[footsteps](pkg/footsteps/README.md)** - Stepwise work/progress orchestration.
-  - **[workbook](pkg/workbook/)** - Persistent structured workbook values.
-  - **[spool](pkg/spool/)** - Metrics collection and reporting for roo programs.
+  - **[boodle](pkg/boodle/README.md)** - Reference documentation catalog tooling for Roo.
+  - **[cli-trooper](pkg/cli-trooper/)** - CLI argument parser and dispatcher for Roo.
+  - **[footsteps](pkg/footsteps/)** - Stepwise work/progress orchestration.
   - **[i18n](pkg/i18n/)** - Small localization library package.
+  - **[inpoots](pkg/inpoots/)** - Terminal input and portable terminal events for Roo applications.
+  - **[lookup](pkg/lookup/)** - Roo indexing for tool-support.
+  - **[loom](pkg/loom/)** - Roo package manager.
+  - **[moordown](pkg/moordown/)** - Markdown construction and rendering functionality for Roo.
+  - **[proof](pkg/proof/)** - Roo test framework package.
+  - **[proofread](pkg/proofread/)** - Roo syntax checker.
+  - **[spool](pkg/spool/)** - Metrics collection and reporting for roo programs.
+  - **[workbook](pkg/workbook/)** - Persistent structured workbook values.
+  - **[soot](pkg/soot/)** - Small ANSI SGR styling functions for Roo strings.
+  - **[voodoo](pkg/voodoo/)** - Terminal layout and motion for Roo: session-managed transient output, progress bars, spinners, and box/rule/banner rendering.
+  - **[zoology](pkg/zoology/)** - Generic schema resolution, canonicalization, and validation for Roo data.
 
 ## Language
 

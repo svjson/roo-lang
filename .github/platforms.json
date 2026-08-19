@@ -3,16 +3,19 @@
     {
       "platform": "linux-x86_64",
       "runner": "ubuntu-24.04",
+      "cmake_generator": "Ninja",
       "archive-pattern": "dist/roo-*.tar.gz"
     },
     {
       "platform": "macos-arm64",
       "runner": "macos-15",
+      "cmake_generator": "Ninja",
       "archive-pattern": "dist/roo-*.tar.gz"
     },
     {
       "platform": "macos-x86_64",
       "runner": "macos-15-intel",
+      "cmake_generator": "Ninja",
       "archive-pattern": "dist/roo-*.tar.gz"
     },
     {
