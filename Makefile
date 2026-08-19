@@ -1,5 +1,7 @@
 BUILD_TYPE ?= Release
 CMAKE_GENERATOR ?= Ninja
+CMAKE_BUILD_PARALLEL_LEVEL ?= 1
+export CMAKE_BUILD_PARALLEL_LEVEL
 FILTER ?=
 GTEST_FILTER_ARG := $(if $(FILTER),--gtest_filter=$(FILTER),)
 PACKAGE_STAGE := $(CURDIR)/build/package-stage/pkg
