@@ -20,7 +20,6 @@ namespace Roo
     BOOLEAN,
     CHAR,
     FUNCTION,
-    HOST_OBJECT,
     KEYWORD,
     LIST,
     MACRO,
@@ -30,8 +29,7 @@ namespace Roo
     STRING,
     SYMBOL,
     QUOTED_SYMBOL,
-    DISCARD,
-    HOST_SEQ
+    DISCARD
   };
 
   class Context;
@@ -114,6 +112,22 @@ namespace Roo
     CoercionResult coerce(Context& ctx, sptr_val& val) const override;
   };
 
+  /*!
+   * @brief Type reference matching a NATIVE_OBJECT reporting
+   * NativeObjectStructuralKind::VECTOR (a host sequence adapter, e.g. a
+   * wrapped std::vector). Never matched by a parsed AST node - native
+   * objects and their adapters have no literal source syntax and cannot
+   * exist as AST.
+   */
+  class NativeSeqRef : public TypeRef
+  {
+   public:
+    explicit NativeSeqRef(const std::string& name);
+
+    bool is_type_of(const Value& val) const override;
+    bool is_type_of(const AST::ASTNode& obj) const override;
+  };
+
   namespace Type
   {
     inline const TypeRef LIST(Value::Type::LIST, Form::LIST, "List");
@@ -130,11 +144,10 @@ namespace Roo
     inline const TypeRef KEYWORD(Value::Type::KEYWORD, Form::KEYWORD, "Keyword");
     inline const TypeRef FUNCTION(Value::Type::FUNCTION, Form::FUNCTION, "Function");
     inline const TypeRef MACRO(Value::Type::FUNCTION, Form::MACRO, "Macro");
-    inline const TypeRef HOST_OBJECT(Value::Type::OBJECT, Form::HOST_OBJECT, "HostObject");
     inline const TypeRef NATIVE_OBJECT(Value::Type::NATIVE_OBJECT,
-                                       Form::HOST_OBJECT,
+                                       Form::ANY,
                                        "NativeObject");
-    inline const TypeRef HOST_SEQ(Value::Type::OBJECT, Form::HOST_SEQ, "HostSeq");
+    inline const NativeSeqRef HOST_SEQ("HostSeq");
     inline const TypeRef NIL(Value::Type::NIL, Form::NIL, "nil");
 
     inline const MultiRef QUALIFIABLE({&KEYWORD, &SYMBOL, &QUOTED_SYMBOL}, "Qualifiable");
@@ -152,9 +165,7 @@ namespace Roo
                                                "Sequential|String");
     inline const MultiRef EXEC(std::vector<const TypeRef*>{&FUNCTION, &MACRO, &KEYWORD},
                                "Exec");
-    inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP,
-                                                              &HOST_OBJECT,
-                                                              &NATIVE_OBJECT},
+    inline const MultiRef COMPLEX(std::vector<const TypeRef*>{&MAP, &NATIVE_OBJECT},
                                   "Complex");
 
     inline const SeqRef VECTOR_OF_VECTOR(&VECTOR, &VECTOR, "[Vector]");

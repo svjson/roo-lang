@@ -19,18 +19,6 @@ namespace Roo
   bool TypeRef::is_type_of(const Value& val) const
   {
     if (val == *Constant::NIL) return true;
-    if (form_type == Form::HOST_SEQ)
-    {
-      if (val.type == Value::Type::NATIVE_OBJECT)
-      {
-        return val.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR;
-      }
-      if (val.type == Value::Type::OBJECT)
-      {
-        return val.obj()->get_type() == Form::HOST_SEQ;
-      }
-      return false;
-    }
     return val.type == value_type;
   }
 
@@ -208,6 +196,28 @@ namespace Roo
     }
 
     return CoercionResult{false, nullptr};
+  }
+
+  /* NativeSeqRef */
+  NativeSeqRef::NativeSeqRef(const std::string& name)
+    : TypeRef(Value::Type::NATIVE_OBJECT, Form::ANY, name)
+  {
+  }
+
+  bool NativeSeqRef::is_type_of(const Value& val) const
+  {
+    if (val == *Constant::NIL) return true;
+    return val.type == Value::Type::NATIVE_OBJECT &&
+           val.nobj()->structural_kind() == NativeObjectStructuralKind::VECTOR;
+  }
+
+  bool NativeSeqRef::is_type_of(const AST::ASTNode& obj) const
+  {
+    if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
+    {
+      return is_type_of(*wrapper->val);
+    }
+    return false;
   }
 
 } // namespace Roo

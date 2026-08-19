@@ -9,6 +9,7 @@
 #include <stdexcept>
 
 #include <roo/exception.h>
+#include <roo/host/object.h>
 #include <roo/impl.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
@@ -651,7 +652,6 @@ namespace Roo::AST
     case Form::LIST:
       return std::make_shared<List>(reserved_size);
     case Form::VECTOR:
-    case Form::HOST_SEQ:
       return std::make_shared<Vector>(reserved_size);
     case Form::MAP:
       return std::make_shared<Map>(reserved_size);
@@ -1018,9 +1018,6 @@ namespace Roo::AST
     case Roo::Value::Type::MAP:
       type = Form::MAP;
       break;
-    case Roo::Value::Type::NATIVE_OBJECT:
-      type = Form::HOST_OBJECT;
-      break;
     default:
       throw RooException("Invalid Value for RuntimeWrapper: " + val->to_string());
     }
@@ -1064,33 +1061,6 @@ namespace Roo::AST
     }
     default:
       throw RooException("Mutation of underlying value with non-keyword not implemented.");
-    }
-  }
-
-  void RuntimeValueWrapper::append(const sptr_ast_node& value)
-  {
-    RuntimeValueWrapper* val_wrapper = dynamic_cast<RuntimeValueWrapper*>(value.get());
-    if (val_wrapper)
-    {
-      if (val->type == Roo::Value::Type::VECTOR)
-      {
-        sptr_val_v& elements = std::get<sptr_val_v>(val->value);
-        elements.push_back(val_wrapper->val);
-      }
-      else
-      {
-        throw InvocationException("Unsupported target for RTWrapper::append: " +
-                                  std::to_string((int)val->type));
-      }
-    }
-    else
-    {
-      throw RooException("Do we need to handle this?");
-      // sptr_val value = to_rt_value(const_cast<sptr_ast_node&>(value));
-      // sptr_val_v& elements = std::get<sptr_val_v>(val->value);
-      // elements.push_back(value);
-
-      // this->delegate->append(RuntimeValueWrapper::make(value));
     }
   }
 
@@ -1177,6 +1147,20 @@ namespace Roo::AST
       return Symbol::make(std::get<std::string>(value->value));
     case Roo::Value::Type::OBJECT:
       return std::get<sptr_ast_node>(value->value);
+    case Roo::Value::Type::NATIVE_OBJECT:
+    {
+      /*!
+       * Native objects and their adapters have no literal source syntax
+       * and cannot exist as AST - wrap their map/vector data
+       * representation instead, per their structural kind.
+       */
+      sptr_native_obj nobj = value->nobj();
+      sptr_val_v children = nobj->native_children();
+      sptr_val replacement = nobj->structural_kind() == NativeObjectStructuralKind::VECTOR
+                               ? Roo::Value::vector(std::move(children))
+                               : Roo::Value::map(std::move(children));
+      return RuntimeValueWrapper::make(replacement);
+    }
     case Roo::Value::Type::FUNCTION:
       return std::make_shared<RuntimeValueWrapper>(value);
     default:

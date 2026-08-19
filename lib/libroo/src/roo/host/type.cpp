@@ -13,7 +13,7 @@ namespace Roo
    */
   HostTypeRef::HostTypeRef(const std::string& name,
                            const std::optional<std::string>& make_fn)
-    : TypeRef(Value::Type::OBJECT, Form::HOST_OBJECT, name)
+    : TypeRef(Value::Type::NATIVE_OBJECT, Form::ANY, name)
     , make_fn(make_fn)
   {
   }
@@ -21,7 +21,7 @@ namespace Roo
   HostTypeRef::HostTypeRef(const std::string& name,
                            const HostTypeRef* parent_type,
                            const std::optional<std::string>& make_fn)
-    : TypeRef(Value::Type::OBJECT, Form::HOST_OBJECT, name)
+    : TypeRef(Value::Type::NATIVE_OBJECT, Form::ANY, name)
     , parent_type(parent_type)
     , make_fn(make_fn)
   {
@@ -29,11 +29,6 @@ namespace Roo
 
   bool HostTypeRef::is_type_of(const Value& val) const
   {
-    if (val.type == Value::Type::OBJECT)
-    {
-      return this->is_type_of(*std::get<sptr_ast_node>(val.value));
-    }
-
     if (val.type == Value::Type::NATIVE_OBJECT)
     {
       const HostTypeRef* obj_type = val.nobj()->get_host_type();
@@ -47,10 +42,6 @@ namespace Roo
   {
     if (auto* wrapper = dynamic_cast<const AST::RuntimeValueWrapper*>(&obj))
     {
-      if (wrapper->val->type == Value::Type::NATIVE_OBJECT)
-      {
-        return is_type_of(*wrapper->val);
-      }
       return is_type_of(*wrapper->val);
     }
 
@@ -63,7 +54,7 @@ namespace Roo
     {
       sptr_val function = ctx.lookup(*make_fn);
 
-      if (*function == *Constant::NIL || !Type::EXEC.is_type_of(*function))
+      if (*function == *Constant::NIL || !Type::FUNCTION.is_type_of(*function))
       {
         throw InvocationException(
           "Coercion failed. Review Host AST::ASTNode configuration - Make Function '" +

@@ -419,7 +419,6 @@ namespace Roo
       bool operator==(const ASTNode& other) const override;
       unsigned int size() const override;
 
-      void append(const sptr_ast_node& value) override;
       bool has_key(const ASTNode&) const override;
       void set_property(const ASTNode& key, sptr_ast_node& value) override;
       void set_property(const sptr_ast_node& key, const sptr_ast_node& value) override;
