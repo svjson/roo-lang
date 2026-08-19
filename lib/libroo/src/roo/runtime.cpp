@@ -21,6 +21,7 @@
 #include <roo/lang/ast/ast_namespace.h>
 #include <roo/lang/io/io_namespace.h>
 #include <roo/lang/string/string_namespace.h>
+#include <roo/lang/tty/tty_namespace.h>
 #include <roo/namespace.h>
 #include <roo/namespace_loader.h>
 #include <roo/reader.h>
@@ -91,6 +92,8 @@ namespace Roo
     namespaces.emplace(ast.get_name(), std::move(ast));
     Namespace string = make_string_namespace();
     namespaces.emplace(string.get_name(), std::move(string));
+    Namespace tty = make_tty_namespace();
+    namespaces.emplace(tty.get_name(), std::move(tty));
 
     set_namespace_source(std::move(namespace_source));
     switch_namespace(DEFAULT_NAMESPACE);

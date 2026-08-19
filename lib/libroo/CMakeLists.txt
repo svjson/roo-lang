@@ -55,6 +55,8 @@ set(roo_SOURCES
   src/roo/lang/string/string_namespace.cpp
   src/roo/lang/struct.cpp
   src/roo/lang/time.cpp
+  src/roo/lang/tty/tty.cpp
+  src/roo/lang/tty/tty_namespace.cpp
   src/roo/lexer.cpp
   src/roo/exception.cpp
   src/roo/namespace.cpp
