@@ -45,16 +45,11 @@
   Returns:
   A diagnostic map when `node` contains an empty default ignored by its
   collection consumer, otherwise `nil`."
-  [parent {:keys [children] :as node}]
-  (when (or (and (sequences/nil-tolerant-seq-call? node)
-                 (empty-seq-default? (nth children 1)))
-            (and (= "reduce" (forms/head-name node))
-                 (= 3 (count children))
-                 (empty-seq-default? (nth children 2)))
-            (and (sequences/nil-tolerant-map-call? node)
-                 (empty-map-default? (nth children 1)))
-            (and (contains? ["merge" "merge!"] (forms/head-name node))
-                 (any? (tail children) empty-map-default?))
+  [parent node]
+  (when (or (any? (sequences/nil-tolerant-seq-call-values node)
+                  empty-seq-default?)
+            (any? (sequences/nil-tolerant-map-call-values node)
+                  empty-map-default?)
             (any? (sequences/nil-tolerant-seq-binding-values node)
                   empty-seq-default?))
     (diagnostics/make node :redundant-empty-default "Remove redundant empty default")))

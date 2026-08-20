@@ -52,45 +52,181 @@
        (forms/map-form? (nth children 1))
        (nil-filter? (nth children 2))))
 
-(defun nil-tolerant-seq-call?
-  "Test whether a call treats nil input as an empty sequence.
+(def nil-tolerant-seq-call-rules
+  "Maps call names to nil-tolerant sequence argument selectors.
+
+  A vector selects fixed AST child indexes, `:all` selects every call
+  argument, and `:reduce` selects the collection argument according to the
+  supported `reduce` signatures."
+  {"any?" [1 2]
+   "append" [1]
+   "apply" [2]
+   "contains?" [1]
+   "contains-all?" [1 2]
+   "contains-any?" [1 2]
+   "count" [1]
+   "drop" [1]
+   "empty?" [1]
+   "every?" [1 2]
+   "filter" [1 2]
+   "find-first" [1 2]
+   "find-index" [1 2]
+   "flat-map" [1 2]
+   "flatten" [1]
+   "get" [1]
+   "get-in" [1]
+   "head" [1]
+   "index-of" [1]
+   "insert" [1 3]
+   "insert!" [1 3]
+   "insert-one" [1]
+   "insert-one!" [1]
+   "interleave" :all
+   "keep" [1 2]
+   "last" [1]
+   "map" :all
+   "move-nth" [1]
+   "move-nth!" [1]
+   "not-empty?" [1]
+   "nth" [1]
+   "partition" [2]
+   "rand-nth" [1]
+   "reduce" :reduce
+   "remove" [1 2]
+   "remove-first" [1 2]
+   "replace" [1 4]
+   "replace!" [1 4]
+   "reverse" [1]
+   "select-keys" [2]
+   "seq-match" [1]
+   "slice" [1]
+   "sort" [1 2]
+   "tail" [1]
+   "take" [2]})
+
+(def nil-tolerant-map-call-rules
+  "Maps call names to nil-tolerant map argument selectors.
+
+  A vector selects fixed AST child indexes, `:all` selects every call
+  argument, and the `:reduce` and `:reduce-kv` selectors resolve polymorphic
+  reducer signatures."
+  {"any?" [1 2]
+   "append" [1]
+   "apply" [2]
+   "assoc" [1]
+   "assoc-in" [1]
+   "contains?" [1]
+   "contains-all?" [1 2]
+   "contains-any?" [1 2]
+   "count" [1]
+   "dissoc!" [1]
+   "dissoc-in!" [1]
+   "empty?" [1]
+   "every?" [1 2]
+   "filter" [1 2]
+   "find-first" [1 2]
+   "find-index" [1 2]
+   "flat-map" [1 2]
+   "flatten" [1]
+   "get" [1]
+   "get-in" [1]
+   "head" [1]
+   "index-of" [1]
+   "interleave" :all
+   "keep" [1 2]
+   "keys" [1]
+   "last" [1]
+   "map" :all
+   "merge" :all
+   "merge!" :all
+   "not-empty?" [1]
+   "nth" [1]
+   "partition" [2]
+   "pretty-str" [2]
+   "rand-nth" [1]
+   "reduce" :reduce
+   "reduce-kv" :reduce-kv
+   "remove" [1 2]
+   "remove-first" [1 2]
+   "reverse" [1]
+   "select-keys" [1]
+   "seq-match" [1 2]
+   "sort" [1 2]
+   "tail" [1]
+   "take" [2]
+   "update" [1]
+   "update-in" [1]
+   "vals" [1]})
+
+(def nil-tolerant-seq-binding-rules
+  "Maps binding form names to the first nil-tolerant collection index.
+
+  Subsequent collection expressions occur at every second binding-vector
+  child index."
+  {"doseq" 1
+   "for" 1
+   "for-indexed" 2})
+
+(defun nil-tolerant-call-values
+  "Return call arguments selected by nil-tolerant collection rules.
+
+  Args:
+  - `node`: A `roo.ast` call node map.
+  - `rules`: Map from call names to fixed index vectors or special selectors.
+
+  Returns:
+  Selected argument nodes, or `nil` when the call has no matching rule or
+  signature."
+  [{:keys [children] :as node} rules]
+  (when-let [selector (get rules (forms/head-name node))]
+    (case selector
+      :all
+      (tail children)
+
+      :reduce
+      (case (count children)
+        3 [(nth children 1) (nth children 2)]
+        4 (case (forms/head-name (nth children 1))
+            "fn" [(nth children 2)]
+            :default [(nth children 1)])
+        :default nil)
+
+      :reduce-kv
+      (when (= 4 (count children))
+        (if (or (= :keyword (:type (nth children 1)))
+                (= "fn" (forms/head-name (nth children 1))))
+          [(nth children 2)]
+          [(nth children 1)]))
+
+      :default
+      (keep selector
+            (fn [index]
+              (when (< index (count children))
+                (nth children index)))))))
+
+(defun nil-tolerant-seq-call-values
+  "Return call arguments that treat nil as an empty sequence.
 
   Args:
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for sequence calls whose first argument can be `nil`; otherwise
-  `false`."
-  [{:keys [children] :as node}]
-  (and (< 1 (count children))
-       (contains? ["any?"
-                   "count"
-                   "empty?"
-                   "filter"
-                   "find-first"
-                   "find-index"
-                   "flat-map"
-                   "keep"
-                   "map"
-                   "not-empty?"
-                   "reduce"
-                   "remove"]
-                  (forms/head-name node))))
+  Sequence argument nodes for which `nil` and `[]` have equivalent behavior,
+  or `nil` when `node` is not such a call."
+  [node]
+  (nil-tolerant-call-values node nil-tolerant-seq-call-rules))
 
-(defun nil-tolerant-map-call?
-  "Test whether a call treats nil input as an empty map.
+(defun nil-tolerant-map-call-values
+  "Return call arguments that treat nil as an empty map.
 
   Args:
   - `node`: A `roo.ast` node map.
 
   Returns:
-  `true` for map calls whose first argument can be `nil`; otherwise `false`."
-  [{:keys [children] :as node}]
-  (and (< 1 (count children))
-       (contains? ["keys"
-                   "reduce-kv"
-                   "select-keys"]
-                  (forms/head-name node))))
+  Map argument nodes for which `nil` and `{}` have equivalent behavior, or
+  `nil` when `node` is not such a call."
+  [node]
+  (nil-tolerant-call-values node nil-tolerant-map-call-rules))
 
 (defun nil-tolerant-seq-binding-values
   "Return collection expressions from nil-tolerant sequence bindings.
@@ -99,14 +235,16 @@
   - `node`: A `roo.ast` node map.
 
   Returns:
-  Collection expression nodes from a `for` or `doseq` binding vector, or `nil`
-  when `node` is not such a binding form."
+  Collection expression nodes from a `for`, `doseq`, or `for-indexed` binding
+  vector, or `nil` when `node` is not such a binding form."
   [{:keys [children] :as node}]
-  (when (and (contains? ["for" "doseq"] (forms/head-name node))
-             (< 1 (count children)))
-    (let [bindings (nth children 1)]
-      (when (= :vector (:type bindings))
-        (keep (range 1 (count (:children bindings)))
+  (when (and (< 1 (count children))
+             (contains? nil-tolerant-seq-binding-rules (forms/head-name node)))
+    (let [bindings (nth children 1)
+          start (get nil-tolerant-seq-binding-rules (forms/head-name node))]
+      (when (and (= :vector (:type bindings))
+                 (< start (count (:children bindings))))
+        (keep (range start (dec (count (:children bindings))))
               (fn [index]
-                (when (odd? index)
+                (when (even? (- index start))
                   (nth (:children bindings) index))))))))

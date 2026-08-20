@@ -127,9 +127,9 @@ Supported style warnings:
   keyword lookups in predicate positions.
 - `use-string?`: reports `some?` checks that guard string operations and can
   be written as `string?`.
-- `redundant-empty-default`: reports empty collection defaults around values
-  consumed by nil-tolerant sequence calls, map calls, merges, and collection
-  binding forms.
+- `redundant-empty-default`: reports empty collection defaults around arguments
+  and binding values whose consumers treat `nil` as the corresponding empty
+  collection.
 - `use-get-with-default`: reports `(or (get value key) default)` forms that
   can be written as `(get value key default)`.
 - `use-keyword-lookup`: reports `(get value :key)` forms that can be written as

@@ -18,3 +18,29 @@
   (reduce-kv commands
              (or initial {})
              normalize-command))
+
+(def retained-concat-value
+  (concat (or values [])))
+
+(def retained-remove-nth-result
+  (remove-nth (or values []) 0))
+
+(def retained-dissoc-result
+  (dissoc (or values {}) key))
+
+(def retained-dissoc-in-result
+  (dissoc-in (or values {}) path))
+
+(append! (or values []) item)
+(concat! (or values []) other-values)
+(remove! (or values []) predicate)
+(remove-nth! (or values []) 0)
+(assoc! (or values {}) key value)
+(assoc-in! (or values {}) path value)
+(update! (or values {}) key operation)
+(update-in! (or values {}) path operation)
+
+(map? (or values {}))
+(seq? (or values []))
+(seqable? (or values []))
+(sequential? (or values []))

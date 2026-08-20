@@ -270,8 +270,22 @@
                    :column 3}}
           {:rule :redundant-empty-default
            :start {:line 46
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 50
+                   :column 3}}
+          {:rule :redundant-empty-default
+           :start {:line 54
                    :column 3}}]
          (produce-summary "assets/rules/simple-expressions/redundant-empty-default.roo"))))
+
+(deftest redundant-empty-default/reports-all-nil-tolerant-consumers
+  (let [diagnostics
+        (produce-summary
+          "assets/rules/simple-expressions/redundant-empty-default-consumers.roo")]
+    (is (= 109 (count diagnostics)))
+    (is (= (repeat 109 :redundant-empty-default)
+           (map diagnostics :rule)))))
 
 (deftest redundant-empty-default/ignores-non-candidates
   (is (= []

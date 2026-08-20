@@ -45,3 +45,11 @@
 (def selected-options
   (select-keys (or options {})
                [:print-width]))
+
+(def amulet-appeared?
+  (contains? (or saved-state {})
+             :amulet-appeared?))
+
+(def occupied?
+  (contains? (or (:positions actor) [])
+             position))
