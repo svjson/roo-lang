@@ -29,39 +29,59 @@ namespace Roo
   int user_function_rtval_invocations = 0;
   int user_function_wrong_path_invocations = 0;
 
+  namespace
+  {
+    sptr_val dispatch_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args)
+    {
+      if (callable->type == Value::Type::FUNCTION)
+      {
+        return callable->exec().execute(ctx, args);
+      }
+
+      if (callable->type == Value::Type::KEYWORD)
+      {
+        if (args.size() != 1)
+        {
+          throw InvocationException::argument_mismatch(callable, args, 1);
+        }
+        return Dict::get_property(args[0], callable);
+      }
+
+      throw InvocationException::not_callable(callable, args);
+    }
+
+    const char* invocation_operation_name(InvocationOperation operation)
+    {
+      switch (operation)
+      {
+      case InvocationOperation::CALLING:
+        return "calling";
+      case InvocationOperation::APPLYING:
+        return "applying";
+      }
+      return "calling";
+    }
+  } // namespace
+
   sptr_val invoke_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args)
   {
-    if (callable->type == Value::Type::FUNCTION)
-    {
-      return callable->exec().execute(ctx, args);
-    }
-
-    if (callable->type == Value::Type::KEYWORD)
-    {
-      if (args.size() != 1)
-      {
-        throw InvocationException::argument_mismatch(callable, args, 1);
-      }
-      return Dict::get_property(args[0], callable);
-    }
-
-    throw InvocationException::not_callable(callable, args);
+    return dispatch_callable(ctx, callable, args);
   }
 
   sptr_val invoke_indirect_callable(Context& ctx,
                                     const sptr_val& callable,
                                     sptr_val_v& args,
-                                    const std::string& operation)
+                                    InvocationOperation operation)
   {
     try
     {
-      return invoke_callable(ctx, callable, args);
+      return dispatch_callable(ctx, callable, args);
     }
     catch (RooException& e)
     {
       e.set_diagnostic_options(ctx.source_diagnostics_enabled(),
                                ctx.call_stack_diagnostics_enabled());
-      e.add_indirect_call_context(operation, callable, args, true);
+      e.add_indirect_call_context(invocation_operation_name(operation), callable, args, true);
       throw;
     }
     catch (std::exception& e)
@@ -70,7 +90,8 @@ namespace Roo
       wrapped.set_cause(std::current_exception());
       wrapped.set_diagnostic_options(ctx.source_diagnostics_enabled(),
                                      ctx.call_stack_diagnostics_enabled());
-      wrapped.add_indirect_call_context(operation, callable, args, true);
+      wrapped.add_indirect_call_context(
+        invocation_operation_name(operation), callable, args, true);
       throw wrapped;
     }
   }

@@ -78,10 +78,12 @@ TEST_F(ApplyFunction, nil_callee_is_rejected_by_apply)
     EXPECT_EQ(outer.operation, "calling");
     EXPECT_EQ(outer.subject, "apply");
     EXPECT_EQ(outer.source, "<eval>:1:1");
+    ASSERT_TRUE(outer.arguments);
+    EXPECT_EQ(outer.arguments->size(), 2);
 
     EXPECT_EQ(e.what(),
               std::string("Error while calling apply at <eval>:1:1:\n"
-                          "Error while applying nil with arguments [1 2]:\n"
+                          "Error while applying nil:\n"
                           "Cannot invoke nil with arguments: [1 2]"));
   }
 }
@@ -111,8 +113,8 @@ TEST_F(ApplyFunction, callee_signature_failure_names_the_indirect_invocation)
     EXPECT_EQ(indirect.arguments->size(), 2);
 
     const std::string message = e.what();
-    EXPECT_NE(message.find("Error while applying <fn> with arguments [1 \"x\"]"),
-              std::string::npos);
+    EXPECT_NE(message.find("Error while applying <fn>:"), std::string::npos);
+    EXPECT_EQ(message.find("Error while applying <fn> with arguments"), std::string::npos);
     EXPECT_NE(message.find("No matching signature for <fn>"), std::string::npos);
     EXPECT_EQ(message.find("No matching signature for apply"), std::string::npos);
   }
@@ -142,7 +144,8 @@ TEST_F(ApplyFunction, callee_body_failure_retains_the_applied_invocation)
     EXPECT_EQ(frames[2].subject, "apply");
 
     const std::string message = e.what();
-    EXPECT_NE(message.find("Error while applying #'user/broken with arguments [1]"),
+    EXPECT_NE(message.find("Error while applying #'user/broken:"), std::string::npos);
+    EXPECT_EQ(message.find("Error while applying #'user/broken with arguments"),
               std::string::npos);
     EXPECT_NE(message.find("Error while calling +"), std::string::npos);
   }

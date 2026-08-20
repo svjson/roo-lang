@@ -29,7 +29,7 @@ namespace Roo
   EXEC_BODY(ApplyFunction, exec_apply)
   {
     sptr_val_v fn_args = Roo::get_children(*args.back());
-    return invoke_indirect_callable(ctx, args[0], fn_args, "applying");
+    return invoke_indirect_callable(ctx, args[0], fn_args, InvocationOperation::APPLYING);
   }
 
   /** DefunForm - roo/defun */
@@ -169,7 +169,8 @@ namespace Roo
     results.reserve(fns.size());
     for (auto& fn_val : fns)
     {
-      results.push_back(invoke_callable(ctx, fn_val, args));
+      results.push_back(
+        invoke_indirect_callable(ctx, fn_val, args, InvocationOperation::CALLING));
     }
     return Value::vector(std::move(results));
   }

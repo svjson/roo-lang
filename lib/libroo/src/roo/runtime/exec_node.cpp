@@ -22,17 +22,30 @@ namespace Roo
 
   namespace
   {
+    [[noreturn]]
     void rethrow_with_call_context(Context& ctx,
                                    const ExecNode& node,
                                    const CallNode& call,
-                                   std::exception& e)
+                                   std::exception& e,
+                                   const sptr_val_v* arguments = nullptr)
     {
       const std::string source = node.source.valid() ? ctx.describe_source(node.source) : "";
       if (auto* roo_exception = dynamic_cast<RooException*>(&e))
       {
         roo_exception->set_diagnostic_options(ctx.source_diagnostics_enabled(),
                                               ctx.call_stack_diagnostics_enabled());
-        roo_exception->add_call_context("calling", call.callee_name, source, true);
+        if (arguments)
+        {
+          roo_exception->add_call_context("calling",
+                                          call.callee_name,
+                                          *arguments,
+                                          source,
+                                          true);
+        }
+        else
+        {
+          roo_exception->add_call_context("calling", call.callee_name, source, true);
+        }
         throw;
       }
 
@@ -40,7 +53,14 @@ namespace Roo
       wrapped.set_cause(std::current_exception());
       wrapped.set_diagnostic_options(ctx.source_diagnostics_enabled(),
                                      ctx.call_stack_diagnostics_enabled());
-      wrapped.add_call_context("calling", call.callee_name, source, true);
+      if (arguments)
+      {
+        wrapped.add_call_context("calling", call.callee_name, *arguments, source, true);
+      }
+      else
+      {
+        wrapped.add_call_context("calling", call.callee_name, source, true);
+      }
       throw wrapped;
     }
   } // namespace
@@ -248,42 +268,46 @@ namespace Roo
             sig = x->get_signature(ctx, n.args);
           }
 
-          try
+          auto invoke_with_evaluated_args = [&](auto&& invocation) -> sptr_val
           {
-            if (dynamic_callee && dynamic_callee->type != Value::Type::FUNCTION)
+            sptr_val_v args;
+            args.reserve(n.args.size());
+            try
             {
-              sptr_val_v args;
-              args.reserve(n.args.size());
               for (auto& arg : n.args)
               {
                 args.push_back(exec(ctx, *arg));
               }
-              return invoke_callable(ctx, dynamic_callee, args);
             }
-            else if (sig)
+            catch (std::exception& e)
             {
-              sptr_val_v args;
-              args.reserve(n.args.size());
-              for (auto& arg : n.args)
-              {
-                args.push_back(exec(ctx, *arg));
-              }
-              return sig->invoke(ctx, args);
+              rethrow_with_call_context(ctx, node, n, e);
             }
-            else if (x)
+
+            try
             {
-              sptr_val_v val_args;
-              val_args.reserve(n.args.size());
-              for (auto& arg : n.args)
-              {
-                val_args.push_back(exec(ctx, *arg));
-              }
-              return x->execute(ctx, val_args);
+              return invocation(args);
             }
+            catch (std::exception& e)
+            {
+              rethrow_with_call_context(ctx, node, n, e, &args);
+            }
+          };
+
+          if (dynamic_callee && dynamic_callee->type != Value::Type::FUNCTION)
+          {
+            return invoke_with_evaluated_args(
+              [&](sptr_val_v& args) { return invoke_callable(ctx, dynamic_callee, args); });
           }
-          catch (std::exception& e)
+          if (sig)
           {
-            rethrow_with_call_context(ctx, node, n, e);
+            return invoke_with_evaluated_args([&](sptr_val_v& args)
+                                              { return sig->invoke(ctx, args); });
+          }
+          if (x)
+          {
+            return invoke_with_evaluated_args([&](sptr_val_v& args)
+                                              { return x->execute(ctx, args); });
           }
 
           throw InvocationException("Late-bound call target is not executable.");

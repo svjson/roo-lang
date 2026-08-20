@@ -120,6 +120,13 @@ namespace Roo
       return diagnostic.call_stack_diagnostics || innermost_diagnostic_call == frame_index;
     }
 
+    bool failure_renders_arguments(ErrorCondition condition)
+    {
+      return condition == ErrorCondition::NOT_CALLABLE ||
+             condition == ErrorCondition::ARGUMENT_MISMATCH ||
+             condition == ErrorCondition::NO_MATCHING_SIGNATURE;
+    }
+
     std::string render_diagnostic(const Diagnostic& diagnostic)
     {
       std::optional<std::size_t> innermost_diagnostic_call;
@@ -141,6 +148,7 @@ namespace Roo
                                             : innermost_diagnostic_call;
 
       std::string message = render_failure(diagnostic);
+      bool invocation_arguments_rendered = failure_renders_arguments(diagnostic.condition);
       if (diagnostic.category == ErrorCategory::FORM)
       {
         std::string prefix = "Invalid";
@@ -169,9 +177,10 @@ namespace Roo
           if (subject.empty()) subject = "<anonymous>";
 
           std::string prefix = "Error while " + frame.operation + " " + subject;
-          if (frame.arguments)
+          if (frame.arguments && !invocation_arguments_rendered)
           {
             prefix += " with arguments " + render_arguments(*frame.arguments);
+            invocation_arguments_rendered = true;
           }
           if (!frame.source.empty()) prefix += " at " + frame.source;
           message = prefix + ":\n" + message;
@@ -249,6 +258,22 @@ namespace Roo
     add_context(std::move(frame));
   }
 
+  void RooException::add_call_context(const std::string& operation,
+                                      const std::string& binding_name,
+                                      const std::vector<std::shared_ptr<Value>>& arguments,
+                                      const std::string& source,
+                                      bool controlled_by_diagnostics)
+  {
+    DiagnosticFrame frame;
+    frame.kind = DiagnosticFrameKind::CALL;
+    frame.operation = operation;
+    frame.subject = binding_name.empty() ? "<anonymous>" : binding_name;
+    frame.source = source;
+    frame.controlled_by_diagnostics = controlled_by_diagnostics;
+    frame.arguments = arguments;
+    add_context(std::move(frame));
+  }
+
   void RooException::add_indirect_call_context(
     const std::string& operation,
     const std::shared_ptr<Value>& target,
@@ -285,8 +310,7 @@ namespace Roo
                        });
   }
 
-  void RooException::set_form_site(const std::string& form_name,
-                                   const std::string& source)
+  void RooException::set_form_site(const std::string& form_name, const std::string& source)
   {
     if (diagnostic.site) return;
     diagnostic.site = DiagnosticSite{form_name, source};

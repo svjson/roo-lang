@@ -5,6 +5,7 @@
 #include "roo/runtime/lower.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -315,6 +316,12 @@ namespace Roo
    */
   ROO_API sptr_val invoke_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args);
 
+  enum class InvocationOperation : std::uint8_t
+  {
+    CALLING,
+    APPLYING
+  };
+
   /**
    * Invoke a callable reached indirectly through another Roo operation.
    *
@@ -325,7 +332,7 @@ namespace Roo
   ROO_API sptr_val invoke_indirect_callable(Context& ctx,
                                             const sptr_val& callable,
                                             sptr_val_v& args,
-                                            const std::string& operation);
+                                            InvocationOperation operation);
 
   typedef Signature sig;
   typedef std::unique_ptr<Signature> uptr_sig;

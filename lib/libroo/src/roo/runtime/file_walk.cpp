@@ -149,8 +149,11 @@ namespace Roo::FileWalk
         sptr_val_v predicate_args{entry, metadata};
 
         const bool keep =
-          options_.keep ? is_truthy(*invoke_callable(ctx_, options_.keep, predicate_args))
-                        : node.entry.type == FileSystemEntryType::FILE;
+          options_.keep
+            ? is_truthy(
+                *invoke_indirect_callable(
+                  ctx_, options_.keep, predicate_args, InvocationOperation::CALLING))
+            : node.entry.type == FileSystemEntryType::FILE;
         if (keep)
         {
           results_.push_back(result_value(entry, metadata));
@@ -163,7 +166,9 @@ namespace Roo::FileWalk
 
         const bool descend =
           options_.descend
-            ? is_truthy(*invoke_callable(ctx_, options_.descend, predicate_args))
+            ? is_truthy(
+                *invoke_indirect_callable(
+                  ctx_, options_.descend, predicate_args, InvocationOperation::CALLING))
             : true;
         if (!descend || node.metadata.symlink)
         {

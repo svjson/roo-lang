@@ -40,7 +40,8 @@ namespace Roo
     for (auto& element : elements)
     {
       val_arg[0] = element;
-      sptr_val result = invoke_callable(ctx, fn_arg, val_arg);
+      sptr_val result =
+        invoke_indirect_callable(ctx, fn_arg, val_arg, InvocationOperation::CALLING);
       if (Roo::is_truthy(*result))
       {
         return Constant::BOOL_TRUE;
@@ -66,7 +67,8 @@ namespace Roo
     for (auto& element : elements)
     {
       val_arg[0] = element;
-      sptr_val result = invoke_callable(ctx, fn_arg, val_arg);
+      sptr_val result =
+        invoke_indirect_callable(ctx, fn_arg, val_arg, InvocationOperation::CALLING);
       if (!Roo::is_truthy(*result))
       {
         return Constant::BOOL_FALSE;
@@ -107,7 +109,8 @@ namespace Roo
     for (auto val : elements)
     {
       val_args[0] = val;
-      sptr_val pred_result = invoke_callable(ctx, fn, val_args);
+      sptr_val pred_result =
+        invoke_indirect_callable(ctx, fn, val_args, InvocationOperation::CALLING);
       if (Roo::is_truthy(*pred_result))
       {
         result.push_back(val);
@@ -135,7 +138,8 @@ namespace Roo
     for (auto val : children)
     {
       val_args[0] = val;
-      sptr_val pred_result = invoke_callable(ctx, needle_fn, val_args);
+      sptr_val pred_result = invoke_indirect_callable(
+        ctx, needle_fn, val_args, InvocationOperation::CALLING);
       if (Roo::is_truthy(*pred_result))
       {
         return val;
@@ -166,7 +170,9 @@ namespace Roo
     {
       val_args[0] = children[i];
       auto item = std::make_unique<ExecNode>(children[i]);
-      if (Roo::is_truthy(*invoke_callable(ctx, needle_fn, val_args)))
+      if (Roo::is_truthy(
+            *invoke_indirect_callable(
+              ctx, needle_fn, val_args, InvocationOperation::CALLING)))
       {
         return Value::number(static_cast<int>(i));
       }
@@ -203,7 +209,8 @@ namespace Roo
     for (auto& element : elements)
     {
       map_args[0] = element;
-      sptr_val mapped = invoke_callable(ctx, fn, map_args);
+      sptr_val mapped =
+        invoke_indirect_callable(ctx, fn, map_args, InvocationOperation::CALLING);
 
       if (Type::SEQ_OR_STRING.is_type_of(*mapped))
       {
@@ -262,7 +269,8 @@ namespace Roo
     for (auto& v : values)
     {
       arg[0] = v;
-      sptr_val r = invoke_callable(ctx, fn_arg, arg);
+      sptr_val r =
+        invoke_indirect_callable(ctx, fn_arg, arg, InvocationOperation::CALLING);
       if (*r != *Constant::NIL) result.push_back(r);
     }
 
@@ -323,7 +331,8 @@ namespace Roo
 
       if (valid)
       {
-        result.push_back(invoke_callable(ctx, mapper, map_args));
+        result.push_back(
+          invoke_indirect_callable(ctx, mapper, map_args, InvocationOperation::CALLING));
       }
       else
       {
@@ -346,7 +355,7 @@ namespace Roo
     bool reducer_first = is_function_arg(args[0]);
     sptr_val seq_arg = reducer_first ? args[1] : args[0];
     sptr_val result = reducer_first ? args[2] : args[1];
-    auto& reducer = (reducer_first ? args[0] : args[2])->exec();
+    sptr_val reducer = reducer_first ? args[0] : args[2];
     sptr_val_v children = Roo::get_children(*seq_arg);
 
     sptr_val iter_result;
@@ -354,7 +363,8 @@ namespace Roo
     for (auto& lmnt : children)
     {
       reduce_args[1] = lmnt;
-      result = reducer.execute(ctx, reduce_args);
+      result =
+        invoke_indirect_callable(ctx, reducer, reduce_args, InvocationOperation::CALLING);
 
       if (iter_result.get() != result.get())
       {
@@ -395,7 +405,8 @@ namespace Roo
     for (auto val : elements)
     {
       val_args[0] = val;
-      auto pred_result = invoke_callable(ctx, remove_fn, val_args);
+      auto pred_result = invoke_indirect_callable(
+        ctx, remove_fn, val_args, InvocationOperation::CALLING);
       if (!Roo::is_truthy(*pred_result))
       {
         result.push_back(val);
@@ -431,7 +442,8 @@ namespace Roo
                                [&](const Roo::sptr_val& element)
                                {
                                  Roo::sptr_val_v val_args{element};
-                                 auto pred_result = invoke_callable(ctx, fn_arg, val_args);
+                                 auto pred_result = invoke_indirect_callable(
+                                   ctx, fn_arg, val_args, InvocationOperation::CALLING);
                                  return Roo::is_truthy(*pred_result);
                                });
 
@@ -472,7 +484,8 @@ namespace Roo
     for (auto val : Roo::get_children(*original))
     {
       val_args[0] = val;
-      auto test_result = invoke_callable(ctx, remove_fn, val_args);
+      auto test_result = invoke_indirect_callable(
+        ctx, remove_fn, val_args, InvocationOperation::CALLING);
       if (removed || !Roo::is_truthy(*test_result))
       {
         result.push_back(val);
@@ -563,7 +576,9 @@ namespace Roo
                 {
                   cmp_args[0] = a;
                   cmp_args[1] = b;
-                  return Roo::is_truthy(*invoke_callable(ctx, comparator, cmp_args));
+                  return Roo::is_truthy(
+                    *invoke_indirect_callable(
+                      ctx, comparator, cmp_args, InvocationOperation::CALLING));
                 });
     }
 

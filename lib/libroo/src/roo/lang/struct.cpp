@@ -168,7 +168,8 @@ namespace Roo
       {
         sptr_val updater_spec = exec(ctx, *snode.exec_nodes[updater_node_index]);
         UpdateCall call = make_update_call(current_value, updater_spec, function_name);
-        return invoke_callable(ctx, call.updater, call.args);
+        return invoke_indirect_callable(
+          ctx, call.updater, call.args, InvocationOperation::CALLING);
       }
 
       const std::string current_name = snode.values.front()->str();
@@ -734,7 +735,8 @@ namespace Roo
     {
       sptr_val_v reducer_args{result, key, Dict::get_property(map_arg, *key)};
 
-      sptr_val new_result = invoke_callable(ctx, reducer, reducer_args);
+      sptr_val new_result = invoke_indirect_callable(
+        ctx, reducer, reducer_args, InvocationOperation::CALLING);
       if (new_result.get() != result.get())
       {
         result.swap(new_result);

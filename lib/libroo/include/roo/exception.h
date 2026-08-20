@@ -97,6 +97,11 @@ namespace Roo
                           const std::string& binding_name,
                           const std::string& source = "",
                           bool controlled_by_diagnostics = false);
+    void add_call_context(const std::string& operation,
+                          const std::string& binding_name,
+                          const std::vector<std::shared_ptr<Value>>& arguments,
+                          const std::string& source = "",
+                          bool controlled_by_diagnostics = false);
     void add_indirect_call_context(const std::string& operation,
                                    const std::shared_ptr<Value>& target,
                                    const std::vector<std::shared_ptr<Value>>& arguments,

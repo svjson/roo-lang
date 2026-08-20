@@ -64,6 +64,8 @@ TEST_F(Semantic_ErrorHandling, unmatched_call_arity_reports_invocation_exception
     EXPECT_EQ(diagnostic.facts.expected_signatures[0], "[<any>, <any>]");
     ASSERT_EQ(diagnostic.frames.size(), 1);
     expect_call_frame(diagnostic.frames[0], "calling", "add", "<eval>:1:1");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 3);
     message = e.what();
   }
   catch (const std::exception& e)
@@ -137,6 +139,8 @@ TEST_F(Semantic_ErrorHandling, wrong_argument_type_reports_type_error)
     EXPECT_EQ(diagnostic.condition, Roo::ErrorCondition::MESSAGE);
     ASSERT_EQ(diagnostic.frames.size(), 1);
     expect_call_frame(diagnostic.frames[0], "calling", "assoc-in", "<eval>:1:1");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 3);
     message = e.what();
   }
   catch (const std::exception& e)
@@ -146,8 +150,63 @@ TEST_F(Semantic_ErrorHandling, wrong_argument_type_reports_type_error)
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling assoc-in at <eval>:1:1:\n"
+            "Error while calling assoc-in with arguments [{} 5 :x] at <eval>:1:1:\n"
             "Path for assoc-in must be a sequence, got: 5");
+}
+
+TEST_F(Semantic_ErrorHandling,
+       argument_evaluation_failure_does_not_record_partial_outer_arguments)
+{
+  try
+  {
+    runtime.eval("(replace [1 2] (assoc-in {} 5 :x) 1 [])");
+    FAIL() << "Expected Roo::TypeError to be thrown.";
+  }
+  catch (const Roo::TypeError& e)
+  {
+    const auto& frames = e.get_diagnostic().frames;
+    ASSERT_EQ(frames.size(), 2);
+
+    expect_call_frame(frames[0], "calling", "assoc-in", "<eval>:1:16");
+    ASSERT_TRUE(frames[0].arguments);
+    EXPECT_EQ(frames[0].arguments->size(), 3);
+
+    expect_call_frame(frames[1], "calling", "replace", "<eval>:1:1");
+    EXPECT_FALSE(frames[1].arguments);
+  }
+  catch (const std::exception& e)
+  {
+    FAIL() << "Expected Roo::TypeError, got a different exception: " << e.what();
+  }
+}
+
+TEST_F(Semantic_ErrorHandling, higher_order_callback_records_its_invocation_arguments)
+{
+  try
+  {
+    runtime.eval("(map [{}] assoc-in)");
+    FAIL() << "Expected Roo::NoMatchingSignatureException to be thrown.";
+  }
+  catch (const Roo::NoMatchingSignatureException& e)
+  {
+    const auto& frames = e.get_diagnostic().frames;
+    ASSERT_EQ(frames.size(), 2);
+
+    EXPECT_EQ(frames[0].kind, Roo::DiagnosticFrameKind::CALL);
+    EXPECT_EQ(frames[0].operation, "calling");
+    EXPECT_TRUE(frames[0].subject.empty());
+    ASSERT_TRUE(frames[0].target);
+    ASSERT_TRUE(frames[0].arguments);
+    EXPECT_EQ(frames[0].arguments->size(), 1);
+
+    expect_call_frame(frames[1], "calling", "map", "<eval>:1:1");
+    ASSERT_TRUE(frames[1].arguments);
+    EXPECT_EQ(frames[1].arguments->size(), 2);
+  }
+  catch (const std::exception& e)
+  {
+    FAIL() << "Expected Roo::NoMatchingSignatureException, got: " << e.what();
+  }
 }
 
 TEST_F(Semantic_ErrorHandling, unbound_identifier_reports_identifier_exception)
@@ -435,6 +494,8 @@ TEST_F(Semantic_ErrorHandling, context_call_preserves_type_error_and_adds_call_f
     EXPECT_EQ(diagnostic.condition, Roo::ErrorCondition::MESSAGE);
     ASSERT_EQ(diagnostic.frames.size(), 1);
     expect_call_frame(diagnostic.frames[0], "calling", "assoc-in");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 3);
     message = e.what();
   }
   catch (const std::exception& e)
@@ -444,7 +505,7 @@ TEST_F(Semantic_ErrorHandling, context_call_preserves_type_error_and_adds_call_f
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling assoc-in:\n"
+            "Error while calling assoc-in with arguments [{} 5 :x]:\n"
             "Path for assoc-in must be a sequence, got: 5");
 }
 
@@ -467,6 +528,8 @@ TEST_F(Semantic_ErrorHandling, runtime_invoke_preserves_type_error_and_adds_call
     EXPECT_EQ(diagnostic.condition, Roo::ErrorCondition::MESSAGE);
     ASSERT_EQ(diagnostic.frames.size(), 1);
     expect_call_frame(diagnostic.frames[0], "invoking", "assoc-in");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 3);
     message = e.what();
   }
   catch (const std::exception& e)
@@ -476,7 +539,7 @@ TEST_F(Semantic_ErrorHandling, runtime_invoke_preserves_type_error_and_adds_call
 
   // Then
   EXPECT_EQ(message,
-            "Error while invoking assoc-in:\n"
+            "Error while invoking assoc-in with arguments [{} 5 :x]:\n"
             "Path for assoc-in must be a sequence, got: 5");
 }
 
@@ -530,13 +593,16 @@ TEST_F(Semantic_ErrorHandling,
     EXPECT_EQ(diagnostic.condition, Roo::ErrorCondition::MESSAGE);
     ASSERT_EQ(diagnostic.frames.size(), 2);
     expect_call_frame(diagnostic.frames[0], "calling", "assoc-in", "broken.roo:1:1");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 3);
     expect_resource_frame(diagnostic.frames[1], "reading", "broken.roo");
     message = e.what();
   }
 
   // Then
   EXPECT_EQ(message,
-            "Error reading 'broken.roo': Error while calling assoc-in at broken.roo:1:1:\n"
+            "Error reading 'broken.roo': Error while calling assoc-in with arguments "
+            "[{} 5 :x] at broken.roo:1:1:\n"
             "Path for assoc-in must be a sequence, got: 5");
 }
 
@@ -557,6 +623,8 @@ TEST_F(Semantic_ErrorHandling, nil_invocation_records_target_and_arguments)
     ASSERT_EQ(diagnostic.facts.arguments.size(), 2);
     ASSERT_EQ(diagnostic.frames.size(), 1);
     expect_call_frame(diagnostic.frames[0], "calling", "callable", "<eval>:1:21");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 2);
     EXPECT_EQ(e.what(),
               std::string("Error while calling callable at <eval>:1:21:\n"
                           "Cannot invoke nil with arguments: [1 2]"));
@@ -582,6 +650,8 @@ TEST_F(Semantic_ErrorHandling, keyword_arity_records_target_arguments_and_expect
     ASSERT_EQ(diagnostic.facts.arguments.size(), 2);
     ASSERT_EQ(diagnostic.frames.size(), 1);
     expect_call_frame(diagnostic.frames[0], "calling", "key", "<eval>:1:19");
+    ASSERT_TRUE(diagnostic.frames[0].arguments);
+    EXPECT_EQ(diagnostic.frames[0].arguments->size(), 2);
     EXPECT_EQ(e.what(),
               std::string("Error while calling key at <eval>:1:19:\n"
                           "Keyword :value expects exactly 1 argument, got 2: [{} {}]"));

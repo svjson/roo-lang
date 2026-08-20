@@ -160,7 +160,7 @@ namespace Roo
     if (inv->type != Value::Type::FUNCTION)
     {
       InvocationException error = InvocationException::not_callable(inv, args);
-      error.add_call_context("calling", fn_name);
+      error.add_call_context("calling", fn_name, args);
       throw error;
     }
 
@@ -173,14 +173,14 @@ namespace Roo
     }
     catch (RooException& e)
     {
-      e.add_call_context("calling", fn_name);
+      e.add_call_context("calling", fn_name, args);
       throw;
     }
     catch (std::exception& e)
     {
       InvocationException wrapped(e.what());
       wrapped.set_cause(std::current_exception());
-      wrapped.add_call_context("calling", fn_name);
+      wrapped.add_call_context("calling", fn_name, args);
       throw wrapped;
     }
   }
