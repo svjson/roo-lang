@@ -39,7 +39,7 @@ namespace Roo
       return "";
     }
 
-    std::string render_failure(const Diagnostic& diagnostic)
+    std::string render_failure(const Diagnostic& diagnostic, bool render_received_arguments)
     {
       const auto& facts = diagnostic.facts;
       std::ostringstream out;
@@ -49,14 +49,17 @@ namespace Roo
       case ErrorCondition::NOT_CALLABLE:
         if (facts.target && facts.target->type == Value::Type::NIL)
         {
-          out << "Cannot invoke nil with arguments: ";
+          out << "Cannot invoke nil";
         }
         else
         {
-          out << (facts.target ? facts.target->to_string() : "<unknown>")
-              << " is not callable. Arguments: ";
+          out << (facts.target ? facts.target->to_string() : "<unknown>") << " is not callable";
         }
-        out << render_arguments(facts.arguments);
+        if (render_received_arguments)
+        {
+          out << " with arguments: " << render_arguments(facts.arguments);
+        }
+        out << ".";
         return out.str();
 
       case ErrorCondition::ARGUMENT_MISMATCH:
@@ -73,8 +76,15 @@ namespace Roo
           out << " expects exactly " << *facts.expected_arity << " argument";
           if (*facts.expected_arity != 1) out << "s";
         }
-        out << ", got " << facts.arguments.size() << ": "
-            << render_arguments(facts.arguments);
+        out << ", got " << facts.arguments.size();
+        if (render_received_arguments)
+        {
+          out << ": " << render_arguments(facts.arguments);
+        }
+        else
+        {
+          out << ".";
+        }
         return out.str();
 
       case ErrorCondition::NO_MATCHING_SIGNATURE:
@@ -87,7 +97,15 @@ namespace Roo
 
         out << "No matching signature";
         if (!callee.empty()) out << " for " << callee;
-        out << ": " << render_arguments(facts.arguments) << "\n\n";
+        if (render_received_arguments)
+        {
+          out << ": " << render_arguments(facts.arguments);
+        }
+        else
+        {
+          out << ".";
+        }
+        out << "\n\n";
         out << (facts.expected_signatures.size() > 1 ? "Expected one of:" : "Expected:");
         for (const auto& signature : facts.expected_signatures)
         {
@@ -147,8 +165,27 @@ namespace Roo
                                             ? innermost_diagnostic_source_call
                                             : innermost_diagnostic_call;
 
-      std::string message = render_failure(diagnostic);
-      bool invocation_arguments_rendered = failure_renders_arguments(diagnostic.condition);
+      bool invocation_frame_renders_arguments = false;
+      for (std::size_t frame_index = 0; frame_index < diagnostic.frames.size(); frame_index++)
+      {
+        if (!visible_frame(diagnostic, frame_index, visible_innermost_call)) continue;
+        const auto& frame = diagnostic.frames[frame_index];
+        if (frame.kind == DiagnosticFrameKind::CALL && frame.arguments)
+        {
+          invocation_frame_renders_arguments = true;
+          break;
+        }
+      }
+
+      const bool failure_has_invocation_arguments =
+        failure_renders_arguments(diagnostic.condition);
+      std::string message =
+        render_failure(diagnostic,
+                       failure_has_invocation_arguments &&
+                         !invocation_frame_renders_arguments);
+      bool invocation_arguments_rendered =
+        failure_has_invocation_arguments && !invocation_frame_renders_arguments;
+      bool call_frame_rendered = false;
       if (diagnostic.category == ErrorCategory::FORM)
       {
         std::string prefix = "Invalid";
@@ -176,18 +213,21 @@ namespace Roo
           if (subject.empty() && frame.target) subject = frame.target->to_string();
           if (subject.empty()) subject = "<anonymous>";
 
-          std::string prefix = "Error while " + frame.operation + " " + subject;
+          if (message.empty() || message.back() != '\n') message += "\n";
+          message += call_frame_rendered ? "  from " : "  in ";
+          message += subject;
+          if (!frame.source.empty()) message += " at " + frame.source;
           if (frame.arguments && !invocation_arguments_rendered)
           {
-            prefix += " with arguments " + render_arguments(*frame.arguments);
+            message += " - " + render_arguments(*frame.arguments);
             invocation_arguments_rendered = true;
           }
-          if (!frame.source.empty()) prefix += " at " + frame.source;
-          message = prefix + ":\n" + message;
+          call_frame_rendered = true;
         }
         else
         {
-          message = "Error " + frame.operation + " '" + frame.subject + "': " + message;
+          if (message.empty() || message.back() != '\n') message += "\n";
+          message += "  while " + frame.operation + " '" + frame.subject + "'";
         }
       }
       return message;

@@ -75,13 +75,13 @@ TEST_F(Semantic_ErrorHandling, unmatched_call_arity_reports_invocation_exception
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling add at <eval>:1:1:\n"
-            "No matching signature for add: [1 2 3]\n"
+            "No matching signature for add.\n"
             "\n"
             "Expected:\n"
             "  [<any>, <any>]\n"
             "Received:\n"
-            "  [<number> <number> <number>]\n");
+            "  [<number> <number> <number>]\n"
+            "  in add at <eval>:1:1 - [1 2 3]");
 }
 
 TEST_F(Semantic_ErrorHandling, large_nested_argument_is_truncated_not_dumped_in_full)
@@ -117,7 +117,7 @@ TEST_F(Semantic_ErrorHandling, large_nested_argument_is_truncated_not_dumped_in_
   // signature mismatch.
   EXPECT_THAT(
     message,
-    ::testing::HasSubstr("No matching signature for add: "
+    ::testing::HasSubstr("in add at <eval>:1:1 - "
                          "[1 2 [0 1 2 3 4 5 6 7 8 9 ...] "
                          "{:a 1 :b 2 :c 3 :d 4 :e 5 :f 6 :g 7 :h 8 :i 9 :j 10 ...}]"));
   EXPECT_THAT(message, ::testing::Not(::testing::HasSubstr("99999")));
@@ -150,8 +150,31 @@ TEST_F(Semantic_ErrorHandling, wrong_argument_type_reports_type_error)
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling assoc-in with arguments [{} 5 :x] at <eval>:1:1:\n"
-            "Path for assoc-in must be a sequence, got: 5");
+            "Path for assoc-in must be a sequence, got: 5\n"
+            "  in assoc-in at <eval>:1:1 - [{} 5 :x]");
+}
+
+TEST_F(Semantic_ErrorHandling, nested_call_renders_failure_before_innermost_call_path)
+{
+  runtime.set_call_stack_diagnostics(true);
+
+  try
+  {
+    runtime.eval("((fn [] (replace \"abcd\" 1 nil \"c\")))", "<repl:2>");
+    FAIL() << "Expected Roo::TypeError to be thrown.";
+  }
+  catch (const Roo::TypeError& e)
+  {
+    EXPECT_EQ(e.what(),
+              std::string("replace end: must be a number.\n"
+                          "  in replace at <repl:2>:1:9 - [\"abcd\" 1 nil \"c\"]\n"
+                          "  from (fn [] (replace \"abcd\" 1 nil \"c\")) at "
+                          "<repl:2>:1:1"));
+  }
+  catch (const std::exception& e)
+  {
+    FAIL() << "Expected Roo::TypeError, got a different exception: " << e.what();
+  }
 }
 
 TEST_F(Semantic_ErrorHandling,
@@ -317,8 +340,8 @@ TEST_F(Semantic_ErrorHandling,
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling not-a-function:\n"
-            "42 is not callable. Arguments: []");
+            "42 is not callable.\n"
+            "  in not-a-function - []");
 }
 
 TEST_F(Semantic_ErrorHandling,
@@ -354,8 +377,8 @@ TEST_F(Semantic_ErrorHandling,
 
   // Then
   EXPECT_EQ(message,
-            "Error while invoking not-a-function:\n"
-            "42 is not callable. Arguments: []");
+            "42 is not callable.\n"
+            "  in not-a-function - []");
 }
 
 TEST_F(Semantic_ErrorHandling,
@@ -389,13 +412,13 @@ TEST_F(Semantic_ErrorHandling,
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling add:\n"
-            "No matching signature for add: [1 2 3]\n"
+            "No matching signature for add.\n"
             "\n"
             "Expected:\n"
             "  [<any>, <any>]\n"
             "Received:\n"
-            "  [<number> <number> <number>]\n");
+            "  [<number> <number> <number>]\n"
+            "  in add - [1 2 3]");
 }
 
 TEST_F(Semantic_ErrorHandling,
@@ -427,13 +450,13 @@ TEST_F(Semantic_ErrorHandling,
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling count:\n"
-            "No matching signature for count: [1 2]\n"
+            "No matching signature for count.\n"
             "\n"
             "Expected:\n"
             "  [<any>]\n"
             "Received:\n"
-            "  [<number> <number>]\n");
+            "  [<number> <number>]\n"
+            "  in count - [1 2]");
 }
 
 TEST_F(Semantic_ErrorHandling,
@@ -466,13 +489,13 @@ TEST_F(Semantic_ErrorHandling,
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling my-lambda:\n"
-            "No matching signature for my-lambda: [1]\n"
+            "No matching signature for my-lambda.\n"
             "\n"
             "Expected:\n"
             "  [<any>, <any>]\n"
             "Received:\n"
-            "  [<number>]\n");
+            "  [<number>]\n"
+            "  in my-lambda - [1]");
 }
 
 TEST_F(Semantic_ErrorHandling, context_call_preserves_type_error_and_adds_call_frame)
@@ -505,8 +528,8 @@ TEST_F(Semantic_ErrorHandling, context_call_preserves_type_error_and_adds_call_f
 
   // Then
   EXPECT_EQ(message,
-            "Error while calling assoc-in with arguments [{} 5 :x]:\n"
-            "Path for assoc-in must be a sequence, got: 5");
+            "Path for assoc-in must be a sequence, got: 5\n"
+            "  in assoc-in - [{} 5 :x]");
 }
 
 TEST_F(Semantic_ErrorHandling, runtime_invoke_preserves_type_error_and_adds_call_frame)
@@ -539,8 +562,8 @@ TEST_F(Semantic_ErrorHandling, runtime_invoke_preserves_type_error_and_adds_call
 
   // Then
   EXPECT_EQ(message,
-            "Error while invoking assoc-in with arguments [{} 5 :x]:\n"
-            "Path for assoc-in must be a sequence, got: 5");
+            "Path for assoc-in must be a sequence, got: 5\n"
+            "  in assoc-in - [{} 5 :x]");
 }
 
 TEST_F(Semantic_ErrorHandling,
@@ -601,9 +624,9 @@ TEST_F(Semantic_ErrorHandling,
 
   // Then
   EXPECT_EQ(message,
-            "Error reading 'broken.roo': Error while calling assoc-in with arguments "
-            "[{} 5 :x] at broken.roo:1:1:\n"
-            "Path for assoc-in must be a sequence, got: 5");
+            "Path for assoc-in must be a sequence, got: 5\n"
+            "  in assoc-in at broken.roo:1:1 - [{} 5 :x]\n"
+            "  while reading 'broken.roo'");
 }
 
 TEST_F(Semantic_ErrorHandling, nil_invocation_records_target_and_arguments)
@@ -626,8 +649,8 @@ TEST_F(Semantic_ErrorHandling, nil_invocation_records_target_and_arguments)
     ASSERT_TRUE(diagnostic.frames[0].arguments);
     EXPECT_EQ(diagnostic.frames[0].arguments->size(), 2);
     EXPECT_EQ(e.what(),
-              std::string("Error while calling callable at <eval>:1:21:\n"
-                          "Cannot invoke nil with arguments: [1 2]"));
+              std::string("Cannot invoke nil.\n"
+                          "  in callable at <eval>:1:21 - [1 2]"));
   }
 }
 
@@ -653,7 +676,7 @@ TEST_F(Semantic_ErrorHandling, keyword_arity_records_target_arguments_and_expect
     ASSERT_TRUE(diagnostic.frames[0].arguments);
     EXPECT_EQ(diagnostic.frames[0].arguments->size(), 2);
     EXPECT_EQ(e.what(),
-              std::string("Error while calling key at <eval>:1:19:\n"
-                          "Keyword :value expects exactly 1 argument, got 2: [{} {}]"));
+              std::string("Keyword :value expects exactly 1 argument, got 2.\n"
+                          "  in key at <eval>:1:19 - [{} {}]"));
   }
 }

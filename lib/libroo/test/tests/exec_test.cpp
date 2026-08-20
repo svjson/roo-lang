@@ -65,7 +65,7 @@ TEST_F(Executable, source_diagnostics_are_enabled_by_default)
 
   // Then
   EXPECT_THAT(msg, HasSubstr("No matching signature"));
-  EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:1"));
+  EXPECT_THAT(msg, HasSubstr("in + at <eval>:1:1 - [\"not-a-number\" 4]"));
 }
 
 TEST_F(Executable, source_diagnostics_can_be_disabled)
@@ -88,7 +88,7 @@ TEST_F(Executable, source_diagnostics_can_be_disabled)
 
   // Then
   EXPECT_THAT(msg, HasSubstr("No matching signature"));
-  EXPECT_THAT(msg, Not(HasSubstr("Error while calling +")));
+  EXPECT_THAT(msg, Not(HasSubstr("  in ")));
   EXPECT_THAT(msg, Not(HasSubstr("<eval>:1:1")));
 }
 
@@ -110,7 +110,7 @@ TEST_F(Executable, source_diagnostics_include_callee_and_location)
   }
 
   // Then
-  EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:1"));
+  EXPECT_THAT(msg, HasSubstr("in + at <eval>:1:1 - [\"not-a-number\" 4]"));
   EXPECT_THAT(msg, HasSubstr("No matching signature"));
 }
 
@@ -135,10 +135,10 @@ TEST_F(Executable, call_stack_diagnostics_include_nested_call_context)
   }
 
   // Then
-  EXPECT_THAT(msg, HasSubstr("Error while calling broken at <eval>:2:1"));
-  EXPECT_THAT(msg, HasSubstr("Error while calling + at <eval>:1:18"));
+  EXPECT_THAT(msg, HasSubstr("in + at <eval>:1:18 - [\"bad\" 1]"));
+  EXPECT_THAT(msg, HasSubstr("from broken at <eval>:2:1"));
   EXPECT_THAT(msg, HasSubstr("No matching signature"));
-  EXPECT_LT(msg.find("Error while calling broken"), msg.find("Error while calling +"));
+  EXPECT_LT(msg.find("in +"), msg.find("from broken"));
 }
 
 TEST_F(UserFunction, invocation_of_empty_function_returns_nil)

@@ -82,9 +82,9 @@ TEST_F(ApplyFunction, nil_callee_is_rejected_by_apply)
     EXPECT_EQ(outer.arguments->size(), 2);
 
     EXPECT_EQ(e.what(),
-              std::string("Error while calling apply at <eval>:1:1:\n"
-                          "Error while applying nil:\n"
-                          "Cannot invoke nil with arguments: [1 2]"));
+              std::string("Cannot invoke nil.\n"
+                          "  in nil - [1 2]\n"
+                          "  from apply at <eval>:1:1"));
   }
 }
 
@@ -113,8 +113,8 @@ TEST_F(ApplyFunction, callee_signature_failure_names_the_indirect_invocation)
     EXPECT_EQ(indirect.arguments->size(), 2);
 
     const std::string message = e.what();
-    EXPECT_NE(message.find("Error while applying <fn>:"), std::string::npos);
-    EXPECT_EQ(message.find("Error while applying <fn> with arguments"), std::string::npos);
+    EXPECT_NE(message.find("in <fn> - [1 \"x\"]"), std::string::npos);
+    EXPECT_NE(message.find("from apply at <eval>:1:1"), std::string::npos);
     EXPECT_NE(message.find("No matching signature for <fn>"), std::string::npos);
     EXPECT_EQ(message.find("No matching signature for apply"), std::string::npos);
   }
@@ -144,10 +144,10 @@ TEST_F(ApplyFunction, callee_body_failure_retains_the_applied_invocation)
     EXPECT_EQ(frames[2].subject, "apply");
 
     const std::string message = e.what();
-    EXPECT_NE(message.find("Error while applying #'user/broken:"), std::string::npos);
-    EXPECT_EQ(message.find("Error while applying #'user/broken with arguments"),
-              std::string::npos);
-    EXPECT_NE(message.find("Error while calling +"), std::string::npos);
+    EXPECT_NE(message.find("in + at <eval>:1:"), std::string::npos);
+    EXPECT_NE(message.find(" - [1 \"x\"]"), std::string::npos);
+    EXPECT_NE(message.find("from #'user/broken"), std::string::npos);
+    EXPECT_NE(message.find("from apply at <eval>:2:1"), std::string::npos);
   }
 }
 
@@ -165,8 +165,9 @@ TEST_F(ApplyFunction, source_only_diagnostics_prefer_the_enclosing_source_frame)
   {
     ASSERT_EQ(e.get_diagnostic().frames.size(), 2);
     const std::string message = e.what();
-    EXPECT_NE(message.find("Error while calling apply at <eval>:1:1"), std::string::npos);
-    EXPECT_EQ(message.find("Error while applying"), std::string::npos);
+    EXPECT_NE(message.find("in apply at <eval>:1:1 - ["), std::string::npos);
+    EXPECT_NE(message.find("at <eval>:1:1"), std::string::npos);
+    EXPECT_EQ(message.find("from "), std::string::npos);
     EXPECT_NE(message.find("No matching signature for <fn>"), std::string::npos);
     EXPECT_EQ(message.find("No matching signature for apply"), std::string::npos);
   }

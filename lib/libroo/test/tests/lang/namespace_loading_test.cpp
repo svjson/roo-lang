@@ -651,7 +651,7 @@ TEST_F(NamespaceLoading, read_file_parse_exception_includes_file_name)
   }
 
   // Then
-  EXPECT_THAT(message, HasSubstr("Error parsing 'broken.roo'"));
+  EXPECT_THAT(message, HasSubstr("while parsing 'broken.roo'"));
   EXPECT_THAT(message, HasSubstr("Unmatched parens"));
 }
 
@@ -676,8 +676,8 @@ TEST_F(NamespaceLoading,
   }
 
   // Then
-  EXPECT_THAT(message, HasSubstr("Error parsing 'app/utils.roo'"));
-  EXPECT_THAT(message, Not(HasSubstr("Error parsing 'app.roo'")));
+  EXPECT_THAT(message, HasSubstr("while parsing 'app/utils.roo'"));
+  EXPECT_THAT(message, Not(HasSubstr("while parsing 'app.roo'")));
   EXPECT_THAT(message, HasSubstr("Unmatched parens"));
 }
 
@@ -703,8 +703,8 @@ TEST_F(NamespaceLoading,
   }
 
   // Then
-  EXPECT_THAT(message, HasSubstr("Error reading 'app.roo'"));
-  EXPECT_THAT(message, HasSubstr("Error while calling + at app/utils.roo:3:3"));
+  EXPECT_THAT(message, HasSubstr("while reading 'app.roo'"));
+  EXPECT_THAT(message, HasSubstr("in + at app/utils.roo:3:3 - [\"bad\" 4]"));
   EXPECT_THAT(message, HasSubstr("No matching signature"));
 }
 
