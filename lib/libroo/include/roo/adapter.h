@@ -611,8 +611,6 @@ namespace Roo
   template <typename K, typename V, class A1 = K, class A2 = V>
   class NativeStdMapAdapter : public NativeObject<std::map<K, V>>
   {
-    using ValueAdapter = std::conditional_t<is_rt_primitive_v<K>, A1, A2>;
-
    public:
     NativeStdMapAdapter(std::unique_ptr<std::map<K, V>>&& obj_ptr)
       : NativeObject<std::map<K, V>>(obj_ptr)
@@ -675,8 +673,7 @@ namespace Roo
         return Constant::NIL;
       }
 
-      return native_to_rtval<V, ValueAdapter>(
-        get_self_object().at(rtval_to_native<K>(property)));
+      return native_to_rtval<V, A2>(get_self_object().at(rtval_to_native<K>(property)));
     }
 
     bool has_property(const Value& property) const override { return has_key(property); }
@@ -717,7 +714,7 @@ namespace Roo
       for (auto& [key, value] : get_self_object())
       {
         elements.push_back(native_to_rtval<K, A1>(key));
-        elements.push_back(native_to_rtval<V, ValueAdapter>(value));
+        elements.push_back(native_to_rtval<V, A2>(value));
       }
       return elements;
     }

@@ -11,9 +11,41 @@
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
 
+namespace RooTest
+{
+  struct MappedValue
+  {
+    std::string text;
+  };
+
+  struct PrimitiveKeyAdapter
+  {
+    static Roo::sptr_val make_ref(int value) { return Roo::Value::number(value); }
+
+    static Roo::sptr_val make_ref(const MappedValue&)
+    {
+      return Roo::Value::string("primitive-key-adapter");
+    }
+  };
+
+  struct MappedValueAdapter
+  {
+    static Roo::sptr_val make_ref(const MappedValue& value)
+    {
+      return Roo::Value::string(value.text);
+    }
+  };
+
+  inline Roo::HostTypeRef INT_TO_MAPPED_VALUE("map<int, MappedValue>");
+} // namespace RooTest
+
+DEFINE_ROO_TYPE(RooTest::MappedValue, Roo::Type::ANY)
+DEFINE_MAP_TYPE(RooTest::INT_TO_MAPPED_VALUE, int, RooTest::MappedValue)
+
 using NativeStdVectorAdapter_int = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_int_string = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_int_const_string = RooTest::RuntimeTestFixture;
+using NativeStdMapAdapter_int_mapped_value = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_uint8_short = RooTest::RuntimeTestFixture;
 TEST_F(NativeStdVectorAdapter_int, get_set_children_and_count)
 {
@@ -88,6 +120,21 @@ TEST_F(NativeStdMapAdapter_int_string, script_usage)
   EXPECT_EQ(*runtime.eval("(count updated-map)"), *Roo::Value::number(4));
   EXPECT_EQ(*runtime.eval("(count my-map)"), *Roo::Value::number(4));
   EXPECT_EQ(*runtime.eval("(get my-map 8)"), *Roo::Value::string("eight"));
+}
+
+TEST_F(NativeStdMapAdapter_int_mapped_value,
+       mapped_values_use_value_adapter_when_keys_are_primitive)
+{
+  std::map<int, RooTest::MappedValue> values = {{1, {"mapped-value"}}};
+  Roo::sptr_val adapter =
+    Roo::NativeStdMapAdapter<int,
+                             RooTest::MappedValue,
+                             RooTest::PrimitiveKeyAdapter,
+                             RooTest::MappedValueAdapter>::make_ref(values);
+
+  EXPECT_EQ(*Roo::Dict::get_property(adapter, Roo::Value::number(1)),
+            *Roo::Value::string("mapped-value"));
+  EXPECT_EQ(adapter->nobj()->to_string(), R"({1 "mapped-value"})");
 }
 
 TEST_F(NativeStdMapAdapter_int_const_string, script_usage)
