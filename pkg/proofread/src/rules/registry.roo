@@ -1,42 +1,29 @@
 (ns proofread.rules.registry)
 
-(defun descriptor
-  "Build a proofread rule descriptor.
-
-  Args:
-  - `category`: Rule category keyword.
-  - `entry`: Vector containing a rule ID, check function, and optional scope or
-    descriptor options. Node check functions receive parent, node, and effective
-    rule options.
-
-  Returns:
-  A rule descriptor map."
-  [category entry]
-  (let [options (when (map? (nth entry 2))
-                  (nth entry 2))]
-    {:id (head entry)
-     :category category
-     :default-severity :warning
-     :default-options (or (:default-options options) {})
-     :scope (or (:scope options)
-                (when (nil? options)
-                  (nth entry 2))
-                :node)
-     :check (nth entry 1)}))
-
 (defun descriptors
   "Build proofread rule descriptors for a category.
 
   Args:
   - `category`: Rule category keyword.
   - `entries`: Vectors containing a rule ID, check function, and optional scope
-    or descriptor options.
+    or descriptor options. Node check functions receive parent, node, and
+    effective rule options.
 
   Returns:
   Rule descriptor maps."
   [category entries]
   (for [entry entries]
-    (descriptor category entry)))
+    (let [options (when (map? (nth entry 2))
+                    (nth entry 2))]
+      {:id (head entry)
+       :category category
+       :default-severity :warning
+       :default-options (or (:default-options options) {})
+       :scope (or (:scope options)
+                  (when (nil? options)
+                    (nth entry 2))
+                  :node)
+       :check (nth entry 1)})))
 
 (defun scoped
   "Return rule descriptors for one scope.

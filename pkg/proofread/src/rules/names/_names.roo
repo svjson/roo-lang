@@ -33,4 +33,4 @@
   [active-rules file]
   (keep (registry/scoped active-rules :file)
         (fn [rule]
-          ((:check rule) file))))
+          (@> rule (check file)))))

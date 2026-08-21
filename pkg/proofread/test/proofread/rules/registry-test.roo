@@ -5,11 +5,11 @@
 
 
 
-;;; proofread.rules.registry/descriptor
+;;; proofread.rules.registry/descriptors
 
-(deftest descriptor/registers-one-check-function
+(deftest descriptors/registers-one-check-function
   (let [check (fn [_parent _node _options] nil)
-        rule (registry/descriptor :sample [:sample check])]
+        rule (head (registry/descriptors :sample [[:sample check]]))]
     (is (= check (:check rule)))
     (is (not (contains? rule :check-with-options)))))
 
