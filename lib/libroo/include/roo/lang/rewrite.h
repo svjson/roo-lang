@@ -7,23 +7,29 @@
 namespace Roo
 {
   /*!
-   * @brief Invoke a callable stored under a keyword in a map-like target.
+   * @brief Invoke a callable stored under a keyword or symbol in a map-like target.
    *
-   * The head symbol of the call form selects the corresponding keyword from
-   * the target and is temporarily rebound to the retrieved callable while the
-   * call is evaluated. A vector target descriptor separates its first element
-   * as the target and uses the remaining elements as a `get-in` path.
+   * A bare symbol call head selects the corresponding keyword first and falls
+   * back to the corresponding symbol only when the keyword is absent. A keyword
+   * or quoted-symbol call head selects that exact key type without fallback.
+   * The call head is temporarily rebound to the retrieved callable while the
+   * call is evaluated.
+   *
+   * A vector target descriptor separates its first element as the target and
+   * uses the remaining elements as a `get-in` path.
    *
    * Usage:
    * @code
    * (@> handlers (save document))
+   * (@> handlers (:save document))
+   * (@> handlers ('save document))
    * (@> [application :commands] (save document))
    * @endcode
    *
    * | Arg             | Description                                               |
    * | --------------- | --------------------------------------------------------- |
    * | target-or-path  | Target expression, or `[target path-element ...]`.        |
-   * | call            | Call whose head symbol names the keyword-held callable.   |
+   * | call            | Call whose head selects the callable's key and name.      |
    *
    * @return The value returned by the invoked callable.
    * @since 0.1.0

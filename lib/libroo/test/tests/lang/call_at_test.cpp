@@ -12,6 +12,54 @@ TEST_F(CallAtForm, invokes_callable_from_target)
   EXPECT_EQ(runtime.eval("(@> handlers (sum 2 3))")->to_string(), "5");
 }
 
+TEST_F(CallAtForm, falls_back_to_symbol_key)
+{
+  runtime.eval("(def handlers {'sum (fn [a b] (+ a b))})");
+
+  EXPECT_EQ(runtime.eval("(@> handlers (sum 2 3))")->to_string(), "5");
+}
+
+TEST_F(CallAtForm, bare_symbol_prefers_keyword_key)
+{
+  runtime.eval("(def handlers {:selected (fn [] :keyword) 'selected (fn [] :symbol)})");
+
+  EXPECT_EQ(*runtime.eval("(@> handlers (selected))"), *Roo::Value::keyword("keyword"));
+}
+
+TEST_F(CallAtForm, explicit_key_type_resolves_collisions)
+{
+  runtime.eval("(def handlers {:selected (fn [] :keyword) 'selected (fn [] :symbol)})");
+
+  EXPECT_EQ(*runtime.eval("(@> handlers (:selected))"), *Roo::Value::keyword("keyword"));
+  EXPECT_EQ(*runtime.eval("(@> handlers ('selected))"), *Roo::Value::keyword("symbol"));
+}
+
+TEST_F(CallAtForm, explicit_key_type_does_not_fall_back)
+{
+  runtime.eval("(def symbol-handlers {'selected (fn [] :symbol)})");
+  runtime.eval("(def keyword-handlers {:selected (fn [] :keyword)})");
+
+  EXPECT_THROW(runtime.eval("(@> symbol-handlers (:selected))"), Roo::InvocationException);
+  EXPECT_THROW(runtime.eval("(@> keyword-handlers ('selected))"), Roo::InvocationException);
+}
+
+TEST_F(CallAtForm, present_keyword_value_prevents_symbol_fallback)
+{
+  runtime.eval("(def handlers {:selected nil 'selected (fn [] :symbol)})");
+
+  EXPECT_THROW(runtime.eval("(@> handlers (selected))"), Roo::InvocationException);
+}
+
+TEST_F(CallAtForm, invokes_callable_from_module_view)
+{
+  runtime.eval("(ns my-app.actions)");
+  runtime.eval("(defun execute! [value] (+ value 1))");
+  runtime.eval("(ns caller)");
+  runtime.eval("(def actions (module 'my-app.actions))");
+
+  EXPECT_EQ(*runtime.eval("(@> actions (execute! 41))"), *Roo::Value::number(42));
+}
+
 TEST_F(CallAtForm, invokes_callable_below_target_path)
 {
   runtime.eval("(def application {:commands {:sum (fn [a b] (+ a b))}})");
@@ -93,7 +141,7 @@ TEST_F(CallAtForm, rejects_non_call_second_argument)
   EXPECT_THROW(runtime.eval("(@> {} :missing)"), Roo::TypeError);
 }
 
-TEST_F(CallAtForm, rejects_non_symbol_call_head)
+TEST_F(CallAtForm, rejects_invalid_call_head)
 {
-  EXPECT_THROW(runtime.eval("(@> {} (:missing))"), Roo::TypeError);
+  EXPECT_THROW(runtime.eval("(@> {} (42))"), Roo::TypeError);
 }

@@ -57,13 +57,16 @@ namespace Roo
     }
 
     const sptr_ast_node& callee_form = call_form->get_children()[0];
-    if (callee_form->get_type() != Form::SYMBOL)
+    const Form callee_type = callee_form->get_type();
+    if (callee_type != Form::SYMBOL && callee_type != Form::KEYWORD &&
+        callee_type != Form::QUOTED_SYMBOL)
     {
-      throw TypeError("@> expects the call head to be a symbol, got: " +
+      throw TypeError("@> expects the call head to be a symbol, keyword, or quoted "
+                      "symbol, got: " +
                       callee_form->to_string());
     }
 
-    const std::string callee_name = callee_form->to_string();
+    const std::string callee_name = AST::Value<std::string>::value_of(*callee_form);
     uptr_exec_node_v exec_nodes;
 
     if (target_form->get_type() == Form::VECTOR)
@@ -91,7 +94,19 @@ namespace Roo
     ctx.add_lexical_binding(callee_binding);
     try
     {
-      exec_nodes.push_back(lower_expr(ctx, call_form));
+      if (callee_type == Form::SYMBOL)
+      {
+        exec_nodes.push_back(lower_expr(ctx, call_form));
+      }
+      else
+      {
+        sptr_ast_node_v normalized_elements = call_form->get_children();
+        normalized_elements[0] = AST::Symbol::make(callee_name);
+        normalized_elements[0]->set_source(callee_form->get_source());
+        sptr_ast_node normalized_call = AST::List::make(normalized_elements);
+        normalized_call->set_source(call_form->get_source());
+        exec_nodes.push_back(lower_expr(ctx, normalized_call));
+      }
     }
     catch (...)
     {
@@ -100,10 +115,18 @@ namespace Roo
     }
     ctx.pop();
 
+    sptr_val_v values{Value::string(callee_name)};
+    if (callee_type != Form::QUOTED_SYMBOL)
+    {
+      values.push_back(Value::keyword(callee_name));
+    }
+    if (callee_type != Form::KEYWORD)
+    {
+      values.push_back(Value::symbol(callee_name));
+    }
+
     return std::make_unique<ExecNode>(
-      SpecialFormNode(this,
-                      {Value::string(callee_name), Value::keyword(callee_name)},
-                      std::move(exec_nodes)));
+      SpecialFormNode(this, std::move(values), std::move(exec_nodes)));
   }
 
   EXECNODE_BODY(CallAtForm, execnode_call_at)
@@ -118,7 +141,16 @@ namespace Roo
     }
 
     sptr_val container = Dict::get_property_path(target, path);
-    sptr_val callable = Dict::get_property(container, snode.values[1]);
+    sptr_val callable = Constant::NIL;
+    for (size_t i = 1; i < snode.values.size(); i++)
+    {
+      auto [found, value] = Dict::find_property(container, snode.values[i]);
+      if (found)
+      {
+        callable = value;
+        break;
+      }
+    }
 
     Scope call_scope;
     call_scope.store(snode.values[0]->str(), callable);
