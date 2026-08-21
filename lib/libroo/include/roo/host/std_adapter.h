@@ -1,6 +1,6 @@
 
-#ifndef __ADAPTER_H_
-#define __ADAPTER_H_
+#ifndef ROO__HOST__STD_ADAPTER_H
+#define ROO__HOST__STD_ADAPTER_H
 
 #include <cstdint>
 #include <map>
@@ -187,6 +187,12 @@ namespace Roo
     static const HostTypeRef MAP_INT_TO_CONST_STRING("map<int, const string>");
 
     /*!
+     * @brief Type reference for std::map<std::string, sptr_val> in
+     * NativeStdMapAdapter.
+     */
+    static const HostTypeRef MAP_STRING_TO_VALUE("map<string, sptr_val>");
+
+    /*!
      * @brief Type reference for std::map<uint8_t, short> in
      * NativeStdMapAdapter
      */
@@ -249,8 +255,13 @@ namespace Roo
     const TypeRef* value_type;
 
     NativeStdMapTraits(const StdMapTraits* traits)
+      : NativeStdMapTraits(traits, traits->key_type)
+    {
+    }
+
+    NativeStdMapTraits(const StdMapTraits* traits, const TypeRef* adapted_key_type)
       : NativeObjectTraits(traits->type_ref, NO_N_ACCESSORS)
-      , key_type(traits->key_type)
+      , key_type(adapted_key_type)
       , value_type(traits->value_type)
     {
     }
@@ -260,6 +271,9 @@ namespace Roo
   inline constexpr bool is_rt_primitive_v =
     std::is_arithmetic_v<std::remove_const_t<T>> ||
     std::is_same_v<std::remove_const_t<T>, std::string>;
+
+  template <typename T>
+  inline constexpr bool is_rt_value_v = std::is_same_v<std::remove_const_t<T>, sptr_val>;
 
   template <typename T> std::remove_const_t<T> rtval_to_native(const Value& value)
   {
@@ -273,9 +287,25 @@ namespace Roo
     }
   }
 
+  template <typename T> std::remove_const_t<T> rtval_to_native(const sptr_val& value)
+  {
+    if constexpr (is_rt_value_v<T>)
+    {
+      return value;
+    }
+    else
+    {
+      return rtval_to_native<T>(*value);
+    }
+  }
+
   template <typename T, class Adapter = T> sptr_val native_to_rtval(const T& value)
   {
-    if constexpr (is_rt_primitive_v<T>)
+    if constexpr (is_rt_value_v<T>)
+    {
+      return value ? value : Constant::NIL;
+    }
+    else if constexpr (is_rt_primitive_v<T>)
     {
       return rtval_from(static_cast<std::remove_const_t<T>>(value));
     }
@@ -346,6 +376,14 @@ namespace Roo
    * get_roo_type<V> template specialization for const std::string
    */
   ROO__DEFINE_ROO_TYPE(const std::string, Type::STRING);
+  /*!
+   * get_roo_type<V> template specialization for Roo runtime values.
+   */
+  ROO__DEFINE_ROO_TYPE(sptr_val, Type::ANY);
+  /*!
+   * get_roo_type<V> template specialization for const Roo runtime values.
+   */
+  ROO__DEFINE_ROO_TYPE(const sptr_val, Type::ANY);
 
   /*!
    * @brief Template method that must be specialized for all types that are
@@ -425,6 +463,12 @@ namespace Roo
   ROO__DEFINE_MAP_TYPE(Roo::Type::MAP_INT_TO_STRING, int, std::string)
 
   ROO__DEFINE_MAP_TYPE(Roo::Type::MAP_INT_TO_CONST_STRING, int, const std::string)
+
+  /*!
+   * @brief StdMapTraits template specialization for maps from strings to Roo
+   * runtime values.
+   */
+  ROO__DEFINE_MAP_TYPE(Roo::Type::MAP_STRING_TO_VALUE, std::string, sptr_val)
 
   /*!
    * @brief StdMapTraits template specialization of get_map_type<T> for
@@ -608,17 +652,64 @@ namespace Roo
     }
   };
 
-  template <typename K, typename V, class A1 = K, class A2 = V>
+  /*!
+   * @brief Default conversion policy for native std::map keys.
+   *
+   * Custom policies can provide a distinct Roo key representation for an
+   * otherwise identical std::map type by providing `key_type`, `accepts`,
+   * `to_native`, and `to_runtime` operations with the same signatures.
+   */
+  template <typename K, class A = K> struct NativeStdMapKeyPolicy
+  {
+    static const TypeRef* key_type(const StdMapTraits* traits) { return traits->key_type; }
+
+    static bool accepts(const Value& property, const StdMapTraits* traits)
+    {
+      return property.type != Value::Type::NIL && traits->key_type->is_type_of(property);
+    }
+
+    static std::remove_const_t<K> to_native(const Value& property)
+    {
+      return rtval_to_native<K>(property);
+    }
+
+    static sptr_val to_runtime(const K& key) { return native_to_rtval<K, A>(key); }
+  };
+
+  /*!
+   * @brief Controls whether Roo code can mutate a NativeStdMapAdapter.
+   *
+   * Immutability prevents property assignment through the adapter. It does not
+   * prevent native code from changing a referenced map or freeze values stored
+   * in the map.
+   */
+  enum class NativeStdMapMutability
+  {
+    MUTABLE,
+    IMMUTABLE
+  };
+
+  template <typename K,
+            typename V,
+            class A1 = K,
+            class A2 = V,
+            class KeyPolicy = NativeStdMapKeyPolicy<K, A1>>
   class NativeStdMapAdapter : public NativeObject<std::map<K, V>>
   {
+    const NativeStdMapMutability mutability;
+
    public:
-    NativeStdMapAdapter(std::unique_ptr<std::map<K, V>>&& obj_ptr)
+    NativeStdMapAdapter(std::unique_ptr<std::map<K, V>>&& obj_ptr,
+                        NativeStdMapMutability mutability = NativeStdMapMutability::MUTABLE)
       : NativeObject<std::map<K, V>>(obj_ptr)
+      , mutability(mutability)
     {
     }
 
-    NativeStdMapAdapter(std::map<K, V>& obj_ref)
+    NativeStdMapAdapter(std::map<K, V>& obj_ref,
+                        NativeStdMapMutability mutability = NativeStdMapMutability::MUTABLE)
       : NativeObject<std::map<K, V>>(obj_ref)
+      , mutability(mutability)
     {
     }
 
@@ -626,27 +717,40 @@ namespace Roo
     std::map<K, V>& get_self_object() const { return get_object(); }
     void* self_object_ptr() const override { return &get_self_object(); }
 
-    static sptr_val claim(std::unique_ptr<std::map<K, V>>&& uptr)
+    static sptr_val claim(
+      std::unique_ptr<std::map<K, V>>&& uptr,
+      NativeStdMapMutability mutability = NativeStdMapMutability::MUTABLE)
     {
       return Value::native_object(
-        std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(std::move(uptr)));
+        std::make_shared<NativeStdMapAdapter>(std::move(uptr), mutability));
     }
 
     template <typename... Args> static sptr_val make_unique(Args&&... args)
     {
-      return Value::native_object(std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(
+      return Value::native_object(std::make_shared<NativeStdMapAdapter>(
         std::make_unique<std::map<K, V>>(std::forward<Args>(args)...)));
     }
 
-    static sptr_val make_ref(const std::map<K, V>& ref)
+    template <typename... Args>
+    static sptr_val make_unique(NativeStdMapMutability mutability, Args&&... args)
     {
-      return Value::native_object(std::make_shared<NativeStdMapAdapter<K, V, A1, A2>>(
-        const_cast<std::map<K, V>&>(ref)));
+      return Value::native_object(std::make_shared<NativeStdMapAdapter>(
+        std::make_unique<std::map<K, V>>(std::forward<Args>(args)...),
+        mutability));
+    }
+
+    static sptr_val make_ref(
+      const std::map<K, V>& ref,
+      NativeStdMapMutability mutability = NativeStdMapMutability::MUTABLE)
+    {
+      return Value::native_object(
+        std::make_shared<NativeStdMapAdapter>(const_cast<std::map<K, V>&>(ref), mutability));
     }
 
     const NativeObjectTraits* get_traits() const override
     {
-      static const NativeStdMapTraits traits(get_map_traits<K, V>());
+      static const StdMapTraits* map_traits = get_map_traits<K, V>();
+      static const NativeStdMapTraits traits(map_traits, KeyPolicy::key_type(map_traits));
       return &traits;
     }
 
@@ -657,13 +761,12 @@ namespace Roo
 
     bool has_key(const Value& property) const
     {
-      const NativeStdMapTraits* traits = get_map_native_traits();
-      if (*Constant::NIL == property || !traits->key_type->is_type_of(property))
+      if (!KeyPolicy::accepts(property, get_map_traits<K, V>()))
       {
         return false;
       }
 
-      return get_self_object().count(rtval_to_native<K>(property));
+      return get_self_object().count(KeyPolicy::to_native(property));
     }
 
     sptr_val get_property(const Value& property) const override
@@ -673,22 +776,28 @@ namespace Roo
         return Constant::NIL;
       }
 
-      return native_to_rtval<V, A2>(get_self_object().at(rtval_to_native<K>(property)));
+      return native_to_rtval<V, A2>(get_self_object().at(KeyPolicy::to_native(property)));
     }
 
     bool has_property(const Value& property) const override { return has_key(property); }
 
     void set_property(const Value& property, sptr_val& value) override
     {
+      if (mutability == NativeStdMapMutability::IMMUTABLE)
+      {
+        throw InvocationException("Native std::map adapter is immutable.");
+      }
+
       const NativeStdMapTraits* traits = get_map_native_traits();
-      if (*value == *Constant::NIL || *Constant::NIL == property ||
-          !traits->key_type->is_type_of(property) || !traits->value_type->is_type_of(*value))
+      if (!KeyPolicy::accepts(property, get_map_traits<K, V>()) ||
+          (!is_rt_value_v<V> && *value == *Constant::NIL) ||
+          !traits->value_type->is_type_of(*value))
       {
         return;
       }
 
-      auto key = rtval_to_native<K>(property);
-      auto map_value = rtval_to_native<V>(*value);
+      auto key = KeyPolicy::to_native(property);
+      auto map_value = rtval_to_native<V>(value);
 
       if constexpr (std::is_const_v<V>)
       {
@@ -713,7 +822,7 @@ namespace Roo
       elements.reserve(get_self_object().size() * 2);
       for (auto& [key, value] : get_self_object())
       {
-        elements.push_back(native_to_rtval<K, A1>(key));
+        elements.push_back(KeyPolicy::to_runtime(key));
         elements.push_back(native_to_rtval<V, A2>(value));
       }
       return elements;

@@ -1,7 +1,7 @@
 
 #include <vector>
 
-#include <roo/adapter.h>
+#include <roo/host/std_adapter.h>
 #include <roo/runtime/seq.h>
 
 #include "runtime_fixture.h"

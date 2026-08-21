@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <roo/adapter.h>
+#include <roo/host/std_adapter.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/seq.h>
 #include <roo/runtime/value.h>
@@ -36,6 +36,26 @@ namespace RooTest
     }
   };
 
+  struct SymbolStringKeyPolicy
+  {
+    static const Roo::TypeRef* key_type(const Roo::StdMapTraits*)
+    {
+      return &Roo::Type::SYMBOL;
+    }
+
+    static bool accepts(const Roo::Value& property, const Roo::StdMapTraits*)
+    {
+      return property.type == Roo::Value::Type::SYMBOL;
+    }
+
+    static std::string to_native(const Roo::Value& property) { return property.str(); }
+
+    static Roo::sptr_val to_runtime(const std::string& key)
+    {
+      return Roo::Value::symbol(key);
+    }
+  };
+
   inline Roo::HostTypeRef INT_TO_MAPPED_VALUE("map<int, MappedValue>");
 } // namespace RooTest
 
@@ -46,6 +66,7 @@ using NativeStdVectorAdapter_int = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_int_string = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_int_const_string = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_int_mapped_value = RooTest::RuntimeTestFixture;
+using NativeStdMapAdapter_string_value = RooTest::RuntimeTestFixture;
 using NativeStdMapAdapter_uint8_short = RooTest::RuntimeTestFixture;
 TEST_F(NativeStdVectorAdapter_int, get_set_children_and_count)
 {
@@ -135,6 +156,85 @@ TEST_F(NativeStdMapAdapter_int_mapped_value,
   EXPECT_EQ(*Roo::Dict::get_property(adapter, Roo::Value::number(1)),
             *Roo::Value::string("mapped-value"));
   EXPECT_EQ(adapter->nobj()->to_string(), R"({1 "mapped-value"})");
+}
+
+TEST_F(NativeStdMapAdapter_string_value, preserves_runtime_value_identity_and_nil)
+{
+  Roo::sptr_val stored = Roo::Value::vector({Roo::Value::number(1)});
+  std::map<std::string, Roo::sptr_val> values = {{"stored", stored},
+                                                 {"nil", Roo::Constant::NIL},
+                                                 {"null", nullptr}};
+  Roo::sptr_val adapter =
+    Roo::NativeStdMapAdapter<std::string, Roo::sptr_val>::make_ref(values);
+
+  EXPECT_EQ(Roo::Dict::get_property(adapter, Roo::Value::string("stored")).get(),
+            stored.get());
+  EXPECT_EQ(Roo::Dict::get_property(adapter, Roo::Value::string("nil")).get(),
+            Roo::Constant::NIL.get());
+  EXPECT_EQ(Roo::Dict::get_property(adapter, Roo::Value::string("null")).get(),
+            Roo::Constant::NIL.get());
+
+  Roo::sptr_val replacement = Roo::Value::vector({Roo::Value::number(2)});
+  Roo::Dict::set_property(adapter, Roo::Value::string("stored"), replacement);
+  Roo::Dict::set_property(adapter, Roo::Value::string("new-nil"), Roo::Constant::NIL);
+
+  EXPECT_EQ(values.at("stored").get(), replacement.get());
+  EXPECT_EQ(values.at("new-nil").get(), Roo::Constant::NIL.get());
+}
+
+TEST_F(NativeStdMapAdapter_string_value, key_policy_customizes_identical_native_map_types)
+{
+  std::map<std::string, Roo::sptr_val> values = {{"action", Roo::Value::string("selected")}};
+  Roo::sptr_val string_keys =
+    Roo::NativeStdMapAdapter<std::string, Roo::sptr_val>::make_ref(values);
+  Roo::sptr_val symbol_keys =
+    Roo::NativeStdMapAdapter<std::string,
+                             Roo::sptr_val,
+                             std::string,
+                             Roo::sptr_val,
+                             RooTest::SymbolStringKeyPolicy>::make_ref(values);
+
+  EXPECT_EQ(*Roo::Dict::get_property(string_keys, Roo::Value::string("action")),
+            *Roo::Value::string("selected"));
+  EXPECT_EQ(*Roo::Dict::get_property(string_keys, Roo::Value::symbol("action")),
+            *Roo::Constant::NIL);
+  EXPECT_EQ(*Roo::Dict::get_property(symbol_keys, Roo::Value::symbol("action")),
+            *Roo::Value::string("selected"));
+  EXPECT_EQ(*Roo::Dict::get_property(symbol_keys, Roo::Value::string("action")),
+            *Roo::Constant::NIL);
+
+  EXPECT_EQ(Roo::Dict::map_sptr_keys(string_keys).at(0)->type, Roo::Value::Type::STRING);
+  EXPECT_EQ(Roo::Dict::map_sptr_keys(symbol_keys).at(0)->type, Roo::Value::Type::SYMBOL);
+  EXPECT_EQ(
+    static_cast<const Roo::NativeStdMapTraits*>(symbol_keys->nobj()->get_traits())->key_type,
+    &Roo::Type::SYMBOL);
+}
+
+TEST_F(NativeStdMapAdapter_string_value, immutable_adapter_rejects_mutation)
+{
+  std::map<std::string, Roo::sptr_val> values = {{"answer", Roo::Value::number(42)}};
+  runtime.get_current_namespace().store(
+    "values",
+    Roo::NativeStdMapAdapter<std::string, Roo::sptr_val>::make_ref(
+      values,
+      Roo::NativeStdMapMutability::IMMUTABLE));
+
+  EXPECT_THROW(runtime.eval(R"((assoc! values "answer" 43))"), Roo::InvocationException);
+  EXPECT_EQ(*values.at("answer"), *Roo::Value::number(42));
+}
+
+TEST_F(NativeStdMapAdapter_string_value, immutable_owned_adapter_rejects_mutation)
+{
+  std::map<std::string, Roo::sptr_val> values = {{"answer", Roo::Value::number(42)}};
+  Roo::sptr_val adapter = Roo::NativeStdMapAdapter<std::string, Roo::sptr_val>::make_unique(
+    Roo::NativeStdMapMutability::IMMUTABLE,
+    values);
+
+  EXPECT_THROW(
+    Roo::Dict::set_property(adapter, Roo::Value::string("answer"), Roo::Value::number(43)),
+    Roo::InvocationException);
+  EXPECT_EQ(*Roo::Dict::get_property(adapter, Roo::Value::string("answer")),
+            *Roo::Value::number(42));
 }
 
 TEST_F(NativeStdMapAdapter_int_const_string, script_usage)

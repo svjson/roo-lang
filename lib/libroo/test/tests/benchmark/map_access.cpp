@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <roo/adapter.h>
+#include <roo/host/std_adapter.h>
 #include <roo/namespace.h>
 #include <roo/runtime/value.h>
 

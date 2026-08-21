@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include <roo/adapter.h>
+#include <roo/host/std_adapter.h>
 #include <roo/runtime/value.h>
 
 #include "host/test_adapters/vectorgfx_native_adapters.h"

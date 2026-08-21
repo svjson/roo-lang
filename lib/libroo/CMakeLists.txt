@@ -1,7 +1,7 @@
 get_filename_component(ROO_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 
 set(roo_SOURCES
-  src/roo/adapter.cpp
+  src/roo/host/std_adapter.cpp
   src/roo/bind.cpp
   src/roo/context.cpp
   src/roo/io/dir_root_file_system.cpp
