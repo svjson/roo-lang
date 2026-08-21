@@ -14,12 +14,13 @@
   "Find name diagnostics beneath one AST root.
 
   Args:
+  - `active-rules`: Rule descriptors to run.
   - `root`: A top-level `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [root]
-  (registry/check (registry/scoped rules :node) root))
+  [active-rules root]
+  (registry/check (registry/scoped active-rules :node) root))
 
 (defun check-file
   "Find name diagnostics for one source file.

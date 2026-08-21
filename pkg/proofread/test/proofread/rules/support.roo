@@ -5,25 +5,37 @@
 ;;; Re-usable test support functions/fixtures
 
 (defun produce-rule-start-summary
-  "Produces a summary triggered rules and their start locations
-   for a specific path/file and a check-function."
-  [path check-fn]
-  (for [d (-> path
-              roo.ast/slurp!
-              (flat-map check-fn))]
+  "Summarize triggered rules and their start locations for one source file.
+
+  Args:
+  - `path`: Roo source file path.
+  - `check-fn`: Category check function.
+  - `active-rules`: Rule descriptors to pass to `check-fn`.
+
+  Returns:
+  Maps containing each diagnostic's rule and start location."
+  [path check-fn active-rules]
+  (for [d (flat-map (roo.ast/slurp! path) (fn [root] (check-fn active-rules root)))]
     {:rule (:rule d)
      :start (-> d :source :start)}))
 
 (defun produce-suggestion-summary
-  [path check-fn rule]
-  (keep (-> path roo.ast/slurp! (flat-map check-fn))
+  "Summarize suggestions from one rule for a source file.
+
+  Args:
+  - `path`: Roo source file path.
+  - `check-fn`: Category check function.
+  - `active-rules`: Rule descriptors to pass to `check-fn`.
+  - `rule`: Rule keyword whose suggestions should be retained.
+
+  Returns:
+  Maps containing the selected rule and its suggestion titles and edits."
+  [path check-fn active-rules rule]
+  (keep (flat-map (roo.ast/slurp! path) (fn [root] (check-fn active-rules root)))
         (fn [d]
           (when (= (:rule d) rule)
             {:rule (:rule d)
              :suggestions (for [s (:suggestions d)]
                             {:title (:title s)
-                             :edits (for [e (:edits s)] {:replacement (:replacement e)})})}))))
-
-(defun produce-file-diagnostics
-  [checker-fn rules path]
-  (apply checker-fn [rules path]))
+                             :edits (for [e (:edits s)]
+                                      {:replacement (:replacement e)})})}))))

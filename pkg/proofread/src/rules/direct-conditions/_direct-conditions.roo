@@ -74,8 +74,8 @@
                   (check-node active-rules node child))))
     []))
 
-(defun check-with-rules
-  "Find direct-condition diagnostics using selected rules.
+(defun check
+  "Find direct-condition diagnostics beneath one AST root.
 
   Args:
   - `active-rules`: Rule descriptors to run.
@@ -85,14 +85,3 @@
   A vector of diagnostic maps."
   [active-rules root]
   (check-node active-rules nil root))
-
-(defun check
-  "Find direct-condition diagnostics beneath one AST root.
-
-  Args:
-  - `root`: A top-level `roo.ast` node map.
-
-  Returns:
-  A vector of diagnostic maps."
-  [root]
-  (check-with-rules rules root))

@@ -9,7 +9,7 @@
 
 (defun produce-summary
   [path]
-  (support/produce-rule-start-summary path names/check))
+  (support/produce-rule-start-summary path names/check names/rules))
 
 
 
@@ -38,27 +38,23 @@
            :severity :warning
            :source {:path "assets/rules/names/bad_filename.roo"}
            :message "Use kebab-case filenames"}]
-         (support/produce-file-diagnostics names/check-file
-                                           names/rules
-                                           "assets/rules/names/bad_filename.roo"))))
+         (names/check-file names/rules
+                           "assets/rules/names/bad_filename.roo"))))
 
 
 (deftest kebab-case-filename/ignores-kebab-case-filenames
   (is (= []
-         (support/produce-file-diagnostics names/check-file
-                                           names/rules
-                                           "assets/rules/names/good-filename.roo"))))
+         (names/check-file names/rules
+                           "assets/rules/names/good-filename.roo"))))
 
 
 (deftest kebab-case-filename/ignores-namespace-directory-entry-filenames
   (is (= []
-         (support/produce-file-diagnostics
-           names/check-file
+         (names/check-file
            names/rules
            "assets/rules/names/default-layout/src/my-app/infra/_infra.roo")))
   (is (= []
-         (support/produce-file-diagnostics
-           names/check-file
+         (names/check-file
            names/rules
            "assets/rules/names/namespace-root-layout/src/_my-app.roo"))))
 
@@ -68,7 +64,6 @@
            :severity :warning
            :source {:path "assets/rules/names/default-layout/src/my-app/infra/_cowabunga.roo"}
            :message "Use kebab-case filenames"}]
-         (support/produce-file-diagnostics
-           names/check-file
+         (names/check-file
            names/rules
            "assets/rules/names/default-layout/src/my-app/infra/_cowabunga.roo"))))

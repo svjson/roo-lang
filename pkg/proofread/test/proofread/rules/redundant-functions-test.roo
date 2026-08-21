@@ -9,7 +9,9 @@
 
 (defun produce-summary
   [path]
-  (support/produce-rule-start-summary path redundant-functions/check))
+  (support/produce-rule-start-summary path
+                                      redundant-functions/check
+                                      redundant-functions/rules))
 
 
 

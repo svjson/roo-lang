@@ -1,0 +1,18 @@
+(ns proofread.rules-test
+  (:require proof.core
+            [proofread.rules :as rules]))
+
+
+
+;;; proofread.rules/categories
+
+(deftest categories/preserves-rule-category-order
+  (is (= [:redundant-self-binding
+          :use-flat-map
+          :use-for-indexed
+          :use-head
+          :kebab-case-name
+          :redundant-function
+          :redundant-do]
+         (for [category rules/categories]
+           (:id (head (get category 'rules)))))))

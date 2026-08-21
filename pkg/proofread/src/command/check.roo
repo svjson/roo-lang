@@ -18,9 +18,7 @@
   Returns:
   A vector of trimmed group names."
   [text]
-  (if-let [separator (find-index text
-                                 (fn [ch]
-                                   (= "," (str ch))))]
+  (if-let [separator (index-of text ',')]
     (concat [(trim (substr text 0 separator))]
             (split-groups (substr text (+ separator 1) (count text))))
     [(trim text)]))
@@ -55,9 +53,7 @@
     result
     (if-let [criterion (group-criterion text)]
       (update result :groups [append! criterion])
-      (update result
-              :errors
-              [append! (str "Unknown group criterion: " text)]))))
+      (update result :errors [append! (str "Unknown group criterion: " text)]))))
 
 (defun parse-groups
   "Parse a CLI group option.
@@ -69,8 +65,7 @@
   A map containing parsed `:groups` and `:errors`."
   [text]
   (reduce (split-groups text)
-          {:groups []
-           :errors []}
+          {:groups [] :errors []}
           parse-group-step))
 
 (defun parse-args-step

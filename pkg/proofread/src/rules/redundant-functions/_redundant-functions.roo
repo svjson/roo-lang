@@ -14,9 +14,10 @@
   "Find redundant function diagnostics for a parsed AST root.
 
   Args:
+  - `active-rules`: Rule descriptors to run.
   - `root`: A top-level `roo.ast` node map.
 
   Returns:
   A vector of diagnostic maps."
-  [root]
-  (registry/check rules root))
+  [active-rules root]
+  (registry/check active-rules root))

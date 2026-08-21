@@ -9,7 +9,9 @@
 
 (defun produce-summary
   [path]
-  (support/produce-rule-start-summary path simple-expressions/check))
+  (support/produce-rule-start-summary path
+                                      simple-expressions/check
+                                      simple-expressions/rules))
 
 
 
@@ -392,6 +394,7 @@
          (support/produce-suggestion-summary
            "assets/rules/simple-expressions/flatten-struct-operations.roo"
            simple-expressions/check
+           simple-expressions/rules
            :flatten-struct-operations))))
 
 
@@ -404,6 +407,7 @@
                           :edits [{:replacement "(slice values 3)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/use-slice.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-slice))))
 
 
@@ -413,6 +417,7 @@
                           :edits [{:replacement "(head items)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-head))))
 
 (deftest use-empty?/reports-structured-suggestions
@@ -424,6 +429,7 @@
                           :edits [{:replacement "(empty? items)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-empty?))))
 
 (deftest use-not-empty?/reports-structured-suggestions
@@ -438,6 +444,7 @@
                           :edits [{:replacement "(not-empty? items)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-not-empty?))))
 
 (deftest use-not=/reports-structured-suggestions
@@ -446,6 +453,7 @@
                           :edits [{:replacement "(not= left right)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-not=))))
 
 (deftest use-nil?/reports-structured-suggestions
@@ -457,6 +465,7 @@
                           :edits [{:replacement "(nil? value)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-nil?))))
 
 (deftest use-some?/reports-structured-suggestions
@@ -474,6 +483,7 @@
                           :edits [{:replacement "(some? (index-of name '-'))"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-some?))))
 
 (deftest use-any?/reports-structured-suggestions
@@ -488,6 +498,7 @@
                           :edits [{:replacement "(any? diagnostics failing?)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-any?))))
 
 (deftest use-get-with-default/reports-structured-suggestions
@@ -499,6 +510,7 @@
                           :edits [{:replacement "(get values :name \"Missing\")"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-get-with-default))))
 
 (deftest use-get-in-with-default/reports-structured-suggestions
@@ -508,6 +520,7 @@
                                    "(get-in game-state (concat obligations-path [:groups group-id]) [])"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-get-in-with-default))))
 
 (deftest use-keyword-lookup/reports-structured-suggestions
@@ -516,6 +529,7 @@
                           :edits [{:replacement "(:name symbol)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-keyword-lookup))))
 
 (deftest use-type-predicate/reports-structured-suggestions
@@ -527,6 +541,7 @@
                           :edits [{:replacement "(string? name)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/candidates.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-type-predicate))))
 
 (deftest use-string-starts-with?/reports-structured-suggestions
@@ -538,4 +553,5 @@
                           :edits [{:replacement "(if (string/starts-with? text \":\") (substr text 1) text)"}]}]}]
          (support/produce-suggestion-summary "assets/rules/simple-expressions/use-string-starts-with.roo"
                                              simple-expressions/check
+                                             simple-expressions/rules
                                              :use-string-starts-with?))))
