@@ -5,13 +5,39 @@
 
 #include <iostream>
 
+#include <roo/host/std_adapter.h>
 #include <roo/lang/base.h>
+#include <roo/namespace.h>
+#include <roo/runtime.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/value.h>
 
 namespace Roo
 {
+  namespace
+  {
+    struct ModuleSymbolKeyPolicy
+    {
+      static const TypeRef* key_type(const StdMapTraits*) { return &Type::SYMBOL; }
+
+      static bool accepts(const Value& property, const StdMapTraits*)
+      {
+        return property.type == Value::Type::SYMBOL;
+      }
+
+      static std::string to_native(const Value& property) { return property.str(); }
+
+      static sptr_val to_runtime(const std::string& key) { return Value::symbol(key); }
+    };
+
+    using ModuleAdapter = NativeStdMapAdapter<std::string,
+                                              sptr_val,
+                                              std::string,
+                                              sptr_val,
+                                              ModuleSymbolKeyPolicy>;
+  } // namespace
+
   /** DefForm - roo/def */
   SPECIAL_FORM_IMPL(DefForm,
                     MULTI_SIG((FN_ARGS((&Type::SYMBOL, DATA), (&Type::ANY)),
@@ -392,6 +418,36 @@ namespace Roo
   EXEC_BODY(TypeOfFunction, exec_type_of)
   {
     return Value::string(std::string(type_string(*args[0])));
+  }
+
+  /** ModuleFunction - roo/module */
+  FUNC_IMPL(ModuleFunction,
+            MULTI_SIG((FN_ARGS((&Type::SYMBOL_VALUE)),
+                       EXEC_DISPATCH(&ModuleFunction::exec_module)),
+                      (FN_ARGS((&Type::SYMBOL_VALUE), (&Type::KEYWORD)),
+                       EXEC_DISPATCH(&ModuleFunction::exec_module))))
+
+  EXEC_BODY(ModuleFunction, exec_module)
+  {
+    if (args.size() == 2 && args[1]->str() != "live" && args[1]->str() != "snapshot")
+    {
+      throw InvocationException("module mode must be :live or :snapshot, got " +
+                                args[1]->to_string() + ".");
+    }
+
+    const std::string& namespace_name = args[0]->str();
+    Namespace* module_namespace = ctx.runtime.ns(namespace_name);
+    if (!module_namespace)
+    {
+      throw NamespaceException("Namespace '" + namespace_name + "' does not exist.");
+    }
+
+    if (args.size() == 2 && args[1]->str() == "snapshot")
+    {
+      return ModuleAdapter::make_unique(module_namespace->values);
+    }
+    return ModuleAdapter::make_ref(module_namespace->values,
+                                   NativeStdMapMutability::IMMUTABLE);
   }
 
   /** ResolveFunction - roo/resolve */

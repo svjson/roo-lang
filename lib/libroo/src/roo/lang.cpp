@@ -160,6 +160,7 @@ namespace Roo
     lang_symbols.emplace("move-nth!", MoveNthBangFunction::make());
     lang_symbols.emplace("min", MinFunction::make());
     lang_symbols.emplace("mod", ModulusFunction::make());
+    lang_symbols.emplace("module", ModuleFunction::make());
     lang_symbols.emplace("name", NameFunction::make());
     lang_symbols.emplace("nil", Constant::NIL);
     lang_symbols.emplace("nil?", NilPFunction::make());

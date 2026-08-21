@@ -14,6 +14,8 @@
 
 namespace Roo
 {
+  class ModuleFunction;
+
   class Namespace : public Scope
   {
    public:
@@ -116,6 +118,7 @@ namespace Roo
     static Namespace make_lang(const std::string& name,
                                std::map<std::string, sptr_val> lang_symbols);
 
+    friend class ModuleFunction;
     friend class Runtime;
   };
 } // namespace Roo

@@ -18,6 +18,7 @@ namespace Roo
   class Runtime;
   class Namespace;
   class FileSystem;
+  class ModuleFunction;
 
   class ContextFrame
   {
@@ -162,6 +163,7 @@ namespace Roo
      */
     void define_namespace_alias(const std::string& ns_name, const std::string& alias);
 
+    friend class ModuleFunction;
     friend class NsForm;
   };
 } // namespace Roo

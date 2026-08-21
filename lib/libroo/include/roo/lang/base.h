@@ -285,6 +285,43 @@ namespace Roo
   FUNC(PrnBangFunction, prn_bang)
 
   /*!
+   * @brief Return a map-like view of a loaded namespace's local bindings.
+   * @since 0.1.0
+   *
+   * The default view is live: later definitions and mutations in the namespace
+   * are visible through the returned value. Roo code cannot mutate the
+   * namespace through this view.
+   *
+   * Passing `:live` explicitly returns the same live view as the one-argument
+   * form. Passing `:snapshot` returns an independent, mutable copy of the
+   * bindings as they exist when `module` is called.
+   *
+   * Namespace binding names are exposed as symbol keys.
+   *
+   * Usage:
+   * @code
+   * (module 'my-app.actions.move)
+   *
+   * (module 'my-app.actions.move :live)
+   *
+   * (module 'my-app.actions.move :snapshot)
+   * @endcode
+   *
+   * | Arg       | Description                                                   |
+   * | --------- | ------------------------------------------------------------- |
+   * | namespace | Symbol naming an existing, loaded namespace.                  |
+   *
+   * | Arg       | Description                                                   |
+   * | --------- | ------------------------------------------------------------- |
+   * | namespace | Symbol naming an existing, loaded namespace.                  |
+   * | mode      | Either `:live` or `:snapshot`.                                |
+   *
+   * @return An immutable live view when mode is omitted or `:live`, or a mutable
+   * copy for `:snapshot`.
+   */
+  FUNC(ModuleFunction, module)
+
+  /*!
    * @brief Resolve the value of a symbol programmatically.
    *
    * Usage:
