@@ -125,12 +125,6 @@
                      (not= function-name (forms/head-name body))
                      (specialized-wrapper? param-names body)))))))))
 
-(defun check
-  "Return a `redundant-function` diagnostic for matching nodes."
-  [parent node]
-  (when (redundant-function? node)
-    (diagnostics/make node :redundant-function "Inline redundant function")))
-
 (defun skipped-function?
   "Test whether a function name is exempt from redundant-function checks."
   [node options]
@@ -138,8 +132,17 @@
                  ["check" "check-file"])
              (forms/symbol-name (nth (:children node) 1))))
 
-(defun check-with-options
-  "Return a `redundant-function` diagnostic for matching nodes."
+(defun check
+  "Return a `redundant-function` diagnostic for matching nodes.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+  - `options`: Effective rule options map, or `nil`.
+
+  Returns:
+  A diagnostic map when `node` is a non-exempt redundant function, otherwise
+  `nil`."
   [parent node options]
   (when (and (not (skipped-function? node options))
              (redundant-function? node))

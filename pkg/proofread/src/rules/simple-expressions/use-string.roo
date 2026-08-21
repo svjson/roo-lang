@@ -52,9 +52,10 @@
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
 
   Returns:
   A diagnostic map when `node` should use `string?`, otherwise `nil`."
-  [parent node]
+  [parent node _options]
   (when (string-guard-some-check? parent node)
     (diagnostics/make node :use-string? "Use string?")))

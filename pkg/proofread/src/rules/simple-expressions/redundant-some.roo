@@ -23,10 +23,11 @@
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
 
   Returns:
   A diagnostic map when `node` should remove `some?`, otherwise `nil`."
-  [parent {:keys [children] :as node}]
+  [parent {:keys [children] :as node} _options]
   (when (and (forms/branch-predicate-position? parent node)
              (forms/call? node "some?" 2)
              (or (non-predicate-name? (forms/symbol-name (nth children 1)))

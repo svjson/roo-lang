@@ -5,7 +5,9 @@
 
   Args:
   - `category`: Rule category keyword.
-  - `entry`: Vector containing rule ID, check function, and optional scope.
+  - `entry`: Vector containing a rule ID, check function, and optional scope or
+    descriptor options. Node check functions receive parent, node, and effective
+    rule options.
 
   Returns:
   A rule descriptor map."
@@ -20,15 +22,15 @@
                 (when (nil? options)
                   (nth entry 2))
                 :node)
-     :check (nth entry 1)
-     :check-with-options (:check-with-options options)}))
+     :check (nth entry 1)}))
 
 (defun descriptors
   "Build proofread rule descriptors for a category.
 
   Args:
   - `category`: Rule category keyword.
-  - `entries`: Vectors containing rule ID, check function, and optional scope.
+  - `entries`: Vectors containing a rule ID, check function, and optional scope
+    or descriptor options.
 
   Returns:
   Rule descriptor maps."
@@ -50,26 +52,12 @@
           (fn [rule]
             (= scope (:scope rule)))))
 
-(defun check-rule
-  "Run one rule descriptor against an AST node.
-
-  Args:
-  - `rule`: Rule descriptor map.
-  - `parent`: Parent `roo.ast` node map, or `nil`.
-  - `node`: Current `roo.ast` node map.
-
-  Returns:
-  A diagnostic map, or `nil` when the rule does not match."
-  [rule parent node]
-  (if-let [check (:check-with-options rule)]
-    (check parent node (:options rule))
-    ((:check rule) parent node)))
-
 (defun node-diagnostic
   "Return the first diagnostic from matching rule descriptors.
 
   Args:
-  - `rules`: Rule descriptor maps.
+  - `rules`: Node-scoped rule descriptor maps whose check functions accept
+    parent, node, and effective rule options.
   - `parent`: Parent `roo.ast` node map, or `nil`.
   - `node`: Current `roo.ast` node map.
 
@@ -78,7 +66,7 @@
   [rules parent node]
   (head (keep rules
               (fn [rule]
-                (check-rule rule parent node)))))
+                (@> rule (check parent node (:options rule)))))))
 
 (defun check-node
   "Find diagnostics beneath one AST node.

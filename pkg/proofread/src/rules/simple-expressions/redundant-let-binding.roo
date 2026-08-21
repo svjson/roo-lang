@@ -2,13 +2,13 @@
   (:require [proofread.inspect.bindings :as bindings]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(defun check-with-options
+(defun check
   "Return a `redundant-let-binding` diagnostic using configured rule options.
 
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
-  - `options`: Rule options map.
+  - `options`: Effective rule options map, or `nil`.
 
   Returns:
   A diagnostic map when `node` contains a redundant binding, otherwise `nil`."
@@ -22,8 +22,3 @@
         (diagnostics/make binding
                           :redundant-let-binding
                           "Inline redundant let binding")))))
-
-(defun check
-  "Return a `redundant-let-binding` diagnostic for multi-binding lets."
-  [parent node]
-  (check-with-options parent node {}))

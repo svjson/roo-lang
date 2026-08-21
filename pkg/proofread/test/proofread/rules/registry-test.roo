@@ -5,6 +5,33 @@
 
 
 
+;;; proofread.rules.registry/descriptor
+
+(deftest descriptor/registers-one-check-function
+  (let [check (fn [_parent _node _options] nil)
+        rule (registry/descriptor :sample [:sample check])]
+    (is (= check (:check rule)))
+    (is (not (contains? rule :check-with-options)))))
+
+
+
+;;; proofread.rules.registry/node-diagnostic
+
+(deftest node-diagnostic/passes-rule-options-to-check
+  (is (= {:parent :parent
+          :node :node
+          :options {:mode :strict}}
+         (registry/node-diagnostic
+           [{:check (fn [parent node options]
+                      {:parent parent
+                       :node node
+                       :options options})
+             :options {:mode :strict}}]
+           :parent
+           :node))))
+
+
+
 ;;; proofread.rules.registry/known-rule?
 
 (deftest known-rule?/exposes-registered-rule-ids

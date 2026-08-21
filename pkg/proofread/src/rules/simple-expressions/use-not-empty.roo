@@ -85,10 +85,11 @@
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
 
   Returns:
   A diagnostic map when `node` should use `not-empty?`, otherwise `nil`."
-  [parent node]
+  [parent node _options]
   (when (and (forms/predicate-position? parent node)
              (not (direct-unless-candidate? parent node))
              (or (not-empty-count-comparison? node)

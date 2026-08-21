@@ -60,8 +60,16 @@
                    (loop-mutates-bound-name? body-form names)))))))
 
 (defun check
-  "Return a `use-reduce` diagnostic for matching nodes."
-  [parent node]
+  "Return a `use-reduce` diagnostic for matching nodes.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
+
+  Returns:
+  A diagnostic map when `node` matches this rule, otherwise `nil`."
+  [parent node _options]
   (when (candidate? node)
     (diagnostics/make node
                       :use-reduce

@@ -32,8 +32,16 @@
                 ")")))
 
 (defun check
-  "Return a `use-unless` diagnostic for matching nodes."
-  [parent {:keys [children] :as node}]
+  "Return a `use-unless` diagnostic for matching nodes.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
+
+  Returns:
+  A diagnostic map when `node` matches this rule, otherwise `nil`."
+  [parent {:keys [children] :as node} _options]
   (when (or (if-empty-then-branch? node)
             (when-negated-condition? node))
     (diagnostics/make-suggesting

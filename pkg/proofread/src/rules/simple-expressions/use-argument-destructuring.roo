@@ -57,13 +57,13 @@
                                  (nth (:children parent) (dec body-index))
                                  options)))))
 
-(defun check-with-options
+(defun check
   "Return a `use-argument-destructuring` diagnostic using configured rule options.
 
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
-  - `options`: Rule options map.
+  - `options`: Effective rule options map, or `nil`.
 
   Returns:
   A diagnostic map when `node` should use argument destructuring, otherwise `nil`."
@@ -72,8 +72,3 @@
     (diagnostics/make node
                       :use-argument-destructuring
                       "Use argument destructuring")))
-
-(defun check
-  "Return a `use-argument-destructuring` diagnostic for matching nodes."
-  [parent node]
-  (check-with-options parent node default-options))

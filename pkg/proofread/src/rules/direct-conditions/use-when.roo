@@ -3,8 +3,16 @@
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun check
-  "Return a `use-when` diagnostic for matching nodes."
-  [parent {:keys [children] :as node}]
+  "Return a `use-when` diagnostic for matching nodes.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
+
+  Returns:
+  A diagnostic map when `node` matches this rule, otherwise `nil`."
+  [parent {:keys [children] :as node} _options]
   (when (and (= "if" (forms/head-name node))
              (or (= 3 (count children))
                  (forms/nil-node? (nth children 3))))

@@ -102,8 +102,16 @@
          ")")))
 
 (defun check
-  "Report `string/starts-with?` opportunities in equality and case forms."
-  [parent node]
+  "Report `string/starts-with?` opportunities in equality and case forms.
+
+  Args:
+  - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
+  - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
+
+  Returns:
+  A diagnostic map when `node` matches this rule, otherwise `nil`."
+  [parent node _options]
   (when-let [candidate (candidate? node)]
     (diagnostics/make-suggesting
       node

@@ -53,16 +53,13 @@
      [:redundant-some? redundant-some/check]
      [:use-argument-destructuring
       use-argument-destructuring/check
-      {:default-options use-argument-destructuring/default-options
-       :check-with-options use-argument-destructuring/check-with-options}]
+      {:default-options use-argument-destructuring/default-options}]
      [:redundant-let
       redundant-let/check
-      {:default-options expressions/default-options
-       :check-with-options redundant-let/check-with-options}]
+      {:default-options expressions/default-options}]
      [:redundant-let-binding
       redundant-let-binding/check
-      {:default-options expressions/default-options
-       :check-with-options redundant-let-binding/check-with-options}]
+      {:default-options expressions/default-options}]
      [:redundant-let-rebind redundant-let-rebind/check]
      [:redundant-empty-default redundant-empty-default/check]
      [:use-get-with-default use-get-with-default/check]

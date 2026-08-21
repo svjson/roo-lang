@@ -8,8 +8,7 @@
     :redundant-functions
     [[:redundant-function
       redundant-function/check
-      {:default-options {:ignore-function-names ["check" "check-file"]}
-       :check-with-options redundant-function/check-with-options}]]))
+      {:default-options {:ignore-function-names ["check" "check-file"]}}]]))
 
 (defun check
   "Find redundant function diagnostics for a parsed AST root.

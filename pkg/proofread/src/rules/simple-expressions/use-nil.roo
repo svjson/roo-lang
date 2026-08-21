@@ -33,10 +33,11 @@
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
   - `node`: Current `roo.ast` node map.
+  - `_options`: Ignored effective rule options map, or `nil`.
 
   Returns:
   A diagnostic map when `node` should use `nil?`, otherwise `nil`."
-  [parent node]
+  [parent node _options]
   (when (nil-comparison? node)
     (diagnostics/make-suggesting
       node
