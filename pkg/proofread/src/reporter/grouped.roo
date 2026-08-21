@@ -156,7 +156,7 @@
   (map (lines-with-options (:diagnostics state)
                            (:groups state)
                            (:options state))
-       prn)
+       prn!)
   (rc/print-summary! summary))
 
 (defun make

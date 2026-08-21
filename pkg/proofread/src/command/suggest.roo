@@ -165,10 +165,10 @@
     (if (not-empty? (:errors options))
       (do
         (map (:errors options) prn)
-        (prn usage-line)
+        (prn! usage-line)
         (native/fail! "proofread: invalid arguments"))
       (let [diagnostics (suggestions-at (checked-diagnostics (:file options))
                                         (:line options)
                                         (:column options))]
-        (prn diagnostics)
+        (prn! diagnostics)
         diagnostics))))

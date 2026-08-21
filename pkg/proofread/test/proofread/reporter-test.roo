@@ -1,0 +1,29 @@
+(ns proofread.reporter-test
+  (:require proof.core
+            [proofread.reporter :as reporter]))
+
+
+
+;;; proofread.reporter/report-file!
+
+(deftest report-file!/updates-reporter-state
+  (let [reported (reporter/report-file!
+                   {:state [:existing]
+                    :report-file! (fn [state file-result]
+                                    (append state (:file file-result)))}
+                   {:file "sample.roo"})]
+    (is (= [:existing "sample.roo"] (:state reported)))))
+
+
+
+;;; proofread.reporter/report-summary!
+
+(deftest report-summary!/returns-callback-result
+  (is (= {:state :reporter-state
+          :summary {:files 2 :warnings 1 :errors 0}}
+         (reporter/report-summary!
+           {:state :reporter-state
+            :report-summary! (fn [state summary]
+                               {:state state
+                                :summary summary})}
+           {:files 2 :warnings 1 :errors 0}))))

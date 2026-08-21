@@ -203,7 +203,7 @@
   (let [text (summary-text summary)
         separator (apply join (concat [""]
                                       (repeat (count text) "-")))]
-    (prn separator)
-    (prn (soot/paint (summary-styles summary) text))
-    (prn separator)
+    (prn! separator)
+    (prn! (soot/paint (summary-styles summary) text))
+    (prn! separator)
     summary))

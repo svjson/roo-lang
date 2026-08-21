@@ -43,7 +43,7 @@
   [reporter file-result]
   (assoc reporter
          :state
-         ((:report-file! reporter) (:state reporter) file-result)))
+         (@> reporter (report-file! (:state reporter) file-result))))
 
 (defun report-summary!
   "Report the final proofread summary.
@@ -53,6 +53,6 @@
   - `summary`: Map containing `:files`, `:warnings`, and `:errors`.
 
   Returns:
-  `summary`."
+  The value returned by the reporter's `:report-summary!` callback."
   [reporter summary]
-  ((:report-summary! reporter) (:state reporter) summary))
+  (@> reporter (report-summary! (:state reporter) summary)))
