@@ -21,6 +21,17 @@
                               :destination :verbose}}
              "--verbose"))))
 
+(deftest command-flag/recognizes-assignment-for-terminal-diagnostics
+  (is (= {:names ["--help"]
+          :spec {:type :command
+                 :command :cli-trooper/help}
+          :argument "--help"
+          :assigned? true}
+         (command/command-flag
+          {["--help"] {:type :command
+                        :command :cli-trooper/help}}
+          "--help=true"))))
+
 
 
 ;; cli-trooper.parse.command/select

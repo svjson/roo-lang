@@ -61,6 +61,30 @@
           (flag/normalize-spec ["--root"] {:type :dir
                                             :repeatable? true})))))
 
+(deftest normalize-spec/normalizes-a-constant-negative-flag
+  (is (= {:type :flag
+          :required? false
+          :repeatable? false
+          :default true
+          :value false
+          :destination :durations?}
+         (flag/normalize-spec ["--no-durations"]
+                              {:type :flag
+                               :destination :durations?
+                               :value false}))))
+
+(deftest normalize-spec/normalizes-an-optional-value-boolean
+  (is (= {:type :boolean
+          :required? false
+          :repeatable? false
+          :default false
+          :optional-value? true
+          :destination :durations?}
+         (flag/normalize-spec ["--durations"]
+                              {:type :boolean
+                               :destination :durations?
+                               :optional-value? true}))))
+
 (deftest normalize-spec/retains-an-explicit-default
   (is (= :text
          (:default

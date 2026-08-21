@@ -11,8 +11,10 @@
           "Unknown command: build. Expected: generate, inspect."
           "Unknown option: --wat."
           "Missing value after --out."
+          "Option does not accept a value: --verbose."
           "Missing required option: --out."
           "Invalid value for --format: html. Expected: github-pages."
+          "Invalid value for --durations: yes. Expected: true, false."
           "Missing required argument: index-file."
           "Unexpected argument: extra.edn."
           "Unexpected argument after :cli-trooper/help: trailing."]
@@ -26,12 +28,18 @@
             :argument "--wat"}
            {:kind :missing-option-value
             :argument "--out"}
+           {:kind :unexpected-option-value
+            :argument "--verbose"}
            {:kind :missing-required-option
             :argument "--out"}
            {:kind :invalid-enum-value
             :argument "--format"
             :value "html"
             :expected ["github-pages"]}
+           {:kind :invalid-boolean-value
+            :argument "--durations"
+            :value "yes"
+            :expected ["true" "false"]}
            {:kind :missing-positional
             :argument "index-file"}
            {:kind :unexpected-positional

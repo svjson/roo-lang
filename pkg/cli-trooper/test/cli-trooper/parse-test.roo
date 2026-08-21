@@ -23,6 +23,22 @@
                    :optional? true
                    :repeatable? true}]}}})
 
+(def boolean-config
+  "Executable-root declaration covering optional and constant boolean flags."
+  {:application "proof"
+   :features {:help false
+              :version false}
+   :execute! (fn [_context _options] nil)
+   :flags
+   {"durations" {:type :boolean
+                  :optional-value? true
+                  :destination :durations?
+                  :default false}
+    "no-durations" {:type :flag
+                    :value false
+                    :destination :durations?
+                    :default false}}})
+
 
 
 ;; cli-trooper.parse/parse
@@ -97,6 +113,88 @@
          (:options
           (parse/parse (config/normalize test-config)
                        ["inspect" "--out" "-"])))))
+
+(deftest parse/accepts-assigned-long-option-values
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag ["one" "two"]
+                    :format :edn
+                    :out "target=name"
+                    :input nil
+                    :labels []}
+          :errors []}
+         (parse/parse (config/normalize test-config)
+                      ["inspect"
+                       "--format=edn"
+                       "--tag=one,two"
+                       "--out=target=name"]))))
+
+(deftest parse/accepts-implicit-separated-and-assigned-optional-booleans
+  (let [config (config/normalize boolean-config)]
+    (is (= {:implicit {:command []
+                       :options {:durations? true}
+                       :errors []}
+            :separated {:command []
+                        :options {:durations? false}
+                        :errors []}
+            :assigned {:command []
+                       :options {:durations? false}
+                       :errors []}
+            :negated {:command []
+                      :options {:durations? false}
+                      :errors []}}
+           {:implicit (parse/parse config ["--durations"])
+            :separated (parse/parse config ["--durations" "false"])
+            :assigned (parse/parse config ["--durations=false"])
+            :negated (parse/parse config
+                                  ["--durations" "--no-durations"])}))))
+
+(deftest parse/reports-invalid-or-unexpected-assigned-values
+  (is (= {:empty {:command "inspect"
+                  :options {:verbose false
+                            :tag []
+                            :out nil
+                            :input nil
+                            :labels []}
+                  :errors [{:kind :missing-option-value
+                            :command "inspect"
+                            :argument "--format"}]}
+          :constant {:command "inspect"
+                     :options {:tag []
+                               :format :text
+                               :out nil
+                               :input nil
+                               :labels []}
+                     :errors [{:kind :unexpected-option-value
+                               :command "inspect"
+                               :argument "--verbose"}]}
+          :boolean {:command []
+                    :options {}
+                    :errors [{:kind :invalid-boolean-value
+                              :command []
+                              :argument "--durations"
+                              :value "yes"
+                              :expected ["true" "false"]}]}}
+         {:empty (parse/parse (config/normalize test-config)
+                              ["inspect" "--format="])
+          :constant (parse/parse (config/normalize test-config)
+                                 ["inspect" "--verbose=true"])
+          :boolean (parse/parse (config/normalize boolean-config)
+                                ["--durations=yes"])})))
+
+(deftest parse/rejects-an-assigned-value-on-a-command-shaped-flag
+  (is (= {:command ["inspect" :cli-trooper/help]
+          :options {:verbose false
+                    :tag []
+                    :format :text
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors [{:kind :unexpected-option-value
+                    :command "inspect"
+                    :argument "--help"}]}
+         (parse/parse (config/normalize test-config)
+                      ["inspect" "--help=true"]))))
 
 (deftest parse/reports-a-missing-command
   (is (= {:command nil

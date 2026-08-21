@@ -40,46 +40,6 @@
 
 ;; Flag state transitions
 
-(defun consume
-  "Apply one flag-shaped argument to parser state.
-
-   Args:
-   - `state`: The current argument parser state.
-   - `command`: The selected command literal.
-   - `flags`: The applicable canonical flag map.
-   - `arg`: The raw flag argument.
-
-   Returns:
-   Parser state with a boolean destination enabled, a pending value context, or
-   an unknown-option diagnostic."
-  [state command flags arg]
-  (let [flag-key (find-first (keys flags)
-                             (fn [key]
-                               (flag= arg key)))
-        spec (get flags flag-key)]
-    (case (:type spec)
-      nil
-      (update state :errors [append {:kind :unknown-option
-                                     :command command
-                                     :argument arg}])
-
-      :command
-      (update state :errors [append {:kind :unknown-option
-                                     :command command
-                                     :argument arg}])
-
-      :flag
-      (-> state
-          (update :defaults [dissoc (:destination spec)])
-          (assoc-in [:options (:destination spec)] true))
-
-      :default
-      (-> state
-          (update :defaults [dissoc (:destination spec)])
-          (assoc :ctx
-                 {:name arg
-                  :flag spec})))))
-
 (defun consume-value
   "Capture a raw argument for the pending value-taking flag.
 
@@ -116,6 +76,104 @@
                    (:value converted))))
      :ctx
      nil)))
+
+(defun consume
+  "Apply one flag-shaped argument to parser state.
+
+  Long flags may carry an assigned value after `=`. A constant flag rejects an
+  assigned value. An optional-value boolean stores `true` when no recognized
+  explicit value follows it.
+
+  Args:
+  - `state`: The current argument parser state, including the complete argument
+    sequence and current argument index.
+  - `command`: The selected command literal or path.
+  - `flags`: The applicable canonical flag map.
+  - `arg`: The raw flag argument.
+
+  Returns:
+  Parser state with a constant value stored, a pending value context, an
+  assigned value consumed, or a structured option diagnostic."
+  [state command flags arg]
+  (let [separator (when (and (string? arg)
+                             (string/starts-with? arg "--"))
+                    (index-of arg '='))
+        assigned? (some? separator)
+        argument-name (cond-> arg
+                        assigned? (substr 0 separator))
+        assigned-value (when assigned? (substr arg (+ separator 1)))
+        flag-key (find-first (keys flags)
+                             (fn [key]
+                               (flag= argument-name key)))
+        spec (get flags flag-key)
+        next-index (+ (:arg-index state) 1)
+        next-boolean (when (and (= :boolean (:type spec))
+                                (:optional-value? spec)
+                                (not assigned?)
+                                (< next-index (count (:args state))))
+                       (value/convert spec (nth (:args state) next-index)))
+        pending-state (-> state
+                          (update :defaults [dissoc (:destination spec)])
+                          (assoc :ctx {:name argument-name
+                                       :flag spec}))]
+    (case (:type spec)
+      nil
+      (update state :errors [append {:kind :unknown-option
+                                     :command command
+                                     :argument arg}])
+
+      :command
+      (update state
+              :errors
+              [append {:kind (if assigned?
+                               :unexpected-option-value
+                               :unknown-option)
+                       :command command
+                       :argument argument-name}])
+
+      :flag
+      (if assigned?
+        (-> state
+            (update :defaults [dissoc (:destination spec)])
+            (update :errors [append {:kind :unexpected-option-value
+                                     :command command
+                                     :argument argument-name}]))
+        (-> state
+            (update :defaults [dissoc (:destination spec)])
+            (assoc-in [:options (:destination spec)] (:value spec))))
+
+      :boolean
+      (cond
+        assigned?
+        (if (empty? assigned-value)
+          (-> pending-state
+              (assoc :ctx nil)
+              (update :errors [append {:kind :missing-option-value
+                                       :command command
+                                       :argument argument-name}]))
+          (consume-value pending-state command assigned-value))
+
+        (:optional-value? spec)
+        (cond-> (-> pending-state
+                    (assoc :ctx nil)
+                    (assoc-in [:options (:destination spec)] true))
+          (and next-boolean (contains? next-boolean :value))
+          (assoc :ctx {:name argument-name
+                       :flag spec}))
+
+        true
+        pending-state)
+
+      :default
+      (if assigned?
+        (if (empty? assigned-value)
+          (-> pending-state
+              (assoc :ctx nil)
+              (update :errors [append {:kind :missing-option-value
+                                       :command command
+                                       :argument argument-name}]))
+          (consume-value pending-state command assigned-value))
+        pending-state))))
 
 (defun finalize
   "Record unfinished and absent required flag values.

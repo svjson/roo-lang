@@ -39,6 +39,12 @@
 
     true
     (case (:type spec)
+      :boolean (case raw
+                 "true" {:value true}
+                 "false" {:value false}
+                 :default {:error {:kind :invalid-boolean-value
+                                   :value raw
+                                   :expected ["true" "false"]}})
       :enum (if (contains? (:values spec) raw)
               {:value (keyword raw)}
               {:error {:kind :invalid-enum-value

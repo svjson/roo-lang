@@ -1,5 +1,6 @@
 (ns cli-trooper.parse.command
-  (:require [cli-trooper.parse.flag :as flag]
+  (:require [roo.string :as string]
+            [cli-trooper.parse.flag :as flag]
             [cli-trooper.parse.positional :as positional]))
 
 
@@ -9,23 +10,35 @@
 (defun command-flag
   "Find a command-shaped flag declaration matching one argument.
 
+  An assigned long spelling also matches so command selection can report that
+  the terminal flag does not accept a value.
+
    Args:
    - `flags`: An applicable canonical flag map.
    - `arg`: The raw argument to match.
 
    Returns:
-   A map containing the matched canonical `:names` and `:spec`, or `nil` when
-   the argument does not select a command-shaped flag."
+   A map containing the matched canonical `:names` and `:spec`. An assigned
+   spelling also carries its canonical `:argument` and `:assigned? true`; an
+   unmatched argument returns `nil`."
   [flags arg]
-  (reduce-kv flags
-             nil
-             (fn [selected names spec]
-               (if (or selected
-                       (not= :command (:type spec))
-                       (not (flag/flag= arg names)))
-                 selected
-                 {:names names
-                  :spec spec}))))
+  (let [separator (when (and (string? arg)
+                             (string/starts-with? arg "--"))
+                    (index-of arg '='))
+        assigned? (some? separator)
+        argument (cond-> arg
+                   assigned? (substr 0 separator))]
+    (reduce-kv flags
+               nil
+               (fn [selected names spec]
+                 (if (or selected
+                         (not= :command (:type spec))
+                         (not (flag/flag= argument names)))
+                   selected
+                   (cond-> {:names names
+                            :spec spec}
+                     assigned? (assoc :argument argument
+                                      :assigned? true)))))))
 
 (defun select
   "Resolve positional or command-shaped flag selection from an argument sequence.
@@ -63,15 +76,19 @@
       root-terminal-entry
       (let [terminal (command-flag (:flags config)
                                    (:argument root-terminal-entry))]
-        {:index nil
-         :terminal-index (:index root-terminal-entry)
-         :transition-indexes [(:index root-terminal-entry)]
-         :terminal? true
-         :command (-> terminal :spec :command)
-         :source-command []
-         :root? true
-         :spec config
-         :commands commands})
+        (cond-> {:index nil
+                 :terminal-index (:index root-terminal-entry)
+                 :transition-indexes [(:index root-terminal-entry)]
+                 :terminal? true
+                 :command (-> terminal :spec :command)
+                 :source-command []
+                 :root? true
+                 :spec config
+                 :commands commands}
+          (:assigned? terminal)
+          (assoc :errors [{:kind :unexpected-option-value
+                           :command []
+                           :argument (:argument terminal)}])))
 
       command-entry
       (let [index (:index command-entry)
@@ -96,16 +113,20 @@
                                           (:argument terminal-entry)))
             terminal (or local-terminal root-terminal)]
         (if terminal
-          {:index index
-           :terminal-index (:index terminal-entry)
-           :transition-indexes [index (:index terminal-entry)]
-           :terminal? true
-           :command (if local-terminal
-                      [command (-> terminal :spec :command)]
-                      (-> terminal :spec :command))
-           :source-command command
-           :spec spec
-           :commands commands}
+          (cond-> {:index index
+                   :terminal-index (:index terminal-entry)
+                   :transition-indexes [index (:index terminal-entry)]
+                   :terminal? true
+                   :command (if local-terminal
+                              [command (-> terminal :spec :command)]
+                              (-> terminal :spec :command))
+                   :source-command command
+                   :spec spec
+                   :commands commands}
+            (:assigned? terminal)
+            (assoc :errors [{:kind :unexpected-option-value
+                             :command command
+                             :argument (:argument terminal)}]))
           {:index index
            :transition-indexes [index]
            :terminal? false

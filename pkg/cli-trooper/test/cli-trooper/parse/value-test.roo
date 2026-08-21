@@ -19,6 +19,18 @@
                          :delimiter ","}
                         "breadcrumbs,up"))))
 
+(deftest convert/converts-strict-boolean-values
+  (is (= {:true {:value true}
+          :false {:value false}}
+         {:true (value/convert {:type :boolean} "true")
+          :false (value/convert {:type :boolean} "false")})))
+
+(deftest convert/reports-an-invalid-boolean-value
+  (is (= {:error {:kind :invalid-boolean-value
+                  :value "yes"
+                  :expected ["true" "false"]}}
+         (value/convert {:type :boolean} "yes"))))
+
 (deftest convert/returns-an-application-defined-parse-result
   (is (= {:value {:name "roo"}}
          (value/convert {:type :package

@@ -54,6 +54,14 @@
                          :repeatable? true}]
            :flags {["--durations"] {:type :flag}}}))))
 
+(deftest command-string/formats-an-optional-value-boolean
+  (is (= "proof [--durations [<true|false>]]"
+         (usage/command-string
+          "proof"
+          {:positional []
+           :flags {["--durations"] {:type :boolean
+                                     :optional-value? true}}}))))
+
 
 
 ;; cli-trooper.usage/usage-string

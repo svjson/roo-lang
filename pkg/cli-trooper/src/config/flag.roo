@@ -43,10 +43,10 @@
 
    Returns:
    A canonical value-producing flag specification with explicit `:type`,
-   `:required?`, `:repeatable?`, `:default`, and `:destination` entries, or a
-   canonical command-shaped flag specification without value storage fields. An
-   explicit default may be a literal value or a resolver function accepting the
-   available options map."
+   `:required?`, `:repeatable?`, `:default`, and `:destination` entries. Constant
+   flags also carry `:value`; boolean flags carry `:optional-value?`. A
+   command-shaped flag has no value storage fields. An explicit default may be a
+   literal value or a resolver function accepting the available options map."
   [names spec]
   (let [expanded (cond
                    (= :flag spec) {:type :flag}
@@ -67,10 +67,14 @@
       :default
       (let [required? (or (:required? expanded) false)
             repeatable? (or (:repeatable? expanded) false)
+            optional-value? (and (= :boolean type)
+                                 (or (:optional-value? expanded) false))
+            flag-value (get expanded :value true)
             default (cond
                       (contains? expanded :default) (:default expanded)
                       repeatable? []
-                      (= :flag type) false
+                      (= :flag type) (not flag-value)
+                      optional-value? false
                       true nil)
             long-name (reduce names
                               nil
@@ -98,14 +102,21 @@
 
                              true
                              destination-name)))]
-        (assoc (merge {:type type
-                       :required? required?
-                       :repeatable? repeatable?
-                       :default default}
+        (assoc (merge (cond-> {:type type
+                               :required? required?
+                               :repeatable? repeatable?
+                               :default default}
+                        (= :flag type)
+                        (assoc :value flag-value)
+
+                        (= :boolean type)
+                        (assoc :optional-value? optional-value?))
                       (dissoc expanded
                               :type
                               :required?
                               :repeatable?
+                              :optional-value?
+                              :value
                               :default
                               :destination))
                :destination destination)))))

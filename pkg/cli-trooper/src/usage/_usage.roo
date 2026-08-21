@@ -48,6 +48,7 @@
     (case (:type flag-spec)
       :flag nil
       :command nil
+      :boolean "true|false"
       :enum (apply join (concat "|" (:values flag-spec)))
       :default (format-flag-arg (:type flag-spec)))))
 
@@ -97,7 +98,10 @@
   (let [f (format-flag-name flag)
         f-arg (format-flag-arg spec)
         formatted (str f
-                       (if f-arg (str " <" f-arg ">") ""))]
+                       (cond
+                         (nil? f-arg) ""
+                         (:optional-value? spec) (str " [<" f-arg ">]")
+                         true (str " <" f-arg ">")))]
     (if (:required? spec)
       (str formatted
            (if (:repeatable? spec) "..." ""))

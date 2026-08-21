@@ -54,10 +54,22 @@
       :missing-option-value
       (str "Missing value after " (:argument diagnostic) ".")
 
+      :unexpected-option-value
+      (str "Option does not accept a value: " (:argument diagnostic) ".")
+
       :missing-required-option
       (str "Missing required option: " (:argument diagnostic) ".")
 
       :invalid-enum-value
+      (str "Invalid value for "
+           (:argument diagnostic)
+           ": "
+           (:value diagnostic)
+           ". Expected: "
+           (expected-text (:expected diagnostic))
+           ".")
+
+      :invalid-boolean-value
       (str "Invalid value for "
            (:argument diagnostic)
            ": "

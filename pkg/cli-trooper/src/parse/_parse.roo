@@ -30,7 +30,8 @@
                        (reduce args
                                {:options {}
                                 :defaults (command/pending-defaults spec)
-                                :errors []
+                                :errors (or (:errors selection) [])
+                                :args args
                                 :ctx nil
                                 :arg-index 0
                                 :positional-index 0}
