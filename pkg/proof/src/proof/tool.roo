@@ -1,0 +1,18 @@
+(ns proof.tool
+  (:require [cli-trooper :as cli-trooper]
+            [proof.cli :as cli]))
+
+(defun run!
+  "Run Proof through the Roo package-tool boundary.
+
+  Args:
+  - `context`: Package-tool context containing command-line arguments under
+    `:args`, package-relative execution data such as `:package-root`, and the
+    selected package's Proof configuration under `:config`.
+
+  Returns:
+  Process status `0` for a passing run or help, `1` for a failing or errored
+  test run, or `2` for invalid command-line input."
+  [{:keys [config] :as context}]
+  (cli-trooper/run! cli/application
+                    (assoc context :options config)))

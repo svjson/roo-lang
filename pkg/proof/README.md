@@ -470,12 +470,14 @@ running tests.
 Supported flags are:
 
 - `--help` or `-h`
-- `--test-root <path>` or `--test-root=<path>`; repeat it to provide multiple roots
+- `--test-root <path>`, `--test-root=<path>`, or the existing `--test-roots`
+  alias; repeat either spelling to provide multiple roots
 - positional `<test-path>` arguments; repeat them to provide test directories or `.roo` files
 - `--filter <pattern>` or `--filter=<pattern>`
 - `--namespace <namespace>`, `--namespace=<namespace>`, or `-n <namespace>`; repeat it to provide multiple namespaces
 - `--include-sub-namespaces`, `--include-sub-namespaces=true|false`, and `--no-include-sub-namespaces`
 - `--reporter simple|tree` or `--reporter=simple|tree`
+- `--fixture-root <path>` or `--fixture-root=<path>`
 - `--durations`, `--durations=true|false`, and `--no-durations`
 
 Proof tests can also be run manually from Roo code by loading test namespaces and

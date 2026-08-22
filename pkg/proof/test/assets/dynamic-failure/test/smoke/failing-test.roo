@@ -1,0 +1,5 @@
+(ns smoke.failing-test
+  (:require proof.core))
+
+(deftest reports-failure
+  (is false))

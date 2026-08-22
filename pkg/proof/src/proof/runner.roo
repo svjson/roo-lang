@@ -1,45 +1,92 @@
 (ns proof.runner
-  (:require [proof.cli :as cli]
-            proof.core
+  (:require proof.core
+            [proof.reporter :as reporter]
             [proof.fixture :as fixture]
             [roo.io :as io]
-            [roo.string :as string]))
+            [roo.string :as string]
+            [voodoo.session :as session]
+            [voodoo.widget :as widget]))
 
-(defun configured-test-paths [context]
-  (if-let [roots (:test-roots (:config context))]
-    roots
-    ["test"]))
+(defun absolute-test-path
+  "Resolve one configured test path against the invoking package root.
 
-(defun configured-fixture-root [context]
-  (or (:fixture-root (:config context))
-      "test/fixtures"))
+  Args:
+  - `context`: Run context optionally containing `:package-root`.
+  - `path`: Configured absolute or package-relative test path.
 
-(defun absolute-test-path [context path]
+  Returns:
+  An absolute package-root-relative path when a package root is available, or
+  `path` unchanged otherwise."
+  [context path]
   (if (or (nil? (:package-root context))
           (string/starts-with? path "/"))
     path
     (io/join-path (:package-root context) path)))
 
-(defun absolute-fixture-root [context root]
+(defun absolute-fixture-root
+  "Resolve a configured fixture root against the invoking package root.
+
+  Args:
+  - `context`: Run context optionally containing `:package-root`.
+  - `root`: Configured absolute or package-relative fixture-root path.
+
+  Returns:
+  An absolute package-root-relative path when a package root is available, or
+  `root` unchanged otherwise."
+  [context root]
   (if (or (nil? (:package-root context))
           (string/starts-with? root "/"))
     root
     (io/join-path (:package-root context) root)))
 
-(defun normalized-path [path]
+(defun normalized-path
+  "Normalize path separators for display and prefix comparison.
+
+  Args:
+  - `path`: Path-compatible value.
+
+  Returns:
+  String path with backslashes replaced by forward slashes."
+  [path]
   (string/replace (str path) "\\" "/"))
 
-(defun trim-trailing-slash [path]
+(defun trim-trailing-slash
+  "Remove a non-root path's trailing slash.
+
+  Args:
+  - `path`: Normalized path string.
+
+  Returns:
+  `path` without its trailing slash, except when `path` is a root slash."
+  [path]
   (cond-> path
     (and (> (count path) 1)
          (string/ends-with? path "/"))
     (substr 0 (- (count path) 1))))
 
-(defun roo-file-entry? [entry metadata]
+(defun roo-file-entry?
+  "Determine whether a walked filesystem entry is a Roo source file.
+
+  Args:
+  - `entry`: Filesystem entry containing a `:type`.
+  - `metadata`: Walk metadata containing the entry's `:relative-path`.
+
+  Returns:
+  True for file entries whose relative path ends in `.roo`; otherwise false."
+  [entry metadata]
   (and (= (:type entry) :file)
        (= ".roo" (io/extension (:relative-path metadata)))))
 
-(defun discover-roo-files [root]
+(defun discover-roo-files
+  "Discover Roo source files beneath one test root.
+
+  Args:
+  - `root`: Test directory or individual Roo source path.
+
+  Returns:
+  A sequence of discovered Roo file paths, or an empty sequence when the root
+  is not a readable directory or Roo file."
+  [root]
   (cond
     (io/directory? root)
     (for [result (io/walk! root {:keep? roo-file-entry?})]
@@ -52,12 +99,30 @@
     true
     []))
 
-(defun discover-test-files [context]
-  (flat-map (configured-test-paths context)
+(defun discover-test-files
+  "Discover Roo files from every configured test path.
+
+  Args:
+  - `context`: Run context containing Proof options and optional package root.
+
+  Returns:
+  A flat sequence of discovered Roo test file paths."
+  [context]
+  (flat-map (or (-> context :config :test-roots) ["test"])
             (fn [path]
               (discover-roo-files (absolute-test-path context path)))))
 
-(defun relative-package-path [context path]
+(defun relative-package-path
+  "Build a stable package-relative display path.
+
+  Args:
+  - `context`: Run context optionally containing `:package-root`.
+  - `path`: Discovered test file path.
+
+  Returns:
+  A normalized path relative to the package root when possible, or the
+  normalized input path otherwise."
+  [context path]
   (if-let [package-root (:package-root context)]
     (let [normalized-root (trim-trailing-slash (normalized-path package-root))
           normalized-file (normalized-path path)
@@ -67,83 +132,109 @@
         (substr (count prefix))))
     (normalized-path path)))
 
-(defun test-file-entry [context path]
-  {:path path
-   :display-file (relative-package-path context path)
-   :namespace (proof.core/declared-namespace path)})
+(defun ensure-test-file-entry
+  "Append metadata for a test file unless its namespace is already present.
 
-(defun test-namespace-seen? [entries namespace]
-  (contains? (map entries :namespace) namespace))
+  Args:
+  - `context`: Run context used to derive the display path.
+  - `entries`: Accumulated test file metadata maps.
+  - `path`: Discovered Roo test file path.
 
-(defun append-test-file-entry-if-new! [context entries path]
-  (let [entry (test-file-entry context path)]
-    (if (test-namespace-seen? entries (:namespace entry))
-      entries
-      (append! entries entry))))
+  Returns:
+  `entries` unchanged for a duplicate namespace, or with the new test file map
+  appended."
+  [context entries path]
+  (let [entry {:path path
+               :display-file (relative-package-path context path)
+               :namespace (proof.core/declared-namespace path)}]
+    (cond-> entries
+            (not (contains? (map entries :namespace) (:namespace entry)))
+            (append entry))))
 
-(defun discovered-test-file-entries [context]
-  (reduce (discover-test-files context)
-          []
-          (fn [entries path]
-            (append-test-file-entry-if-new! context entries path))))
+(defun require-form
+  "Build the namespace form used to load discovered test namespaces.
 
-(defun append-namespace-if-new! [namespaces path]
-  (let [namespace (proof.core/declared-namespace path)]
-    (if (contains? namespaces namespace)
-      namespaces
-      (append! namespaces namespace))))
+  Args:
+  - `namespaces`: Declared test namespace names in discovery order.
 
-(defun discovered-test-namespaces [context]
-  (reduce (discover-test-files context) [] append-namespace-if-new!))
-
-(defun require-entry [index namespace]
-  (str "[" namespace " :as __proof_test_" index "]"))
-
-(defun require-entries [namespaces]
-  (for-indexed [index namespace namespaces]
-    (require-entry index namespace)))
-
-(defun require-form [namespaces]
+  Returns:
+  Roo source text for the synthetic `proof.runner.discovery` namespace."
+  [namespaces]
   (str "(ns proof.runner.discovery (:require "
-       (apply join (concat [" "] (require-entries namespaces)))
+       (apply join
+              (concat [" "]
+                      (for-indexed [index namespace namespaces]
+                        (str "["
+                             namespace
+                             " :as __proof_test_"
+                             index
+                             "]"))))
        "))"))
 
-(defun require-test-namespaces [namespaces]
-  (if (empty? namespaces)
-    namespaces
-    (do
-      (eval (require-form namespaces))
-      namespaces)))
+(defun load-tests
+  "Clear the registry, load discovered test namespaces, and annotate tests.
 
-(defun load-tests [context]
+  Args:
+  - `context`: Run context containing Proof options and optional package root.
+
+  Returns:
+  The discovered test file metadata entries."
+  [context]
   (proof.core/clear!)
-  (let [entries (discovered-test-file-entries context)]
-    (require-test-namespaces (map entries :namespace))
+  (let [entries (reduce (discover-test-files context)
+                        []
+                        (fn [entries path]
+                          (ensure-test-file-entry context entries path)))
+        namespaces (map entries :namespace)]
+    (when (not-empty? namespaces)
+      (eval (require-form namespaces)))
     (proof.core/annotate-tests!
-      (reduce entries
-              {}
-              (fn [metadata entry]
-                (assoc metadata
-                       (:namespace entry)
-                       {:file (:path entry)
-                        :display-file (:display-file entry)}))))
+     (reduce entries
+             {}
+             (fn [metadata entry]
+               (assoc metadata
+                      (:namespace entry)
+                      {:file (:path entry)
+                       :display-file (:display-file entry)}))))
     entries))
 
-(defun run [context]
-  (if (cli/help-requested? context)
-    (do
-      (cli/print-help!)
-      nil)
-    (let [config (cli/config context)
-          errors (or (:errors config) [])
-          run-context (assoc context :config config)]
-      (if (not-empty? errors)
-        (do
-          (cli/print-errors-and-help! errors)
-          nil)
-        (do
-          (fixture/configure!
-            {:fixture-root (absolute-fixture-root run-context
-                                                 (configured-fixture-root run-context))})
-          (load-tests run-context)
-          (proof.core/run-selected config))))))
+(defun run
+  "Discover and run tests from an already coherent Proof configuration.
+
+  This programmatic API does not parse command-line arguments or interpret
+  process status.
+
+  Args:
+  - `context`: Run context containing Proof options under `:config` and an
+    optional `:package-root` for relative test and fixture paths.
+
+  Returns:
+  Proof result maps for the selected tests."
+  [context]
+  (let [config (or (:config context) {})]
+    (fixture/configure!
+      {:fixture-root (absolute-fixture-root context
+                                            (or (-> context :config :fixture-root)
+                                                "test/fixtures"))})
+    (let [scan-session (session/make)
+          label (session/add! scan-session
+                              (widget/make {:type :label
+                                            :text "Discovering proof tests..."}))]
+      (load-tests context)
+      (session/remove! scan-session label))
+    (proof.core/run-selected config)))
+
+(defun execute!
+  "Execute a parsed Proof command and interpret its test outcome as status.
+
+  Args:
+  - `context`: cli-trooper invocation context containing runner data such as
+    `:package-root`.
+  - `options`: Fully resolved Proof command options.
+
+  Returns:
+  Process status `0` when no selected test failed or errored, otherwise `1`."
+  [context options]
+  (let [summary (reporter/result-summary
+                 (run (assoc context :config options)))]
+    (min 1 (+ (:failed summary) (get summary :errored 0)))))

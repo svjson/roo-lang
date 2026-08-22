@@ -284,7 +284,7 @@ TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
             ":message \"Expected truthy expression: false.\" "
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
             "{:name duration-error :status :error "
-            ":message \"Error while calling / at <eval>:7:7:\\nDivision by zero\"}]");
+            ":message \"Division by zero\\n  in / at <eval>:7:7 - [1 0]\"}]");
   expect_elapsed_ms_for_results(results);
   expect_duration_output_line(output, simple_pass_label() + " duration-pass");
   expect_duration_output_line(output, simple_fail_label() + " duration-fail");
@@ -423,7 +423,7 @@ TEST(ProofPackage, runner_loads_all_discovered_namespaces_before_filtering)
   EXPECT_EQ(runtime.eval("app.admin-test/loaded?")->to_string(), "true");
 }
 
-TEST(ProofPackage, runner_accepts_positional_test_file)
+TEST(ProofPackage, runner_accepts_configured_test_file)
 {
   const auto root = fresh_proof_fixture_root("positional-test-file");
   write_file(root / "test/app/checkout-test.roo",
@@ -449,13 +449,14 @@ TEST(ProofPackage, runner_accepts_positional_test_file)
     (:require proof.runner)))");
 
   auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
-                              " :args [\"test/app/checkout-test.roo\"]})");
+                              " :config {:test-roots "
+                              "[\"test/app/checkout-test.roo\"]}})");
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-total :status :pass}]");
   expect_elapsed_ms_for_results(results);
 }
 
-TEST(ProofPackage, runner_reports_unknown_cli_argument)
+TEST(ProofPackage, direct_cli_reports_unknown_argument)
 {
   const auto root = fresh_proof_fixture_root("unknown-cli-argument");
   write_file(root / "test/app/failing-test.roo",
@@ -470,17 +471,16 @@ TEST(ProofPackage, runner_reports_unknown_cli_argument)
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
   configure_proof_runtime(runtime);
 
-  runtime.eval(R"((ns proof.runner-unknown-argument-test
-    (:require proof.runner)))");
+  runtime.eval(R"((ns proof.direct-cli-unknown-argument-test
+    (:require proof.cli)))");
 
   testing::internal::CaptureStdout();
-  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
-                              " :args [\"--wat\"]})");
+  auto status = runtime.eval("(proof.cli/main [\"--wat\"])");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(without_elapsed_ms_string(results), "nil");
-  EXPECT_NE(output.find("Unrecognized argument: --wat\n"), std::string::npos);
-  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"), std::string::npos);
+  EXPECT_EQ(status->to_string(), "2");
+  EXPECT_NE(output.find("Unknown option: --wat.\n"), std::string::npos);
+  EXPECT_EQ(output.find("Usage:"), std::string::npos);
   EXPECT_EQ(output.find("should-not-run"), std::string::npos);
   EXPECT_EQ(output.find("FAIL"), std::string::npos);
 }
@@ -564,7 +564,7 @@ TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
             ":message \"Expected truthy expression: false.\" "
             ":failures [{:message \"Expected truthy expression: false.\"}]} "
             "{:name duration-error :status :error "
-            ":message \"Error while calling / at <eval>:7:7:\\nDivision by zero\"}]");
+            ":message \"Division by zero\\n  in / at <eval>:7:7 - [1 0]\"}]");
   expect_elapsed_ms_for_results(results);
   EXPECT_NE(output.find(bold_label("proof.package-tree-durations-test") + "\n"),
             std::string::npos);
@@ -573,7 +573,7 @@ TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
   expect_duration_output_line(output, "└── " + error_label() + " - duration-error");
 }
 
-TEST(ProofPackage, runner_merges_cli_args_over_package_config)
+TEST(ProofPackage, package_tool_merges_cli_args_over_package_config)
 {
   const auto root = fresh_proof_fixture_root("cli-config");
   write_file(root / "spec/app/checkout-test.roo",
@@ -598,28 +598,28 @@ TEST(ProofPackage, runner_merges_cli_args_over_package_config)
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
   configure_proof_runtime(runtime);
 
-  runtime.eval(R"((ns proof.runner-cli-args-test
-    (:require proof.runner)))");
+  runtime.eval(R"((ns proof.tool-cli-args-test
+    (:require proof.tool)))");
 
   testing::internal::CaptureStdout();
-  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
-                              " :config {:test-roots [\"test\"] "
-                              ":filter \"ignored*\" "
-                              ":durations? true} "
-                              ":args [\"--test-root\" \"spec\" "
-                              "\"--filter=checkout-discount\" "
-                              "\"--reporter\" \"tree\" "
-                              "\"--no-durations\"]})");
+  auto status = runtime.eval("(proof.tool/run! {:package-root " + roo_string(root) +
+                             " :config {:test-roots [\"test\"] "
+                             ":filter \"ignored*\" "
+                             ":durations? true} "
+                             ":args [\"--test-root\" \"spec\" "
+                             "\"--filter=checkout-discount\" "
+                             "\"--reporter\" \"tree\" "
+                             "\"--no-durations\"]})");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(without_elapsed_ms_string(results), "[{:name checkout-discount :status :pass}]");
+  EXPECT_EQ(status->to_string(), "0");
   EXPECT_NE(output.find(bold_label("spec/app/checkout-test.roo") + "\n" + "└── " +
                         pass_label() + " - checkout-discount\n"),
             std::string::npos);
   EXPECT_EQ(output.find("checkout-discount ("), std::string::npos);
 }
 
-TEST(ProofPackage, runner_prints_help_without_loading_tests)
+TEST(ProofPackage, direct_cli_prints_help_without_loading_tests)
 {
   const auto root = fresh_proof_fixture_root("runner-help");
   write_file(root / "test/app/failing-test.roo",
@@ -634,19 +634,17 @@ TEST(ProofPackage, runner_prints_help_without_loading_tests)
   Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
   configure_proof_runtime(runtime);
 
-  runtime.eval(R"((ns proof.runner-help-test
-    (:require proof.runner)))");
+  runtime.eval(R"((ns proof.direct-cli-help-test
+    (:require proof.cli)))");
 
   testing::internal::CaptureStdout();
-  auto results = runtime.eval("(proof.runner/run {:package-root " + roo_string(root) +
-                              " :config {:test-roots [\"test\"]} "
-                              ":args [\"--help\"]})");
+  auto status = runtime.eval("(proof.cli/main [\"--help\"])");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(without_elapsed_ms_string(results), "nil");
-  EXPECT_NE(output.find("Usage: roo proof [options] [<test-path>...]\n"), std::string::npos);
+  EXPECT_EQ(status->to_string(), "0");
+  EXPECT_NE(output.find("Usage: roo proof [<test-path>...]"), std::string::npos);
   EXPECT_NE(output.find("<test-path>"), std::string::npos);
-  EXPECT_NE(output.find("--reporter simple|tree"), std::string::npos);
+  EXPECT_NE(output.find("--reporter <simple|tree>"), std::string::npos);
   EXPECT_NE(output.find("--durations"), std::string::npos);
   EXPECT_EQ(output.find("should-not-run"), std::string::npos);
   EXPECT_EQ(output.find("FAIL"), std::string::npos);
@@ -678,6 +676,52 @@ TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
   EXPECT_EQ(without_elapsed_ms_string(results), "0");
   EXPECT_NE(output.find(bold_label("test/smoke/discovered.roo") + "\n"), std::string::npos);
   expect_duration_output_line(output, "└── " + pass_label() + " - discovered-proof");
+}
+
+TEST(ProofPackage, package_tool_returns_one_for_a_failing_test_run)
+{
+  const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-failure";
+
+  Roo::DirRootFileSystem manifest_fs("/");
+  auto plan = Roo::Package::resolve_load_plan(manifest_fs, root.string());
+
+  auto fs = Roo::Package::make_load_path_file_system(plan);
+  Roo::Package::LoadedNativePackages native_packages;
+  Roo::Runtime runtime(fs.get());
+  Roo::Package::configure_runtime_namespace_roots(runtime, plan);
+  native_packages = Roo::Package::load_native_libraries(runtime, plan);
+  Roo::Package::load_autoloads(runtime, plan);
+
+  testing::internal::CaptureStdout();
+  auto status = Roo::Package::Application::invoke_tool(runtime, plan, "proof", "run", {});
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(status->to_string(), "1");
+  EXPECT_NE(output.find(simple_fail_label() + " reports-failure\n"), std::string::npos);
+}
+
+TEST(ProofPackage, package_tool_returns_two_for_invalid_arguments)
+{
+  const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-smoke";
+
+  Roo::DirRootFileSystem manifest_fs("/");
+  auto plan = Roo::Package::resolve_load_plan(manifest_fs, root.string());
+
+  auto fs = Roo::Package::make_load_path_file_system(plan);
+  Roo::Package::LoadedNativePackages native_packages;
+  Roo::Runtime runtime(fs.get());
+  Roo::Package::configure_runtime_namespace_roots(runtime, plan);
+  native_packages = Roo::Package::load_native_libraries(runtime, plan);
+  Roo::Package::load_autoloads(runtime, plan);
+
+  testing::internal::CaptureStdout();
+  auto status =
+    Roo::Package::Application::invoke_tool(runtime, plan, "proof", "run", {"--wat"});
+  std::string output = testing::internal::GetCapturedStdout();
+
+  EXPECT_EQ(status->to_string(), "2");
+  EXPECT_NE(output.find("Unknown option: --wat.\n"), std::string::npos);
+  EXPECT_EQ(output.find("Discovering proof tests..."), std::string::npos);
 }
 
 TEST(ProofPackage, ScenarioFormsRejectTooManyRequiredArguments)

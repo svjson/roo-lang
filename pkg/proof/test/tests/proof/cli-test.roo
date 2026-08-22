@@ -1,30 +1,98 @@
 (ns proof.cli-test
   (:require proof.core
+            [proof.fixture :as fixture]
+            [proof.syntax :as p]
+            [cli-trooper.config :as config]
+            [cli-trooper.parse :as parse]
             [proof.cli :as cli]))
 
-(deftest parses-fixture-root-cli-option
-  (is (= "tmp/fixtures"
-         (:fixture-root
-          (cli/config {:args ["--fixture-root" "tmp/fixtures"]}))))
-  (is (= "tmp/fixtures"
-         (:fixture-root
-          (cli/config {:args ["--fixture-root=tmp/fixtures"]})))))
 
-(deftest parses-repeated-namespace-cli-options
-  (is (= ["app.checkout-test" "app.profile-test"]
-         (:namespace
-          (cli/config {:args ["-n" "app.checkout-test"
-                              "--namespace=app.profile-test"]})))))
+
+;; Test Fixture
 
-(deftest parses-positional-test-paths
-  (is (= ["test/app/checkout-test.roo" "test/app/profile-test.roo"]
-         (:test-roots
-          (cli/config {:args ["test/app/checkout-test.roo"
-                              "test/app/profile-test.roo"]})))))
+(fixture/deffixture application-config
+  {}
+  (config/normalize cli/application))
 
-(deftest rejects-predicate-style-cli-flags
-  (is (= ["Unrecognized argument: --durations?"
-          "Unrecognized argument: --include-sub-namespaces?"]
-         (:errors
-          (cli/config {:args ["--durations?"
-                              "--include-sub-namespaces?"]})))))
+
+
+;; proof.cli/application -- happy path
+
+(deftest application/parses-proof-command-line-options [application-config]
+  (p/when []
+    (parse/parse application-config
+                 ["test/app/checkout-test.roo"
+                  "--fixture-root=tmp/fixtures"
+                  "-n"
+                  "app.checkout-test"
+                  "--namespace=app.profile-test"
+                  "--reporter"
+                  "tree"
+                  "--durations"
+                  "--no-include-sub-namespaces"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace ["app.checkout-test" "app.profile-test"]
+                      :test-roots ["test/app/checkout-test.roo"]
+                      :filter nil
+                      :reporter :tree
+                      :fixture-root "tmp/fixtures"
+                      :durations? true
+                      :include-sub-namespaces? false}
+            :errors []}
+           parsed))))
+
+(deftest application/layers-package-configuration-beneath-explicit-arguments
+  [application-config]
+  (p/when []
+    (parse/parse application-config
+                 ["--filter=checkout-*"
+                  "--reporter=simple"
+                  "--no-durations"]
+                 {:namespace ["package.tests"]
+                  :test-roots ["spec"]
+                  :filter "package-*"
+                  :reporter :tree
+                  :fixture-root "spec/fixtures"
+                  :durations? true
+                  :include-sub-namespaces? true}))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace ["package.tests"]
+                      :test-roots ["spec"]
+                      :filter "checkout-*"
+                      :reporter :simple
+                      :fixture-root "spec/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? true}
+            :errors []}
+           parsed))))
+
+
+
+;; proof.cli/application -- error handling
+
+(deftest application/rejects-predicate-style-cli-flags [application-config]
+  (p/when []
+    (parse/parse application-config
+                 ["--durations?"
+                  "--include-sub-namespaces?"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :reporter :simple
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors [{:kind :unknown-option
+                      :command []
+                      :argument "--durations?"}
+                     {:kind :unknown-option
+                      :command []
+                      :argument "--include-sub-namespaces?"}]}
+           parsed))))

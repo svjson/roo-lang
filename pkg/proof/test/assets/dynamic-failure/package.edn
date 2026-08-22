@@ -1,0 +1,5 @@
+{:name proof-dynamic-failure
+ :version "0.1.0"
+ :dependencies {proof "file:../../.."}
+ :load-roots ["test"]
+ :config {proof {:test-roots ["test"]}}}

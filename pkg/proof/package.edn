@@ -1,7 +1,8 @@
 {:name proof
  :version "0.1.0"
  :description "Roo test framework."
- :dependencies {soot "0.1.0"
+ :dependencies {cli-trooper "0.1.0"
+                soot "0.1.0"
                 voodoo "0.1.0"}
  :load-roots ["src"]
  :native-libraries [{:name "proof-native"
@@ -10,5 +11,6 @@
                      :namespaces [proof.syntax
                                   proof.syntax.fixture
                                   proof.syntax.scenario]}]
- :tools {run proof.runner/run}
+ :tools {run proof.tool/run!}
+ :main proof.cli/main
  :entry-points [proof.core]}

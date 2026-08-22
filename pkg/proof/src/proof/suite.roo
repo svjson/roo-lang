@@ -65,4 +65,4 @@
           (fn [acc test]
             (update-in acc
                        [(test-display-file test)]
-                       (fn [existing] (append (or existing []) test))))))
+                       (fn [existing] (append existing test))))))
