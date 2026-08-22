@@ -1,0 +1,66 @@
+(ns roopl.history-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [roo.io :as io]
+            [roopl.history :as history]))
+
+
+
+;; roopl.history/default-path!
+
+(deftest default-path!/uses-the-user-home-directory
+  (is (= (io/join-path (io/home-directory!) ".roopl_history")
+         (history/default-path!))))
+
+
+
+;; roopl.history/load!
+
+(deftest load!/returns-empty-history-when-the-file-does-not-exist
+  (let [path (io/join-path (io/current-directory!)
+                           "missing-roopl-history-test")]
+    (when (io/exists? path)
+      (io/remove-tree! path))
+    (is (= [] (history/load! path)))))
+
+(deftest load!/keeps-the-newest-nonblank-entries
+  (p/given
+    (let [path (io/join-path (io/current-directory!)
+                             "load-roopl-history-test")
+          entries (map (range 0 104) str)]
+      (io/spit! path
+                (str (apply join (concat ["\n"]
+                                         (concat (take 50 entries)
+                                                 ["" "   "]
+                                                 (slice entries 50))))
+                     "\n"))
+      {:path path}))
+
+  (p/when [{:keys [path]}]
+    (history/load! path))
+
+  (p/then [entries {:keys [path]}]
+    (io/remove-tree! path)
+    (is (= (map (range 5 104) str)
+           entries))))
+
+
+
+;; roopl.history/record!
+
+(deftest record!/persists-the-newest-entries
+  (p/given
+    {:path (io/join-path (io/current-directory!)
+                         "record-roopl-history-test")
+     :entries (map (range 0 99) str)})
+
+  (p/when [{:keys [path entries]}]
+    {:entries (history/record! path entries "100")
+     :contents (io/slurp! path)})
+
+  (p/then [result {:keys [path]}]
+    (io/remove-tree! path)
+    (let [entries (map (range 1 100) str)]
+      (is (= {:entries entries
+              :contents (str (apply join (concat ["\n"] entries)) "\n")}
+             result)))))

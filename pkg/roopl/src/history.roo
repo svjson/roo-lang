@@ -1,0 +1,50 @@
+(ns roopl.history
+  (:require [roo.io :as io]))
+
+(def max-entries
+  "Maximum number of commands retained in memory and in `.roopl_history`."
+  100)
+
+(defun default-path!
+  "Return the default per-user roopl history path.
+
+  Args:
+  None.
+
+  Returns:
+  The `.roopl_history` path under the active filesystem's home directory."
+  []
+  (io/join-path (io/home-directory!) ".roopl_history"))
+
+(defun load!
+  "Load recent nonblank commands from PATH.
+
+  Args:
+  - `path`: History file path. A missing file represents empty history.
+
+  Returns:
+  A vector containing at most the newest `max-entries` commands."
+  [path]
+  (if (io/exists? path)
+    (let [entries (remove (split (io/slurp! path) "\n") blank?)]
+      (slice entries (max 0 (- (count entries) max-entries))))
+    []))
+
+(defun record!
+  "Record COMMAND and atomically persist recent history to PATH.
+
+  Args:
+  - `path`: History file path to replace.
+  - `entries`: Existing command history in oldest-to-newest order.
+  - `command`: Nonblank, single-line command to add.
+
+  Returns:
+  A vector containing COMMAND and at most the newest `max-entries` entries."
+  [path entries command]
+  (let [all-entries (append entries command)
+        retained (slice all-entries
+                        (max 0 (- (count all-entries) max-entries)))]
+    (io/spit! path
+              (str (apply join (concat ["\n"] retained)) "\n")
+              {:atomic? true})
+    retained))

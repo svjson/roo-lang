@@ -1,6 +1,7 @@
 (ns roopl.terminal
   (:require [inpoots.stdin :as stdin]
             [roo.tty :as tty]
+            [roopl.history :as history-store]
             [roopl.repl :as repl]
             [roopl.target.local.dedicated :as dedicated]
             [voodoo.session :as session]
@@ -22,7 +23,8 @@
   (let [repl-state (repl/make (dedicated/make {}))
         widget-session (session/make)
         columns (or (:columns (tty/dimensions!)) 80)
-        history []
+        history-path (history-store/default-path!)
+        history (history-store/load! history-path)
         handle (session/add! widget-session
                              (prompt/make
                                {:prompt (str (repl/current-namespace repl-state)
@@ -43,7 +45,10 @@
                          (when (= :submit (:type action))
                            (session/evict! widget-session handle)
                            (unless (blank? (:value action))
-                             (append! history (:value action))
+                             (set! [history]
+                               (history-store/record! history-path
+                                                      history
+                                                      (:value action)))
                              (let [response (repl/submit! repl-state
                                                           (:value action)
                                                           {:print-width columns})]
