@@ -1,0 +1,78 @@
+(ns loom.command.bootstrap-test
+  (:require proof.core
+            [proof.syntax :as s]
+            [roo.io :as io]
+            [loom.command.bootstrap :as bootstrap]
+            [loom.core :as core]
+            [loom.test-support :as support]))
+
+(deftest bootstrap!/installs-a-source-package-dependency-closure-in-versioned-layout
+  (s/given
+    (let [source-root (support/build-path "loom-proof-bootstrap-sources")
+          repo-root (support/fresh-repo! "loom-proof-bootstrap-repo")]
+      (when (io/exists? source-root)
+        (io/remove-tree! source-root))
+      (support/fresh-package-at!
+        (io/join-path source-root "leaf")
+        "{:name leaf :version \"1.0.0\" :dependencies [] :load-roots [\"src\"]}")
+      (support/fresh-package-at!
+        (io/join-path source-root "middle")
+        "{:name middle :version \"2.0.0\" :dependencies {leaf \"1.0.0\"} :load-roots [\"src\"]}")
+      (let [app-dir (support/fresh-package-at!
+                      (io/join-path source-root "app")
+                      "{:name app :version \"3.0.0\" :dependencies {middle \"2.0.0\"} :load-roots [\"src\"]}")]
+        {:source-root source-root
+         :repo-root repo-root
+         :app-dir app-dir})))
+
+  (s/when [{:keys [source-root repo-root app-dir]}]
+    {:installed (bootstrap/bootstrap! app-dir source-root repo-root)
+     :repo-root repo-root})
+
+  (s/then [{:keys [installed repo-root]}]
+    (is (= ["leaf@1.0.0" "middle@2.0.0"] installed))
+    (is (io/exists? (support/installed-path repo-root "leaf" "1.0.0" "package.edn")))
+    (is (io/exists? (support/installed-path repo-root "middle" "2.0.0" "package.edn")))
+    (is (= false
+           (io/exists? (support/installed-path repo-root "app" "3.0.0" "package.edn"))))))
+
+(deftest bootstrap!/rejects-a-missing-dependency
+  (let [source-root (support/build-path "loom-proof-bootstrap-missing-sources")
+        repo-root (support/fresh-repo! "loom-proof-bootstrap-missing-repo")]
+    (when (io/exists? source-root)
+      (io/remove-tree! source-root))
+    (let [app-dir (support/fresh-package-at!
+                    (io/join-path source-root "app")
+                    "{:name app :version \"1.0.0\" :dependencies {missing \"2.0.0\"} :load-roots [\"src\"]}")]
+      (is (nil? (bootstrap/bootstrap! app-dir source-root repo-root)))
+      (is (= false (io/exists? (io/join-path repo-root "missing")))))))
+
+(deftest bootstrap!/rejects-a-cyclic-dependency
+  (let [source-root (support/build-path "loom-proof-bootstrap-cycle-sources")
+        repo-root (support/fresh-repo! "loom-proof-bootstrap-cycle-repo")]
+    (when (io/exists? source-root)
+      (io/remove-tree! source-root))
+    (let [app-dir (support/fresh-package-at!
+                    (io/join-path source-root "app")
+                    "{:name app :version \"1.0.0\" :dependencies {middle \"1.0.0\"} :load-roots [\"src\"]}")]
+      (support/fresh-package-at!
+        (io/join-path source-root "middle")
+        "{:name middle :version \"1.0.0\" :dependencies {app \"1.0.0\"} :load-roots [\"src\"]}")
+      (is (nil? (bootstrap/bootstrap! app-dir source-root repo-root)))
+      (is (= false (io/exists? (io/join-path repo-root "middle")))))))
+
+(deftest bootstrap-command/returns-a-failure-exit-code-for-a-rejected-bootstrap
+  (let [source-root (support/build-path "loom-proof-bootstrap-command-sources")
+        repo-root (support/fresh-repo! "loom-proof-bootstrap-command-repo")]
+    (when (io/exists? source-root)
+      (io/remove-tree! source-root))
+    (let [app-dir (support/fresh-package-at!
+                    (io/join-path source-root "app")
+                    "{:name app :version \"1.0.0\" :dependencies {missing \"2.0.0\"} :load-roots [\"src\"]}")]
+      (is (= 1
+             (core/bootstrap-command ["bootstrap"
+                                      app-dir
+                                      "--source-root"
+                                      source-root
+                                      "--repo"
+                                      repo-root]))))))

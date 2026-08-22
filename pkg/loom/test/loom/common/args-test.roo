@@ -3,18 +3,6 @@
             [proof.syntax :as s]
             [loom.common.args :as args]))
 
-(deftest finds-arguments-by-index
-  (s/given
-    ["install" "pkg/loom"])
-
-  (s/when [index-argv]
-    {:index-command (args/arg-at index-argv 0)
-     :missing-index-arg (args/arg-at index-argv 3)})
-
-  (s/then [{:keys [index-command missing-index-arg]}]
-    (is (= "install" index-command))
-    (is (nil? missing-index-arg))))
-
 (deftest finds-options-and-flags-from-offset
   (s/given
     ["install" "pkg/loom" "--repo" "build/repo" "--force"])

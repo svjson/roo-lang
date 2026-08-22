@@ -1,0 +1,71 @@
+(ns loom.command.bootstrap
+  (:require [loom.command.install :as install]
+            [loom.common.dependency-graph :as graph]))
+
+(defun install-node!
+  "Install NODE and its dependency subtree into REPO-ROOT.
+
+  Args:
+  - `repo-root`: Destination package repository.
+  - `installed`: Mutable collection of package IDs already installed.
+  - `node`: Dependency-graph node to install.
+
+  Returns:
+  The package ID appended to INSTALLED, or nil when it was already installed."
+  [repo-root installed node]
+  (for [dependency (:dependencies node)]
+    (install-node! repo-root installed dependency))
+  (unless (contains? installed (:id node))
+    (install/install! (:path node) repo-root true)
+    (append! installed (:id node))))
+
+(defun install-dependencies!
+  "Install DEPENDENCIES into REPO-ROOT in dependency-first order.
+
+  Args:
+  - `repo-root`: Destination package repository.
+  - `dependencies`: Dependency-graph nodes to install.
+
+  Returns:
+  Package IDs in installation order."
+  [repo-root dependencies]
+  (let [installed []]
+    (for [dependency dependencies]
+      (install-node! repo-root installed dependency))
+    installed))
+
+(defun reject!
+  "Report a bootstrap rejection.
+
+  Args:
+  - `message`: Description of why the bootstrap was rejected.
+  - `items`: Package IDs involved in the rejection.
+
+  Returns:
+  Nil."
+  [message items]
+  (prn! "loom:" message items))
+
+(defun bootstrap!
+  "Install the source dependency closure needed to build a package.
+
+  Args:
+  - `package-dir`: Package whose dependencies are being bootstrapped.
+  - `source-root`: Directory containing dependency source packages.
+  - `repo-root`: Destination package repository.
+
+  Returns:
+  The installed package IDs, or nil when the dependency graph is invalid."
+  [package-dir source-root repo-root]
+  (when-let [dependency-graph (graph/source-root-node! package-dir source-root)]
+    (let [missing (graph/collect-missing-package-ids dependency-graph)
+          cycles (graph/collect-cycle-package-ids dependency-graph)]
+      (cond
+        (not-empty? missing)
+        (reject! "missing bootstrap dependencies:" missing)
+
+        (not-empty? cycles)
+        (reject! "cyclic bootstrap dependencies:" cycles)
+
+        :default
+        (install-dependencies! repo-root (:dependencies dependency-graph))))))

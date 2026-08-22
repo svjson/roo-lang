@@ -1,9 +1,5 @@
 (ns loom.common.args)
 
-(defun arg-at [args index]
-  (when (< index (count args))
-    (nth args index)))
-
 (defun flag-from? [args index flag]
   (if (< index (count args))
     (if (= (nth args index) flag)
@@ -14,6 +10,6 @@
 (defun option-from [args index option default]
   (if (< index (count args))
     (if (= (nth args index) option)
-      (arg-at args (+ index 1))
+      (nth args (+ index 1))
       (option-from args (+ index 1) option default))
     default))

@@ -11,9 +11,8 @@
 
 (defun normalize-name [name]
   (let [text (str name)]
-    (if (keyword-name? text)
-      (substr text 1)
-      text)))
+    (cond-> text
+      (keyword-name? text) (substr 1))))
 
 (defun file-path [text]
   (when (string/starts-with? text "file:")
@@ -57,9 +56,9 @@
              (reduce-kv dependencies
                         []
                         (fn [result dependency-name dependency-version]
-                          (concat result
-                                  [(dependency-spec dependency-name
-                                                    dependency-version)])))
+                          (append result
+                                  (dependency-spec dependency-name
+                                                   dependency-version))))
              (fn [a b] (< (:id a) (:id b))))
       "vector" (sort
                 (for [dep-name dependencies]
@@ -122,11 +121,10 @@
 (defun dependency-node! [package-root repo-root spec ancestors]
   (let [declared-name (:name spec)
         declared-version (:version spec)
-        id (:id spec)
         target-dir (spec-root package-root repo-root spec)
         manifest-path (io/join-path target-dir "package.edn")]
     (cond
-      (contains? ancestors id)
+      (contains? ancestors (:id spec))
       (package-node declared-name declared-version target-dir false true [])
 
       (not (io/exists? manifest-path))
@@ -148,7 +146,7 @@
                           (dependency-nodes! target-dir
                                              repo-root
                                              (dependency-specs package-manifest)
-                                             (concat ancestors [resolved-id])))))
+                                             (append ancestors resolved-id)))))
         (package-node declared-name declared-version target-dir true false [])))))
 
 (defun root-node! [package-dir repo-root]
@@ -166,6 +164,105 @@
                                        (dependency-specs package-manifest)
                                        [id])))))
 
+(defun source-dependency-root
+  "Resolve a dependency to its source-package directory.
+
+  Args:
+  - `package-root`: Directory containing the dependent package.
+  - `source-root`: Directory containing named source packages.
+  - `name`: Declared dependency name.
+  - `path`: Optional path declared by the dependency.
+
+  Returns:
+  The dependency source directory."
+  [package-root source-root {:keys [name path]}]
+  (if path
+    (dependency-path-root package-root {:path path})
+    (io/join-path source-root name)))
+
+(defun source-dependency-nodes!
+  "Build source dependency nodes for SPECS.
+
+  Args:
+  - `package-root`: Directory containing the dependent package.
+  - `source-root`: Directory containing named source packages.
+  - `specs`: Dependency specifications to resolve.
+  - `ancestors`: Package IDs already present in the active graph path.
+
+  Returns:
+  Dependency-graph nodes corresponding to SPECS."
+  [package-root source-root specs ancestors]
+  (for [spec specs]
+    (source-dependency-node! package-root source-root spec ancestors)))
+
+(defun source-dependency-node!
+  "Build a source dependency node and its transitive dependencies.
+
+  Args:
+  - `package-root`: Directory containing the dependent package.
+  - `source-root`: Directory containing named source packages.
+  - `spec`: Dependency specification to resolve.
+  - `ancestors`: Package IDs already present in the active graph path.
+
+  Returns:
+  A dependency-graph node marked when missing or cyclic."
+  [package-root source-root spec ancestors]
+  (let [declared-name (:name spec)
+        declared-version (:version spec)
+        target-dir (source-dependency-root package-root source-root spec)
+        manifest-path (io/join-path target-dir "package.edn")]
+    (cond
+      (contains? ancestors (:id spec))
+      (package-node declared-name declared-version target-dir false true [])
+
+      (not (io/exists? manifest-path))
+      (package-node declared-name declared-version target-dir true false [])
+
+      true
+      (if-let [package-manifest (manifest/validate! (io/slurp-edn! manifest-path)
+                                                     manifest-path)]
+        (let [resolved-name (manifest/package-name package-manifest)
+              resolved-version (manifest/package-version package-manifest)
+              resolved-id (repository/package-id resolved-name resolved-version)]
+          (if (contains? ancestors resolved-id)
+            (package-node resolved-name resolved-version target-dir false true [])
+            (package-node resolved-name
+                          resolved-version
+                          target-dir
+                          false
+                          false
+                          (source-dependency-nodes!
+                            target-dir
+                            source-root
+                            (dependency-specs package-manifest)
+                            (append ancestors resolved-id)))))
+        (package-node declared-name declared-version target-dir true false [])))))
+
+(defun source-root-node!
+  "Build a dependency graph from source packages.
+
+  Args:
+  - `package-dir`: Root package directory.
+  - `source-root`: Directory containing named source packages.
+
+  Returns:
+  The root dependency-graph node, or nil when the manifest is invalid."
+  [package-dir source-root]
+  (when-let [package-manifest (manifest/read! package-dir)]
+    (let [name (manifest/package-name package-manifest)
+          version (manifest/package-version package-manifest)
+          id (manifest/package-id package-manifest)]
+      (package-node name
+                    version
+                    package-dir
+                    false
+                    false
+                    (source-dependency-nodes!
+                      package-dir
+                      source-root
+                      (dependency-specs package-manifest)
+                      [id])))))
+
 (defun collect-missing-package-ids [node]
   (concat
     (if (:missing? node)
@@ -175,3 +272,18 @@
 
 (defun complete? [node]
   (empty? (collect-missing-package-ids node)))
+
+(defun collect-cycle-package-ids
+  "Collect package IDs marked as cycles beneath NODE.
+
+  Args:
+  - `node`: Dependency-graph node to inspect.
+
+  Returns:
+  Package IDs for every detected dependency cycle."
+  [node]
+  (concat
+    (if (:cycle? node)
+      [(:id node)]
+      [])
+    (flat-map (:dependencies node) collect-cycle-package-ids)))

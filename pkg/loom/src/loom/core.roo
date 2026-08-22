@@ -1,5 +1,7 @@
 (ns loom.core
-  (:require [loom.command.deps :as deps]
+  (:require [roo.io :as io]
+            [loom.command.deps :as deps]
+            [loom.command.bootstrap :as bootstrap]
             [loom.command.info :as info]
             [loom.command.init :as init]
             [loom.command.install :as install]
@@ -12,6 +14,7 @@
 
 (defun usage []
   (prn "Usage: loom init [package-dir] [--name <name>] [--version <version>]")
+  (prn "       loom bootstrap <package-dir> [--source-root <dir>] [--repo <dir>]")
   (prn "       loom install <package-dir> [--repo <dir>]")
   (prn "       loom link <package-dir> [--repo <dir>]")
   (prn "       loom uninstall <package@version> [--repo <dir>]")
@@ -26,7 +29,7 @@
     :default (= "-" (str (head arg)))))
 
 (defun init-package-dir [argv]
-  (let [first-arg (args/arg-at argv 1)]
+  (let [first-arg (nth argv 1)]
     (unless (option? first-arg)
       first-arg)))
 
@@ -37,7 +40,7 @@
                 (args/option-from argv 1 "--version" nil))))
 
 (defun install-command [argv]
-  (if-let [package-dir (args/arg-at argv 1)]
+  (if-let [package-dir (nth argv 1)]
     (let [repo-root (args/option-from argv 2 "--repo"
                                       (repository/default-repository-root))]
       (if (args/flag-from? argv 2 "--link")
@@ -47,15 +50,38 @@
                           (args/flag-from? argv 2 "--force"))))
     (usage)))
 
+(defun bootstrap-command
+  "Run the bootstrap command described by ARGV.
+
+  Args:
+  - `argv`: Command-line arguments beginning with `bootstrap`.
+
+  Returns:
+  Zero on success, one on bootstrap failure, or the usage result when no package
+  is supplied."
+  [argv]
+  (if-let [package-dir (nth argv 1)]
+    (if (nil? (bootstrap/bootstrap!
+                package-dir
+                (args/option-from argv 2
+                                  "--source-root"
+                                  (io/parent-path package-dir))
+                (args/option-from argv 2
+                                  "--repo"
+                                  (repository/default-repository-root))))
+      1
+      0)
+    (usage)))
+
 (defun link-command [argv]
-  (if-let [package-dir (args/arg-at argv 1)]
+  (if-let [package-dir (nth argv 1)]
     (link/link! package-dir
                 (args/option-from argv 2 "--repo"
                                   (repository/default-repository-root)))
     (usage)))
 
 (defun uninstall-command [argv]
-  (if-let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
+  (if-let [spec (package-spec/parse (nth argv 1) (nth argv 2))]
     (uninstall/uninstall! (args/option-from argv 1 "--repo"
                                             (repository/default-repository-root))
                           (:name spec)
@@ -67,7 +93,7 @@
                                 (repository/default-repository-root))))
 
 (defun info-command [argv]
-  (if-let [spec (package-spec/parse (args/arg-at argv 1) (args/arg-at argv 2))]
+  (if-let [spec (package-spec/parse (nth argv 1) (nth argv 2))]
     (info/info! (args/option-from argv 1 "--repo"
                                   (repository/default-repository-root))
                 (:name spec)
@@ -75,7 +101,7 @@
     (usage)))
 
 (defun deps-command [argv]
-  (if-let [package-dir (args/arg-at argv 1)]
+  (if-let [package-dir (nth argv 1)]
     (deps/deps! package-dir
                 (args/option-from argv 1 "--repo"
                                   (repository/default-repository-root))
@@ -84,7 +110,8 @@
     (usage)))
 
 (defun main [args]
-  (case (args/arg-at args 0)
+  (case (nth args 0)
+    "bootstrap" (bootstrap-command args)
     "init" (init-command args)
     "install" (install-command args)
     "link" (link-command args)

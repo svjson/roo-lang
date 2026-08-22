@@ -3,13 +3,16 @@ set -eu
 
 ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
+ROOC="${ROOC_BIN:-$ROOT_DIR/build/rooc}"
 PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
 LOOM_PACKAGE="$PACKAGE_STAGE_ROOT/loom"
 LOOM_REPO="$ROOT_DIR/build/loom-test-repo"
 LOOM_LINK_REPO="$ROOT_DIR/build/loom-link-test-repo"
 LOOM_INIT_DIR="$ROOT_DIR/build/loom-init-test-package"
 PROOF_REPO="$ROOT_DIR/build/loom-proof-test-repo"
+BOOTSTRAP_TEST_ROOT="$ROOT_DIR/build/loom-bootstrap-dependency-test"
 PROOF_NATIVE_LIBRARY=libproof-native.so
+LOOM_BINARY=loom
 
 fail()
 {
@@ -76,7 +79,10 @@ expected_init_manifest()
 
 case "$(uname -s)" in
   Darwin) PROOF_NATIVE_LIBRARY=libproof-native.dylib ;;
-  MINGW*|MSYS*|CYGWIN*) PROOF_NATIVE_LIBRARY=proof-native.dll ;;
+  MINGW*|MSYS*|CYGWIN*)
+    PROOF_NATIVE_LIBRARY=proof-native.dll
+    LOOM_BINARY=loom.exe
+    ;;
 esac
 
 printf '%s\n' "==> Testing loom proof suite"
@@ -157,3 +163,39 @@ cmake -E rm -rf "$PROOF_REPO"
 "$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --repo "$PROOF_REPO" --force
 assert_file "$PROOF_REPO/proof/0.1.0/package.edn"
 assert_file "$PROOF_REPO/proof/0.1.0/native/$PROOF_NATIVE_LIBRARY"
+
+printf '%s\n' "==> Testing dependency-bearing Loom bootstrap"
+cmake -E rm -rf "$BOOTSTRAP_TEST_ROOT"
+cmake -E make_directory "$BOOTSTRAP_TEST_ROOT/packages/loom"
+cmake -E copy_directory "$LOOM_PACKAGE/src" "$BOOTSTRAP_TEST_ROOT/packages/loom/src"
+cmake -E copy_directory \
+  "$PACKAGE_STAGE_ROOT/cli-trooper" \
+  "$BOOTSTRAP_TEST_ROOT/packages/cli-trooper"
+printf '%s\n' \
+  "{:name loom" \
+  " :version \"0.1.0\"" \
+  " :description \"Bootstrap dependency fixture.\"" \
+  " :dependencies {cli-trooper \"0.1.0\"}" \
+  " :load-roots [\"src\"]" \
+  " :main loom.core/main}" \
+  > "$BOOTSTRAP_TEST_ROOT/packages/loom/package.edn"
+
+cmake -E env HOME="$BOOTSTRAP_TEST_ROOT/home" \
+  "$ROO" \
+  "$BOOTSTRAP_TEST_ROOT/packages/loom" \
+  bootstrap \
+  "$BOOTSTRAP_TEST_ROOT/packages/loom" \
+  --source-root "$BOOTSTRAP_TEST_ROOT/packages" \
+  --repo "$BOOTSTRAP_TEST_ROOT/repository"
+assert_file "$BOOTSTRAP_TEST_ROOT/repository/cli-trooper/0.1.0/package.edn"
+cmake -E rm -rf "$BOOTSTRAP_TEST_ROOT/packages/cli-trooper"
+
+cmake -E env HOME="$BOOTSTRAP_TEST_ROOT/home" \
+  "$ROOC" \
+  build \
+  "$BOOTSTRAP_TEST_ROOT/packages/loom" \
+  --package-repository "$BOOTSTRAP_TEST_ROOT/repository" \
+  --build-dir "$BOOTSTRAP_TEST_ROOT/compiled" \
+  --name loom
+assert_file "$BOOTSTRAP_TEST_ROOT/compiled/build/$LOOM_BINARY"
+"$BOOTSTRAP_TEST_ROOT/compiled/build/$LOOM_BINARY" --help >/dev/null
