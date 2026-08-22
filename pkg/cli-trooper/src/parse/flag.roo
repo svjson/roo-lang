@@ -205,7 +205,9 @@
                  (cond-> result
                    (and (:required? spec)
                         (contains? (:defaults result)
-                                   (:destination spec)))
+                                   (:destination spec))
+                        (not (contains? (:supplied result)
+                                        (:destination spec))))
                    (update :errors
                            [append
                             {:kind :missing-required-option

@@ -10,15 +10,17 @@
   Args:
   - `spec`: The selected canonical command specification.
   - `options`: Values successfully captured from the argument sequence.
-  - `defaults`: Literal values or resolver functions whose destinations were
-    not claimed by supplied arguments. Resolver functions receive the captured
-    options and every pending literal default.
+  - `defaults`: Pending declaration defaults and invocation options whose
+    destinations were not claimed by explicit arguments. Declaration resolver
+    functions receive the captured options and every pending literal.
+  - `supplied`: Destinations whose pending values came from invocation options
+    rather than the canonical declaration.
 
   Returns:
   A flat options map containing captured values and resolved defaults in
   canonical declaration order. A claimed destination without a captured value
   is omitted."
-  [spec options defaults]
+  [spec options defaults supplied]
   (let [declarations
         (concat (reduce-kv (:flags spec)
                            []
@@ -29,7 +31,8 @@
         (reduce-kv defaults
                    options
                    (fn [result destination candidate]
-                     (if (fn? candidate)
+                     (if (and (fn? candidate)
+                              (not (contains? supplied destination)))
                        result
                        (assoc result destination candidate))))]
     (reduce declarations
@@ -46,7 +49,8 @@
                 (let [candidate (get defaults destination)]
                   (assoc result
                          destination
-                         (if (fn? candidate)
+                         (if (and (fn? candidate)
+                                  (not (contains? supplied destination)))
                            (candidate (merge available-options result))
                            candidate)))
 

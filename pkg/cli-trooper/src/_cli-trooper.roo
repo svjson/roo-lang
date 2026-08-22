@@ -12,7 +12,8 @@
 
   Args:
   - `supplied`: The supplied cli-trooper application configuration.
-  - `context`: The CLI invocation context containing arguments under `:args`.
+  - `context`: The CLI invocation context containing arguments under `:args`
+    and optional canonical options under `:options`.
 
   Returns:
   A map containing the canonical model under `:config` and the public parse
@@ -31,14 +32,15 @@
                     (if-let [default-args (:default-args canonical)]
                       default-args
                       []))]
-         (parser/parse canonical args)))}))
+         (parser/parse canonical args (:options context))))}))
 
 (defun parse
   "Normalize configuration and parse arguments without executing a command.
 
   Args:
   - `supplied`: The supplied cli-trooper application configuration.
-  - `context`: The CLI invocation context containing arguments under `:args`.
+  - `context`: The CLI invocation context containing arguments under `:args`
+    and optional canonical options under `:options`.
 
   Returns:
   A map containing the selected `:command`, fully resolved `:options`, and
@@ -51,9 +53,9 @@
 
   Args:
   - `supplied`: The supplied cli-trooper application configuration.
-  - `context`: The CLI invocation context containing arguments under `:args`.
-    An optional `:cli-trooper/print!` function replaces the default diagnostic
-    line printer.
+  - `context`: The CLI invocation context containing arguments under `:args`
+    and optional canonical options under `:options`. An optional
+    `:cli-trooper/print!` function replaces the default diagnostic line printer.
 
   Returns:
   A parse result with the command execution value under `:result`.
@@ -76,7 +78,8 @@
 
   Args:
   - `supplied`: The supplied cli-trooper application configuration.
-  - `context`: The CLI invocation context containing arguments under `:args`.
+  - `context`: The CLI invocation context containing arguments under `:args`
+    and optional canonical options under `:options`.
 
   Returns:
   The integer returned by the command, `0` after a successful command returns

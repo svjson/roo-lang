@@ -57,6 +57,16 @@
                            :default-args ["inspect" "default.roo"])
                     {:args []}))))
 
+(deftest parse/layers-invocation-options-beneath-explicit-arguments
+  (is (= {:command "inspect"
+          :options {:verbose true
+                    :file "explicit.roo"}
+          :errors []}
+         (cli/parse runtime-config
+                    {:args ["inspect" "explicit.roo"]
+                     :options {:verbose true
+                               :file "configured.roo"}}))))
+
 (deftest parse/returns-configuration-errors-without-parsing
   (is (= {:command nil
           :options {}
@@ -110,6 +120,20 @@
                   {:caller :test
                    :args ["one.roo" "--verbose" "two.roo"]}))))
 
+(deftest run/invokes-a-command-with-supplied-required-options
+  (is (= {:command "inspect"
+          :options {:verbose true
+                    :file "configured.roo"}
+          :errors []
+          :result {:caller :test
+                   :options {:verbose true
+                             :file "configured.roo"}}}
+         (cli/run runtime-config
+                  {:caller :test
+                   :args ["inspect"]
+                   :options {:verbose true
+                             :file "configured.roo"}}))))
+
 
 
 ;; cli-trooper/run!
@@ -131,3 +155,16 @@
          (cli/run! runtime-config
                    {:args ["inspect"]
                     :cli-trooper/print! (fn [line] nil)}))))
+
+(deftest run!/returns-an-integer-supplied-through-invocation-options
+  (is (= 7
+         (cli/run!
+          {:application "status"
+           :features {:help false
+                      :version false}
+           :execute! (fn [_context options]
+                       (:status options))
+           :flags {"status" {:type :number
+                              :default 0}}}
+          {:args []
+           :options {:status 7}}))))

@@ -114,6 +114,60 @@
           (parse/parse (config/normalize test-config)
                        ["inspect" "--out" "-"])))))
 
+(deftest parse/layers-supplied-options-between-defaults-and-explicit-arguments
+  (is (= {:command "inspect"
+          :options {:verbose true
+                    :tag ["one" "two"]
+                    :format :text
+                    :out "configured.out"
+                    :input "cli.roo"
+                    :labels ["configured"]}
+          :errors []}
+         (parse/parse
+          (config/normalize test-config)
+          ["inspect" "--tag" "one,two" "--format" "text" "cli.roo"]
+          {:verbose true
+           :tag ["configured"]
+           :format :edn
+           :out "configured.out"
+           :input "configured.roo"
+           :labels ["configured"]}))))
+
+(deftest parse/does-not-fall-back-after-an-invalid-explicit-value
+  (is (= {:command "inspect"
+          :options {:verbose false
+                    :tag []
+                    :out nil
+                    :input nil
+                    :labels []}
+          :errors [{:kind :invalid-enum-value
+                    :command "inspect"
+                    :argument "--format"
+                    :value "json"
+                    :expected ["edn" "text"]}]}
+         (parse/parse (config/normalize test-config)
+                      ["inspect" "--format" "json"]
+                      {:format :edn}))))
+
+(deftest parse/accepts-supplied-required-flags-and-positionals
+  (is (= {:command []
+          :options {:out "site"
+                    :test-path ["test"]}
+          :errors []}
+         (parse/parse
+          (config/normalize
+           {:application "proof"
+            :features {:help false
+                       :version false}
+            :execute! (fn [_context _options] nil)
+            :flags {"out" {:type :dir
+                            :required? true}}
+            :positional [{:name "test-path"
+                          :repeatable? true}]})
+          []
+          {:out "site"
+           :test-path ["test"]}))))
+
 (deftest parse/accepts-assigned-long-option-values
   (is (= {:command "inspect"
           :options {:verbose false

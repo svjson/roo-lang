@@ -16,20 +16,26 @@
   Args:
   - `config`: A normalized cli-trooper configuration model.
   - `args`: The CLI argument sequence to parse.
+  - `supplied-options`: Optional canonical option defaults supplied by the
+    invocation. Explicit arguments override these options.
 
   Returns:
   A map containing the selected `:command` identity, parsed `:options`, and
   structured `:errors`. The command is `nil` and options are empty when command
   selection fails."
-  [config args]
+  [config args & supplied-options &rest]
   (let [selection (command/select config args)
         command (:command selection)
         spec (:spec selection)
+        supplied-options (or supplied-options {})
         parsed (if spec
-                 (let [consumed
+                 (let [supplied (keys supplied-options)
+                       consumed
                        (reduce args
                                {:options {}
-                                :defaults (command/pending-defaults spec)
+                                :defaults (merge (command/pending-defaults spec)
+                                                 supplied-options)
+                                :supplied supplied
                                 :errors (or (:errors selection) [])
                                 :args args
                                 :ctx nil
@@ -51,7 +57,8 @@
         options (if spec
                   (default/resolve spec
                                    (:options parsed)
-                                   (:defaults parsed))
+                                   (:defaults parsed)
+                                   (:supplied parsed))
                   {})
         semantic-errors (if (and spec
                                  (not (:terminal? selection))

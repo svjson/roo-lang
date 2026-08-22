@@ -14,7 +14,8 @@
                    ["--second"] {:destination :second}}
            :positional [{:destination :third}]}
           {:first "supplied"}
-          {:third []}))))
+          {:third []}
+          []))))
 
 (deftest resolve/evaluates-default-resolvers-against-available-options
   (is (= {:first "supplied"
@@ -27,4 +28,20 @@
           {:first "supplied"}
           {:second (fn [options]
                      [(:first options) (:third options)])
-           :third nil}))))
+           :third nil}
+          []))))
+
+(deftest resolve/exposes-supplied-options-to-default-resolvers
+  (is (= {:first "configured"
+          :second ["configured" nil]
+          :third nil}
+         (default/resolve
+          {:flags {["--first"] {:destination :first}
+                   ["--second"] {:destination :second}}
+           :positional [{:destination :third}]}
+          {}
+          {:first "configured"
+           :second (fn [options]
+                     [(:first options) (:third options)])
+           :third nil}
+          [:first]))))

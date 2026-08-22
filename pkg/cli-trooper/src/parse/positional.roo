@@ -80,6 +80,8 @@
           state
           (fn [result positional]
             (if (or (:optional? positional)
+                    (contains? (:supplied result)
+                               (:destination positional))
                     (and (:repeatable? positional)
                          (not (contains? (:defaults result)
                                          (:destination positional)))))

@@ -10,6 +10,10 @@
   (is (flag/flag? "-o"))
   (is (flag/flag? "-p")))
 
+
+
+;; cli-trooper.parse.flag/flag=
+
 (deftest flag=/exact-match
   (is (flag/flag= "-o" "-o")))
 
@@ -48,6 +52,21 @@
                  :flag {:type :dir
                         :required? true
                         :destination :out}}}
+          "generate"
+          {["-o" "--out"] {:type :dir
+                           :required? true
+                           :destination :out}}))))
+
+(deftest finalize/accepts-a-supplied-required-option
+  (is (= {:defaults {:out "site"}
+          :supplied [:out]
+          :errors []
+          :ctx nil}
+         (flag/finalize
+          {:defaults {:out "site"}
+           :supplied [:out]
+           :errors []
+           :ctx nil}
           "generate"
           {["-o" "--out"] {:type :dir
                            :required? true

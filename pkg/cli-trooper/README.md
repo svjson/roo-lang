@@ -40,6 +40,11 @@ declared `:execute!` function. A root application may declare flags,
 positionals, validation, and `:execute!` directly; a successful root invocation
 uses `[]` as its command path.
 
+The invocation context may supply an already canonical options map under
+`:options`. These options override declaration defaults, while explicit CLI
+arguments override supplied options. The calling application owns any
+translation from package configuration or other external data into this map.
+
 `cli-trooper/run` returns the parsed command, practical options, structured
 errors, and the command execution result. `cli-trooper/run!` prints rendered CLI
 diagnostics and returns an integer command result as the process status, `0`

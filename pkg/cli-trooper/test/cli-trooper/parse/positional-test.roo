@@ -1,0 +1,23 @@
+(ns cli-trooper.parse.positional-test
+  (:require proof.core
+            [cli-trooper.parse.positional :as positional]))
+
+
+
+;; cli-trooper.parse.positional/finalize
+
+(deftest finalize/accepts-a-supplied-required-positional
+  (is (= {:defaults {:test-path ["test"]}
+          :supplied [:test-path]
+          :errors []
+          :positional-index 0}
+         (positional/finalize
+          {:defaults {:test-path ["test"]}
+           :supplied [:test-path]
+           :errors []
+           :positional-index 0}
+          []
+          {:positional [{:name "test-path"
+                         :destination :test-path
+                         :optional? false
+                         :repeatable? true}]}))))
