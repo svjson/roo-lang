@@ -73,20 +73,11 @@
   (append! tests {:name name :namespace namespace :body body})
   name)
 
-(defun annotate-test [metadata-by-namespace test]
-  (if-let [metadata (get metadata-by-namespace (:namespace test) nil)]
-    (merge test metadata)
-    test))
-
 (defun annotate-tests! [metadata-by-namespace]
   (set! [tests]
         (for [test tests]
-          (annotate-test metadata-by-namespace test)))
+          (merge test (get metadata-by-namespace (:namespace test) nil))))
   tests)
-
-(defun selected-tests [options]
-  (filter tests
-          (fn [test] (suite/test-selected? options test))))
 
 (defun record-failure! [message]
   (let [failure {:message message}]
@@ -95,68 +86,39 @@
 
 (defun run-test [test]
   (set! [current-failures] [])
-  (let [test-timing {:start-ms (epoch-ms)}
+  (let [start-ms (epoch-ms)
         body-result (run-test-body (:body test))
         test-result {:name (:name test)
                      :status (cond
                                (= (:status body-result) :error) :error
                                (not-empty? current-failures) :fail
                                true :pass)
-                     :elapsed-ms (max 0 (- (epoch-ms) (:start-ms test-timing)))}]
+                     :elapsed-ms (max 0 (- (epoch-ms) start-ms))}]
     (merge test-result
            (case (:status test-result)
              :fail {:message (:message (head current-failures))
                     :failures current-failures}
              :error {:message (:message body-result)}))))
 
-(defun begin-test-report
-  "Ask REPORTER to report that TEST is about to run.
-
-  Args:
-  - `reporter`: Reporter map returned by `proof.reporter/make`.
-  - `test`: Test about to run.
-  - `options`: Run options, e.g. `:tty?`.
-
-  Returns:
-  A map with `:reporter` (REPORTER with its state advanced) and
-  `:context` (an opaque value to pass into `end-test-report` once TEST
-  finishes). How TEST's in-progress state is shown, if at all, is
-  entirely REPORTER's own concern - `proof.core` never touches a display
-  primitive itself."
-  [reporter test options]
-  (let [outcome ((:begin-test reporter) (:state reporter) test options)]
-    {:reporter (assoc reporter :state (:state outcome))
-     :context (:context outcome)}))
-
-(defun end-test-report
-  "Ask REPORTER to report TEST's finished RESULT.
-
-  Args:
-  - `reporter`: Reporter map returned by `proof.reporter/make`.
-  - `context`: Value returned by the matching `begin-test-report` call.
-  - `test`: Test that ran.
-  - `result`: Its result.
-  - `options`: Run options, e.g. `:durations?`.
-
-  Returns:
-  REPORTER with its state advanced. Printing RESULT, in whatever form
-  REPORTER uses, is done as a side effect before this returns."
-  [reporter context test result options]
-  (let [outcome ((:end-test reporter) (:state reporter) context test result options)]
-    (assoc reporter :state (:state outcome))))
-
 (defun run-and-report-selected-test [run-state test]
-  (let [begin (begin-test-report (:reporter run-state) test (:options run-state))
+  (let [reporter (:reporter run-state)
+        begin ((:begin-test reporter) (:state reporter) test (:options run-state))
         result (run-test test)
-        reporter (end-test-report (:reporter begin) (:context begin) test result
-                                  (:options run-state))]
+        end ((:end-test reporter)
+             (:state begin)
+             (:context begin)
+             test
+             result
+             (:options run-state))]
     (assoc run-state
-           :reporter reporter
-           :results (append! (:results run-state) result))))
+           :reporter (assoc reporter :state (:state end))
+           :results (append (:results run-state) result))))
 
 (defun run-selected [options]
-  (let [tests-to-run (selected-tests options)
-        run-timing {:start-ms (epoch-ms)}
+  (let [tests-to-run (filter tests
+                             (fn [test]
+                               (suite/test-selected? options test)))
+        start-ms (epoch-ms)
         run-state (reduce tests-to-run
                           {:results []
                            :options options
@@ -165,7 +127,7 @@
     (-> run-state
         :results
         reporter/result-summary
-        (assoc :elapsed-ms (max 0 (- (epoch-ms) (:start-ms run-timing))))
+        (assoc :elapsed-ms (max 0 (- (epoch-ms) start-ms)))
         reporter/print!)
     (:results run-state)))
 

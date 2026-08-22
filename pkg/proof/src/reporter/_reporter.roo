@@ -27,8 +27,7 @@
 
 (defun print! [summary]
   (let [report-text (summary-text summary)
-        separator (apply join (concat [""]
-                                      (repeat (count report-text) "-")))]
+        separator (apply str (repeat (count report-text) "-"))]
     (prn! separator)
     (prn! report-text)
     (prn! separator)

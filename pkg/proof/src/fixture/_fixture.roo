@@ -97,16 +97,10 @@
   (set! [fixtures]
         (assoc fixtures
                name
-               (assoc (or opts {})
+               (assoc opts
                       :name name
                       :generate generate)))
   name)
-
-(defun fixture-options
-  "Returns declared fixture options with per-use overrides applied."
-  [name opts]
-  (merge (or (get fixtures name nil) {})
-         (or opts {})))
 
 (defun fixture-value
   "Returns the value for a declared fixture.
@@ -115,12 +109,8 @@
   :persistent` is backed by the persistent fixture store; other fixtures use the
   in-process cache fixture store."
   [name & opts &rest]
-  (let [opts (fixture-options name opts)
-        generate (:generate opts)
-        storage (get opts :storage :cache)]
-    (cond
-      (= storage :persistent)
-      (persistent/value (or (:path opts) (str name ".edn")) generate opts)
-
-      true
-      (cache/value name generate opts))))
+  (let [opts (merge (get fixtures name nil) opts)
+        generate (:generate opts)]
+    (case (get opts :storage :cache)
+      :persistent (persistent/value (or (:path opts) (str name ".edn")) generate opts)
+      :default (cache/value name generate opts))))

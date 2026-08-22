@@ -5,6 +5,7 @@
                 soot "0.1.0"
                 voodoo "0.1.0"}
  :load-roots ["src"]
+ :namespace-roots {proof "src"}
  :native-libraries [{:name "proof-native"
                      :version "0.1.0"
                      :path "native"

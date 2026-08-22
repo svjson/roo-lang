@@ -25,32 +25,17 @@
   [relative-path]
   (io/join-path fixture-root relative-path))
 
-(defun fixture-document
-  "Returns the EDN document written for a persistent fixture value."
-  [relative-path fixture-value opts]
-  {:format fixture-format
-   :fixture/path relative-path
-   :version (:version opts)
-   :value fixture-value})
-
-(defun current-document?
-  "Returns true when `document` matches the proof fixture format and version."
-  [document opts]
-  (and (= fixture-format (:format document))
-       (= (:version opts) (:version document))))
-
-(defun write-value!
-  "Writes `fixture-value` to the persistent fixture path and returns it."
-  [relative-path fixture-value opts]
-  (io/spit-edn! (fixture-path relative-path)
-                (fixture-document relative-path fixture-value opts)
-                {:pretty? true})
-  fixture-value)
-
 (defun generated-value!
   "Generates, projects, writes, and returns a persistent fixture value."
   [relative-path generate opts]
-  (write-value! relative-path (value/generated generate opts) opts))
+  (let [fixture-value (value/generated generate opts)]
+    (io/spit-edn! (fixture-path relative-path)
+                  {:format fixture-format
+                   :fixture/path relative-path
+                   :version (:version opts)
+                   :value fixture-value}
+                  {:pretty? true})
+    fixture-value))
 
 (defun value
   "Returns a persistent fixture value.
@@ -59,12 +44,12 @@
   calls `generate`, writes the resulting document, and returns the generated
   value. Set `:refresh? true` in `opts` to force regeneration."
   [relative-path generate & opts &rest]
-  (let [opts (or opts {})
-        path (fixture-path relative-path)]
+  (let [path (fixture-path relative-path)]
     (if (and (not (:refresh? opts))
              (io/exists? path))
       (let [document (io/slurp-edn! path)]
-        (if (current-document? document opts)
+        (if (and (= fixture-format (:format document))
+                 (= (:version opts) (:version document)))
           (:value document)
           (generated-value! relative-path generate opts)))
       (generated-value! relative-path generate opts))))

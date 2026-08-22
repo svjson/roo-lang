@@ -39,9 +39,6 @@
       :running (soot/gray label)
       :default label)))
 
-(defun tree-parent-label [label]
-  (soot/bold label))
-
 (defun highlight-test-name [name]
   "Highlight the subject segment of a '<subject>/<description>' test name.
 
@@ -56,13 +53,6 @@
     (if-let [separator (index-of text '/')]
       (str (soot/bold (substr text 0 separator)) (substr text separator))
       text)))
-
-(defun report-result-details [result]
-  (case (:status result)
-    :fail (for [failure (:failures result)]
-            (prn! "    -" (:message failure)))
-    :error (prn! "    -" (:message result)))
-  result)
 
 (defun duration-args [options result]
   (if (:durations? options)

@@ -20,9 +20,8 @@
   only when the key is absent. `opts` may contain `:paths` to retain only stable
   nested paths from the generated value."
   [key generate & opts &rest]
-  (let [opts (or opts {})]
-    (if (contains? entries key)
-      (get entries key)
-      (let [generated (value/generated generate opts)]
-        (set! [entries] (assoc entries key generated))
-        generated))))
+  (if (contains? entries key)
+    (get entries key)
+    (let [generated (value/generated generate opts)]
+      (set! [entries] (assoc entries key generated))
+      generated)))

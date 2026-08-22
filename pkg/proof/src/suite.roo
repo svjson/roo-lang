@@ -42,9 +42,9 @@
       (any? namespaces
             (fn [selected-namespace]
               (let [namespace-text (str selected-namespace)]
-                (cond-> (= namespace-text test-namespace)
-                  (:include-sub-namespaces? options)
-                  (or (sub-namespace? namespace-text test-namespace)))))))
+                (or (= namespace-text test-namespace)
+                    (and (:include-sub-namespaces? options)
+                         (sub-namespace? namespace-text test-namespace)))))))
     true))
 
 (defun test-selected? [options test]

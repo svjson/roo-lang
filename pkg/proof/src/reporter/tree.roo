@@ -5,11 +5,6 @@
             [voodoo.session :as session]
             [voodoo.widget :as widget]))
 
-(defun increment-file-count [counts test]
-  (update-in counts
-             [(suite/test-display-file test)]
-             (fn [count] (inc (or count 0)))))
-
 (defun bullet-for-index
   "The bullet character for the INDEX'th (1-based) test out of TOTAL in
   its file."
@@ -31,32 +26,27 @@
   [bullet test]
   (str bullet " " (rc/status-label :running) " - " (rc/highlight-test-name (:name test))))
 
-(defun detail-lines
-  "Failure/error message lines for RESULT, e.g. '    - Expected 1, got
-  2.' - empty for a passing result."
-  [result]
-  (case (:status result)
-    :fail (for [failure (:failures result)] (str "    - " (:message failure)))
-    :error [(str "    - " (:message result))]
-    :default []))
-
 (defun result-text
   "Render RESULT's finished line for TEST's BULLET: the same shape as
   `running-text`'s but with RESULT's real status/duration, folded
-  together with RESULT's own `detail-lines` (if any) into one multi-line
-  string - see `voodoo.widget/line-count` - so they finalize, redraw, and
-  get evicted as a single unit."
+  together with any failure or error details into one multi-line string -
+  see `voodoo.widget/line-count` - so they finalize, redraw, and get evicted
+  as a single unit."
   [bullet result options]
   (apply join
-         (concat ["\n"]
-                 (concat [(apply join
-                                 (concat [" "]
-                                         (concat [bullet
-                                                 (rc/status-label (:status result))
-                                                 "-"
-                                                 (rc/highlight-test-name (:name result))]
-                                                 (rc/duration-args options result))))]
-                         (detail-lines result)))))
+         (concat ["\n"
+                  (apply join
+                         (concat [" "
+                                  bullet
+                                  (rc/status-label (:status result))
+                                  "-"
+                                  (rc/highlight-test-name (:name result))]
+                                 (rc/duration-args options result)))]
+                 (case (:status result)
+                   :fail (for [failure (:failures result)]
+                           (str "    - " (:message failure)))
+                   :error [(str "    - " (:message result))]
+                   :default []))))
 
 (defun add-pending-widgets!
   "Add every test in TESTS to WIDGET-SESSION as a pending widget, in file
@@ -102,7 +92,7 @@
                          (:session state))
         handles (if new-file?
                   (do
-                    (prn! (rc/tree-parent-label file))
+                    (prn! (soot/bold file))
                     (add-pending-widgets! widget-session (get (:tests-by-file state) file)))
                   (:handles state))
         current-index (+ 1 (get (:indexes state) file 0))
@@ -152,7 +142,12 @@
 (defun make [tests]
   {:state {:current-file nil
            :indexes {}
-           :counts (reduce tests {} increment-file-count)
+           :counts (reduce tests
+                           {}
+                           (fn [counts test]
+                             (update-in counts
+                                        [(suite/test-display-file test)]
+                                        (fn [count] (inc (or count 0))))))
            :tests-by-file (suite/tests-by-file tests)
            :session nil
            :handles []}

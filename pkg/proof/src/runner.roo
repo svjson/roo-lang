@@ -211,18 +211,17 @@
   Returns:
   Proof result maps for the selected tests."
   [context]
-  (let [config (or (:config context) {})]
-    (fixture/configure!
-      {:fixture-root (absolute-fixture-root context
-                                            (or (-> context :config :fixture-root)
-                                                "test/fixtures"))})
-    (let [scan-session (session/make)
-          label (session/add! scan-session
-                              (widget/make {:type :label
-                                            :text "Discovering proof tests..."}))]
-      (load-tests context)
-      (session/remove! scan-session label))
-    (proof.core/run-selected config)))
+  (fixture/configure!
+    {:fixture-root (absolute-fixture-root context
+                                          (or (-> context :config :fixture-root)
+                                              "test/fixtures"))})
+  (let [scan-session (session/make)
+        label (session/add! scan-session
+                            (widget/make {:type :label
+                                          :text "Discovering proof tests..."}))]
+    (load-tests context)
+    (session/remove! scan-session label))
+  (proof.core/run-selected (:config context)))
 
 (defun execute!
   "Execute a parsed Proof command and interpret its test outcome as status.

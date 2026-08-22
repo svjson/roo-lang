@@ -5,14 +5,15 @@
 
 (defun result-text [result & options &rest]
   (apply join
-         (concat [" "]
-                 (concat [(rc/padded-status-label (:status result))
-                         (rc/highlight-test-name (:name result))]
-                         (rc/duration-args options result)))))
+         (concat [" "
+                  (rc/padded-status-label (:status result))
+                  (rc/highlight-test-name (:name result))]
+                 (rc/duration-args options result))))
 
 (defun running-text [test]
-  (apply join (concat [" "] [(rc/padded-status-label :running)
-                             (rc/highlight-test-name (:name test))])))
+  (join " "
+        (rc/padded-status-label :running)
+        (rc/highlight-test-name (:name test))))
 
 (defun begin-test
   "Report that TEST is about to run.
@@ -57,7 +58,10 @@
   [state context test result options]
   (session/remove! (:session context) (:handle context))
   (prn! (result-text result options))
-  (rc/report-result-details result)
+  (case (:status result)
+    :fail (for [failure (:failures result)]
+            (prn! "    -" (:message failure)))
+    :error (prn! "    -" (:message result)))
   {:state state})
 
 (defun make [tests]

@@ -1,0 +1,16 @@
+(ns proof.fixture.value)
+
+(defun generated
+  "Calls `generate` and applies optional fixture value projection.
+
+  `opts` may contain `:paths`, a vector of nested paths to retain from the
+  generated value. When `:paths` is omitted, the full generated value is
+  returned."
+  [generate opts]
+  (let [generated-value (generate)]
+    (if-let [paths (:paths opts)]
+      (reduce paths
+              {}
+              (fn [result path]
+                (assoc-in result path (get-in generated-value path))))
+      generated-value)))
