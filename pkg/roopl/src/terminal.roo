@@ -15,8 +15,9 @@
   - `args`: Command-line argument vector. No arguments are currently accepted.
 
   Returns:
-  `nil` after the frontend exits on EOF or interruption. Submitted source is
-  evaluated by a dedicated local Roo runtime."
+  `nil` after the frontend exits on EOF or an interruption not consumed by the
+  prompt editor. Submitted source is evaluated by a dedicated local Roo
+  runtime."
   [args]
   (prn! "roopl 0.1.0")
   (prn! "-----------")
@@ -39,7 +40,8 @@
                            action (head (:actions input-result))]
                        (case (:type (:event input-result))
                          :eof (set! [running] false)
-                         :interrupt (set! [running] false)
+                         :interrupt (unless (= :cancel (:type action))
+                                      (set! [running] false))
                          :resize (set! [columns] (:columns (:event input-result)))
                          :default
                          (when (= :submit (:type action))
