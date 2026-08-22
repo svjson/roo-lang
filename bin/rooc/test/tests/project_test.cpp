@@ -74,6 +74,32 @@ TEST(RoocProject, collects_roo_source_files)
   EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key, "main/app.roo")));
 }
 
+TEST(RoocProject, resolves_versioned_dependency_from_explicit_repository)
+{
+  // Given
+  const auto root =
+    std::filesystem::temp_directory_path() / "rooc-project-explicit-repository-test";
+  std::filesystem::remove_all(root);
+  write_file(root / "app/package.edn",
+             "{:name app :version \"0.1.0\" :dependencies {util \"1.0.0\"} "
+             ":load-roots [\"src\"]}\n");
+  write_file(root / "app/src/app.roo", "(ns app)\n");
+  write_file(root / "repository/util/1.0.0/package.edn",
+             "{:name util :version \"1.0.0\" :dependencies [] "
+             ":load-roots [\"src\"]}\n");
+  write_file(root / "repository/util/1.0.0/src/util.roo", "(ns util)\n");
+  auto options = options_for(root / "app");
+  options.package_repository_roots.push_back((root / "repository").string());
+
+  // When
+  auto project = Rooc::prepare_project(options);
+
+  // Then
+  EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key, "util.roo")));
+  EXPECT_THAT(project.plan.package_roots,
+              Contains((root / "repository/util/1.0.0").string()));
+}
+
 TEST(RoocProject, sanitizes_explicit_executable_name)
 {
   // Given

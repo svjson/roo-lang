@@ -54,6 +54,35 @@ TEST(RoocOptions, parses_equals_form_options)
   EXPECT_EQ(options.executable_name, "app");
 }
 
+TEST(RoocOptions, parses_package_repository_roots)
+{
+  // When
+  auto options = parse({"rooc",
+                        "build",
+                        "pkg/app",
+                        "-R",
+                        "out/repo",
+                        "--package-repository=vendor/repo"});
+
+  // Then
+  EXPECT_EQ(options.package_repository_roots,
+            (std::vector<std::string>{"out/repo", "vendor/repo"}));
+}
+
+TEST(RoocOptions, rejects_missing_package_repository_root)
+{
+  // Then
+  EXPECT_THROW(parse({"rooc", "build", "pkg/app", "--package-repository"}),
+               Roo::RooException);
+}
+
+TEST(RoocOptions, rejects_old_repo_option)
+{
+  // Then
+  EXPECT_THROW(parse({"rooc", "build", "pkg/app", "--repo", "out/repo"}),
+               Roo::RooException);
+}
+
 TEST(RoocOptions, rejects_unknown_command)
 {
   // Then

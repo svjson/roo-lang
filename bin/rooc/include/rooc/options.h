@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace Rooc
 {
@@ -13,6 +14,7 @@ namespace Rooc
     std::filesystem::path package_dir;
     std::filesystem::path build_dir;
     std::string executable_name;
+    std::vector<std::string> package_repository_roots;
   };
 
   void print_usage();

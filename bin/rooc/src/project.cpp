@@ -120,7 +120,10 @@ namespace Rooc
     Roo::DirRootFileSystem manifest_fs("/");
     const auto package_dir =
       std::filesystem::absolute(options.package_dir).lexically_normal();
-    auto plan = Roo::Package::resolve_load_plan(manifest_fs, package_dir.string());
+    auto plan = Roo::Package::resolve_load_plan(
+      manifest_fs,
+      package_dir.string(),
+      Roo::Package::ResolveOptions{options.package_repository_roots});
 
     std::string executable_name = options.executable_name.empty()
                                     ? default_executable_name(plan)

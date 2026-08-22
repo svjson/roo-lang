@@ -78,17 +78,25 @@ namespace Rooc
   void print_usage()
   {
     std::cout << "Usage: rooc <generate|build> <package-dir> "
-                 "[--build-dir <dir>] [--name <name>]\n";
+                 "[--build-dir <dir>] [--name <name>] "
+                 "[-R|--package-repository <dir>]...\n";
   }
 
   void print_help()
   {
     std::cout << "rooc: generate and build a native Roo executable project\n"
                  "Usage:\n"
-                 "  rooc generate <package-dir> [--build-dir <dir>] [--name <name>]\n"
-                 "  rooc build <package-dir> [--build-dir <dir>] [--name <name>]\n"
+                 "  rooc generate <package-dir> [--build-dir <dir>] [--name <name>] "
+                 "[-R|--package-repository <dir>]...\n"
+                 "  rooc build <package-dir> [--build-dir <dir>] [--name <name>] "
+                 "[-R|--package-repository <dir>]...\n"
                  "  rooc --help\n"
-                 "  rooc --version\n";
+                 "  rooc --version\n"
+                 "\n"
+                 "Options:\n"
+                 "  -R, --package-repository <dir>\n"
+                 "      Search this versioned package repository before sibling packages "
+                 "and the user-local repository. Repeatable.\n";
   }
 
   void print_version()
@@ -153,6 +161,22 @@ namespace Rooc
       if (arg.rfind("--name=", 0) == 0)
       {
         options.executable_name = arg.substr(std::string("--name=").size());
+        continue;
+      }
+
+      if (arg == "-R" || arg == "--package-repository")
+      {
+        if (i + 1 >= argc)
+        {
+          throw Roo::RooException("Missing value for --package-repository.");
+        }
+        options.package_repository_roots.push_back(argv[++i]);
+        continue;
+      }
+      if (arg.rfind("--package-repository=", 0) == 0)
+      {
+        options.package_repository_roots.push_back(
+          arg.substr(std::string("--package-repository=").size()));
         continue;
       }
 
