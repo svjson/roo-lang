@@ -1,14 +1,12 @@
 (ns proofread.rules.loops
-  (:require [proofread.rules.loops.use-reduce :as use-reduce]
-            [proofread.rules.loops.use-for-indexed :as use-for-indexed]
-            [proofread.rules.registry :as registry]))
+  (:require [proofread.rules.registry :as registry]))
 
 (def rules
   "Loop rule descriptors."
   (registry/descriptors
     :loops
-    [[:use-for-indexed use-for-indexed/check]
-     [:use-reduce use-reduce/check]]))
+    {:use-for-indexed 'proofread.rules.loops.use-for-indexed
+     :use-reduce 'proofread.rules.loops.use-reduce}))
 
 (defun check
   "Find loop diagnostics for a parsed AST root.

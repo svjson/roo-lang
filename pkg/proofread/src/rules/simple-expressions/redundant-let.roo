@@ -1,6 +1,15 @@
 (ns proofread.rules.simple-expressions.redundant-let
   (:require [proofread.inspect.bindings :as bindings]
+            [proofread.inspect.expressions :as expressions]
             [proofread.rules.diagnostics :as diagnostics]))
+
+(defun default-options
+  "Return the default redundant-let configuration.
+
+  Returns:
+  A map describing calls treated as simple expressions."
+  []
+  expressions/default-options)
 
 (defun check
   "Return a `redundant-let` diagnostic for single-binding lets.

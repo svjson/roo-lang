@@ -3,6 +3,14 @@
             [proofread.rules.diagnostics :as diagnostics]
             [roo.io :as io]))
 
+(defun scope
+  "Return the diagnostic scope for filename checks.
+
+  Returns:
+  The `:file` scope keyword."
+  []
+  :file)
+
 (defun check
   "Check a source path for underscores outside the directory-entry convention.
 

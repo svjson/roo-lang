@@ -7,11 +7,29 @@
 
 ;;; proofread.rules.registry/descriptors
 
-(deftest descriptors/registers-one-check-function
-  (let [check (fn [_parent _node _options] nil)
-        rule (head (registry/descriptors :sample [[:sample check]]))]
-    (is (= check (:check rule)))
-    (is (not (contains? rule :check-with-options)))))
+(deftest descriptors/loads-ordered-rule-modules
+  (let [descriptors
+        (registry/descriptors
+          :sample
+          {:first 'proofread.rules.higher-order.use-flat-map
+           :second 'proofread.rules.higher-order.use-find-first})
+        first-rule (head descriptors)]
+    (is (= [:first :second] (registry/rule-ids descriptors)))
+    (is (= (get (module 'proofread.rules.higher-order.use-flat-map) 'check)
+           (get (:module first-rule) 'check)))
+    (is (= :node (:scope first-rule)))
+    (is (nil? (:default-options first-rule)))))
+
+(deftest descriptors/reads-optional-module-metadata
+  (let [filename-rule (find-first rules/rules
+                                  (fn [rule]
+                                    (= :kebab-case-filename (:id rule))))
+        destructuring-rule (find-first rules/rules
+                                       (fn [rule]
+                                         (= :use-argument-destructuring (:id rule))))]
+    (is (= :file (:scope filename-rule)))
+    (is (= {:allow-renamed-keyword-lookups true}
+           (:default-options destructuring-rule)))))
 
 
 
@@ -22,10 +40,8 @@
           :node :node
           :options {:mode :strict}}
          (registry/node-diagnostic
-           [{:check (fn [parent node options]
-                      {:parent parent
-                       :node node
-                       :options options})
+           [{:module {'check (fn [parent node options]
+                               {:parent parent :node node :options options})}
              :options {:mode :strict}}]
            :parent
            :node))))

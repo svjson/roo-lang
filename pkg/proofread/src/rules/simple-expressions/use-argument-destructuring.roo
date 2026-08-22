@@ -2,8 +2,12 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
-(def default-options
-  "Default options for use-argument-destructuring."
+(defun default-options
+  "Return the default argument-destructuring configuration.
+
+  Returns:
+  A map controlling whether renamed keyword lookups are allowed."
+  []
   {:allow-renamed-keyword-lookups true})
 
 (defun matching-binding?
@@ -68,7 +72,7 @@
   Returns:
   A diagnostic map when `node` should use argument destructuring, otherwise `nil`."
   [parent node options]
-  (when (candidate? parent node (merge default-options options))
+  (when (candidate? parent node (merge (default-options) options))
     (diagnostics/make node
                       :use-argument-destructuring
                       "Use argument destructuring")))

@@ -1,12 +1,11 @@
 (ns proofread.rules.redundant-do
-  (:require [proofread.rules.redundant-do.redundant-do :as redundant-do]
-            [proofread.rules.registry :as registry]))
+  (:require [proofread.rules.registry :as registry]))
 
 (def rules
   "Redundant-do rule descriptors."
   (registry/descriptors
     :redundant-do
-    [[:redundant-do redundant-do/check]]))
+    {:redundant-do 'proofread.rules.redundant-do.redundant-do}))
 
 (defun check
   "Find redundant `do` forms beneath one AST root.

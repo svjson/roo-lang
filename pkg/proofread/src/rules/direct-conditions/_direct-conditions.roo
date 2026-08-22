@@ -1,29 +1,20 @@
 (ns proofread.rules.direct-conditions
   (:require [proofread.inspect.forms :as forms]
-            [proofread.rules.direct-conditions.flatten-if-pyramid :as flatten-if-pyramid]
-            [proofread.rules.direct-conditions.redundant-self-binding :as redundant-self-binding]
-            [proofread.rules.direct-conditions.use-case :as use-case]
-            [proofread.rules.direct-conditions.use-cond :as use-cond]
-            [proofread.rules.direct-conditions.use-cond-thread-first :as use-cond-thread-first]
-            [proofread.rules.direct-conditions.use-if-let :as use-if-let]
-            [proofread.rules.direct-conditions.use-unless :as use-unless]
-            [proofread.rules.direct-conditions.use-when :as use-when]
-            [proofread.rules.direct-conditions.use-when-let :as use-when-let]
             [proofread.rules.registry :as registry]))
 
 (def rules
   "Direct-condition rule descriptors."
   (registry/descriptors
     :direct-conditions
-    [[:redundant-self-binding redundant-self-binding/check]
-     [:use-if-let use-if-let/check]
-     [:use-when-let use-when-let/check]
-     [:use-case use-case/check]
-     [:use-cond-thread-first use-cond-thread-first/check]
-     [:flatten-if-pyramid flatten-if-pyramid/check]
-     [:use-cond use-cond/check]
-     [:use-when use-when/check]
-     [:use-unless use-unless/check]]))
+    {:redundant-self-binding 'proofread.rules.direct-conditions.redundant-self-binding
+     :use-if-let 'proofread.rules.direct-conditions.use-if-let
+     :use-when-let 'proofread.rules.direct-conditions.use-when-let
+     :use-case 'proofread.rules.direct-conditions.use-case
+     :use-cond-thread-first 'proofread.rules.direct-conditions.use-cond-thread-first
+     :flatten-if-pyramid 'proofread.rules.direct-conditions.flatten-if-pyramid
+     :use-cond 'proofread.rules.direct-conditions.use-cond
+     :use-when 'proofread.rules.direct-conditions.use-when
+     :use-unless 'proofread.rules.direct-conditions.use-unless}))
 
 (defun covered-child?
   "Test whether a child is covered by an existing parent diagnostic."

@@ -1,14 +1,12 @@
 (ns proofread.rules.names
-  (:require [proofread.rules.names.kebab-case-filename :as kebab-case-filename]
-            [proofread.rules.names.kebab-case-name :as kebab-case-name]
-            [proofread.rules.registry :as registry]))
+  (:require [proofread.rules.registry :as registry]))
 
 (def rules
   "Name rule descriptors."
   (registry/descriptors
     :names
-    [[:kebab-case-name kebab-case-name/check]
-     [:kebab-case-filename kebab-case-filename/check :file]]))
+    {:kebab-case-name 'proofread.rules.names.kebab-case-name
+     :kebab-case-filename 'proofread.rules.names.kebab-case-filename}))
 
 (defun check
   "Find name diagnostics beneath one AST root.
@@ -34,4 +32,4 @@
   [active-rules file]
   (keep (registry/scoped active-rules :file)
         (fn [rule]
-          (@> rule (check file)))))
+          (@> (:module rule) (check file)))))

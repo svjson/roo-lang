@@ -1,14 +1,11 @@
 (ns proofread.rules.redundant-functions
-  (:require [proofread.rules.redundant-functions.redundant-function :as redundant-function]
-            [proofread.rules.registry :as registry]))
+  (:require [proofread.rules.registry :as registry]))
 
 (def rules
   "Redundant-function rule descriptors."
   (registry/descriptors
     :redundant-functions
-    [[:redundant-function
-      redundant-function/check
-      {:default-options {:ignore-function-names ["check" "check-file"]}}]]))
+    {:redundant-function 'proofread.rules.redundant-functions.redundant-function}))
 
 (defun check
   "Find redundant function diagnostics for a parsed AST root.

@@ -2,6 +2,14 @@
   (:require [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
+(defun default-options
+  "Return the default redundant-function configuration.
+
+  Returns:
+  A map containing function names ignored by default."
+  []
+  {:ignore-function-names ["check" "check-file"]})
+
 (defun defun-body-index
   "Return the first body child index for a `defun` form."
   [{:keys [children] :as node}]
@@ -128,8 +136,7 @@
 (defun skipped-function?
   "Test whether a function name is exempt from redundant-function checks."
   [node options]
-  (contains? (or (:ignore-function-names options)
-                 ["check" "check-file"])
+  (contains? (:ignore-function-names (merge (default-options) options))
              (forms/symbol-name (nth (:children node) 1))))
 
 (defun check

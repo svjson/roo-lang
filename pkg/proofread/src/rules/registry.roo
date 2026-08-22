@@ -5,25 +5,25 @@
 
   Args:
   - `category`: Rule category keyword.
-  - `entries`: Vectors containing a rule ID, check function, and optional scope
-    or descriptor options. Node check functions receive parent, node, and
-    effective rule options.
+  - `entries`: Ordered map from rule IDs to implementation namespace symbols.
 
   Returns:
-  Rule descriptor maps."
+  Rule descriptor maps retaining live implementation modules."
   [category entries]
-  (for [entry entries]
-    (let [options (when (map? (nth entry 2))
-                    (nth entry 2))]
-      {:id (head entry)
-       :category category
-       :default-severity :warning
-       :default-options (or (:default-options options) {})
-       :scope (or (:scope options)
-                  (when (nil? options)
-                    (nth entry 2))
-                  :node)
-       :check (nth entry 1)})))
+  (reduce-kv entries
+             []
+             (fn [rules id namespace]
+               (let [rule-module (module namespace)]
+                 (append rules
+                          {:id id
+                           :category category
+                           :default-severity :warning
+                           :default-options (when (get rule-module 'default-options)
+                                              (@> rule-module (default-options)))
+                           :scope (if (get rule-module 'scope)
+                                    (@> rule-module (scope))
+                                    :node)
+                           :module rule-module})))))
 
 (defun scoped
   "Return rule descriptors for one scope.
@@ -43,8 +43,8 @@
   "Return the first diagnostic from matching rule descriptors.
 
   Args:
-  - `rules`: Node-scoped rule descriptor maps whose check functions accept
-    parent, node, and effective rule options.
+  - `rules`: Node-scoped rule descriptors whose modules expose `check` functions
+    accepting parent, node, and effective rule options.
   - `parent`: Parent `roo.ast` node map, or `nil`.
   - `node`: Current `roo.ast` node map.
 
@@ -53,7 +53,8 @@
   [rules parent node]
   (head (keep rules
               (fn [rule]
-                (@> rule (check parent node (:options rule)))))))
+                (@> (:module rule)
+                    (check parent node (:options rule)))))))
 
 (defun check-node
   "Find diagnostics beneath one AST node.

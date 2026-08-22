@@ -1,16 +1,13 @@
 (ns proofread.rules.higher-order
-  (:require [proofread.rules.higher-order.use-flat-map :as use-flat-map]
-            [proofread.rules.higher-order.use-find-first :as use-find-first]
-            [proofread.rules.higher-order.use-keep :as use-keep]
-            [proofread.rules.registry :as registry]))
+  (:require [proofread.rules.registry :as registry]))
 
 (def rules
   "Higher-order rule descriptors."
   (registry/descriptors
     :higher-order
-    [[:use-flat-map use-flat-map/check]
-     [:use-find-first use-find-first/check]
-     [:use-keep use-keep/check]]))
+    {:use-flat-map 'proofread.rules.higher-order.use-flat-map
+     :use-find-first 'proofread.rules.higher-order.use-find-first
+     :use-keep 'proofread.rules.higher-order.use-keep}))
 
 (defun check
   "Find higher-order diagnostics for a parsed AST root.
