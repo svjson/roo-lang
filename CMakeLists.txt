@@ -118,6 +118,50 @@ roo_copy_runtime_dlls(rooc_cli
   roo-package_shared
 )
 
+set(ROO_LOOM_BOOTSTRAP_DIR "${CMAKE_BINARY_DIR}/loom-bootstrap")
+set(ROO_LOOM_BOOTSTRAP_REPOSITORY
+  "${ROO_LOOM_BOOTSTRAP_DIR}/repository"
+)
+set(ROO_LOOM_BOOTSTRAP_HOME "${ROO_LOOM_BOOTSTRAP_DIR}/home")
+set(ROO_LOOM_BOOTSTRAP_SOURCE "${ROO_LOOM_BOOTSTRAP_DIR}/source/loom")
+
+add_custom_target(bootstrap_loom
+  COMMAND ${CMAKE_COMMAND} -E rm -rf "${ROO_LOOM_BOOTSTRAP_REPOSITORY}"
+  COMMAND ${CMAKE_COMMAND} -E rm -rf "${ROO_LOOM_BOOTSTRAP_HOME}"
+  COMMAND ${CMAKE_COMMAND} -E rm -rf "${ROO_LOOM_BOOTSTRAP_SOURCE}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${ROO_LOOM_BOOTSTRAP_SOURCE}"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${CMAKE_CURRENT_SOURCE_DIR}/pkg/loom/package.edn"
+          "${ROO_LOOM_BOOTSTRAP_SOURCE}/package.edn"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${CMAKE_CURRENT_SOURCE_DIR}/pkg/loom/src"
+          "${ROO_LOOM_BOOTSTRAP_SOURCE}/src"
+  COMMAND ${CMAKE_COMMAND} -E env
+          "HOME=${ROO_LOOM_BOOTSTRAP_HOME}"
+          $<TARGET_FILE:roo_cli>
+          "${CMAKE_CURRENT_SOURCE_DIR}/pkg/loom"
+          bootstrap
+          "${CMAKE_CURRENT_SOURCE_DIR}/pkg/loom"
+          --source-root
+          "${CMAKE_CURRENT_SOURCE_DIR}/pkg"
+          --repo
+          "${ROO_LOOM_BOOTSTRAP_REPOSITORY}"
+  COMMAND ${CMAKE_COMMAND} -E env
+          "HOME=${ROO_LOOM_BOOTSTRAP_HOME}"
+          $<TARGET_FILE:rooc_cli>
+          build
+          "${ROO_LOOM_BOOTSTRAP_SOURCE}"
+          --package-repository
+          "${ROO_LOOM_BOOTSTRAP_REPOSITORY}"
+          --build-dir
+          "${ROO_LOOM_BOOTSTRAP_DIR}"
+          --name
+          loom
+  DEPENDS roo_cli rooc_cli
+  USES_TERMINAL
+  VERBATIM
+)
+
 if(ROO_BUILD_TESTS)
   enable_testing()
   add_test(
@@ -154,6 +198,17 @@ if(ROO_BUILD_TESTS)
     PROPERTIES
       WORKING_DIRECTORY
         ${ROO_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-smoke
+  )
+  add_test(
+    NAME roo_cli_returns_failure_for_failing_proof
+    COMMAND $<TARGET_FILE:roo_cli> proof
+  )
+  set_tests_properties(
+    roo_cli_returns_failure_for_failing_proof
+    PROPERTIES
+      WILL_FAIL TRUE
+      WORKING_DIRECTORY
+        ${ROO_PACKAGE_STAGE_DIR}/proof/test/assets/dynamic-failure
   )
   add_test(
     NAME roo_cli_runs_package_with_namespace_roots
