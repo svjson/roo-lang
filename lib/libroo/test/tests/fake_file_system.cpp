@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <filesystem>
 
+#include <roo/exception.h>
+
 namespace RooTest
 {
   namespace
@@ -21,11 +23,16 @@ namespace RooTest
   const std::string FakeFileSystem::read(const std::string& file_name)
   {
     const std::string normalized_file_name = normalize(file_name);
-    if (fs_symlinks.count(normalized_file_name))
+    const std::string resolved_file_name =
+      fs_symlinks.count(normalized_file_name)
+        ? normalize(fs_symlinks.at(normalized_file_name))
+        : normalized_file_name;
+    const auto file = fs_contents.find(resolved_file_name);
+    if (file == fs_contents.end())
     {
-      return fs_contents.at(normalize(fs_symlinks.at(normalized_file_name)));
+      throw Roo::IOException("File not found: '" + file_name + "'");
     }
-    return fs_contents.at(normalized_file_name);
+    return file->second;
   }
 
   void FakeFileSystem::add_file(const std::string& file_name,

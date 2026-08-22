@@ -436,6 +436,7 @@ namespace Roo
     }
 
     const std::string& namespace_name = args[0]->str();
+    ctx.runtime.ensure_namespace_loaded(namespace_name);
     Namespace* module_namespace = ctx.runtime.ns(namespace_name);
     if (!module_namespace)
     {

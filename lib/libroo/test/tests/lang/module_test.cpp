@@ -3,6 +3,17 @@
 
 using ModuleFunction = RooTest::RuntimeTestFixture;
 
+TEST_F(ModuleFunction, loads_namespace_on_demand_without_importing_it)
+{
+  fs.add_file("my-app/actions/move.roo", "(ns my-app.actions.move) (def speed 7)");
+  runtime.eval("(ns caller)");
+
+  EXPECT_EQ(*runtime.eval("(get (module 'my-app.actions.move) 'speed)"),
+            *Roo::Value::number(7));
+  EXPECT_EQ(runtime.get_current_namespace().get_name(), "caller");
+  EXPECT_EQ(runtime.find("speed"), nullptr);
+}
+
 TEST_F(ModuleFunction, returns_live_view_with_symbol_keys)
 {
   runtime.eval("(ns my-app.actions.move)");

@@ -26,6 +26,7 @@ namespace Roo
     class Symbol;
   } // namespace AST
   class FileSystem;
+  class ModuleFunction;
   class NamespaceLoader;
   class NamespaceSource;
 
@@ -343,6 +344,7 @@ namespace Roo
     void define_namespace_alias(const std::string& ns_name, const std::string& alias);
 
     friend class Context;
+    friend class ModuleFunction;
   };
 } // namespace Roo
 

@@ -285,8 +285,12 @@ namespace Roo
   FUNC(PrnBangFunction, prn_bang)
 
   /*!
-   * @brief Return a map-like view of a loaded namespace's local bindings.
+   * @brief Return a map-like view of a namespace's local bindings.
    * @since 0.1.0
+   *
+   * If the named namespace has not been loaded, `module` attempts to load it
+   * through the runtime's configured namespace sources. Loading does not import
+   * its bindings or define an alias in the calling namespace.
    *
    * The default view is live: later definitions and mutations in the namespace
    * are visible through the returned value. Roo code cannot mutate the
@@ -309,11 +313,11 @@ namespace Roo
    *
    * | Arg       | Description                                                   |
    * | --------- | ------------------------------------------------------------- |
-   * | namespace | Symbol naming an existing, loaded namespace.                  |
+   * | namespace | Symbol naming a namespace.                                    |
    *
    * | Arg       | Description                                                   |
    * | --------- | ------------------------------------------------------------- |
-   * | namespace | Symbol naming an existing, loaded namespace.                  |
+   * | namespace | Symbol naming a namespace.                                    |
    * | mode      | Either `:live` or `:snapshot`.                                |
    *
    * @return An immutable live view when mode is omitted or `:live`, or a mutable
