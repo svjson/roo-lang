@@ -1,0 +1,383 @@
+(ns cli-trooper.example.proof-test
+  (:require proof.core
+            [proof.fixture :as fixture]
+            [proof.syntax :as p]
+            [cli-trooper :as cli]
+            [cli-trooper.config :as config]
+            [cli-trooper.feature.help :as help]
+            [cli-trooper.parse :as parse]
+            [cli-trooper.usage :as usage]))
+
+
+
+;; Test Fixture
+
+(defun execute-proof!
+  "Return the test outcome selected by the example invocation context.
+
+  Args:
+  - `context`: The example invocation context, optionally carrying an integer
+    outcome under `:test-status`.
+  - `options`: The fully parsed Proof options, unused by the example execution.
+
+  Returns:
+  The integer `:test-status` from `context`, or `0` when none is supplied."
+  [context options]
+  (get context :test-status 0))
+
+(def proof-config
+  "Supplied cli-trooper declaration of Proof's current command-line interface."
+  {:application "roo proof"
+   :description "run Roo tests"
+   :features {:help {:default? false}
+              :version false}
+   :execute! execute-proof!
+   :flags {["n" "namespace"] {:type :string
+                                 :name "namespace"
+                                 :repeatable? true
+                                 :default nil}
+           ["test-root" "test-roots"] {:type :path
+                                          :name "path"
+                                          :repeatable? true
+                                          :destination :test-roots
+                                          :default ["test"]}
+           "filter" {:type :string
+                      :name "pattern"
+                      :default nil}
+           "reporter" {:type :enum
+                       :values ["simple" "tree"]
+                       :default :simple}
+           "fixture-root" {:type :path
+                           :default "test/fixtures"}
+           "durations" {:type :boolean
+                        :optional-value? true
+                        :destination :durations?
+                        :default false}
+           "no-durations" {:type :flag
+                           :destination :durations?
+                           :value false
+                           :default false}
+           "include-sub-namespaces" {:type :boolean
+                                     :optional-value? true
+                                     :destination :include-sub-namespaces?
+                                     :default false}
+           "no-include-sub-namespaces" {:type :flag
+                                        :destination :include-sub-namespaces?
+                                        :value false
+                                        :default false}}
+   :positional [{:type :path
+                 :name "test-path"
+                 :destination :test-roots
+                 :repeatable? true
+                 :optional? true
+                 :default ["test"]}]})
+
+(fixture/deffixture proof-app-config
+  {}
+  (config/normalize proof-config))
+
+
+
+;; cli-trooper.usage/usage-string
+
+(deftest usage-string/formats-the-current-proof-interface [proof-app-config]
+  (is (= ["roo proof: run Roo tests"
+          ""
+          "Usage: roo proof [<test-path>...] [-n,--namespace <namespace>]... [--test-root,--test-roots <path>]... [--filter <pattern>] [--reporter <simple|tree>] [--fixture-root <path>] [--durations [<true|false>]] [--no-durations] [--include-sub-namespaces [<true|false>]] [--no-include-sub-namespaces]"]
+         (usage/usage-string proof-app-config))))
+
+
+
+;; cli-trooper features -- output
+
+(deftest application/renders-root-help [proof-app-config]
+  (is (= ["roo proof: run Roo tests"
+          ""
+          "Usage: roo proof [<test-path>...] [-n,--namespace <namespace>]... [--test-root,--test-roots <path>]... [--filter <pattern>] [--reporter <simple|tree>] [--fixture-root <path>] [--durations [<true|false>]] [--no-durations] [--include-sub-namespaces [<true|false>]] [--no-include-sub-namespaces]"]
+         (help/lines proof-app-config []))))
+
+
+
+;; cli-trooper.parse/parse -- application -- happy path
+
+(deftest application/applies-proof-defaults [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config []))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :reporter :simple
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors []}
+           parsed))))
+
+(deftest application/parses-the-current-proof-interface [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config
+                 ["test/proof"
+                  "-n"
+                  "proof.core-test"
+                  "--namespace=proof.runner-test"
+                  "--test-root"
+                  "test/unit"
+                  "--test-roots=test/integration"
+                  "--filter=checkout-*"
+                  "--reporter"
+                  "tree"
+                  "--fixture-root=test/fixtures/integration"
+                  "--durations=false"
+                  "--include-sub-namespaces"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace ["proof.core-test" "proof.runner-test"]
+                      :test-roots ["test/proof"
+                                   "test/unit"
+                                   "test/integration"]
+                      :filter "checkout-*"
+                      :reporter :tree
+                      :fixture-root "test/fixtures/integration"
+                      :durations? false
+                      :include-sub-namespaces? true}
+            :errors []}
+           parsed))))
+
+(deftest application/parses-negative-boolean-flags [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config
+                 ["--durations"
+                  "true"
+                  "--no-durations"
+                  "--include-sub-namespaces=true"
+                  "--no-include-sub-namespaces"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :reporter :simple
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors []}
+           parsed))))
+
+(deftest application/uses-package-configuration-as-invocation-options
+  [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config
+                 []
+                 {:namespace ["package.tests"]
+                  :test-roots ["test/package"]
+                  :filter "package-*"
+                  :reporter :tree
+                  :fixture-root "test/fixtures/package"
+                  :durations? true
+                  :include-sub-namespaces? true}))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace ["package.tests"]
+                      :test-roots ["test/package"]
+                      :filter "package-*"
+                      :reporter :tree
+                      :fixture-root "test/fixtures/package"
+                      :durations? true
+                      :include-sub-namespaces? true}
+            :errors []}
+           parsed))))
+
+(deftest application/replaces-package-configuration-with-explicit-arguments
+  [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config
+                 ["test/cli"
+                  "--test-root=test/extra"
+                  "-n"
+                  "cli.tests"
+                  "--filter=cli-*"
+                  "--reporter=simple"
+                  "--fixture-root"
+                  "test/fixtures/cli"
+                  "--no-durations"
+                  "--no-include-sub-namespaces"]
+                 {:namespace ["package.tests"]
+                  :test-roots ["test/package"]
+                  :filter "package-*"
+                  :reporter :tree
+                  :fixture-root "test/fixtures/package"
+                  :durations? true
+                  :include-sub-namespaces? true}))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace ["cli.tests"]
+                      :test-roots ["test/cli" "test/extra"]
+                      :filter "cli-*"
+                      :reporter :simple
+                      :fixture-root "test/fixtures/cli"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper.parse/parse -- application -- feature commands
+
+(deftest application/selects-root-help [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config ["--help"]))
+
+  (p/then [parsed]
+    (is (= {:command :cli-trooper/help
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :reporter :simple
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors []}
+           parsed))))
+
+
+
+;; cli-trooper.parse/parse -- application -- error handling
+
+(deftest application/reports-an-unknown-option [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config ["--watch"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :reporter :simple
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors [{:kind :unknown-option
+                      :command []
+                      :argument "--watch"}]}
+           parsed))))
+
+(deftest application/reports-a-missing-option-value [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config ["--filter"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :reporter :simple
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors [{:kind :missing-option-value
+                      :command []
+                      :argument "--filter"}]}
+           parsed))))
+
+(deftest application/reports-invalid-reporter-and-boolean-values
+  [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config
+                 ["--reporter=progress"
+                  "--durations=occasionally"]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :fixture-root "test/fixtures"
+                      :include-sub-namespaces? false}
+            :errors [{:kind :invalid-enum-value
+                      :command []
+                      :argument "--reporter"
+                      :value "progress"
+                      :expected ["simple" "tree"]}
+                     {:kind :invalid-boolean-value
+                      :command []
+                      :argument "--durations"
+                      :value "occasionally"
+                      :expected ["true" "false"]}]}
+           parsed))))
+
+(deftest application/reports-an-empty-assigned-value [proof-app-config]
+  (p/when []
+    (parse/parse proof-app-config ["--reporter="]))
+
+  (p/then [parsed]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test"]
+                      :filter nil
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors [{:kind :missing-option-value
+                      :command []
+                      :argument "--reporter"}]}
+           parsed))))
+
+
+
+;; cli-trooper/run -- application -- happy path
+
+(deftest application/invokes-the-proof-root-command
+  (p/when []
+    (cli/run proof-config
+             {:test-status 1
+              :package-root "/workspace/package"
+              :args ["--reporter=tree"]
+              :options {:test-roots ["test/package"]}}))
+
+  (p/then [invocation]
+    (is (= {:command []
+            :options {:namespace nil
+                      :test-roots ["test/package"]
+                      :filter nil
+                      :reporter :tree
+                      :fixture-root "test/fixtures"
+                      :durations? false
+                      :include-sub-namespaces? false}
+            :errors []
+            :result 1}
+           invocation))))
+
+
+
+;; cli-trooper/run! -- application -- exit status
+
+(deftest application/returns-zero-for-a-successful-test-run
+  (is (= 0
+         (cli/run! proof-config
+                   {:test-status 0
+                    :args []}))))
+
+(deftest application/returns-one-for-a-failed-test-run
+  (is (= 1
+         (cli/run! proof-config
+                   {:test-status 1
+                    :args []}))))
+
+(deftest application/returns-two-for-invalid-proof-arguments
+  (is (= 2
+         (cli/run! proof-config
+                   {:args ["--reporter=progress"]
+                    :cli-trooper/print! (fn [line] nil)}))))
+
+(deftest application/returns-zero-for-help
+  (is (= 0
+         (cli/run! proof-config
+                   {:args ["--help"]
+                    :cli-trooper/print! (fn [line] nil)}))))
