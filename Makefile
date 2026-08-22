@@ -18,7 +18,7 @@ GITHUB_PAGES_DOC_INDEXES := $(ROO_LANG_INDEX_PATH) $(ROO_PACKAGE_INDEX_PATHS)
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 
-.PHONY: configure configure-server-tests build bootstrap-loom relink dev-native-packages dev-native-package-links stage-packages install build-proof build-lookup build-roopl build-roo-lang-index build-roo-package-indexes audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+.PHONY: configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install build-proof build-lookup build-roopl build-roo-lang-index build-roo-package-indexes audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
 .PHONY: $(ROO_PACKAGE_INDEX_PATHS)
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
@@ -163,6 +163,9 @@ dev-native-package-links:
 
 stage-packages: configure
 	cmake --build build --target stage_packages
+
+package-artifacts: configure
+	cmake --build build --target package_artifacts
 
 install: build
 	cmake --build build --target install

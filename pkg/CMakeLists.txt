@@ -27,8 +27,8 @@ add_subdirectory(cli-trooper)
 
 function(roo_add_stage_package_target package_name)
   set(options)
-  set(one_value_args NATIVE_TARGET)
-  set(multi_value_args)
+  set(one_value_args NATIVE_PATH NATIVE_TARGET)
+  set(multi_value_args LOAD_ROOTS)
   cmake_parse_arguments(STAGE_PACKAGE
     "${options}"
     "${one_value_args}"
@@ -39,6 +39,15 @@ function(roo_add_stage_package_target package_name)
   set(package_source_dir "${CMAKE_CURRENT_SOURCE_DIR}/${package_name}")
   set(package_stage_dir "${ROO_PACKAGE_STAGE_DIR}/${package_name}")
   set(package_target "stage_${package_name}_package")
+  set(package_artifact_target "package_artifact_${package_name}")
+
+  if(NOT STAGE_PACKAGE_LOAD_ROOTS)
+    set(STAGE_PACKAGE_LOAD_ROOTS src)
+  endif()
+
+  if(STAGE_PACKAGE_NATIVE_TARGET AND NOT STAGE_PACKAGE_NATIVE_PATH)
+    set(STAGE_PACKAGE_NATIVE_PATH native)
+  endif()
 
   add_custom_target(${package_target}
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${package_stage_dir}"
@@ -52,14 +61,14 @@ function(roo_add_stage_package_target package_name)
     VERBATIM
   )
 
-  if(EXISTS "${package_source_dir}/src")
+  foreach(load_root IN LISTS STAGE_PACKAGE_LOAD_ROOTS)
     add_custom_command(TARGET ${package_target} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory
-              "${package_source_dir}/src"
-              "${package_stage_dir}/src"
+              "${package_source_dir}/${load_root}"
+              "${package_stage_dir}/${load_root}"
       VERBATIM
     )
-  endif()
+  endforeach()
 
   if(EXISTS "${package_source_dir}/test")
     add_custom_command(TARGET ${package_target} POST_BUILD
@@ -74,13 +83,43 @@ function(roo_add_stage_package_target package_name)
     add_dependencies(${package_target} ${STAGE_PACKAGE_NATIVE_TARGET})
     add_custom_command(TARGET ${package_target} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory
-              "${package_stage_dir}/native"
+              "${package_stage_dir}/${STAGE_PACKAGE_NATIVE_PATH}"
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
               "$<TARGET_FILE:${STAGE_PACKAGE_NATIVE_TARGET}>"
-              "${package_stage_dir}/native/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
+              "${package_stage_dir}/${STAGE_PACKAGE_NATIVE_PATH}/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
       VERBATIM
     )
+
+    set(package_artifact_dir "${package_stage_dir}")
+    set(package_artifact_dependency "${package_target}")
+    set(package_artifact_required_files
+      "${STAGE_PACKAGE_NATIVE_PATH}/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
+    )
+  else()
+    set(package_artifact_dir "${package_source_dir}")
+    set(package_artifact_dependency)
+    set(package_artifact_required_files)
   endif()
+
+  add_custom_target(${package_artifact_target}
+    COMMAND ${CMAKE_COMMAND}
+            "-DROO_ARTIFACT_DIR=${package_artifact_dir}"
+            "-DROO_ARTIFACT_PACKAGE=${package_name}"
+            "-DROO_ARTIFACT_REQUIRED_FILES=${package_artifact_required_files}"
+            -P "${ROO_ROOT_DIR}/cmake/rooValidatePackageArtifact.cmake"
+    VERBATIM
+  )
+
+  if(package_artifact_dependency)
+    add_dependencies(${package_artifact_target} ${package_artifact_dependency})
+  endif()
+
+  set_property(TARGET ${package_artifact_target}
+    PROPERTY ROO_PACKAGE_ARTIFACT_DIR "${package_artifact_dir}"
+  )
+  set_property(GLOBAL APPEND PROPERTY ROO_PACKAGE_ARTIFACT_TARGETS
+    "${package_artifact_target}"
+  )
 endfunction()
 
 roo_add_stage_package_target(proof NATIVE_TARGET proof_native)
@@ -99,6 +138,11 @@ roo_add_stage_package_target(roopl NATIVE_TARGET roopl_native)
 roo_add_stage_package_target(i18n)
 roo_add_stage_package_target(spool)
 roo_add_stage_package_target(cli-trooper)
+
+get_property(package_artifact_targets GLOBAL
+  PROPERTY ROO_PACKAGE_ARTIFACT_TARGETS
+)
+add_custom_target(package_artifacts DEPENDS ${package_artifact_targets})
 
 add_custom_target(stage_packages
   DEPENDS
