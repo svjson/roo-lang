@@ -155,6 +155,40 @@
                           {:type :key
                            :key :enter}))))
 
+(deftest on-event/cancels-a-nonempty-edit-and-leaves-an-empty-interrupt-unhandled
+  (p/given
+    (let [widget (prompt/make {:history ["one" "two"]})]
+      (:widget (prompt/on-event widget
+                                {:type :key
+                                 :key :up}))))
+
+  (p/when [widget]
+    (let [cancelled (prompt/on-event widget {:type :interrupt})]
+      {:cancelled
+       (update cancelled :widget
+               (fn [widget]
+                 (select-keys widget
+                              [:history
+                               :history-position
+                               :buffer
+                               :text
+                               :cursor])))
+       :empty (prompt/on-event (:widget cancelled) {:type :interrupt})}))
+
+  (p/then [result]
+    (is (= {:cancelled
+            {:widget
+             {:history ["one" "two" ""]
+              :history-position 2
+              :buffer {:before []
+                       :after []}
+              :text ""
+              :cursor {:row 0
+                       :text-before ""}}
+             :actions [{:type :cancel}]}
+            :empty {}}
+           result))))
+
 (deftest on-event/browses-history-and-restores-current-input
   (p/given
     (prompt/make {:history ["one" "two"]}))

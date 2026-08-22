@@ -20,8 +20,10 @@
      :value \"(+ 1 2)\"}]}
   ```
 
-  Unrecognized events and modified key combinations return an empty result so
-  another interaction layer may give them meaning later."
+  An interrupt clears a nonempty current edit and returns a generic cancel
+  action. An interrupt on an empty edit remains unhandled. Other unrecognized
+  events and modified key combinations also return an empty result so another
+  interaction layer may give them meaning later."
   [prompt event]
   (let [next-widget (fn [next-prompt next-buffer]
                       (let [next-value (buffer/text next-buffer)]
@@ -46,6 +48,14 @@
               {})
       :paste (next-widget prompt
                           (buffer/insert (:buffer prompt) (:text event)))
+      :interrupt
+      (if (empty? (buffer/text (:buffer prompt)))
+        {}
+        (merge (next-widget
+                 (assoc prompt
+                        :history-position (dec (count (:history prompt))))
+                 (buffer/make ""))
+               {:actions [{:type :cancel}]}))
       :key (if (empty? (:modifiers event))
              (case (:key event)
                :left (next-widget prompt (buffer/move-left (:buffer prompt)))
