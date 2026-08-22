@@ -37,6 +37,7 @@ set(roo_SOURCES
   src/roo/lang/base.cpp
   src/roo/lang/bind_form.cpp
   src/roo/lang/branch.cpp
+  src/roo/lang/err.cpp
   src/roo/lang/func.cpp
   src/roo/lang/io/file.cpp
   src/roo/lang/io/fs.cpp

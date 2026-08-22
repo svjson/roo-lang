@@ -15,6 +15,7 @@
 #include <roo/lang/base.h>
 #include <roo/lang/bind_form.h>
 #include <roo/lang/branch.h>
+#include <roo/lang/err.h>
 #include <roo/lang/func.h>
 #include <roo/lang/loop.h>
 #include <roo/lang/math.h>
@@ -122,6 +123,7 @@ namespace Roo
     lang_symbols.emplace("fn?", FnPFunction::make());
     lang_symbols.emplace("for", ForForm::make());
     lang_symbols.emplace("for-indexed", ForIndexedForm::make());
+    lang_symbols.emplace("guard", GuardForm::make());
     lang_symbols.emplace("float", FloatFunction::make());
     lang_symbols.emplace("float?", FloatPFunction::make());
     lang_symbols.emplace("floor", FloorFunction::make());

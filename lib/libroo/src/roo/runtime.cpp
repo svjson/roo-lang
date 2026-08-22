@@ -491,7 +491,7 @@ namespace Roo
     sptr_val inv = lookup(function);
     if (inv->type != Value::Type::FUNCTION)
     {
-      InvocationException error = InvocationException::not_callable(inv, args);
+      NotCallableException error(inv, args);
       error.add_call_context("invoking", function, args);
       throw error;
     }

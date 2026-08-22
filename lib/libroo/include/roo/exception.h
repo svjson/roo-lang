@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <roo/runtime/pretty_print.h>
@@ -15,6 +16,17 @@ namespace Roo
   class Executable;
   class Signature;
   struct Value;
+
+  class ErrorMapBuilder
+  {
+   public:
+    void add(const std::string& key, const std::shared_ptr<Value>& value);
+
+   private:
+    std::vector<std::pair<std::string, std::shared_ptr<Value>>> fields;
+
+    friend class RooException;
+  };
 
   const Pretty::PrintOptions& invocation_args_print_options();
 
@@ -92,6 +104,10 @@ namespace Roo
 
     const Diagnostic& get_diagnostic() const;
 
+    std::shared_ptr<Value> to_error_map() const;
+    std::string roo_error_type() const;
+    std::vector<std::string> roo_parent_error_types() const;
+
     void add_context(DiagnosticFrame frame);
     void add_call_context(const std::string& operation,
                           const std::string& binding_name,
@@ -115,6 +131,8 @@ namespace Roo
    protected:
     RooException(ErrorCategory category, const std::string& reason);
     explicit RooException(Diagnostic diagnostic);
+    virtual void append_roo_error_types(std::vector<std::string>& types) const;
+    virtual void append_error_fields(ErrorMapBuilder& builder) const;
 
    private:
     Diagnostic diagnostic;
@@ -125,18 +143,27 @@ namespace Roo
   {
    public:
     explicit ParseException(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class InvalidFormException : public RooException
   {
    public:
     explicit InvalidFormException(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class IdentifierException : public RooException
   {
    public:
     explicit IdentifierException(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class InvocationException : public RooException
@@ -144,19 +171,34 @@ namespace Roo
    public:
     explicit InvocationException(const std::string& message);
 
-    static InvocationException not_callable(
-      const std::shared_ptr<Value>& target,
-      const std::vector<std::shared_ptr<Value>>& arguments);
-    static InvocationException argument_mismatch(
-      const std::shared_ptr<Value>& target,
-      const std::vector<std::shared_ptr<Value>>& arguments,
-      std::size_t expected_arity);
-
    protected:
     explicit InvocationException(Diagnostic diagnostic);
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
-  class NoMatchingSignatureException : public InvocationException
+  class NotCallableException : public InvocationException
+  {
+   public:
+    NotCallableException(const std::shared_ptr<Value>& target,
+                         const std::vector<std::shared_ptr<Value>>& arguments);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
+  };
+
+  class ArgumentMismatchException : public InvocationException
+  {
+   public:
+    ArgumentMismatchException(const std::shared_ptr<Value>& target,
+                              const std::vector<std::shared_ptr<Value>>& arguments,
+                              std::size_t expected_arity);
+
+   protected:
+    explicit ArgumentMismatchException(Diagnostic diagnostic);
+    void append_roo_error_types(std::vector<std::string>& types) const override;
+  };
+
+  class NoMatchingSignatureException : public ArgumentMismatchException
   {
    public:
     static NoMatchingSignatureException no_matching_signature(
@@ -172,30 +214,45 @@ namespace Roo
 
    private:
     explicit NoMatchingSignatureException(Diagnostic diagnostic);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class NamespaceException : public RooException
   {
    public:
     explicit NamespaceException(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class CyclicNamespaceException : public NamespaceException
   {
    public:
     explicit CyclicNamespaceException(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class TypeError : public RooException
   {
    public:
     explicit TypeError(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 
   class IOException : public RooException
   {
    public:
     explicit IOException(const std::string& message);
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
   };
 } // namespace Roo
 

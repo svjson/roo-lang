@@ -159,7 +159,7 @@ namespace Roo
     sptr_val inv = lookup(fn_name);
     if (inv->type != Value::Type::FUNCTION)
     {
-      InvocationException error = InvocationException::not_callable(inv, args);
+      NotCallableException error(inv, args);
       error.add_call_context("calling", fn_name, args);
       throw error;
     }

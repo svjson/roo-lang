@@ -3,8 +3,10 @@
 #include "roo/runtime/value.h"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <sstream>
+#include <unordered_set>
 #include <utility>
 
 #include <roo/exec.h>
@@ -14,11 +16,135 @@ namespace Roo
 {
   namespace
   {
+    void append_map_field(sptr_val_v& fields, const std::string& key, const sptr_val& value)
+    {
+      fields.push_back(Value::keyword(key));
+      fields.push_back(value);
+    }
+
+    sptr_val strings_to_keywords(const std::vector<std::string>& values)
+    {
+      sptr_val_v result;
+      result.reserve(values.size());
+      for (const auto& value : values)
+      {
+        result.push_back(Value::keyword(value));
+      }
+      return Value::vector(result);
+    }
+
+    sptr_val strings_to_values(const std::vector<std::string>& values)
+    {
+      sptr_val_v result;
+      result.reserve(values.size());
+      for (const auto& value : values)
+      {
+        result.push_back(Value::string(value));
+      }
+      return Value::vector(result);
+    }
+
+    sptr_val site_to_value(const std::optional<DiagnosticSite>& site)
+    {
+      if (!site) return Constant::NIL;
+
+      sptr_val_v fields;
+      append_map_field(fields, "subject", Value::string(site->subject));
+      append_map_field(fields, "source", Value::string(site->source));
+      return Value::map(fields);
+    }
+
+    sptr_val frames_to_value(const std::vector<DiagnosticFrame>& frames)
+    {
+      sptr_val_v result;
+      result.reserve(frames.size());
+      for (const auto& frame : frames)
+      {
+        sptr_val_v fields;
+        append_map_field(
+          fields,
+          "kind",
+          Value::keyword(frame.kind == DiagnosticFrameKind::CALL ? "call" : "resource"));
+        append_map_field(fields, "operation", Value::string(frame.operation));
+        append_map_field(fields, "subject", Value::string(frame.subject));
+        append_map_field(fields, "source", Value::string(frame.source));
+        if (frame.target) append_map_field(fields, "target", frame.target);
+        if (frame.arguments)
+        {
+          append_map_field(fields, "arguments", Value::vector(*frame.arguments));
+        }
+        result.push_back(Value::map(fields));
+      }
+      return Value::vector(result);
+    }
+
+    sptr_val foreign_error_map(const std::string& message)
+    {
+      sptr_val_v fields;
+      append_map_field(fields, "type", Value::keyword("roo/foreign-error"));
+      append_map_field(fields,
+                       "parent-types",
+                       strings_to_keywords(std::vector<std::string>{"roo/error"}));
+      append_map_field(fields, "message", Value::string(message));
+      append_map_field(fields, "detail", Value::string(message));
+      append_map_field(fields, "site", Constant::NIL);
+      append_map_field(fields, "frames", Value::vector({}));
+      append_map_field(fields, "cause", Constant::NIL);
+      return Value::map(fields);
+    }
+
+    sptr_val cause_to_value(const std::exception_ptr& cause)
+    {
+      if (!cause) return Constant::NIL;
+      try
+      {
+        std::rethrow_exception(cause);
+      }
+      catch (const RooException& error)
+      {
+        return error.to_error_map();
+      }
+      catch (const std::exception& error)
+      {
+        return foreign_error_map(error.what());
+      }
+      catch (...)
+      {
+        return foreign_error_map("Unknown foreign exception");
+      }
+    }
+
     Diagnostic message_diagnostic(ErrorCategory category, const std::string& reason)
     {
       Diagnostic diagnostic;
       diagnostic.category = category;
       diagnostic.facts.detail = reason;
+      return diagnostic;
+    }
+
+    Diagnostic not_callable_diagnostic(
+      const std::shared_ptr<Value>& target,
+      const std::vector<std::shared_ptr<Value>>& arguments)
+    {
+      Diagnostic diagnostic;
+      diagnostic.category = ErrorCategory::INVOCATION;
+      diagnostic.condition = ErrorCondition::NOT_CALLABLE;
+      diagnostic.facts.target = target;
+      diagnostic.facts.arguments = arguments;
+      return diagnostic;
+    }
+
+    Diagnostic argument_mismatch_diagnostic(
+      const std::shared_ptr<Value>& target,
+      const std::vector<std::shared_ptr<Value>>& arguments,
+      std::size_t expected_arity)
+    {
+      Diagnostic diagnostic;
+      diagnostic.category = ErrorCategory::INVOCATION;
+      diagnostic.condition = ErrorCondition::ARGUMENT_MISMATCH;
+      diagnostic.facts.target = target;
+      diagnostic.facts.arguments = arguments;
+      diagnostic.facts.expected_arity = expected_arity;
       return diagnostic;
     }
 
@@ -53,7 +179,8 @@ namespace Roo
         }
         else
         {
-          out << (facts.target ? facts.target->to_string() : "<unknown>") << " is not callable";
+          out << (facts.target ? facts.target->to_string() : "<unknown>")
+              << " is not callable";
         }
         if (render_received_arguments)
         {
@@ -166,7 +293,8 @@ namespace Roo
                                             : innermost_diagnostic_call;
 
       bool invocation_frame_renders_arguments = false;
-      for (std::size_t frame_index = 0; frame_index < diagnostic.frames.size(); frame_index++)
+      for (std::size_t frame_index = 0; frame_index < diagnostic.frames.size();
+           frame_index++)
       {
         if (!visible_frame(diagnostic, frame_index, visible_innermost_call)) continue;
         const auto& frame = diagnostic.frames[frame_index];
@@ -179,10 +307,9 @@ namespace Roo
 
       const bool failure_has_invocation_arguments =
         failure_renders_arguments(diagnostic.condition);
-      std::string message =
-        render_failure(diagnostic,
-                       failure_has_invocation_arguments &&
-                         !invocation_frame_renders_arguments);
+      std::string message = render_failure(
+        diagnostic,
+        failure_has_invocation_arguments && !invocation_frame_renders_arguments);
       bool invocation_arguments_rendered =
         failure_has_invocation_arguments && !invocation_frame_renders_arguments;
       bool call_frame_rendered = false;
@@ -245,6 +372,11 @@ namespace Roo
     return options;
   }
 
+  void ErrorMapBuilder::add(const std::string& key, const std::shared_ptr<Value>& value)
+  {
+    fields.emplace_back(key, value);
+  }
+
   RooException::RooException(const std::string& reason)
     : RooException(ErrorCategory::GENERAL, reason)
   {
@@ -277,6 +409,93 @@ namespace Roo
   {
     return diagnostic;
   }
+
+  std::shared_ptr<Value> RooException::to_error_map() const
+  {
+    const std::string error_type = roo_error_type();
+    std::vector<std::string> parent_types;
+    std::unordered_set<std::string> seen_parent_types;
+    for (const auto& parent : roo_parent_error_types())
+    {
+      if (parent != error_type && seen_parent_types.insert(parent).second)
+      {
+        parent_types.push_back(parent);
+      }
+    }
+
+    sptr_val_v fields;
+    append_map_field(fields, "type", Value::keyword(error_type));
+    append_map_field(fields, "parent-types", strings_to_keywords(parent_types));
+    append_map_field(fields, "message", Value::string(what()));
+    append_map_field(fields, "detail", Value::string(render_failure(diagnostic, true)));
+    append_map_field(fields, "site", site_to_value(diagnostic.site));
+    append_map_field(fields, "frames", frames_to_value(diagnostic.frames));
+    append_map_field(fields, "cause", cause_to_value(diagnostic.cause));
+
+    std::unordered_set<std::string>
+      keys{"type", "parent-types", "message", "detail", "site", "frames", "cause"};
+    const auto& facts = diagnostic.facts;
+    if (facts.target)
+    {
+      append_map_field(fields, "target", facts.target);
+      keys.insert("target");
+    }
+    if (!facts.arguments.empty() || diagnostic.condition != ErrorCondition::MESSAGE)
+    {
+      append_map_field(fields, "arguments", Value::vector(facts.arguments));
+      keys.insert("arguments");
+    }
+    if (facts.expected_arity)
+    {
+      append_map_field(fields,
+                       "expected-arity",
+                       Value::number(static_cast<long>(*facts.expected_arity)));
+      keys.insert("expected-arity");
+    }
+    if (!facts.expected_signatures.empty())
+    {
+      append_map_field(fields,
+                       "expected-signatures",
+                       strings_to_values(facts.expected_signatures));
+      keys.insert("expected-signatures");
+    }
+    if (!facts.callee.empty())
+    {
+      append_map_field(fields, "callee", Value::string(facts.callee));
+      keys.insert("callee");
+    }
+
+    ErrorMapBuilder builder;
+    append_error_fields(builder);
+    for (const auto& [key, value] : builder.fields)
+    {
+      if (value && keys.insert(key).second) append_map_field(fields, key, value);
+    }
+    return Value::map(fields);
+  }
+
+  std::string RooException::roo_error_type() const
+  {
+    std::vector<std::string> types;
+    append_roo_error_types(types);
+    return types.back();
+  }
+
+  std::vector<std::string> RooException::roo_parent_error_types() const
+  {
+    std::vector<std::string> types;
+    append_roo_error_types(types);
+    types.pop_back();
+    std::reverse(types.begin(), types.end());
+    return types;
+  }
+
+  void RooException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    types.push_back("roo/error");
+  }
+
+  void RooException::append_error_fields(ErrorMapBuilder&) const {}
 
   void RooException::add_context(DiagnosticFrame frame)
   {
@@ -375,14 +594,32 @@ namespace Roo
   {
   }
 
+  void ParseException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    types.push_back("roo/parse-error");
+  }
+
   InvalidFormException::InvalidFormException(const std::string& message)
     : RooException(ErrorCategory::FORM, message)
   {
   }
 
+  void InvalidFormException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    types.push_back("roo/invalid-form-error");
+  }
+
   IdentifierException::IdentifierException(const std::string& message)
     : RooException(ErrorCategory::IDENTIFIER, message)
   {
+  }
+
+  void IdentifierException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    types.push_back("roo/identifier-error");
   }
 
   InvocationException::InvocationException(const std::string& message)
@@ -395,34 +632,47 @@ namespace Roo
   {
   }
 
-  InvocationException InvocationException::not_callable(
-    const std::shared_ptr<Value>& target,
-    const std::vector<std::shared_ptr<Value>>& arguments)
+  void InvocationException::append_roo_error_types(std::vector<std::string>& types) const
   {
-    Diagnostic diagnostic;
-    diagnostic.category = ErrorCategory::INVOCATION;
-    diagnostic.condition = ErrorCondition::NOT_CALLABLE;
-    diagnostic.facts.target = target;
-    diagnostic.facts.arguments = arguments;
-    return InvocationException(std::move(diagnostic));
+    RooException::append_roo_error_types(types);
+    types.push_back("roo/invocation-error");
   }
 
-  InvocationException InvocationException::argument_mismatch(
+  NotCallableException::NotCallableException(
+    const std::shared_ptr<Value>& target,
+    const std::vector<std::shared_ptr<Value>>& arguments)
+    : InvocationException(not_callable_diagnostic(target, arguments))
+  {
+  }
+
+  void NotCallableException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    InvocationException::append_roo_error_types(types);
+    types.push_back("roo/not-callable-error");
+  }
+
+  ArgumentMismatchException::ArgumentMismatchException(
     const std::shared_ptr<Value>& target,
     const std::vector<std::shared_ptr<Value>>& arguments,
     std::size_t expected_arity)
+    : InvocationException(argument_mismatch_diagnostic(target, arguments, expected_arity))
   {
-    Diagnostic diagnostic;
-    diagnostic.category = ErrorCategory::INVOCATION;
-    diagnostic.condition = ErrorCondition::ARGUMENT_MISMATCH;
-    diagnostic.facts.target = target;
-    diagnostic.facts.arguments = arguments;
-    diagnostic.facts.expected_arity = expected_arity;
-    return InvocationException(std::move(diagnostic));
+  }
+
+  ArgumentMismatchException::ArgumentMismatchException(Diagnostic diagnostic)
+    : InvocationException(std::move(diagnostic))
+  {
+  }
+
+  void ArgumentMismatchException::append_roo_error_types(
+    std::vector<std::string>& types) const
+  {
+    InvocationException::append_roo_error_types(types);
+    types.push_back("roo/argument-mismatch-error");
   }
 
   NoMatchingSignatureException::NoMatchingSignatureException(Diagnostic diagnostic)
-    : InvocationException(std::move(diagnostic))
+    : ArgumentMismatchException(std::move(diagnostic))
   {
   }
 
@@ -470,9 +720,22 @@ namespace Roo
     return get_diagnostic().facts.arguments;
   }
 
+  void NoMatchingSignatureException::append_roo_error_types(
+    std::vector<std::string>& types) const
+  {
+    ArgumentMismatchException::append_roo_error_types(types);
+    types.push_back("roo/no-matching-signature-error");
+  }
+
   NamespaceException::NamespaceException(const std::string& message)
     : RooException(ErrorCategory::NAMESPACE, message)
   {
+  }
+
+  void NamespaceException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    types.push_back("roo/namespace-error");
   }
 
   CyclicNamespaceException::CyclicNamespaceException(const std::string& message)
@@ -480,13 +743,32 @@ namespace Roo
   {
   }
 
+  void CyclicNamespaceException::append_roo_error_types(
+    std::vector<std::string>& types) const
+  {
+    NamespaceException::append_roo_error_types(types);
+    types.push_back("roo/require-cycle-error");
+  }
+
   TypeError::TypeError(const std::string& message)
     : RooException(ErrorCategory::TYPE, message)
   {
   }
 
+  void TypeError::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    types.push_back("roo/type-error");
+  }
+
   IOException::IOException(const std::string& message)
     : RooException(ErrorCategory::IO, message)
   {
+  }
+
+  void IOException::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    types.push_back("roo.io/error");
   }
 } // namespace Roo

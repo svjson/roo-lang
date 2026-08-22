@@ -42,12 +42,12 @@ namespace Roo
       {
         if (args.size() != 1)
         {
-          throw InvocationException::argument_mismatch(callable, args, 1);
+          throw ArgumentMismatchException(callable, args, 1);
         }
         return Dict::get_property(args[0], callable);
       }
 
-      throw InvocationException::not_callable(callable, args);
+      throw NotCallableException(callable, args);
     }
 
     const char* invocation_operation_name(InvocationOperation operation)
