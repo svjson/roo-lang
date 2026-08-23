@@ -119,10 +119,10 @@ fi
 
 assert_contains "roo proof help includes usage" \
   "$PROOF_HELP_OUTPUT" \
-  "Usage: roo proof [options]"
+  "Usage: roo proof [<test-path>...]"
 assert_contains "roo proof help includes reporter option" \
   "$PROOF_HELP_OUTPUT" \
-  "--reporter simple|tree"
+  "--reporter <simple|tree>"
 
 assert_not_contains "roo proof help does not run tests" "$PROOF_HELP_OUTPUT" "test/smoke/discovered.roo"
 assert_not_contains "roo proof help does not report passes" "$PROOF_HELP_OUTPUT" "PASS "
