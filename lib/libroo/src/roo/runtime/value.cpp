@@ -6,6 +6,7 @@
 #include <limits>
 #include <string>
 
+#include <roo/benchmark/counters.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/form.h>
@@ -16,11 +17,6 @@
 
 namespace Roo
 {
-  int rtvalues_constructed = 0;
-  int rtvalue_wrappers_constructed = 0;
-  int to_ast_conversions = 0;
-  int to_rtvalue_conversions = 0;
-
   namespace Constant
   {
     const sptr_val BOOL_TRUE = std::make_shared<Value>(true);
@@ -110,35 +106,35 @@ namespace Roo
     : value(Value::Number{.num_type = Value::NumberType::INT, .int_value = v})
     , type(Value::Type::NUMBER)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
   }
 
   Value::Value(const Value::Number& num)
     : value(num)
     , type(Value::Type::NUMBER)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
   }
 
   Value::Value(const std::string& s, Type type)
     : value(s)
     , type(type)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
   }
 
   Value::Value(bool v)
     : value(v)
     , type(Value::Type::BOOL)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
   }
 
   Value::Value(std::monostate)
     : value(std::monostate())
     , type(Value::Type::NIL)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
   }
 
   unsigned short Value::Number::get_unsigned_short() const
@@ -466,14 +462,14 @@ namespace Roo
         return Value::number(intval);
       }
     }
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     return std::make_shared<Value>(
       Value::Number{.num_type = Value::NumberType::FLOAT, .float_value = v});
   }
 
   sptr_val Value::character(char c)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::CHAR;
     val->value = c;
@@ -482,7 +478,7 @@ namespace Roo
 
   sptr_val Value::string(const std::string& v)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::STRING;
     val->value = v;
@@ -496,7 +492,7 @@ namespace Roo
 
   sptr_val Value::symbol(const std::string& v)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::SYMBOL;
     val->value = v;
@@ -505,7 +501,7 @@ namespace Roo
 
   sptr_val Value::object(const sptr_ast_node& o)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::OBJECT;
     val->value = o;
@@ -514,7 +510,7 @@ namespace Roo
 
   sptr_val Value::native_object(const sptr_native_obj& o)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::NATIVE_OBJECT;
     val->value = o;
@@ -523,7 +519,7 @@ namespace Roo
 
   sptr_val Value::list(const sptr_val_v& v)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::LIST;
     val->value = v;
@@ -532,7 +528,7 @@ namespace Roo
 
   sptr_val Value::vector(const sptr_val_v& v)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::VECTOR;
     val->value = v;
@@ -541,7 +537,7 @@ namespace Roo
 
   sptr_val Value::map(const sptr_val_v& v)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::MAP;
     val->value = v;
@@ -551,7 +547,7 @@ namespace Roo
 
   sptr_val Value::executable(const sptr_executable& fn)
   {
-    rtvalues_constructed++;
+    ROO_BENCHMARK_INC(rtvalues_constructed);
     sptr_val val = std::make_shared<Value>();
     val->type = Value::Type::FUNCTION;
     val->value = fn;
@@ -924,7 +920,7 @@ namespace Roo
     if (auto* wrapper = dynamic_cast<AST::RuntimeValueWrapper*>(obj.get()))
       return wrapper->val;
 
-    to_rtvalue_conversions++;
+    ROO_BENCHMARK_INC(to_rtvalue_conversions);
     switch (obj->get_type())
     {
     case Form::VECTOR:
@@ -965,7 +961,7 @@ namespace Roo
 
   sptr_ast_node to_AST(Value& val)
   {
-    to_ast_conversions++;
+    ROO_BENCHMARK_INC(to_ast_conversions);
     switch (val.type)
     {
     case Value::Type::BOOL:

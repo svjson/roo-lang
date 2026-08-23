@@ -6,9 +6,6 @@
 
 namespace Roo
 {
-  extern ROO_API int eval_executions;
-  extern ROO_API int exec_executions;
-
   sptr_val exec(Context& ctx, ExecNode& node);
 
   std::string to_string(const ExecNode& node, std::string indent = "");

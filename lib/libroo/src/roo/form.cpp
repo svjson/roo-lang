@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdexcept>
 
+#include <roo/benchmark/counters.h>
 #include <roo/exception.h>
 #include <roo/host/object.h>
 #include <roo/impl.h>
@@ -1005,7 +1006,7 @@ namespace Roo::AST
     , val(val)
     , delegate(NIL)
   {
-    rtvalue_wrappers_constructed++;
+    ROO_BENCHMARK_INC(rtvalue_wrappers_constructed);
 
     switch (val->type)
     {

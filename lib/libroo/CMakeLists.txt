@@ -71,16 +71,28 @@ set(roo_SOURCES
 )
 
 add_library(roo_objects OBJECT ${roo_SOURCES})
-target_include_directories(roo_objects
-  PRIVATE
-    ${ROO_ROOT_DIR}/lib/libroo/include
-)
-target_compile_definitions(roo_objects
-  PRIVATE
-    ROO_BUILDING_ROO
+add_library(roo_benchmark_objects OBJECT
+  ${roo_SOURCES}
+  src/roo/benchmark/counters.cpp
 )
 
-set_target_properties(roo_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+foreach(target roo_objects roo_benchmark_objects)
+  target_include_directories(${target}
+    PRIVATE
+      ${ROO_ROOT_DIR}/lib/libroo/include
+  )
+  target_compile_definitions(${target}
+    PRIVATE
+      ROO_BUILDING_ROO
+  )
+  set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endforeach()
+
+target_compile_definitions(roo_benchmark_objects
+  PRIVATE
+    ROO_ENABLE_BENCHMARK_COUNTERS
+)
+set_target_properties(roo_benchmark_objects PROPERTIES EXCLUDE_FROM_ALL ON)
 
 add_library(roo INTERFACE)
 add_library(roo_static STATIC $<TARGET_OBJECTS:roo_objects>)

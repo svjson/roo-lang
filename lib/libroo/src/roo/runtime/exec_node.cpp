@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 
+#include <roo/benchmark/counters.h>
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/exec.h>
@@ -17,9 +18,6 @@
 
 namespace Roo
 {
-  int eval_executions = 0;
-  int exec_executions = 0;
-
   namespace
   {
     [[noreturn]]
@@ -193,7 +191,7 @@ namespace Roo
 
   sptr_val exec(Context& ctx, ExecNode& node)
   {
-    exec_executions++;
+    ROO_BENCHMARK_INC(exec_executions);
     return std::visit(
       [&](auto& n) -> sptr_val
       {

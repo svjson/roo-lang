@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include <roo/benchmark/counters.h>
 #include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/exception.h>
@@ -32,17 +33,6 @@ namespace Roo
       throw;
     }
   } // namespace
-
-  int lowered_expressions = 0;
-  int lowered_literals = 0;
-  int lower_time_exec_resolutions = 0;
-  int lower_time_exec_unresolved = 0;
-
-  /**
-   * Tracks invocations of exec-implementations of special forms that
-   * should have rewritten the exec tree
-   */
-  int deprecated_special_form_invocations = 0;
 
   LCtxFrame::LCtxFrame(bool allow_lookup, bool literal_mode)
     : allow_lookup(allow_lookup)
@@ -128,7 +118,7 @@ namespace Roo
         elements.push_back(lower_expr(ctx, child));
       }
 
-      lowered_expressions++;
+      ROO_BENCHMARK_INC(lowered_expressions);
       return std::make_unique<ExecNode>(obj, MapNode(std::move(elements)));
     }
     case Form::VECTOR:
@@ -144,7 +134,7 @@ namespace Roo
         elements.push_back(lower_expr(ctx, child));
       }
 
-      lowered_expressions++;
+      ROO_BENCHMARK_INC(lowered_expressions);
       return std::make_unique<ExecNode>(obj, VectorNode(std::move(elements)));
     }
     case Form::CHAR:
@@ -158,7 +148,7 @@ namespace Roo
       return lower_literal(obj);
 
     case Form::QUOTED_SYMBOL:
-      lowered_expressions++;
+      ROO_BENCHMARK_INC(lowered_expressions);
       return std::make_unique<ExecNode>(Value::symbol(obj->as<AST::QuotedSymbol>().value));
 
     case Form::SYMBOL:
@@ -195,11 +185,11 @@ namespace Roo
         }
         if (static_val)
         {
-          lowered_literals++;
+          ROO_BENCHMARK_INC(lowered_literals);
           return std::make_unique<ExecNode>(static_val);
         }
       }
-      lowered_expressions++;
+      ROO_BENCHMARK_INC(lowered_expressions);
       return std::make_unique<ExecNode>(obj, LookupNode(obj->as<AST::Symbol>()));
     }
 
@@ -231,8 +221,8 @@ namespace Roo
               throw RooException("Invalid key lookup form: " + list.to_string());
             }
 
-            lowered_expressions++;
-            lower_time_exec_resolutions++;
+            ROO_BENCHMARK_INC(lowered_expressions);
+            ROO_BENCHMARK_INC(lower_time_exec_resolutions);
             return std::make_unique<ExecNode>(
               KeyLookupNode(literal_callee->value, lower_expr(ctx, children[1])));
           }
@@ -252,8 +242,8 @@ namespace Roo
               if (sform_lowered)
               {
                 sform_lowered->source = obj->get_source();
-                lowered_expressions++;
-                lower_time_exec_resolutions++;
+                ROO_BENCHMARK_INC(lowered_expressions);
+                ROO_BENCHMARK_INC(lower_time_exec_resolutions);
                 return sform_lowered;
               }
             }
@@ -277,16 +267,16 @@ namespace Roo
                 std::get_if<sptr_executable>(&literal_callee->value->value))
           {
             call_node.static_callee = *executable_val;
-            lower_time_exec_resolutions++;
+            ROO_BENCHMARK_INC(lower_time_exec_resolutions);
           }
         }
 
         if (call_node.static_callee == nullptr)
         {
-          lower_time_exec_unresolved++;
+          ROO_BENCHMARK_INC(lower_time_exec_unresolved);
         }
 
-        lowered_expressions++;
+        ROO_BENCHMARK_INC(lowered_expressions);
 
         auto node = std::make_unique<ExecNode>(obj, std::move(call_node));
 
@@ -295,7 +285,7 @@ namespace Roo
     }
 
     case Form::DISCARD:
-      lowered_expressions++;
+      ROO_BENCHMARK_INC(lowered_expressions);
       return std::make_unique<ExecNode>(Roo::Constant::NIL);
 
     default:
@@ -306,7 +296,7 @@ namespace Roo
 
   std::unique_ptr<ExecNode> lower_literal(const sptr_ast_node& obj)
   {
-    lowered_literals++;
+    ROO_BENCHMARK_INC(lowered_literals);
     switch (obj->get_type())
     {
     case Form::CHAR:
@@ -370,7 +360,7 @@ namespace Roo
         return std::make_unique<ExecNode>(
           obj,
           LiteralNode(Value::number(Value::Number{.num_type = Value::NumberType::FLOAT,
-                                                   .float_value = num_obj.float_value()}),
+                                                  .float_value = num_obj.float_value()}),
                       obj));
       }
 

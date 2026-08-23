@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+#include <roo/benchmark/counters.h>
 #include <roo/host/std_adapter.h>
 #include <roo/lang/base.h>
 #include <roo/namespace.h>
@@ -82,7 +83,7 @@ namespace Roo
 
   EXECNODE_BODY(DefForm, execnode_def_docstring)
   {
-    deprecated_special_form_invocations++;
+    ROO_BENCHMARK_INC(deprecated_special_form_invocations);
 
     return Constant::NIL;
   }

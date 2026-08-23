@@ -13,13 +13,6 @@ namespace Roo
 {
   class RestBinding;
 
-  extern ROO_API int lowered_expressions;
-  extern ROO_API int lowered_literals;
-  extern ROO_API int lower_time_exec_resolutions;
-  extern ROO_API int lower_time_exec_unresolved;
-
-  extern ROO_API int deprecated_special_form_invocations;
-
   struct LCtxFrame
   {
     LCtxFrame() = default;

@@ -163,13 +163,6 @@ FORM_NAME::FORM_NAME() \
 
 namespace Roo
 {
-  extern ROO_API int user_functions_created;
-  extern ROO_API int user_functions_ast_created;
-  extern ROO_API int user_functions_rtval_created;
-  extern ROO_API int user_function_ast_invocations;
-  extern ROO_API int user_function_rtval_invocations;
-  extern ROO_API int user_function_wrong_path_invocations;
-
   class Context;
   class Scope;
 

@@ -3,6 +3,8 @@
 #include "roo/runtime/lower.h"
 
 #include <functional>
+
+#include <roo/benchmark/counters.h>
 #include <roo/exec.h>
 #include <roo/impl.h>
 #include <roo/lang/func.h>
@@ -87,13 +89,13 @@ namespace Roo
   }
   EXECNODE_BODY(DefunForm, execnode_decl)
   {
-    deprecated_special_form_invocations++;
+    ROO_BENCHMARK_INC(deprecated_special_form_invocations);
 
     return Constant::NIL;
   }
   EXECNODE_BODY(DefunForm, execnode_decl_docstring)
   {
-    deprecated_special_form_invocations++;
+    ROO_BENCHMARK_INC(deprecated_special_form_invocations);
 
     return Constant::NIL;
   }
@@ -137,15 +139,14 @@ namespace Roo
 
   EXECNODE_BODY(FnForm, execnode_decl)
   {
-    deprecated_special_form_invocations++;
+    ROO_BENCHMARK_INC(deprecated_special_form_invocations);
 
     return Constant::NIL;
   }
 
   /** JuxtFunction - roo/juxt */
   FUNC_IMPL(JuxtFunction,
-            SIG((FN_ARGS((VARARG, &Type::ANY)),
-                 EXEC_DISPATCH(&JuxtFunction::exec_juxt))))
+            SIG((FN_ARGS((VARARG, &Type::ANY)), EXEC_DISPATCH(&JuxtFunction::exec_juxt))))
 
   EXEC_BODY(JuxtFunction, exec_juxt)
   {
@@ -153,12 +154,11 @@ namespace Roo
   }
 
   JuxtedFunction::JuxtedFunction(sptr_val_v captured_fns)
-    : Function(std::make_unique<Signature>(
-        arg_v{arg(VARARG, &Type::ANY)},
-        exec_val_fn(std::bind(&JuxtedFunction::exec_juxt,
-                              this,
-                              std::placeholders::_1,
-                              std::placeholders::_2))))
+    : Function(std::make_unique<Signature>(arg_v{arg(VARARG, &Type::ANY)},
+                                           exec_val_fn(std::bind(&JuxtedFunction::exec_juxt,
+                                                                 this,
+                                                                 std::placeholders::_1,
+                                                                 std::placeholders::_2))))
     , fns(std::move(captured_fns))
   {
   }

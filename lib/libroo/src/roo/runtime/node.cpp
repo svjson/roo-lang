@@ -3,38 +3,29 @@
 
 #include <vector>
 
+#include <roo/benchmark/counters.h>
 #include <roo/bind.h>
 
 namespace Roo
 {
-  int exec_nodes_constructed = 0;
-  int call_nodes_constructed = 0;
-  int literal_nodes_constructed = 0;
-  int lookup_nodes_constructed = 0;
-
-  void record_exec_node_constructed()
-  {
-    exec_nodes_constructed++;
-  }
-
   LiteralNode::LiteralNode(const sptr_val& v)
     : value(v)
     , ast_node(Roo::AST::NIL)
   {
-    literal_nodes_constructed++;
+    ROO_BENCHMARK_INC(literal_nodes_constructed);
   }
 
   LiteralNode::LiteralNode(const sptr_val& v, sptr_ast_node ast_node)
     : value(v)
     , ast_node(ast_node)
   {
-    literal_nodes_constructed++;
+    ROO_BENCHMARK_INC(literal_nodes_constructed);
   }
 
   LookupNode::LookupNode(AST::Symbol id)
     : identifier(id)
   {
-    lookup_nodes_constructed++;
+    ROO_BENCHMARK_INC(lookup_nodes_constructed);
   }
 
   MapNode::MapNode(std::vector<uptr_exec_node> elements)
@@ -62,7 +53,7 @@ namespace Roo
     : callee(std::move(callee))
     , args(std::move(args))
   {
-    call_nodes_constructed++;
+    ROO_BENCHMARK_INC(call_nodes_constructed);
   }
 
   CallNode::CallNode(uptr_exec_node callee,
@@ -72,7 +63,7 @@ namespace Roo
     , args(std::move(args))
     , callee_name(std::move(callee_name))
   {
-    call_nodes_constructed++;
+    ROO_BENCHMARK_INC(call_nodes_constructed);
   }
 
   SpecialFormNode::SpecialFormNode(const SpecialForm* form,
@@ -148,7 +139,7 @@ namespace Roo
     , source()
     , data(LiteralNode(runtime_value))
   {
-    exec_nodes_constructed++;
+    ROO_BENCHMARK_INC(exec_nodes_constructed);
   }
 
   uptr_exec_node ExecNode::clone() const

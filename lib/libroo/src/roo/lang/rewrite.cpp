@@ -4,6 +4,7 @@
 #include "roo/runtime/value.h"
 #include "roo/type.h"
 
+#include <roo/benchmark/counters.h>
 #include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/exception.h>
@@ -286,7 +287,7 @@ namespace Roo
   }
   EXECNODE_BODY(ThreadFirstForm, execnode_thread_first)
   {
-    deprecated_special_form_invocations++;
+    ROO_BENCHMARK_INC(deprecated_special_form_invocations);
 
     return Constant::NIL;
   }

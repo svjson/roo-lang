@@ -23,6 +23,7 @@ PREFIX ?= $(LOCAL_PREFIX)
 
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
+BENCHMARK_TEST_BINARY := lib/libroo/test/benchmarkroo
 PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage
 PROOF_TEST_BINARY := pkg/proof/test/testproof
 INPOOTS_TEST_BINARY := pkg/inpoots/test/testinpoots
@@ -41,6 +42,7 @@ PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
   SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport.exe
   TEST_BINARY := lib/libroo/test/testroo.exe
+  BENCHMARK_TEST_BINARY := lib/libroo/test/benchmarkroo.exe
   PACKAGE_TEST_BINARY := lib/libroo-package/test/testpackage.exe
   PROOF_TEST_BINARY := pkg/proof/test/testproof.exe
   INPOOTS_TEST_BINARY := pkg/inpoots/test/testinpoots.exe
@@ -334,7 +336,7 @@ test\:support: build
 
 test\:lang: build
 	cmake --build build --target testroo
-	./build/$(TEST_BINARY) --skip-benchmarks $(GTEST_FILTER_ARG)
+	./build/$(TEST_BINARY) $(GTEST_FILTER_ARG)
 
 test\:package: build
 	cmake --build build --target testpackage
@@ -412,9 +414,9 @@ test\:lookup-cli: build stage-packages
 test\:boodle-cli: build stage-packages
 	ROO_PACKAGE_STAGE_ROOT=$(PACKAGE_STAGE) sh $(CURDIR)/pkg/boodle/test/run-cli-tests.sh $(CURDIR)
 
-test\:benchmark: build
-	cmake --build build --target testroo
-	./build/$(TEST_BINARY) --benchmark $(GTEST_FILTER_ARG)
+test\:benchmark: configure
+	cmake --build build --target benchmarkroo
+	./build/$(BENCHMARK_TEST_BINARY) --benchmark $(GTEST_FILTER_ARG)
 
 test\:server: configure-server-tests
 	cmake --build build --target testserver

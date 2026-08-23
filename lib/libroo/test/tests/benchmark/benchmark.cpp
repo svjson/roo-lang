@@ -35,17 +35,21 @@ namespace RooTest
 
   void snapshot_setup_counters(SetupCounters& counters)
   {
-    counters.lowered_literals = Roo::lowered_literals;
-    counters.lowered_expressions = Roo::lowered_expressions;
-    counters.lower_time_exec_resolutions = Roo::lower_time_exec_resolutions;
-    counters.lower_time_exec_unresolved = Roo::lower_time_exec_unresolved;
-    counters.rtvalues_constructed = Roo::rtvalues_constructed;
-    counters.exec_nodes_constructed = Roo::exec_nodes_constructed;
-    counters.call_nodes_constructed = Roo::call_nodes_constructed;
-    counters.literal_nodes_constructed = Roo::literal_nodes_constructed;
-    counters.lookup_nodes_constructed = Roo::lookup_nodes_constructed;
-    counters.user_functions_rtval_created = Roo::user_functions_rtval_created;
-    counters.deprecated_special_form_invocations = Roo::deprecated_special_form_invocations;
+    counters.lowered_literals = Roo::Benchmark::counters.lowered_literals;
+    counters.lowered_expressions = Roo::Benchmark::counters.lowered_expressions;
+    counters.lower_time_exec_resolutions =
+      Roo::Benchmark::counters.lower_time_exec_resolutions;
+    counters.lower_time_exec_unresolved =
+      Roo::Benchmark::counters.lower_time_exec_unresolved;
+    counters.rtvalues_constructed = Roo::Benchmark::counters.rtvalues_constructed;
+    counters.exec_nodes_constructed = Roo::Benchmark::counters.exec_nodes_constructed;
+    counters.call_nodes_constructed = Roo::Benchmark::counters.call_nodes_constructed;
+    counters.literal_nodes_constructed = Roo::Benchmark::counters.literal_nodes_constructed;
+    counters.lookup_nodes_constructed = Roo::Benchmark::counters.lookup_nodes_constructed;
+    counters.user_functions_rtval_created =
+      Roo::Benchmark::counters.user_functions_rtval_created;
+    counters.deprecated_special_form_invocations =
+      Roo::Benchmark::counters.deprecated_special_form_invocations;
   }
 
   void snapshot_setup_counters()
@@ -61,8 +65,10 @@ namespace RooTest
   void print_counters(bool include_setup_phase)
   {
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "EVAL path executions: " << Roo::eval_executions << std::endl;
-    std::cout << "EXEC path executions: " << Roo::exec_executions << std::endl;
+    std::cout << "EVAL path executions: " << Roo::Benchmark::counters.eval_executions
+              << std::endl;
+    std::cout << "EXEC path executions: " << Roo::Benchmark::counters.exec_executions
+              << std::endl;
 
     if (include_setup_phase)
     {
@@ -111,151 +117,109 @@ namespace RooTest
     }
 
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "Lowered expressions: " << Roo::lowered_expressions << std::endl;
-    std::cout << "Lowered literals: " << Roo::lowered_literals << std::endl;
-    std::cout << "Callees resolved at lower time: " << Roo::lower_time_exec_resolutions
+    std::cout << "Lowered expressions: " << Roo::Benchmark::counters.lowered_expressions
               << std::endl;
-    std::cout << "Callees unresolved at lower time: " << Roo::lower_time_exec_unresolved
+    std::cout << "Lowered literals: " << Roo::Benchmark::counters.lowered_literals
               << std::endl;
+    std::cout << "Callees resolved at lower time: "
+              << Roo::Benchmark::counters.lower_time_exec_resolutions << std::endl;
+    std::cout << "Callees unresolved at lower time: "
+              << Roo::Benchmark::counters.lower_time_exec_unresolved << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
 
-    std::cout << "Value constructions: " << Roo::rtvalues_constructed << std::endl;
-    std::cout << "RuntimeValueWrapper constructions: " << Roo::rtvalue_wrappers_constructed
+    std::cout << "Value constructions: " << Roo::Benchmark::counters.rtvalues_constructed
               << std::endl;
+    std::cout << "RuntimeValueWrapper constructions: "
+              << Roo::Benchmark::counters.rtvalue_wrappers_constructed << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "ExecNode constructions: " << Roo::exec_nodes_constructed << std::endl;
-    std::cout << "CallNode constructions: " << Roo::call_nodes_constructed << std::endl;
-    std::cout << "LiteralNode constructions: " << Roo::literal_nodes_constructed
-              << std::endl;
-    std::cout << "LookupNode constructions: " << Roo::lookup_nodes_constructed << std::endl;
+    std::cout << "ExecNode constructions: "
+              << Roo::Benchmark::counters.exec_nodes_constructed << std::endl;
+    std::cout << "CallNode constructions: "
+              << Roo::Benchmark::counters.call_nodes_constructed << std::endl;
+    std::cout << "LiteralNode constructions: "
+              << Roo::Benchmark::counters.literal_nodes_constructed << std::endl;
+    std::cout << "LookupNode constructions: "
+              << Roo::Benchmark::counters.lookup_nodes_constructed << std::endl;
 
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "to_AST conversions: " << Roo::to_ast_conversions << std::endl;
-    std::cout << "to_Value conversions: " << Roo::to_rtvalue_conversions << std::endl;
+    std::cout << "to_AST conversions: " << Roo::Benchmark::counters.to_ast_conversions
+              << std::endl;
+    std::cout << "to_Value conversions: " << Roo::Benchmark::counters.to_rtvalue_conversions
+              << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "UserFunction constructions: " << Roo::user_functions_created << std::endl;
+    std::cout << "UserFunction constructions: "
+              << Roo::Benchmark::counters.user_functions_created << std::endl;
     std::cout << "UserFunction(Value body) constructions: "
-              << Roo::user_functions_rtval_created << std::endl;
+              << Roo::Benchmark::counters.user_functions_rtval_created << std::endl;
     std::cout << "UserFunction(Value body) invocations: "
-              << Roo::user_function_rtval_invocations << std::endl;
-    std::cout << "UserFunction(AST Body) constructions: " << Roo::user_functions_ast_created
-              << std::endl;
-    std::cout << "UserFunction(AST Body) invocations: " << Roo::user_function_ast_invocations
-              << std::endl;
+              << Roo::Benchmark::counters.user_function_rtval_invocations << std::endl;
+    std::cout << "UserFunction(AST Body) constructions: "
+              << Roo::Benchmark::counters.user_functions_ast_created << std::endl;
+    std::cout << "UserFunction(AST Body) invocations: "
+              << Roo::Benchmark::counters.user_function_ast_invocations << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "Invocations of legacy special form exec: "
-              << Roo::deprecated_special_form_invocations << std::endl;
+              << Roo::Benchmark::counters.deprecated_special_form_invocations << std::endl;
     if (include_setup_phase)
     {
       std::cout << "SETUP PHASE - Invocations of legacy special form exec: "
-                << Roo::deprecated_special_form_invocations << std::endl;
+                << Roo::Benchmark::counters.deprecated_special_form_invocations << std::endl;
     }
     std::cout << "-----------------------------------------------" << std::endl;
   }
 
   void snapshot_counters()
   {
-    counter_snapshot.eval_executions = Roo::eval_executions;
-    counter_snapshot.exec_executions = Roo::exec_executions;
-    counter_snapshot.lowered_literals = Roo::lowered_literals;
-    counter_snapshot.lowered_expressions = Roo::lowered_expressions;
-    counter_snapshot.lower_time_exec_resolutions = Roo::lower_time_exec_resolutions;
-    counter_snapshot.lower_time_exec_unresolved = Roo::lower_time_exec_unresolved;
-    counter_snapshot.rtvalues_constructed = Roo::rtvalues_constructed;
-    counter_snapshot.rtvalue_wrappers_constructed = Roo::rtvalue_wrappers_constructed;
-    counter_snapshot.to_ast_conversions = Roo::to_ast_conversions;
-    counter_snapshot.to_rtvalue_conversions = Roo::to_rtvalue_conversions;
-    counter_snapshot.exec_nodes_constructed = Roo::exec_nodes_constructed;
-    counter_snapshot.call_nodes_constructed = Roo::call_nodes_constructed;
-    counter_snapshot.literal_nodes_constructed = Roo::literal_nodes_constructed;
-    counter_snapshot.lookup_nodes_constructed = Roo::lookup_nodes_constructed;
-    counter_snapshot.user_functions_created = Roo::user_functions_created;
-    counter_snapshot.user_functions_ast_created = Roo::user_functions_ast_created;
-    counter_snapshot.user_functions_rtval_created = Roo::user_functions_rtval_created;
-    counter_snapshot.user_function_ast_invocations = Roo::user_function_ast_invocations;
-    counter_snapshot.user_function_rtval_invocations = Roo::user_function_rtval_invocations;
-    counter_snapshot.user_function_wrong_path_invocations =
-      Roo::user_function_wrong_path_invocations;
-    counter_snapshot.deprecated_special_form_invocations =
-      Roo::deprecated_special_form_invocations;
+    counter_snapshot = Roo::Benchmark::counters;
   }
 
   void reset_counters()
   {
-    Roo::eval_executions = 0;
-    Roo::exec_executions = 0;
-    Roo::lowered_expressions = 0;
-    Roo::lowered_literals = 0;
-    Roo::lower_time_exec_resolutions = 0;
-    Roo::lower_time_exec_unresolved = 0;
-    Roo::rtvalues_constructed = 0;
-    Roo::rtvalue_wrappers_constructed = 0;
-    Roo::to_ast_conversions = 0;
-    Roo::to_rtvalue_conversions = 0;
-    Roo::exec_nodes_constructed = 0;
-    Roo::call_nodes_constructed = 0;
-    Roo::literal_nodes_constructed = 0;
-    Roo::lookup_nodes_constructed = 0;
-    Roo::user_functions_created = 0;
-    Roo::user_functions_ast_created = 0;
-    Roo::user_functions_rtval_created = 0;
-    Roo::user_function_ast_invocations = 0;
-    Roo::user_function_rtval_invocations = 0;
-    Roo::user_function_wrong_path_invocations = 0;
-    Roo::deprecated_special_form_invocations = 0;
+    Roo::Benchmark::counters = {};
   }
 
   void restore_counter_snapshot()
   {
-    Roo::eval_executions = counter_snapshot.eval_executions;
-    Roo::exec_executions = counter_snapshot.exec_executions;
-    Roo::lowered_expressions = counter_snapshot.lowered_expressions;
-    Roo::lowered_literals = counter_snapshot.lowered_literals;
-    Roo::lower_time_exec_resolutions = counter_snapshot.lower_time_exec_resolutions;
-    Roo::lower_time_exec_unresolved = counter_snapshot.lower_time_exec_unresolved;
-    Roo::rtvalues_constructed = counter_snapshot.rtvalues_constructed;
-    Roo::rtvalue_wrappers_constructed = counter_snapshot.rtvalue_wrappers_constructed;
-    Roo::to_ast_conversions = counter_snapshot.to_ast_conversions;
-    Roo::to_rtvalue_conversions = counter_snapshot.to_rtvalue_conversions;
-    Roo::exec_nodes_constructed = counter_snapshot.exec_nodes_constructed;
-    Roo::call_nodes_constructed = counter_snapshot.call_nodes_constructed;
-    Roo::literal_nodes_constructed = counter_snapshot.literal_nodes_constructed;
-    Roo::lookup_nodes_constructed = counter_snapshot.lookup_nodes_constructed;
-    Roo::user_functions_created = counter_snapshot.user_functions_created;
-    Roo::user_functions_ast_created = counter_snapshot.user_functions_ast_created;
-    Roo::user_functions_rtval_created = counter_snapshot.user_functions_rtval_created;
-    Roo::user_function_ast_invocations = counter_snapshot.user_function_ast_invocations;
-    Roo::user_function_rtval_invocations = counter_snapshot.user_function_rtval_invocations;
-    Roo::user_function_wrong_path_invocations =
-      counter_snapshot.user_function_wrong_path_invocations;
-    Roo::deprecated_special_form_invocations =
-      counter_snapshot.deprecated_special_form_invocations;
+    Roo::Benchmark::counters = counter_snapshot;
   }
 
   void apply_counter_snapshot()
   {
-    Roo::eval_executions += counter_snapshot.eval_executions;
-    Roo::exec_executions += counter_snapshot.exec_executions;
-    Roo::lowered_expressions += counter_snapshot.lowered_expressions;
-    Roo::lowered_literals += counter_snapshot.lowered_literals;
-    Roo::lower_time_exec_resolutions += counter_snapshot.lower_time_exec_resolutions;
-    Roo::lower_time_exec_unresolved += counter_snapshot.lower_time_exec_unresolved;
-    Roo::rtvalues_constructed += counter_snapshot.rtvalues_constructed;
-    Roo::rtvalue_wrappers_constructed += counter_snapshot.rtvalue_wrappers_constructed;
-    Roo::to_ast_conversions += counter_snapshot.to_ast_conversions;
-    Roo::to_rtvalue_conversions += counter_snapshot.to_rtvalue_conversions;
-    Roo::exec_nodes_constructed += counter_snapshot.exec_nodes_constructed;
-    Roo::call_nodes_constructed += counter_snapshot.call_nodes_constructed;
-    Roo::literal_nodes_constructed += counter_snapshot.literal_nodes_constructed;
-    Roo::lookup_nodes_constructed += counter_snapshot.lookup_nodes_constructed;
-    Roo::user_functions_created += counter_snapshot.user_functions_created;
-    Roo::user_functions_ast_created += counter_snapshot.user_functions_ast_created;
-    Roo::user_functions_rtval_created += counter_snapshot.user_functions_rtval_created;
-    Roo::user_function_ast_invocations += counter_snapshot.user_function_ast_invocations;
-    Roo::user_function_rtval_invocations += counter_snapshot.user_function_rtval_invocations;
-    Roo::user_function_wrong_path_invocations +=
+    Roo::Benchmark::counters.eval_executions += counter_snapshot.eval_executions;
+    Roo::Benchmark::counters.exec_executions += counter_snapshot.exec_executions;
+    Roo::Benchmark::counters.lowered_expressions += counter_snapshot.lowered_expressions;
+    Roo::Benchmark::counters.lowered_literals += counter_snapshot.lowered_literals;
+    Roo::Benchmark::counters.lower_time_exec_resolutions +=
+      counter_snapshot.lower_time_exec_resolutions;
+    Roo::Benchmark::counters.lower_time_exec_unresolved +=
+      counter_snapshot.lower_time_exec_unresolved;
+    Roo::Benchmark::counters.rtvalues_constructed += counter_snapshot.rtvalues_constructed;
+    Roo::Benchmark::counters.rtvalue_wrappers_constructed +=
+      counter_snapshot.rtvalue_wrappers_constructed;
+    Roo::Benchmark::counters.to_ast_conversions += counter_snapshot.to_ast_conversions;
+    Roo::Benchmark::counters.to_rtvalue_conversions +=
+      counter_snapshot.to_rtvalue_conversions;
+    Roo::Benchmark::counters.exec_nodes_constructed +=
+      counter_snapshot.exec_nodes_constructed;
+    Roo::Benchmark::counters.call_nodes_constructed +=
+      counter_snapshot.call_nodes_constructed;
+    Roo::Benchmark::counters.literal_nodes_constructed +=
+      counter_snapshot.literal_nodes_constructed;
+    Roo::Benchmark::counters.lookup_nodes_constructed +=
+      counter_snapshot.lookup_nodes_constructed;
+    Roo::Benchmark::counters.user_functions_created +=
+      counter_snapshot.user_functions_created;
+    Roo::Benchmark::counters.user_functions_ast_created +=
+      counter_snapshot.user_functions_ast_created;
+    Roo::Benchmark::counters.user_functions_rtval_created +=
+      counter_snapshot.user_functions_rtval_created;
+    Roo::Benchmark::counters.user_function_ast_invocations +=
+      counter_snapshot.user_function_ast_invocations;
+    Roo::Benchmark::counters.user_function_rtval_invocations +=
+      counter_snapshot.user_function_rtval_invocations;
+    Roo::Benchmark::counters.user_function_wrong_path_invocations +=
       counter_snapshot.user_function_wrong_path_invocations;
-    Roo::deprecated_special_form_invocations +=
+    Roo::Benchmark::counters.deprecated_special_form_invocations +=
       counter_snapshot.deprecated_special_form_invocations;
   }
 
@@ -506,15 +470,24 @@ namespace RooTest
 
     out << timestamp << "," << case_name << "," << parse_time << "," << lower_time_per_iter
         << "," << exec_time << "," << unacc_time << "," << total_time << ","
-        << single_lowering_total_time << "," << lower_time << "," << Roo::eval_executions
-        << "," << Roo::exec_executions << "," << Roo::rtvalues_constructed << ","
-        << Roo::rtvalue_wrappers_constructed << "," << Roo::literal_nodes_constructed << ","
-        << Roo::lookup_nodes_constructed << "," << Roo::to_ast_conversions << ","
-        << Roo::to_rtvalue_conversions << "," << Roo::user_functions_created << ","
-        << Roo::user_functions_rtval_created << "," << Roo::user_functions_ast_created << ","
-        << Roo::user_function_rtval_invocations << "," << Roo::user_function_ast_invocations
-        << ", " << Roo::lowered_expressions << "," << Roo::lowered_literals << ","
-        << Roo::lower_time_exec_resolutions << "," << Roo::lower_time_exec_unresolved << ", "
+        << single_lowering_total_time << "," << lower_time << ","
+        << Roo::Benchmark::counters.eval_executions << ","
+        << Roo::Benchmark::counters.exec_executions << ","
+        << Roo::Benchmark::counters.rtvalues_constructed << ","
+        << Roo::Benchmark::counters.rtvalue_wrappers_constructed << ","
+        << Roo::Benchmark::counters.literal_nodes_constructed << ","
+        << Roo::Benchmark::counters.lookup_nodes_constructed << ","
+        << Roo::Benchmark::counters.to_ast_conversions << ","
+        << Roo::Benchmark::counters.to_rtvalue_conversions << ","
+        << Roo::Benchmark::counters.user_functions_created << ","
+        << Roo::Benchmark::counters.user_functions_rtval_created << ","
+        << Roo::Benchmark::counters.user_functions_ast_created << ","
+        << Roo::Benchmark::counters.user_function_rtval_invocations << ","
+        << Roo::Benchmark::counters.user_function_ast_invocations << ", "
+        << Roo::Benchmark::counters.lowered_expressions << ","
+        << Roo::Benchmark::counters.lowered_literals << ","
+        << Roo::Benchmark::counters.lower_time_exec_resolutions << ","
+        << Roo::Benchmark::counters.lower_time_exec_unresolved << ", "
         << with_one_input_lowering(setup_counters.lowered_expressions,
                                    input_lower_counters.lowered_expressions)
         << ","

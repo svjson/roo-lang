@@ -7,6 +7,7 @@
 #include <utility>
 #include <variant>
 
+#include <roo/benchmark/counters.h>
 #include <roo/bind.h>
 #include <roo/context.h>
 #include <roo/exception.h>
@@ -22,13 +23,6 @@
 
 namespace Roo
 {
-  int user_functions_created = 0;
-  int user_functions_ast_created = 0;
-  int user_functions_rtval_created = 0;
-  int user_function_ast_invocations = 0;
-  int user_function_rtval_invocations = 0;
-  int user_function_wrong_path_invocations = 0;
-
   namespace
   {
     sptr_val dispatch_callable(Context& ctx, const sptr_val& callable, sptr_val_v& args)
@@ -81,7 +75,10 @@ namespace Roo
     {
       e.set_diagnostic_options(ctx.source_diagnostics_enabled(),
                                ctx.call_stack_diagnostics_enabled());
-      e.add_indirect_call_context(invocation_operation_name(operation), callable, args, true);
+      e.add_indirect_call_context(invocation_operation_name(operation),
+                                  callable,
+                                  args,
+                                  true);
       throw;
     }
     catch (std::exception& e)
@@ -90,8 +87,10 @@ namespace Roo
       wrapped.set_cause(std::current_exception());
       wrapped.set_diagnostic_options(ctx.source_diagnostics_enabled(),
                                      ctx.call_stack_diagnostics_enabled());
-      wrapped.add_indirect_call_context(
-        invocation_operation_name(operation), callable, args, true);
+      wrapped.add_indirect_call_context(invocation_operation_name(operation),
+                                        callable,
+                                        args,
+                                        true);
       throw wrapped;
     }
   }
@@ -583,7 +582,8 @@ namespace Roo
 
   sptr_val DetachedFunction::dispatch_detached(Context&, sptr_val_v& args)
   {
-    auto execute_captured = [this](sptr_val_v& call_args) {
+    auto execute_captured = [this](sptr_val_v& call_args)
+    {
       if (auto user_function = std::dynamic_pointer_cast<UserFunction>(fun))
       {
         return user_function->execute_captured(*ctx, call_args);
@@ -636,8 +636,8 @@ namespace Roo
     , optional_count(optional_count)
     , rest_binding(std::move(rest_binding))
   {
-    user_functions_created++;
-    user_functions_rtval_created++;
+    ROO_BENCHMARK_INC(user_functions_created);
+    ROO_BENCHMARK_INC(user_functions_rtval_created);
     this->body.reserve(body.size());
     for (auto& node : uptr_body)
     {
@@ -682,7 +682,7 @@ namespace Roo
 
   sptr_val UserFunction::exec_body_in_context(Context& ctx, sptr_val_v& args)
   {
-    user_function_rtval_invocations++;
+    ROO_BENCHMARK_INC(user_function_rtval_invocations);
     const std::string current_namespace = ctx.get_current_namespace()->get_name();
     ctx.switch_namespace(home_ns);
     bool pushed_context = false;

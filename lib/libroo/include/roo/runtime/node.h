@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <variant>
 
+#include <roo/benchmark/counters.h>
 #include <roo/export.h>
 #include <roo/form.h>
 #include <roo/runtime/value.h>
@@ -13,13 +14,6 @@
 
 namespace Roo
 {
-  extern ROO_API int exec_nodes_constructed;
-  extern ROO_API int call_nodes_constructed;
-  extern ROO_API int literal_nodes_constructed;
-  extern ROO_API int lookup_nodes_constructed;
-
-  ROO_API void record_exec_node_constructed();
-
   struct ExecNode;
   class Function;
   class SpecialForm;
@@ -158,7 +152,7 @@ namespace Roo
       , source()
       , data(std::move(node))
     {
-      record_exec_node_constructed();
+      ROO_BENCHMARK_INC(exec_nodes_constructed);
     }
 
     /**
@@ -178,7 +172,7 @@ namespace Roo
       , source(form ? form->get_source() : SourceRef{})
       , data(std::move(node))
     {
-      record_exec_node_constructed();
+      ROO_BENCHMARK_INC(exec_nodes_constructed);
     }
 
     uptr_exec_node clone() const;
