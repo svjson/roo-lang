@@ -211,7 +211,7 @@ namespace Roo::Proof
         throw RooException("deftest requires an active lowering context.");
       }
 
-      sptr_val name = std::get<LiteralNode>(lower_literal(elements[1])->data).value;
+      sptr_val name = std::get<LiteralNode>(lower_literal(ctx, elements[1])->data).value;
       auto arg_vec = std::make_shared<AST::Vector>();
       const bool has_fixtures = elements[2]->get_type() == Form::VECTOR;
       const size_t body_start = has_fixtures ? 3 : 2;

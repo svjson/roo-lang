@@ -79,8 +79,8 @@ namespace Roo::Proof
       }
 
       const size_t body_start = 3;
-      sptr_val name = std::get<LiteralNode>(lower_literal(elements[1])->data).value;
-      sptr_val options = std::get<LiteralNode>(lower_literal(elements[2])->data).value;
+      sptr_val name = std::get<LiteralNode>(lower_literal(ctx, elements[1])->data).value;
+      sptr_val options = std::get<LiteralNode>(lower_literal(ctx, elements[2])->data).value;
 
       sptr_ast_node_v body;
       body.reserve(elements.size() - body_start);
@@ -158,14 +158,14 @@ namespace Roo::Proof
       }
       else
       {
-        exec_nodes.push_back(lower_literal(AST::NIL));
+        exec_nodes.push_back(lower_literal(ctx, AST::NIL));
       }
 
-      auto bind_node = lower_literal(bind_forms[0]);
+      auto bind_node = lower_literal(ctx, bind_forms[0]);
       std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(bind_node->data)),
-                       lower_literal(AST::NIL)));
+                       lower_literal(ctx, AST::NIL)));
 
       ctx.push({});
       ctx.add_lexical_binding(*bindings.back().first);
@@ -237,11 +237,11 @@ namespace Roo::Proof
       ctx.push({});
       for (auto& spec : fixture_specs)
       {
-        auto bind_node = lower_literal(fixture_spec_binding(spec));
+        auto bind_node = lower_literal(ctx, fixture_spec_binding(spec));
         bindings.push_back(
           std::make_pair(LexicalBinding::create(std::get<LiteralNode>(bind_node->data)),
-                         lower_literal(AST::NIL)));
-        exec_nodes.push_back(lower_literal(fixture_spec_name(spec)));
+                         lower_literal(ctx, AST::NIL)));
+        exec_nodes.push_back(lower_literal(ctx, fixture_spec_name(spec)));
         exec_nodes.push_back(lower_expr(ctx, fixture_spec_options(spec)));
         ctx.add_lexical_binding(*bindings.back().first);
       }
