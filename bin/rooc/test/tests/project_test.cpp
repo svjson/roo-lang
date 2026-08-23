@@ -126,5 +126,5 @@ TEST(RoocProject, prepares_package_with_native_dependency)
   EXPECT_THAT(project.plan.native_libraries,
               Contains(Field(&Roo::Package::NativeLibrary::name, "proof-native")));
   EXPECT_THAT(project.plan.native_namespaces, Contains("proof.syntax"));
-  EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key, "proof/core.roo")));
+  EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key, "core.roo")));
 }
