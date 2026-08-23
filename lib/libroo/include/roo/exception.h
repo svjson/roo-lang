@@ -135,8 +135,13 @@ namespace Roo
     virtual void append_error_fields(ErrorMapBuilder& builder) const;
 
    private:
+    RooException(const std::string& reason, std::shared_ptr<Value> error_map_seed);
+
     Diagnostic diagnostic;
     mutable std::optional<std::string> message;
+    std::shared_ptr<Value> seeded_error_map;
+
+    friend class RaisedError;
   };
 
   class ParseException : public RooException
@@ -253,6 +258,42 @@ namespace Roo
 
    protected:
     void append_roo_error_types(std::vector<std::string>& types) const override;
+  };
+
+  /*!
+   * @brief Map-backed native carrier for an error created by Roo `raise`.
+   * @since 0.1.0
+   *
+   * The error map is normalized and owned by the exception. `source_error`
+   * identifies the original Roo map only while `GuardForm` determines whether
+   * a clause is reraising its unchanged caught error.
+   */
+  class RaisedError : public RooException
+  {
+   public:
+    explicit RaisedError(const std::shared_ptr<Value>& error_map,
+                         std::shared_ptr<Value> source_error = nullptr);
+
+    const std::shared_ptr<Value>& source_error() const noexcept;
+
+   protected:
+    void append_roo_error_types(std::vector<std::string>& types) const override;
+
+   private:
+    struct Normalized
+    {
+      std::shared_ptr<Value> error_map;
+      std::string error_type;
+      std::optional<std::string> parent_type;
+      std::string message;
+    };
+
+    static Normalized normalize(const std::shared_ptr<Value>& error_map);
+    RaisedError(Normalized normalized, std::shared_ptr<Value> source_error);
+
+    std::shared_ptr<Value> raised_source_error;
+    std::string raised_error_type;
+    std::optional<std::string> raised_parent_type;
   };
 } // namespace Roo
 

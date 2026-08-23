@@ -1,6 +1,8 @@
 #include "roo/lang/err.h"
 
 #include <algorithm>
+#include <exception>
+#include <unordered_set>
 #include <utility>
 
 #include <roo/bind.h>
@@ -49,6 +51,122 @@ namespace Roo
 
       if (matches(error_type)) return true;
       return std::any_of(parent_types.begin(), parent_types.end(), matches);
+    }
+
+    sptr_val snapshot_error_value(const sptr_val& value)
+    {
+      if (!value) return nullptr;
+
+      sptr_val_v elements;
+      switch (value->type)
+      {
+      case Value::Type::MAP:
+      case Value::Type::LIST:
+      case Value::Type::VECTOR:
+        elements.reserve(value->elements().size());
+        for (const auto& element : value->elements())
+        {
+          elements.push_back(snapshot_error_value(element));
+        }
+        break;
+      default:
+        return value;
+      }
+
+      if (value->type == Value::Type::MAP) return Value::map(elements);
+      if (value->type == Value::Type::LIST) return Value::list(elements);
+      return Value::vector(elements);
+    }
+
+    bool reserved_error_key(const sptr_val& key)
+    {
+      if (key->type != Value::Type::KEYWORD) return false;
+
+      static const std::unordered_set<std::string> keys{
+        "type",
+        "parent-type",
+        "parent-types",
+        "message",
+        "detail",
+        "site",
+        "frames",
+        "cause",
+      };
+      return keys.contains(key->str());
+    }
+
+    void append_metadata(sptr_val_v& fields, const sptr_val& metadata)
+    {
+      if (metadata->type != Value::Type::MAP)
+      {
+        throw TypeError("raise metadata must be a map.");
+      }
+
+      const sptr_val_v& metadata_fields = metadata->elements();
+      for (std::size_t i = 0; i < metadata_fields.size(); i += 2)
+      {
+        if (reserved_error_key(metadata_fields[i]))
+        {
+          throw TypeError("raise metadata cannot contain reserved error key " +
+                          metadata_fields[i]->to_string() + ".");
+        }
+        fields.push_back(metadata_fields[i]);
+        fields.push_back(metadata_fields[i + 1]);
+      }
+    }
+
+    sptr_val raise_error_map(const sptr_val_v& args, sptr_val& source_error)
+    {
+      sptr_val_v fields;
+      const sptr_val& error = args[0];
+
+      if (args.size() == 1)
+      {
+        if (error->type == Value::Type::MAP)
+        {
+          source_error = error;
+          return error;
+        }
+        if (error->type == Value::Type::STRING)
+        {
+          fields = {Value::keyword("message"), error};
+        }
+        else if (error->type == Value::Type::KEYWORD)
+        {
+          fields = {Value::keyword("type"), error};
+        }
+        else
+        {
+          throw TypeError("raise expects a string, qualified keyword, or error map.");
+        }
+        return Value::map(fields);
+      }
+
+      if (error->type == Value::Type::STRING && args[1]->type == Value::Type::MAP)
+      {
+        fields = {Value::keyword("message"), error};
+        append_metadata(fields, args[1]);
+        return Value::map(fields);
+      }
+
+      if (error->type == Value::Type::KEYWORD)
+      {
+        fields = {Value::keyword("type"), error};
+        if (args[1]->type == Value::Type::STRING)
+        {
+          fields.push_back(Value::keyword("message"));
+          fields.push_back(args[1]);
+          if (args.size() == 3) append_metadata(fields, args[2]);
+          return Value::map(fields);
+        }
+        if (args.size() == 2 && args[1]->type == Value::Type::MAP)
+        {
+          append_metadata(fields, args[1]);
+          return Value::map(fields);
+        }
+      }
+
+      throw TypeError("raise arguments do not match a supported call shape.");
     }
   } // namespace
 
@@ -164,9 +282,11 @@ namespace Roo
     }
     catch (RooException& error)
     {
+      const std::exception_ptr original_exception = std::current_exception();
       const std::string error_type = error.roo_error_type();
       const std::vector<std::string> parent_types = error.roo_parent_error_types();
       const sptr_val error_value = error.to_error_map();
+      const sptr_val original_error_value = snapshot_error_value(error_value);
       const std::size_t clause_count = (snode.values.size() - 1) / 3;
       std::size_t node_index = body_count;
 
@@ -189,20 +309,47 @@ namespace Roo
         PushedContext pushed_context(ctx);
         snode.bind_forms[clause_index].first->apply(ctx.current_scope(), error_value);
 
-        if (has_condition && !is_truthy(*exec(ctx, *snode.exec_nodes[node_index++])))
+        try
         {
-          node_index += handler_count;
-          continue;
-        }
+          if (has_condition && !is_truthy(*exec(ctx, *snode.exec_nodes[node_index++])))
+          {
+            node_index += handler_count;
+            continue;
+          }
 
-        sptr_val result = Constant::NIL;
-        for (std::size_t i = 0; i < handler_count; i++)
-        {
-          result = exec(ctx, *snode.exec_nodes[node_index++]);
+          sptr_val result = Constant::NIL;
+          for (std::size_t i = 0; i < handler_count; i++)
+          {
+            result = exec(ctx, *snode.exec_nodes[node_index++]);
+          }
+          return result;
         }
-        return result;
+        catch (const RaisedError& raised)
+        {
+          if (raised.source_error() == error_value && *error_value == *original_error_value)
+          {
+            std::rethrow_exception(original_exception);
+          }
+          throw;
+        }
       }
       throw;
     }
   }
+
+  /** RaiseFunction - roo/raise */
+  FUNC_IMPL(RaiseFunction,
+            MULTI_SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&RaiseFunction::exec_raise)),
+                      (FN_ARGS((&Type::ANY), (&Type::ANY)),
+                       EXEC_DISPATCH(&RaiseFunction::exec_raise)),
+                      (FN_ARGS((&Type::KEYWORD), (&Type::STRING), (&Type::MAP)),
+                       EXEC_DISPATCH(&RaiseFunction::exec_raise))))
+
+  EXEC_BODY(RaiseFunction, exec_raise)
+  {
+    sptr_val source_error;
+    const sptr_val error_map = raise_error_map(args, source_error);
+    throw RaisedError(error_map, std::move(source_error));
+  }
+
 } // namespace Roo

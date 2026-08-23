@@ -45,6 +45,32 @@ namespace Roo
    * @return The guarded body's result, or the selected handler's result.
    */
   SPECIAL_FORM_DECL(GuardForm, guard)
+
+  /*!
+   * @brief Raise a Roo error.
+   * @since 0.1.0
+   *
+   * A string raises a generic `:roo/error`; a qualified keyword supplies the
+   * concrete error type; and a map supplies an error directly. The optional
+   * metadata map adds flat application-specific facts.
+   *
+   * Usage:
+   * @code
+   * (raise "The operation failed")
+   * (raise :my-app/not-ready "The account is not ready")
+   * (raise :my-app/not-ready "The account is not ready" {:account-id id})
+   * (raise error)
+   * @endcode
+   *
+   * | Arg      | Description                                              |
+   * | -------- | -------------------------------------------------------- |
+   * | error    | Error message, qualified error type, or complete map.    |
+   * | message  | Optional message following a qualified error type.       |
+   * | metadata | Optional map of flat application-specific error facts.   |
+   *
+   * @return This function never returns normally.
+   */
+  FUNC(RaiseFunction, raise)
 } // namespace Roo
 
 #endif /* ROO__LANG__ERR_H */

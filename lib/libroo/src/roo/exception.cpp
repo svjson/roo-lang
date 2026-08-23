@@ -10,6 +10,7 @@
 #include <utility>
 
 #include <roo/exec.h>
+#include <roo/runtime/dict.h>
 #include <roo/runtime/pretty_print.h>
 
 namespace Roo
@@ -20,6 +21,29 @@ namespace Roo
     {
       fields.push_back(Value::keyword(key));
       fields.push_back(value);
+    }
+
+    bool reserved_error_key(const Value& key)
+    {
+      if (key.type != Value::Type::KEYWORD) return false;
+
+      static const std::unordered_set<std::string> keys{
+        "type",
+        "parent-type",
+        "parent-types",
+        "message",
+        "detail",
+        "site",
+        "frames",
+        "cause",
+      };
+      return keys.contains(key.str());
+    }
+
+    bool qualified_error_type(const std::string& type)
+    {
+      const std::size_t separator = type.find('/');
+      return separator != std::string::npos && separator != 0 && separator + 1 < type.size();
     }
 
     sptr_val strings_to_keywords(const std::vector<std::string>& values)
@@ -122,9 +146,8 @@ namespace Roo
       return diagnostic;
     }
 
-    Diagnostic not_callable_diagnostic(
-      const std::shared_ptr<Value>& target,
-      const std::vector<std::shared_ptr<Value>>& arguments)
+    Diagnostic not_callable_diagnostic(const std::shared_ptr<Value>& target,
+                                       const std::vector<std::shared_ptr<Value>>& arguments)
     {
       Diagnostic diagnostic;
       diagnostic.category = ErrorCategory::INVOCATION;
@@ -392,6 +415,13 @@ namespace Roo
   {
   }
 
+  RooException::RooException(const std::string& reason,
+                             std::shared_ptr<Value> error_map_seed)
+    : RooException(reason)
+  {
+    seeded_error_map = std::move(error_map_seed);
+  }
+
   const char* RooException::what() const noexcept
   {
     try
@@ -423,17 +453,69 @@ namespace Roo
       }
     }
 
+    const sptr_val& seed = seeded_error_map;
+    auto seeded_value = [&](const std::string& key, const sptr_val& fallback)
+    {
+      if (!seed) return fallback;
+      const auto [found, value] = Dict::find_property(seed, *Value::keyword(key));
+      return found ? value : fallback;
+    };
+
+    sptr_val_v combined_frames;
+    if (seed)
+    {
+      const sptr_val seeded_frames = seeded_value("frames", Value::vector({}));
+      combined_frames = seeded_frames->elements();
+    }
+    const sptr_val diagnostic_frames = frames_to_value(diagnostic.frames);
+    combined_frames.insert(combined_frames.end(),
+                           diagnostic_frames->elements().begin(),
+                           diagnostic_frames->elements().end());
+
+    sptr_val site = site_to_value(diagnostic.site);
+    if (seed)
+    {
+      const sptr_val seeded_site = seeded_value("site", Constant::NIL);
+      if (seeded_site->type != Value::Type::NIL) site = seeded_site;
+    }
+
+    sptr_val cause = cause_to_value(diagnostic.cause);
+    if (seed)
+    {
+      const sptr_val seeded_cause = seeded_value("cause", Constant::NIL);
+      if (seeded_cause->type != Value::Type::NIL) cause = seeded_cause;
+    }
+
     sptr_val_v fields;
     append_map_field(fields, "type", Value::keyword(error_type));
     append_map_field(fields, "parent-types", strings_to_keywords(parent_types));
     append_map_field(fields, "message", Value::string(what()));
-    append_map_field(fields, "detail", Value::string(render_failure(diagnostic, true)));
-    append_map_field(fields, "site", site_to_value(diagnostic.site));
-    append_map_field(fields, "frames", frames_to_value(diagnostic.frames));
-    append_map_field(fields, "cause", cause_to_value(diagnostic.cause));
+    append_map_field(
+      fields,
+      "detail",
+      seeded_value("detail", Value::string(render_failure(diagnostic, true))));
+    append_map_field(fields, "site", site);
+    append_map_field(fields, "frames", Value::vector(combined_frames));
+    append_map_field(fields, "cause", cause);
 
     std::unordered_set<std::string>
       keys{"type", "parent-types", "message", "detail", "site", "frames", "cause"};
+
+    if (seed)
+    {
+      const sptr_val_v& seeded_fields = seed->elements();
+      for (std::size_t i = 0; i < seeded_fields.size(); i += 2)
+      {
+        if (reserved_error_key(*seeded_fields[i])) continue;
+        fields.push_back(seeded_fields[i]);
+        fields.push_back(seeded_fields[i + 1]);
+        if (seeded_fields[i]->type == Value::Type::KEYWORD)
+        {
+          keys.insert(seeded_fields[i]->str());
+        }
+      }
+    }
+
     const auto& facts = diagnostic.facts;
     if (facts.target)
     {
@@ -771,4 +853,152 @@ namespace Roo
     RooException::append_roo_error_types(types);
     types.push_back("roo.io/error");
   }
+
+  RaisedError::Normalized RaisedError::normalize(const std::shared_ptr<Value>& error_map)
+  {
+    if (!error_map || error_map->type != Value::Type::MAP)
+    {
+      throw TypeError("RaisedError requires an error map.");
+    }
+
+    auto find = [&](const std::string& key)
+    {
+      return Dict::find_property(error_map, *Value::keyword(key));
+    };
+
+    std::string error_type = "roo/error";
+    if (const auto [found, value] = find("type"); found)
+    {
+      if (value->type != Value::Type::KEYWORD || !qualified_error_type(value->str()))
+      {
+        throw TypeError("Raised error :type must be a qualified keyword.");
+      }
+      error_type = value->str();
+    }
+
+    std::optional<std::string> parent_type;
+    if (const auto [found, value] = find("parent-type");
+        found && value->type != Value::Type::NIL)
+    {
+      if (value->type != Value::Type::KEYWORD || !qualified_error_type(value->str()))
+      {
+        throw TypeError("Raised error :parent-type must be a qualified keyword or nil.");
+      }
+      if (value->str() == error_type)
+      {
+        throw TypeError("Raised error :parent-type cannot equal :type.");
+      }
+      if (error_type == "roo/error")
+      {
+        throw TypeError(":roo/error cannot declare a parent error type.");
+      }
+      parent_type = value->str();
+    }
+
+    std::string message = "Raised :" + error_type;
+    if (const auto [found, value] = find("message"); found)
+    {
+      if (value->type != Value::Type::STRING)
+      {
+        throw TypeError("Raised error :message must be a string.");
+      }
+      message = value->str();
+    }
+
+    sptr_val detail = Value::string(message);
+    if (const auto [found, value] = find("detail"); found)
+    {
+      if (value->type != Value::Type::STRING)
+      {
+        throw TypeError("Raised error :detail must be a string.");
+      }
+      detail = value;
+    }
+
+    sptr_val site = Constant::NIL;
+    if (const auto [found, value] = find("site"); found)
+    {
+      if (value->type != Value::Type::MAP && value->type != Value::Type::NIL)
+      {
+        throw TypeError("Raised error :site must be a map or nil.");
+      }
+      site = value;
+    }
+
+    sptr_val frames = Value::vector({});
+    if (const auto [found, value] = find("frames"); found)
+    {
+      if (value->type != Value::Type::VECTOR)
+      {
+        throw TypeError("Raised error :frames must be a vector.");
+      }
+      frames = value;
+    }
+
+    sptr_val cause = Constant::NIL;
+    if (const auto [found, value] = find("cause"); found)
+    {
+      if (value->type != Value::Type::MAP && value->type != Value::Type::NIL)
+      {
+        throw TypeError("Raised error :cause must be an error map or nil.");
+      }
+      cause = value;
+    }
+
+    std::vector<std::string> parent_types;
+    if (parent_type && *parent_type != "roo/error") parent_types.push_back(*parent_type);
+    if (error_type != "roo/error") parent_types.push_back("roo/error");
+
+    sptr_val_v normalized_fields;
+    append_map_field(normalized_fields, "type", Value::keyword(error_type));
+    append_map_field(normalized_fields, "parent-types", strings_to_keywords(parent_types));
+    append_map_field(normalized_fields, "message", Value::string(message));
+    append_map_field(normalized_fields, "detail", detail);
+    append_map_field(normalized_fields, "site", site);
+    append_map_field(normalized_fields, "frames", frames);
+    append_map_field(normalized_fields, "cause", cause);
+
+    const sptr_val_v& input_fields = error_map->elements();
+    for (std::size_t i = 0; i < input_fields.size(); i += 2)
+    {
+      if (reserved_error_key(*input_fields[i])) continue;
+      normalized_fields.push_back(input_fields[i]);
+      normalized_fields.push_back(input_fields[i + 1]);
+    }
+
+    return Normalized{Value::map(normalized_fields),
+                      error_type,
+                      parent_type,
+                      std::move(message)};
+  }
+
+  RaisedError::RaisedError(const std::shared_ptr<Value>& error_map,
+                           std::shared_ptr<Value> source_error)
+    : RaisedError(normalize(error_map), std::move(source_error))
+  {
+  }
+
+  RaisedError::RaisedError(Normalized normalized, std::shared_ptr<Value> source_error)
+    : RooException(normalized.message, std::move(normalized.error_map))
+    , raised_source_error(std::move(source_error))
+    , raised_error_type(std::move(normalized.error_type))
+    , raised_parent_type(std::move(normalized.parent_type))
+  {
+  }
+
+  const std::shared_ptr<Value>& RaisedError::source_error() const noexcept
+  {
+    return raised_source_error;
+  }
+
+  void RaisedError::append_roo_error_types(std::vector<std::string>& types) const
+  {
+    RooException::append_roo_error_types(types);
+    if (raised_parent_type && *raised_parent_type != "roo/error")
+    {
+      types.push_back(*raised_parent_type);
+    }
+    if (raised_error_type != "roo/error") types.push_back(raised_error_type);
+  }
+
 } // namespace Roo

@@ -186,6 +186,7 @@ namespace Roo
     lang_symbols.emplace("rand-nth", RandNthFunction::make());
     lang_symbols.emplace("random-seed!", RandomSeedBangFunction::make());
     lang_symbols.emplace("range", RangeFunction::make());
+    lang_symbols.emplace("raise", RaiseFunction::make());
     lang_symbols.emplace("reduce", ReduceFunction::make());
     lang_symbols.emplace("reduce-kv", ReduceKeyValueFunction::make());
     lang_symbols.emplace("replace", ReplaceFunction::make());
