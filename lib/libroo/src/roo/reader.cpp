@@ -16,4 +16,13 @@ namespace Roo
     auto symbols = lexer.read_symbols(input, source_diagnostics);
     return parser.parse_sexps(symbols, source_file_id, source_diagnostics);
   }
+
+  sptr_ast_node_v Reader::read_sexps_for_evaluation(const std::string& input,
+                                                    AST::Pool& pool,
+                                                    uint32_t source_file_id,
+                                                    bool source_diagnostics) const
+  {
+    auto symbols = lexer.read_symbols(input, source_diagnostics);
+    return parser.parse_sexps(symbols, source_file_id, source_diagnostics, &pool);
+  }
 } // namespace Roo

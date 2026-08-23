@@ -53,6 +53,44 @@ TEST(Keyword, equality)
   EXPECT_NE(key1, symbol);
 }
 
+TEST(Keyword, context_free_factory_does_not_pool)
+{
+  auto first = Roo::AST::Keyword::make("kind");
+  auto second = Roo::AST::Keyword::make("kind");
+
+  EXPECT_NE(first.get(), second.get());
+  EXPECT_EQ(*first, *second);
+}
+
+TEST(ASTPool, reuses_keywords_and_small_integers)
+{
+  Roo::AST::Pool pool;
+
+  auto first_keyword = Roo::AST::Keyword::make("kind", pool);
+  auto second_keyword = Roo::AST::Keyword::make("kind", pool);
+  auto first_number = Roo::AST::Number::make("42", pool);
+  auto second_number = Roo::AST::Number::make("42", pool);
+
+  EXPECT_EQ(first_keyword.get(), second_keyword.get());
+  EXPECT_EQ(first_number.get(), second_number.get());
+}
+
+TEST(ASTPool, does_not_share_values_between_pools)
+{
+  Roo::AST::Pool first_pool;
+  Roo::AST::Pool second_pool;
+
+  auto first_keyword = Roo::AST::Keyword::make("kind", first_pool);
+  auto second_keyword = Roo::AST::Keyword::make("kind", second_pool);
+  auto first_number = Roo::AST::Number::make("42", first_pool);
+  auto second_number = Roo::AST::Number::make("42", second_pool);
+
+  EXPECT_NE(first_keyword.get(), second_keyword.get());
+  EXPECT_NE(first_number.get(), second_number.get());
+  EXPECT_EQ(*first_keyword, *second_keyword);
+  EXPECT_EQ(*first_number, *second_number);
+}
+
 TEST(List, get_property__single_entry)
 {
   // Given

@@ -118,6 +118,11 @@ namespace Roo
     return keywords;
   }
 
+  AST::Pool& Runtime::ast_pool()
+  {
+    return ast_values;
+  }
+
   bool Runtime::source_diagnostics_enabled() const
   {
     return options.source_diagnostics || options.call_stack_diagnostics;
@@ -460,7 +465,10 @@ namespace Roo
       source_file_id = source_map.intern_file(source_name);
     }
     sptr_ast_node_v script =
-      sexp_reader.read_sexps(str, source_file_id, source_diagnostics_enabled());
+      sexp_reader.read_sexps_for_evaluation(str,
+                                            ast_values,
+                                            source_file_id,
+                                            source_diagnostics_enabled());
 
     sptr_val result;
 

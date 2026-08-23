@@ -47,6 +47,19 @@ TEST_F(Runtime, keyword_pool_is_local_to_runtime)
   EXPECT_EQ(*literal, *other_literal);
 }
 
+TEST_F(Runtime, ast_pool_is_local_to_runtime)
+{
+  Roo::Runtime other_runtime;
+
+  auto first = Roo::AST::Keyword::make("kind", runtime.ast_pool());
+  auto repeated = Roo::AST::Keyword::make("kind", runtime.ast_pool());
+  auto other = Roo::AST::Keyword::make("kind", other_runtime.ast_pool());
+
+  EXPECT_EQ(first.get(), repeated.get());
+  EXPECT_NE(first.get(), other.get());
+  EXPECT_EQ(*first, *other);
+}
+
 TEST_F(Runtime, instantiation_vanilla_with_file_system)
 {
   // Given

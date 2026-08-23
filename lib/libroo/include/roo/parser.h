@@ -11,8 +11,13 @@
 
 namespace Roo
 {
+  class Reader;
   class TokenSymbol;
   enum class Token : uint8_t;
+  namespace AST
+  {
+    class Pool;
+  }
 
   class ParseContext
   {
@@ -34,6 +39,14 @@ namespace Roo
     sptr_ast_node_v parse_sexps(std::vector<TokenSymbol> symbols,
                                 uint32_t source_file_id = 0,
                                 bool source_diagnostics = false) const;
+
+   private:
+    sptr_ast_node_v parse_sexps(std::vector<TokenSymbol> symbols,
+                                uint32_t source_file_id,
+                                bool source_diagnostics,
+                                AST::Pool* pool) const;
+
+    friend class Reader;
   };
 } // namespace Roo
 

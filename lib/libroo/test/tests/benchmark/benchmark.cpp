@@ -328,7 +328,7 @@ namespace RooTest
     runtime.switch_namespace(ns);
 
     parse_start_time = now();
-    auto parse_result = reader.read_sexps(input);
+    auto parse_result = reader.read_sexps_for_evaluation(input, runtime.ast_pool());
     parse_end_time = now();
     parse_time = parse_end_time - parse_start_time;
 

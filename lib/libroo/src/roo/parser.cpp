@@ -117,6 +117,14 @@ namespace Roo
                                       uint32_t source_file_id,
                                       bool source_diagnostics) const
   {
+    return parse_sexps(std::move(symbols), source_file_id, source_diagnostics, nullptr);
+  }
+
+  sptr_ast_node_v Parser::parse_sexps(std::vector<TokenSymbol> symbols,
+                                      uint32_t source_file_id,
+                                      bool source_diagnostics,
+                                      AST::Pool* pool) const
+  {
     ParseContext ctx;
 
     unsigned int offset = 0;
@@ -149,8 +157,15 @@ namespace Roo
                                source_ref(source_file_id, sym.span, source_diagnostics)));
         break;
       case Token::KEYWORD:
-        ctx.append(with_source(std::make_shared<AST::Keyword>(sym.value),
-                               source_ref(source_file_id, sym.span, source_diagnostics)));
+        if (pool)
+        {
+          ctx.append(AST::Keyword::make(sym.value, *pool));
+        }
+        else
+        {
+          ctx.append(with_source(AST::Keyword::make(sym.value),
+                                 source_ref(source_file_id, sym.span, source_diagnostics)));
+        }
         break;
       case Token::SYMBOL:
         ctx.append(with_source(std::make_shared<AST::Symbol>(sym.value),
@@ -158,15 +173,18 @@ namespace Roo
         break;
       case Token::NUMBER:
       {
-        auto number = AST::Number::make(sym.value);
-        if (!source_diagnostics)
+        if (pool)
         {
-          ctx.append(number);
+          ctx.append(AST::Number::make(sym.value, *pool));
         }
         else
         {
-          ctx.append(with_source(std::make_shared<AST::Number>(*number),
-                                 source_ref(source_file_id, sym.span, source_diagnostics)));
+          auto number = AST::Number::make(sym.value);
+          ctx.append(
+            source_diagnostics
+              ? with_source(std::move(number),
+                            source_ref(source_file_id, sym.span, source_diagnostics))
+              : std::move(number));
         }
         break;
       }

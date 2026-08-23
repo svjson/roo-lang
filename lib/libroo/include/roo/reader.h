@@ -20,6 +20,11 @@ namespace Roo
     sptr_ast_node_v read_sexps(const std::string& input,
                                uint32_t source_file_id = 0,
                                bool source_diagnostics = false) const;
+
+    sptr_ast_node_v read_sexps_for_evaluation(const std::string& input,
+                                              AST::Pool& pool,
+                                              uint32_t source_file_id = 0,
+                                              bool source_diagnostics = false) const;
   };
 } // namespace Roo
 

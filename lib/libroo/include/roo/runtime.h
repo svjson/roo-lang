@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include <roo/form.h>
 #include <roo/namespace.h>
 #include <roo/namespace_source.h>
 #include <roo/random.h>
@@ -41,6 +42,7 @@ namespace Roo
     SourceMap source_map;
     RandomState random_state;
     KeywordPool keywords;
+    AST::Pool ast_values;
 
     /*!
      * @brief Runtime namespaces, including the implicit Roo language namespace.
@@ -225,6 +227,7 @@ namespace Roo
     void set_random_state(const RandomState& state);
 
     KeywordPool& keyword_pool();
+    AST::Pool& ast_pool();
 
     /*!
      * @brief Tests if this Runtime instance may access any file system

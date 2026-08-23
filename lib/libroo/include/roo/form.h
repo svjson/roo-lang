@@ -23,10 +23,30 @@ namespace Roo
     class Number;
     class Keyword;
 
-    extern ROO_API const int INT_CONSTANTS_SIZE;
-    extern ROO_API std::vector<std::shared_ptr<Number>> INT_CONSTANTS;
+    class Pool
+    {
+     public:
+      Pool();
+      ~Pool();
+      Pool(Pool&&) noexcept;
+      Pool& operator=(Pool&&) noexcept;
 
-    extern ROO_API std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
+      Pool(const Pool&) = delete;
+      Pool& operator=(const Pool&) = delete;
+
+     private:
+      static constexpr int MIN_INTEGER = 0;
+      static constexpr int MAX_INTEGER = 1000;
+
+      std::unordered_map<std::string, std::shared_ptr<Keyword>> keywords;
+      std::vector<std::shared_ptr<Number>> integers;
+
+      std::shared_ptr<Keyword> keyword(const std::string& value);
+      std::shared_ptr<Number> number(int value);
+
+      friend class Keyword;
+      friend class Number;
+    };
 
     /*!
      * @brief Abstract base class for all form implementations
@@ -223,6 +243,7 @@ namespace Roo
       bool operator<(const Keyword& other) const;
 
       static std::shared_ptr<Keyword> make(const std::string& value);
+      static std::shared_ptr<Keyword> make(const std::string& value, Pool& pool);
     };
 
     enum class NumberType : uint8_t
@@ -286,6 +307,7 @@ namespace Roo
       static std::shared_ptr<Number> make(double value);
       static std::shared_ptr<Number> make(unsigned int value);
       static std::shared_ptr<Number> make(const std::string& value);
+      static std::shared_ptr<Number> make(const std::string& value, Pool& pool);
     };
 
     class Symbol : public QualifiableStringValue

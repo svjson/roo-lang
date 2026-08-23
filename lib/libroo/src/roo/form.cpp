@@ -22,20 +22,35 @@ namespace Roo::AST
 {
   std::shared_ptr<ASTNode> NIL = std::make_shared<Nil>();
 
-  const int INT_CONSTANTS_SIZE = 1001;
-  std::vector<std::shared_ptr<Number>> INT_CONSTANTS = []()
+  Pool::Pool()
+    : integers(static_cast<size_t>(MAX_INTEGER - MIN_INTEGER + 1))
   {
-    std::vector<std::shared_ptr<Number>> ints(INT_CONSTANTS_SIZE);
+  }
 
-    for (int i = 0; i < INT_CONSTANTS_SIZE; i++)
+  Pool::~Pool() = default;
+  Pool::Pool(Pool&&) noexcept = default;
+  Pool& Pool::operator=(Pool&&) noexcept = default;
+
+  std::shared_ptr<Keyword> Pool::keyword(const std::string& value)
+  {
+    auto existing = keywords.find(value);
+    if (existing != keywords.end()) return existing->second;
+
+    auto [inserted, _] = keywords.emplace(value, std::make_shared<Keyword>(value));
+    return inserted->second;
+  }
+
+  std::shared_ptr<Number> Pool::number(int value)
+  {
+    if (value < MIN_INTEGER || value > MAX_INTEGER)
     {
-      ints[i] = std::make_shared<Number>(i);
+      return std::make_shared<Number>(value);
     }
 
-    return ints;
-  }();
-
-  std::unordered_map<std::string, std::shared_ptr<Keyword>> key_intern_pool;
+    std::shared_ptr<Number>& number = integers[static_cast<size_t>(value - MIN_INTEGER)];
+    if (!number) number = std::make_shared<Number>(value);
+    return number;
+  }
 
   ASTNode::ASTNode(Form form)
     : type(form)
@@ -343,13 +358,12 @@ namespace Roo::AST
 
   std::shared_ptr<Keyword> Keyword::make(const std::string& value)
   {
-    if (key_intern_pool.count(value))
-    {
-      return key_intern_pool.at(value);
-    }
-    auto key = std::make_shared<Keyword>(value);
-    key_intern_pool.emplace(value, key);
-    return key;
+    return std::make_shared<Keyword>(value);
+  }
+
+  std::shared_ptr<Keyword> Keyword::make(const std::string& value, Pool& pool)
+  {
+    return pool.keyword(value);
   }
 
   /**
@@ -577,10 +591,6 @@ namespace Roo::AST
 
   std::shared_ptr<Number> Number::make(int value)
   {
-    if (value >= 0 && value < INT_CONSTANTS_SIZE)
-    {
-      return INT_CONSTANTS[value];
-    }
     return std::make_shared<Number>(value);
   }
 
@@ -630,6 +640,31 @@ namespace Roo::AST
       {
         return Number::make(stof(str_value));
       }
+    }
+    catch (std::runtime_error& error)
+    {
+      throw TypeError("Not a valid number: \"" + str_value + "\"");
+    }
+  }
+
+  std::shared_ptr<Number> Number::make(const std::string& str_value, Pool& pool)
+  {
+    try
+    {
+      if (str_value.find('.') == std::string::npos)
+      {
+        if (str_value.size() >= 10)
+        {
+          const long long value = stoll(str_value);
+          if (value >= Pool::MIN_INTEGER && value <= Pool::MAX_INTEGER)
+          {
+            return pool.number(static_cast<int>(value));
+          }
+          return Number::make(value);
+        }
+        return pool.number(stoi(str_value));
+      }
+      return Number::make(stof(str_value));
     }
     catch (std::runtime_error& error)
     {
