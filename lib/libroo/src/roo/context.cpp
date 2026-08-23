@@ -210,6 +210,11 @@ namespace Roo
     return runtime.language_namespace();
   }
 
+  Runtime& Context::get_runtime()
+  {
+    return runtime;
+  }
+
   void Context::seed_random(int seed)
   {
     runtime.seed_random(seed);

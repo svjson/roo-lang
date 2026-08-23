@@ -487,7 +487,12 @@ namespace Roo
 
   sptr_val Value::keyword(const std::string& v)
   {
-    return KeywordPool::get(v);
+    return std::make_shared<Value>(v, Value::Type::KEYWORD);
+  }
+
+  sptr_val Value::keyword(const std::string& v, KeywordPool& pool)
+  {
+    return pool.get(v);
   }
 
   sptr_val Value::symbol(const std::string& v)

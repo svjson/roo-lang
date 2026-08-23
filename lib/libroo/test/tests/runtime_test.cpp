@@ -32,6 +32,21 @@ TEST_F(Runtime, instantiation_vanilla)
   EXPECT_FALSE(runtime.has_file_system_access());
 }
 
+TEST_F(Runtime, keyword_pool_is_local_to_runtime)
+{
+  Roo::Runtime other_runtime;
+
+  auto literal = runtime.eval(":kind");
+  auto repeated_literal = runtime.eval(":kind");
+  auto constructed = runtime.eval("(keyword \"kind\")");
+  auto other_literal = other_runtime.eval(":kind");
+
+  EXPECT_EQ(literal.get(), repeated_literal.get());
+  EXPECT_EQ(literal.get(), constructed.get());
+  EXPECT_NE(literal.get(), other_literal.get());
+  EXPECT_EQ(*literal, *other_literal);
+}
+
 TEST_F(Runtime, instantiation_vanilla_with_file_system)
 {
   // Given

@@ -9,6 +9,7 @@
 #include <roo/exec.h>
 #include <roo/host/schema.h>
 #include <roo/io/file_system.h>
+#include <roo/runtime.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/file_walk.h>
 #include <roo/runtime/value.h>
@@ -26,53 +27,53 @@ namespace Roo
       std::vector<std::string> filters;
     };
 
-    sptr_val type_keyword(FileSystemEntryType type)
+    sptr_val type_keyword(FileSystemEntryType type, KeywordPool& keywords)
     {
       switch (type)
       {
       case FileSystemEntryType::FILE:
-        return Value::keyword("file");
+        return Value::keyword("file", keywords);
       case FileSystemEntryType::DIRECTORY:
-        return Value::keyword("directory");
+        return Value::keyword("directory", keywords);
       case FileSystemEntryType::OTHER:
-        return Value::keyword("other");
+        return Value::keyword("other", keywords);
       }
-      return Value::keyword("other");
+      return Value::keyword("other", keywords);
     }
 
-    sptr_val directory_entry_value(const DirectoryEntry& entry)
+    sptr_val directory_entry_value(const DirectoryEntry& entry, KeywordPool& keywords)
     {
-      return Value::map({Value::keyword("name"),
+      return Value::map({Value::keyword("name", keywords),
                          Value::string(entry.name),
-                         Value::keyword("path"),
+                         Value::keyword("path", keywords),
                          Value::string(entry.path),
-                         Value::keyword("type"),
-                         type_keyword(entry.type)});
+                         Value::keyword("type", keywords),
+                         type_keyword(entry.type, keywords)});
     }
 
-    sptr_val stat_value(const FileSystemStat& stat)
+    sptr_val stat_value(const FileSystemStat& stat, KeywordPool& keywords)
     {
       if (!stat.exists)
       {
-        return Value::map({Value::keyword("exists?"),
+        return Value::map({Value::keyword("exists?", keywords),
                            Value::boolean(false),
-                           Value::keyword("type"),
+                           Value::keyword("type", keywords),
                            Constant::NIL,
-                           Value::keyword("size"),
+                           Value::keyword("size", keywords),
                            Constant::NIL,
-                           Value::keyword("modified-ms"),
+                           Value::keyword("modified-ms", keywords),
                            Constant::NIL});
       }
 
-      return Value::map({Value::keyword("exists?"),
+      return Value::map({Value::keyword("exists?", keywords),
                          Value::boolean(true),
-                         Value::keyword("type"),
-                         type_keyword(stat.type),
-                         Value::keyword("size"),
+                         Value::keyword("type", keywords),
+                         type_keyword(stat.type, keywords),
+                         Value::keyword("size", keywords),
                          stat.type == FileSystemEntryType::FILE
                            ? Value::number(static_cast<long>(stat.size))
                            : Constant::NIL,
-                         Value::keyword("modified-ms"),
+                         Value::keyword("modified-ms", keywords),
                          Value::number(stat.modified_ms)});
     }
 
@@ -232,7 +233,7 @@ namespace Roo
       {
         if (matches_options(entry, options))
         {
-          values.push_back(directory_entry_value(entry));
+          values.push_back(directory_entry_value(entry, ctx.get_runtime().keyword_pool()));
         }
       }
       return Value::vector(values);
@@ -333,7 +334,8 @@ namespace Roo
 
   EXEC_BODY(StatBangFunction, exec_stat)
   {
-    return stat_value(ctx.file_system().stat(args[0]->str()));
+    return stat_value(ctx.file_system().stat(args[0]->str()),
+                      ctx.get_runtime().keyword_pool());
   }
 
   /** AbsolutePathBangFunction - roo.io/absolute-path! */

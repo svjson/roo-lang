@@ -1,4 +1,5 @@
 
+#include <roo/runtime/pool.h>
 #include <roo/runtime/value.h>
 
 #include <gtest/gtest.h>
@@ -15,10 +16,29 @@ TEST(Value_keyword, equals)
   EXPECT_FALSE(*value == *kind);
 }
 
+TEST(Value_keyword, context_free_factory_does_not_pool)
+{
+  auto first = Roo::Value::keyword("kind");
+  auto second = Roo::Value::keyword("kind");
+
+  EXPECT_NE(first.get(), second.get());
+  EXPECT_EQ(*first, *second);
+}
+
+TEST(Value_keyword, explicit_pool_reuses_keyword)
+{
+  Roo::KeywordPool pool;
+
+  auto first = Roo::Value::keyword("kind", pool);
+  auto second = Roo::Value::keyword("kind", pool);
+
+  EXPECT_EQ(first.get(), second.get());
+}
+
 TEST(Value_string, to_string_escapes_edn_string_content)
 {
-  auto map = Roo::Value::map({Roo::Value::keyword("example"),
-                              Roo::Value::string("=> \"source text\"\nnext")});
+  auto map = Roo::Value::map(
+    {Roo::Value::keyword("example"), Roo::Value::string("=> \"source text\"\nnext")});
 
   EXPECT_EQ(map->to_string(), R"({:example "=> \"source text\"\nnext"})");
 }

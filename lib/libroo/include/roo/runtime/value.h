@@ -16,6 +16,7 @@ namespace Roo
     class ASTNode;
   }
   class Executable;
+  class KeywordPool;
   struct Value;
   template <class T> class HostObject;
   struct NativeObjectBase;
@@ -107,6 +108,7 @@ namespace Roo
     static sptr_val string(const std::string&);
     static sptr_val character(char);
     static sptr_val keyword(const std::string&);
+    static sptr_val keyword(const std::string&, KeywordPool&);
     static sptr_val symbol(const std::string&);
     static sptr_val list(const sptr_val_v&);
     static sptr_val vector(const sptr_val_v&);
@@ -180,6 +182,10 @@ namespace Roo
   inline sptr_val keyword(const std::string& value)
   {
     return Value::keyword(value);
+  }
+  inline sptr_val keyword(const std::string& value, KeywordPool& pool)
+  {
+    return Value::keyword(value, pool);
   }
   inline sptr_val symbol(const std::string& value)
   {

@@ -9,6 +9,7 @@
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/namespace.h>
+#include <roo/runtime.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/node.h>
 
@@ -145,7 +146,7 @@ namespace Roo
     case Form::B_TRUE:
     case Form::B_FALSE:
     case Form::NIL:
-      return lower_literal(obj);
+      return lower_literal(ctx, obj);
 
     case Form::QUOTED_SYMBOL:
       ROO_BENCHMARK_INC(lowered_expressions);
@@ -200,7 +201,7 @@ namespace Roo
 
       if (list.is_quoted() || ctx.is_literal_mode())
       {
-        return lower_literal(obj);
+        return lower_literal(ctx, obj);
       }
       else
       {
@@ -294,7 +295,7 @@ namespace Roo
     }
   }
 
-  std::unique_ptr<ExecNode> lower_literal(const sptr_ast_node& obj)
+  std::unique_ptr<ExecNode> lower_literal(LowerContext& ctx, const sptr_ast_node& obj)
   {
     ROO_BENCHMARK_INC(lowered_literals);
     switch (obj->get_type())
@@ -309,7 +310,7 @@ namespace Roo
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
-        auto lit_child = lower_literal(l);
+        auto lit_child = lower_literal(ctx, l);
         elements.push_back(std::get<LiteralNode>(lit_child->data).value);
       }
       return std::make_unique<ExecNode>(obj, LiteralNode(Value::list(elements), obj));
@@ -320,7 +321,7 @@ namespace Roo
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
-        auto lit_child = lower_literal(l);
+        auto lit_child = lower_literal(ctx, l);
         elements.push_back(std::get<LiteralNode>(lit_child->data).value);
       }
       return std::make_unique<ExecNode>(obj, LiteralNode(Value::vector(elements), obj));
@@ -331,7 +332,7 @@ namespace Roo
       elements.reserve(obj->get_children().size());
       for (auto& l : obj->get_children())
       {
-        auto lit_child = lower_literal(l);
+        auto lit_child = lower_literal(ctx, l);
         elements.push_back(std::get<LiteralNode>(lit_child->data).value);
       }
       return std::make_unique<ExecNode>(obj, LiteralNode(Value::map(elements), obj));
@@ -339,9 +340,14 @@ namespace Roo
     case Form::NIL:
       return std::make_unique<ExecNode>(Constant::NIL);
     case Form::KEYWORD:
+    {
+      const std::string& keyword = obj->as<AST::Keyword>().value;
       return std::make_unique<ExecNode>(
         obj,
-        LiteralNode(Value::keyword(obj->as<AST::Keyword>().value), obj));
+        LiteralNode(ctx.ctx ? Value::keyword(keyword, ctx.ctx->get_runtime().keyword_pool())
+                            : Value::keyword(keyword),
+                    obj));
+    }
     case Form::NUMBER:
     {
       auto& num_obj = obj->as<Roo::AST::Number>();

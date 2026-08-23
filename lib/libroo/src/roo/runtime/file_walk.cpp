@@ -9,6 +9,7 @@
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/io/file_system.h>
+#include <roo/runtime.h>
 #include <roo/runtime/walk.h>
 
 namespace Roo::FileWalk
@@ -30,48 +31,52 @@ namespace Roo::FileWalk
       Metadata metadata;
     };
 
-    sptr_val type_keyword(FileSystemEntryType type)
+    sptr_val type_keyword(FileSystemEntryType type, KeywordPool& keywords)
     {
       switch (type)
       {
       case FileSystemEntryType::FILE:
-        return Value::keyword("file");
+        return Value::keyword("file", keywords);
       case FileSystemEntryType::DIRECTORY:
-        return Value::keyword("directory");
+        return Value::keyword("directory", keywords);
       case FileSystemEntryType::OTHER:
-        return Value::keyword("other");
+        return Value::keyword("other", keywords);
       }
-      return Value::keyword("other");
+      return Value::keyword("other", keywords);
     }
 
-    sptr_val entry_value(const DirectoryEntry& entry)
+    sptr_val entry_value(const DirectoryEntry& entry, KeywordPool& keywords)
     {
-      return Value::map({Value::keyword("name"),
+      return Value::map({Value::keyword("name", keywords),
                          Value::string(entry.name),
-                         Value::keyword("path"),
+                         Value::keyword("path", keywords),
                          Value::string(entry.path),
-                         Value::keyword("type"),
-                         type_keyword(entry.type)});
+                         Value::keyword("type", keywords),
+                         type_keyword(entry.type, keywords)});
     }
 
-    sptr_val metadata_value(const Metadata& metadata)
+    sptr_val metadata_value(const Metadata& metadata, KeywordPool& keywords)
     {
-      return Value::map({Value::keyword("root"),
+      return Value::map({Value::keyword("root", keywords),
                          Value::string(metadata.root),
-                         Value::keyword("relative-path"),
+                         Value::keyword("relative-path", keywords),
                          Value::string(metadata.relative_path),
-                         Value::keyword("depth"),
+                         Value::keyword("depth", keywords),
                          Value::number(metadata.depth),
-                         Value::keyword("root?"),
+                         Value::keyword("root?", keywords),
                          Value::boolean(metadata.root_entry),
-                         Value::keyword("symlink?"),
+                         Value::keyword("symlink?", keywords),
                          Value::boolean(metadata.symlink)});
     }
 
-    sptr_val result_value(const sptr_val& entry, const sptr_val& metadata)
+    sptr_val result_value(const sptr_val& entry,
+                          const sptr_val& metadata,
+                          KeywordPool& keywords)
     {
-      return Value::map(
-        {Value::keyword("entry"), entry, Value::keyword("metadata"), metadata});
+      return Value::map({Value::keyword("entry", keywords),
+                         entry,
+                         Value::keyword("metadata", keywords),
+                         metadata});
     }
 
     std::string relative_child_path(const std::string& parent, const std::string& name)
@@ -144,19 +149,20 @@ namespace Roo::FileWalk
 
       Walk::Control enter(const Node& node)
       {
-        const sptr_val entry = entry_value(node.entry);
-        const sptr_val metadata = metadata_value(node.metadata);
+        KeywordPool& keywords = ctx_.get_runtime().keyword_pool();
+        const sptr_val entry = entry_value(node.entry, keywords);
+        const sptr_val metadata = metadata_value(node.metadata, keywords);
         sptr_val_v predicate_args{entry, metadata};
 
         const bool keep =
-          options_.keep
-            ? is_truthy(
-                *invoke_indirect_callable(
-                  ctx_, options_.keep, predicate_args, InvocationOperation::CALLING))
-            : node.entry.type == FileSystemEntryType::FILE;
+          options_.keep ? is_truthy(*invoke_indirect_callable(ctx_,
+                                                              options_.keep,
+                                                              predicate_args,
+                                                              InvocationOperation::CALLING))
+                        : node.entry.type == FileSystemEntryType::FILE;
         if (keep)
         {
-          results_.push_back(result_value(entry, metadata));
+          results_.push_back(result_value(entry, metadata, keywords));
         }
 
         if (node.entry.type != FileSystemEntryType::DIRECTORY)
@@ -166,9 +172,10 @@ namespace Roo::FileWalk
 
         const bool descend =
           options_.descend
-            ? is_truthy(
-                *invoke_indirect_callable(
-                  ctx_, options_.descend, predicate_args, InvocationOperation::CALLING))
+            ? is_truthy(*invoke_indirect_callable(ctx_,
+                                                  options_.descend,
+                                                  predicate_args,
+                                                  InvocationOperation::CALLING))
             : true;
         if (!descend || node.metadata.symlink)
         {

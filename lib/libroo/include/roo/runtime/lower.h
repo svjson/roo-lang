@@ -54,7 +54,7 @@ namespace Roo
    *
    * @return A unique pointer to the resulting ExecNode
    */
-  std::unique_ptr<ExecNode> lower_literal(const sptr_ast_node& obj);
+  std::unique_ptr<ExecNode> lower_literal(LowerContext& ctx, const sptr_ast_node& obj);
 
 } // namespace Roo
 

@@ -33,7 +33,7 @@ namespace Roo
     ctx.push({});
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
-      auto sym_node = lower_literal(bind_forms[i]);
+      auto sym_node = lower_literal(ctx, bind_forms[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        lower_expr(ctx, bind_forms[i + 1])));
@@ -103,7 +103,7 @@ namespace Roo
     ctx.push({});
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
-      auto sym_node = lower_literal(bind_forms[i]);
+      auto sym_node = lower_literal(ctx, bind_forms[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        lower_expr(ctx, bind_forms[i + 1])));
@@ -177,7 +177,7 @@ namespace Roo
     ctx.push({});
     for (size_t i = 0; i < bind_forms.size(); i += 2)
     {
-      auto sym_node = lower_literal(bind_forms[i]);
+      auto sym_node = lower_literal(ctx, bind_forms[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        lower_expr(ctx, bind_forms[i + 1])));
@@ -259,8 +259,8 @@ namespace Roo
 
         exec_nodes.push_back(lower_expr(ctx, vec_elems[1]));
 
-        auto sym_node = lower_literal(vec_elems[0]);
-        auto binding  = LexicalBinding::create(std::get<LiteralNode>(sym_node->data));
+        auto sym_node = lower_literal(ctx, vec_elems[0]);
+        auto binding = LexicalBinding::create(std::get<LiteralNode>(sym_node->data));
 
         ctx.push({});
         ctx.add_lexical_binding(*binding);
@@ -286,12 +286,12 @@ namespace Roo
   EXECNODE_BODY(CondLetForm, execnode_cond_let)
   {
     const size_t n_clauses = snode.values.size();
-    size_t binding_idx     = 0;
+    size_t binding_idx = 0;
 
     for (size_t i = 0; i < n_clauses; i++)
     {
       const bool is_binding = snode.values[i]->i64() == 1;
-      sptr_val test_val     = exec(ctx, *snode.exec_nodes[2 * i]);
+      sptr_val test_val = exec(ctx, *snode.exec_nodes[2 * i]);
 
       if (Roo::is_truthy(*test_val))
       {

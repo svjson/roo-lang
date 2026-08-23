@@ -186,8 +186,9 @@ namespace Roo
 
   EXEC_BODY(KeywordFunction, exec_keyword)
   {
-    return args[0]->type == Value::Type::NIL ? Constant::NIL
-                                             : Value::keyword(args[0]->str());
+    return args[0]->type == Value::Type::NIL
+             ? Constant::NIL
+             : Value::keyword(args[0]->str(), ctx.get_runtime().keyword_pool());
   }
 
   /** KeywordPFunction - roo/keyword? */

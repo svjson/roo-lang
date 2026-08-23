@@ -11,6 +11,7 @@
 #include <roo/namespace_source.h>
 #include <roo/random.h>
 #include <roo/reader.h>
+#include <roo/runtime/pool.h>
 #include <roo/source.h>
 #include <roo/type.h>
 
@@ -39,6 +40,7 @@ namespace Roo
     RuntimeOptions options;
     SourceMap source_map;
     RandomState random_state;
+    KeywordPool keywords;
 
     /*!
      * @brief Runtime namespaces, including the implicit Roo language namespace.
@@ -221,6 +223,8 @@ namespace Roo
      */
     RandomState get_random_state() const;
     void set_random_state(const RandomState& state);
+
+    KeywordPool& keyword_pool();
 
     /*!
      * @brief Tests if this Runtime instance may access any file system

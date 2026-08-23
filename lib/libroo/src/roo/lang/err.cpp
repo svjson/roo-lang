@@ -9,6 +9,7 @@
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/impl.h>
+#include <roo/runtime.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/lower.h>
 #include <roo/runtime/value.h>
@@ -115,7 +116,9 @@ namespace Roo
       }
     }
 
-    sptr_val raise_error_map(const sptr_val_v& args, sptr_val& source_error)
+    sptr_val raise_error_map(const sptr_val_v& args,
+                             sptr_val& source_error,
+                             KeywordPool& keywords)
     {
       sptr_val_v fields;
       const sptr_val& error = args[0];
@@ -129,11 +132,11 @@ namespace Roo
         }
         if (error->type == Value::Type::STRING)
         {
-          fields = {Value::keyword("message"), error};
+          fields = {Value::keyword("message", keywords), error};
         }
         else if (error->type == Value::Type::KEYWORD)
         {
-          fields = {Value::keyword("type"), error};
+          fields = {Value::keyword("type", keywords), error};
         }
         else
         {
@@ -144,17 +147,17 @@ namespace Roo
 
       if (error->type == Value::Type::STRING && args[1]->type == Value::Type::MAP)
       {
-        fields = {Value::keyword("message"), error};
+        fields = {Value::keyword("message", keywords), error};
         append_metadata(fields, args[1]);
         return Value::map(fields);
       }
 
       if (error->type == Value::Type::KEYWORD)
       {
-        fields = {Value::keyword("type"), error};
+        fields = {Value::keyword("type", keywords), error};
         if (args[1]->type == Value::Type::STRING)
         {
-          fields.push_back(Value::keyword("message"));
+          fields.push_back(Value::keyword("message", keywords));
           fields.push_back(args[1]);
           if (args.size() == 3) append_metadata(fields, args[2]);
           return Value::map(fields);
@@ -215,7 +218,7 @@ namespace Roo
       std::size_t binding_index = 0;
       if (clause_forms[0]->get_type() == Form::KEYWORD)
       {
-        auto selector_node = lower_literal(clause_forms[0]);
+        auto selector_node = lower_literal(ctx, clause_forms[0]);
         selector = std::get<LiteralNode>(selector_node->data).value;
         binding_index = 1;
       }
@@ -237,7 +240,7 @@ namespace Roo
           clause_forms[binding_index]->to_string());
       }
 
-      auto binding_node = lower_literal(binding_forms[0]);
+      auto binding_node = lower_literal(ctx, binding_forms[0]);
       auto binding = LexicalBinding::create(std::get<LiteralNode>(binding_node->data));
 
       ctx.push({});
@@ -348,7 +351,8 @@ namespace Roo
   EXEC_BODY(RaiseFunction, exec_raise)
   {
     sptr_val source_error;
-    const sptr_val error_map = raise_error_map(args, source_error);
+    const sptr_val error_map =
+      raise_error_map(args, source_error, ctx.get_runtime().keyword_pool());
     throw RaisedError(error_map, std::move(source_error));
   }
 

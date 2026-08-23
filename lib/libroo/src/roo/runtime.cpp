@@ -113,6 +113,11 @@ namespace Roo
     options.call_stack_diagnostics = enabled;
   }
 
+  KeywordPool& Runtime::keyword_pool()
+  {
+    return keywords;
+  }
+
   bool Runtime::source_diagnostics_enabled() const
   {
     return options.source_diagnostics || options.call_stack_diagnostics;

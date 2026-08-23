@@ -42,7 +42,7 @@ namespace Roo
 
     if (bind_forms.size() == 2)
     {
-      auto sym_node = lower_literal(bind_forms[0]);
+      auto sym_node = lower_literal(ctx, bind_forms[0]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        std::make_unique<ExecNode>(Constant::NIL)));
@@ -145,7 +145,7 @@ namespace Roo
 
     for (size_t i = 0; i < bind_elems.size(); i += 2)
     {
-      auto sym_node = lower_literal(bind_elems[i]);
+      auto sym_node = lower_literal(ctx, bind_elems[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        std::make_unique<ExecNode>(Constant::NIL)));
@@ -253,7 +253,7 @@ namespace Roo
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(1);
 
-    auto sym_node = lower_literal(bind_forms[0]);
+    auto sym_node = lower_literal(ctx, bind_forms[0]);
     bindings.push_back(
       std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                      std::make_unique<ExecNode>(Constant::NIL)));
@@ -340,7 +340,7 @@ namespace Roo
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(1 + pair_count);
 
-    auto index_node = lower_literal(bind_elems[0]);
+    auto index_node = lower_literal(ctx, bind_elems[0]);
     bindings.push_back(
       std::make_pair(LexicalBinding::create(std::get<LiteralNode>(index_node->data)),
                      std::make_unique<ExecNode>(Constant::NIL)));
@@ -350,7 +350,7 @@ namespace Roo
 
     for (size_t i = 1; i < bind_elems.size(); i += 2)
     {
-      auto sym_node = lower_literal(bind_elems[i]);
+      auto sym_node = lower_literal(ctx, bind_elems[i]);
       bindings.push_back(
         std::make_pair(LexicalBinding::create(std::get<LiteralNode>(sym_node->data)),
                        std::make_unique<ExecNode>(Constant::NIL)));

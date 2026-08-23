@@ -128,6 +128,7 @@ namespace Roo
     Namespace* get_current_namespace();
 
     Namespace& lang();
+    Runtime& get_runtime();
     void seed_random(int seed);
     int random_int(int min, int max);
     RandomState get_random_state() const;

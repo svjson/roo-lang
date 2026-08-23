@@ -31,13 +31,11 @@ namespace Roo
 
   sptr_val KeywordPool::get(const std::string& kw)
   {
-    static std::unordered_map<std::string, sptr_val> pool;
-
-    auto it = pool.find(kw);
-    if (it != pool.end()) return it->second;
+    auto it = keywords.find(kw);
+    if (it != keywords.end()) return it->second;
 
     auto [inserted_it, _] =
-      pool.emplace(kw, std::make_shared<Value>(kw, Value::Type::KEYWORD));
+      keywords.emplace(kw, std::make_shared<Value>(kw, Value::Type::KEYWORD));
     return inserted_it->second;
   }
 

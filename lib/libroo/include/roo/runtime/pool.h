@@ -23,10 +23,10 @@ namespace Roo
   class KeywordPool
   {
    public:
-    static sptr_val get(const std::string& keyword);
+    sptr_val get(const std::string& keyword);
 
    private:
-    static std::unordered_map<std::string, sptr_val> pool;
+    std::unordered_map<std::string, sptr_val> keywords;
   };
 } // namespace Roo
 

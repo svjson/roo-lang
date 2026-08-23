@@ -9,6 +9,7 @@
 #include <roo/context.h>
 #include <roo/exception.h>
 #include <roo/lang/rewrite.h>
+#include <roo/runtime.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/scope.h>
@@ -119,7 +120,9 @@ namespace Roo
     sptr_val_v values{Value::string(callee_name)};
     if (callee_type != Form::QUOTED_SYMBOL)
     {
-      values.push_back(Value::keyword(callee_name));
+      values.push_back(ctx.ctx
+                         ? Value::keyword(callee_name, ctx.ctx->get_runtime().keyword_pool())
+                         : Value::keyword(callee_name));
     }
     if (callee_type != Form::KEYWORD)
     {
@@ -191,7 +194,7 @@ namespace Roo
   {
     sptr_ast_node_v& elements = ast_node->get_children();
 
-    if (elements.size() < 2) return lower_literal(Roo::AST::NIL);
+    if (elements.size() < 2) return lower_literal(ctx, Roo::AST::NIL);
     if (elements.size() == 2) return lower_expr(ctx, elements[1]);
 
     if ((elements.size() - 2) % 2 != 0)
@@ -273,7 +276,7 @@ namespace Roo
   SFORM_LOWER_IMPL(ThreadFirstForm)
   {
     sptr_ast_node_v& elements = ast_node->get_children();
-    if (elements.size() == 1) return lower_literal(Roo::AST::NIL);
+    if (elements.size() == 1) return lower_literal(ctx, Roo::AST::NIL);
     if (elements.size() == 2) return lower_expr(ctx, elements[1]);
 
     sptr_ast_node current = elements[1];

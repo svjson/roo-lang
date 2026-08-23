@@ -49,6 +49,7 @@ namespace Roo
                         std::string indent)
   {
     indent += "  ";
+    LowerContext lctx{&ctx};
     for (size_t i = 0; i < input.size(); ++i)
     {
       const EvalMode* elem_mode = pattern.get(i);
@@ -80,7 +81,7 @@ namespace Roo
       }
       else if (elem_mode == &Eval::LITERAL)
       {
-        storage.push_back(lower_literal(arg->form));
+        storage.push_back(lower_literal(lctx, arg->form));
         output.push_back(storage.back().get());
       }
       else if (elem_mode == &Eval::DEFAULT)

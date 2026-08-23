@@ -9,11 +9,13 @@
 #include <io.h>
 #include <windows.h>
 #else
-#include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <sys/ioctl.h>
 #endif
 
 #include <roo/exec.h>
+#include <roo/runtime.h>
 #include <roo/runtime/value.h>
 
 namespace Roo
@@ -68,9 +70,10 @@ namespace Roo
     const long rows = static_cast<long>(ws.ws_row);
 #endif
 
-    return Value::map({Value::keyword("columns"),
+    KeywordPool& keywords = ctx.get_runtime().keyword_pool();
+    return Value::map({Value::keyword("columns", keywords),
                        Value::number(columns),
-                       Value::keyword("rows"),
+                       Value::keyword("rows", keywords),
                        Value::number(rows)});
   }
 } // namespace Roo
