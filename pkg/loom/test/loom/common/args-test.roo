@@ -5,10 +5,10 @@
 
 (deftest finds-options-and-flags-from-offset
   (s/given
-    ["install" "pkg/loom" "--repo" "build/repo" "--force"])
+    ["install" "pkg/loom" "--package-repository" "build/repo" "--force"])
 
   (s/when [options-argv]
-    {:option-repo (args/option-from options-argv 2 "--repo" "default-repo")
+    {:option-repo (args/option-from options-argv 2 "--package-repository" "default-repo")
      :force-option? (args/flag-from? options-argv 2 "--force")
      :dry-run-option? (args/flag-from? options-argv 2 "--dry-run")})
 

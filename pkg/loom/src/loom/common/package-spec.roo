@@ -11,5 +11,6 @@
         {:name (substr package-id 0 separator)
          :version (substr package-id (+ separator 1))})
       (unless (or (nil? version)
-                  (= version "--repo"))
+                  (= version "-R")
+                  (= version "--package-repository"))
         {:name package-id :version version}))))

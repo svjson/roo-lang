@@ -32,13 +32,15 @@
   (s/when [missing-package-spec]
     {:nil-spec (package-spec/parse missing-package-spec nil)
      :missing-version-spec (package-spec/parse "loom" nil)
-     :option-version-spec (package-spec/parse "loom" "--repo")
+     :short-option-version-spec (package-spec/parse "loom" "-R")
+     :option-version-spec (package-spec/parse "loom" "--package-repository")
      :empty-name-spec (package-spec/parse "@0.1.0" nil)
      :empty-version-spec (package-spec/parse "loom@" nil)})
 
-  (s/then [{:keys [nil-spec missing-version-spec option-version-spec empty-name-spec empty-version-spec]}]
+  (s/then [{:keys [nil-spec missing-version-spec short-option-version-spec option-version-spec empty-name-spec empty-version-spec]}]
     (is (nil? nil-spec))
     (is (nil? missing-version-spec))
+    (is (nil? short-option-version-spec))
     (is (nil? option-version-spec))
     (is (nil? empty-name-spec))
     (is (nil? empty-version-spec))))

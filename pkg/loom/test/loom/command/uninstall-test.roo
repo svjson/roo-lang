@@ -30,7 +30,7 @@
        :target-dir (repository/package-target-dir repo-root "loom" "0.1.0")}))
 
   (s/when [{:keys [repo-root]}]
-    (core/uninstall-command ["uninstall" "loom@0.1.0" "--repo" repo-root]))
+    (core/uninstall-command ["uninstall" "loom@0.1.0" "--package-repository" repo-root]))
 
   (s/then [uninstall-package-id-result {:keys [target-dir]}]
     (is (= target-dir uninstall-package-id-result))

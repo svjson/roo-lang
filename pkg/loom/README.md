@@ -32,7 +32,8 @@ Projects can then refer to installed packages by version:
 {:dependencies {proof "0.1.0"}}
 ```
 
-Use `--repo <dir>` with any Loom command to operate on a different repository root.
+Use `-R <dir>` or `--package-repository <dir>` with any Loom command to operate
+on a different package repository root.
 
 ## Running Loom From Source
 

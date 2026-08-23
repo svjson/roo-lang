@@ -7,7 +7,7 @@
 
 (deftest dispatches-list-command
   (s/given
-    ["list" "--repo" (support/fresh-repo! "loom-proof-core-list")])
+    ["list" "-R" (support/fresh-repo! "loom-proof-core-list")])
 
   (s/when [list-argv]
     (core/main list-argv))

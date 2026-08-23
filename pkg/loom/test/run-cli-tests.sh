@@ -93,7 +93,7 @@ printf '%s\n' "==> Testing loom proof suite"
 
 printf '%s\n' "==> Testing loom install/list/info/deps"
 cmake -E rm -rf "$LOOM_REPO"
-"$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO" --force
+"$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --package-repository "$LOOM_REPO" --force
 
 assert_file "$LOOM_REPO/loom/0.1.0/package.edn"
 assert_file "$LOOM_REPO/loom/0.1.0/src/loom/core.roo"
@@ -111,12 +111,12 @@ assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/manifest.roo"
 assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/package-spec.roo"
 assert_file "$LOOM_REPO/loom/0.1.0/src/loom/common/repository.roo"
 
-if ! LIST_OUTPUT=$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_REPO"); then
+if ! LIST_OUTPUT=$("$ROO" "$LOOM_PACKAGE" list --package-repository "$LOOM_REPO"); then
   fail "loom list command failed"
 fi
 assert_eq "loom list output" "loom@0.1.0" "$LIST_OUTPUT"
-"$ROO" "$LOOM_PACKAGE" info loom@0.1.0 --repo "$LOOM_REPO"
-if ! DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --repo "$LOOM_REPO" --flat); then
+"$ROO" "$LOOM_PACKAGE" info loom@0.1.0 --package-repository "$LOOM_REPO"
+if ! DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --package-repository "$LOOM_REPO" --flat); then
   fail "loom deps --flat command failed"
 fi
 assert_eq "loom deps --flat output" "" "$DEPS_OUTPUT"
@@ -140,27 +140,27 @@ assert_eq "loom init preserves existing package.edn contents" \
 
 printf '%s\n' "==> Testing loom link/uninstall"
 cmake -E rm -rf "$LOOM_LINK_REPO"
-"$ROO" "$LOOM_PACKAGE" link "$LOOM_PACKAGE" --repo "$LOOM_LINK_REPO"
+"$ROO" "$LOOM_PACKAGE" link "$LOOM_PACKAGE" --package-repository "$LOOM_LINK_REPO"
 assert_symlink "$LOOM_LINK_REPO/loom/0.1.0"
-if ! LINK_LIST_OUTPUT=$("$ROO" "$LOOM_PACKAGE" list --repo "$LOOM_LINK_REPO"); then
+if ! LINK_LIST_OUTPUT=$("$ROO" "$LOOM_PACKAGE" list --package-repository "$LOOM_LINK_REPO"); then
   fail "loom list linked repo command failed"
 fi
 assert_eq "loom list linked repo output" \
   "loom@0.1.0" \
   "$LINK_LIST_OUTPUT"
-"$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_LINK_REPO"
+"$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --package-repository "$LOOM_LINK_REPO"
 assert_not_exists "$LOOM_LINK_REPO/loom/0.1.0"
 
 cmake -E touch "$LOOM_REPO/loom/0.1.0/stale-file"
-"$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --repo "$LOOM_REPO"
+"$ROO" "$LOOM_PACKAGE" install "$LOOM_PACKAGE" --package-repository "$LOOM_REPO"
 assert_not_exists "$LOOM_REPO/loom/0.1.0/stale-file"
 
-"$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --repo "$LOOM_REPO"
+"$ROO" "$LOOM_PACKAGE" uninstall loom@0.1.0 --package-repository "$LOOM_REPO"
 assert_not_exists "$LOOM_REPO/loom/0.1.0/package.edn"
 
 printf '%s\n' "==> Testing loom native package install"
 cmake -E rm -rf "$PROOF_REPO"
-"$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --repo "$PROOF_REPO" --force
+"$ROO" "$LOOM_PACKAGE" install "$PACKAGE_STAGE_ROOT/proof" --package-repository "$PROOF_REPO" --force
 assert_file "$PROOF_REPO/proof/0.1.0/package.edn"
 assert_file "$PROOF_REPO/proof/0.1.0/native/$PROOF_NATIVE_LIBRARY"
 
@@ -186,7 +186,7 @@ cmake -E env HOME="$BOOTSTRAP_TEST_ROOT/home" \
   bootstrap \
   "$BOOTSTRAP_TEST_ROOT/packages/loom" \
   --source-root "$BOOTSTRAP_TEST_ROOT/packages" \
-  --repo "$BOOTSTRAP_TEST_ROOT/repository"
+  --package-repository "$BOOTSTRAP_TEST_ROOT/repository"
 assert_file "$BOOTSTRAP_TEST_ROOT/repository/cli-trooper/0.1.0/package.edn"
 cmake -E rm -rf "$BOOTSTRAP_TEST_ROOT/packages/cli-trooper"
 
