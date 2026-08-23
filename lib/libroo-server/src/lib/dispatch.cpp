@@ -58,7 +58,7 @@ namespace Roo::Server
 
       if (!cmd.has_property(_NS))
       {
-        return Error{0x01, "CMD 'eval-sexp' requires @ID"};
+        return Error{0x01, "CMD 'eval-sexp' requires @NS"};
       }
 
       const std::string& ns = cmd.get_property(_NS);
@@ -95,7 +95,7 @@ namespace Roo::Server
     {
       std::string body = config.application_name.size()
                            ? config.application_name + " " + config.application_version
-                           : config.server_name + " " + config.server_name;
+                           : config.server_name + " " + config.server_version;
 
       return MessageBuilder::build_response_with_props(
         "server-info",

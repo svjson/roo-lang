@@ -2,6 +2,7 @@
 #include "roo-server/server.h"
 
 #include <cerrno>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -34,6 +35,10 @@ namespace Roo::Server
     using NativeSocketHandle = SOCKET;
     constexpr SocketHandle INVALID_SOCKET_HANDLE = static_cast<SocketHandle>(-1);
     constexpr short SOCKET_READ_EVENT = POLLRDNORM;
+    constexpr short SOCKET_WRITE_EVENT = POLLWRNORM;
+    constexpr short SOCKET_ERROR_EVENTS = POLLERR | POLLHUP | POLLNVAL;
+    constexpr int SOCKET_SEND_FLAGS = 0;
+    using SocketLength = int;
 
     NativeSocketHandle to_native_socket(SocketHandle socket)
     {
@@ -48,6 +53,16 @@ namespace Roo::Server
     std::string socket_error_message()
     {
       return "socket error: " + std::to_string(WSAGetLastError());
+    }
+
+    bool socket_would_block()
+    {
+      return WSAGetLastError() == WSAEWOULDBLOCK;
+    }
+
+    bool parse_ipv4_address(const std::string& value, in_addr& address)
+    {
+      return InetPtonA(AF_INET, value.c_str(), &address) == 1;
     }
 
     void close_socket(SocketHandle socket)
@@ -71,7 +86,7 @@ namespace Roo::Server
       for (const auto& descriptor : socket_descriptors)
       {
         native_descriptors.push_back(
-          {to_native_socket(descriptor.fd), descriptor.events, descriptor.revents});
+          {to_native_socket(descriptor.fd), descriptor.events, 0});
       }
 
       const int result =
@@ -86,6 +101,14 @@ namespace Roo::Server
     using NativeSocketHandle = int;
     constexpr SocketHandle INVALID_SOCKET_HANDLE = static_cast<SocketHandle>(-1);
     constexpr short SOCKET_READ_EVENT = POLLIN;
+    constexpr short SOCKET_WRITE_EVENT = POLLOUT;
+    constexpr short SOCKET_ERROR_EVENTS = POLLERR | POLLHUP | POLLNVAL;
+#ifdef MSG_NOSIGNAL
+    constexpr int SOCKET_SEND_FLAGS = MSG_NOSIGNAL;
+#else
+    constexpr int SOCKET_SEND_FLAGS = 0;
+#endif
+    using SocketLength = socklen_t;
 
     NativeSocketHandle to_native_socket(SocketHandle socket)
     {
@@ -102,6 +125,16 @@ namespace Roo::Server
       return std::strerror(errno);
     }
 
+    bool socket_would_block()
+    {
+      return errno == EAGAIN || errno == EWOULDBLOCK;
+    }
+
+    bool parse_ipv4_address(const std::string& value, in_addr& address)
+    {
+      return inet_pton(AF_INET, value.c_str(), &address) == 1;
+    }
+
     void close_socket(SocketHandle socket)
     {
       close(to_native_socket(socket));
@@ -116,7 +149,7 @@ namespace Roo::Server
       for (const auto& descriptor : socket_descriptors)
       {
         native_descriptors.push_back(
-          {to_native_socket(descriptor.fd), descriptor.events, descriptor.revents});
+          {to_native_socket(descriptor.fd), descriptor.events, 0});
       }
 
       const int result = poll(native_descriptors.data(), native_descriptors.size(), 0);
@@ -127,6 +160,9 @@ namespace Roo::Server
       return result;
     }
 #endif
+
+    constexpr size_t MAX_PENDING_INPUT_SIZE = 16 * 1024 * 1024;
+    const std::string MESSAGE_TERMINATOR = "/MSG\x1E";
   } // namespace
 
   void set_socket_non_blocking(SocketHandle socket_fd)
@@ -160,8 +196,22 @@ namespace Roo::Server
   {
   }
 
+  Server::~Server()
+  {
+    shutdown();
+  }
+
   ServerStatus Server::start()
   {
+    if (!socket_descriptors.empty())
+    {
+      return ServerStatus{1, "Already started"};
+    }
+    if (config.port > 65535)
+    {
+      return ServerStatus{-1, "Invalid TCP port: " + std::to_string(config.port)};
+    }
+
 #ifdef _WIN32
     WSADATA wsa_data;
     if (!socket_runtime_started && WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0)
@@ -193,7 +243,12 @@ namespace Roo::Server
     }
 
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
+    if (!parse_ipv4_address(config.bind_address, address.sin_addr))
+    {
+      close_socket(server_socket);
+      cleanup_socket_runtime(socket_runtime_started);
+      return ServerStatus{-1, "Invalid IPv4 bind address: " + config.bind_address};
+    }
     address.sin_port = htons(config.port);
 
     if (bind(to_native_socket(server_socket), (sockaddr*)&address, sizeof(address)) < 0)
@@ -211,13 +266,24 @@ namespace Roo::Server
       return ServerStatus{-1, "Listening for connections failed after binding socket."};
     }
 
+    sockaddr_in bound_address{};
+    SocketLength bound_address_length = sizeof(bound_address);
+    if (getsockname(to_native_socket(server_socket),
+                    reinterpret_cast<sockaddr*>(&bound_address),
+                    &bound_address_length) < 0)
+    {
+      close_socket(server_socket);
+      cleanup_socket_runtime(socket_runtime_started);
+      return ServerStatus{-1, "Could not inspect bound socket: " + socket_error_message()};
+    }
+    bound_port = ntohs(bound_address.sin_port);
+
     set_socket_non_blocking(server_socket);
-    socket_descriptors.push_back({server_socket, SOCKET_READ_EVENT, 0});
+    socket_descriptors.push_back({server_socket, SOCKET_READ_EVENT, 0, "", ""});
 
-    //// Temp
-    std::cout << "Server listening on port " << config.port << std::endl;
-
-    return ServerStatus{1, "Started"};
+    return ServerStatus{
+      1,
+      "Listening on " + config.bind_address + ":" + std::to_string(bound_port)};
   }
 
   ServerStatus Server::shutdown()
@@ -233,12 +299,23 @@ namespace Roo::Server
         }
       }
       socket_descriptors.clear();
+      bound_port = 0;
       cleanup_socket_runtime(socket_runtime_started);
 
       return ServerStatus{1, "Shutdown"};
     }
 
     return ServerStatus{1, "Not Started"};
+  }
+
+  unsigned int Server::port() const
+  {
+    return bound_port;
+  }
+
+  const std::string& Server::address() const
+  {
+    return config.bind_address;
   }
 
   void Server::query_sockets()
@@ -252,6 +329,11 @@ namespace Roo::Server
     if (poll_count < 0)
     {
       std::cout << "Error! Polling failed." << std::endl;
+      return;
+    }
+    if (poll_count == 0)
+    {
+      return;
     }
 
     if (socket_descriptors[0].revents & SOCKET_READ_EVENT)
@@ -262,61 +344,116 @@ namespace Roo::Server
       {
         SocketHandle new_client_sock = from_native_socket(native_new_client_sock);
         set_socket_non_blocking(new_client_sock);
-        socket_descriptors.push_back({new_client_sock, SOCKET_READ_EVENT, 0});
+        socket_descriptors.push_back({new_client_sock, SOCKET_READ_EVENT, 0, "", ""});
       }
     }
 
-    for (size_t i = 1; i < socket_descriptors.size(); i++)
+    for (size_t i = 1; i < socket_descriptors.size();)
     {
-      if (socket_descriptors[i].revents & SOCKET_READ_EVENT)
+      auto& descriptor = socket_descriptors[i];
+      bool connected = !(descriptor.revents & SOCKET_ERROR_EVENTS);
+
+      if (connected && (descriptor.revents & SOCKET_READ_EVENT))
       {
-        accept_request(socket_descriptors[i].fd);
+        connected = receive_requests(descriptor);
+      }
+      if (connected && !descriptor.output.empty())
+      {
+        connected = flush_responses(descriptor);
+      }
+
+      if (!connected)
+      {
+        close_socket(descriptor.fd);
+        socket_descriptors.erase(socket_descriptors.begin() +
+                                 static_cast<std::ptrdiff_t>(i));
+      }
+      else
+      {
+        descriptor.events = SOCKET_READ_EVENT;
+        if (!descriptor.output.empty())
+        {
+          descriptor.events |= SOCKET_WRITE_EVENT;
+        }
+        ++i;
       }
     }
   }
 
-  void Server::accept_request(SocketHandle socket)
+  bool Server::receive_requests(SocketDescriptor& socket)
   {
-    int valread = 1;
-    char buffer[1024] = {0};
-
-    std::string raw_message;
-
-    while (valread > 0)
+    char buffer[4096];
+    while (true)
     {
-      valread = recv(to_native_socket(socket), buffer, static_cast<int>(sizeof(buffer)), 0);
-
-      if (valread > 0)
+      const int received =
+        recv(to_native_socket(socket.fd), buffer, static_cast<int>(sizeof(buffer)), 0);
+      if (received > 0)
       {
-        raw_message.append(buffer, static_cast<size_t>(valread));
-        memset(buffer, 0, sizeof(buffer));
+        socket.input.append(buffer, static_cast<size_t>(received));
+      }
+      else if (received == 0)
+      {
+        return false;
+      }
+      else if (socket_would_block())
+      {
+        break;
+      }
+      else
+      {
+        return false;
       }
     }
 
-    std::cout << "<---------------" << std::endl;
-    std::cout << raw_message << std::endl;
+    size_t message_end;
+    while ((message_end = socket.input.find(MESSAGE_TERMINATOR)) != std::string::npos)
+    {
+      message_end += MESSAGE_TERMINATOR.size();
+      socket.output += dispatch_message(socket.input.substr(0, message_end));
+      socket.input.erase(0, message_end);
+    }
+    return socket.input.size() <= MAX_PENDING_INPUT_SIZE;
+  }
+
+  bool Server::flush_responses(SocketDescriptor& socket)
+  {
+    while (!socket.output.empty())
+    {
+      const int sent = send(to_native_socket(socket.fd),
+                            socket.output.data(),
+                            static_cast<int>(socket.output.size()),
+                            SOCKET_SEND_FLAGS);
+      if (sent > 0)
+      {
+        socket.output.erase(0, static_cast<size_t>(sent));
+      }
+      else if (sent < 0 && socket_would_block())
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  std::string Server::dispatch_message(const std::string& raw_message)
+  {
     auto message = message_parser.parse_message(raw_message);
-    std::string response;
 
     if (auto* err = std::get_if<Error>(&message))
     {
-      std::cout << "err: " << err->msg << std::endl;
-      response = MessageBuilder::build_error_response(*err).encode();
+      return MessageBuilder::build_error_response(*err).encode();
     }
-    else
+
+    auto result = dispatcher.dispatch(std::get<Message>(message));
+
+    if (auto* err = std::get_if<Error>(&result))
     {
-      std::cout << "cmd: " << std::get<Message>(message).get_block(_CMD).get_property(_ID)
-                << std::endl;
-
-      auto result = dispatcher.dispatch(std::get<Message>(message));
-
-      if (auto* err = std::get_if<Error>(&result))
-        response = MessageBuilder::build_error_response(*err).encode();
-      else
-        response = std::get<Response>(result).encode();
+      return MessageBuilder::build_error_response(*err).encode();
     }
-    std::cout << response << std::endl;
-    std::cout << "--------------->" << std::endl;
-    send(to_native_socket(socket), response.c_str(), static_cast<int>(response.length()), 0);
+    return std::get<Response>(result).encode();
   }
 } // namespace Roo::Server
