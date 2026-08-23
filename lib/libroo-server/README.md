@@ -34,3 +34,17 @@ roo-server --host 0.0.0.0 --port 8100
 The protocol permits remote code evaluation and currently has no
 authentication or encryption. Only expose it on a trusted network, preferably
 through an authenticated tunnel.
+
+## Evaluation semantics
+
+`roo-server` is intended as a development tool and intentionally loosens some `roo-lang`
+semantics.
+
+### Re-evaluation of `def` and `defun`
+
+Redefinition of a symbol or function with `def` or `defun` is not permitted in `roo-lang`.
+
+A successful evaluation of a `def` or `defun` form with `eval-sexp` is allowed to redefine
+namespace symbols in non-language namespaces. It is treated as an intentional live edit, as
+opposed to a duplicate definition.
+
