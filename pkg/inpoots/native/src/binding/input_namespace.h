@@ -36,13 +36,14 @@ namespace Roo::Inpoots
     /*!
      * @brief Read the next portable terminal event.
      *
-     * Blocks until the scoped input receives text, a key, pasted text, a
-     * resize, EOF, or an interruption. The returned map contains a `:type`
-     * keyword and event-specific fields.
+     * Blocks until the scoped input receives a keystroke, pasted text, a
+     * resize, or stream EOF. The returned map contains a `:type` keyword and
+     * event-specific fields. Terminal control keystrokes may contain `:signal`
+     * or `:control` metadata.
      *
      * @code
      * (read! input)
-     * => {:type :key :key :left}
+     * => {:type :keystroke :key :key/left}
      * @endcode
      *
      * @return A portable terminal event map.

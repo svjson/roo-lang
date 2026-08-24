@@ -32,7 +32,7 @@ namespace Roo::Inpoots::Terminal
       if ((state & SHIFT_PRESSED) != 0) modifiers.push_back("shift");
       if ((state & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0) modifiers.push_back("alt");
       if ((state & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0)
-        modifiers.push_back("control");
+        modifiers.push_back("ctrl");
       return modifiers;
     }
 
@@ -362,13 +362,12 @@ namespace Roo::Inpoots::Terminal
 
       const KEY_EVENT_RECORD& key = record.Event.KeyEvent;
       const WCHAR character = key.uChar.UnicodeChar;
-      if (character == 0x03) return Event::interrupt_event();
-      if (character == 0x04 || character == 0x1a) return Event::eof_event();
 
       if (auto name = named_key(key.wVirtualKeyCode))
       {
-        return state->emit(Event::key_event(*name, key_modifiers(key.dwControlKeyState)),
-                           key.wRepeatCount);
+        return state->emit(
+          Event::keystroke_event(*name, key_modifiers(key.dwControlKeyState)),
+          key.wRepeatCount);
       }
       if (character == 0) continue;
 
@@ -389,7 +388,7 @@ namespace Roo::Inpoots::Terminal
         auto modifiers = std::move(state->high_surrogate_modifiers);
         state->high_surrogate_modifiers.clear();
         return state->emit(
-          Event::text_event(utf8_text(high, character), std::move(modifiers)),
+          Event::text_keystroke(utf8_text(high, character), std::move(modifiers)),
           key.wRepeatCount);
       }
       if (state->high_surrogate != 0)
@@ -409,7 +408,7 @@ namespace Roo::Inpoots::Terminal
         continue;
       }
       return state->emit(
-        Event::text_event(utf8_text(character), key_modifiers(key.dwControlKeyState)),
+        Event::text_keystroke(utf8_text(character), key_modifiers(key.dwControlKeyState)),
         key.wRepeatCount);
     }
   }

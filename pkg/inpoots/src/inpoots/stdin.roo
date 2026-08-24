@@ -15,6 +15,10 @@
 (def read-event!
   "Block until INPUT yields a portable terminal event.
 
-  INPUT is the scoped value supplied to a `with!` callback. Returns a text,
-  key, paste, resize, EOF, or interrupt event map."
+  INPUT is the scoped value supplied to a `with!` callback. Returns a
+  keystroke, paste, resize, or stream-EOF event map. Keystrokes contain a
+  normalized `:key` lookup value when Inpoots can infer one, and contain
+  `:text` when the terminal produced text. Terminal control keystrokes may
+  contain `:signal` or `:control` metadata for an unhandled interaction layer
+  to apply."
   input/read!)

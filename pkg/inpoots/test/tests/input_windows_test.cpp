@@ -165,13 +165,15 @@ TEST(InpootsWindowsInput, ReadsCookedEventsAndEofFromRedirectedInput)
   const auto left = input.read_event();
   const auto eof = input.read_event();
 
-  EXPECT_EQ(text.type, EventType::TEXT);
+  EXPECT_EQ(text.type, EventType::KEYSTROKE);
+  EXPECT_EQ(text.key, "x");
   EXPECT_EQ(text.text, "x");
-  EXPECT_EQ(enter.type, EventType::KEY);
+  EXPECT_EQ(enter.type, EventType::KEYSTROKE);
   EXPECT_EQ(enter.key, "enter");
-  EXPECT_EQ(following_text.type, EventType::TEXT);
+  EXPECT_EQ(following_text.type, EventType::KEYSTROKE);
+  EXPECT_EQ(following_text.key, "y");
   EXPECT_EQ(following_text.text, "y");
-  EXPECT_EQ(left.type, EventType::KEY);
+  EXPECT_EQ(left.type, EventType::KEYSTROKE);
   EXPECT_EQ(left.key, "left");
   EXPECT_EQ(eof.type, EventType::EOF_EVENT);
 }
@@ -233,9 +235,10 @@ TEST_F(InpootsWindowsConsoleInput, ReadsCookedConsoleTextAndEnter)
   const auto text = terminal_input.read_event();
   const auto enter = terminal_input.read_event();
 
-  EXPECT_EQ(text.type, EventType::TEXT);
+  EXPECT_EQ(text.type, EventType::KEYSTROKE);
+  EXPECT_EQ(text.key, "x");
   EXPECT_EQ(text.text, "x");
-  EXPECT_EQ(enter.type, EventType::KEY);
+  EXPECT_EQ(enter.type, EventType::KEYSTROKE);
   EXPECT_EQ(enter.key, "enter");
 }
 
@@ -243,12 +246,13 @@ TEST_F(InpootsWindowsConsoleInput, ReadsKeysUnicodeRepeatsAndResizeRecords)
 {
   known_mode();
   Input terminal_input(reinterpret_cast<std::intptr_t>(input), Mode::RAW);
-  write_records({key_record(0, VK_LEFT, SHIFT_PRESSED | LEFT_CTRL_PRESSED, 2, false),
-                 key_record(0, VK_LEFT, SHIFT_PRESSED | LEFT_CTRL_PRESSED, 2),
-                 key_record(L'\u00e5', 0, 0, 2),
-                 key_record(L'\xd83d'),
-                 key_record(L'\xde42'),
-                 resize_record(120, 40)});
+  write_records(
+    {key_record(0, VK_LEFT, SHIFT_PRESSED | LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED, 2, false),
+     key_record(0, VK_LEFT, SHIFT_PRESSED | LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED, 2),
+     key_record(L'\u00e5', 0, 0, 2),
+     key_record(L'\xd83d'),
+     key_record(L'\xde42'),
+     resize_record(120, 40)});
 
   const auto left = terminal_input.read_event();
   const auto repeated_left = terminal_input.read_event();
@@ -257,31 +261,43 @@ TEST_F(InpootsWindowsConsoleInput, ReadsKeysUnicodeRepeatsAndResizeRecords)
   const auto emoji = terminal_input.read_event();
   const auto resize = terminal_input.read_event();
 
-  EXPECT_EQ(left.type, EventType::KEY);
+  EXPECT_EQ(left.type, EventType::KEYSTROKE);
   EXPECT_EQ(left.key, "left");
-  EXPECT_EQ(left.modifiers, (std::vector<std::string>{"shift", "control"}));
-  EXPECT_EQ(repeated_left.type, EventType::KEY);
+  EXPECT_EQ(left.modifiers, (std::vector<std::string>{"shift", "alt", "ctrl"}));
+  EXPECT_EQ(repeated_left.type, EventType::KEYSTROKE);
   EXPECT_EQ(repeated_left.key, "left");
   EXPECT_EQ(repeated_left.modifiers, left.modifiers);
-  EXPECT_EQ(letter.type, EventType::TEXT);
+  EXPECT_EQ(letter.type, EventType::KEYSTROKE);
+  EXPECT_TRUE(letter.key.empty());
   EXPECT_EQ(letter.text, "\xc3\xa5");
-  EXPECT_EQ(repeated_letter.type, EventType::TEXT);
+  EXPECT_EQ(repeated_letter.type, EventType::KEYSTROKE);
+  EXPECT_TRUE(repeated_letter.key.empty());
   EXPECT_EQ(repeated_letter.text, "\xc3\xa5");
-  EXPECT_EQ(emoji.type, EventType::TEXT);
+  EXPECT_EQ(emoji.type, EventType::KEYSTROKE);
+  EXPECT_TRUE(emoji.key.empty());
   EXPECT_EQ(emoji.text, "\xf0\x9f\x99\x82");
   EXPECT_EQ(resize.type, EventType::RESIZE);
   EXPECT_EQ(resize.columns, 120);
   EXPECT_EQ(resize.rows, 40);
 }
 
-TEST_F(InpootsWindowsConsoleInput, ReadsInterruptAndEofRecords)
+TEST_F(InpootsWindowsConsoleInput, ReadsAnnotatedControlCAndControlDKeystrokes)
 {
   known_mode();
   Input terminal_input(reinterpret_cast<std::intptr_t>(input), Mode::RAW);
   write_records({key_record(0x03), key_record(0x04)});
 
-  EXPECT_EQ(terminal_input.read_event().type, EventType::INTERRUPT);
-  EXPECT_EQ(terminal_input.read_event().type, EventType::EOF_EVENT);
+  const auto ctrl_c = terminal_input.read_event();
+  const auto ctrl_d = terminal_input.read_event();
+
+  EXPECT_EQ(ctrl_c.type, EventType::KEYSTROKE);
+  EXPECT_EQ(ctrl_c.key, "c");
+  EXPECT_EQ(ctrl_c.modifiers, std::vector<std::string>({"ctrl"}));
+  EXPECT_EQ(ctrl_c.signal, "interrupt");
+  EXPECT_EQ(ctrl_d.type, EventType::KEYSTROKE);
+  EXPECT_EQ(ctrl_d.key, "d");
+  EXPECT_EQ(ctrl_d.modifiers, std::vector<std::string>({"ctrl"}));
+  EXPECT_EQ(ctrl_d.control, "eof");
 }
 
 #endif

@@ -83,13 +83,15 @@ TEST(InpootsInput, ReadsEventsAndEofFromCookedDescriptors)
   auto left = input.read_event();
   auto eof = input.read_event();
 
-  EXPECT_EQ(text.type, EventType::TEXT);
+  EXPECT_EQ(text.type, EventType::KEYSTROKE);
+  EXPECT_EQ(text.key, "x");
   EXPECT_EQ(text.text, "x");
-  EXPECT_EQ(enter.type, EventType::KEY);
+  EXPECT_EQ(enter.type, EventType::KEYSTROKE);
   EXPECT_EQ(enter.key, "enter");
-  EXPECT_EQ(following_text.type, EventType::TEXT);
+  EXPECT_EQ(following_text.type, EventType::KEYSTROKE);
+  EXPECT_EQ(following_text.key, "y");
   EXPECT_EQ(following_text.text, "y");
-  EXPECT_EQ(left.type, EventType::KEY);
+  EXPECT_EQ(left.type, EventType::KEYSTROKE);
   EXPECT_EQ(left.key, "left");
   EXPECT_EQ(eof.type, EventType::EOF_EVENT);
 }
@@ -106,7 +108,7 @@ TEST(InpootsInput, EmitsEscapeBeforeEof)
   auto escape = input.read_event();
   auto eof = input.read_event();
 
-  EXPECT_EQ(escape.type, EventType::KEY);
+  EXPECT_EQ(escape.type, EventType::KEYSTROKE);
   EXPECT_EQ(escape.key, "escape");
   EXPECT_EQ(eof.type, EventType::EOF_EVENT);
 }
@@ -172,7 +174,7 @@ TEST(InpootsInput, NativeApiReadsPortableEventsFromStdin)
         (inpoots.input/read! input)))
   )");
 
-  EXPECT_EQ(event->to_string(), "{:type :text :text \"x\"}");
+  EXPECT_EQ(event->to_string(), "{:type :keystroke :key :key/x :text \"x\"}");
 }
 
 TEST(InpootsInput, NativeApiRestoresRawModeWhenCallbackThrows)

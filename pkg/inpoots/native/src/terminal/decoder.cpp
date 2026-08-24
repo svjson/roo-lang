@@ -69,7 +69,7 @@ namespace Roo::Inpoots::Terminal
       const int bits = value - 1;
       if ((bits & 1) != 0) modifiers.push_back("shift");
       if ((bits & 2) != 0) modifiers.push_back("alt");
-      if ((bits & 4) != 0) modifiers.push_back("control");
+      if ((bits & 4) != 0) modifiers.push_back("ctrl");
       return modifiers;
     }
 
@@ -105,7 +105,7 @@ namespace Roo::Inpoots::Terminal
       const char final = sequence.back();
       const auto parsed_parameters =
         csi_parameters(std::string_view(sequence).substr(2, sequence.size() - 3));
-      if (!parsed_parameters) return Event::key_event("unknown", {}, sequence);
+      if (!parsed_parameters) return Event::keystroke_event("unknown", {}, sequence);
       const auto& parameters = *parsed_parameters;
       std::vector<std::string> modifiers;
       if (parameters.size() >= 2 && parameters[1] >= 2 && parameters[1] <= 8)
@@ -116,19 +116,19 @@ namespace Roo::Inpoots::Terminal
       switch (final)
       {
       case 'A':
-        return Event::key_event("up", modifiers);
+        return Event::keystroke_event("up", modifiers);
       case 'B':
-        return Event::key_event("down", modifiers);
+        return Event::keystroke_event("down", modifiers);
       case 'C':
-        return Event::key_event("right", modifiers);
+        return Event::keystroke_event("right", modifiers);
       case 'D':
-        return Event::key_event("left", modifiers);
+        return Event::keystroke_event("left", modifiers);
       case 'H':
-        return Event::key_event("home", modifiers);
+        return Event::keystroke_event("home", modifiers);
       case 'F':
-        return Event::key_event("end", modifiers);
+        return Event::keystroke_event("end", modifiers);
       case 'Z':
-        return Event::key_event("tab", {"shift"});
+        return Event::keystroke_event("tab", {"shift"});
       case '~':
         if (!parameters.empty())
         {
@@ -136,18 +136,18 @@ namespace Roo::Inpoots::Terminal
           {
           case 1:
           case 7:
-            return Event::key_event("home", modifiers);
+            return Event::keystroke_event("home", modifiers);
           case 2:
-            return Event::key_event("insert", modifiers);
+            return Event::keystroke_event("insert", modifiers);
           case 3:
-            return Event::key_event("delete", modifiers);
+            return Event::keystroke_event("delete", modifiers);
           case 4:
           case 8:
-            return Event::key_event("end", modifiers);
+            return Event::keystroke_event("end", modifiers);
           case 5:
-            return Event::key_event("page-up", modifiers);
+            return Event::keystroke_event("page-up", modifiers);
           case 6:
-            return Event::key_event("page-down", modifiers);
+            return Event::keystroke_event("page-down", modifiers);
           default:
             break;
           }
@@ -156,7 +156,7 @@ namespace Roo::Inpoots::Terminal
       default:
         break;
       }
-      return Event::key_event("unknown", {}, sequence);
+      return Event::keystroke_event("unknown", {}, sequence);
     }
 
     Event control_event(unsigned char byte)
@@ -164,30 +164,38 @@ namespace Roo::Inpoots::Terminal
       switch (byte)
       {
       case 0x00:
-        return Event::key_event("at", {"control"});
+        return Event::keystroke_event("at", {"ctrl"});
       case 0x03:
-        return Event::interrupt_event();
+      {
+        Event event = Event::keystroke_event("c", {"ctrl"});
+        event.signal = "interrupt";
+        return event;
+      }
       case 0x04:
-        return Event::eof_event();
+      {
+        Event event = Event::keystroke_event("d", {"ctrl"});
+        event.control = "eof";
+        return event;
+      }
       case 0x08:
       case 0x7f:
-        return Event::key_event("backspace");
+        return Event::keystroke_event("backspace");
       case 0x09:
-        return Event::key_event("tab");
+        return Event::keystroke_event("tab");
       case 0x0a:
       case 0x0d:
-        return Event::key_event("enter");
+        return Event::keystroke_event("enter");
       case 0x1c:
-        return Event::key_event("backslash", {"control"});
+        return Event::keystroke_event("backslash", {"ctrl"});
       case 0x1d:
-        return Event::key_event("right-bracket", {"control"});
+        return Event::keystroke_event("right-bracket", {"ctrl"});
       case 0x1e:
-        return Event::key_event("caret", {"control"});
+        return Event::keystroke_event("caret", {"ctrl"});
       case 0x1f:
-        return Event::key_event("underscore", {"control"});
+        return Event::keystroke_event("underscore", {"ctrl"});
       default:
-        return Event::key_event(std::string(1, static_cast<char>('a' + byte - 1)),
-                                {"control"});
+        return Event::keystroke_event(std::string(1, static_cast<char>('a' + byte - 1)),
+                                      {"ctrl"});
       }
     }
 
@@ -274,19 +282,19 @@ namespace Roo::Inpoots::Terminal
           switch (key)
           {
           case 'A':
-            return Event::key_event("up");
+            return Event::keystroke_event("up");
           case 'B':
-            return Event::key_event("down");
+            return Event::keystroke_event("down");
           case 'C':
-            return Event::key_event("right");
+            return Event::keystroke_event("right");
           case 'D':
-            return Event::key_event("left");
+            return Event::keystroke_event("left");
           case 'H':
-            return Event::key_event("home");
+            return Event::keystroke_event("home");
           case 'F':
-            return Event::key_event("end");
+            return Event::keystroke_event("end");
           default:
-            return Event::key_event("unknown", {}, sequence);
+            return Event::keystroke_event("unknown", {}, sequence);
           }
         }
 
@@ -294,7 +302,7 @@ namespace Roo::Inpoots::Terminal
         const std::size_t length = utf8_length(static_cast<unsigned char>(alternate[0]));
         if (!valid_utf8(alternate, length)) return std::nullopt;
         pending.erase(0, length + 1);
-        return Event::text_event(alternate.substr(0, length), {"alt"});
+        return Event::text_keystroke(alternate.substr(0, length), {"alt"});
       }
 
       if (first < 0x20 || first == 0x7f)
@@ -307,7 +315,7 @@ namespace Roo::Inpoots::Terminal
       if (!valid_utf8(pending, length)) return std::nullopt;
       std::string text = pending.substr(0, length);
       pending.erase(0, length);
-      return Event::text_event(std::move(text));
+      return Event::text_keystroke(std::move(text));
     }
     return std::nullopt;
   }
@@ -318,13 +326,13 @@ namespace Roo::Inpoots::Terminal
     if (pending == "\x1b")
     {
       pending.clear();
-      return Event::key_event("escape");
+      return Event::keystroke_event("escape");
     }
     if (pending[0] == 0x1b)
     {
       std::string sequence = std::move(pending);
       pending.clear();
-      return Event::key_event("unknown", {}, std::move(sequence));
+      return Event::keystroke_event("unknown", {}, std::move(sequence));
     }
     return std::nullopt;
   }

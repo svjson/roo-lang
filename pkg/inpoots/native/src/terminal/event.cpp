@@ -4,22 +4,53 @@
 
 namespace Roo::Inpoots::Terminal
 {
-  Event Event::text_event(std::string text, std::vector<std::string> modifiers)
+  namespace
   {
-    Event event(EventType::TEXT);
-    event.text = std::move(text);
-    event.modifiers = std::move(modifiers);
-    return event;
-  }
+    std::string text_key(const std::string& text)
+    {
+      if (text == " ") return "space";
+      if (text.size() != 1) return {};
+      if (text[0] >= 'A' && text[0] <= 'Z')
+      {
+        return std::string(1, static_cast<char>(text[0] - 'A' + 'a'));
+      }
+      if ((text[0] >= 'a' && text[0] <= 'z') || (text[0] >= '0' && text[0] <= '9'))
+      {
+        return text;
+      }
+      return {};
+    }
 
-  Event Event::key_event(std::string key,
-                         std::vector<std::string> modifiers,
-                         std::string sequence)
+    sptr_val key_value(const std::string& key, const std::vector<std::string>& modifiers)
+    {
+      if (modifiers.empty()) return Value::keyword("key/" + key);
+
+      sptr_val_v chord;
+      chord.reserve(modifiers.size() + 1);
+      for (const auto& modifier : modifiers)
+      {
+        chord.push_back(Value::keyword("key/" + modifier));
+      }
+      chord.push_back(Value::keyword("key/" + key));
+      return Value::vector(chord);
+    }
+  } // namespace
+
+  Event Event::keystroke_event(std::string key,
+                               std::vector<std::string> modifiers,
+                               std::string sequence)
   {
-    Event event(EventType::KEY);
+    Event event(EventType::KEYSTROKE);
     event.key = std::move(key);
     event.modifiers = std::move(modifiers);
     event.sequence = std::move(sequence);
+    return event;
+  }
+
+  Event Event::text_keystroke(std::string text, std::vector<std::string> modifiers)
+  {
+    Event event = keystroke_event(text_key(text), std::move(modifiers));
+    event.text = std::move(text);
     return event;
   }
 
@@ -43,25 +74,33 @@ namespace Roo::Inpoots::Terminal
     return Event(EventType::EOF_EVENT);
   }
 
-  Event Event::interrupt_event()
-  {
-    return Event(EventType::INTERRUPT);
-  }
-
   sptr_val Event::value() const
   {
     sptr_val_v fields{Value::keyword("type")};
     switch (type)
     {
-    case EventType::TEXT:
-      fields.push_back(Value::keyword("text"));
-      fields.push_back(Value::keyword("text"));
-      fields.push_back(Value::string(text));
-      break;
-    case EventType::KEY:
-      fields.push_back(Value::keyword("key"));
-      fields.push_back(Value::keyword("key"));
-      fields.push_back(Value::keyword(key));
+    case EventType::KEYSTROKE:
+      fields.push_back(Value::keyword("keystroke"));
+      if (!key.empty())
+      {
+        fields.push_back(Value::keyword("key"));
+        fields.push_back(key_value(key, modifiers));
+      }
+      if (!text.empty())
+      {
+        fields.push_back(Value::keyword("text"));
+        fields.push_back(Value::string(text));
+      }
+      if (!control.empty())
+      {
+        fields.push_back(Value::keyword("control"));
+        fields.push_back(Value::keyword(control));
+      }
+      if (!signal.empty())
+      {
+        fields.push_back(Value::keyword("signal"));
+        fields.push_back(Value::keyword(signal));
+      }
       break;
     case EventType::PASTE:
       fields.push_back(Value::keyword("paste"));
@@ -78,21 +117,6 @@ namespace Roo::Inpoots::Terminal
     case EventType::EOF_EVENT:
       fields.push_back(Value::keyword("eof"));
       break;
-    case EventType::INTERRUPT:
-      fields.push_back(Value::keyword("interrupt"));
-      break;
-    }
-
-    if (!modifiers.empty())
-    {
-      sptr_val_v modifier_values;
-      modifier_values.reserve(modifiers.size());
-      for (const auto& modifier : modifiers)
-      {
-        modifier_values.push_back(Value::keyword(modifier));
-      }
-      fields.push_back(Value::keyword("modifiers"));
-      fields.push_back(Value::vector(modifier_values));
     }
     if (!sequence.empty())
     {
