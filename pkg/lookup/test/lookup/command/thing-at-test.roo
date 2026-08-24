@@ -1,40 +1,141 @@
 (ns lookup.command.thing-at-test
   (:require proof.core
-            [lookup.analysis :as analysis]))
+            [proof.scenario :as p]
+            [lookup.analysis :as analysis]
+            [lookup.command.thing-at :as thing-at]))
 
-(deftest resolves-thing-at-local-let-binding
-  (let [result (analysis/thing-at! "."
-                                   "src/sample.roo"
-                                   "3"
-                                   "3"
-                                   "(ns sample.core)\n(let [command-value 1]\n  command-value)\n")
-        thing (:thing result)
-        resolution (:resolution thing)
-        source-location (:source resolution)]
-    (is (= :ok (:status result)))
-    (is (= "command-value" (:text thing)))
-    (is (= :symbol (:kind thing)))
-    (is (= :local-reference (:role thing)))
-    (is (= :local (:kind resolution)))
-    (is (= "command-value" (:name resolution)))
-    (is (= "local binding" (:signature resolution)))
-    (is (= "src/sample.roo" (:path source-location)))
-    (is (= 2 (:line source-location)))
-    (is (= 7 (:column source-location)))))
 
-(deftest resolves-thing-at-function-parameter
-  (let [result (analysis/thing-at! "."
-                                   "src/sample.roo"
-                                   "3"
-                                   "3"
-                                   "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n")
-        thing (:thing result)
-        resolution (:resolution thing)
-        source-location (:source resolution)]
-    (is (= :ok (:status result)))
-    (is (= "command-value" (:text thing)))
-    (is (= :local-reference (:role thing)))
-    (is (= "command-value" (:name resolution)))
-    (is (= "parameter" (:signature resolution)))
-    (is (= 2 (:line source-location)))
-    (is (= 16 (:column source-location)))))
+
+;; lookup.command.thing-at/thing-at!
+
+(deftest thing-at!/resolves-local-let-binding
+  (p/when []
+    (analysis/thing-at! "."
+                        "src/sample.roo"
+                        "3"
+                        "3"
+                        "(ns sample.core)\n(let [command-value 1]\n  command-value)\n"))
+
+  (p/then [result]
+    (is (= {:status :ok
+            :range {:start {:line 3 :column 3}
+                    :end {:line 3 :column 15}}
+            :thing {:text "command-value"
+                    :kind :symbol
+                    :role :local-reference
+                    :resolution {:kind :local
+                                 :name "command-value"
+                                 :source {:path "src/sample.roo"
+                                          :line 2
+                                          :column 7
+                                          :start {:line 2 :column 7}
+                                          :end {:line 2 :column 19}}
+                                 :signature "local binding"}}}
+           result))))
+
+(deftest thing-at!/resolves-function-parameter
+  (p/when []
+    (analysis/thing-at! "."
+                        "src/sample.roo"
+                        "3"
+                        "3"
+                        "(ns sample.core)\n(defun submit [command-value]\n  command-value)\n"))
+
+  (p/then [result]
+    (is (= {:status :ok
+            :range {:start {:line 3 :column 3}
+                    :end {:line 3 :column 15}}
+            :thing {:text "command-value"
+                    :kind :symbol
+                    :role :local-reference
+                    :resolution {:kind :local
+                                 :name "command-value"
+                                 :source {:path "src/sample.roo"
+                                          :line 2
+                                          :column 16
+                                          :start {:line 2 :column 16}
+                                          :end {:line 2 :column 28}}
+                                 :signature "parameter"}}}
+           result))))
+
+
+;; lookup.command.thing-at/resolve-namespace
+
+
+(deftest resolve-namespace/resolves-a-declared-namespace-by-its-own-name
+  (p/when []
+    (thing-at/resolve-namespace ".." "lookup.index"))
+
+  (p/then [resolution]
+    (is (= {:kind :namespace
+            :name "lookup.index"
+            :source {:path "../src/index.roo"
+                     :line 1
+                     :column 1
+                     :start {:line 1 :column 1}
+                     :end {:line 5 :column 69}}
+            :signature "namespace"}
+           resolution))))
+
+(deftest resolve-namespace/returns-nil-for-a-name-that-is-not-a-declared-namespace
+  (p/when []
+    (thing-at/resolve-namespace ".." "lookup.not-a-real-namespace"))
+
+  (p/then [resolution]
+    (is (nil? resolution))))
+
+
+;; lookup.command.thing-at/with-namespace-fallback
+
+
+(deftest with-namespace-fallback/adds-a-resolution-for-a-namespace-reference
+  (p/when []
+    (thing-at/with-namespace-fallback
+      ".."
+      {:status :ok
+       :thing {:text "lookup.index" :kind :symbol :role :reference}}))
+
+  (p/then [result]
+    (is (= {:status :ok
+            :thing {:text "lookup.index"
+                    :kind :symbol
+                    :role :reference
+                    :resolution {:kind :namespace
+                                 :name "lookup.index"
+                                 :source {:path "../src/index.roo"
+                                          :line 1
+                                          :column 1
+                                          :start {:line 1 :column 1}
+                                          :end {:line 5 :column 69}}
+                                 :signature "namespace"}}}
+           result))))
+
+(deftest with-namespace-fallback/leaves-an-existing-resolution-untouched
+  (p/when []
+    (thing-at/with-namespace-fallback
+      ".."
+      {:status :ok
+       :thing {:text "lookup.index"
+               :kind :symbol
+               :role :local-reference
+               :resolution {:kind :local :name "x" :signature "local binding"}}}))
+
+  (p/then [result]
+    (is (= {:status :ok
+            :thing {:text "lookup.index"
+                    :kind :symbol
+                    :role :local-reference
+                    :resolution {:kind :local :name "x" :signature "local binding"}}}
+           result))))
+
+(deftest with-namespace-fallback/leaves-an-unresolvable-reference-unresolved
+  (p/when []
+    (thing-at/with-namespace-fallback
+      ".."
+      {:status :ok
+       :thing {:text "not/a-namespace-or-symbol" :kind :symbol :role :reference}}))
+
+  (p/then [result]
+    (is (= {:status :ok
+            :thing {:text "not/a-namespace-or-symbol" :kind :symbol :role :reference}}
+           result))))

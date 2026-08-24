@@ -1,11 +1,56 @@
 (ns lookup.command.thing-at
   (:require [lookup.analysis :as analysis]
-            [lookup.reader :as reader]))
+            [lookup.reader :as reader]
+            [lookup.index :as index]))
 
 (def usage-line
   "Usage line for the `lookup thing-at` command."
   "       lookup thing-at <package-dir> <file> <line> <column>")
 
+(defun resolve-namespace [package-dir name]
+  "Look up NAME as a namespace declared in PACKAGE-DIR's own symbol index -
+  the fallback for a namespace reference (e.g. in a `:require` clause) that
+  the native local resolver never sees, since it only walks the queried
+  file's own AST.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+  - `name`: Candidate namespace name, exactly as written at the query
+    position.
+
+  Returns:
+  A `:resolution` map shaped like the native resolver's own, if NAME
+  matches a declared namespace's own name, else nil."
+  [package-dir name]
+  (when-let [entry (find-first (:namespaces (index/symbol-index package-dir))
+                                (fn [namespace] (= (:name namespace) name)))]
+    {:kind :namespace
+     :name (:name entry)
+     :source (:source entry)
+     :signature "namespace"}))
+
+(defun with-namespace-fallback [package-dir result]
+  "Populate RESULT's `:thing :resolution` from PACKAGE-DIR's own namespaces
+  when the native resolver found nothing - `thing-at` only resolves local
+  bindings and parameters on its own; this is the first step past that,
+  narrower than general symbol resolution since a namespace reference is
+  already written in complete form at the point of use (no alias mapping
+  needed).
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+  - `result`: The `analysis/thing-at!` result map.
+
+  Returns:
+  RESULT, with `:thing :resolution` populated when its `:thing :text`
+  names a namespace declared in PACKAGE-DIR's own index."
+  [package-dir result]
+  (let [thing (:thing result)]
+    (if (and thing (nil? (:resolution thing)))
+      (if-let [resolution (resolve-namespace package-dir (:text thing))]
+        (assoc result :thing (assoc thing :resolution resolution))
+        result)
+      result)))
 
 (defun run! [args]
   "Run the `lookup thing-at` command.
@@ -25,9 +70,11 @@
             (nil? column))
       {:errors ["Missing argument"]}
       {:format :default
-       :value (analysis/thing-at! package-dir
-                                  file
-                                  line
-                                  column
-                                  (reader/read-stdin!))
+       :value (with-namespace-fallback
+                package-dir
+                (analysis/thing-at! package-dir
+                                    file
+                                    line
+                                    column
+                                    (reader/read-stdin!)))
        :errors []})))
