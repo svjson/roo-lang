@@ -27,7 +27,9 @@ set_target_properties(testroo PROPERTIES
 )
 
 target_include_directories(testroo
-  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+  PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+    "${ROO_ROOT_DIR}/lib/libroo/src"
 )
 target_include_directories(benchmarkroo
   PRIVATE
