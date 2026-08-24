@@ -266,39 +266,84 @@
     (session/focus! widget-session :voodoo/missing)
     (is (= handle (:focus widget-session)))))
 
-(deftest dispatch!/updates-the-focused-widget-and-returns-its-actions
-  (let [widget-session (session/make {:tty? false})
-        handle (session/add! widget-session
-                             {:type :field
-                              :text "before"
-                              :degrade {:on-add :hidden
-                                        :on-update :hidden
-                                        :on-remove :hidden}
-                              :on-event (fn [widget event]
-                                          {:widget (assoc widget :text (:text event))
-                                           :actions
-                                           [{:type :changed
-                                             :value (:text event)}]})})]
-    (session/focus! widget-session handle)
-    (is (= [{:type :changed
-             :value "after"}]
-           (session/dispatch! widget-session
-                              {:type :text
-                               :text "after"})))
-    (is (= "after" (get-in widget-session [:widgets handle :text])))))
+(deftest dispatch!/updates-the-focused-widget-and-returns-a-handled-result
+  (p/given
+    (let [widget-session (session/make {:tty? false})
+          handle (session/add! widget-session
+                               {:type :field
+                                :text "before"
+                                :degrade {:on-add :hidden
+                                          :on-update :hidden
+                                          :on-remove :hidden}
+                                :on-event (fn [widget event]
+                                            {:widget (assoc widget :text (:text event))
+                                             :actions
+                                             [{:type :changed
+                                               :value (:text event)}]})})]
+      (session/focus! widget-session handle)
+      {:session widget-session
+       :handle handle}))
 
-(deftest dispatch!/does-nothing-without-a-focused-event-widget
-  (let [widget-session (session/make {:tty? false})
-        handle (session/add! widget-session
+  (p/when [{:keys [session handle]}]
+    {:dispatch (session/dispatch! session
+                                  {:type :text
+                                   :text "after"})
+     :widget (select-keys (get (:widgets session) handle)
+                          [:text])})
+
+  (p/then [result]
+    (is (= {:dispatch {:handled? true
+                       :actions [{:type :changed
+                                  :value "after"}]}
+            :widget {:text "after"}}
+           result))))
+
+(deftest dispatch!/leaves-events-unhandled-without-a-focused-event-widget
+  (p/given
+    (let [widget-session (session/make {:tty? false})]
+      {:session widget-session
+       :handle (session/add! widget-session
                              {:type :label
-                              :text "label"})]
-    (is (= [] (session/dispatch! widget-session
-                                 {:type :text
-                                  :text "ignored"})))
-    (session/focus! widget-session handle)
-    (is (= [] (session/dispatch! widget-session
-                                 {:type :text
-                                  :text "ignored"})))))
+                              :text "label"})}))
+
+  (p/when [{:keys [session handle]}]
+    (let [unfocused (session/dispatch! session
+                                       {:type :text
+                                        :text "ignored"})]
+      (session/focus! session handle)
+      {:unfocused unfocused
+       :without-event-function
+       (session/dispatch! session
+                          {:type :text
+                           :text "ignored"})}))
+
+  (p/then [result]
+    (is (= {:unfocused {:handled? false
+                        :actions []}
+            :without-event-function {:handled? false
+                                     :actions []}}
+           result))))
+
+(deftest dispatch!/reports-an-empty-widget-result-as-unhandled
+  (p/given
+    (let [widget-session (session/make {:tty? false})
+          handle (session/add! widget-session
+                               {:type :field
+                                :text "value"
+                                :degrade {:on-add :hidden}
+                                :on-event (fn [widget event] {})})]
+      (session/focus! widget-session handle)
+      widget-session))
+
+  (p/when [session]
+    (session/dispatch! session {:type :keystroke
+                                :key [:key/ctrl :key/c]
+                                :signal :interrupt}))
+
+  (p/then [result]
+    (is (= {:handled? false
+            :actions []}
+           result))))
 
 
 

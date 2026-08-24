@@ -40,10 +40,10 @@
   (p/when []
     (let [moved (:widget (prompt/on-event (prompt/make {:prompt "> "
                                                         :value "ac"})
-                                          {:type :key
-                                           :key :left}))
+                                          {:type :keystroke
+                                           :key :key/left}))
           typed (:widget (prompt/on-event moved
-                                          {:type :text
+                                          {:type :keystroke
                                            :text "猫"}))]
       (for [widget [moved
                     typed
@@ -84,24 +84,24 @@
 (deftest on-event/moves-and-edits-with-named-keys
   (p/when []
     (let [at-start (:widget (prompt/on-event (prompt/make {:value "a猫🙂"})
-                                             {:type :key
-                                              :key :home}))
+                                             {:type :keystroke
+                                              :key :key/home}))
           after-a (:widget (prompt/on-event at-start
-                                            {:type :key
-                                             :key :right}))
+                                            {:type :keystroke
+                                             :key :key/right}))
           deleted (:widget (prompt/on-event after-a
-                                            {:type :key
-                                             :key :delete}))
+                                            {:type :keystroke
+                                             :key :key/delete}))
           at-end (:widget (prompt/on-event deleted
-                                           {:type :key
-                                            :key :end}))]
+                                           {:type :keystroke
+                                            :key :key/end}))]
       (for [widget [at-start
                     after-a
                     deleted
                     at-end
                     (:widget (prompt/on-event at-end
-                                              {:type :key
-                                               :key :backspace}))]]
+                                              {:type :keystroke
+                                               :key :key/backspace}))]]
         (select-keys widget
                      [:history
                       :history-position
@@ -152,18 +152,21 @@
           [{:type :submit
             :value "(+ 1 2)"}]}
          (prompt/on-event (prompt/make {:value "(+ 1 2)"})
-                          {:type :key
-                           :key :enter}))))
+                          {:type :keystroke
+                           :key :key/enter}))))
 
-(deftest on-event/cancels-a-nonempty-edit-and-leaves-an-empty-interrupt-unhandled
+(deftest on-event/cancels-a-nonempty-edit-and-leaves-empty-control-c-unhandled
   (p/given
     (let [widget (prompt/make {:history ["one" "two"]})]
       (:widget (prompt/on-event widget
-                                {:type :key
-                                 :key :up}))))
+                                {:type :keystroke
+                                 :key :key/up}))))
 
   (p/when [widget]
-    (let [cancelled (prompt/on-event widget {:type :interrupt})]
+    (let [cancelled (prompt/on-event widget
+                                     {:type :keystroke
+                                      :key [:key/ctrl :key/c]
+                                      :signal :interrupt})]
       {:cancelled
        (update cancelled :widget
                (fn [widget]
@@ -173,7 +176,10 @@
                                :buffer
                                :text
                                :cursor])))
-       :empty (prompt/on-event (:widget cancelled) {:type :interrupt})}))
+       :empty (prompt/on-event (:widget cancelled)
+                               {:type :keystroke
+                                :key [:key/ctrl :key/c]
+                                :signal :interrupt})}))
 
   (p/then [result]
     (is (= {:cancelled
@@ -198,17 +204,17 @@
                                           {:type :paste
                                            :text "(ran"}))
           newest (:widget (prompt/on-event typed
-                                           {:type :key
-                                            :key :up}))
+                                           {:type :keystroke
+                                            :key :key/up}))
           oldest (:widget (prompt/on-event newest
-                                           {:type :key
-                                            :key :up}))
+                                           {:type :keystroke
+                                            :key :key/up}))
           newer (:widget (prompt/on-event oldest
-                                          {:type :key
-                                           :key :down}))
+                                          {:type :keystroke
+                                           :key :key/down}))
           current (:widget (prompt/on-event newer
-                                            {:type :key
-                                             :key :down}))]
+                                            {:type :keystroke
+                                             :key :key/down}))]
       {:widgets
        (for [widget [typed newest oldest newer current]]
          (select-keys widget
@@ -218,11 +224,11 @@
                        :text
                        :cursor]))
        :above-oldest (prompt/on-event oldest
-                                      {:type :key
-                                       :key :up})
+                                      {:type :keystroke
+                                       :key :key/up})
        :below-current (prompt/on-event current
-                                       {:type :key
-                                        :key :down})}))
+                                       {:type :keystroke
+                                        :key :key/down})}))
 
   (p/then [result]
     (is (= {:widgets
@@ -265,21 +271,16 @@
             :below-current {}}
            result))))
 
-(deftest on-event/leaves-modified-and-unrecognized-input-unhandled
+(deftest on-event/leaves-unrecognized-input-unhandled
   (p/when []
     (let [widget (prompt/make {:value "abc"})]
       [(prompt/on-event widget
-                        {:type :text
-                         :text "x"
-                         :modifiers [:alt]})
-       (prompt/on-event widget
-                        {:type :key
-                         :key :left
-                         :modifiers [:control]})
+                        {:type :keystroke
+                         :key [:key/ctrl :key/left]})
        (prompt/on-event widget
                         {:type :resize
                          :columns 80
                          :rows 24})]))
 
   (p/then [results]
-    (is (= [{} {} {}] results))))
+    (is (= [{} {}] results))))

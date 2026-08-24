@@ -7,23 +7,26 @@
   WIDGET-SESSION.
 
   The caller retains ownership of the surrounding input loop and can therefore
-  handle EOF, interruption, resize, and widget actions without Voodoo imposing
-  application policy.
+  handle EOF, unconsumed keystrokes, resize, and widget actions without Voodoo
+  imposing application policy.
 
   Args:
   - `widget-session`: Session whose focused widget receives the event.
   - `input`: Scoped terminal input supplied by `inpoots.stdin/with!`.
 
   Returns:
-  A map containing the original portable `:event` and the generic widget
-  `:actions` returned by `voodoo.session/dispatch!`:
+  A map containing the original portable `:event`, whether the focused widget
+  handled it, and the generic widget `:actions` returned by
+  `voodoo.session/dispatch!`:
 
   ```roo
-  {:event {:type :text
+  {:event {:type :keystroke
+           :key :key/a
            :text \"a\"}
+   :handled? true
    :actions []}
   ```"
   [widget-session input]
   (let [event (stdin/read-event! input)]
-    {:event event
-     :actions (session/dispatch! widget-session event)}))
+    (merge {:event event}
+           (session/dispatch! widget-session event))))

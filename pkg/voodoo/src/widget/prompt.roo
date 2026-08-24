@@ -20,10 +20,10 @@
      :value \"(+ 1 2)\"}]}
   ```
 
-  An interrupt clears a nonempty current edit and returns a generic cancel
-  action. An interrupt on an empty edit remains unhandled. Other unrecognized
-  events and modified key combinations also return an empty result so another
-  interaction layer may give them meaning later."
+  Control-C clears a nonempty current edit and returns a generic cancel action.
+  Control-C on an empty edit remains unhandled. Other unrecognized keystrokes
+  and events also return an empty result so another interaction layer may give
+  them meaning later."
   [prompt event]
   (let [next-widget (fn [next-prompt next-buffer]
                       (let [next-value (buffer/text next-buffer)]
@@ -42,40 +42,38 @@
                    (next-widget (assoc prompt :history-position position)
                                 (buffer/make (nth (:history prompt) position))))]
     (case (:type event)
-      :text (if (empty? (:modifiers event))
-              (next-widget prompt
-                           (buffer/insert (:buffer prompt) (:text event)))
-              {})
       :paste (next-widget prompt
                           (buffer/insert (:buffer prompt) (:text event)))
-      :interrupt
-      (if (empty? (buffer/text (:buffer prompt)))
-        {}
-        (merge (next-widget
-                 (assoc prompt
-                        :history-position (dec (count (:history prompt))))
-                 (buffer/make ""))
-               {:actions [{:type :cancel}]}))
-      :key (if (empty? (:modifiers event))
-             (case (:key event)
-               :left (next-widget prompt (buffer/move-left (:buffer prompt)))
-               :right (next-widget prompt (buffer/move-right (:buffer prompt)))
-               :up (if (> (:history-position prompt) 0)
-                     (navigate (dec (:history-position prompt)))
-                     {})
-               :down (if (< (:history-position prompt)
-                            (dec (count (:history prompt))))
-                       (navigate (inc (:history-position prompt)))
-                       {})
-               :home (next-widget prompt (buffer/move-start (:buffer prompt)))
-               :end (next-widget prompt (buffer/move-end (:buffer prompt)))
-               :backspace (next-widget prompt (buffer/backspace (:buffer prompt)))
-               :delete (next-widget prompt (buffer/delete (:buffer prompt)))
-               :enter {:actions
-                       [{:type :submit
-                         :value (buffer/text (:buffer prompt))}]}
-               :default {})
-             {})
+      :keystroke
+      (case (:key event)
+        :key/left (next-widget prompt (buffer/move-left (:buffer prompt)))
+        :key/right (next-widget prompt (buffer/move-right (:buffer prompt)))
+        :key/up (if (> (:history-position prompt) 0)
+                  (navigate (dec (:history-position prompt)))
+                  {})
+        :key/down (if (< (:history-position prompt)
+                         (dec (count (:history prompt))))
+                    (navigate (inc (:history-position prompt)))
+                    {})
+        :key/home (next-widget prompt (buffer/move-start (:buffer prompt)))
+        :key/end (next-widget prompt (buffer/move-end (:buffer prompt)))
+        :key/backspace (next-widget prompt (buffer/backspace (:buffer prompt)))
+        :key/delete (next-widget prompt (buffer/delete (:buffer prompt)))
+        :key/enter {:actions
+                    [{:type :submit
+                      :value (buffer/text (:buffer prompt))}]}
+        [:key/ctrl :key/c]
+        (if (empty? (buffer/text (:buffer prompt)))
+          {}
+          (merge (next-widget
+                   (assoc prompt
+                          :history-position (dec (count (:history prompt))))
+                   (buffer/make ""))
+                 {:actions [{:type :cancel}]}))
+        :default (if-let [text (:text event)]
+                   (next-widget prompt
+                                (buffer/insert (:buffer prompt) text))
+                   {}))
       :default {})))
 
 (defun make
@@ -99,7 +97,7 @@
   (let [prompt-text (get opts :prompt "")
         initial-value (get opts :value "")
         initial-buffer (buffer/make initial-value)
-        history (append (get opts :history []) initial-value)]
+        history (append (:history opts) initial-value)]
     (widget/make
       (merge (dissoc opts :value)
              {:type :prompt

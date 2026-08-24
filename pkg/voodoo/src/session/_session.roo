@@ -158,8 +158,17 @@
   A widget participates by storing an `:on-event` function in its spec. That
   function receives the current spec and EVENT and returns a map which may
   contain a replacement `:widget` and an `:actions` vector. The replacement is
-  rendered through `update!`; actions are returned to the caller. Widgets with
-  no event function, and sessions with no focused widget, return `[]`."
+  rendered through `update!`. An empty widget result leaves the event
+  unhandled so another interaction layer can interpret it.
+
+  Args:
+  - `session`: Session returned by `make`.
+  - `event`: Event value to send to the focused widget.
+
+  Returns:
+  A map containing `:handled?` and the widget's `:actions`. Widgets with no
+  event function, sessions with no focused widget, and empty widget results
+  return `{:handled? false :actions []}`."
   [session event]
   (let [tracked-widget (get (:widgets session) (:focus session))
         on-event (get-in tracked-widget [:spec :on-event])]
@@ -167,8 +176,10 @@
       (let [result (on-event (:spec tracked-widget) event)]
         (when-let [next-widget (:widget result)]
           (update! session (:focus session) next-widget))
-        (get result :actions []))
-      [])))
+        {:handled? (not (empty? result))
+         :actions (get result :actions [])})
+      {:handled? false
+       :actions []})))
 
 
 
