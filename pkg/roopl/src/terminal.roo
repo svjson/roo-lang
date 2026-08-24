@@ -15,9 +15,9 @@
   - `args`: Command-line argument vector. No arguments are currently accepted.
 
   Returns:
-  `nil` after the frontend exits on EOF or an interruption not consumed by the
-  prompt editor. Submitted source is evaluated by a dedicated local Roo
-  runtime."
+  `nil` after the frontend exits on stream EOF or an unhandled terminal
+  interrupt/EOF keystroke. Submitted source is evaluated by a dedicated local
+  Roo runtime."
   [args]
   (prn! "roopl 0.1.0")
   (prn! "-----------")
@@ -37,14 +37,25 @@
                  (fn [terminal-input]
                    (while running
                      (let [input-result (input/dispatch-next! widget-session terminal-input)
+                           event (:event input-result)
                            action (head (:actions input-result))]
-                       (case (:type (:event input-result))
-                         :eof (set! [running] false)
-                         :interrupt (unless (= :cancel (:type action))
-                                      (set! [running] false))
-                         :resize (set! [columns] (:columns (:event input-result)))
-                         :default
-                         (when (= :submit (:type action))
+                       (cond
+                         (= :eof (:type event))
+                         (set! [running] false)
+
+                         (= :resize (:type event))
+                         (set! [columns] (:columns event))
+
+                         (and (not (:handled? input-result))
+                              (= :interrupt (:signal event)))
+                         (set! [running] false)
+
+                         (and (not (:handled? input-result))
+                              (= :eof (:control event)))
+                         (set! [running] false)
+
+                         (= :submit (:type action))
+                         (do
                            (session/evict! widget-session handle)
                            (unless (blank? (:value action))
                              (set! [history]
