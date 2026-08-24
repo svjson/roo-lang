@@ -139,12 +139,12 @@ add_custom_target(bootstrap_loom
   COMMAND ${CMAKE_COMMAND} -E env
           "HOME=${ROO_LOOM_BOOTSTRAP_HOME}"
           $<TARGET_FILE:roo_cli>
-          "${CMAKE_CURRENT_SOURCE_DIR}/pkg/loom"
+          "${ROO_PACKAGE_STAGE_DIR}/loom"
           bootstrap
-          "${CMAKE_CURRENT_SOURCE_DIR}/pkg/loom"
+          "${ROO_PACKAGE_STAGE_DIR}/loom"
           --source-root
-          "${CMAKE_CURRENT_SOURCE_DIR}/pkg"
-          --repo
+          "${ROO_PACKAGE_STAGE_DIR}"
+          --package-repository
           "${ROO_LOOM_BOOTSTRAP_REPOSITORY}"
   COMMAND ${CMAKE_COMMAND} -E env
           "HOME=${ROO_LOOM_BOOTSTRAP_HOME}"
@@ -157,7 +157,7 @@ add_custom_target(bootstrap_loom
           "${ROO_LOOM_BOOTSTRAP_DIR}"
           --name
           loom
-  DEPENDS roo_cli rooc_cli
+  DEPENDS roo_cli rooc_cli stage_loom_package
   USES_TERMINAL
   VERBATIM
 )

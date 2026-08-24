@@ -119,7 +119,7 @@ assert_eq "loom list output" "loom@0.1.0" "$LIST_OUTPUT"
 if ! DEPS_OUTPUT=$("$ROO" "$LOOM_PACKAGE" deps "$LOOM_PACKAGE" --package-repository "$LOOM_REPO" --flat); then
   fail "loom deps --flat command failed"
 fi
-assert_eq "loom deps --flat output" "" "$DEPS_OUTPUT"
+assert_eq "loom deps --flat output" "lookup@0.1.0" "$DEPS_OUTPUT"
 
 printf '%s\n' "==> Testing loom init"
 cmake -E rm -rf "$LOOM_INIT_DIR"

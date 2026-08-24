@@ -6,6 +6,8 @@ ci-help:
 
 include Makefile
 
+NATIVE_PACKAGE_STAGE ?= $(PACKAGE_STAGE)
+
 .PHONY: ci-build-libroo ci-build-libroo-package ci-build-libroo-server ci-build-tools ci-build-native-packages ci-build-loom ci-build-lookup ci-build-proof ci-build-proofread ci-build-boodle ci-audit-roo-lang-index ci-test-support ci-test-lang ci-test-package ci-test-server ci-test-proof ci-test-inpoots ci-test-boodle ci-test-moordown ci-test-workbook ci-test-footsteps ci-test-rooc ci-test-roo-cli ci-test-loom-cli ci-test-lookup-cli ci-test-boodle-cli ci-test-proofread
 
 ci-build-libroo: configure
@@ -21,10 +23,11 @@ ci-build-tools:
 	cmake --build build --target roo_cli rooc_cli
 
 ci-build-native-packages:
-	cmake --build build --target stage_native_packages
+	cmake --build build --target stage_packages
 
 ci-build-loom:
-	./build/rooc build $(NATIVE_PACKAGE_STAGE)/loom --build-dir $(CURDIR)/build/loom-build --name loom
+	cmake --build build --target stage_loom_package
+	./build/rooc build $(NATIVE_PACKAGE_STAGE)/loom --package-repository $(NATIVE_PACKAGE_STAGE) --build-dir $(CURDIR)/build/loom-build --name loom
 
 ci-build-lookup:
 	./build/rooc build $(NATIVE_PACKAGE_STAGE)/lookup --build-dir $(CURDIR)/build/lookup-build --name lookup

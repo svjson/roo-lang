@@ -1407,7 +1407,7 @@ jobs:
           cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Build Loom binary
-        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/loom --build-dir build/loom-build --name loom
+        run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/loom --package-repository build/package-stage/pkg --build-dir build/loom-build --name loom
 
       - name: Build Lookup binary
         run: ./build/rooc${{ runner.os == 'Windows' && '.exe' || '' }} build build/package-stage/pkg/lookup --build-dir build/lookup-build --name lookup

@@ -1,6 +1,6 @@
 {:name loom
  :version "0.1.0"
  :description "Roo package manager."
- :dependencies []
+ :dependencies {lookup "0.1.0"}
  :load-roots ["src"]
  :main loom.core/main}
