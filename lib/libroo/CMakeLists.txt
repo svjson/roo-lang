@@ -105,7 +105,11 @@ add_library(Roo::roo ALIAS roo)
 add_library(Roo::roo_static ALIAS roo_static)
 add_library(Roo::roo_shared ALIAS roo_shared)
 
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
+
+target_link_libraries(roo_objects PRIVATE Threads::Threads)
+target_link_libraries(roo_benchmark_objects PRIVATE Threads::Threads)
 
 foreach(target roo_static roo_shared)
   set_target_properties(${target} PROPERTIES
