@@ -24,6 +24,7 @@ set(roo_SOURCES
   src/roo/runtime/seq.cpp
   src/roo/runtime/str.cpp
   src/roo/runtime/walk.cpp
+  src/roo/runtime/worker.cpp
   src/roo/runtime/value.cpp
   src/roo/form.cpp
   src/roo/host/object.cpp
@@ -59,6 +60,8 @@ set(roo_SOURCES
   src/roo/lang/time.cpp
   src/roo/lang/tty/tty.cpp
   src/roo/lang/tty/tty_namespace.cpp
+  src/roo/lang/worker/worker.cpp
+  src/roo/lang/worker/worker_namespace.cpp
   src/roo/lexer.cpp
   src/roo/exception.cpp
   src/roo/namespace.cpp
@@ -102,12 +105,14 @@ add_library(Roo::roo ALIAS roo)
 add_library(Roo::roo_static ALIAS roo_static)
 add_library(Roo::roo_shared ALIAS roo_shared)
 
+find_package(Threads REQUIRED)
+
 foreach(target roo_static roo_shared)
   set_target_properties(${target} PROPERTIES
     OUTPUT_NAME roo
   )
 
-  target_link_libraries(${target})
+  target_link_libraries(${target} PUBLIC Threads::Threads)
 
   target_include_directories(${target}
     PUBLIC

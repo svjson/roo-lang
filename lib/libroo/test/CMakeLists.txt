@@ -49,6 +49,7 @@ target_link_libraries(testroo
 target_link_libraries(benchmarkroo
   GTest::gtest
   GTest::gmock
+  Threads::Threads
 )
 
 if(COMMAND target_precompile_headers AND NOT DEFINED ENV{TESTS_USE_IWYU})

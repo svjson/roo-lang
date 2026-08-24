@@ -22,6 +22,7 @@
 #include <roo/lang/io/io_namespace.h>
 #include <roo/lang/string/string_namespace.h>
 #include <roo/lang/tty/tty_namespace.h>
+#include <roo/lang/worker/worker_namespace.h>
 #include <roo/namespace.h>
 #include <roo/namespace_loader.h>
 #include <roo/reader.h>
@@ -29,6 +30,8 @@
 #include <roo/runtime/lower.h>
 #include <roo/runtime/value.h>
 #include <roo/type.h>
+
+#include "runtime/worker.h"
 
 namespace Roo
 {
@@ -88,6 +91,8 @@ namespace Roo
     namespaces.emplace(string.get_name(), std::move(string));
     Namespace tty = make_tty_namespace();
     namespaces.emplace(tty.get_name(), std::move(tty));
+    Namespace worker = make_worker_namespace();
+    namespaces.emplace(worker.get_name(), std::move(worker));
 
     set_namespace_source(std::move(namespace_source));
     switch_namespace(DEFAULT_NAMESPACE);

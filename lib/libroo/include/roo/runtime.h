@@ -31,6 +31,7 @@ namespace Roo
   class ModuleFunction;
   class NamespaceLoader;
   class NamespaceSource;
+  class WorkerRegistry;
 
   class Runtime
   {
@@ -53,6 +54,7 @@ namespace Roo
 
     std::unique_ptr<NamespaceSource> default_ns_source;
     std::unique_ptr<NamespaceLoader> namespace_loader;
+    std::unique_ptr<WorkerRegistry> workers;
 
    public:
     ~Runtime();
@@ -228,6 +230,14 @@ namespace Roo
 
     KeywordPool& keyword_pool();
     AST::Pool& ast_pool();
+
+    /*!
+     * @brief Create and start a vanilla worker runtime owned by this runtime.
+     *
+     * Worker identities are unique within their parent Runtime. The worker is
+     * constructed on, confined to, and destroyed on its own execution thread.
+     */
+    void create_worker(const std::string& identity);
 
     /*!
      * @brief Tests if this Runtime instance may access any file system
