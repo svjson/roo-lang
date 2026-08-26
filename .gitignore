@@ -1,6 +1,7 @@
 **/CMakeFiles
 build/
 build-release/
+.roo-build.lock
 dist/
 Makefile
 !/Makefile
