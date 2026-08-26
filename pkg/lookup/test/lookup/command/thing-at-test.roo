@@ -69,7 +69,7 @@
   (p/then [resolution]
     (is (= {:kind :namespace
             :name "lookup.index"
-            :source {:path "../src/index.roo"
+            :source {:path "../src/index/_index.roo"
                      :line 1
                      :column 1
                      :start {:line 1 :column 1}
@@ -102,7 +102,7 @@
                     :role :reference
                     :resolution {:kind :namespace
                                  :name "lookup.index"
-                                 :source {:path "../src/index.roo"
+                                 :source {:path "../src/index/_index.roo"
                                           :line 1
                                           :column 1
                                           :start {:line 1 :column 1}

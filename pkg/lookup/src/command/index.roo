@@ -1,7 +1,7 @@
 (ns lookup.command.index
   (:require [roo.io :as io]
             [lookup.index :as index]
-            [lookup.incremental :as incremental]))
+            [lookup.index.incremental :as incremental]))
 
 (def usage-line
   "Usage line for the `lookup index` command."

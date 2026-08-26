@@ -16,7 +16,7 @@
           paths (for [source sources] (:path source))
           index-source (find-first sources
                                    (fn [source]
-                                     (= "../src/index.roo" (:path source))))
+                                     (= "../src/index/_index.roo" (:path source))))
           first-form (head (:forms index-source))]
       (is (= :roo/source-forms (:format source-index)))
       (is (= 1 (:version source-index)))
@@ -29,8 +29,8 @@
               "../src/command/index.roo"
               "../src/command/thing-at.roo"
               "../src/doc.roo"
-              "../src/incremental.roo"
-              "../src/index.roo"
+              "../src/index/_index.roo"
+              "../src/index/incremental.roo"
               "../src/source.roo"
               "../src/source/docstring/parse/content.roo"
               "../src/source/docstring/symbols.roo"
@@ -38,7 +38,7 @@
               "../src/source/native/parse/entries.roo"
               "../src/source/native/symbols.roo"]
              paths))
-      (is (= "../src/index.roo" (:path index-source)))
+      (is (= "../src/index/_index.roo" (:path index-source)))
       (is (= "ns" (str (head (:form first-form)))))
       (is (= "lookup.index" (str (nth (:form first-form) 1)))))))
 
@@ -71,7 +71,7 @@
       (is (= 1 (:version symbol-index)))
       (is (= "lookup" (:name (:package symbol-index))))
       (is (contains? sources {:path "../src/cli.roo"}))
-      (is (contains? sources {:path "../src/index.roo"}))
+      (is (contains? sources {:path "../src/index/_index.roo"}))
       (is (any? namespaces (fn [namespace]
                              (= "lookup.cli" (:name namespace)))))
       (is (any? namespaces
@@ -108,7 +108,7 @@
       (is (= {:min 1 :max 1 :variadic false}
              (:arity symbol-index-signature)))
       (is (= :markdown (:format (:doc symbol-index-symbol))))
-      (is (= "../src/index.roo"
+      (is (= "../src/index/_index.roo"
              (:path (:source symbol-index-symbol)))))))
 
 

@@ -1,4 +1,4 @@
-(ns lookup.incremental
+(ns lookup.index.incremental
   (:require [roo.io :as io]
             [lookup.source :as source]
             [lookup.source.docstring.symbols :as docstring-symbols]

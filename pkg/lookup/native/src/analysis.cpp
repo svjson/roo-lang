@@ -309,11 +309,18 @@ namespace Roo::Lookup
         }
         if (*head == "defun")
         {
-          return resolve_local_in_params_and_body(node->get_children(),
+          const auto& children = node->get_children();
+          std::size_t params_index = 2;
+          if (children.size() > params_index &&
+              children[params_index]->get_type() == Form::STRING)
+          {
+            ++params_index;
+          }
+          return resolve_local_in_params_and_body(children,
                                                   target,
                                                   scopes,
-                                                  2,
-                                                  3);
+                                                  params_index,
+                                                  params_index + 1);
         }
         if (*head == "fn")
         {
