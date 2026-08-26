@@ -25,3 +25,8 @@ TEST_F(WhenLetForm, branching_should_happen_according_to_truthiness_not_just_ifd
   EXPECT_EQ(runtime.eval("(when-let [value (:a {:a true})] value)")->to_string(), "true");
   EXPECT_EQ(runtime.eval("(when-let [value (:a {:a false})] value)")->to_string(), "nil");
 }
+
+TEST_F(WhenLetForm, rejects_uneven_binding_vector)
+{
+  EXPECT_THROW(runtime.eval("(when-let [x true y] x)"), Roo::InvalidFormException);
+}

@@ -31,3 +31,8 @@ TEST_F(IfLetForm, branching_should_happen_according_to_truthiness_not_just_ifdef
   EXPECT_EQ(runtime.eval("(if-let [value (:a {:a false})] value \"no value\")")->to_string(),
             "\"no value\"");
 }
+
+TEST_F(IfLetForm, rejects_uneven_binding_vector)
+{
+  EXPECT_THROW(runtime.eval("(if-let [x true y] x :missing)"), Roo::InvalidFormException);
+}

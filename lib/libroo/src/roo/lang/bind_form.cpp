@@ -27,6 +27,12 @@ namespace Roo
     }
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
+    if (bind_forms.size() % 2 != 0)
+    {
+      throw InvalidFormException("let: Unmatched binding-value pairs: " +
+                                 elements[1]->to_string());
+    }
+
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(bind_forms.size() / 2);
 
@@ -97,6 +103,12 @@ namespace Roo
     }
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
+    if (bind_forms.size() % 2 != 0)
+    {
+      throw InvalidFormException("if-let: Unmatched binding-value pairs: " +
+                                 elements[1]->to_string());
+    }
+
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(bind_forms.size() / 2);
 
@@ -171,6 +183,12 @@ namespace Roo
     }
 
     sptr_ast_node_v& bind_forms = elements[1]->get_children();
+    if (bind_forms.size() % 2 != 0)
+    {
+      throw InvalidFormException("when-let: Unmatched binding-value pairs: " +
+                                 elements[1]->to_string());
+    }
+
     std::vector<std::pair<std::unique_ptr<LexicalBinding>, uptr_exec_node>> bindings;
     bindings.reserve(bind_forms.size() / 2);
 

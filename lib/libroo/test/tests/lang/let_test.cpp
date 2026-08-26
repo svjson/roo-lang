@@ -92,3 +92,8 @@ TEST_F(LetForm, empty_let_body_returns_nil)
   ASSERT_TRUE(result.get());
   ASSERT_EQ(result, Roo::Constant::NIL);
 }
+
+TEST_F(LetForm, rejects_uneven_binding_vector)
+{
+  EXPECT_THROW(runtime.eval("(let [x 10 y] x)"), Roo::InvalidFormException);
+}
