@@ -117,8 +117,7 @@ namespace Roo
         {
           throw InvalidFormException("Updater spec cannot be empty.");
         }
-        if (updater_parts.front()->get_type() == Form::KEYWORD &&
-            updater_parts.size() != 1)
+        if (updater_parts.front()->get_type() == Form::KEYWORD && updater_parts.size() != 1)
         {
           throw InvalidFormException("Keyword updater expects no additional arguments: " +
                                      updater_form->to_string());
@@ -168,8 +167,10 @@ namespace Roo
       {
         sptr_val updater_spec = exec(ctx, *snode.exec_nodes[updater_node_index]);
         UpdateCall call = make_update_call(current_value, updater_spec, function_name);
-        return invoke_indirect_callable(
-          ctx, call.updater, call.args, InvocationOperation::CALLING);
+        return invoke_indirect_callable(ctx,
+                                        call.updater,
+                                        call.args,
+                                        InvocationOperation::CALLING);
       }
 
       const std::string current_name = snode.values.front()->str();
@@ -338,6 +339,26 @@ namespace Roo
                                      " '");
     }
 
+    if (args[0]->type == Value::Type::NIL)
+    {
+      bool integer_keys = true;
+      for (size_t i = 1; i < args.size() - 1; i += 2)
+      {
+        if (args[i]->type != Value::Type::NUMBER ||
+            (args[i]->num().num_type != Value::NumberType::INT &&
+             args[i]->num().num_type != Value::NumberType::LONG))
+        {
+          integer_keys = false;
+          break;
+        }
+      }
+
+      sptr_val_v normalized_args = args;
+      normalized_args[0] = integer_keys ? Value::vector({}) : Value::map({});
+      return integer_keys ? exec_assoc_seq_bang(ctx, normalized_args)
+                          : exec_assoc_bang(ctx, normalized_args);
+    }
+
     for (size_t i = 1; i < args.size() - 1; i += 2)
     {
       Dict::set_property(args[0], args[i], args[i + 1]);
@@ -348,15 +369,14 @@ namespace Roo
 
   EXEC_BODY(AssocBangFunction, exec_assoc_seq_bang)
   {
-    if (auto* elements = std::get_if<sptr_val_v>(&args[0]->value))
+    for (size_t i = 1; i < args.size() - 1; i += 2)
     {
-      size_t index = args[1]->i32();
-      (*elements)[index] = args.back();
-    }
-    else
-    {
-      throw TypeError("assoc! on seq by index not implemented for value type: " +
-                      std::to_string((int)args[0]->type));
+      const std::int64_t index = checked_sequence_index(*args[i], "assoc! index");
+      if (index < 0)
+      {
+        throw TypeError("assoc! index must not be negative.");
+      }
+      Roo::set_child(*args[0], static_cast<size_t>(index), args[i + 1]);
     }
 
     return args[0];
@@ -735,8 +755,8 @@ namespace Roo
     {
       sptr_val_v reducer_args{result, key, Dict::get_property(map_arg, *key)};
 
-      sptr_val new_result = invoke_indirect_callable(
-        ctx, reducer, reducer_args, InvocationOperation::CALLING);
+      sptr_val new_result =
+        invoke_indirect_callable(ctx, reducer, reducer_args, InvocationOperation::CALLING);
       if (new_result.get() != result.get())
       {
         result.swap(new_result);

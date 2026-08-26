@@ -56,3 +56,32 @@ TEST_F(AssocBangFunction, add_and_replace_multiple)
   EXPECT_EQ(runtime.lookup("my-map")->to_string(),
             runtime.eval("{:a 1 :b 10 :c 3 :d \"some string\"}")->to_string());
 }
+
+TEST_F(AssocBangFunction, treats_nil_as_an_empty_map)
+{
+  runtime.eval("(def target nil)");
+
+  EXPECT_EQ(*runtime.eval("(assoc! target :a 1 :b 2)"),
+            *runtime.eval("{:a 1 :b 2}"));
+  EXPECT_EQ(*runtime.lookup("target"), *Roo::Constant::NIL);
+}
+
+TEST_F(AssocBangFunction, treats_nil_as_an_empty_vector_when_all_keys_are_integers)
+{
+  runtime.eval("(def target nil)");
+
+  EXPECT_EQ(*runtime.eval("(assoc! target 0 :a 1 :b)"), *runtime.eval("[:a :b]"));
+  EXPECT_EQ(*runtime.lookup("target"), *Roo::Constant::NIL);
+}
+
+TEST_F(AssocBangFunction, treats_nil_as_an_empty_map_when_any_key_is_not_an_integer)
+{
+  EXPECT_EQ(*runtime.eval("(assoc! nil 0 :zero :name \"value\")"),
+            *runtime.eval("{0 :zero :name \"value\"}"));
+}
+
+TEST_F(AssocBangFunction, requires_integer_keys_to_infer_an_empty_vector)
+{
+  EXPECT_EQ(*runtime.eval("(assoc! nil 0 :zero 1.5 :float)"),
+            *runtime.eval("{0 :zero 1.5 :float}"));
+}
