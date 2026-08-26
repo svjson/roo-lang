@@ -133,11 +133,17 @@
                                :end {:line 3 :column 12}}
                       :suggestions [{:title "Inner rewrite"
                                      :kind :rewrite
+                                     :edits []}]}
+                     {:rule :same-start-inner
+                      :source {:start {:line 1 :column 1}
+                               :end {:line 4 :column 1}}
+                      :suggestions [{:title "Same-start rewrite"
+                                     :kind :rewrite
                                      :edits []}]}]
         matches (suggest-command/suggestions-at diagnostics 3 5)]
-    (is (= [:inner :outer] (map matches :rule)))
+    (is (= [:inner :same-start-inner :outer] (map matches :rule)))
     (is (= ["Outer rewrite" "Outer alternative"]
-           (map (:suggestions (nth matches 1)) :title)))))
+           (map (:suggestions (nth matches 2)) :title)))))
 
 
 
@@ -150,4 +156,3 @@
            :source {:path "assets/invalid/broken.roo"}
            :message "Unexpected end of input"}]
          (suggest-command/checked-diagnostics "assets/invalid/broken.roo"))))
-
