@@ -1,5 +1,3 @@
-#include "worker.h"
-
 #include <memory>
 #include <utility>
 
@@ -12,6 +10,7 @@
 #include <roo/runtime/deep_copy.h>
 
 #include "runtime_transfer.h"
+#include "worker_internal.h"
 
 namespace Roo
 {
@@ -102,7 +101,20 @@ namespace Roo
       }
       return *handle;
     }
+
   } // namespace
+
+  struct WorkerRegistry::Impl
+  {
+    std::map<std::string, std::shared_ptr<Worker>> workers;
+  };
+
+  WorkerRegistry::WorkerRegistry()
+    : impl(std::make_unique<Impl>())
+  {
+  }
+
+  WorkerRegistry::~WorkerRegistry() = default;
 
   WorkerExecution::WorkerExecution(uint64_t execution_id)
     : execution_id(execution_id)
@@ -262,18 +274,18 @@ namespace Roo
 
   void WorkerRegistry::create(const std::string& identity)
   {
-    if (workers.contains(identity))
+    if (impl->workers.contains(identity))
     {
       throw RooException("Worker :" + identity + " already exists.");
     }
 
-    workers.emplace(identity, std::make_shared<Worker>());
+    impl->workers.emplace(identity, std::make_shared<Worker>());
   }
 
-  sptr_val WorkerRegistry::enqueue(const std::string& identity, WorkerTask task)
+  sptr_val WorkerRegistry::enqueue(const std::string& identity, Task task)
   {
-    auto found = workers.find(identity);
-    if (found == workers.end())
+    auto found = impl->workers.find(identity);
+    if (found == impl->workers.end())
     {
       throw RooException("Worker :" + identity + " does not exist.");
     }
@@ -307,9 +319,9 @@ namespace Roo
   WorkerExecutionStatus WorkerRegistry::poll(const sptr_val& execution_handle_value) const
   {
     const auto& handle = execution_handle(execution_handle_value);
-    auto found = workers.find(handle.identity());
+    auto found = impl->workers.find(handle.identity());
     auto handle_worker = handle.lock_worker();
-    if (found == workers.end() || !handle_worker || found->second != handle_worker)
+    if (found == impl->workers.end() || !handle_worker || found->second != handle_worker)
     {
       throw RooException("Worker execution handle does not belong to this runtime.");
     }
@@ -325,56 +337,21 @@ namespace Roo
   sptr_val WorkerRegistry::collect(const sptr_val& execution_handle_value)
   {
     const auto& handle = execution_handle(execution_handle_value);
-    auto found = workers.find(handle.identity());
+    auto found = impl->workers.find(handle.identity());
     auto handle_worker = handle.lock_worker();
-    if (found == workers.end() || !handle_worker || found->second != handle_worker)
+    if (found == impl->workers.end() || !handle_worker || found->second != handle_worker)
     {
       throw RooException("Worker execution handle does not belong to this runtime.");
     }
     return handle_worker->collect(handle.id());
   }
 
-  void Runtime::create_worker(const std::string& identity)
+  WorkerRegistry& Runtime::worker_registry()
   {
     if (!workers)
     {
       workers = std::make_unique<WorkerRegistry>();
     }
-    workers->create(identity);
-  }
-
-  sptr_val Runtime::invoke_worker(const std::string& identity,
-                                  const sptr_val& callable,
-                                  const sptr_val_v& arguments)
-  {
-    if (!workers)
-    {
-      throw RooException("Worker :" + identity + " does not exist.");
-    }
-    return workers->invoke(identity, callable, arguments);
-  }
-
-  sptr_val Runtime::poll_worker(const sptr_val& execution_handle)
-  {
-    if (!workers) throw RooException("Worker execution does not belong to this runtime.");
-
-    switch (workers->poll(execution_handle))
-    {
-    case WorkerExecutionStatus::QUEUED:
-      return Value::keyword("queued", keywords);
-    case WorkerExecutionStatus::RUNNING:
-      return Value::keyword("running", keywords);
-    case WorkerExecutionStatus::SUCCEEDED:
-      return Value::keyword("succeeded", keywords);
-    case WorkerExecutionStatus::FAILED:
-      return Value::keyword("failed", keywords);
-    }
-    throw RooException("Worker execution has an invalid status.");
-  }
-
-  sptr_val Runtime::collect_worker(const sptr_val& execution_handle)
-  {
-    if (!workers) throw RooException("Worker execution does not belong to this runtime.");
-    return workers->collect(execution_handle);
+    return *workers;
   }
 } // namespace Roo

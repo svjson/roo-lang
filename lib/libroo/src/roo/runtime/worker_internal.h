@@ -1,5 +1,5 @@
-#ifndef ROO__RUNTIME__WORKER_H
-#define ROO__RUNTIME__WORKER_H
+#ifndef ROO__RUNTIME__WORKER_INTERNAL_H
+#define ROO__RUNTIME__WORKER_INTERNAL_H
 
 #include <atomic>
 #include <condition_variable>
@@ -13,19 +13,11 @@
 #include <string>
 #include <thread>
 
-#include <roo/runtime/value.h>
+#include <roo/runtime/worker.h>
 
 namespace Roo
 {
   class Runtime;
-
-  enum class WorkerExecutionStatus : uint8_t
-  {
-    QUEUED,
-    RUNNING,
-    SUCCEEDED,
-    FAILED
-  };
 
   class WorkerExecution
   {
@@ -84,20 +76,6 @@ namespace Roo
     sptr_val collect(uint64_t execution_id);
   };
 
-  class WorkerRegistry
-  {
-   private:
-    std::map<std::string, std::shared_ptr<Worker>> workers;
-
-   public:
-    void create(const std::string& identity);
-    sptr_val enqueue(const std::string& identity, WorkerTask task);
-    sptr_val invoke(const std::string& identity,
-                    const sptr_val& callable,
-                    const sptr_val_v& arguments);
-    WorkerExecutionStatus poll(const sptr_val& execution_handle) const;
-    sptr_val collect(const sptr_val& execution_handle);
-  };
 } // namespace Roo
 
 #endif

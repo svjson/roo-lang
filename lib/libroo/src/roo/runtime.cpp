@@ -31,7 +31,7 @@
 #include <roo/runtime/value.h>
 #include <roo/type.h>
 
-#include "runtime/worker.h"
+#include "runtime/worker_internal.h"
 
 namespace Roo
 {
@@ -128,6 +128,16 @@ namespace Roo
     return ast_values;
   }
 
+  SourceMap& Runtime::source_map()
+  {
+    return sources;
+  }
+
+  const SourceMap& Runtime::source_map() const
+  {
+    return sources;
+  }
+
   bool Runtime::source_diagnostics_enabled() const
   {
     return options.source_diagnostics || options.call_stack_diagnostics;
@@ -140,7 +150,7 @@ namespace Roo
 
   std::string Runtime::describe_source(const SourceRef& source) const
   {
-    return source_map.describe(source);
+    return sources.describe(source);
   }
 
   void Runtime::ensure_namespace_loaded(const std::string& ns_name)
@@ -467,7 +477,7 @@ namespace Roo
     uint32_t source_file_id = 0;
     if (source_diagnostics_enabled())
     {
-      source_file_id = source_map.intern_file(source_name);
+      source_file_id = sources.intern_file(source_name);
     }
     sptr_ast_node_v script =
       sexp_reader.read_sexps_for_evaluation(str,

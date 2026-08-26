@@ -13,6 +13,7 @@ namespace Roo
     std::map<std::string, sptr_val> symbols;
     symbols.emplace("collect!", CollectWorkerBangFunction::make());
     symbols.emplace("create!", CreateWorkerBangFunction::make());
+    symbols.emplace("execute-let!", ExecuteLetWorkerBangForm::make());
     symbols.emplace("invoke!", InvokeWorkerBangFunction::make());
     symbols.emplace("poll!", PollWorkerBangFunction::make());
 

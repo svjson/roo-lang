@@ -40,7 +40,7 @@ namespace Roo
     bool file_system_access = false;
     Reader sexp_reader;
     RuntimeOptions options;
-    SourceMap source_map;
+    SourceMap sources;
     RandomState random_state;
     KeywordPool keywords;
     AST::Pool ast_values;
@@ -231,29 +231,14 @@ namespace Roo
     KeywordPool& keyword_pool();
     AST::Pool& ast_pool();
 
-    /*!
-     * @brief Create and start a vanilla worker runtime owned by this runtime.
-     *
-     * Worker identities are unique within their parent Runtime. The worker is
-     * constructed on, confined to, and destroyed on its own execution thread.
-     */
-    void create_worker(const std::string& identity);
+    /** @brief Access the runtime-owned source-file registry. */
+    SourceMap& source_map();
 
-    /**
-     * @brief Invoke a callable asynchronously in a named worker runtime.
-     *
-     * The callable and arguments are copied under the runtime-transfer policy
-     * before they are queued.
-     */
-    sptr_val invoke_worker(const std::string& identity,
-                           const sptr_val& callable,
-                           const sptr_val_v& arguments);
+    /** @brief Access the runtime-owned source-file registry without mutation. */
+    const SourceMap& source_map() const;
 
-    /** @brief Return the current status keyword for a worker execution. */
-    sptr_val poll_worker(const sptr_val& execution_handle);
-
-    /** @brief Consume a completed worker execution's transported result. */
-    sptr_val collect_worker(const sptr_val& execution_handle);
+    /** @brief Access the runtime-owned worker registry. */
+    WorkerRegistry& worker_registry();
 
     /*!
      * @brief Tests if this Runtime instance may access any file system
