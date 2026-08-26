@@ -1,0 +1,58 @@
+(ns loom.package.preflight-test
+  (:require proof.core
+            [proof.scenario :as s]
+            [roo.io :as io]
+            [loom.package.preflight :as preflight]
+            [loom.test-support :as support]))
+
+
+;;; loom.package.prefight/check
+
+(deftest accepts-complete-package-artifacts
+  (s/given
+    (let [package-dir (support/fresh-package!
+                       "loom-proof-preflight-complete"
+                       "{:name sample\n :version \"1.0.0\"\n :load-roots [\"src\"]\n :native-libraries [{:name \"sample-native\" :path \"native\"}]}")]
+      (io/spit! (io/join-path package-dir "src/sample.roo")
+                "(ns sample)\n")
+      (io/spit! (io/join-path package-dir "native/libsample.so") "native")
+      package-dir))
+
+  (s/when [package-dir]
+    (preflight/check package-dir))
+
+  (s/then [result]
+    (is (:ok? result))
+    (is (= "sample" (str (:name (:manifest result)))))
+    (is (string? (:symbols result)))
+    (is (empty? (:diagnostics result)))))
+
+
+(deftest reports-every-missing-declared-payload
+  (s/given
+    (support/fresh-package!
+     "loom-proof-preflight-missing"
+     "{:name incomplete\n :version \"1.0.0\"\n :load-roots [\"src\"]\n :native-libraries [{:name \"incomplete-native\" :path \"native\"}]}"))
+
+  (s/when [package-dir]
+    (preflight/check package-dir))
+
+  (s/then [result]
+    (is (not (:ok? result)))
+    (is (= 2 (count (:diagnostics result))))
+    (is (= :missing-load-root (:kind (head (:diagnostics result)))))
+    (is (= :missing-native-path (:kind (nth (:diagnostics result) 1))))))
+
+
+(deftest rejects-paths-that-escape-the-package
+  (s/given
+    (support/fresh-package!
+      "loom-proof-preflight-unsafe"
+      "{:name unsafe\n :version \"1.0.0\"\n :load-roots [\"../src\"]}"))
+
+  (s/when [package-dir]
+    (preflight/check package-dir))
+
+  (s/then [result]
+    (is (not (:ok? result)))
+    (is (= :unsafe-package-path (:kind (head (:diagnostics result)))))))

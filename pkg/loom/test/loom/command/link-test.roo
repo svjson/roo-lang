@@ -1,14 +1,34 @@
 (ns loom.command.link-test
   (:require proof.core
+            proof.fixture
             [proof.syntax :as s]
             [roo.io :as io]
             [loom.command.install :as install]
             [loom.command.link :as link]
-            [loom.command.uninstall :as uninstall]
             [loom.common.repository :as repository]
             [loom.test-support :as support]))
 
-(deftest links-package-version-to-source-directory
+
+
+;; Fixtures
+
+(deffixture installed-package-for-link {:storage :cache}
+  (let [repo-root (support/fresh-repo! "loom-proof-link-replace-install")
+        package-dir
+        (support/fresh-package! "loom-proof-link-replace-install-package"
+                                "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}")
+        target-dir (repository/package-target-dir repo-root "linked" "0.1.0")]
+    (io/spit! (io/join-path package-dir "src/linked.roo") "(ns linked)\n")
+    (install/install! package-dir repo-root true)
+    {:repo-root repo-root
+     :package-dir package-dir
+     :target-dir target-dir}))
+
+
+
+;;; loom.command.link/link!
+
+(deftest link!/links-package-version-to-source-directory
   (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-link")
           package-dir
@@ -22,69 +42,23 @@
   (s/when [{:keys [repo-root package-dir]}]
     (link/link! package-dir repo-root))
 
-  (s/then [linked-target-dir {:keys [package-dir target-dir]}]
-    (is (= target-dir linked-target-dir))
+  (s/then [linked-package-dir {:keys [package-dir target-dir]}]
+    (is (= target-dir linked-package-dir))
     (is (io/symlink? target-dir))
     (is (= (io/absolute-path! package-dir)
            (io/read-link! target-dir)))
     (is (io/exists? (io/join-path target-dir "package.edn")))
     (is (= false (io/exists? (io/join-path target-dir "symbols.edn"))))))
 
-(deftest uninstall-removes-link-without-removing-source-package
-  (s/given
-    (let [repo-root (support/fresh-repo! "loom-proof-link-uninstall")
-          package-dir
-          (support/fresh-package! "loom-proof-link-uninstall-package"
-                                  "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}")
-          target-dir (repository/package-target-dir repo-root "linked" "0.1.0")]
-      (link/link! package-dir repo-root)
-      {:repo-root repo-root
-       :package-dir package-dir
-       :target-dir target-dir}))
-
-  (s/when [{:keys [repo-root]}]
-    (uninstall/uninstall! repo-root "linked" "0.1.0"))
-
-  (s/then [uninstalled-dir {:keys [package-dir target-dir]}]
-    (is (= false (io/exists? target-dir)))
-    (is (io/exists? (io/join-path package-dir "package.edn")))))
-
-(deftest install-replaces-linked-package-with-copied-package
-  (s/given
-    (let [repo-root (support/fresh-repo! "loom-proof-link-install-replace")
-          package-dir
-          (support/fresh-package! "loom-proof-link-install-replace-package"
-                                  "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}")
-          target-dir (repository/package-target-dir repo-root "linked" "0.1.0")]
-      (link/link! package-dir repo-root)
-      {:repo-root repo-root
-       :package-dir package-dir
-       :target-dir target-dir}))
-
-  (s/when [{:keys [repo-root package-dir]}]
-    (install/install! package-dir repo-root false))
-
-  (s/then [installed-dir {:keys [package-dir target-dir]}]
-    (is (= false (io/symlink? target-dir)))
-    (is (io/exists? (io/join-path target-dir "package.edn")))
-    (is (io/exists? (io/join-path package-dir "package.edn")))))
-
-(deftest link-replaces-copied-package-with-linked-package
-  (s/given
-    (let [repo-root (support/fresh-repo! "loom-proof-link-replace-install")
-          package-dir
-          (support/fresh-package! "loom-proof-link-replace-install-package"
-                                  "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}")
-          target-dir (repository/package-target-dir repo-root "linked" "0.1.0")]
-      (install/install! package-dir repo-root true)
-      {:repo-root repo-root
-       :package-dir package-dir
-       :target-dir target-dir}))
+(deftest link!/replaces-copied-package-with-linked-package
+  [installed-package-for-link]
+  (s/given installed-package-for-link)
 
   (s/when [{:keys [repo-root package-dir]}]
     (link/link! package-dir repo-root))
 
-  (s/then [linked-dir {:keys [package-dir target-dir]}]
+  (s/then [linked-package-dir {:keys [package-dir target-dir]}]
+    (is (= target-dir linked-package-dir))
     (is (io/symlink? target-dir))
     (is (= (io/absolute-path! package-dir)
            (io/read-link! target-dir)))))

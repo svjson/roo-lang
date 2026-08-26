@@ -1,0 +1,18 @@
+(ns loom.fixture.bootstrap
+  (:require proof.fixture
+            [roo.io :as io]
+            [loom.test-support :as support]))
+
+
+
+;; Fixtures
+
+(deffixture package-with-missing-dependency {:storage :cache}
+  (let [source-root (support/build-path "loom-proof-bootstrap-missing-sources")]
+    (when (io/exists? source-root)
+      (io/remove-tree! source-root))
+    {:source-root source-root
+     :package-dir
+     (support/fresh-package-at!
+       (io/join-path source-root "app")
+       "{:name app :version \"1.0.0\" :dependencies {missing \"2.0.0\"} :load-roots [\"src\"]}")}))

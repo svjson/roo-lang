@@ -1,11 +1,19 @@
 (ns loom.core-test
   (:require proof.core
+            proof.fixture
             [proof.syntax :as s]
             [roo.io :as io]
             [loom.core :as core]
+            [loom.command.install :as install]
+            [loom.common.repository :as repository]
+            loom.fixture.bootstrap
             [loom.test-support :as support]))
 
-(deftest dispatches-list-command
+
+
+;;; loom.core/main
+
+(deftest main/dispatches-list-command
   (s/given
     ["list" "-R" (support/fresh-repo! "loom-proof-core-list")])
 
@@ -15,7 +23,26 @@
   (s/then [list-result]
     (is (= [] list-result))))
 
-(deftest init-options-do-not-count-as-package-directory
+(deftest main/dispatches-init-command
+  (s/given
+    (let [package-dir (support/build-path "loom-proof-core-init")]
+      (when (io/exists? package-dir)
+        (io/remove-tree! package-dir))
+      ["init" package-dir "--name" "core-sample"]))
+
+  (s/when [init-argv]
+    (core/main init-argv))
+
+  (s/then [manifest-path]
+    (is (= "{:name core-sample\n :version \"0.1.0\"\n :dependencies []\n :load-roots [\"src\"]}\n"
+           (io/slurp! manifest-path)))))
+
+
+
+
+;;; loom.core/init-package-dir
+
+(deftest init-package-dir/-options-do-not-count-as-package-directory
   (s/given
     ["init" "--name" "sample"])
 
@@ -25,17 +52,43 @@
   (s/then [package-dir]
     (is (nil? package-dir))))
 
-(deftest dispatches-init-command
+
+
+;;; loom.core/bootstrap-command
+
+(deftest bootstrap-command/returns-failure-exit-code-for-rejected-bootstrap
+  [package-with-missing-dependency]
   (s/given
-    (let [package-dir (support/build-path "loom-proof-core-init")]
-      (if (io/exists? package-dir)
-        (io/remove-tree! package-dir)
-        nil)
-      ["init" package-dir "--name" "core-sample"]))
+    (support/fresh-repo! "loom-proof-bootstrap-command-repo"))
 
-  (s/when [init-argv]
-    (core/main init-argv))
+  (s/when [repo-root]
+    (core/bootstrap-command ["bootstrap"
+                             (:package-dir package-with-missing-dependency)
+                             "--source-root"
+                             (:source-root package-with-missing-dependency)
+                             "--package-repository"
+                             repo-root]))
 
-  (s/then [manifest-path]
-    (is (= "{:name core-sample\n :version \"0.1.0\"\n :dependencies []\n :load-roots [\"src\"]}\n"
-           (io/slurp! manifest-path)))))
+  (s/then [exit-code]
+    (is (= 1 exit-code))))
+
+
+
+;;; loom.core/uninstall-command
+
+(deftest uninstall-command/accepts-package-at-version
+  (s/given
+    (let [repo-root (support/fresh-repo! "loom-proof-uninstall-package-id")]
+      (install/install! (support/loom-package-dir) repo-root true)
+      {:repo-root repo-root
+       :target-dir (repository/package-target-dir repo-root "loom" "0.1.0")}))
+
+  (s/when [{:keys [repo-root]}]
+    (core/uninstall-command ["uninstall"
+                             "loom@0.1.0"
+                             "--package-repository"
+                             repo-root]))
+
+  (s/then [uninstalled-package-dir {:keys [target-dir]}]
+    (is (= target-dir uninstalled-package-dir))
+    (is (= false (io/exists? target-dir)))))

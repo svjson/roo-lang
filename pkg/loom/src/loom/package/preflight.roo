@@ -1,0 +1,175 @@
+(ns loom.package.preflight
+  (:require [lookup.index :as index]
+            [roo.io :as io]
+            [roo.string :as string]
+            [loom.common.manifest :as manifest]))
+
+(defun unsafe-package-path?
+  "Determine whether PATH may escape or ambiguously address the package directory.
+
+  Args:
+  - `path`: Package payload path to inspect. Backslashes are normalized before
+    validation.
+
+  Returns:
+  True when PATH is blank, absolute, drive-qualified, or contains a parent-directory
+  segment; otherwise false."
+  [path]
+  (let [normalized (string/replace (str path) "\\" "/")]
+    (or (blank? normalized)
+        (string/starts-with? normalized "/")
+        (and (> (count normalized) 1)
+             (= ":" (nth (split normalized "") 1)))
+        (reduce (split normalized "/")
+                false
+                (fn [unsafe? segment]
+                  (or unsafe? (= ".." segment)))))))
+
+(defun payload-path-diagnostic
+  "Validate one declared package payload path.
+
+  Args:
+  - `package-dir`: Root directory of the package being checked.
+  - `field`: Manifest field represented by VALUE, used to classify diagnostics.
+  - `value`: Declared payload path.
+  - `directory?`: Whether the resolved payload must be a directory.
+
+  Returns:
+  A diagnostic map describing an invalid, unsafe, missing, or incorrectly typed
+  payload path; nil when the payload path is valid."
+  [package-dir field value directory?]
+  (if (or (string? value)
+          (symbol? value)
+          (keyword? value))
+    (let [path (str value)]
+      (cond
+        (unsafe-package-path? path)
+        {:kind :unsafe-package-path
+         :field field
+         :path path}
+
+        (not (io/exists? (io/join-path package-dir path)))
+        {:kind (case field
+                 :load-root :missing-load-root
+                 :default :missing-native-path)
+         :field field
+         :path path}
+
+        (and directory?
+             (not (io/directory? (io/join-path package-dir path))))
+        {:kind :load-root-not-directory
+         :field field
+         :path path}
+
+        true nil))
+    {:kind :invalid-package-path
+     :field field
+     :path value}))
+
+(defun collect-path-diagnostic
+  "Append a present path diagnostic to a diagnostic collection.
+
+  Args:
+  - `diagnostics`: Existing diagnostic collection.
+  - `diagnostic`: Diagnostic map to append, or nil when validation succeeded.
+
+  Returns:
+  DIAGNOSTICS unchanged when DIAGNOSTIC is nil; otherwise DIAGNOSTICS with
+  DIAGNOSTIC appended."
+  [diagnostics diagnostic]
+  (if (nil? diagnostic)
+    diagnostics
+    (append diagnostics diagnostic)))
+
+(defun load-root-diagnostics
+  "Validate every load root declared by a package manifest.
+
+  Args:
+  - `package-dir`: Root directory of the package being checked.
+  - `package-manifest`: Validated package manifest containing `:load-roots`.
+
+  Returns:
+  A vector of diagnostics for invalid, unsafe, missing, or non-directory load roots.
+  The vector is empty when every declared load root is valid."
+  [package-dir package-manifest]
+  (reduce (manifest/load-roots package-manifest)
+          []
+          (fn [diagnostics root]
+            (collect-path-diagnostic
+              diagnostics
+              (payload-path-diagnostic package-dir :load-root root true)))))
+
+(defun native-library-diagnostics
+  "Validate every native-library payload declared by a package manifest.
+
+  Args:
+  - `package-dir`: Root directory of the package being checked.
+  - `package-manifest`: Validated package manifest that may contain
+    `:native-libraries`.
+
+  Returns:
+  A vector of diagnostics for malformed native-library declarations and invalid,
+  unsafe, or missing native payload paths. The vector is empty when no native
+  libraries are declared or every declaration is valid."
+  [package-dir package-manifest]
+  (let [libraries (manifest/native-libraries package-manifest)]
+    (cond
+      (nil? libraries)
+        []
+      true
+        (case (type-of libraries)
+          "vector"
+            (reduce libraries
+                    []
+                    (fn [diagnostics library]
+                      (collect-path-diagnostic
+                        diagnostics
+                        (case (type-of library)
+                          "map" (payload-path-diagnostic package-dir
+                                                         :native-library
+                                                         (:path library)
+                                                         false)
+                          :default {:kind :invalid-native-library
+                                    :field :native-libraries
+                                    :path nil}))))
+          :default [{:kind :invalid-native-libraries
+                     :field :native-libraries
+                     :path nil}]))))
+
+(defun check
+  "Check whether a package directory contains a complete installable artifact.
+
+  Args:
+  - `package-dir`: Root directory containing the package manifest and all declared
+    payloads.
+
+  Returns:
+  A result map containing `:ok?` and `:diagnostics`. Missing or invalid manifests
+  return `:ok? false` with manifest diagnostics. Invalid or missing payloads also
+  return the validated `:manifest`. A successful result returns `:ok? true`, the
+  validated `:manifest`, a serialized symbol index in `:symbols`, and an empty
+  diagnostic vector."
+  [package-dir]
+  (let [manifest-path (manifest/manifest-path package-dir)]
+    (if (not (io/exists? manifest-path))
+      {:ok? false
+       :diagnostics [{:kind :missing-manifest
+                      :path manifest-path}]}
+      (let [package-manifest (io/slurp-edn! manifest-path)
+            manifest-errors (manifest/validation-errors package-manifest)]
+        (if (not-empty? manifest-errors)
+          {:ok? false
+           :diagnostics [{:kind :invalid-manifest
+                          :path manifest-path
+                          :errors manifest-errors}]}
+          (let [diagnostics (concat
+                              (load-root-diagnostics package-dir package-manifest)
+                              (native-library-diagnostics package-dir package-manifest))]
+            (if (not-empty? diagnostics)
+              {:ok? false
+               :manifest package-manifest
+               :diagnostics diagnostics}
+              {:ok? true
+               :manifest package-manifest
+               :symbols (str (index/symbol-index package-dir) "\n")
+               :diagnostics []})))))))

@@ -1,14 +1,34 @@
 (ns loom.command.uninstall-test
   (:require proof.core
+            proof.fixture
             [proof.syntax :as s]
             [roo.io :as io]
-            [loom.core :as core]
             [loom.command.install :as install]
+            [loom.command.link :as link]
             [loom.command.uninstall :as uninstall]
             [loom.common.repository :as repository]
             [loom.test-support :as support]))
 
-(deftest uninstall-removes-installed-package-version
+
+
+;; Fixtures
+
+(deffixture linked-package {:storage :cache}
+  (let [repo-root (support/fresh-repo! "loom-proof-link-uninstall")
+        package-dir
+        (support/fresh-package! "loom-proof-link-uninstall-package"
+                                "{:name linked :version \"0.1.0\" :dependencies [] :load-roots [\"src\"]}")
+        target-dir (repository/package-target-dir repo-root "linked" "0.1.0")]
+    (link/link! package-dir repo-root)
+    {:repo-root repo-root
+     :package-dir package-dir
+     :target-dir target-dir}))
+
+
+
+;;; loom.command.uninstall/uninstall!
+
+(deftest uninstall!/removes-installed-package-version
   (s/given
     (let [repo-root (support/fresh-repo! "loom-proof-uninstall")]
       (install/install! (support/loom-package-dir) repo-root true)
@@ -18,32 +38,26 @@
   (s/when [{:keys [repo-root]}]
     (uninstall/uninstall! repo-root "loom" "0.1.0"))
 
-  (s/then [uninstalled-dir {:keys [target-dir]}]
-    (is (= target-dir uninstalled-dir))
+  (s/then [uninstalled-package-dir {:keys [target-dir]}]
+    (is (= target-dir uninstalled-package-dir))
     (is (= false (io/exists? target-dir)))))
 
-(deftest uninstall-command-accepts-package-at-version
+(deftest uninstall!/removes-link-without-removing-source-package
+  [linked-package]
+  (s/when []
+    (uninstall/uninstall! (:repo-root linked-package) "linked" "0.1.0"))
+
+  (s/then [uninstalled-package-dir]
+    (is (= (:target-dir linked-package) uninstalled-package-dir))
+    (is (= false (io/exists? (:target-dir linked-package))))
+    (is (io/exists? (io/join-path (:package-dir linked-package) "package.edn")))))
+
+(deftest uninstall!/returns-nil-for-missing-package
   (s/given
-    (let [repo-root (support/fresh-repo! "loom-proof-uninstall-package-id")]
-      (install/install! (support/loom-package-dir) repo-root true)
-      {:repo-root repo-root
-       :target-dir (repository/package-target-dir repo-root "loom" "0.1.0")}))
+    (support/fresh-repo! "loom-proof-uninstall-missing"))
 
-  (s/when [{:keys [repo-root]}]
-    (core/uninstall-command ["uninstall" "loom@0.1.0" "--package-repository" repo-root]))
-
-  (s/then [uninstall-package-id-result {:keys [target-dir]}]
-    (is (= target-dir uninstall-package-id-result))
-    (is (= false (io/exists? target-dir)))))
-
-(deftest uninstall-returns-nil-for-missing-package
-  (s/given
-    {:repo-root (support/fresh-repo! "loom-proof-uninstall-missing")
-     :package-id (repository/package-id "missing" "0.1.0")})
-
-  (s/when [{:keys [repo-root]}]
+  (s/when [repo-root]
     (uninstall/uninstall! repo-root "missing" "0.1.0"))
 
-  (s/then [missing-removed-dir {:keys [package-id]}]
-    (is (= "missing@0.1.0" package-id))
-    (is (nil? missing-removed-dir))))
+  (s/then [result]
+    (is (nil? result))))
