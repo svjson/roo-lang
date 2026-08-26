@@ -43,4 +43,5 @@ install(TARGETS inpoots_native
 
 install(DIRECTORY include/
   DESTINATION include
+  COMPONENT Unspecified
 )

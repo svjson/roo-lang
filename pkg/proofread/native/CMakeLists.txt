@@ -30,4 +30,5 @@ install(TARGETS proofread_native
 
 install(DIRECTORY include/
   DESTINATION include
+  COMPONENT Unspecified
 )

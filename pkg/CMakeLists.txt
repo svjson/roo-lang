@@ -2,10 +2,22 @@ if(ROO_BUILD_TESTS)
   enable_testing()
 endif()
 
+# Legacy package-repository install rules remain available as an explicit
+# component during the Loom migration, but supported aggregate installation
+# does not select them. Package-native development headers opt back into the
+# ordinary non-package install component in their own CMake files.
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME RooPackageRepositoryLegacy)
+
 set(ROO_PACKAGE_STAGE_DIR
   "${CMAKE_BINARY_DIR}/package-stage/pkg"
   CACHE PATH
   "Directory used to stage Roo packages for testing and cross-package dependency resolution, including their built native libraries where present."
+)
+
+set(ROO_PACKAGE_ARTIFACT_DIR
+  "${CMAKE_BINARY_DIR}/package-artifacts"
+  CACHE PATH
+  "Directory containing install-ready Roo package inputs for Loom."
 )
 
 add_subdirectory(proof)
@@ -38,6 +50,9 @@ function(roo_add_stage_package_target package_name)
 
   set(package_source_dir "${CMAKE_CURRENT_SOURCE_DIR}/${package_name}")
   set(package_stage_dir "${ROO_PACKAGE_STAGE_DIR}/${package_name}")
+  set(package_artifact_dir "${ROO_PACKAGE_ARTIFACT_DIR}/${package_name}")
+  set(package_artifact_destination "package-artifacts/${package_name}")
+  set(package_artifact_component "RooPackageArtifact-${package_name}")
   set(package_target "stage_${package_name}_package")
   set(package_artifact_target "package_artifact_${package_name}")
 
@@ -48,6 +63,22 @@ function(roo_add_stage_package_target package_name)
   if(STAGE_PACKAGE_NATIVE_TARGET AND NOT STAGE_PACKAGE_NATIVE_PATH)
     set(STAGE_PACKAGE_NATIVE_PATH native)
   endif()
+
+  install(FILES
+    "${package_source_dir}/package.edn"
+    "${package_source_dir}/README.md"
+    DESTINATION "${package_artifact_destination}"
+    COMPONENT "${package_artifact_component}"
+    EXCLUDE_FROM_ALL
+  )
+
+  foreach(load_root IN LISTS STAGE_PACKAGE_LOAD_ROOTS)
+    install(DIRECTORY "${package_source_dir}/${load_root}/"
+      DESTINATION "${package_artifact_destination}/${load_root}"
+      COMPONENT "${package_artifact_component}"
+      EXCLUDE_FROM_ALL
+    )
+  endforeach()
 
   add_custom_target(${package_target}
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${package_stage_dir}"
@@ -90,18 +121,39 @@ function(roo_add_stage_package_target package_name)
       VERBATIM
     )
 
-    set(package_artifact_dir "${package_stage_dir}")
-    set(package_artifact_dependency "${package_target}")
+    install(TARGETS ${STAGE_PACKAGE_NATIVE_TARGET}
+      LIBRARY
+        DESTINATION "${package_artifact_destination}/${STAGE_PACKAGE_NATIVE_PATH}"
+        COMPONENT "${package_artifact_component}"
+        EXCLUDE_FROM_ALL
+      RUNTIME
+        DESTINATION "${package_artifact_destination}/${STAGE_PACKAGE_NATIVE_PATH}"
+        COMPONENT "${package_artifact_component}"
+        EXCLUDE_FROM_ALL
+    )
+
     set(package_artifact_required_files
       "${STAGE_PACKAGE_NATIVE_PATH}/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
     )
+    set(package_artifact_prepare_command
+      COMMAND ${CMAKE_COMMAND}
+              "-DROO_ARTIFACT_NATIVE_LIBRARY=${package_artifact_dir}/${STAGE_PACKAGE_NATIVE_PATH}/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
+              "-DROO_ARTIFACT_NATIVE_OLD_RPATH=${ROO_PACKAGE_NATIVE_INSTALL_RPATH}"
+              "-DROO_ARTIFACT_NATIVE_RPATH=${ROO_PACKAGE_NATIVE_ARTIFACT_RPATH}"
+              -P "${ROO_ROOT_DIR}/cmake/rooPreparePackageArtifact.cmake"
+    )
   else()
-    set(package_artifact_dir "${package_source_dir}")
-    set(package_artifact_dependency)
     set(package_artifact_required_files)
+    set(package_artifact_prepare_command)
   endif()
 
   add_custom_target(${package_artifact_target}
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${package_artifact_dir}"
+    COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}"
+            --config "$<CONFIG>"
+            --prefix "${CMAKE_BINARY_DIR}"
+            --component "${package_artifact_component}"
+    ${package_artifact_prepare_command}
     COMMAND ${CMAKE_COMMAND}
             "-DROO_ARTIFACT_DIR=${package_artifact_dir}"
             "-DROO_ARTIFACT_PACKAGE=${package_name}"
@@ -110,8 +162,8 @@ function(roo_add_stage_package_target package_name)
     VERBATIM
   )
 
-  if(package_artifact_dependency)
-    add_dependencies(${package_artifact_target} ${package_artifact_dependency})
+  if(STAGE_PACKAGE_NATIVE_TARGET)
+    add_dependencies(${package_artifact_target} ${STAGE_PACKAGE_NATIVE_TARGET})
   endif()
 
   set_property(TARGET ${package_artifact_target}

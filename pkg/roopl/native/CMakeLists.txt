@@ -36,4 +36,5 @@ install(TARGETS roopl_native
 
 install(DIRECTORY include/
   DESTINATION include
+  COMPONENT Unspecified
 )

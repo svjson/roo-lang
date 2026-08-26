@@ -106,8 +106,13 @@ for target in $release_targets; do
   cmake --build "$build_dir" --config "$config" --parallel "$jobs" --target "$target"
 done
 
-printf '%s\n' "==> Staging native packages"
-cmake --build "$build_dir" --config "$config" --parallel "$jobs" --target stage_native_packages
+printf '%s\n' "==> Building bootstrap Loom"
+cmake --build "$build_dir" --config "$config" --parallel "$jobs" --target bootstrap_loom
+
+printf '%s\n' "==> Building install-ready package artifacts"
+cmake --build "$build_dir" --config "$config" --parallel "$jobs" --target package_artifacts
+
+package_artifact_root="$build_dir/package-artifacts"
 
 rooc="$build_dir/rooc$exe_suffix"
 if [ ! -f "$rooc" ]; then
@@ -120,7 +125,7 @@ fi
 
 printf '%s\n' "==> Building release lookup indexer"
 lookup_build_dir="$build_dir/lookup-release"
-"$rooc" build "$build_dir/native-package-stage/pkg/lookup" \
+"$rooc" build "$build_dir/package-stage/pkg/lookup" \
   --build-dir "$lookup_build_dir" \
   --name lookup
 lookup="$lookup_build_dir/build/lookup$exe_suffix"
@@ -135,11 +140,28 @@ fi
 printf '%s\n' "==> Recreating staged install tree"
 cmake -E rm -rf "$stage_dir"
 cmake -E make_directory "$stage_dir"
-cmake --install "$build_dir" --config "$config"
+cmake --install "$build_dir" --config "$config" --component Unspecified
+
+loom="$build_dir/loom-bootstrap/build/loom$exe_suffix"
+if [ ! -f "$loom" ]; then
+  loom="$build_dir/loom-bootstrap/build/$config/loom$exe_suffix"
+fi
+if [ ! -f "$loom" ]; then
+  printf '%s\n' "could not find bootstrap Loom executable" >&2
+  exit 1
+fi
+
+printf '%s\n' "==> Installing versioned Roo packages with Loom"
+package_repository="$stage_dir/share/roo/pkg"
+cmake -E make_directory "$package_repository"
+for package_dir in "$package_artifact_root"/*; do
+  [ -d "$package_dir" ] || continue
+  "$loom" install "$package_dir" --package-repository "$package_repository"
+done
 
 printf '%s\n' "==> Generating Roo language index"
 index_dir="$build_dir/indexes/roo-lang/$version"
-index_path="$index_dir/roo-symbols.edn"
+index_path="$index_dir/symbols.edn"
 installed_index_dir="$stage_dir/share/roo/indexes/roo-lang/$version"
 cmake -E make_directory "$index_dir"
 "$lookup" index \
@@ -148,7 +170,7 @@ cmake -E make_directory "$index_dir"
   -o "$index_path"
 sh "$root_dir/scripts/audit-roo-lang-index.sh" "$lookup" "$index_path"
 cmake -E make_directory "$installed_index_dir"
-cmake -E copy_if_different "$index_path" "$installed_index_dir/roo-symbols.edn"
+cmake -E copy_if_different "$index_path" "$installed_index_dir/symbols.edn"
 
 printf '%s\n' "==> Writing release metadata"
 cmake -E copy_if_different "$root_dir/LICENSE" "$stage_dir/LICENSE"

@@ -89,7 +89,7 @@ host_path()
 }
 
 printf '%s\n' "==> Testing release Roo language index"
-roo_lang_index="$release_root/share/roo/indexes/roo-lang/$version/roo-symbols.edn"
+roo_lang_index="$release_root/share/roo/indexes/roo-lang/$version/symbols.edn"
 if [ ! -s "$roo_lang_index" ]; then
   fail "missing Roo language index: $roo_lang_index"
 fi
@@ -161,22 +161,22 @@ if [ ! -f "$cmake_smoke" ]; then
 fi
 "$cmake_smoke"
 
-if [ -d "$release_root/share/roo/pkg/lookup" ]; then
+if [ -d "$release_root/share/roo/pkg/lookup/0.1.0" ]; then
   printf '%s\n' "==> Testing release lookup package"
   assert_eq "lookup --version output" \
     "lookup 0.1.0" \
-    "$("$roo" "$release_root/share/roo/pkg/lookup" --version)"
+    "$("$roo" "$release_root/share/roo/pkg/lookup/0.1.0" --version)"
 fi
 
-if [ -d "$release_root/share/roo/pkg/proofread" ]; then
+if [ -d "$release_root/share/roo/pkg/proofread/0.1.0" ]; then
   printf '%s\n' "==> Testing release proofread package"
   assert_eq "proofread --version output" \
     "proofread 0.1.0" \
-    "$("$roo" "$release_root/share/roo/pkg/proofread" --version)"
+    "$("$roo" "$release_root/share/roo/pkg/proofread/0.1.0" --version)"
 fi
 
 footsteps_pkg="$tmp_dir/footsteps-smoke"
-footsteps_dependency_path=$(host_path "$release_root/share/roo/pkg/footsteps")
+footsteps_dependency_path=$(host_path "$release_root/share/roo/pkg/footsteps/0.1.0")
 cmake -E make_directory "$footsteps_pkg/src/footsteps_smoke"
 cat > "$footsteps_pkg/package.edn" <<EOF
 {:name footsteps-smoke
