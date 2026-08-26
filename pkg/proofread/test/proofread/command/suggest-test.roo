@@ -1,7 +1,13 @@
 (ns proofread.command.suggest-test
-  (:require proof.core
+  (:require [cli-trooper :as cli-trooper]
+            proof.core
+            [proofread.cli :as proofread-cli]
             [proofread.command.suggest :as suggest-command]
             [proofread.source :as source]))
+
+
+
+;; Fixture Source File Paths
 
 (def candidates-path
   "Simple-expression candidate fixture path."
@@ -14,6 +20,10 @@
 (def direct-conditions-unless-path
   "Direct-condition use-unless candidate fixture path."
   "assets/rules/direct-conditions/use-unless-when.roo")
+
+
+
+;; Fixture Functions
 
 (defun suggestion-summary
   [diagnostic]
@@ -37,50 +47,57 @@
                                        column)
        suggestion-summary))
 
-(deftest parses-suggest-options
-  (is (= {:errors []
-          :file "src/app.roo"
-          :line 12
-          :column 4}
-         (suggest-command/parse-args ["src/app.roo"
-                                      "--line" "12"
-                                      "--column" "4"])))
-  (is (= {:errors ["Missing file."]
-          :line 12
-          :column 4}
-         (suggest-command/parse-args ["--line" "12" "--column" "4"]))))
 
-(deftest reports-invalid-suggest-options
-  (is (= {:errors ["Missing line."
-                   "Missing column."]
-          :file "src/app.roo"}
-         (suggest-command/parse-args ["src/app.roo"])))
-  (is (= {:errors ["Invalid line: zero"
-                   "Missing line."
-                   "Missing column."]
-          :file "src/app.roo"}
-         (suggest-command/parse-args ["src/app.roo" "--line" "zero"])))
-  (is (= {:errors ["Unknown option: --wat"
-                   "Missing line."
-                   "Missing column."]
-          :file "src/app.roo"}
-         (suggest-command/parse-args ["src/app.roo" "--wat"]))))
+
+;; cli-trooper option parsing
 
-(deftest finds-suggestions-at-source-position
+(deftest cli-options/parses-suggest-options
+  (is (= {:line 12
+          :column 4
+          :file "src/app.roo"}
+         (:options
+          (cli-trooper/parse proofread-cli/application
+                             {:args ["suggest"
+                                     "src/app.roo"
+                                     "--line" "12"
+                                     "--column" "4"]}))))
+  (is (= [:missing-positional]
+         (map (:errors
+               (cli-trooper/parse proofread-cli/application
+                                  {:args ["suggest"
+                                          "--line" "12"
+                                          "--column" "4"]}))
+              :kind))))
+
+(deftest cli-options/reports-invalid-suggest-options
+  (is (= [:missing-required-option :missing-required-option]
+         (map (:errors
+               (cli-trooper/parse proofread-cli/application
+                                  {:args ["suggest" "src/app.roo"]}))
+              :kind)))
+  (is (= [:invalid-positive-integer :missing-required-option]
+         (map (:errors
+               (cli-trooper/parse proofread-cli/application
+                                  {:args ["suggest" "src/app.roo"
+                                          "--line" "zero"]}))
+              :kind)))
+  (is (= [:unknown-option
+          :missing-required-option
+          :missing-required-option]
+         (map (:errors
+               (cli-trooper/parse proofread-cli/application
+                                  {:args ["suggest" "src/app.roo" "--wat"]}))
+              :kind))))
+
+
+
+;; proofread.command.suggest.suggestions-at
+
+(deftest suggestions-at/finds-suggestions-at-source-position
   (is (= [[:use-head
            ["Rewrite as head"]
            ["(head items)"]]]
-        (suggestions-at 4 5))))
-
-(deftest returns-parse-error-diagnostics-when-unreadable
-  (let [diagnostics (suggest-command/checked-diagnostics "assets/invalid/broken.roo")
-        diagnostic (head diagnostics)]
-    (is (= 1 (count diagnostics)))
-    (is (= :parse (:rule diagnostic)))
-    (is (= :error (:severity diagnostic)))
-    (is (= "assets/invalid/broken.roo" (:file diagnostic)))
-    (is (= "assets/invalid/broken.roo" (:path (:source diagnostic))))
-    (is (= "Unexpected end of input" (:message diagnostic)))))
+         (suggestions-at 4 5))))
 
 (deftest suggest-no-nil-for-not-empty-with-guard
   (is (= [[:use-not-empty?
@@ -121,3 +138,16 @@
     (is (= [:inner :outer] (map matches :rule)))
     (is (= ["Outer rewrite" "Outer alternative"]
            (map (:suggestions (nth matches 1)) :title)))))
+
+
+
+;; proofread.command.suggest/checked-diagnostics
+
+(deftest returns-parse-error-diagnostics-when-unreadable
+  (is (= [{:rule :parse
+           :severity :error
+           :file "assets/invalid/broken.roo"
+           :source {:path "assets/invalid/broken.roo"}
+           :message "Unexpected end of input"}]
+         (suggest-command/checked-diagnostics "assets/invalid/broken.roo"))))
+

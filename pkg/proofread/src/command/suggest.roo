@@ -1,83 +1,28 @@
 (ns proofread.command.suggest
   (:require [proofread.native :as native]
-            [proofread.source :as source]
-            [roo.string :as string]))
+            [proofread.source :as source]))
 
-(def usage-line
-  "Usage line for the proofread suggest command."
-  "Usage: proofread suggest <file> --line <line> --column <column>")
-
-(defun digit?
-  [ch]
-  (contains? ["0" "1" "2" "3" "4" "5" "6" "7" "8" "9"]
-             (str ch)))
-
-(defun positive-int
-  [text]
-  (when (and (not (blank? text))
-             (not (any? text
-                        (fn [ch]
-                          (not (digit? ch))))))
-    (let [value (int text)]
-      (when (< 0 value)
-        value))))
-
-(defun parse-number-option
-  [args options key label]
-  (if-let [value (nth args 1)]
-    (parse-args-step
-     (slice args 2)
-     (if-let [number (positive-int value)]
-       (assoc options key number)
-       (update options :errors [append! (str "Invalid " label ": " value)])))
-    (update options :errors [append! (str "Missing value after --" label)])))
-
-(defun parse-args-step
-  [args options]
-  (let [arg (head args)]
-    (cond
-      (nil? arg)
-      options
-
-      (= arg "--line")
-      (parse-number-option args options :line "line")
-
-      (= arg "--column")
-      (parse-number-option args options :column "column")
-
-      (string/starts-with? arg "--")
-      (parse-args-step
-        (tail args)
-        (update options :errors [append! (str "Unknown option: " arg)]))
-
-      (nil? (:file options))
-      (parse-args-step (tail args)
-                       (assoc options :file arg))
-
-      true
-      (parse-args-step
-        (tail args)
-        (update options :errors [append! (str "Unexpected argument: " arg)])))))
-
-(defun parse-args
-  "Parse proofread suggest arguments.
+(defun parse-positive-int
+  "Convert CLI text to a positive integer.
 
   Args:
-  - `args`: Command line file path and position options.
+  - `text`: Raw option value.
 
   Returns:
-  An options map containing `:file`, `:line`, `:column`, and `:errors`."
-  [args]
-  (let [options (parse-args-step args {:errors []})]
-    (cond-> options
-            (nil? (:file options))
-            (update :errors [append! "Missing file."])
-
-            (nil? (:line options))
-            (update :errors [append! "Missing line."])
-
-            (nil? (:column options))
-            (update :errors [append! "Missing column."]))))
+  A cli-trooper conversion result containing the integer under `:value`, or an
+  invalid-positive-integer diagnostic under `:error`."
+  [text]
+  (if (and (not (blank? text))
+           (any? text digit?))
+    (let [value (int text)]
+      (if (< 0 value)
+        {:value value}
+        {:error {:kind :invalid-positive-integer
+                 :value text
+                 :expected "positive integer"}}))
+    {:error {:kind :invalid-positive-integer
+             :value text
+             :expected "positive integer"}}))
 
 (defun before-or-at?
   [left right]
@@ -87,10 +32,10 @@
 
 (defun source-range
   [source]
-  (when-let [start (:start source)]
-    (when-let [end (:end source)]
-      {:start start
-       :end end})))
+  (when-let [start (:start source)
+             end (:end source)]
+    {:start start
+     :end end}))
 
 (defun position-in-source?
   [source line column]
@@ -103,7 +48,7 @@
   [source]
   (let [range (source-range source)]
     (+ (* 100000 (- (:line (:end range))
-                   (:line (:start range))))
+                    (:line (:start range))))
        (- (:column (:end range))
           (:column (:start range))))))
 
@@ -152,23 +97,31 @@
       0 (source/diagnostics file)
       :default (map (:error-details check-result) parse-error-diagnostic))))
 
-(defun run!
-  "Print suggestions at a file position.
+(defun execute!
+  "Print suggestions at a file position from parsed command options.
 
   Args:
-  - `args`: Command line file path and position options.
+  - `_context`: The cli-trooper invocation context.
+  - `options`: Parsed options containing `:file`, `:line`, and `:column`.
 
   Returns:
   Matching diagnostics with structured suggestions."
-  [args]
-  (let [options (parse-args args)]
-    (if (not-empty? (:errors options))
-      (do
-        (map (:errors options) prn)
-        (prn! usage-line)
-        (native/fail! "proofread: invalid arguments"))
-      (let [diagnostics (suggestions-at (checked-diagnostics (:file options))
-                                        (:line options)
-                                        (:column options))]
-        (prn! diagnostics)
-        diagnostics))))
+  [_context options]
+  (let [diagnostics (suggestions-at (checked-diagnostics (:file options))
+                                    (:line options)
+                                    (:column options))]
+    (prn! diagnostics)
+    diagnostics))
+
+(def command
+  "cli-trooper declaration for Proofread's `suggest` command."
+  {:description "Show structured suggestions at a source position."
+   :execute! execute!
+   :flags {"line" {:type :positive-integer
+                   :parse parse-positive-int
+                   :required? true}
+           "column" {:type :positive-integer
+                     :parse parse-positive-int
+                     :required? true}}
+   :positional [{:type :file
+                 :name "file"}]})

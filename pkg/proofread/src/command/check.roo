@@ -2,173 +2,32 @@
   (:require [proofread.native :as native]
             [proofread.source.walk :as walk]
             [proofread.reporter :as reporter]
-            [proofread.source :as source]
-            [roo.string :as string]))
+            [proofread.source :as source]))
 
-(def usage-line
-  "Usage line for the proofread check command."
-  "Usage: proofread [--help|--version] [--reporter simple] [--group-by rule,namespace,file,package] [--show-ranges] [--stdin-filename <path> | <file|pattern>...]")
-
-(defun split-groups
-  "Split a comma-separated group option.
+(defun validation-errors
+  "Return semantic diagnostics for parsed check options.
 
   Args:
-  - `text`: Group option text.
+  - `options`: Parsed check options containing `:files` and
+    `:stdin-filename`.
 
   Returns:
-  A vector of trimmed group names."
-  [text]
-  (if-let [separator (index-of text ',')]
-    (concat [(trim (substr text 0 separator))]
-            (split-groups (substr text (+ separator 1) (count text))))
-    [(trim text)]))
+  A diagnostic vector when standard input conflicts with positional inputs or
+  neither input form was supplied; otherwise an empty vector."
+  [options]
+  (cond
+    (and (some? (:stdin-filename options))
+         (not-empty? (:files options)))
+    [{:kind :conflicting-inputs
+      :message "Cannot combine --stdin-filename with files or patterns."}]
 
-(defun group-criterion
-  "Return a group criterion keyword for CLI text.
+    (and (empty? (:files options))
+         (nil? (:stdin-filename options)))
+    [{:kind :missing-input
+      :message "No files or patterns provided."}]
 
-  Args:
-  - `text`: CLI criterion name.
-
-  Returns:
-  A group criterion keyword, or `nil` when unknown."
-  [text]
-  (case text
-    "rule" :rule
-    "namespace" :namespace
-    "file" :file
-    "package" :package
-    :default nil))
-
-(defun parse-group-step
-  "Parse one group criterion into an accumulated result.
-
-  Args:
-  - `result`: Accumulated parse result.
-  - `text`: CLI criterion name.
-
-  Returns:
-  Updated parse result containing `:groups` and `:errors`."
-  [result text]
-  (if (blank? text)
-    result
-    (if-let [criterion (group-criterion text)]
-      (update result :groups [append! criterion])
-      (update result :errors [append! (str "Unknown group criterion: " text)]))))
-
-(defun parse-groups
-  "Parse a CLI group option.
-
-  Args:
-  - `text`: Group option text, possibly comma-separated.
-
-  Returns:
-  A map containing parsed `:groups` and `:errors`."
-  [text]
-  (reduce (split-groups text)
-          {:groups [] :errors []}
-          parse-group-step))
-
-(defun parse-args-step
-  "Parse proofread check arguments.
-
-  Args:
-  - `args`: Remaining command line arguments.
-  - `options`: Accumulated options map.
-
-  Returns:
-  An options map containing `:files`, `:stdin-filename`, `:reporter`, `:groups`,
-  and `:errors`."
-  [args options]
-  (let [arg (head args)]
-    (cond
-
-      (nil? arg)
-      options
-
-      (= arg "--reporter")
-      (let [reporter-name (nth args 1)]
-        (cond
-          (nil? reporter-name)
-          (update options
-                  :errors
-                  [concat ["Missing reporter after --reporter"]])
-
-          (reporter/known? (keyword reporter-name))
-          (parse-args-step (slice args 2)
-                           (assoc options :reporter (keyword reporter-name)))
-
-          true
-          (parse-args-step (slice args 2)
-                           (update options
-                                   :errors
-                                   [concat [(str "Unknown reporter: "
-                                                 reporter-name)]]))))
-
-      (= arg "--group-by")
-      (if-let [group-text (nth args 1)]
-        (let [result (parse-groups group-text)]
-          (parse-args-step (slice args 2)
-                           (assoc options
-                                  :groups (concat (:groups options)
-                                                  (:groups result))
-                                  :errors (concat (:errors options)
-                                                  (:errors result)))))
-        (update options
-                :errors
-                [concat ["Missing group criteria after --group-by"]]))
-
-      (= arg "--show-ranges")
-      (parse-args-step (tail args)
-                       (assoc options :show-ranges? true))
-
-      (= arg "--stdin-filename")
-      (if-let [path (nth args 1)]
-        (parse-args-step (slice args 2)
-                         (assoc options :stdin-filename path))
-        (update options
-                :errors
-                [concat ["Missing path after --stdin-filename"]]))
-
-      (string/starts-with? arg "--")
-      (parse-args-step (tail args)
-                       (update options
-                               :errors
-                               [concat [(str "Unknown option: " arg)]]))
-
-      true
-      (parse-args-step (tail args)
-                       (update options :files [concat [arg]])))))
-
-(defun parse-args
-  "Parse arguments for the proofread check command.
-
-  Args:
-  - `args`: Command line file paths, shell-style patterns, and check options.
-
-  Returns:
-  An options map containing `:files`, `:stdin-filename`, `:reporter`, `:groups`,
-  and `:errors`."
-  [args]
-  (let [options (parse-args-step args
-                                 {:files []
-                                  :reporter :simple
-                                  :groups []
-                                  :show-ranges? false
-                                  :errors []})]
-    (cond
-      (and (some? (:stdin-filename options))
-           (not-empty? (:files options)))
-      (update options
-              :errors
-              [concat ["Cannot combine --stdin-filename with files or patterns."]])
-
-      (and (empty? (:files options))
-           (nil? (:stdin-filename options))
-           (empty? (:errors options)))
-      (update options :errors [concat ["No files or patterns provided."]])
-
-      true
-      options)))
+    true
+    []))
 
 (defun parse-error-diagnostic
   "Build a diagnostic for a parse or read error.
@@ -214,64 +73,81 @@
                  (fn [diagnostic]
                    (= severity (:severity diagnostic))))))
 
-(defun run!
-  "Run proofread checks for CLI file and pattern arguments.
+(defun execute!
+  "Run proofread checks with parsed command options.
 
   Args:
-  - `args`: Command line file paths, shell-style patterns, and check options.
+  - `_context`: The cli-trooper invocation context.
+  - `options`: Parsed check options.
 
   Returns:
   A summary map when no errors were found."
-  [args]
-  (let [options (parse-args args)]
-    (if (not-empty? (:errors options))
-      (do
-        (map (:errors options) prn)
-        (prn! usage-line)
-        (native/fail! "proofread: invalid arguments"))
-      (let [stdin-filename (:stdin-filename options)
-            source-text (when stdin-filename (native/read-stdin!))
-            source-options (when stdin-filename {:source source-text})
-            collection (unless stdin-filename (walk/collect (:files options)))
-            files-to-check (if stdin-filename
-                             [stdin-filename]
-                             (:files collection))
-            collection-errors (or (:errors collection) [])]
-        (when (not-empty? collection-errors)
-          (map collection-errors prn)
-          (native/fail! "proofread: checks failed"))
-        (let [run-result (reduce files-to-check
-                                 {:summary {:files 0
-                                            :warnings 0
-                                            :errors 0}
-                                  :reporter (reporter/make options files-to-check)}
-                                 (fn [{:keys [summary reporter]} file]
-                                   (let [check-result (if stdin-filename
-                                                        (native/check-source-result! file source-text)
-                                                        (native/check-files-result! [file]))
-                                         file-errors (:errors check-result)
-                                         diagnostics (check-diagnostics file
-                                                                        check-result
-                                                                        source-options)
-                                         file-result {:file file
-                                                      :checked (:checked check-result)
-                                                      :errors file-errors
-                                                      :diagnostics diagnostics}]
-                                     {:summary {:files (+ (:files summary)
-                                                         (:checked check-result)
-                                                         file-errors)
-                                                :warnings (+ (:warnings summary)
-                                                             (diagnostic-count diagnostics
-                                                                               :warning))
-                                                :errors (+ (:errors summary)
-                                                          (case file-errors
-                                                            0 (diagnostic-count diagnostics
-                                                                                :error)
-                                                            :default file-errors))}
-                                      :reporter (reporter/report-file! reporter
-                                                                      file-result)})))
-              summary (:summary run-result)]
-          (reporter/report-summary! (:reporter run-result) summary)
-          (case (:errors summary)
-            0 summary
-            :default (native/fail! "proofread: checks failed")))))))
+  [_context options]
+  (let [stdin-filename (:stdin-filename options)
+        source-text (when stdin-filename (native/read-stdin!))
+        source-options (when stdin-filename {:source source-text})
+        collection (unless stdin-filename (walk/collect (:files options)))
+        files-to-check (if stdin-filename
+                         [stdin-filename]
+                         (:files collection))
+        collection-errors (:errors collection)]
+    (when (not-empty? collection-errors)
+      (map collection-errors prn)
+      (native/fail! "proofread: checks failed"))
+    (let [run-result (reduce files-to-check
+                             {:summary {:files 0
+                                        :warnings 0
+                                        :errors 0}
+                              :reporter (reporter/make options files-to-check)}
+                             (fn [{:keys [summary reporter]} file]
+                               (let [check-result (if stdin-filename
+                                                    (native/check-source-result! file source-text)
+                                                    (native/check-files-result! [file]))
+                                     file-errors (:errors check-result)
+                                     diagnostics (check-diagnostics file
+                                                                    check-result
+                                                                    source-options)
+                                     file-result {:file file
+                                                  :checked (:checked check-result)
+                                                  :errors file-errors
+                                                  :diagnostics diagnostics}]
+                                 {:summary {:files (+ (:files summary)
+                                                     (:checked check-result)
+                                                     file-errors)
+                                            :warnings (+ (:warnings summary)
+                                                         (diagnostic-count diagnostics
+                                                                           :warning))
+                                            :errors (+ (:errors summary)
+                                                      (case file-errors
+                                                        0 (diagnostic-count diagnostics
+                                                                            :error)
+                                                        :default file-errors))}
+                                  :reporter (reporter/report-file! reporter
+                                                                  file-result)})))
+          summary (:summary run-result)]
+      (reporter/report-summary! (:reporter run-result) summary)
+      (case (:errors summary)
+        0 summary
+        :default (native/fail! "proofread: checks failed")))))
+
+(def command
+  "cli-trooper declaration for Proofread's `check` command."
+  {:description "Check Roo source and EDN files."
+   :execute! execute!
+   :flags {"reporter" {:type :enum
+                        :values ["simple"]
+                        :default :simple}
+           "group-by" {:type :enum
+                        :values ["rule" "namespace" "file" "package"]
+                        :delimiter ","
+                        :repeatable? true
+                        :destination :groups}
+           "show-ranges" {:type :flag
+                           :destination :show-ranges?}
+           "stdin-filename" {:type :path}}
+   :positional [{:type :path
+                 :name "file-or-pattern"
+                 :destination :files
+                 :repeatable? true
+                 :optional? true}]
+   :validate validation-errors})

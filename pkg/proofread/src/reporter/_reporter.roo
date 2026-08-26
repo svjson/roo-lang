@@ -2,19 +2,6 @@
   (:require [proofread.reporter.grouped :as grouped]
             [proofread.reporter.simple :as simple]))
 
-(defun known?
-  "Test whether a reporter name is supported.
-
-  Args:
-  - `reporter`: Reporter keyword.
-
-  Returns:
-  `true` for supported reporter keywords, otherwise `false`."
-  [reporter]
-  (case reporter
-    :simple true
-    :default false))
-
 (defun make
   "Create a proofread reporter.
 

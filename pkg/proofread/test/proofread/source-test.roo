@@ -7,10 +7,14 @@
 
 ;; proofread.source/diagnostics
 
+(deftest diagnostics/empty-source-yields-empty-result
+  (is (= []
+         (source/diagnostics "assets/style/redundant-do.roo" {:source ""}))))
+
 (deftest diagnostics/contains-source-context-annotations
-  (when []
+  (s/when []
     (head (source/diagnostics "assets/style/redundant-do.roo")))
-  (then [diagnostic]
+  (s/then [diagnostic]
     (is (= {:file "assets/style/redundant-do.roo"
             :namespace "proofread.style-sample"
             :package "proofread-tests"}
@@ -19,9 +23,9 @@
                                     :package])))))
 
 (deftest diagnostics/contains-full-source-reference
-  (when []
+  (s/when []
     (head (source/diagnostics "assets/style/redundant-do.roo")))
-  (then [diagnostic]
+  (s/then [diagnostic]
     (is (= {:path "assets/style/redundant-do.roo"
             :line 4
             :column 3
@@ -64,3 +68,39 @@
   (is (= []
          (for [d (source/diagnostics "assets/config/options/argument-destructuring/use-argument-destructuring-renamed.roo")]
            (select-keys d [:rule :severity])))))
+
+(deftest diagnostics/logical-source-locations
+  (s/when []
+    (source/diagnostics "assets/valid/unsaved_source.roo"
+                        {:source "(ns proofread.unsaved)\n\n(def value\n  (do 42))"}))
+
+  (s/then [diagnostics]
+    (is (= {:file "assets/valid/unsaved_source.roo"
+            :namespace "proofread.unsaved"
+            :package "proofread-sample"
+            :rule :redundant-do
+            :severity :warning
+            :source {:path "assets/valid/unsaved_source.roo"
+                     :line 4
+                     :column 3
+                     :start {:line 4
+                             :column 3}
+                     :end {:line 4
+                           :column 9}}
+            :message "Redundant do form"}
+           (find-first diagnostics (fn [item] (= :redundant-do (:rule item))))))
+
+    (is (= :kebab-case-filename (:rule (head diagnostics))))))
+
+(deftest diagnostics/uses-logical-path-config-for-in-memory-source
+  (let [diagnostics (source/diagnostics
+                     "assets/config/project/not-on-disk.roo"
+                     {:source "(ns proofread.stdin)\n(def first-item (nth items 0))\n(def body (do :ok))"})]
+    (is (= [:use-head] (map diagnostics :rule)))
+    (is (= [:error] (map diagnostics :severity)))))
+
+(deftest diagnostics/in-memory-source-takes-precedence-over-on-disk-content
+  (let [path "assets/valid/sample.roo"]
+    (is (= [] (source/diagnostics path)))
+    (is (= [:redundant-do]
+           (map (source/diagnostics path {:source "(def value (do 42))"}) :rule)))))
