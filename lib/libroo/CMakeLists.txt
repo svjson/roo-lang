@@ -13,6 +13,7 @@ set(roo_SOURCES
   src/roo/ordered_namespace_source.cpp
   src/roo/exec.cpp
   src/roo/runtime/dict.cpp
+  src/roo/runtime/deep_copy.cpp
   src/roo/runtime/eval_plan.cpp
   src/roo/runtime/exec_node.cpp
   src/roo/runtime/file_walk.cpp

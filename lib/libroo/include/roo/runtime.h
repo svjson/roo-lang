@@ -239,6 +239,22 @@ namespace Roo
      */
     void create_worker(const std::string& identity);
 
+    /**
+     * @brief Invoke a callable asynchronously in a named worker runtime.
+     *
+     * The callable and arguments are copied under the runtime-transfer policy
+     * before they are queued.
+     */
+    sptr_val invoke_worker(const std::string& identity,
+                           const sptr_val& callable,
+                           const sptr_val_v& arguments);
+
+    /** @brief Return the current status keyword for a worker execution. */
+    sptr_val poll_worker(const sptr_val& execution_handle);
+
+    /** @brief Consume a completed worker execution's transported result. */
+    sptr_val collect_worker(const sptr_val& execution_handle);
+
     /*!
      * @brief Tests if this Runtime instance may access any file system
      * abstraction, and thus can read files from disk or virtual a file system.

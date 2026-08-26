@@ -30,6 +30,73 @@ namespace Roo
    * @return `nil` after the worker runtime has initialized successfully.
    */
   FUNC(CreateWorkerBangFunction, create_worker)
+
+  /*!
+   * @brief Schedule a callable invocation in a named worker runtime.
+   * @since 0.1.0
+   *
+   * The callable and arguments are evaluated in the parent runtime, copied
+   * together under the runtime-transfer policy, and invoked using the worker's
+   * own execution context. The invocation result is copied back before the
+   * execution becomes successful. The returned native handle exposes the
+   * stable read-only properties `:worker` and `:id` while retaining its
+   * runtime-local routing identity.
+   *
+   * Usage:
+   * @code
+   * (roo.worker/invoke! :my-app/worker identity {:answer 42})
+   * => #<roo.worker/execution :my-app/worker 1>
+   * @endcode
+   *
+   * | Arg      | Description                                                |
+   * | -------- | ---------------------------------------------------------- |
+   * | identity | Keyword identifying the worker in the current runtime.     |
+   * | callable | Callable value to invoke in the worker runtime.             |
+   * | args...  | Zero or more argument values transferred to the worker.    |
+   *
+   * @return An execution handle accepted by `poll!` and `collect!`.
+   */
+  FUNC(InvokeWorkerBangFunction, invoke_worker)
+
+  /*!
+   * @brief Return the current status of a worker execution.
+   * @since 0.1.0
+   *
+   * Usage:
+   * @code
+   * (roo.worker/poll! execution)
+   * => :queued
+   * @endcode
+   *
+   * | Arg       | Description                                                |
+   * | --------- | ---------------------------------------------------------- |
+   * | execution | Execution handle returned by a worker operation.           |
+   *
+   * @return One of `:queued`, `:running`, `:succeeded`, or `:failed`.
+   */
+  FUNC(PollWorkerBangFunction, poll_worker)
+
+  /*!
+   * @brief Consume and return a completed worker execution's result.
+   * @since 0.1.0
+   *
+   * Collection removes the execution and its retained result from the worker.
+   * Collecting an unfinished, already collected, or unknown execution is an
+   * error. A failed execution raises its failure and is likewise removed.
+   *
+   * Usage:
+   * @code
+   * (roo.worker/collect! execution)
+   * => {:answer 42}
+   * @endcode
+   *
+   * | Arg       | Description                                                |
+   * | --------- | ---------------------------------------------------------- |
+   * | execution | Completed execution handle returned by a worker operation. |
+   *
+   * @return The transported execution result without a wrapper.
+   */
+  FUNC(CollectWorkerBangFunction, collect_worker)
 } // namespace Roo
 
 #endif

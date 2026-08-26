@@ -32,10 +32,11 @@ namespace Roo
    private:
     uint64_t execution_id;
     std::atomic<WorkerExecutionStatus> execution_status = WorkerExecutionStatus::QUEUED;
+    sptr_val result;
     std::exception_ptr failure;
 
     void mark_running();
-    void mark_succeeded();
+    void mark_succeeded(sptr_val value);
     void mark_failed(std::exception_ptr error);
 
     friend class Worker;
@@ -48,7 +49,7 @@ namespace Roo
     void rethrow_failure() const;
   };
 
-  using WorkerTask = std::function<void(Runtime&)>;
+  using WorkerTask = std::function<sptr_val(Runtime&)>;
 
   class Worker
   {
@@ -80,6 +81,7 @@ namespace Roo
 
     uint64_t enqueue(WorkerTask task);
     std::shared_ptr<const WorkerExecution> find_execution(uint64_t execution_id);
+    sptr_val collect(uint64_t execution_id);
   };
 
   class WorkerRegistry
@@ -90,7 +92,11 @@ namespace Roo
    public:
     void create(const std::string& identity);
     sptr_val enqueue(const std::string& identity, WorkerTask task);
+    sptr_val invoke(const std::string& identity,
+                    const sptr_val& callable,
+                    const sptr_val_v& arguments);
     WorkerExecutionStatus poll(const sptr_val& execution_handle) const;
+    sptr_val collect(const sptr_val& execution_handle);
   };
 } // namespace Roo
 
