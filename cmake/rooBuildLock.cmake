@@ -16,11 +16,10 @@ file(LOCK "${ROO_BUILD_LOCK_PATH}"
   TIMEOUT 0
   RESULT_VARIABLE lock_result
 )
-
 if(NOT lock_result STREQUAL "0")
-  message(STATUS "Another Roo build is active; waiting for it to finish")
-  file(LOCK "${ROO_BUILD_LOCK_PATH}" GUARD PROCESS)
-  message(STATUS "Roo build lock acquired")
+  message(FATAL_ERROR
+    "Another Roo build is active; cannot start '${ROO_BUILD_TARGET}'"
+  )
 endif()
 
 execute_process(
