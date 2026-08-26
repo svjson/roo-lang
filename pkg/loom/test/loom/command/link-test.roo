@@ -27,7 +27,8 @@
     (is (io/symlink? target-dir))
     (is (= (io/absolute-path! package-dir)
            (io/read-link! target-dir)))
-    (is (io/exists? (io/join-path target-dir "package.edn")))))
+    (is (io/exists? (io/join-path target-dir "package.edn")))
+    (is (= false (io/exists? (io/join-path target-dir "symbols.edn"))))))
 
 (deftest uninstall-removes-link-without-removing-source-package
   (s/given

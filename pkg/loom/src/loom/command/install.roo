@@ -1,5 +1,6 @@
 (ns loom.command.install
-  (:require [roo.io :as io]
+  (:require [lookup.index :as index]
+            [roo.io :as io]
             [loom.command.uninstall :as uninstall]
             [loom.common.files :as files]
             [loom.common.manifest :as manifest]
@@ -35,5 +36,7 @@
       (copy-native-libraries! package-dir
                               target-dir
                               (manifest/native-libraries package-manifest))
+      (io/spit! (io/join-path target-dir "symbols.edn")
+                (str (index/symbol-index target-dir) "\n"))
       (prn (str "Installed " package-id " to " target-dir))
       target-dir)))

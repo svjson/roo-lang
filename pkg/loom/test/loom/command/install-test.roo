@@ -21,7 +21,8 @@
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
                                             "src/loom/core.roo")))
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
-                                            "src/loom/command/install.roo")))))
+                                            "src/loom/command/install.roo")))
+    (is (io/exists? (io/join-path install-loom-target-dir "symbols.edn")))))
 
 (deftest installs-native-libraries-when-declared
   (s/given

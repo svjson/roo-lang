@@ -171,11 +171,14 @@ cmake -E copy_directory "$LOOM_PACKAGE/src" "$BOOTSTRAP_TEST_ROOT/packages/loom/
 cmake -E copy_directory \
   "$PACKAGE_STAGE_ROOT/cli-trooper" \
   "$BOOTSTRAP_TEST_ROOT/packages/cli-trooper"
+cmake -E copy_directory \
+  "$PACKAGE_STAGE_ROOT/lookup" \
+  "$BOOTSTRAP_TEST_ROOT/packages/lookup"
 printf '%s\n' \
   "{:name loom" \
   " :version \"0.1.0\"" \
   " :description \"Bootstrap dependency fixture.\"" \
-  " :dependencies {cli-trooper \"0.1.0\"}" \
+  " :dependencies {cli-trooper \"0.1.0\" lookup \"0.1.0\"}" \
   " :load-roots [\"src\"]" \
   " :main loom.core/main}" \
   > "$BOOTSTRAP_TEST_ROOT/packages/loom/package.edn"
@@ -188,7 +191,9 @@ cmake -E env HOME="$BOOTSTRAP_TEST_ROOT/home" \
   --source-root "$BOOTSTRAP_TEST_ROOT/packages" \
   --package-repository "$BOOTSTRAP_TEST_ROOT/repository"
 assert_file "$BOOTSTRAP_TEST_ROOT/repository/cli-trooper/0.1.0/package.edn"
+assert_file "$BOOTSTRAP_TEST_ROOT/repository/lookup/0.1.0/package.edn"
 cmake -E rm -rf "$BOOTSTRAP_TEST_ROOT/packages/cli-trooper"
+cmake -E rm -rf "$BOOTSTRAP_TEST_ROOT/packages/lookup"
 
 cmake -E env HOME="$BOOTSTRAP_TEST_ROOT/home" \
   "$ROOC" \
