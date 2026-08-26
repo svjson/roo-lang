@@ -58,6 +58,31 @@
                                  :signature "parameter"}}}
            result))))
 
+(deftest thing-at!/resolves-function-parameter-past-a-docstring
+  (p/when []
+    (analysis/thing-at! "."
+                        "src/sample.roo"
+                        "5"
+                        "3"
+                        "(ns sample.core)\n(defun submit\n  \"Submits something.\"\n  [command-value]\n  command-value)\n"))
+
+  (p/then [result]
+    (is (= {:status :ok
+            :range {:start {:line 5 :column 3}
+                    :end {:line 5 :column 15}}
+            :thing {:text "command-value"
+                    :kind :symbol
+                    :role :local-reference
+                    :resolution {:kind :local
+                                 :name "command-value"
+                                 :source {:path "src/sample.roo"
+                                          :line 4
+                                          :column 4
+                                          :start {:line 4 :column 4}
+                                          :end {:line 4 :column 16}}
+                                 :signature "parameter"}}}
+           result))))
+
 
 ;; lookup.command.thing-at/resolve-namespace
 
