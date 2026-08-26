@@ -6,18 +6,29 @@
 namespace Roo
 {
   /*!
-   * @brief Join two path segments and normalize the result lexically.
+   * @brief Join path segments and normalize the result lexically.
+   *
+   * This functions takes an arbitrary number of path segments in addition to
+   * to a mandatory base path.
+   *
+   * Any `nil` value among the segments is ignored.
    *
    * Usage:
    * @code
-   * (roo.io/join-path "assets" "config.edn")
+   * (roo.io/join-path "assets" "images" "logo.svg")
+   * => "assets/images/logo.svg"
+   *
+   * (apply roo.io/join-path ["assets" "logo.svg"])
+   * => "assets/logo.svg"
+   *
+   * (roo.io/join-path nil "assets" nil "config.edn")
    * => "assets/config.edn"
    * @endcode
    *
-   * | Arg   | Description                                                        |
-   * | ----- | ------------------------------------------------------------------ |
-   * | base  | The base path.                                                     |
-   * | child | The child path segment.                                            |
+   * | Arg      | Description                                                     |
+   * | -------- | --------------------------------------------------------------- |
+   * | base     | The base path.                                                  |
+   * | segments | Zero or more path segments. Any `nil` values are ignored.       |
    */
   FUNC(JoinPathFunction, join_path)
 

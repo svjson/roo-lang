@@ -10,14 +10,18 @@ namespace Roo
 {
   /** JoinPathFunction - roo.io/join-path */
   FUNC_IMPL(JoinPathFunction,
-            SIG((FN_ARGS((&Type::STRING), (&Type::STRING)),
+            SIG((FN_ARGS((&Type::STRING), (VARARG, &Type::STRING)),
                  EXEC_DISPATCH(&JoinPathFunction::exec_join_path))))
 
   EXEC_BODY(JoinPathFunction, exec_join_path)
   {
-    return Value::string((std::filesystem::path(args[0]->str()) / args[1]->str())
-                           .lexically_normal()
-                           .generic_string());
+    std::filesystem::path path;
+    for (const auto& segment : args)
+    {
+      if (segment->type != Value::Type::NIL) path /= segment->str();
+    }
+
+    return Value::string(path.lexically_normal().generic_string());
   }
 
   /** ParentPathFunction - roo.io/parent-path */
