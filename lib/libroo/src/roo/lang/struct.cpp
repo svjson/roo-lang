@@ -15,6 +15,20 @@ namespace Roo
       return arg->type == Value::Type::FUNCTION || arg->type == Value::Type::KEYWORD;
     }
 
+    bool assoc_keys_are_integers(const sptr_val_v& args)
+    {
+      for (size_t i = 1; i < args.size() - 1; i += 2)
+      {
+        if (args[i]->type != Value::Type::NUMBER ||
+            (args[i]->num().num_type != Value::NumberType::INT &&
+             args[i]->num().num_type != Value::NumberType::LONG))
+        {
+          return false;
+        }
+      }
+      return true;
+    }
+
     struct UpdateCall
     {
       sptr_val updater;
@@ -278,6 +292,11 @@ namespace Roo
                                      " '");
     }
 
+    if (args[0]->type == Value::Type::NIL)
+    {
+      if (assoc_keys_are_integers(args)) return exec_assoc_seq(ctx, args);
+    }
+
     sptr_val_v new_content = Roo::get_children(*args[0]);
     for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
     {
@@ -307,21 +326,18 @@ namespace Roo
 
   EXEC_BODY(AssocFunction, exec_assoc_seq)
   {
-    sptr_val_v new_content = Roo::get_children(*args[0]);
-    int idx = args[1]->i32();
-    sptr_val& value = args.back();
-
-    if (idx >= static_cast<int>(new_content.size()))
+    sptr_val result = Value::vector(Roo::get_children(*args[0]));
+    for (size_t i = 1; i < args.size() - 1; i += 2)
     {
-      for (int i = 0; i < idx - static_cast<int>(new_content.size()); i++)
+      const std::int64_t index = checked_sequence_index(*args[i], "assoc index");
+      if (index < 0)
       {
-        new_content.push_back(Roo::Constant::NIL);
+        throw TypeError("assoc index must not be negative.");
       }
+      Roo::set_child(*result, static_cast<size_t>(index), args[i + 1]);
     }
 
-    new_content[idx] = value;
-
-    return Value::vector(std::move(new_content));
+    return result;
   }
 
   /** AssocBangFunction - roo/assoc! */
@@ -341,22 +357,14 @@ namespace Roo
 
     if (args[0]->type == Value::Type::NIL)
     {
-      bool integer_keys = true;
-      for (size_t i = 1; i < args.size() - 1; i += 2)
-      {
-        if (args[i]->type != Value::Type::NUMBER ||
-            (args[i]->num().num_type != Value::NumberType::INT &&
-             args[i]->num().num_type != Value::NumberType::LONG))
-        {
-          integer_keys = false;
-          break;
-        }
-      }
-
       sptr_val_v normalized_args = args;
-      normalized_args[0] = integer_keys ? Value::vector({}) : Value::map({});
-      return integer_keys ? exec_assoc_seq_bang(ctx, normalized_args)
-                          : exec_assoc_bang(ctx, normalized_args);
+      if (assoc_keys_are_integers(args))
+      {
+        normalized_args[0] = Value::vector({});
+        return exec_assoc_seq_bang(ctx, normalized_args);
+      }
+      normalized_args[0] = Value::map({});
+      return exec_assoc_bang(ctx, normalized_args);
     }
 
     for (size_t i = 1; i < args.size() - 1; i += 2)
