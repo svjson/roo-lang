@@ -1,0 +1,37 @@
+(ns roopl.editor-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [roopl.editor :as roopl-editor]
+            [soot :as soot]
+            [voodoo.editor.presentation :as presentation]
+            [voodoo.text.buffer :as buffer]))
+
+(deftest default/highlights-the-boundaries-of-a-matched-pair-at-the-cursor
+  (p/given
+    (buffer/make "(foo)"))
+
+  (p/when [at-end]
+    (let [before-closing (buffer/move-left at-end)
+          away-from-delimiters (buffer/move-left before-closing)]
+      {:at-end
+       {:decorations (presentation/decorations roopl-editor/default at-end)
+        :rendered (presentation/render roopl-editor/default at-end)}
+       :before-closing (presentation/render roopl-editor/default before-closing)
+       :away-from-delimiters
+       (presentation/render roopl-editor/default away-from-delimiters)}))
+
+  (p/then [result]
+    (let [rendered (str (soot/bold "(") "foo" (soot/bold ")"))]
+      (is (= {:at-end
+              {:decorations
+               [{:range {:start 0 :end 5}
+                 :role :roopl/matching-delimiters}]
+               :rendered {:text rendered
+                          :text-before rendered}}
+              :before-closing
+              {:text rendered
+               :text-before (str (soot/bold "(") "foo")}
+              :away-from-delimiters
+              {:text "(foo)"
+               :text-before "(fo"}}
+             result)))))

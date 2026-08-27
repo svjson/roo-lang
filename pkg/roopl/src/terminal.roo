@@ -1,6 +1,7 @@
 (ns roopl.terminal
   (:require [inpoots.stdin :as stdin]
             [roo.tty :as tty]
+            [roopl.editor :as roopl-editor]
             [roopl.history :as history-store]
             [roopl.repl :as repl]
             [roopl.target.local.dedicated :as dedicated]
@@ -30,6 +31,7 @@
                              (prompt/make
                                {:prompt (str (repl/current-namespace repl-state)
                                              "=> ")
+                                :editor roopl-editor/default
                                 :history history}))
         running true]
     (session/focus! widget-session handle)
@@ -73,6 +75,7 @@
                                            (prompt/make
                                              {:prompt (str (repl/current-namespace repl-state)
                                                            "=> ")
+                                              :editor roopl-editor/default
                                               :history history})))
                            (session/focus! widget-session handle)))))))
     (session/remove! widget-session handle)

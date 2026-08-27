@@ -1,0 +1,64 @@
+(ns roopl.editor
+  (:require [soot :as soot]
+            [voodoo.editor :as editor]
+            [voodoo.editor.text :as text-editor]
+            [voodoo.text.buffer :as buffer]
+            [wraparoo :as wraparoo]
+            [wraparoo.delimiter :as delimiter]))
+
+(defun matching-delimiter-decorations
+  "Describe the matched delimiter pair touching BUFFER's cursor.
+
+  Args:
+  - `buffer`: Voodoo text buffer containing Roo source and a logical cursor.
+
+  Returns:
+  A vector containing one `:roopl/matching-delimiters` typed range from the
+  opening delimiter through the closing delimiter, or an empty vector when no
+  complete pair touches the cursor."
+  [buffer]
+  (let [analysis (wraparoo/analyze (buffer/text buffer))
+        pair (delimiter/pair-at analysis (buffer/position buffer))]
+    (if pair
+      [{:range {:start (get-in pair [:open :start])
+                :end (get-in pair [:close :end])}
+        :role :roopl/matching-delimiters}]
+      [])))
+
+(defun matching-delimiter-styling
+  "Style the boundaries of matching-delimiter decorations.
+
+  Args:
+  - `context`: Voodoo presentation context containing ordered
+    `:decorations` over an editable Roo value.
+
+  Returns:
+  Concrete one-scalar ranges for both boundaries of every
+  `:roopl/matching-delimiters` decoration. Each range carries Soot's
+  `:bold` style."
+  [context]
+  (flat-map (filter (:decorations context)
+                    (fn [decoration]
+                      (= :roopl/matching-delimiters (:role decoration))))
+            (fn [decoration]
+              (let [start (get-in decoration [:range :start])
+                    end (get-in decoration [:range :end])]
+                [{:range {:start start
+                          :end (inc start)}
+                  :styles [:bold]}
+                 {:range {:start (dec end)
+                          :end end}
+                  :styles [:bold]}]))))
+
+(def default
+  "Default Roopl editor with plain-text editing and matched delimiters.
+
+  The value is a composed Voodoo editor. One presentation layer contributes a
+  typed matching-delimiter range from Wraparoo; another maps that semantic
+  range to bold boundary ranges. The top-level `:paint` function is
+  `soot/paint`."
+  (assoc (editor/compose
+           text-editor/default
+           {:layers [{:decorations matching-delimiter-decorations}]}
+           {:layers [{:styling matching-delimiter-styling}]})
+         :paint soot/paint))

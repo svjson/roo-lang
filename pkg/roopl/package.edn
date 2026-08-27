@@ -2,7 +2,9 @@
  :version "0.1.0"
  :description "Interactive terminal shell for Roo."
  :dependencies {inpoots "0.1.0"
-                voodoo "0.1.0"}
+                soot "0.1.0"
+                voodoo "0.1.0"
+                wraparoo "0.1.0"}
  :load-roots ["src"]
  :namespace-roots {roopl "src"}
  :native-libraries [{:name "roopl-native"
