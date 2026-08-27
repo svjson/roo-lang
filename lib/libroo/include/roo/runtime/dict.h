@@ -44,7 +44,11 @@ namespace Roo::Dict
 
   sptr_val shallow_copy(const sptr_val& source);
   sptr_val assoc_in(const sptr_val& source, const sptr_val_v& path, const sptr_val& value);
+  sptr_val assoc_in_bang(const sptr_val& source,
+                         const sptr_val_v& path,
+                         const sptr_val& value);
   sptr_val dissoc_in(const sptr_val& source, const sptr_val_v& path);
+  sptr_val dissoc_in_bang(const sptr_val& source, const sptr_val_v& path);
 
 } // namespace Roo::Dict
 

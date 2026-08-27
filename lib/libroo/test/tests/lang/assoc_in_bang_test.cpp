@@ -56,3 +56,43 @@ TEST_F(AssocInBangFunction, replace_key_when_same_value_occurs_before_key)
   EXPECT_EQ(*result, *runtime.eval("{:id :type :type :type/updated}"));
   EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:id :type :type :type/updated}"));
 }
+
+TEST_F(AssocInBangFunction, associates_multiple_paths_and_returns_the_target)
+{
+  runtime.eval("(def target {:a 1 :nested {:x 2}})");
+  auto target = runtime.lookup("target");
+
+  auto result = runtime.eval("(assoc-in! target [:a] 10 [:nested :y] 3 [:b] 20)");
+
+  EXPECT_EQ(result, target);
+  EXPECT_EQ(*result, *runtime.eval("{:a 10 :nested {:x 2 :y 3} :b 20}"));
+}
+
+TEST_F(AssocInBangFunction, creates_missing_maps_below_a_nil_target)
+{
+  runtime.eval("(def target nil)");
+
+  auto result = runtime.eval("(assoc-in! target [:a :b] 1 [:c] 2)");
+
+  EXPECT_EQ(*result, *runtime.eval("{:a {:b 1} :c 2}"));
+  EXPECT_EQ(*runtime.lookup("target"), *Roo::Constant::NIL);
+}
+
+TEST_F(AssocInBangFunction, creates_a_missing_intermediate_map)
+{
+  runtime.eval("(def target {:a 1})");
+
+  auto result = runtime.eval("(assoc-in! target [:nested :value] 2)");
+
+  EXPECT_EQ(result, runtime.lookup("target"));
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :nested {:value 2}}"));
+}
+
+TEST_F(AssocInBangFunction, accepts_sequential_paths)
+{
+  runtime.eval("(def target {:nested {}})");
+
+  auto result = runtime.eval("(assoc-in! target '(:nested :value) 2)");
+
+  EXPECT_EQ(*result, *runtime.eval("{:nested {:value 2}}"));
+}

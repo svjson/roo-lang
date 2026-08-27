@@ -456,6 +456,55 @@ namespace Roo::Dict
     return assoc_in_copy(current, path, 0, value);
   }
 
+  static sptr_val assoc_in_mutate(const sptr_val& current,
+                                  const sptr_val_v& path,
+                                  size_t index,
+                                  const sptr_val& value)
+  {
+    if (index >= path.size())
+    {
+      throw InvocationException("assoc-in! path traversal went out of bounds.");
+    }
+
+    sptr_val result = current;
+    if (result->type == Value::Type::NIL)
+    {
+      result = Value::map({});
+    }
+    else
+    {
+      switch (result->type)
+      {
+      case Value::Type::MAP:
+      case Value::Type::OBJECT:
+      case Value::Type::NATIVE_OBJECT:
+      case Value::Type::VECTOR:
+      case Value::Type::LIST:
+        break;
+      default:
+        throw TypeError("assoc-in! cannot traverse through " + result->to_string());
+      }
+    }
+
+    const sptr_val& key = path[index];
+    if (index == path.size() - 1)
+    {
+      Dict::set_property(result, key, value);
+      return result;
+    }
+
+    sptr_val child = Dict::get_property(result, *key);
+    Dict::set_property(result, key, assoc_in_mutate(child, path, index + 1, value));
+    return result;
+  }
+
+  sptr_val assoc_in_bang(const sptr_val& current,
+                         const sptr_val_v& path,
+                         const sptr_val& value)
+  {
+    return assoc_in_mutate(current, path, 0, value);
+  }
+
   static bool can_dissoc_in_traverse(const sptr_val& current)
   {
     switch (current->type)
@@ -548,6 +597,39 @@ namespace Roo::Dict
   sptr_val dissoc_in(const sptr_val& current, const sptr_val_v& path)
   {
     return dissoc_in_copy(current, path, 0);
+  }
+
+  sptr_val dissoc_in_bang(const sptr_val& current, const sptr_val_v& path)
+  {
+    if (path.empty())
+    {
+      throw InvocationException("dissoc-in! path cannot be empty.");
+    }
+
+    sptr_val target = current;
+    for (size_t i = 0; i < path.size() - 1; i++)
+    {
+      if (*target == *Constant::NIL) return current;
+
+      if (!can_dissoc_in_traverse(target))
+      {
+        throw TypeError("dissoc-in! cannot traverse through " + target->to_string());
+      }
+
+      auto [found, value] = Dict::find_property(target, path[i]);
+      if (!found) return current;
+      target = value;
+    }
+
+    if (*target == *Constant::NIL) return current;
+
+    if (target->type != Value::Type::MAP)
+    {
+      throw TypeError("dissoc-in! cannot remove property from " + target->to_string());
+    }
+
+    Dict::remove_property(target, path.back());
+    return current;
   }
 
 } // namespace Roo::Dict

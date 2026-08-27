@@ -7,30 +7,32 @@
 using DissocInBangFunction = RooTest::RuntimeTestFixture;
 using namespace ::testing;
 
-TEST_F(DissocInBangFunction, removal_of_non_existing_path_returns_nil)
+TEST_F(DissocInBangFunction, missing_path_returns_unchanged_target)
 {
   // Given
   runtime.eval("(def my-map {:a 1 :b {:x 10}})");
+  auto target = runtime.lookup("my-map");
 
   // When
   auto result = runtime.eval("(dissoc-in! my-map [:b :missing])");
 
   // Then
-  EXPECT_EQ(*result, *Roo::Constant::NIL);
-  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:a 1 :b {:x 10}}"));
+  EXPECT_EQ(result, target);
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :b {:x 10}}"));
 }
 
-TEST_F(DissocInBangFunction, removal_of_key_returns_value_and_mutates_map)
+TEST_F(DissocInBangFunction, removes_key_and_returns_modified_target)
 {
   // Given
   runtime.eval("(def my-map {:a 1 :b {:x 10 :y 20}})");
+  auto target = runtime.lookup("my-map");
 
   // When
   auto result = runtime.eval("(dissoc-in! my-map [:b :x])");
 
   // Then
-  EXPECT_EQ(*result, *Roo::Value::number(10));
-  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:a 1 :b {:y 20}}"));
+  EXPECT_EQ(result, target);
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :b {:y 20}}"));
 }
 
 TEST_F(DissocInBangFunction, traverses_vector_slots)
@@ -42,21 +44,47 @@ TEST_F(DissocInBangFunction, traverses_vector_slots)
   auto result = runtime.eval("(dissoc-in! my-map [:items 0 :remove])");
 
   // Then
-  EXPECT_EQ(*result, *Roo::Value::number(2));
-  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:items [{:keep 1}]}"));
+  EXPECT_EQ(result, runtime.lookup("my-map"));
+  EXPECT_EQ(*result, *runtime.eval("{:items [{:keep 1}]}"));
 }
 
-TEST_F(DissocInBangFunction, missing_intermediate_path_returns_nil)
+TEST_F(DissocInBangFunction, missing_intermediate_path_returns_unchanged_target)
 {
   // Given
   runtime.eval("(def my-map {:a 1})");
+  auto target = runtime.lookup("my-map");
 
   // When
   auto result = runtime.eval("(dissoc-in! my-map [:missing :nested])");
 
   // Then
-  EXPECT_EQ(*result, *Roo::Constant::NIL);
-  EXPECT_EQ(*runtime.lookup("my-map"), *runtime.eval("{:a 1}"));
+  EXPECT_EQ(result, target);
+  EXPECT_EQ(*result, *runtime.eval("{:a 1}"));
+}
+
+TEST_F(DissocInBangFunction, removes_multiple_paths)
+{
+  runtime.eval("(def target {:a 1 :b {:x 10 :y 20} :c {:z 30}})");
+  auto target = runtime.lookup("target");
+
+  auto result = runtime.eval("(dissoc-in! target [:a] [:b :y] [:c :z])");
+
+  EXPECT_EQ(result, target);
+  EXPECT_EQ(*result, *runtime.eval("{:b {:x 10} :c {}}"));
+}
+
+TEST_F(DissocInBangFunction, accepts_sequential_paths)
+{
+  runtime.eval("(def target {:nested {:keep 1 :remove 2}})");
+
+  auto result = runtime.eval("(dissoc-in! target '(:nested :remove))");
+
+  EXPECT_EQ(*result, *runtime.eval("{:nested {:keep 1}}"));
+}
+
+TEST_F(DissocInBangFunction, removes_multiple_paths_from_nil)
+{
+  EXPECT_EQ(*runtime.eval("(dissoc-in! nil [:a] [:b :c])"), *Roo::Constant::NIL);
 }
 
 TEST_F(DissocInBangFunction, throws_on_empty_path)

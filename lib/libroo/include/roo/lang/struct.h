@@ -95,13 +95,15 @@ namespace Roo
    * Usage:
    * @code
    * (assoc-in! my-nested-map [:key :nested-key] new-value)
+   * (assoc-in! my-nested-map [:key1] value1 [:key2 :nested-key] value2)
    * @endcode
    *
-   * | Arg    | Description                                                        |
-   * | ------ | ------------------------------------------------------------------ |
-   * | target | The map to mutate                                                  |
-   * | path   | The path to the nested key to set                                  |
-   * | value  | The value to associate with the last key of the key path           |
+   * | Arg      | Description                                                      |
+   * | -------- | ---------------------------------------------------------------- |
+   * | target   | The map or map-like value to mutate                              |
+   * | path     | The path to the nested key to set                                |
+   * | value    | The value to associate with the final key of the path            |
+   * | pairs... | Optional repetitions of path and value                           |
    *
    * @return The mutated target.
    */
@@ -326,6 +328,7 @@ namespace Roo
    * Usage:
    * @code
    * (dissoc-in! my-map [:key :nested-key])
+   * (dissoc-in! my-map [:key1] [:key2 :nested-key])
    * @endcode
    *
    * | Arg      | Description                                                        |
@@ -333,7 +336,7 @@ namespace Roo
    * | target   | The map or map-like value to mutate.                               |
    * | paths... | One or more paths to nested keys to remove.                        |
    *
-   * @return The removed value, or `nil` when the path does not exist.
+   * @return The mutated target, or `nil` when the target is `nil`.
    */
   FUNC(DissocInBangFunction, dissoc_in_bang)
 

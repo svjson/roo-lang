@@ -78,6 +78,29 @@ TEST_F(UpdateInBangFunction, mutates_multiple_paths_in_one_call)
   EXPECT_EQ(runtime.lookup("my-map")->to_string(), "{:a 2 :nested {:count 12}}");
 }
 
+TEST_F(UpdateInBangFunction, creates_missing_maps_below_a_nil_target)
+{
+  runtime.eval("(def target nil)");
+
+  auto result =
+    runtime.eval("(update-in! target [:nested :count] (fn [x] (if (nil? x) 1 x)))");
+
+  EXPECT_EQ(*result, *runtime.eval("{:nested {:count 1}}"));
+  EXPECT_EQ(*runtime.lookup("target"), *Roo::Constant::NIL);
+}
+
+TEST_F(UpdateInBangFunction, creates_a_missing_intermediate_map)
+{
+  runtime.eval("(def target {:a 1})");
+  auto target = runtime.lookup("target");
+
+  auto result = runtime.eval(
+    "(update-in! target [:nested :count] (fn [x] (if (nil? x) 2 x)))");
+
+  EXPECT_EQ(result, target);
+  EXPECT_EQ(*result, *runtime.eval("{:a 1 :nested {:count 2}}"));
+}
+
 TEST_F(UpdateInBangFunction, throws_on_non_sequence_path)
 {
   runtime.eval("(def my-map {:a 1})");

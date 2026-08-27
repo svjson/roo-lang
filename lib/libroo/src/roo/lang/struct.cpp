@@ -247,12 +247,7 @@ namespace Roo
           }
           else
           {
-            sptr_val target = result;
-            for (size_t path_i = 0; path_i + 1 < path.size(); path_i++)
-            {
-              target = Dict::get_property(target, *path[path_i]);
-            }
-            Dict::set_property(target, path.back(), updated_value);
+            result = Dict::assoc_in_bang(result, path, updated_value);
           }
           continue;
         }
@@ -428,28 +423,38 @@ namespace Roo
 
   /** AssocInBangFunction - roo/assoc-in! */
   FUNC_IMPL(AssocInBangFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::VECTOR), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&AssocInBangFunction::exec_assoc_in_bang))))
 
   EXEC_BODY(AssocInBangFunction, exec_assoc_in_bang)
   {
-    const sptr_val_v& assoc_path = args[1]->elements();
-    if (assoc_path.empty())
+    if (args.size() % 2 == 0)
     {
-      throw InvocationException("Path for assoc-in! cannot be empty.");
-    }
-    sptr_val value = args.back();
-    const sptr_val& assoc_key = assoc_path.back();
-
-    sptr_val target = args[0];
-    for (size_t i = 0; i < assoc_path.size() - 1; i++)
-    {
-      target = Dict::get_property(target, *assoc_path[i]);
+      throw Roo::InvocationException("No value given for path '" +
+                                     args.back()->to_string() + " '");
     }
 
-    Dict::set_property(target, assoc_key, value);
+    sptr_val result = args[0];
+    for (size_t assoc_arg_i = 1; assoc_arg_i < args.size() - 1; assoc_arg_i += 2)
+    {
+      const sptr_val& assoc_path_value = args[assoc_arg_i];
+      if (assoc_path_value->type == Value::Type::NIL ||
+          !Type::SEQ.is_type_of(*assoc_path_value))
+      {
+        throw TypeError("Path for assoc-in! must be a sequence, got: " +
+                        assoc_path_value->to_string());
+      }
 
-    return args[0];
+      const sptr_val_v assoc_path = Roo::get_children(*assoc_path_value);
+      if (assoc_path.empty())
+      {
+        throw InvocationException("Path for assoc-in! cannot be empty.");
+      }
+
+      result = Dict::assoc_in_bang(result, assoc_path, args[assoc_arg_i + 1]);
+    }
+
+    return result;
   }
 
   /** UpdateForm - roo/update */
@@ -641,58 +646,32 @@ namespace Roo
 
   /** DissocInBangFunction - roo/dissoc-in! */
   FUNC_IMPL(DissocInBangFunction,
-            SIG((FN_ARGS((&Type::COMPLEX), (&Type::VECTOR)),
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&DissocInBangFunction::exec_dissoc_in_bang))))
 
   EXEC_BODY(DissocInBangFunction, exec_dissoc_in_bang)
   {
-    const sptr_val_v& dissoc_path = args[1]->elements();
-    if (dissoc_path.empty())
+    sptr_val result = args[0];
+    for (size_t dissoc_arg_i = 1; dissoc_arg_i < args.size(); dissoc_arg_i++)
     {
-      throw InvocationException("Path for dissoc-in! cannot be empty.");
-    }
-
-    sptr_val target = args[0];
-    for (size_t i = 0; i < dissoc_path.size() - 1; i++)
-    {
-      if (*target == *Constant::NIL)
+      const sptr_val& dissoc_path_value = args[dissoc_arg_i];
+      if (dissoc_path_value->type == Value::Type::NIL ||
+          !Type::SEQ.is_type_of(*dissoc_path_value))
       {
-        return Constant::NIL;
+        throw TypeError("Path for dissoc-in! must be a sequence, got: " +
+                        dissoc_path_value->to_string());
       }
 
-      switch (target->type)
+      const sptr_val_v dissoc_path = Roo::get_children(*dissoc_path_value);
+      if (dissoc_path.empty())
       {
-      case Value::Type::NIL:
-      case Value::Type::MAP:
-      case Value::Type::OBJECT:
-      case Value::Type::NATIVE_OBJECT:
-      case Value::Type::VECTOR:
-      case Value::Type::LIST:
-        break;
-      default:
-        throw TypeError("dissoc-in! cannot traverse through " + target->to_string());
+        throw InvocationException("Path for dissoc-in! cannot be empty.");
       }
 
-      auto [found, value] = Dict::find_property(target, dissoc_path[i]);
-      if (!found)
-      {
-        return Constant::NIL;
-      }
-
-      target = value;
+      result = Dict::dissoc_in_bang(result, dissoc_path);
     }
 
-    if (*target == *Constant::NIL)
-    {
-      return Constant::NIL;
-    }
-
-    if (target->type != Value::Type::MAP)
-    {
-      throw TypeError("dissoc-in! cannot remove property from " + target->to_string());
-    }
-
-    return Dict::remove_property(target, dissoc_path.back());
+    return result;
   }
 
   /** KeysFunction - roo/keys */
