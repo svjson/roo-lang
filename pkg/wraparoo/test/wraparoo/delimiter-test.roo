@@ -1,0 +1,66 @@
+(ns wraparoo.delimiter-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [wraparoo :as wraparoo]
+            [wraparoo.delimiter :as delimiter]))
+
+(deftest analyze/pairs-only-properly-nested-delimiters
+  (is (= {:delimiter-pairs
+          [{:delimiter :bracket
+            :open {:start 1 :end 2}
+            :close {:start 3 :end 4}}]
+          :unmatched-delimiters
+          [{:delimiter :paren
+            :side :open
+            :range {:start 0 :end 1}}
+           {:delimiter :paren
+            :side :close
+            :range {:start 2 :end 3}}]}
+         (select-keys (wraparoo/analyze "([)]")
+                      [:delimiter-pairs :unmatched-delimiters]))))
+
+(deftest analyze/retains-unclosed-delimiters-without-repairing-source
+  (is (= {:delimiter-pairs
+          [{:delimiter :bracket
+            :open {:start 1 :end 2}
+            :close {:start 3 :end 4}}]
+          :unmatched-delimiters
+          [{:delimiter :paren
+            :side :open
+            :range {:start 0 :end 1}}
+           {:delimiter :curly
+            :side :open
+            :range {:start 5 :end 6}}]}
+         (select-keys (wraparoo/analyze "([x] {y")
+                      [:delimiter-pairs :unmatched-delimiters]))))
+
+(deftest pair-at/selects-the-pair-adjacent-to-the-cursor
+  (p/given
+    (wraparoo/analyze "([])"))
+
+  (p/when [analysis]
+    {:before-opening (delimiter/pair-at analysis 0)
+     :after-opening (delimiter/pair-at analysis 1)
+     :after-inner-close (delimiter/pair-at analysis 3)
+     :after-outer-close (delimiter/pair-at analysis 4)
+     :not-touching (delimiter/pair-at analysis 10)})
+
+  (p/then [result]
+    (is (= {:before-opening
+            {:delimiter :paren
+             :open {:start 0 :end 1}
+             :close {:start 3 :end 4}}
+            :after-opening
+            {:delimiter :paren
+             :open {:start 0 :end 1}
+             :close {:start 3 :end 4}}
+            :after-inner-close
+            {:delimiter :bracket
+             :open {:start 1 :end 2}
+             :close {:start 2 :end 3}}
+            :after-outer-close
+            {:delimiter :paren
+             :open {:start 0 :end 1}
+             :close {:start 3 :end 4}}
+            :not-touching nil}
+           result))))

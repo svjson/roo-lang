@@ -20,7 +20,7 @@ PREFIX ?= $(LOCAL_PREFIX)
 PACKAGE_REPOSITORY = $(DESTDIR)$(PREFIX)/share/roo/pkg
 BOOTSTRAP_LOOM = $(CURDIR)/build/loom-bootstrap/build/$(LOOM_BINARY)
 
-ROO_BUILD_TARGETS := configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install install-packages build-proof build-lookup build-roopl build-roo-lang-index audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+ROO_BUILD_TARGETS := configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install install-packages build-proof build-lookup build-roopl build-roo-lang-index audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-wraparoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:wraparoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
 .PHONY: $(ROO_BUILD_TARGETS)
 
 ROO_BUILD_LOCK_PATH := $(CURDIR)/.roo-build.lock
@@ -354,6 +354,12 @@ install-voodoo: build
 	cmake -E copy_if_different $(CURDIR)/pkg/voodoo/package.edn $(PREFIX)/share/roo/pkg/voodoo/package.edn
 	cmake -E copy_if_different $(CURDIR)/pkg/voodoo/README.md $(PREFIX)/share/roo/pkg/voodoo/README.md
 
+install-wraparoo: build
+	cmake -E make_directory $(PREFIX)/share/roo/pkg/wraparoo/src
+	cmake -E copy_directory $(CURDIR)/pkg/wraparoo/src $(PREFIX)/share/roo/pkg/wraparoo/src
+	cmake -E copy_if_different $(CURDIR)/pkg/wraparoo/package.edn $(PREFIX)/share/roo/pkg/wraparoo/package.edn
+	cmake -E copy_if_different $(CURDIR)/pkg/wraparoo/README.md $(PREFIX)/share/roo/pkg/wraparoo/README.md
+
 install-cli-trooper: build
 	cmake -E make_directory $(PREFIX)/share/roo/pkg/cli-trooper/src
 	cmake -E copy_directory $(CURDIR)/pkg/cli-trooper/src $(PREFIX)/share/roo/pkg/cli-trooper/src
@@ -363,10 +369,10 @@ install-cli-trooper: build
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
 
-test: test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc
+test: test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:wraparoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc
 test: test\:cli
 
-test\:all: test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:server
+test\:all: test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:wraparoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:server
 
 test\:support: build
 	cmake --build build --target testsupport
@@ -415,6 +421,9 @@ test\:soot: build stage-packages
 
 test\:voodoo: build stage-packages
 	cd $(PACKAGE_STAGE)/voodoo/test && $(CURDIR)/build/roo proof
+
+test\:wraparoo: build stage-packages
+	cd $(PACKAGE_STAGE)/wraparoo/test && $(CURDIR)/build/roo proof
 
 test\:i18n: build stage-packages
 	cd $(PACKAGE_STAGE)/i18n/test && $(CURDIR)/build/roo proof

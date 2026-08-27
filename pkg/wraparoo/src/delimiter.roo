@@ -1,0 +1,103 @@
+(ns wraparoo.delimiter
+  "Derive delimiter relationships from Wraparoo's lossless token stream.
+
+  `analyze` pairs only properly nested collection delimiters and reports the
+  remaining openers and closers in source order. `pair-at` selects a pair next
+  to a Unicode-scalar cursor position, preferring a delimiter immediately
+  before the cursor over one beginning at it.
+
+  Examples:
+
+  ```roo
+  (require '[wraparoo :as wraparoo])
+  (require '[wraparoo.delimiter :as delimiter])
+
+  (def analysis (wraparoo/analyze \"([value])\"))
+
+  (delimiter/pair-at analysis 2)
+  (:unmatched-delimiters (wraparoo/analyze \"(value\"))
+  ```
+
+  Call `analyze` with tokens from `wraparoo.lex/scan` when composing the lower
+  level passes directly.")
+
+(defun analyze
+  "Find structurally valid delimiter pairs and unmatched delimiters in TOKENS.
+
+  Args:
+  - `tokens`: Lossless token vector returned by `wraparoo.lex/scan`.
+
+  Returns:
+  A map containing `:delimiter-pairs` and source-ordered
+  `:unmatched-delimiters`. A closing delimiter pairs only with a matching opener
+  at the top of the structural stack, so malformed source never produces
+  crossing pairs. Delimiters inside strings, characters, and comments are not
+  delimiter tokens and therefore require no special treatment here."
+  [tokens]
+  (let [state
+        (reduce tokens
+                {:stack []
+                 :delimiter-pairs []
+                 :unmatched-delimiters []}
+                (fn [state token]
+                  (case (:kind token)
+                    :delimiter
+                    (case (:side token)
+                      :open
+                      (update state :stack (fn [stack] (append stack token)))
+
+                      :close
+                      (let [opener (last (:stack state))]
+                        (if (and opener
+                                 (= (:delimiter opener) (:delimiter token)))
+                          (-> state
+                              (assoc :stack (slice (:stack state)
+                                                   0
+                                                   (dec (count (:stack state)))))
+                              (update :delimiter-pairs
+                                      (fn [pairs]
+                                        (append pairs
+                                                {:delimiter (:delimiter token)
+                                                 :open (:range opener)
+                                                 :close (:range token)}))))
+                          (update state :unmatched-delimiters
+                                  (fn [unmatched]
+                                    (append unmatched
+                                            (select-keys token
+                                                         [:delimiter
+                                                          :side
+                                                          :range]))))))
+
+                      :default state)
+                    :default state)))
+        unmatched
+        (sort (concat (:unmatched-delimiters state)
+                      (for [token (:stack state)]
+                        (select-keys token [:delimiter :side :range])))
+              (fn [left right]
+                (< (get-in left [:range :start])
+                   (get-in right [:range :start]))))]
+    {:delimiter-pairs (:delimiter-pairs state)
+     :unmatched-delimiters unmatched}))
+
+(defun pair-at
+  "Return the delimiter pair touching scalar cursor POSITION in ANALYSIS.
+
+  Args:
+  - `analysis`: Result returned by `wraparoo/analyze`.
+  - `position`: Unicode-scalar cursor offset between source scalars.
+
+  Returns:
+  The pair whose opening or closing range ends at POSITION, preferring the
+  delimiter immediately before the cursor. If none ends there, returns the pair
+  whose delimiter starts at POSITION. Returns `nil` when no pair touches the
+  cursor."
+  [analysis position]
+  (or (find-first (:delimiter-pairs analysis)
+                  (fn [pair]
+                    (or (= position (get-in pair [:open :end]))
+                        (= position (get-in pair [:close :end])))))
+      (find-first (:delimiter-pairs analysis)
+                  (fn [pair]
+                    (or (= position (get-in pair [:open :start]))
+                        (= position (get-in pair [:close :start])))))))

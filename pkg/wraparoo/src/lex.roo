@@ -1,0 +1,278 @@
+(ns wraparoo.lex
+  "Losslessly scan complete or incomplete Roo source into lexical tokens.
+
+  `scan` retains whitespace, comments, and exact token text so concatenating
+  the token text reconstructs the original source. Token ranges are half-open
+  Unicode-scalar offsets, and incomplete strings or escaped characters are
+  returned with `:status :incomplete` instead of raising an error.
+
+  Examples:
+
+  ```roo
+  (require '[wraparoo.lex :as lex])
+
+  (def tokens (lex/scan \"(+ 1 2\"))
+
+  (select-keys (head tokens) [:kind :text :range :status])
+  ```
+
+  Most integrations can use `wraparoo/analyze`, which combines this token
+  stream with delimiter analysis.")
+
+(def delimiter-specs
+  "Roo collection delimiter characters and their structural roles.
+
+  The map is keyed by the exact one-scalar source text and each value is shaped
+  as `{:delimiter :paren|:bracket|:curly :side :open|:close}`."
+  {"(" {:delimiter :paren
+        :side :open}
+   ")" {:delimiter :paren
+        :side :close}
+   "[" {:delimiter :bracket
+        :side :open}
+   "]" {:delimiter :bracket
+        :side :close}
+   "{" {:delimiter :curly
+        :side :open}
+   "}" {:delimiter :curly
+        :side :close}})
+
+(defun boundary?
+  "Return whether SCALAR ends an ordinary Roo atom during source analysis.
+
+  Args:
+  - `scalar`: One Unicode scalar string.
+
+  Returns:
+  `true` for whitespace, collection delimiters, comment/string/quote starts,
+  and the discard prefix; otherwise `false`."
+  [scalar]
+  (or (blank? scalar)
+      (contains? [";" "\"" "'" "#"] scalar)
+      (some? (get delimiter-specs scalar))))
+
+(defun number-token?
+  "Return whether TEXT has the lexical shape of a Roo number.
+
+  Args:
+  - `text`: Exact atom text.
+
+  Returns:
+  `true` for Roo's optional-minus decimal spelling, with at most one decimal
+  point after the required leading digits, and for lowercase `0x` hexadecimal
+  spelling; otherwise `false`."
+  [text]
+  (let [scalars (split text "")
+        decimal-start (case (head scalars)
+                        "-" 1
+                        :default 0)
+        decimal-state (reduce (slice scalars (inc decimal-start))
+                              {:decimal-point? false
+                               :valid? (and (< decimal-start (count scalars))
+                                            (digit? (nth scalars decimal-start)))}
+                              (fn [state scalar]
+                                (cond
+                                  (not (:valid? state)) state
+                                  (digit? scalar) state
+                                  (and (= "." scalar)
+                                       (not (:decimal-point? state)))
+                                  (assoc state :decimal-point? true)
+                                  true (assoc state :valid? false))))
+        hexadecimal? (and (> (count scalars) 1)
+                          (= "0" (head scalars))
+                          (= "x" (nth scalars 1))
+                          (every? (slice scalars 2)
+                                  (fn [scalar]
+                                    (contains? ["0" "1" "2" "3" "4"
+                                                "5" "6" "7" "8" "9"
+                                                "a" "b" "c" "d" "e" "f"
+                                                "A" "B" "C" "D" "E" "F"]
+                                               scalar))))]
+    (or hexadecimal?
+        (:valid? decimal-state))))
+
+(defun token
+  "Construct one lossless source token.
+
+  Args:
+  - `scalars`: Complete source split into Unicode scalar strings.
+  - `start`: Inclusive scalar offset.
+  - `end`: Exclusive scalar offset.
+  - `kind`: Lexical token kind keyword.
+  - `status`: `:complete` or `:incomplete`.
+  - `fields`: Additional token fields, such as delimiter role data.
+
+  Returns:
+  A token retaining the exact source slice and a half-open scalar range."
+  [scalars start end kind status fields]
+  (merge {:kind kind
+          :text (apply str (slice scalars start end))
+          :range {:start start
+                  :end end}
+          :status status}
+         fields))
+
+(defun span-end
+  "Find the exclusive end of a token span while CONTINUES? accepts scalars.
+
+  Args:
+  - `scalars`: Complete source split into Unicode scalar strings.
+  - `start`: First scalar offset to test.
+  - `continues?`: Function receiving one scalar and returning whether it remains
+    part of the span.
+
+  Returns:
+  The first scalar offset rejected by CONTINUES?, or the source size when every
+  remaining scalar is accepted."
+  [scalars start continues?]
+  (or (find-first (if (>= start (count scalars))
+                    []
+                    (range start (dec (count scalars))))
+                  (fn [position]
+                    (not (continues? (nth scalars position)))))
+      (count scalars)))
+
+(defun string-span
+  "Analyze a string token beginning at START without requiring its closing quote.
+
+  Args:
+  - `scalars`: Complete source split into Unicode scalar strings.
+  - `start`: Offset of the opening double quote.
+
+  Returns:
+  A map containing exclusive `:end` and `:status :complete|:incomplete`. Escaped
+  quotes remain inside the string."
+  [scalars start]
+  (let [size (count scalars)
+        state (reduce (if (>= (inc start) size)
+                        []
+                        (range (inc start) (dec size)))
+                      {:escaped? false
+                       :end nil}
+                      (fn [state position]
+                        (if (:end state)
+                          state
+                          (let [scalar (nth scalars position)]
+                            (cond
+                              (:escaped? state)
+                              (assoc state :escaped? false)
+
+                              (= "\\" scalar)
+                              (assoc state :escaped? true)
+
+                              (= "\"" scalar)
+                              (assoc state :end (inc position))
+
+                              true state)))))]
+    {:end (or (:end state) size)
+     :status (if (:end state) :complete :incomplete)}))
+
+(defun scan-token
+  "Scan the source token beginning at START.
+
+  Args:
+  - `scalars`: Complete source split into Unicode scalar strings.
+  - `start`: Offset of the first scalar in the token.
+
+  Returns:
+  One lossless token map whose range begins at START and ends after at least one
+  scalar."
+  [scalars start]
+  (let [size (count scalars)
+        scalar (nth scalars start)
+        delimiter (get delimiter-specs scalar)]
+    (cond
+      (blank? scalar)
+      (token scalars
+             start
+             (span-end scalars (inc start) blank?)
+             :whitespace
+             :complete
+             {})
+
+      (= ";" scalar)
+      (token scalars
+             start
+             (span-end scalars
+                       (inc start)
+                       (fn [scalar] (not= "\n" scalar)))
+             :comment
+             :complete
+             {})
+
+      (= "\"" scalar)
+      (let [{:keys [end status]} (string-span scalars start)]
+        (token scalars start end :string status {}))
+
+      (= "'" scalar)
+      (let [escaped-character? (and (< (+ start 3) size)
+                                    (= "\\" (nth scalars (+ start 1)))
+                                    (= "'" (nth scalars (+ start 3))))
+            character? (and (< (+ start 2) size)
+                            (not= "\\" (nth scalars (+ start 1)))
+                            (= "'" (nth scalars (+ start 2))))
+            incomplete-character? (and (< (+ start 1) size)
+                                       (= "\\" (nth scalars (+ start 1)))
+                                       (not escaped-character?))]
+        (cond
+          escaped-character?
+          (token scalars start (+ start 4) :character :complete {})
+
+          character?
+          (token scalars start (+ start 3) :character :complete {})
+
+          incomplete-character?
+          (token scalars
+                 start
+                 (min size (+ start 3))
+                 :character
+                 :incomplete
+                 {})
+
+          true
+          (token scalars start (inc start) :quote :complete {})))
+
+      delimiter
+      (token scalars start (inc start) :delimiter :complete delimiter)
+
+      (= "#" scalar)
+      (token scalars start (inc start) :discard-prefix :complete {})
+
+      true
+      (let [end (span-end scalars
+                          (inc start)
+                          (fn [scalar] (not (boundary? scalar))))
+            text (apply str (slice scalars start end))]
+        (token scalars
+               start
+               end
+               (cond
+                 (= ":" (head (split text ""))) :keyword
+                 (number-token? text) :number
+                 true :symbol)
+               :complete
+               {})))))
+
+(defun scan
+  "Scan complete or incomplete Roo SOURCE into lossless lexical tokens.
+
+  Args:
+  - `source`: Roo source string.
+
+  Returns:
+  A vector of source-ordered token maps. Their `:text` values concatenate back
+  to SOURCE exactly. Ranges are half-open Unicode-scalar offsets. Whitespace and
+  comments remain tokens, and an unterminated string or escaped character is
+  returned with `:status :incomplete` instead of raising."
+  [source]
+  (let [scalars (split source "")]
+    (:tokens
+      (reduce (if (empty? scalars) [] (range 0 (dec (count scalars))))
+              {:next-position 0
+               :tokens []}
+              (fn [state position]
+                (if (not= position (:next-position state))
+                  state
+                  (let [next-token (scan-token scalars position)]
+                    {:next-position (get-in next-token [:range :end])
+                     :tokens (append (:tokens state) next-token)})))))))

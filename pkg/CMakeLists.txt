@@ -33,6 +33,7 @@ add_subdirectory(footsteps)
 add_subdirectory(zoology)
 add_subdirectory(soot)
 add_subdirectory(voodoo)
+add_subdirectory(wraparoo)
 add_subdirectory(inpoots)
 add_subdirectory(roopl)
 add_subdirectory(cli-trooper)
@@ -186,6 +187,7 @@ roo_add_stage_package_target(footsteps)
 roo_add_stage_package_target(zoology)
 roo_add_stage_package_target(soot)
 roo_add_stage_package_target(voodoo)
+roo_add_stage_package_target(wraparoo)
 roo_add_stage_package_target(inpoots NATIVE_TARGET inpoots_native)
 roo_add_stage_package_target(roopl NATIVE_TARGET roopl_native)
 roo_add_stage_package_target(i18n)
@@ -212,6 +214,7 @@ add_custom_target(stage_packages
     stage_zoology_package
     stage_soot_package
     stage_voodoo_package
+    stage_wraparoo_package
     stage_inpoots_package
     stage_roopl_package
     stage_i18n_package

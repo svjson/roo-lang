@@ -1,0 +1,6 @@
+{:name wraparoo
+ :version "0.1.0"
+ :description "Frontend-neutral analysis and structural editing of Roo source."
+ :dependencies []
+ :load-roots ["src"]
+ :namespace-roots {wraparoo "src"}}

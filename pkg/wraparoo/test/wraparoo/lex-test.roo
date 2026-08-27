@@ -1,0 +1,147 @@
+(ns wraparoo.lex-test
+  (:require proof.core
+            [wraparoo.lex :as lex]))
+
+(deftest scan/preserves-exact-source-and-scalar-ranges
+  (let [tokens (lex/scan "(猫 :x \"🙂\") ; hi")]
+    (is (= {:tokens
+            [{:kind :delimiter
+              :text "("
+              :range {:start 0 :end 1}
+              :status :complete
+              :delimiter :paren
+              :side :open}
+             {:kind :symbol
+              :text "猫"
+              :range {:start 1 :end 2}
+              :status :complete}
+             {:kind :whitespace
+              :text " "
+              :range {:start 2 :end 3}
+              :status :complete}
+             {:kind :keyword
+              :text ":x"
+              :range {:start 3 :end 5}
+              :status :complete}
+             {:kind :whitespace
+              :text " "
+              :range {:start 5 :end 6}
+              :status :complete}
+             {:kind :string
+              :text "\"🙂\""
+              :range {:start 6 :end 9}
+              :status :complete}
+             {:kind :delimiter
+              :text ")"
+              :range {:start 9 :end 10}
+              :status :complete
+              :delimiter :paren
+              :side :close}
+             {:kind :whitespace
+              :text " "
+              :range {:start 10 :end 11}
+              :status :complete}
+             {:kind :comment
+              :text "; hi"
+              :range {:start 11 :end 15}
+              :status :complete}]
+            :reconstructed "(猫 :x \"🙂\") ; hi"}
+           {:tokens tokens
+            :reconstructed (apply str (map tokens :text))}))))
+
+(deftest scan/retains-an-unterminated-string
+  (is (= [{:kind :delimiter
+           :text "("
+           :range {:start 0 :end 1}
+           :status :complete
+           :delimiter :paren
+           :side :open}
+          {:kind :symbol
+           :text "foo"
+           :range {:start 1 :end 4}
+           :status :complete}
+          {:kind :whitespace
+           :text " "
+           :range {:start 4 :end 5}
+           :status :complete}
+          {:kind :string
+           :text "\"bar"
+           :range {:start 5 :end 9}
+           :status :incomplete}]
+         (lex/scan "(foo \"bar"))))
+
+(deftest scan/keeps-escaped-quotes-inside-strings
+  (is (= [{:kind :string
+           :text "\"a\\\"b\""
+           :range {:start 0 :end 6}
+           :status :complete}]
+         (lex/scan "\"a\\\"b\""))))
+
+(deftest scan/keeps-comment-delimiters-out-of-the-structural-token-stream
+  (is (= [{:kind :comment
+           :text "; ([{}]) \"ignored\""
+           :range {:start 0 :end 18}
+           :status :complete}]
+         (lex/scan "; ([{}]) \"ignored\""))))
+
+(deftest scan/distinguishes-characters-quotes-numbers-and-symbols
+  (is (= [{:kind :delimiter
+           :text "["
+           :range {:start 0 :end 1}
+           :status :complete
+           :delimiter :bracket
+           :side :open}
+          {:kind :character
+           :text "'a'"
+           :range {:start 1 :end 4}
+           :status :complete}
+          {:kind :whitespace
+           :text " "
+           :range {:start 4 :end 5}
+           :status :complete}
+          {:kind :quote
+           :text "'"
+           :range {:start 5 :end 6}
+           :status :complete}
+          {:kind :symbol
+           :text "foo"
+           :range {:start 6 :end 9}
+           :status :complete}
+          {:kind :whitespace
+           :text " "
+           :range {:start 9 :end 10}
+           :status :complete}
+          {:kind :number
+           :text "0x0f"
+           :range {:start 10 :end 14}
+           :status :complete}
+          {:kind :whitespace
+           :text " "
+           :range {:start 14 :end 15}
+           :status :complete}
+          {:kind :number
+           :text "-2"
+           :range {:start 15 :end 17}
+           :status :complete}
+          {:kind :whitespace
+           :text " "
+           :range {:start 17 :end 18}
+           :status :complete}
+          {:kind :symbol
+           :text "123abc"
+           :range {:start 18 :end 24}
+           :status :complete}
+          {:kind :delimiter
+           :text "]"
+           :range {:start 24 :end 25}
+           :status :complete
+           :delimiter :bracket
+           :side :close}]
+         (lex/scan "['a' 'foo 0x0f -2 123abc]"))))
+
+(deftest scan/marks-an-escaped-character-without-a-closing-quote-incomplete
+  (is (= [{:kind :character
+           :text "'\\n"
+           :range {:start 0 :end 3}
+           :status :incomplete}]
+         (lex/scan "'\\n"))))

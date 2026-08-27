@@ -1,0 +1,45 @@
+(ns wraparoo
+  "Analyze complete or incomplete Roo source for editors and source tools.
+
+  `analyze` is the usual entry point. It preserves the complete token stream
+  and reports structurally valid delimiter pairs and unmatched delimiters
+  without evaluating, repairing, or otherwise changing the source. All ranges
+  are half-open Unicode-scalar offsets into the supplied string.
+
+  Examples:
+
+  ```roo
+  (require '[wraparoo :as wraparoo])
+
+  (def analysis (wraparoo/analyze \"(map values\"))
+
+  (:tokens analysis)
+  (:delimiter-pairs analysis)
+  (:unmatched-delimiters analysis)
+  ```
+
+  Use `wraparoo.lex/scan` directly when only lexical tokens are needed, and
+  `wraparoo.delimiter/pair-at` to find the delimiter pair adjacent to a cursor."
+  (:require [wraparoo.delimiter :as delimiter]
+            [wraparoo.lex :as lex]))
+
+(defun analyze
+  "Analyze complete or incomplete Roo SOURCE without evaluating or repairing it.
+
+  Args:
+  - `source`: Roo source string to analyze.
+
+  Returns:
+  A map containing lossless `:tokens`, structurally valid
+  `:delimiter-pairs`, and source-ordered `:unmatched-delimiters`. Every range is
+  a half-open Unicode-scalar range into SOURCE.
+
+  ```roo
+  {:tokens [...]
+   :delimiter-pairs [...]
+   :unmatched-delimiters [...]}
+  ```"
+  [source]
+  (let [tokens (lex/scan source)]
+    (merge {:tokens tokens}
+           (delimiter/analyze tokens))))
