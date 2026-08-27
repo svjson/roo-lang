@@ -118,3 +118,27 @@
   (fixture/using-fixtures [declared-cache-fixture]
     (is (= 1 declared-generation-count))
     (is (= {:stable {:id :declared}} declared-cache-fixture))))
+
+
+
+;; proof.core/deftest -- per-test lifecycle with fixtures
+
+(deftest deftest/makes-fixture-bindings-available-to-lifecycle-directives
+  (clear!)
+  (def observed-fixture-values [])
+  (deftest fixture-lifecycle
+    {:before (set! [observed-fixture-values]
+                   (append observed-fixture-values [:before my-fixture]))
+     :after (set! [observed-fixture-values]
+                  (append observed-fixture-values [:after my-fixture]))}
+    [my-fixture]
+    (set! [observed-fixture-values]
+          (append observed-fixture-values [:body my-fixture])))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'fixture-lifecycle :status :pass}
+           (select-keys result [:name :status])))
+    (is (= [[:before {:fixture :my-fixture}]
+            [:body {:fixture :my-fixture}]
+            [:after {:fixture :my-fixture}]]
+           observed-fixture-values))))

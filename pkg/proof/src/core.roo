@@ -10,13 +10,16 @@
 (def deftest
   "Defines and registers a test.
 
-  The body runs when the test suite selects the test. An optional fixture vector
-  may follow the test name. Scenario tests may use
+  The body runs when the test suite selects the test. An optional directive map
+  may supply per-test `:before` and `:after` forms, followed by a fixture vector
+  (which may be empty). A fixture vector may also follow the name directly.
+  Scenario tests may use
   `proof.scenario/given`, `proof.scenario/when`, and `proof.scenario/then` as
   top-level body phases.
 
   Args:
   - `name`: Symbol that identifies the test.
+  - `directives`: Optional map containing `:before` and/or `:after` forms.
   - `fixtures`: Optional vector of declared fixture specs.
   - `body...`: One or more forms evaluated as the test body.
 
@@ -27,6 +30,12 @@
   ```roo
   (deftest addition
     (is (= 4 (+ 2 2))))
+
+  (deftest service/responds
+    {:before start-service!
+     :after stop-service!}
+    []
+    (is (= :ok (request-status))))
   ```
 
   See Also:
@@ -61,7 +70,6 @@
 (def should proof.syntax/should)
 (def assert proof.syntax/assert)
 (def expect proof.syntax/expect)
-(def run-test-body proof.syntax/run-test-body)
 (def declared-namespace proof.syntax/declared-namespace)
 
 (defun clear! []
@@ -79,26 +87,110 @@
           (merge test (get metadata-by-namespace (:namespace test) nil))))
   tests)
 
-(defun record-failure! [message]
+(defun record-failure!
+  "Record one assertion failure for the test currently executing.
+
+  Args:
+  - `message`: Human-readable assertion diagnostic.
+
+  Returns:
+  The recorded failure map."
+  [message]
   (let [failure {:message message}]
-    (append! current-failures failure)
+    (set! [current-failures] (append current-failures failure))
     failure))
 
-(defun run-test [test]
+(defun run-test-body
+  "Execute BODY while translating failures into Proof's body-result contract.
+
+  Args:
+  - `body`: Zero-argument executable containing a test body.
+
+  Returns:
+  The body's return value, `nil` after an aborting assertion, or an error result
+  map when a Roo error escapes the body."
+  [body]
+  (guard
+    ((:proof/assertion-abort [error] nil)
+     ([error] {:status :error
+               :message (:message error)}))
+    (body)))
+
+(defun run-test-lifecycle
+  "Execute one test's optional setup, body, and optional cleanup.
+
+  Setup and cleanup return values are ignored. A setup error or aborting
+  assertion prevents BODY from running. AFTER is still attempted exactly once;
+  its errors are retained separately and do not alter the primary test status.
+
+  Args:
+  - `before`: Optional zero-argument executable run before BODY.
+  - `body`: Zero-argument executable containing the test body.
+  - `after`: Optional zero-argument executable run after setup and BODY.
+
+  Returns:
+  An internal lifecycle envelope containing the primary body result and, when
+  cleanup raises an error, an `:after {:error ...}` diagnostic."
+  [before body after]
+  (let [before-outcome (if before
+                         (guard
+                           ((:proof/assertion-abort [error]
+                              {:aborted? true})
+                            ([error] {:error error}))
+                           (before)
+                           {})
+                         {})
+        body-result (cond
+                      (:error before-outcome)
+                      {:status :error
+                       :message (:message (:error before-outcome))}
+
+                      (or (:aborted? before-outcome)
+                          (not-empty? current-failures))
+                      nil
+
+                      true
+                      (run-test-body body))
+        lifecycle {:primary-failures current-failures
+                   :after (if after
+                            (guard
+                              (([error] {:error error}))
+                              (after)
+                              {})
+                            {})}]
+    (set! [current-failures] (:primary-failures lifecycle))
+    (cond-> {:proof/lifecycle true
+             :body-result body-result}
+      (:error (:after lifecycle)) (assoc :after (:after lifecycle)))))
+
+(defun run-test
+  "Execute TEST and materialize its result.
+
+  Args:
+  - `test`: Registered test map containing `:name` and executable `:body`.
+
+  Returns:
+  A result map containing the test name, status, elapsed time, primary failure
+  details, and any non-failing cleanup diagnostic."
+  [test]
   (set! [current-failures] [])
   (let [start-ms (epoch-ms)
-        body-result (run-test-body (:body test))
+        execution (run-test-body (:body test))
+        body-result (if (= true (:proof/lifecycle execution))
+                      (:body-result execution)
+                      execution)
         test-result {:name (:name test)
                      :status (cond
                                (= (:status body-result) :error) :error
                                (not-empty? current-failures) :fail
                                true :pass)
                      :elapsed-ms (max 0 (- (epoch-ms) start-ms))}]
-    (merge test-result
-           (case (:status test-result)
-             :fail {:message (:message (head current-failures))
-                    :failures current-failures}
-             :error {:message (:message body-result)}))))
+    (cond-> (merge test-result
+                   (case (:status test-result)
+                     :fail {:message (:message (head current-failures))
+                            :failures current-failures}
+                     :error {:message (:message body-result)}))
+      (:after execution) (assoc :after (:after execution)))))
 
 (defun run-and-report-selected-test [run-state test]
   (let [reporter (:reporter run-state)

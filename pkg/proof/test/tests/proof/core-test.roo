@@ -8,6 +8,11 @@
   (is (some? (:elapsed-ms result)))
   (is (not (< (:elapsed-ms result) 0))))
 
+(def lifecycle-events [])
+
+(defun record-lifecycle-before! []
+  (set! [lifecycle-events] (append lifecycle-events :before)))
+
 (deftest registers-and-runs-tests
   (clear!)
   (deftest addition
@@ -237,3 +242,97 @@
     (assert-result result "scenario-order" :pass)
     (is (= [:before :given :after-given :when :after-when :then :after]
            events))))
+
+
+
+;; proof.core/deftest -- per-test lifecycle
+
+(deftest deftest/runs-function-and-inline-directives-around-the-body
+  (clear!)
+  (set! [lifecycle-events] [])
+  (deftest managed-test
+    {:before record-lifecycle-before!
+     :after (set! [lifecycle-events] (append lifecycle-events :after))}
+    []
+    (set! [lifecycle-events] (append lifecycle-events :body)))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'managed-test :status :pass}
+           (select-keys result [:name :status])))
+    (is (= [:before :body :after] lifecycle-events))))
+
+(deftest deftest/accepts-an-empty-directive-map
+  (clear!)
+  (deftest empty-directives
+    {}
+    []
+    (is true))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'empty-directives :status :pass}
+           (select-keys result [:name :status])))))
+
+(deftest deftest/skips-the-body-after-a-before-error-and-still-runs-after
+  (clear!)
+  (set! [lifecycle-events] [])
+  (deftest before-error
+    {:before (do
+               (set! [lifecycle-events] (append lifecycle-events :before))
+               (/ 1 0))
+     :after (set! [lifecycle-events] (append lifecycle-events :after))}
+    []
+    (set! [lifecycle-events] (append lifecycle-events :body)))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'before-error :status :error}
+           (select-keys result [:name :status])))
+    (is (contains-all? (:message result) "Division by zero"))
+    (is (= [:before :after] lifecycle-events))))
+
+(deftest deftest/skips-the-body-after-a-before-assertion-and-still-runs-after
+  (clear!)
+  (set! [lifecycle-events] [])
+  (deftest before-assertion
+    {:before (do
+               (set! [lifecycle-events] (append lifecycle-events :before))
+               (is false))
+     :after (set! [lifecycle-events] (append lifecycle-events :after))}
+    []
+    (set! [lifecycle-events] (append lifecycle-events :body)))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'before-assertion
+            :status :fail
+            :message "Expected truthy expression: false."
+            :failures [{:message "Expected truthy expression: false."}]}
+           (select-keys result [:name :status :message :failures])))
+    (is (= [:before :after] lifecycle-events))))
+
+(deftest deftest/runs-after-without-changing-a-failing-body-result
+  (clear!)
+  (set! [lifecycle-events] [])
+  (deftest failing-body
+    {:after (set! [lifecycle-events] (append lifecycle-events :after))}
+    []
+    (is false))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'failing-body
+            :status :fail
+            :message "Expected truthy expression: false."
+            :failures [{:message "Expected truthy expression: false."}]}
+           (select-keys result [:name :status :message :failures])))
+    (is (= [:after] lifecycle-events))))
+
+(deftest deftest/records-after-errors-without-changing-the-primary-result
+  (clear!)
+  (deftest after-error
+    {:after (/ 1 0)}
+    []
+    (is true))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'after-error :status :pass}
+           (select-keys result [:name :status])))
+    (is (= {:type :roo/error :detail "Division by zero"}
+           (select-keys (:error (:after result)) [:type :detail])))))

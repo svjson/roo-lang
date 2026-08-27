@@ -57,8 +57,9 @@ namespace Roo::Proof
      * @brief Define and register a test.
      *
      * The body is retained for execution by the proof runner. An optional
-     * fixture vector binds declared fixtures around the body. Scenario phases
-     * from `proof.scenario` may appear as top-level body forms.
+     * directive map configures per-test setup and cleanup, and an optional
+     * fixture vector binds declared fixtures around the directives and body.
+     * Scenario phases from `proof.scenario` may appear as top-level body forms.
      *
      * @code
      * (deftest addition
@@ -76,32 +77,19 @@ namespace Roo::Proof
      * | fixtures | Vector of declared fixture specs.              |
      * | body...  | Forms evaluated when the selected test is run. |
      *
+     * | Arg        | Description                                      |
+     * | ---------- | ------------------------------------------------ |
+     * | name       | Symbol identifying the test.                     |
+     * | directives | Map containing optional `:before` and `:after`.  |
+     * | fixtures   | Vector of declared fixture specs, possibly empty. |
+     * | body...    | Forms evaluated when the selected test is run.   |
+     *
      * @return The test name.
      * @see proof.fixture/using-fixtures
      * @see proof.scenario/given
      * @since 0.1.0
      */
     SPECIAL_FORM_DECL(DefTestForm, deftest)
-
-    /*!
-     * @brief Execute a registered test body.
-     *
-     * Assertion aborts are converted to `nil`; other exceptions become error
-     * result maps for the proof runner.
-     *
-     * @code
-     * (run-test-body test-body)
-     * @endcode
-     *
-     * | Arg       | Description                         |
-     * | --------- | ----------------------------------- |
-     * | test-body | Executable registered test body.    |
-     *
-     * @return The body result, `nil`, or an error result map.
-     * @see proof.core/deftest
-     * @since 0.1.0
-     */
-    FUNC(RunTestBodyFunction, run_test_body)
 
     /*!
      * @brief Read the namespace declared by a Roo source file.

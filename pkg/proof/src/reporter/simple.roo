@@ -62,6 +62,8 @@
     :fail (for [failure (:failures result)]
             (prn! "    -" (:message failure)))
     :error (prn! "    -" (:message result)))
+  (when-let [error (:error (:after result))]
+    (prn! "    - After error:" (:message error)))
   {:state state})
 
 (defun make [tests]

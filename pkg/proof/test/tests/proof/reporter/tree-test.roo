@@ -64,6 +64,15 @@
               "\n    - boom")
          (tree/result-text "├──" {:name "t1" :status :error :message "boom"} {}))))
 
+(deftest result-text/appends-after-errors-without-changing-the-status-line
+  (is (= (str "├── " soot-core/esc "[32mPASS" soot-core/esc "[39m - t1"
+              "\n    - After error: cleanup failed")
+         (tree/result-text "├──"
+                           {:name "t1"
+                            :status :pass
+                            :after {:error {:message "cleanup failed"}}}
+                           {}))))
+
 
 
 ;; proof.reporter.tree/begin-test

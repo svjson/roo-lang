@@ -184,6 +184,28 @@ namespace
     }
   }
 
+  void expect_duration_test_results(const Roo::sptr_val& results)
+  {
+    expect_elapsed_ms_for_results(results);
+    ASSERT_EQ(results->elements().size(), 3);
+    EXPECT_EQ(without_elapsed_ms_string(results->elements()[0]),
+              "{:name duration-pass :status :pass}");
+    EXPECT_EQ(without_elapsed_ms_string(results->elements()[1]),
+              "{:name duration-fail :status :fail "
+              ":message \"Expected truthy expression: false.\" "
+              ":failures [{:message \"Expected truthy expression: false.\"}]}");
+
+    const auto error = without_elapsed_ms(results->elements()[2]);
+    EXPECT_EQ(Roo::Dict::get_property(error, *Roo::Value::keyword("name"))->str(),
+              "duration-error");
+    EXPECT_EQ(Roo::Dict::get_property(error, *Roo::Value::keyword("status"))->str(),
+              "error");
+    EXPECT_NE(Roo::Dict::get_property(error, *Roo::Value::keyword("message"))
+                ->str()
+                .find("Division by zero\n  in / at <eval>:7:7 - [1 0]"),
+              std::string::npos);
+  }
+
   void expect_duration_output_line(const std::string& output, const std::string& prefix)
   {
     const auto line_start = output.find(prefix + " (");
@@ -278,14 +300,7 @@ TEST(ProofPackage, simple_reporter_prints_duration_when_requested)
   auto results = runtime.eval("(run-selected {:durations? true})");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(without_elapsed_ms_string(results),
-            "[{:name duration-pass :status :pass} "
-            "{:name duration-fail :status :fail "
-            ":message \"Expected truthy expression: false.\" "
-            ":failures [{:message \"Expected truthy expression: false.\"}]} "
-            "{:name duration-error :status :error "
-            ":message \"Division by zero\\n  in / at <eval>:7:7 - [1 0]\"}]");
-  expect_elapsed_ms_for_results(results);
+  expect_duration_test_results(results);
   expect_duration_output_line(output, simple_pass_label() + " duration-pass");
   expect_duration_output_line(output, simple_fail_label() + " duration-fail");
   expect_duration_output_line(output, simple_error_label() + " duration-error");
@@ -354,6 +369,26 @@ TEST(ProofPackage, dynamically_loads_native_syntax_from_package_manifest)
 
   EXPECT_EQ(without_elapsed_ms_string(results), "[{:name dynamic-addition :status :pass}]");
   expect_elapsed_ms_for_results(results);
+}
+
+TEST(ProofPackage, deftest_rejects_unknown_lifecycle_directives)
+{
+  Roo::DirRootFileSystem fs(proof_load_paths());
+  Roo::Runtime runtime(Roo::Proof::make_native_namespaces(), &fs);
+  configure_proof_runtime(runtime);
+
+  runtime.eval(R"(
+    (ns proof.package-directive-validation-test
+      (:require proof.core))
+  )");
+
+  EXPECT_THROW(runtime.eval(R"(
+    (deftest invalid-directive
+      {:around (prn! "not supported")}
+      []
+      (is true))
+  )"),
+               std::exception);
 }
 
 TEST(ProofPackage, runner_loads_discovered_files_through_namespace_require)
@@ -558,14 +593,7 @@ TEST(ProofPackage, tree_reporter_prints_duration_when_requested)
   auto results = runtime.eval("(run-selected {:reporter :tree :durations? true})");
   std::string output = testing::internal::GetCapturedStdout();
 
-  EXPECT_EQ(without_elapsed_ms_string(results),
-            "[{:name duration-pass :status :pass} "
-            "{:name duration-fail :status :fail "
-            ":message \"Expected truthy expression: false.\" "
-            ":failures [{:message \"Expected truthy expression: false.\"}]} "
-            "{:name duration-error :status :error "
-            ":message \"Division by zero\\n  in / at <eval>:7:7 - [1 0]\"}]");
-  expect_elapsed_ms_for_results(results);
+  expect_duration_test_results(results);
   EXPECT_NE(output.find(bold_label("proof.package-tree-durations-test") + "\n"),
             std::string::npos);
   expect_duration_output_line(output, "├── " + pass_label() + " - duration-pass");

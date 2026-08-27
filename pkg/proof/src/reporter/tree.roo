@@ -46,7 +46,10 @@
                    :fail (for [failure (:failures result)]
                            (str "    - " (:message failure)))
                    :error [(str "    - " (:message result))]
-                   :default []))))
+                   :default [])
+                 (if-let [error (:error (:after result))]
+                   [(str "    - After error: " (:message error))]
+                   []))))
 
 (defun add-pending-widgets!
   "Add every test in TESTS to WIDGET-SESSION as a pending widget, in file

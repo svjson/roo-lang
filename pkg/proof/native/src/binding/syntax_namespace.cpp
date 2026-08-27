@@ -1,4 +1,3 @@
-#include <exception>
 #include <scenario.h>
 #include <string>
 #include <utility>
@@ -19,31 +18,6 @@ namespace Roo::Proof
 {
   namespace
   {
-    class AssertionAbort : public std::exception
-    {
-     public:
-      const char* what() const noexcept override
-      {
-        return "proof assertion aborted test body";
-      }
-    };
-
-    bool is_assertion_abort(const std::exception& e)
-    {
-      return std::string(e.what()).find("proof assertion aborted test body") !=
-             std::string::npos;
-    }
-
-    sptr_val body_error_result(const std::exception& e)
-    {
-      return Value::map({
-        Value::keyword("status"),
-        Value::keyword("error"),
-        Value::keyword("message"),
-        Value::string(e.what()),
-      });
-    }
-
     bool is_equality_form(const sptr_ast_node& node)
     {
       if (node->get_type() != Form::LIST)
@@ -188,7 +162,11 @@ namespace Roo::Proof
       sptr_val failure = record_failure(ctx, message);
       if (should_abort)
       {
-        throw AssertionAbort();
+        return ctx.call("raise",
+                        {
+                          Value::keyword("proof/assertion-abort"),
+                          Value::string(message),
+                        });
       }
       return failure;
     }
@@ -213,8 +191,17 @@ namespace Roo::Proof
 
       sptr_val name = std::get<LiteralNode>(lower_literal(ctx, elements[1])->data).value;
       auto arg_vec = std::make_shared<AST::Vector>();
-      const bool has_fixtures = elements[2]->get_type() == Form::VECTOR;
-      const size_t body_start = has_fixtures ? 3 : 2;
+      const bool has_directives = elements.size() >= 4 &&
+                                  elements[2]->get_type() == Form::MAP &&
+                                  elements[3]->get_type() == Form::VECTOR;
+      const bool has_fixtures = has_directives || elements[2]->get_type() == Form::VECTOR;
+      const size_t fixture_index = has_directives ? 3 : 2;
+      const size_t body_start = has_directives ? 4 : has_fixtures ? 3 : 2;
+
+      if (body_start >= elements.size())
+      {
+        throw RooException("Invalid deftest form: " + ast_node->to_string());
+      }
 
       sptr_ast_node_v body;
       body.reserve(elements.size() - body_start);
@@ -223,10 +210,62 @@ namespace Roo::Proof
         body.push_back(elements[i]);
       }
       body = rewrite_scenario_body(body);
+
+      if (has_directives)
+      {
+        sptr_ast_node before = AST::NIL;
+        sptr_ast_node after = AST::NIL;
+        auto& directive_elements = elements[2]->get_children();
+        for (size_t i = 0; i < directive_elements.size(); i += 2)
+        {
+          const auto& key = directive_elements[i];
+          if (key->get_type() != Form::KEYWORD ||
+              (!key->has_value("before") && !key->has_value("after")))
+          {
+            throw RooException("Invalid deftest directive " + key->to_string() +
+                               ", expected :before or :after.");
+          }
+
+          sptr_ast_node directive = directive_elements[i + 1];
+          if (directive->get_type() == Form::SYMBOL)
+          {
+            directive = AST::List::make({directive});
+          }
+
+          sptr_ast_node_v function_elements{
+            AST::Symbol::make("fn"),
+            std::make_shared<AST::Vector>(),
+            directive,
+          };
+          if (key->has_value("before"))
+          {
+            before = AST::List::make(function_elements);
+          }
+          else
+          {
+            after = AST::List::make(function_elements);
+          }
+        }
+
+        sptr_ast_node_v body_function_elements{
+          AST::Symbol::make("fn"),
+          std::make_shared<AST::Vector>(),
+        };
+        body_function_elements.insert(body_function_elements.end(),
+                                      body.begin(),
+                                      body.end());
+        body = {AST::List::make({
+          AST::Symbol::make("proof.core/run-test-lifecycle"),
+          before,
+          AST::List::make(body_function_elements),
+          after,
+        })};
+      }
+
       if (has_fixtures)
       {
         sptr_ast_node_v fixture_body{AST::Symbol::make("proof.fixture/using-fixtures"),
-                                     elements[2]};
+                                     elements[fixture_index]};
         fixture_body.insert(fixture_body.end(), body.begin(), body.end());
         body = {AST::List::make(fixture_body)};
       }
@@ -253,32 +292,6 @@ namespace Roo::Proof
       args.push_back(Value::string(ctx.get_current_namespace()->get_name()));
       ctx.call("proof.core/register-test!", args);
       return snode.values.front();
-    }
-
-    /** RunTestBodyFunction - proof.syntax/run-test-body */
-    FUNC_IMPL(RunTestBodyFunction,
-              SIG((FN_ARGS((&Type::EXEC)),
-                   EXEC_DISPATCH(&RunTestBodyFunction::exec_run_test_body))))
-
-    EXEC_BODY(RunTestBodyFunction, exec_run_test_body)
-    {
-      sptr_val_v body_args;
-      try
-      {
-        return args[0]->exec().execute(ctx, body_args);
-      }
-      catch (const AssertionAbort&)
-      {
-        return Constant::NIL;
-      }
-      catch (const std::exception& e)
-      {
-        if (is_assertion_abort(e))
-        {
-          return Constant::NIL;
-        }
-        return body_error_result(e);
-      }
     }
 
     /** DeclaredNamespaceFunction - proof.syntax/declared-namespace */
@@ -420,7 +433,6 @@ namespace Roo::Proof
      * @since 0.1.0
      */
     store("expect", Function::ExpectForm::make());
-    store("run-test-body", Function::RunTestBodyFunction::make());
     store("declared-namespace", Function::DeclaredNamespaceFunction::make());
   }
 } // namespace Roo::Proof
