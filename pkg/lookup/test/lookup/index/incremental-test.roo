@@ -1,0 +1,125 @@
+(ns lookup.index.incremental-test
+  (:require proof.core
+            proof.fixture
+            [proof.syntax :as p]
+            [roo.io :as io]
+            [lookup.index.incremental :as incremental]))
+
+
+
+;; Fixtures
+
+(defun fresh-package!
+  "Create a fresh package and incremental state configuration for a test."
+  [name]
+  (let [root (io/join-path "build" name)
+        package-dir (io/join-path root "package")
+        source-path (io/join-path package-dir "src/sample.roo")]
+    (io/spit-edn! (io/join-path package-dir "package.edn")
+                  {:name 'sample
+                   :version "1.0.0"
+                   :description "Incremental index fixture."
+                   :load-roots ["src"]
+                   :native-libraries []})
+    (io/spit! source-path
+              "(ns sample)\n(defun value \"Return a value.\" [] 1)\n")
+    {:root root
+     :package-dir package-dir
+     :source-path source-path
+     :options {:package-dir package-dir
+               :extractors [:symbols]
+               :state (io/join-path root "state")}}))
+
+(deffixture new-index-state {:storage :cache}
+  (fresh-package! "lookup-incremental-new-state"))
+
+(deffixture new-native-index-state {:storage :cache}
+  (let [state-dir (io/join-path "build" "lookup-incremental-native-state")]
+    {:state-dir state-dir
+     :options {:package-dir "assets/native-package"
+               :extractors [:symbols]
+               :state state-dir}}))
+
+(deffixture changed-index-state {:storage :cache}
+  (let [fixture (fresh-package! "lookup-incremental-changed-state")]
+    (incremental/index-with-state (:options fixture))
+    (io/spit! (:source-path fixture)
+              "(ns sample)\n(defun value \"Return another value.\" [] 2)\n")
+    fixture))
+
+(deffixture removed-index-source {:storage :cache}
+  (let [fixture (fresh-package! "lookup-incremental-removed-source")]
+    (incremental/index-with-state (:options fixture))
+    (io/remove-tree! (:source-path fixture))
+    fixture))
+
+
+
+;; lookup.index.incremental/index-with-state
+
+(deftest index-with-state/publishes-package-relative-snapshot-paths
+  {:after (io/remove-tree! (:root new-index-state))}
+  [new-index-state]
+  (p/when []
+    (incremental/index-with-state (:options new-index-state)))
+
+  (p/then [result]
+    (is (= [{:path "src/sample.roo"}]
+           (:sources (:snapshot result))))
+    (is (= "src/sample.roo"
+           (:path (:source (head (:namespaces (:snapshot result)))))))
+    (is (= (:snapshot result)
+           (:reset (:delta result))))
+    (is (contains? (:sources (:manifest result))
+                   (incremental/canonical-path
+                     (:source-path new-index-state))))))
+
+(deftest index-with-state/publishes-package-relative-native-paths
+  {:after (io/remove-tree! (:state-dir new-native-index-state))}
+  [new-native-index-state]
+  (p/when []
+    (incremental/index-with-state (:options new-native-index-state)))
+
+  (p/then [result]
+    (is (contains? (:sources (:snapshot result))
+                   {:path "native/include/sample.h"}))
+    (is (contains? (:sources (:snapshot result))
+                   {:path "native/src/sample.cpp"}))
+    (is (= "native/src/sample.cpp"
+           (:path (:source (head (:symbols (:snapshot result))))))))
+  )
+
+(deftest index-with-state/publishes-package-relative-replacement-paths
+  {:after (io/remove-tree! (:root changed-index-state))}
+  [changed-index-state]
+  (p/when []
+    (incremental/index-with-state
+      (assoc (:options changed-index-state)
+             :updates [(:source-path changed-index-state)]
+             :emit-delta :edn)))
+
+  (p/then [result]
+    (is (= ["src/sample.roo"]
+           (keys (:replace (:delta result)))))
+    (is (= "src/sample.roo"
+           (:path (get (:replace (:delta result)) "src/sample.roo"))))
+    (is (= "src/sample.roo"
+           (:path
+             (:source
+               (head
+                 (:namespaces
+                   (get (:replace (:delta result)) "src/sample.roo"))))))))
+  )
+
+(deftest index-with-state/publishes-package-relative-removal-paths
+  {:after (io/remove-tree! (:root removed-index-source))}
+  [removed-index-source]
+  (p/when []
+    (incremental/index-with-state
+      (assoc (:options removed-index-source)
+             :updates [(:source-path removed-index-source)]
+             :emit-delta :edn)))
+
+  (p/then [result]
+    (is (= ["src/sample.roo"]
+           (:remove (:delta result))))))

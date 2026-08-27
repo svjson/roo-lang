@@ -9,7 +9,7 @@
   "Format identities and schema version for persisted incremental index data."
   {:state-format :roo/incremental-index-state
    :delta-format :roo/index-delta
-   :schema-version 1})
+   :schema-version 2})
 
 (defun canonical-path
   "Return PATH as a normalized absolute path."
@@ -53,18 +53,28 @@
               (append result path)))))
 
 (defun empty-contribution
-  "Create an empty source contribution owned by PATH."
-  [path]
+  "Create an empty source contribution.
+
+  Args:
+  - `path`: Absolute filesystem path used by incremental state.
+  - `index-path`: Package-relative path published to index consumers.
+
+  Returns:
+  An empty contribution retaining both path identities."
+  [path index-path]
   {:path path
+   :index-path index-path
    :namespaces []
    :symbols []})
 
 (defun roo-contribution
   "Index one Roo source at PATH as a replaceable package contribution."
-  [package-name path]
-  (let [source-entry (source/source-entry path)
+  [package-dir package-name path]
+  (let [index-path (source/package-relative-path package-dir path)
+        source-entry (source/source-entry-for-index path index-path)
         namespace-entry (docstring-symbols/source-namespace-entry source-entry)]
     {:path path
+     :index-path index-path
      :namespaces (if namespace-entry [namespace-entry] [])
      :symbols (docstring-symbols/source-symbols package-name source-entry)}))
 
@@ -77,22 +87,25 @@
         initial (reduce paths
                         {}
                         (fn [result path]
-                          (assoc result path (empty-contribution path))))
+                          (let [index-path
+                                (source/package-relative-path package-dir path)]
+                            (assoc result
+                                   index-path
+                                   (empty-contribution path index-path)))))
         grouped (reduce symbols
                         initial
                         (fn [result symbol]
-                          (let [path (:path (:source symbol))
+                          (let [index-path (:path (:source symbol))
                                 contribution (get result
-                                                  path
-                                                  (empty-contribution path))]
+                                                  index-path)]
                             (assoc result
-                                   path
+                                   index-path
                                    (update contribution
                                            :symbols
                                            [append
                                             symbol])))))]
-    (for [path (sort (keys grouped) <)]
-      (get grouped path))))
+    (for [index-path (sort (keys grouped) <)]
+      (get grouped index-path))))
 
 (defun package-contributions
   "Build independently replaceable Roo and native contributions for PACKAGE."
@@ -102,23 +115,40 @@
         roo-files (source/package-source-files package-dir manifest)]
     (concat
       (for [path roo-files]
-        (roo-contribution package-name path))
+        (roo-contribution package-dir package-name path))
       (native-contributions package-dir package-name))))
+
+(defun published-contribution
+  "Remove incremental path bookkeeping from a source contribution.
+
+  Args:
+  - `contribution`: Persisted contribution containing `:path` and
+    `:index-path` identities.
+
+  Returns:
+  A contribution whose `:path` is package-relative and which contains no
+  `:index-path` field."
+  [contribution]
+  (-> contribution
+      (assoc :path (:index-path contribution))
+      (dissoc :index-path)))
 
 (defun snapshot
   "Assemble a complete symbol-index snapshot from source CONTRIBUTIONS."
   [package contributions]
-  {:format :roo/symbol-index
-   :version 1
-   :package package
-   :sources (for [contribution contributions]
-              {:path (:path contribution)})
-   :namespaces (flat-map contributions
-                         (fn [contribution]
-                           (:namespaces contribution)))
-   :symbols (flat-map contributions
-                      (fn [contribution]
-                        (:symbols contribution)))})
+  (let [published (for [contribution contributions]
+                    (published-contribution contribution))]
+    {:format :roo/symbol-index
+     :version 1
+     :package package
+     :sources (for [contribution published]
+                {:path (:path contribution)})
+     :namespaces (flat-map published
+                           (fn [contribution]
+                             (:namespaces contribution)))
+     :symbols (flat-map published
+                        (fn [contribution]
+                          (:symbols contribution)))}))
 
 (defun source-kind
   "Classify PATH as a Roo or native index source."
@@ -250,6 +280,8 @@
                                  (:next-source-id current-manifest))
                             shard (shard-relative-path id next-revision)
                             contribution (roo-contribution
+                                           (:package-dir
+                                             (:options current-manifest))
                                            (:name (:package current-manifest))
                                            path)
                             next-id (if existing
@@ -264,17 +296,23 @@
                                        path
                                        (new-source-entry id path shard))
                                 :next-source-id next-id)
-                         :replace (assoc (:replace result) path contribution)
+                         :replace (assoc (:replace result)
+                                         (:index-path contribution)
+                                         (published-contribution contribution))
                          :remove (:remove result)
                          :changed? true})
 
                       existing
-                      {:manifest (assoc current-manifest
-                                        :sources
-                                        (dissoc current-sources path))
-                       :replace (:replace result)
-                       :remove (append (:remove result) path)
-                       :changed? true}
+                      (let [index-path
+                            (source/package-relative-path
+                              (:package-dir (:options current-manifest))
+                              path)]
+                        {:manifest (assoc current-manifest
+                                          :sources
+                                          (dissoc current-sources path))
+                         :replace (:replace result)
+                         :remove (append (:remove result) index-path)
+                         :changed? true})
 
                       true
                       result))))
