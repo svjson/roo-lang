@@ -1009,12 +1009,15 @@ namespace Roo::Package
     runtime.set_namespace_roots(plan.namespace_roots);
   }
 
-  void load_autoloads(Roo::Runtime& runtime, const LoadPlan& plan)
+  void load_autoloads(Roo::Runtime& runtime,
+                      const LoadPlan& plan,
+                      const std::string& loader_namespace,
+                      const std::string& source_name)
   {
     for (const auto& autoload : plan.autoloads)
     {
-      runtime.eval("(ns roo.package.autoload (:require " + autoload + "))",
-                   "<package-autoload>");
+      runtime.eval("(ns " + loader_namespace + " (:require " + autoload + "))",
+                   source_name);
     }
   }
 } // namespace Roo::Package

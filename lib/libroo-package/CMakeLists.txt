@@ -38,6 +38,7 @@ endif()
 set(roo-package_SOURCES
   src/lib/manifest.cpp
   src/lib/native_loader.cpp
+  src/lib/runtime_environment.cpp
 )
 
 add_library(roo-package_objects OBJECT ${roo-package_SOURCES})

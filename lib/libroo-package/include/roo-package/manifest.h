@@ -132,10 +132,15 @@ namespace Roo::Package
 
   /**
    * Load package-declared bootstrap namespaces. Call this after
-   * native package * libraries are loaded, so autoload namespaces may
-   * require native namespaces.
+   * native package libraries are loaded, so autoload namespaces may require
+   * native namespaces. The loader namespace and source name let hosts retain
+   * their established bootstrap identity and diagnostics.
    */
-  void load_autoloads(Roo::Runtime& runtime, const LoadPlan& plan);
+  void load_autoloads(
+    Roo::Runtime& runtime,
+    const LoadPlan& plan,
+    const std::string& loader_namespace = "roo.package.autoload",
+    const std::string& source_name = "<package-autoload>");
 } // namespace Roo::Package
 
 #endif

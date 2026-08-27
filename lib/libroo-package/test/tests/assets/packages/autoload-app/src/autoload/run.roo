@@ -1,3 +1,18 @@
 (ns autoload.run)
 
-autoload.bootstrap/value
+(defun collect-worker-result [execution]
+  (let [report (roo.worker/poll! execution)]
+    (while (or (= :queued (:status report))
+               (= :running (:status report)))
+      (set! [report] (roo.worker/poll! execution)))
+    (roo.worker/collect! execution)))
+
+(roo.worker/create! :autoload/worker {:environment :application})
+(let [result
+      (collect-worker-result
+        (roo.worker/execute-let! :autoload/worker [] autoload.bootstrap/value))]
+  (if (= 42 result)
+    nil
+    (raise :autoload/worker-result
+           "Application worker returned the wrong autoloaded value."
+           {:actual result})))
