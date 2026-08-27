@@ -89,14 +89,6 @@ else
   DEV_NATIVE_ARTIFACT = cmake -E create_symlink $(1) $(2)
 endif
 
-ifeq ($(shell uname -s),Darwin)
-  SET_PACKAGE_NATIVE_RPATH = install_name_tool -add_rpath @loader_path/../../../../../lib $(1) 2>/dev/null || true
-else ifeq ($(OS),Windows_NT)
-  SET_PACKAGE_NATIVE_RPATH = true
-else
-  SET_PACKAGE_NATIVE_RPATH = patchelf --set-rpath '$$ORIGIN/../../../../../lib' $(1)
-endif
-
 RELINK_ARTIFACTS := \
 	$(CURDIR)/build/roo \
 	$(CURDIR)/build/rooc \
@@ -196,6 +188,13 @@ install-packages: bootstrap-loom
 			--package-repository $(PACKAGE_REPOSITORY); \
 	done
 
+install-repository-package-%: bootstrap-loom
+	cmake --build build --target package_artifact_$*
+	cmake -E make_directory $(PACKAGE_REPOSITORY)
+	$(BOOTSTRAP_LOOM) install \
+		$(PACKAGE_ARTIFACT_DIR)/$* \
+		--package-repository $(PACKAGE_REPOSITORY)
+
 install: build
 	cmake --install build --config $(BUILD_TYPE) --prefix $(PREFIX) --component Unspecified
 	$(MAKE) install-packages
@@ -207,29 +206,15 @@ install: build
 	@printf '    Packages installed by Loom: %s\n' '$(words $(ROO_REPOSITORY_PACKAGES))'
 	@printf '    Roo language index: %s\n' '$(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn'
 
-install-loom: bootstrap-loom
+install-loom: install-repository-package-loom bootstrap-loom
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/loom-bootstrap/build/$(LOOM_BINARY) $(PREFIX)/bin/$(LOOM_BINARY)
 
 build-proof: build stage-packages
 
-install-proof: build-proof
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/proof/src
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/proof/native
-	cmake -E copy_directory $(PACKAGE_STAGE)/proof/src $(PREFIX)/share/roo/pkg/proof/src
-	cmake -E copy_if_different $(PACKAGE_STAGE)/proof/package.edn $(PREFIX)/share/roo/pkg/proof/package.edn
-	cmake -E copy_if_different $(PACKAGE_STAGE)/proof/README.md $(PREFIX)/share/roo/pkg/proof/README.md
-	cmake -E copy_if_different $(PACKAGE_STAGE)/proof/native/$(PROOF_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY)
-	$(call SET_PACKAGE_NATIVE_RPATH,$(PREFIX)/share/roo/pkg/proof/native/$(PROOF_NATIVE_LIBRARY))
+install-proof: install-repository-package-proof
 
-install-inpoots: build stage-packages
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/inpoots/src
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/inpoots/native
-	cmake -E copy_directory $(PACKAGE_STAGE)/inpoots/src $(PREFIX)/share/roo/pkg/inpoots/src
-	cmake -E copy_if_different $(PACKAGE_STAGE)/inpoots/package.edn $(PREFIX)/share/roo/pkg/inpoots/package.edn
-	cmake -E copy_if_different $(PACKAGE_STAGE)/inpoots/README.md $(PREFIX)/share/roo/pkg/inpoots/README.md
-	cmake -E copy_if_different $(PACKAGE_STAGE)/inpoots/native/$(INPOOTS_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/inpoots/native/$(INPOOTS_NATIVE_LIBRARY)
-	$(call SET_PACKAGE_NATIVE_RPATH,$(PREFIX)/share/roo/pkg/inpoots/native/$(INPOOTS_NATIVE_LIBRARY))
+install-inpoots: install-repository-package-inpoots
 
 build-lookup: configure
 	cmake --build build --target rooc_cli stage_packages
@@ -266,7 +251,7 @@ build-github-pages-docs: install build-boodle
 audit-roo-lang-index: build-roo-lang-index
 	$(SHELL) $(CURDIR)/scripts/audit-roo-lang-index.sh $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(ROO_LANG_INDEX_PATH)
 
-install-lookup: build-lookup
+install-lookup: install-repository-package-lookup build-lookup
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(PREFIX)/bin/$(LOOKUP_BINARY)
 
@@ -277,94 +262,43 @@ install-roo-lang-index: audit-roo-lang-index
 build-proofread: build stage-packages
 	./build/rooc build $(PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-install --name proofread
 
-install-proofread: build-proofread
+install-proofread: install-repository-package-proofread build-proofread
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/proofread-install/build/$(PROOFREAD_BINARY) $(PREFIX)/bin/$(PROOFREAD_BINARY)
 
 build-boodle: build stage-packages
 	./build/rooc build $(PACKAGE_STAGE)/boodle --build-dir $(CURDIR)/build/boodle-install --name boodle
 
-install-boodle: build-boodle
+install-boodle: install-repository-package-boodle build-boodle
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) $(PREFIX)/bin/$(BOODLE_BINARY)
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/boodle/src
-	cmake -E copy_directory $(CURDIR)/pkg/boodle/src $(PREFIX)/share/roo/pkg/boodle/src
-	cmake -E copy_if_different $(CURDIR)/pkg/boodle/package.edn $(PREFIX)/share/roo/pkg/boodle/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/boodle/README.md $(PREFIX)/share/roo/pkg/boodle/README.md
 
 build-roopl: build stage-packages
 	./build/rooc build $(PACKAGE_STAGE)/roopl --build-dir $(CURDIR)/build/roopl-install --name roopl
 
-install-roopl: build-roopl
+install-roopl: install-repository-package-roopl build-roopl
 	cmake -E make_directory $(PREFIX)/bin
 	cmake -E copy_if_different $(CURDIR)/build/roopl-install/build/$(ROOPL_BINARY) $(PREFIX)/bin/$(ROOPL_BINARY)
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/roopl/src
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/roopl/native
-	cmake -E copy_directory $(CURDIR)/pkg/roopl/src $(PREFIX)/share/roo/pkg/roopl/src
-	cmake -E copy_if_different $(CURDIR)/pkg/roopl/package.edn $(PREFIX)/share/roo/pkg/roopl/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/roopl/README.md $(PREFIX)/share/roo/pkg/roopl/README.md
-	cmake -E copy_if_different $(PACKAGE_STAGE)/roopl/native/$(ROOPL_NATIVE_LIBRARY) $(PREFIX)/share/roo/pkg/roopl/native/$(ROOPL_NATIVE_LIBRARY)
-	$(call SET_PACKAGE_NATIVE_RPATH,$(PREFIX)/share/roo/pkg/roopl/native/$(ROOPL_NATIVE_LIBRARY))
 
-install-i18n: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/i18n/src
-	cmake -E copy_directory $(CURDIR)/pkg/i18n/src $(PREFIX)/share/roo/pkg/i18n/src
-	cmake -E copy_if_different $(CURDIR)/pkg/i18n/package.edn $(PREFIX)/share/roo/pkg/i18n/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/i18n/README.md $(PREFIX)/share/roo/pkg/i18n/README.md
+install-i18n: install-repository-package-i18n
 
-install-moordown: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/moordown/src
-	cmake -E copy_directory $(CURDIR)/pkg/moordown/src $(PREFIX)/share/roo/pkg/moordown/src
-	cmake -E copy_if_different $(CURDIR)/pkg/moordown/package.edn $(PREFIX)/share/roo/pkg/moordown/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/moordown/README.md $(PREFIX)/share/roo/pkg/moordown/README.md
+install-moordown: install-repository-package-moordown
 
-install-spool: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/spool/src
-	cmake -E copy_directory $(CURDIR)/pkg/spool/src $(PREFIX)/share/roo/pkg/spool/src
-	cmake -E copy_if_different $(CURDIR)/pkg/spool/package.edn $(PREFIX)/share/roo/pkg/spool/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/spool/README.md $(PREFIX)/share/roo/pkg/spool/README.md
+install-spool: install-repository-package-spool
 
-install-workbook: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/workbook/src
-	cmake -E copy_directory $(CURDIR)/pkg/workbook/src $(PREFIX)/share/roo/pkg/workbook/src
-	cmake -E copy_if_different $(CURDIR)/pkg/workbook/package.edn $(PREFIX)/share/roo/pkg/workbook/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/workbook/README.md $(PREFIX)/share/roo/pkg/workbook/README.md
+install-workbook: install-repository-package-workbook
 
-install-footsteps: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/footsteps/src
-	cmake -E copy_directory $(CURDIR)/pkg/footsteps/src $(PREFIX)/share/roo/pkg/footsteps/src
-	cmake -E copy_if_different $(CURDIR)/pkg/footsteps/package.edn $(PREFIX)/share/roo/pkg/footsteps/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/footsteps/README.md $(PREFIX)/share/roo/pkg/footsteps/README.md
+install-footsteps: install-repository-package-footsteps
 
-install-zoology: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/zoology/src
-	cmake -E copy_directory $(CURDIR)/pkg/zoology/src $(PREFIX)/share/roo/pkg/zoology/src
-	cmake -E copy_if_different $(CURDIR)/pkg/zoology/package.edn $(PREFIX)/share/roo/pkg/zoology/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/zoology/README.md $(PREFIX)/share/roo/pkg/zoology/README.md
+install-zoology: install-repository-package-zoology
 
-install-soot: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/soot/src
-	cmake -E copy_directory $(CURDIR)/pkg/soot/src $(PREFIX)/share/roo/pkg/soot/src
-	cmake -E copy_if_different $(CURDIR)/pkg/soot/package.edn $(PREFIX)/share/roo/pkg/soot/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/soot/README.md $(PREFIX)/share/roo/pkg/soot/README.md
+install-soot: install-repository-package-soot
 
-install-voodoo: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/voodoo/src
-	cmake -E copy_directory $(CURDIR)/pkg/voodoo/src $(PREFIX)/share/roo/pkg/voodoo/src
-	cmake -E copy_if_different $(CURDIR)/pkg/voodoo/package.edn $(PREFIX)/share/roo/pkg/voodoo/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/voodoo/README.md $(PREFIX)/share/roo/pkg/voodoo/README.md
+install-voodoo: install-repository-package-voodoo
 
-install-wraparoo: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/wraparoo/src
-	cmake -E copy_directory $(CURDIR)/pkg/wraparoo/src $(PREFIX)/share/roo/pkg/wraparoo/src
-	cmake -E copy_if_different $(CURDIR)/pkg/wraparoo/package.edn $(PREFIX)/share/roo/pkg/wraparoo/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/wraparoo/README.md $(PREFIX)/share/roo/pkg/wraparoo/README.md
+install-wraparoo: install-repository-package-wraparoo
 
-install-cli-trooper: build
-	cmake -E make_directory $(PREFIX)/share/roo/pkg/cli-trooper/src
-	cmake -E copy_directory $(CURDIR)/pkg/cli-trooper/src $(PREFIX)/share/roo/pkg/cli-trooper/src
-	cmake -E copy_if_different $(CURDIR)/pkg/cli-trooper/package.edn $(PREFIX)/share/roo/pkg/cli-trooper/package.edn
-	cmake -E copy_if_different $(CURDIR)/pkg/cli-trooper/README.md $(PREFIX)/share/roo/pkg/cli-trooper/README.md
+install-cli-trooper: install-repository-package-cli-trooper
 
 release:
 	sh $(CURDIR)/tools/release/package.sh $(VERSION)
