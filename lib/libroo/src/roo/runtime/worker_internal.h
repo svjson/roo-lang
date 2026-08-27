@@ -56,6 +56,7 @@ namespace Roo
 
     std::mutex mutex;
     std::condition_variable state_changed;
+    WorkerEnvironmentFactory environment_factory;
     std::thread execution_thread;
     std::deque<QueuedExecution> queue;
     std::map<uint64_t, std::shared_ptr<WorkerExecution>> executions;
@@ -68,6 +69,7 @@ namespace Roo
 
    public:
     Worker();
+    explicit Worker(WorkerEnvironmentFactory environment_factory);
     ~Worker();
 
     Worker(const Worker&) = delete;

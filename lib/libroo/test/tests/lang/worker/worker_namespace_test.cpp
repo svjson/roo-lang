@@ -1,8 +1,10 @@
+#include <memory>
 #include <thread>
 
 #include <roo/exception.h>
 #include <roo/runtime.h>
 #include <roo/runtime/pretty_print.h>
+#include <roo/runtime/worker.h>
 
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
@@ -11,6 +13,17 @@ using RooTest::RuntimeTestFixture;
 
 namespace
 {
+  class SeededWorkerEnvironment final : public Roo::WorkerEnvironment
+  {
+   private:
+    Roo::Runtime instance;
+
+   public:
+    SeededWorkerEnvironment() { instance.eval("(def application-value 42)"); }
+
+    Roo::Runtime& runtime() override { return instance; }
+  };
+
   Roo::sptr_val wait_for_worker_execution(Roo::Runtime& runtime,
                                           const std::string& execution)
   {
@@ -44,6 +57,37 @@ TEST_F(RuntimeTestFixture, worker_identity_is_local_to_parent_runtime)
 
   EXPECT_NO_THROW(runtime.eval("(roo.worker/create! :my-app/worker)"));
   EXPECT_NO_THROW(another_runtime.eval("(roo.worker/create! :my-app/worker)"));
+}
+
+TEST_F(RuntimeTestFixture, worker_create_rejects_an_unregistered_environment)
+{
+  EXPECT_THROW(runtime.eval(R"(
+      (roo.worker/create! :my-app/worker {:environment :application})
+    )"),
+               Roo::RooException);
+}
+
+TEST_F(RuntimeTestFixture, worker_create_uses_registered_environment_on_worker_thread)
+{
+  const std::thread::id parent_thread = std::this_thread::get_id();
+  auto factory_thread = std::make_shared<std::thread::id>();
+  runtime.worker_registry().register_environment(
+    "application",
+    [factory_thread]()
+    {
+      *factory_thread = std::this_thread::get_id();
+      return std::make_unique<SeededWorkerEnvironment>();
+    });
+
+  runtime.eval(R"(
+    (roo.worker/create! :my-app/worker {:environment :application})
+    (def execution
+      (roo.worker/execute-let! :my-app/worker [] application-value))
+  )");
+
+  EXPECT_NE(*factory_thread, parent_thread);
+  ASSERT_EQ(wait_for_worker_execution(runtime, "execution")->str(), "succeeded");
+  EXPECT_EQ(*runtime.eval("(roo.worker/collect! execution)"), *Roo::Value::number(42));
 }
 
 TEST_F(RuntimeTestFixture, worker_namespace_is_immutable)

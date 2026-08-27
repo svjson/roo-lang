@@ -18,6 +18,23 @@ namespace Roo
   {
     const HostTypeRef WORKER_EXECUTION_HANDLE_TYPE("roo.worker/execution");
 
+    class VanillaWorkerEnvironment final : public WorkerEnvironment
+    {
+     private:
+      Runtime instance;
+
+     public:
+      Runtime& runtime() override { return instance; }
+    };
+
+    WorkerEnvironmentFactory vanilla_environment_factory()
+    {
+      return []()
+      {
+        return std::make_unique<VanillaWorkerEnvironment>();
+      };
+    }
+
     sptr_val transfer_roo_failure(const RooException& failure)
     {
       try
@@ -125,6 +142,7 @@ namespace Roo
 
   struct WorkerRegistry::Impl
   {
+    std::map<std::string, WorkerEnvironmentFactory> environment_factories;
     std::map<std::string, std::shared_ptr<Worker>> workers;
   };
 
@@ -185,8 +203,18 @@ namespace Roo
   }
 
   Worker::Worker()
-    : execution_thread(&Worker::run, this)
+    : Worker(vanilla_environment_factory())
   {
+  }
+
+  Worker::Worker(WorkerEnvironmentFactory environment_factory)
+    : environment_factory(std::move(environment_factory))
+  {
+    if (!this->environment_factory)
+    {
+      throw RooException("Worker environment factory must not be empty.");
+    }
+    execution_thread = std::thread(&Worker::run, this);
     std::unique_lock lock(mutex);
     state_changed.wait(lock, [this]() { return ready; });
     if (startup_failure)
@@ -211,7 +239,12 @@ namespace Roo
   {
     try
     {
-      Runtime runtime;
+      std::unique_ptr<WorkerEnvironment> environment = environment_factory();
+      if (!environment)
+      {
+        throw RooException("Worker environment factory returned no environment.");
+      }
+      Runtime& runtime = environment->runtime();
       std::unique_lock lock(mutex);
       ready = true;
       state_changed.notify_one();
@@ -305,12 +338,47 @@ namespace Roo
 
   void WorkerRegistry::create(const std::string& identity)
   {
+    create(identity, "vanilla");
+  }
+
+  void WorkerRegistry::register_environment(const std::string& name,
+                                            WorkerEnvironmentFactory factory)
+  {
+    if (name.empty()) throw RooException("Worker environment name must not be empty.");
+    if (name == "vanilla")
+    {
+      throw RooException("Worker environment :vanilla is reserved.");
+    }
+    if (!factory) throw RooException("Worker environment factory must not be empty.");
+    if (!impl->environment_factories.emplace(name, std::move(factory)).second)
+    {
+      throw RooException("Worker environment :" + name + " is already registered.");
+    }
+  }
+
+  void WorkerRegistry::create(const std::string& identity, const std::string& environment)
+  {
     if (impl->workers.contains(identity))
     {
       throw RooException("Worker :" + identity + " already exists.");
     }
 
-    impl->workers.emplace(identity, std::make_shared<Worker>());
+    WorkerEnvironmentFactory factory;
+    if (environment == "vanilla")
+    {
+      factory = vanilla_environment_factory();
+    }
+    else
+    {
+      auto found = impl->environment_factories.find(environment);
+      if (found == impl->environment_factories.end())
+      {
+        throw RooException("Worker environment :" + environment + " is not available.");
+      }
+      factory = found->second;
+    }
+
+    impl->workers.emplace(identity, std::make_shared<Worker>(std::move(factory)));
   }
 
   sptr_val WorkerRegistry::enqueue(const std::string& identity, Task task)

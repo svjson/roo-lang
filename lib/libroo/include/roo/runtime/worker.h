@@ -13,6 +13,30 @@ namespace Roo
 {
   class Runtime;
 
+  /**
+   * @brief Own the Runtime and host resources used by one worker thread.
+   * @since 0.1.0
+   *
+   * WorkerRegistry invokes environment factories and destroys their results on
+   * the worker thread. Host implementations may therefore retain file systems,
+   * namespace source backing stores, native-package handles, and other
+   * resources that must outlive the Runtime without exposing them to the
+   * worker controller.
+   */
+  class ROO_API WorkerEnvironment
+  {
+   public:
+    virtual ~WorkerEnvironment() = default;
+
+    /**
+     * @brief Return the runtime owned by this environment.
+     * @return Runtime confined to the worker's execution thread.
+     */
+    virtual Runtime& runtime() = 0;
+  };
+
+  using WorkerEnvironmentFactory = std::function<std::unique_ptr<WorkerEnvironment>()>;
+
   enum class WorkerExecutionStatus : uint8_t
   {
     QUEUED,
@@ -46,10 +70,24 @@ namespace Roo
     WorkerRegistry& operator=(const WorkerRegistry&) = delete;
 
     /**
+     * @brief Register a named host-provided worker environment factory.
+     * @param name Environment name selected during worker creation.
+     * @param factory Factory invoked on each selected worker's own thread.
+     */
+    void register_environment(const std::string& name, WorkerEnvironmentFactory factory);
+
+    /**
      * @brief Create and start a named vanilla worker runtime.
      * @param identity Worker identity, unique within this registry.
      */
     void create(const std::string& identity);
+
+    /**
+     * @brief Create and start a worker using a named environment factory.
+     * @param identity Worker identity, unique within this registry.
+     * @param environment Registered environment name, or `vanilla`.
+     */
+    void create(const std::string& identity, const std::string& environment);
 
     /**
      * @brief Transfer and asynchronously invoke a callable in a named worker.

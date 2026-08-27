@@ -32,10 +32,11 @@ namespace Roo
    * @since 0.1.0
    *
    * The worker is registered under a runtime-local keyword identity and owns a
-   * dedicated execution thread. Its vanilla Roo runtime is constructed on that
-   * thread without application namespaces, namespace loading, or file-system
-   * access inherited from the parent. The call returns only after worker
-   * initialization succeeds.
+   * dedicated execution thread. The default vanilla environment has no
+   * application namespaces, namespace loading, or file-system access inherited
+   * from the parent. A host may register an application environment that
+   * reconstructs its runtime bootstrap without invoking its entry point. The
+   * call returns only after worker initialization succeeds.
    *
    * Creating another worker with the same identity in the current runtime is an
    * error. The same identity may be used independently by another runtime.
@@ -43,11 +44,14 @@ namespace Roo
    * Usage:
    * @code
    * (roo.worker/create! :my-app/worker) => nil
+   * (roo.worker/create! :my-app/application-worker
+   *                     {:environment :application}) => nil
    * @endcode
    *
    * | Arg      | Description                                                  |
    * | -------- | ------------------------------------------------------------ |
    * | identity | Keyword identifying the worker within the current runtime.   |
+   * | options  | Optional map containing a registered `:environment` keyword. |
    *
    * @return `nil` after the worker runtime has initialized successfully.
    */
@@ -124,7 +128,7 @@ namespace Roo
    *
    * @return A report map whose `:status` is one of `:queued`, `:running`,
    * `:succeeded`, or `:failed`.
-  */
+   */
   FUNC(PollWorkerBangFunction, poll_worker)
 } // namespace Roo
 

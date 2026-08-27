@@ -10,6 +10,7 @@
 #include <roo/exception.h>
 #include <roo/exec.h>
 #include <roo/form.h>
+#include <roo/host/schema.h>
 #include <roo/runtime.h>
 #include <roo/runtime/eval_plan.h>
 #include <roo/runtime/exec_node.h>
@@ -289,12 +290,30 @@ namespace Roo
 
   /** CreateWorkerBangFunction - roo.worker/create! */
   FUNC_IMPL(CreateWorkerBangFunction,
-            SIG((FN_ARGS((&Type::KEYWORD)),
-                 EXEC_DISPATCH(&CreateWorkerBangFunction::exec_create_worker))))
+            MULTI_SIG((FN_ARGS((&Type::KEYWORD)),
+                       EXEC_DISPATCH(&CreateWorkerBangFunction::exec_create_worker)),
+                      (FN_ARGS((&Type::KEYWORD), (&Type::MAP)),
+                       EXEC_DISPATCH(&CreateWorkerBangFunction::exec_create_worker))))
 
   EXEC_BODY(CreateWorkerBangFunction, exec_create_worker)
   {
-    ctx.get_runtime().worker_registry().create(args[0]->str());
+    WorkerRegistry& registry = ctx.get_runtime().worker_registry();
+    if (args.size() == 1)
+    {
+      registry.create(args[0]->str());
+      return Constant::NIL;
+    }
+
+    static MapSchema schema({}, {{"environment", &Type::KEYWORD}});
+    MapSchema::Inspector options = schema.bind(ctx, *args[1]);
+    if (options.contains("environment"))
+    {
+      registry.create(args[0]->str(), options.val("environment")->str());
+    }
+    else
+    {
+      registry.create(args[0]->str());
+    }
     return Constant::NIL;
   }
 
