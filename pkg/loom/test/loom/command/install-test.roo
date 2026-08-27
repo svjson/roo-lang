@@ -48,6 +48,21 @@
      :package-dir package-dir
      :target-dir target-dir}))
 
+(deffixture relocatable-package-install {:storage :cache}
+  (let [repo-root (support/fresh-repo! "loom-proof-relocatable-install")
+        package-dir
+        (support/fresh-package!
+          "loom-proof-relocatable-package"
+          "{:name relocatable :version \"1.0.0\" :dependencies [] :load-roots [\"src\"]}")
+        source-path (io/join-path package-dir "src/relocatable.roo")]
+    (io/spit! source-path
+              "(ns relocatable)\n(defun value \"Return a value.\" [] 1)\n")
+    (let [target-dir (install/install! package-dir repo-root false)]
+      (io/remove-tree! package-dir)
+      {:package-dir package-dir
+       :target-dir target-dir
+       :symbols-path (io/join-path target-dir "symbols.edn")})))
+
 
 
 ;;; loom.command.install/install!
@@ -81,6 +96,27 @@
     (is (io/exists? (support/installed-path repo-root "loom" "0.1.0"
                                             "src/loom/command/install.roo")))
     (is (io/exists? (io/join-path installed-package-dir "symbols.edn")))))
+
+(deftest install!/produces-relocatable-symbol-index
+  [relocatable-package-install]
+  (s/when []
+    (io/slurp-edn! (:symbols-path relocatable-package-install)))
+
+  (s/then [symbol-index]
+    (is (= false
+           (io/exists? (:package-dir relocatable-package-install))))
+    (is (= [{:path "src/relocatable.roo"}]
+           (:sources symbol-index)))
+    (is (io/file?
+          (io/join-path (:target-dir relocatable-package-install)
+                        "src/relocatable.roo")))
+    (is (= "src/relocatable.roo"
+           (:path
+             (:source
+               (find-first (:symbols symbol-index)
+                           (fn [symbol]
+                             (= "relocatable/value"
+                                (:qualified-name symbol))))))))))
 
 (deftest install!/installs-declared-native-libraries
   (s/given
