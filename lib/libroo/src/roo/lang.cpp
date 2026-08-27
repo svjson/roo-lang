@@ -209,6 +209,7 @@ namespace Roo
     lang_symbols.emplace("set!", SetBangForm::make());
     lang_symbols.emplace("sin", SinFunction::make());
     lang_symbols.emplace("slice", SliceFunction::make());
+    lang_symbols.emplace("sleep!", SleepBangFunction::make());
     lang_symbols.emplace("some?", SomePFunction::make());
     lang_symbols.emplace("sort", SortFunction::make());
     lang_symbols.emplace("split", SplitFunction::make());

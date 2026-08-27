@@ -24,6 +24,7 @@ set(roo_SOURCES
   src/roo/runtime/pretty_print.cpp
   src/roo/runtime/seq.cpp
   src/roo/runtime/str.cpp
+  src/roo/runtime/time.cpp
   src/roo/runtime/walk.cpp
   src/roo/runtime/worker.cpp
   src/roo/runtime/value.cpp
