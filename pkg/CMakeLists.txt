@@ -149,7 +149,8 @@ function(roo_add_stage_package_target package_name)
 
   add_custom_target(${package_artifact_target}
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${package_artifact_dir}"
-    COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E env --unset=DESTDIR
+            ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}"
             --config "$<CONFIG>"
             --prefix "${CMAKE_BINARY_DIR}"
             --component "${package_artifact_component}"
