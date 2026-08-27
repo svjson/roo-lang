@@ -1,0 +1,58 @@
+(ns voodoo.editor)
+
+(defun compose
+  "Compose EDITORS from general behavior to increasingly specific overlays.
+
+  Args:
+  - `editor`: Base editor map containing an ordered `:layers` vector.
+  - `rest`: Zero or more overlay editor maps containing ordered `:layers`
+    vectors, collected by Roo's rest-argument binding.
+
+  Returns:
+  An editor shaped as `{:layers [base-layer ... overlay-layer]}`. Its layers
+  preserve the supplied base-to-overlay order, and later layers receive the
+  first opportunity to handle an event."
+  [editor &rest]
+  {:layers (reduce rest
+                   (:layers editor)
+                   (fn [layers editor]
+                     (concat layers (:layers editor))))})
+
+(defun dispatch
+  "Dispatch EVENT through EDITOR against BUFFER.
+
+  Each editor layer may contain a `:keymap`, a `:textmap`, an `:on-text`
+  function, and an `:on-paste` function. Key and exact-text functions receive
+  BUFFER. Text and paste functions receive BUFFER and the event text. A
+  function returns the next buffer when it handles the event or `nil` to let a
+  lower layer try it.
+
+  Args:
+  - `editor`: Editor map containing a `:layers` vector.
+  - `buffer`: Current editable text buffer.
+  - `event`: Portable input event to dispatch.
+
+  Returns:
+  The first buffer returned by a handling layer, or `nil` when every layer
+  declines the event."
+  [editor buffer event]
+  (reduce (reverse (:layers editor))
+          nil
+          (fn [next-buffer layer]
+            (if next-buffer
+              next-buffer
+              (case (:type event)
+                :paste
+                (when-let [on-paste (:on-paste layer)]
+                  (on-paste buffer (:text event)))
+
+                :keystroke
+                (if-let [on-key (get (:keymap layer) (:key event))]
+                  (on-key buffer)
+                  (if-let [on-exact-text (get (:textmap layer) (:text event))]
+                    (on-exact-text buffer)
+                    (when-let [text (:text event)
+                               on-text (:on-text layer)]
+                      (on-text buffer text))))
+
+                :default nil)))))

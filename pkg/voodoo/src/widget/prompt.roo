@@ -1,5 +1,7 @@
 (ns voodoo.widget.prompt
-  (:require [voodoo.text.buffer :as buffer]
+  (:require [voodoo.editor :as editor]
+            [voodoo.editor.text :as text-editor]
+            [voodoo.text.buffer :as buffer]
             [voodoo.widget :as widget]))
 
 (defun on-event
@@ -40,41 +42,33 @@
                                                       (apply str (:before next-buffer)))})}))
         navigate (fn [position]
                    (next-widget (assoc prompt :history-position position)
-                                (buffer/make (nth (:history prompt) position))))]
-    (case (:type event)
-      :paste (next-widget prompt
-                          (buffer/insert (:buffer prompt) (:text event)))
-      :keystroke
-      (case (:key event)
-        :key/left (next-widget prompt (buffer/move-left (:buffer prompt)))
-        :key/right (next-widget prompt (buffer/move-right (:buffer prompt)))
-        :key/up (if (> (:history-position prompt) 0)
-                  (navigate (dec (:history-position prompt)))
-                  {})
-        :key/down (if (< (:history-position prompt)
-                         (dec (count (:history prompt))))
-                    (navigate (inc (:history-position prompt)))
+                                (buffer/make (nth (:history prompt) position))))
+        edited-buffer (editor/dispatch (:editor prompt) (:buffer prompt) event)]
+    (if edited-buffer
+      (next-widget prompt edited-buffer)
+      (case (:type event)
+        :keystroke
+        (case (:key event)
+          :key/up (if (> (:history-position prompt) 0)
+                    (navigate (dec (:history-position prompt)))
                     {})
-        :key/home (next-widget prompt (buffer/move-start (:buffer prompt)))
-        :key/end (next-widget prompt (buffer/move-end (:buffer prompt)))
-        :key/backspace (next-widget prompt (buffer/backspace (:buffer prompt)))
-        :key/delete (next-widget prompt (buffer/delete (:buffer prompt)))
-        :key/enter {:actions
-                    [{:type :submit
-                      :value (buffer/text (:buffer prompt))}]}
-        [:key/ctrl :key/c]
-        (if (empty? (buffer/text (:buffer prompt)))
-          {}
-          (merge (next-widget
-                   (assoc prompt
-                          :history-position (dec (count (:history prompt))))
-                   (buffer/make ""))
-                 {:actions [{:type :cancel}]}))
-        :default (if-let [text (:text event)]
-                   (next-widget prompt
-                                (buffer/insert (:buffer prompt) text))
-                   {}))
-      :default {})))
+          :key/down (if (< (:history-position prompt)
+                           (dec (count (:history prompt))))
+                      (navigate (inc (:history-position prompt)))
+                      {})
+          :key/enter {:actions
+                      [{:type :submit
+                        :value (buffer/text (:buffer prompt))}]}
+          [:key/ctrl :key/c]
+          (if (empty? (buffer/text (:buffer prompt)))
+            {}
+            (merge (next-widget
+                     (assoc prompt
+                            :history-position (dec (count (:history prompt))))
+                     (buffer/make ""))
+                   {:actions [{:type :cancel}]}))
+          :default {})
+        :default {}))))
 
 (defun make
   "Create a focusable prompt widget.
@@ -82,7 +76,9 @@
   Args:
   - `opts`: Widget option map. `:prompt` sets the displayed prefix, `:value`
     sets the initial editable text, and `:history` supplies earlier values for
-    Up and Down navigation. Other widget fields are preserved.
+    Up and Down navigation. `:editor` supplies a `voodoo.editor` definition;
+    when omitted, the prompt uses `voodoo.editor.text/default`. Other widget
+    fields are preserved.
 
   Returns:
   A focusable prompt widget. Its history ends with the current editable value,
@@ -105,6 +101,7 @@
               :history history
               :history-position (dec (count history))
               :buffer initial-buffer
+              :editor (get opts :editor text-editor/default)
               :text (str prompt-text (buffer/text initial-buffer))
               :cursor {:row 0
                        :text-before (str prompt-text

@@ -1,8 +1,33 @@
 # voodoo
 
-Voodoo is a terminal layout and motion package for Roo: session-managed
-transient output today, with progress bars, spinners, and box/rule/banner
-rendering planned.
+Voodoo is a terminal layout, editing, and widget package for Roo. It provides
+session-managed transient output, composable editors, and interactive widgets,
+with progress bars, spinners, and box/rule/banner rendering planned.
+
+## Editors
+
+`voodoo.editor` dispatches portable input events through ordered editor layers.
+Later layers receive the first opportunity to handle an event and can return
+`nil` to pass it to a lower layer. This lets an application compose
+syntax-aware behavior over ordinary text editing without placing language rules
+in Voodoo.
+
+```roo
+(def editor
+  (voodoo.editor/compose
+    voodoo.editor.text/default
+    {:layers [{:textmap {"(" insert-balanced-parens}}]}))
+```
+
+Each layer can provide `:keymap`, `:textmap`, `:on-text`, and `:on-paste`.
+Key and exact-text functions receive the current buffer; general text and paste
+functions also receive the event text. A non-`nil` buffer means the event was
+handled.
+
+`voodoo.editor.text/default` provides ordinary prompt editing: text and paste
+insertion, scalar movement and deletion, Home/End and Control-A/E, word
+movement with Control-Left/Right, and Control-K deletion through the end.
+`voodoo.widget.prompt/make` uses it unless an explicit `:editor` is supplied.
 
 ## Sessions
 
@@ -10,7 +35,7 @@ A session tracks widgets, supporting adding, updating, and removing them
 without the call site having to reason about cursor position, or even
 know whether it's writing to a real terminal:
 
-```clojure
+```roo
 (ns app
   (:require [voodoo.session :as session]
             [voodoo.widget :as widget]))
@@ -28,7 +53,7 @@ apart, logging about them, and so on) - voodoo never inspects it.
 `make` takes an optional `:tty?` flag. Omit it to auto-detect via
 `roo.tty/tty?`; pass it explicitly to force terminal mode on or off:
 
-```clojure
+```roo
 (session/make {:tty? false}) ; e.g. CI/log output, no ANSI codes
 ```
 
@@ -45,7 +70,7 @@ running in CI, etc). Terminal output always shows a widget's current
 state live; the degrade policy only controls what non-terminal output
 sees.
 
-```clojure
+```roo
 (widget/make {:type :label :text "Discovering proof tests..."})
 ```
 
@@ -66,7 +91,7 @@ the default doesn't fit:
   Good for a widget that starts as a placeholder and is updated exactly
   once to its real, final content.
 
-```clojure
+```roo
 (widget/make {:type :status
              :text "Running some-test..."
              :degrade widget/tty-only})
@@ -89,7 +114,7 @@ in-progress items that each resolve to a final state, say - `evict!`
 drops a widget from tracking once it has reached its permanent final
 content:
 
-```clojure
+```roo
 (session/update! s h final-spec)
 (session/evict! s h)
 ```

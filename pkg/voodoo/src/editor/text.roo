@@ -1,0 +1,25 @@
+(ns voodoo.editor.text
+  (:require [voodoo.text.buffer :as buffer]))
+
+(def default
+  "Default plain-text editor.
+
+  The editor inserts keystroke text and pasted text; supports scalar movement,
+  deletion, Home/End, Control-A/E, whitespace-delimited word movement with
+  Control-Left/Right, and deletion through the end with Control-K. Its value is
+  shaped as `{:layers [{:keymap {...} :on-text fn :on-paste fn}]}`."
+  {:layers
+   [{:keymap
+     {:key/left buffer/move-left
+      :key/right buffer/move-right
+      [:key/ctrl :key/left] buffer/move-word-left
+      [:key/ctrl :key/right] buffer/move-word-right
+      :key/home buffer/move-start
+      [:key/ctrl :key/a] buffer/move-start
+      :key/end buffer/move-end
+      [:key/ctrl :key/e] buffer/move-end
+      :key/backspace buffer/backspace
+      :key/delete buffer/delete
+      [:key/ctrl :key/k] buffer/delete-to-end}
+     :on-text buffer/insert
+     :on-paste buffer/insert}]})

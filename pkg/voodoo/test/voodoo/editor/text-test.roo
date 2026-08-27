@@ -1,0 +1,101 @@
+(ns voodoo.editor.text-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [voodoo.editor :as editor]
+            [voodoo.editor.text :as text-editor]
+            [voodoo.text.buffer :as buffer]))
+
+(deftest default/inserts-keystroke-text-and-paste
+  (p/when []
+    (let [typed (editor/dispatch text-editor/default
+                                 (buffer/make "a")
+                                 {:type :keystroke
+                                  :key :key/b
+                                  :text "b"})]
+      {:typed typed
+       :pasted (editor/dispatch text-editor/default
+                                typed
+                                {:type :paste
+                                 :text "猫🙂"})}))
+
+  (p/then [result]
+    (is (= {:typed {:before ["a" "b"]
+                    :after []}
+            :pasted {:before ["a" "b" "猫" "🙂"]
+                     :after []}}
+           result))))
+
+(deftest default/supports-scalar-line-and-word-navigation
+  (p/given
+    (buffer/make "one  two three"))
+
+  (p/when [initial]
+    (let [home (editor/dispatch text-editor/default initial
+                                {:type :keystroke
+                                 :key :key/home})
+          control-right (editor/dispatch text-editor/default home
+                                         {:type :keystroke
+                                          :key [:key/ctrl :key/right]})
+          right (editor/dispatch text-editor/default control-right
+                                 {:type :keystroke
+                                  :key :key/right})
+          control-e (editor/dispatch text-editor/default right
+                                     {:type :keystroke
+                                      :key [:key/ctrl :key/e]})
+          control-left (editor/dispatch text-editor/default control-e
+                                        {:type :keystroke
+                                         :key [:key/ctrl :key/left]})]
+      {:home home
+       :control-right control-right
+       :right right
+       :control-e control-e
+       :control-left control-left
+       :control-a (editor/dispatch text-editor/default control-left
+                                   {:type :keystroke
+                                    :key [:key/ctrl :key/a]})
+       :end (editor/dispatch text-editor/default home
+                             {:type :keystroke
+                              :key :key/end})}))
+
+  (p/then [result]
+    (is (= {:home {:before []
+                   :after ["o" "n" "e" " " " " "t" "w" "o" " " "t" "h" "r" "e" "e"]}
+            :control-right {:before ["o" "n" "e"]
+                            :after [" " " " "t" "w" "o" " " "t" "h" "r" "e" "e"]}
+            :right {:before ["o" "n" "e" " "]
+                    :after [" " "t" "w" "o" " " "t" "h" "r" "e" "e"]}
+            :control-e {:before ["o" "n" "e" " " " " "t" "w" "o" " " "t" "h" "r" "e" "e"]
+                        :after []}
+            :control-left {:before ["o" "n" "e" " " " " "t" "w" "o" " "]
+                           :after ["t" "h" "r" "e" "e"]}
+            :control-a {:before []
+                        :after ["o" "n" "e" " " " " "t" "w" "o" " " "t" "h" "r" "e" "e"]}
+            :end {:before ["o" "n" "e" " " " " "t" "w" "o" " " "t" "h" "r" "e" "e"]
+                  :after []}}
+           result))))
+
+(deftest default/supports-deletion-and-control-k
+  (p/given
+    (-> (buffer/make "a猫🙂")
+        buffer/move-start
+        buffer/move-right))
+
+  (p/when [after-a]
+    {:backspace (editor/dispatch text-editor/default after-a
+                                 {:type :keystroke
+                                  :key :key/backspace})
+     :delete (editor/dispatch text-editor/default after-a
+                              {:type :keystroke
+                               :key :key/delete})
+     :control-k (editor/dispatch text-editor/default after-a
+                                 {:type :keystroke
+                                  :key [:key/ctrl :key/k]})})
+
+  (p/then [result]
+    (is (= {:backspace {:before []
+                        :after ["猫" "🙂"]}
+            :delete {:before ["a"]
+                     :after ["🙂"]}
+            :control-k {:before ["a"]
+                        :after []}}
+           result))))

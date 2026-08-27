@@ -1,0 +1,73 @@
+(ns voodoo.editor-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [voodoo.editor :as editor]
+            [voodoo.text.buffer :as buffer]))
+
+(deftest compose/preserves-base-to-overlay-layer-order
+  (is (= {:layers
+          [{:keymap {:key/left buffer/move-left}}
+           {:keymap {:key/right buffer/move-right}}
+           {:keymap {:key/home buffer/move-start}}]}
+         (editor/compose
+           {:layers [{:keymap {:key/left buffer/move-left}}]}
+           {:layers [{:keymap {:key/right buffer/move-right}}]}
+           {:layers [{:keymap {:key/home buffer/move-start}}]}))))
+
+(deftest dispatch/uses-overlays-first-and-falls-through-when-declined
+  (p/given
+    (editor/compose
+      {:layers
+       [{:keymap {:key/left (fn [text-buffer]
+                              (buffer/insert text-buffer "base"))}
+         :on-text buffer/insert}]}
+      {:layers
+       [{:keymap {:key/left (fn [text-buffer] nil)}
+         :textmap {"(" (fn [text-buffer]
+                         (buffer/insert text-buffer "()"))}}]}))
+
+  (p/when [composed]
+    {:declined-key (editor/dispatch composed
+                                    (buffer/make "")
+                                    {:type :keystroke
+                                     :key :key/left})
+     :exact-text (editor/dispatch composed
+                                  (buffer/make "")
+                                  {:type :keystroke
+                                   :text "("})
+     :ordinary-text (editor/dispatch composed
+                                     (buffer/make "")
+                                     {:type :keystroke
+                                      :text "x"})
+     :unhandled (editor/dispatch composed
+                                 (buffer/make "")
+                                 {:type :resize
+                                  :columns 80
+                                  :rows 24})})
+
+  (p/then [result]
+    (is (= {:declined-key {:before ["b" "a" "s" "e"]
+                           :after []}
+            :exact-text {:before ["(" ")"]
+                         :after []}
+            :ordinary-text {:before ["x"]
+                            :after []}
+            :unhandled nil}
+           result))))
+
+(deftest dispatch/lets-paste-layers-decline-to-lower-editors
+  (p/given
+    (editor/compose
+      {:layers [{:on-paste buffer/insert}]}
+      {:layers [{:on-paste (fn [text-buffer text] nil)}]}))
+
+  (p/when [composed]
+    (editor/dispatch composed
+                     (buffer/make "a")
+                     {:type :paste
+                      :text "猫"}))
+
+  (p/then [result]
+    (is (= {:before ["a" "猫"]
+            :after []}
+           result))))

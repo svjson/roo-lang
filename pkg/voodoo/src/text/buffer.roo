@@ -73,6 +73,64 @@
     {:before (append before (head after))
      :after (tail after)}))
 
+(defun move-word-left
+  "Move BUFFER's cursor to the start of the preceding whitespace-delimited word.
+
+  Args:
+  - `buffer`: Buffer whose cursor should move.
+
+  Returns:
+  A buffer moved left across adjacent whitespace and then the preceding run of
+  non-whitespace scalars. A cursor already at the start remains unchanged."
+  [{:keys [before after]}]
+  (let [movement (reduce (reverse before)
+                         {:phase :whitespace
+                          :count 0}
+                         (fn [movement scalar]
+                           (case (:phase movement)
+                             :done movement
+                             :whitespace
+                             (if (blank? scalar)
+                               (update movement :count inc)
+                               {:phase :word
+                                :count (inc (:count movement))})
+                             :word
+                             (if (blank? scalar)
+                               (assoc movement :phase :done)
+                               (update movement :count inc)))))
+        position (- (count before) (:count movement))]
+    {:before (slice before 0 position)
+     :after (concat (slice before position) after)}))
+
+(defun move-word-right
+  "Move BUFFER's cursor to the end of the following whitespace-delimited word.
+
+  Args:
+  - `buffer`: Buffer whose cursor should move.
+
+  Returns:
+  A buffer moved right across adjacent whitespace and then the following run of
+  non-whitespace scalars. A cursor already at the end remains unchanged."
+  [{:keys [before after]}]
+  (let [movement (reduce after
+                         {:phase :whitespace
+                          :count 0}
+                         (fn [movement scalar]
+                           (case (:phase movement)
+                             :done movement
+                             :whitespace
+                             (if (blank? scalar)
+                               (update movement :count inc)
+                               {:phase :word
+                                :count (inc (:count movement))})
+                             :word
+                             (if (blank? scalar)
+                               (assoc movement :phase :done)
+                               (update movement :count inc)))))
+        position (:count movement)]
+    {:before (concat before (slice after 0 position))
+     :after (slice after position)}))
+
 (defun move-start
   "Move BUFFER's cursor to the start of its text.
 
@@ -124,3 +182,15 @@
     buffer
     {:before before
      :after (tail after)}))
+
+(defun delete-to-end
+  "Delete everything after BUFFER's cursor.
+
+  Args:
+  - `buffer`: Buffer to edit.
+
+  Returns:
+  A buffer retaining the scalars before the cursor and containing no scalars
+  after it."
+  [buffer]
+  (assoc buffer :after []))

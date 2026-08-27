@@ -1,5 +1,6 @@
 (ns voodoo.text.buffer-test
   (:require proof.core
+            [proof.scenario :as p]
             [voodoo.text.buffer :as buffer]))
 
 
@@ -8,9 +9,11 @@
 
 (deftest make/places-the-cursor-after-complete-unicode-scalars
   (let [text-buffer (buffer/make "ä猫🙂")]
-    (is (= ["a" "̈" "猫" "🙂"] (:before text-buffer)))
-    (is (= [] (:after text-buffer)))
-    (is (= "ä猫🙂" (buffer/text text-buffer)))))
+    (is (= {:buffer {:before ["a" "̈" "猫" "🙂"]
+                     :after []}
+            :text "ä猫🙂"}
+           {:buffer text-buffer
+            :text (buffer/text text-buffer)}))))
 
 
 
@@ -38,6 +41,14 @@
              buffer/delete
              buffer/text))))
 
+(deftest delete-to-end/removes-everything-after-the-cursor
+  (is (= {:before ["a"]
+          :after []}
+         (-> (buffer/make "a猫🙂")
+             buffer/move-start
+             buffer/move-right
+             buffer/delete-to-end))))
+
 (deftest editing/does-nothing-past-the-buffer-boundaries
   (is (= (buffer/make "")
          (-> (buffer/make "")
@@ -52,12 +63,45 @@
 
 (deftest move-left-and-right/move-one-complete-scalar
   (let [moved-left (buffer/move-left (buffer/make "a🙂"))]
-    (is (= ["a"] (:before moved-left)))
-    (is (= ["🙂"] (:after moved-left)))
-    (is (= (buffer/make "a🙂") (buffer/move-right moved-left)))))
+    (is (= {:moved-left {:before ["a"]
+                         :after ["🙂"]}
+            :moved-right {:before ["a" "🙂"]
+                          :after []}}
+           {:moved-left moved-left
+            :moved-right (buffer/move-right moved-left)}))))
 
 (deftest move-start-and-end/preserve-text
   (let [at-start (buffer/move-start (buffer/make "abc"))]
-    (is (= [] (:before at-start)))
-    (is (= ["a" "b" "c"] (:after at-start)))
-    (is (= (buffer/make "abc") (buffer/move-end at-start)))))
+    (is (= {:at-start {:before []
+                       :after ["a" "b" "c"]}
+            :at-end {:before ["a" "b" "c"]
+                     :after []}}
+           {:at-start at-start
+            :at-end (buffer/move-end at-start)}))))
+
+(deftest move-word-left-and-right/use-whitespace-delimited-words
+  (p/given
+    (buffer/move-start (buffer/make "one  two three")))
+
+  (p/when [at-start]
+    (let [after-second-word (-> at-start
+                                buffer/move-word-right
+                                buffer/move-word-right)]
+      {:after-second-word after-second-word
+       :before-second-word (buffer/move-word-left after-second-word)}))
+
+  (p/then [result]
+    (is (= {:after-second-word {:before ["o" "n" "e" " " " " "t" "w" "o"]
+                                :after [" " "t" "h" "r" "e" "e"]}
+            :before-second-word {:before ["o" "n" "e" " " " "]
+                                 :after ["t" "w" "o" " " "t" "h" "r" "e" "e"]}}
+           result))))
+
+(deftest move-word-left-and-right/stop-at-buffer-boundaries
+  (is (= {:at-start {:before []
+                     :after ["o" "n" "e"]}
+          :at-end {:before ["o" "n" "e"]
+                   :after []}}
+         {:at-start (buffer/move-word-left
+                      (buffer/move-start (buffer/make "one")))
+          :at-end (buffer/move-word-right (buffer/make "one"))})))

@@ -1,6 +1,8 @@
 (ns voodoo.widget.prompt-test
   (:require proof.core
             [proof.scenario :as p]
+            [voodoo.editor.text :as text-editor]
+            [voodoo.text.buffer :as buffer]
             [voodoo.widget :as widget]
             [voodoo.widget.prompt :as prompt]))
 
@@ -15,6 +17,7 @@
           :history-position 0
           :buffer {:before ["(" "+" " " "1" " " "2" ")"]
                    :after []}
+          :editor text-editor/default
           :text "roo> (+ 1 2)"
           :cursor {:row 0
                    :text-before "roo> (+ 1 2)"}
@@ -31,6 +34,41 @@
          (select-keys (prompt/make {:name :search
                                     :degrade {:on-add :visible}})
                       [:name :degrade]))))
+
+(deftest make/uses-a-supplied-editor-without-implicitly-adding-the-default
+  (p/given
+    (let [custom-editor
+          {:layers
+           [{:keymap
+             {:key/f1 (fn [text-buffer]
+                        (buffer/insert text-buffer "custom"))}}]}]
+      (prompt/make {:editor custom-editor})))
+
+  (p/when [widget]
+    {:typed (prompt/on-event widget
+                             {:type :keystroke
+                              :key :key/a
+                              :text "a"})
+     :custom (select-keys
+               (:widget (prompt/on-event widget
+                                         {:type :keystroke
+                                          :key :key/f1}))
+               [:history
+                :history-position
+                :buffer
+                :text
+                :cursor])})
+
+  (p/then [result]
+    (is (= {:typed {}
+            :custom {:history ["custom"]
+                     :history-position 0
+                     :buffer {:before ["c" "u" "s" "t" "o" "m"]
+                              :after []}
+                     :text "custom"
+                     :cursor {:row 0
+                              :text-before "custom"}}}
+           result))))
 
 
 
@@ -276,7 +314,7 @@
     (let [widget (prompt/make {:value "abc"})]
       [(prompt/on-event widget
                         {:type :keystroke
-                         :key [:key/ctrl :key/left]})
+                         :key [:key/ctrl :key/x]})
        (prompt/on-event widget
                         {:type :resize
                          :columns 80
