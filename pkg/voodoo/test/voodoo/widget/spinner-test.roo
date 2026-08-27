@@ -1,0 +1,51 @@
+(ns voodoo.widget.spinner-test
+  (:require proof.core
+            [voodoo.widget :as widget]
+            [voodoo.widget.spinner :as spinner]))
+
+
+
+;; voodoo.widget.spinner/make
+
+(deftest make/builds-a-terminal-only-spinner-widget
+  (is (= {:label "src/app.roo"
+          :type :spinner
+          :shape :dots
+          :frames (:dots spinner/stock-shapes)
+          :frame-index 0
+          :text "src/app.roo ⠋"
+          :degrade widget/tty-only}
+         (spinner/make {:label "src/app.roo"}))))
+
+(deftest make/selects-a-stock-shape
+  (is (= {:shape :line
+          :frames ["/" "-" "\\" "|"]
+          :text "Scanning /"}
+         (select-keys (spinner/make {:label "Scanning" :shape :line})
+                      [:shape :frames :text]))))
+
+(deftest make/preserves-widget-options-and-overlays-the-degrade-policy
+  (is (= {:name :inspection
+          :text "-"
+          :degrade {:on-add :visible
+                    :on-update :hidden
+                    :on-remove :hidden}}
+         (select-keys (spinner/make {:name :inspection
+                                     :frames ["-" "+"]
+                                     :degrade {:on-add :visible}})
+                      [:name :text :degrade]))))
+
+
+
+;; voodoo.widget.spinner/tick
+
+(deftest tick/advances-and-wraps-custom-frames
+  (let [first-frame (spinner/make {:label "checking"
+                                   :frames ["-" "+"]})
+        second-frame (spinner/tick first-frame)
+        wrapped-frame (spinner/tick second-frame)]
+    (is (= [{:frame-index 0 :text "checking -"}
+            {:frame-index 1 :text "checking +"}
+            {:frame-index 0 :text "checking -"}]
+           (for [frame [first-frame second-frame wrapped-frame]]
+             (select-keys frame [:frame-index :text]))))))

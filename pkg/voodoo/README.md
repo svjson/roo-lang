@@ -2,7 +2,7 @@
 
 Voodoo is a terminal layout, editing, and widget package for Roo. It provides
 session-managed transient output, composable editors, and interactive widgets,
-with progress bars, spinners, and box/rule/banner rendering planned.
+including spinners, with progress bars and box/rule/banner rendering planned.
 
 ## Editors
 
@@ -28,6 +28,33 @@ handled.
 insertion, scalar movement and deletion, Home/End and Control-A/E, word
 movement with Control-Left/Right, and Control-K deletion through the end.
 `voodoo.widget.prompt/make` uses it unless an explicit `:editor` is supplied.
+
+## Spinners
+
+`voodoo.widget.spinner/make` creates a terminal-only spinner widget with a
+label. `tick` returns its next frame, ready to replace the current widget in a
+session:
+
+```roo
+(ns app
+  (:require [voodoo.session :as session]
+            [voodoo.widget.spinner :as spinner]))
+
+(def terminal (session/make))
+(def indicator (spinner/make {:label "src/app.roo" :shape :line}))
+(def handle (session/add! terminal indicator))
+
+(set! [indicator] (spinner/tick indicator))
+(session/update! terminal handle indicator)
+```
+
+The caller decides when to tick. Voodoo provides two named stock shapes:
+
+- `:dots` — the default clockwise Braille cycle.
+- `:line` — the ASCII `/`, `-`, `\`, `|` cycle.
+
+Select one with `:shape`. A custom nonempty `:frames` vector may be supplied
+when neither stock shape fits.
 
 ## Sessions
 

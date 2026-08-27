@@ -1,0 +1,64 @@
+(ns voodoo.widget.spinner
+  (:require [voodoo.widget :as widget]))
+
+(def stock-shapes
+  "Named spinner shapes supplied by Voodoo, as keyword-to-frame-vector data.
+
+  `:dots` is the default clockwise Braille shape. `:line` cycles through the
+  four ASCII line orientations.
+
+  ```roo
+  (:line stock-shapes)
+  ;; => [\"/\" \"-\" \"\\\\\" \"|\"]
+  ```"
+  {:dots ["⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏"]
+   :line ["/" "-" "\\" "|"]})
+
+(defun make
+  "Create a spinner widget.
+
+  Args:
+  - `opts`: Widget option map. `:label` is rendered before the current frame.
+    `:shape` selects a key from `stock-shapes` and defaults to `:dots`.
+    `:frames` may instead supply a custom nonempty vector of frame strings.
+    `:frame-index` selects the initial frame and defaults to zero. Other widget
+    fields are preserved.
+
+  Returns:
+  A spinner widget whose `:text` contains its label and current frame. Frame
+  indices wrap around the selected frame vector. The widget defaults to
+  `voodoo.widget/tty-only` degradation.
+
+  ```roo
+  (spinner/make {:label \"src/app.roo\" :shape :line})
+  ```"
+  [opts]
+  (let [shape (get opts :shape :dots)
+        frames (get opts :frames (get stock-shapes shape))
+        frame-index (mod (get opts :frame-index 0) (count frames))
+        label (get opts :label "")
+        frame (nth frames frame-index)]
+    (widget/make
+      (assoc opts
+             :type :spinner
+             :label label
+             :shape shape
+             :frames frames
+             :frame-index frame-index
+             :text (if (empty? label)
+                     frame
+                     (str label " " frame))
+             :degrade (merge widget/tty-only (:degrade opts))))))
+
+(defun tick
+  "Advance a spinner widget by one frame.
+
+  Args:
+  - `spinner`: Spinner widget returned by `make` or an earlier `tick` call.
+
+  Returns:
+  A new spinner widget at the next frame, wrapping to the first frame after the
+  last. The supplied widget is unchanged.
+  "
+  [spinner]
+  (make (update spinner :frame-index inc)))
