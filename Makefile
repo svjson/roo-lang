@@ -11,19 +11,17 @@ ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/symbols.edn
 ROO_LANG_INDEX_INSTALL_DIR = $(DESTDIR)$(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_REPOSITORY_PACKAGES := $(notdir $(patsubst %/package.edn,%,$(wildcard $(CURDIR)/pkg/*/package.edn)))
-ROO_PACKAGE_INDEX_DIR := $(CURDIR)/build/indexes/packages
-ROO_PACKAGE_INDEX_PATHS := $(foreach package,$(ROO_REPOSITORY_PACKAGES),$(ROO_PACKAGE_INDEX_DIR)/$(package)/symbols.edn)
 GITHUB_PAGES_DOCS_DIR ?= $(CURDIR)/build/docs/github-pages
-GITHUB_PAGES_DOC_INDEXES := $(ROO_LANG_INDEX_PATH) $(ROO_PACKAGE_INDEX_PATHS)
+GITHUB_PAGES_PACKAGE_INDEXES = $(foreach package,$(ROO_REPOSITORY_PACKAGES),$(wildcard $(PACKAGE_REPOSITORY)/$(package)/*/symbols.edn))
+GITHUB_PAGES_DOC_INDEXES = $(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn $(GITHUB_PAGES_PACKAGE_INDEXES)
 
 LOCAL_PREFIX := $(HOME)/.local
 PREFIX ?= $(LOCAL_PREFIX)
 PACKAGE_REPOSITORY = $(DESTDIR)$(PREFIX)/share/roo/pkg
 BOOTSTRAP_LOOM = $(CURDIR)/build/loom-bootstrap/build/$(LOOM_BINARY)
 
-ROO_BUILD_TARGETS := configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install install-packages build-proof build-lookup build-roopl build-roo-lang-index build-roo-package-indexes audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+ROO_BUILD_TARGETS := configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install install-packages build-proof build-lookup build-roopl build-roo-lang-index audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
 .PHONY: $(ROO_BUILD_TARGETS)
-.PHONY: $(ROO_PACKAGE_INDEX_PATHS)
 
 ROO_BUILD_LOCK_PATH := $(CURDIR)/.roo-build.lock
 ROO_BUILD_LOCK_SCRIPT := $(CURDIR)/cmake/rooBuildLock.cmake
@@ -241,17 +239,21 @@ build-roo-lang-index: build-lookup
 	cmake -E make_directory $(ROO_LANG_INDEX_DIR)
 	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang --package-name roo --package-version $(ROO_LANG_INDEX_VERSION) -o $(ROO_LANG_INDEX_PATH)
 
-define BUILD_REPOSITORY_PACKAGE_INDEX
-$(ROO_PACKAGE_INDEX_DIR)/$(1)/symbols.edn: build-lookup
-	cmake -E make_directory $(ROO_PACKAGE_INDEX_DIR)/$(1)
-	$(CURDIR)/build/lookup-install/build/$$(LOOKUP_BINARY) index $(CURDIR)/pkg/$(1) -o $(ROO_PACKAGE_INDEX_DIR)/$(1)/symbols.edn
-endef
-
-$(foreach package,$(ROO_REPOSITORY_PACKAGES),$(eval $(call BUILD_REPOSITORY_PACKAGE_INDEX,$(package))))
-
-build-roo-package-indexes: $(ROO_PACKAGE_INDEX_PATHS)
-
-build-github-pages-docs: build-boodle build-roo-lang-index build-roo-package-indexes
+build-github-pages-docs: install build-boodle
+	@test -f $(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn || { \
+		printf 'Missing installed Roo language index: %s\n' '$(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn' >&2; \
+		exit 1; \
+	}
+	@set -e; for package in $(ROO_REPOSITORY_PACKAGES); do \
+		found=false; \
+		for index in "$(PACKAGE_REPOSITORY)/$$package"/*/symbols.edn; do \
+			if [ -f "$$index" ]; then found=true; break; fi; \
+		done; \
+		if [ "$$found" != true ]; then \
+			printf 'Missing installed package index for %s under %s\n' "$$package" '$(PACKAGE_REPOSITORY)' >&2; \
+			exit 1; \
+		fi; \
+	done
 	cmake -E make_directory $(GITHUB_PAGES_DOCS_DIR)
 	$(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) generate \
 		--format github-pages \
