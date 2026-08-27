@@ -226,11 +226,12 @@ TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sour
   const std::string main_cpp = read_file(build_dir / "src/main.cpp");
   const std::string embedded_sources_cpp = read_file(build_dir / "src/embedded_sources.cpp");
 
-  EXPECT_THAT(main_cpp, HasSubstr("Roo::EmbeddedFileSystem namespace_fs"));
+  EXPECT_THAT(main_cpp, HasSubstr("Roo::Package::ApplicationRuntimeSpec runtime_spec"));
+  EXPECT_THAT(main_cpp, HasSubstr("std::make_unique<Roo::EmbeddedFileSystem>"));
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
-  EXPECT_THAT(main_cpp,
-              HasSubstr("LoadedNativePackages native_packages;\n"
-                        "    Roo::Runtime runtime"));
+  EXPECT_THAT(main_cpp, HasSubstr("make_application_runtime_factory"));
+  EXPECT_THAT(main_cpp, HasSubstr("register_environment"));
+  EXPECT_THAT(main_cpp, HasSubstr("roo.compiled.autoload"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("std::array<Roo::EmbeddedFile"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("cafe/run.roo"));
   EXPECT_THAT(embedded_sources_cpp, HasSubstr("recipe/book.roo"));

@@ -1,4 +1,18 @@
 (ns main.app)
 
+(def worker-value "ok")
+
+(defun collect-worker-result [execution]
+  (let [report (roo.worker/poll! execution)]
+    (while (or (= :queued (:status report))
+               (= :running (:status report)))
+      (set! [report] (roo.worker/poll! execution)))
+    (roo.worker/collect! execution)))
+
 (defun main []
-  (roo.io/spit! "main-ran.txt" "ok"))
+  (roo.worker/create! :main/worker {:environment :application})
+  (let [execution
+        (roo.worker/execute-let! :main/worker []
+          (ns main.worker (:require main.app))
+          main.app/worker-value)]
+    (roo.io/spit! "main-ran.txt" (collect-worker-result execution))))
