@@ -11,9 +11,11 @@
   (let [text-buffer (buffer/make "ä猫🙂")]
     (is (= {:buffer {:before ["a" "̈" "猫" "🙂"]
                      :after []}
-            :text "ä猫🙂"}
+            :text "ä猫🙂"
+            :position 4}
            {:buffer text-buffer
-            :text (buffer/text text-buffer)}))))
+            :text (buffer/text text-buffer)
+            :position (buffer/position text-buffer)}))))
 
 
 

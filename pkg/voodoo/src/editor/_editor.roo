@@ -9,23 +9,28 @@
     vectors, collected by Roo's rest-argument binding.
 
   Returns:
-  An editor shaped as `{:layers [base-layer ... overlay-layer]}`. Its layers
-  preserve the supplied base-to-overlay order, and later layers receive the
-  first opportunity to handle an event."
+  An editor retaining top-level configuration from the supplied definitions
+  and shaped with `{:layers [base-layer ... overlay-layer]}`. Layers preserve
+  base-to-overlay order, while later top-level values replace earlier ones.
+  Later layers receive the first opportunity to handle an event."
   [editor &rest]
-  {:layers (reduce rest
-                   (:layers editor)
-                   (fn [layers editor]
-                     (concat layers (:layers editor))))})
+  (reduce rest
+          editor
+          (fn [composed overlay]
+            (assoc (merge composed overlay)
+                   :layers
+                   (concat (:layers composed) (:layers overlay))))))
 
 (defun dispatch
   "Dispatch EVENT through EDITOR against BUFFER.
 
   Each editor layer may contain a `:keymap`, a `:textmap`, an `:on-text`
-  function, and an `:on-paste` function. Key and exact-text functions receive
-  BUFFER. Text and paste functions receive BUFFER and the event text. A
-  function returns the next buffer when it handles the event or `nil` to let a
-  lower layer try it.
+  function, and an `:on-paste` function. Presentation layers may additionally
+  contain `:decorations` and `:styling` functions consumed by
+  `voodoo.editor.presentation`. Key and exact-text functions receive BUFFER.
+  Text and paste functions receive BUFFER and the event text. A function
+  returns the next buffer when it handles the event or `nil` to let a lower
+  layer try it.
 
   Args:
   - `editor`: Editor map containing a `:layers` vector.

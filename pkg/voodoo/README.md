@@ -6,28 +6,86 @@ including spinners, with progress bars and box/rule/banner rendering planned.
 
 ## Editors
 
-`voodoo.editor` dispatches portable input events through ordered editor layers.
-Later layers receive the first opportunity to handle an event and can return
-`nil` to pass it to a lower layer. This lets an application compose
-syntax-aware behavior over ordinary text editing without placing language rules
-in Voodoo.
+### Use the default text editor
+
+Prompt widgets provide conventional text editing by default, so ordinary use
+does not require constructing an editor:
 
 ```roo
-(def editor
-  (voodoo.editor/compose
-    voodoo.editor.text/default
-    {:layers [{:textmap {"(" insert-balanced-parens}}]}))
+(ns app
+  (:require [voodoo.widget.prompt :as prompt]))
+
+(prompt/make {:prompt "roo> "
+              :value "(+ 1 2)"})
 ```
 
-Each layer can provide `:keymap`, `:textmap`, `:on-text`, and `:on-paste`.
-Key and exact-text functions receive the current buffer; general text and paste
-functions also receive the event text. A non-`nil` buffer means the event was
-handled.
+The default editor supports text and paste insertion, scalar movement and
+deletion, Home/End and Control-A/E, word movement with Control-Left/Right, and
+Control-K deletion through the end of the line.
 
-`voodoo.editor.text/default` provides ordinary prompt editing: text and paste
-insertion, scalar movement and deletion, Home/End and Control-A/E, word
-movement with Control-Left/Right, and Control-K deletion through the end.
-`voodoo.widget.prompt/make` uses it unless an explicit `:editor` is supplied.
+### Compose editing behavior
+
+Pass `:editor` when a widget needs application-specific behavior. An explicit
+editor replaces the widget default, so compose additions over
+`voodoo.editor.text/default` to retain conventional editing:
+
+```roo
+(ns app
+  (:require [voodoo.editor :as editor]
+            [voodoo.editor.text :as text-editor]
+            [voodoo.text.buffer :as buffer]
+            [voodoo.widget.prompt :as prompt]))
+
+(def application-editor
+  (editor/compose text-editor/default
+    {:layers [{:textmap {"(" (fn [text-buffer]
+                               (-> text-buffer
+                                   (buffer/insert "()")
+                                   (buffer/move-left))}}}]}))
+
+(prompt/make {:prompt "roo> "
+              :editor application-editor})
+```
+
+Editors contain ordered `:layers`. A layer may handle exact chords with
+`:keymap`, exact inserted text with `:textmap`, general text with `:on-text`, or
+pastes with `:on-paste`. Later layers receive the first opportunity to handle
+input. `:keymap` and `:textmap` functions receive the current buffer; general
+text and paste functions also receive the event text. Returning `nil` lets the
+event continue to a lower layer.
+
+### Present decorated text
+
+Presentation is composed separately from input behavior. Applications can add
+semantic source ranges, map them to visual styles, and choose how those styles
+are rendered:
+
+```roo
+(def presented-editor
+  (editor/compose
+    text-editor/default
+    {:paint paint-styles
+     :layers [{:decorations source-decorations}
+              {:styling application-styling}]}))
+
+(prompt/make {:prompt "roo> "
+              :editor presented-editor})
+```
+
+`source-decorations`, `application-styling`, and `paint-styles` above are
+functions supplied by the application.
+
+A `:decorations` function receives the logical buffer and returns typed source
+ranges. A `:styling` function receives the value, cursor position, and combined
+decorations, then returns concrete ranges carrying application-defined styles.
+Overlapping styles compose in layer order. The top-level `:paint` function
+receives each final style vector and text run; without it, text stays plain.
+
+Prompt widgets automatically render both the complete value and the prefix
+before the logical cursor. Presentation output therefore never enters the
+editable buffer, history, or submitted value. See the
+[presentation namespace](src/editor/presentation.roo) for the range and
+rendering operations.
 
 ## Spinners
 

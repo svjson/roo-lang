@@ -1,5 +1,6 @@
 (ns voodoo.widget.prompt
   (:require [voodoo.editor :as editor]
+            [voodoo.editor.presentation :as presentation]
             [voodoo.editor.text :as text-editor]
             [voodoo.text.buffer :as buffer]
             [voodoo.widget :as widget]))
@@ -28,18 +29,20 @@
   them meaning later."
   [prompt event]
   (let [next-widget (fn [next-prompt next-buffer]
-                      (let [next-value (buffer/text next-buffer)]
+                      (let [next-value (buffer/text next-buffer)
+                            rendered (presentation/render (:editor next-prompt)
+                                                          next-buffer)]
                         {:widget (assoc next-prompt
                                         :history (assoc (:history next-prompt)
                                                         (:history-position next-prompt)
                                                         next-value)
                                         :buffer next-buffer
                                         :text (str (:prompt next-prompt)
-                                                   next-value)
+                                                   (:text rendered))
                                         :cursor {:row 0
                                                  :text-before
                                                  (str (:prompt next-prompt)
-                                                      (apply str (:before next-buffer)))})}))
+                                                      (:text-before rendered))})}))
         navigate (fn [position]
                    (next-widget (assoc prompt :history-position position)
                                 (buffer/make (nth (:history prompt) position))))
@@ -83,7 +86,9 @@
   Returns:
   A focusable prompt widget. Its history ends with the current editable value,
   and its history position starts at that final entry. The prompt defaults to
-  `voodoo.widget/tty-only` degradation.
+  `voodoo.widget/tty-only` degradation. Its rendered `:text` and cursor prefix
+  derive from the editor's composable decorations, styling, and optional
+  top-level `:paint` function; the buffer and submitted value remain plain.
 
   ```roo
   (prompt/make {:prompt \"roo> \"
@@ -93,7 +98,9 @@
   (let [prompt-text (get opts :prompt "")
         initial-value (get opts :value "")
         initial-buffer (buffer/make initial-value)
-        history (append (:history opts) initial-value)]
+        history (append (:history opts) initial-value)
+        selected-editor (get opts :editor text-editor/default)
+        rendered (presentation/render selected-editor initial-buffer)]
     (widget/make
       (merge (dissoc opts :value)
              {:type :prompt
@@ -101,10 +108,10 @@
               :history history
               :history-position (dec (count history))
               :buffer initial-buffer
-              :editor (get opts :editor text-editor/default)
-              :text (str prompt-text (buffer/text initial-buffer))
+              :editor selected-editor
+              :text (str prompt-text (:text rendered))
               :cursor {:row 0
                        :text-before (str prompt-text
-                                         (apply str (:before initial-buffer)))}
+                                         (:text-before rendered))}
               :on-event on-event
               :degrade (merge widget/tty-only (:degrade opts))}))))

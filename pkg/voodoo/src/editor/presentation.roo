@@ -1,0 +1,119 @@
+(ns voodoo.editor.presentation
+  (:require [voodoo.text.buffer :as buffer]))
+
+(defun decorations
+  "Collect semantic decorations contributed by EDITOR for BUFFER.
+
+  Args:
+  - `editor`: Composed editor whose layers may contain `:decorations`
+    functions.
+  - `buffer`: Current editable text buffer.
+
+  Returns:
+  A vector of typed range maps in base-to-overlay editor-layer order. A layer's
+  `:decorations` function receives BUFFER and may return zero or more maps such
+  as `{:range {:start 0 :end 5} :role :application/selection}`."
+  [editor buffer]
+  (flat-map (:layers editor)
+            (fn [layer]
+              (if-let [provide (:decorations layer)]
+                (or (provide buffer) [])
+                []))))
+
+(defun styled-ranges
+  "Collect concrete styled ranges contributed by EDITOR for CONTEXT.
+
+  Args:
+  - `editor`: Composed editor whose layers may contain `:styling` functions.
+  - `context`: Presentation context containing `:value`, `:cursor-position`,
+    and ordered semantic `:decorations`.
+
+  Returns:
+  A vector of maps shaped as `{:range {:start n :end n} :styles [...]}` in
+  base-to-overlay layer order. Styling functions receive CONTEXT and may map
+  one semantic decoration to zero, one, or several concrete ranges."
+  [editor context]
+  (flat-map (:layers editor)
+            (fn [layer]
+              (if-let [style (:styling layer)]
+                (or (style context) [])
+                []))))
+
+(defun styles-at
+  "Return the ordered visual styles applying at scalar POSITION.
+
+  Args:
+  - `ranges`: Concrete styled range maps returned by `styled-ranges`.
+  - `position`: Unicode-scalar offset within the logical value.
+
+  Returns:
+  A vector containing every style from ranges covering POSITION. Range and
+  style order are preserved so later styling layers remain visually later."
+  [ranges position]
+  (flat-map (filter ranges
+                    (fn [styled-range]
+                      (and (<= (get-in styled-range [:range :start]) position)
+                           (< position (get-in styled-range [:range :end])))))
+            :styles))
+
+(defun render-through
+  "Render SCALARS from the beginning through exclusive END.
+
+  Args:
+  - `scalars`: Complete logical value split into Unicode scalar strings.
+  - `end`: Exclusive scalar position to render through.
+  - `ranges`: Concrete styled ranges returned by `styled-ranges`.
+  - `paint`: Optional function receiving an ordered style vector and text run.
+
+  Returns:
+  Rendered text through END. Adjacent scalars with identical styles are painted
+  together, and plain runs remain unchanged when PAINT is nil."
+  [scalars end ranges paint]
+  (let [state
+        (reduce (if (<= end 0) [] (range 0 (dec end)))
+                {:styles []
+                 :text ""
+                 :runs []}
+                (fn [state position]
+                  (let [styles (styles-at ranges position)
+                        scalar (nth scalars position)]
+                    (if (= styles (:styles state))
+                      (update state :text (fn [text] (str text scalar)))
+                      {:styles styles
+                       :text scalar
+                       :runs (if (empty? (:text state))
+                               (:runs state)
+                               (append (:runs state)
+                                       (select-keys state [:styles :text])))}))))
+        runs (if (empty? (:text state))
+               (:runs state)
+               (append (:runs state) (select-keys state [:styles :text])))]
+    (apply str
+           (for [run runs]
+             (if (or (empty? (:styles run)) (nil? paint))
+               (:text run)
+               (paint (:styles run) (:text run)))))))
+
+(defun render
+  "Render BUFFER's logical value through EDITOR's presentation layers.
+
+  Args:
+  - `editor`: Composed editor. Layers may contribute semantic decorations and
+    styling, while optional top-level `:paint` converts styles and text to a
+    rendered string.
+  - `buffer`: Current editable text buffer.
+
+  Returns:
+  `{:text rendered-value :text-before rendered-prefix}`. Both strings derive
+  from the same semantic decorations and concrete styled ranges, while all
+  positions remain Unicode-scalar offsets into the undecorated buffer value."
+  [editor buffer]
+  (let [value (buffer/text buffer)
+        position (buffer/position buffer)
+        scalars (split value "")
+        context {:value value
+                 :cursor-position position
+                 :decorations (decorations editor buffer)}
+        ranges (styled-ranges editor context)]
+    {:text (render-through scalars (count scalars) ranges (:paint editor))
+     :text-before (render-through scalars position ranges (:paint editor))}))

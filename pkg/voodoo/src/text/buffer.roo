@@ -30,6 +30,17 @@
   [buffer]
   (apply str (concat (:before buffer) (:after buffer))))
 
+(defun position
+  "Return BUFFER's logical cursor position.
+
+  Args:
+  - `buffer`: Buffer returned by `make` or another operation in this namespace.
+
+  Returns:
+  The number of Unicode scalars preceding the cursor."
+  [buffer]
+  (count (:before buffer)))
+
 (defun insert
   "Insert TEXT at BUFFER's cursor.
 

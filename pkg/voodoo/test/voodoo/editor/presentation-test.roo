@@ -1,0 +1,61 @@
+(ns voodoo.editor.presentation-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [voodoo.editor :as editor]
+            [voodoo.editor.presentation :as presentation]
+            [voodoo.text.buffer :as buffer]))
+
+(deftest render/composes-editor-decorations-and-styling-in-layer-order
+  (p/given
+    {:editor
+     (editor/compose
+       {:paint (fn [styles text] (str (count styles) text))
+        :layers
+        [{:decorations
+          (fn [text-buffer]
+            [{:range {:start 0 :end (count (split (buffer/text text-buffer) ""))}
+              :role :example/base}])}
+         {:styling
+          (fn [context]
+            (for [decoration (filter (:decorations context)
+                                     (fn [decoration]
+                                       (= :example/base (:role decoration))))]
+              {:range (:range decoration)
+               :styles [:base]}))}]}
+       {:layers
+        [{:decorations
+          (fn [text-buffer]
+            [{:range {:start 1 :end (dec (count (split (buffer/text text-buffer) "")))}
+              :role :example/overlay}])}
+         {:styling
+          (fn [context]
+            (for [decoration (filter (:decorations context)
+                                     (fn [decoration]
+                                       (= :example/overlay (:role decoration))))]
+              {:range (:range decoration)
+               :styles [:overlay]}))}]})
+     :buffer (buffer/move-left (buffer/make "abc"))})
+
+  (p/when [{:keys [editor buffer]}]
+    (let [decorations (presentation/decorations editor buffer)
+          context {:value (buffer/text buffer)
+                   :cursor-position (buffer/position buffer)
+                   :decorations decorations}]
+      {:decorations decorations
+       :styled-ranges (presentation/styled-ranges editor context)
+       :rendered (presentation/render editor buffer)}))
+
+  (p/then [result]
+    (is (= {:decorations
+            [{:range {:start 0 :end 3}
+              :role :example/base}
+             {:range {:start 1 :end 2}
+              :role :example/overlay}]
+            :styled-ranges
+            [{:range {:start 0 :end 3}
+              :styles [:base]}
+             {:range {:start 1 :end 2}
+              :styles [:overlay]}]
+            :rendered {:text "1a2b1c"
+                       :text-before "1a2b"}}
+           result))))

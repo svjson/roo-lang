@@ -1,6 +1,7 @@
 (ns voodoo.widget.prompt-test
   (:require proof.core
             [proof.scenario :as p]
+            [voodoo.editor :as editor]
             [voodoo.editor.text :as text-editor]
             [voodoo.text.buffer :as buffer]
             [voodoo.widget :as widget]
@@ -68,6 +69,55 @@
                      :text "custom"
                      :cursor {:row 0
                               :text-before "custom"}}}
+           result))))
+
+(deftest on-event/keeps-the-buffer-value-separate-from-its-presentation
+  (p/given
+    (prompt/make
+      {:value "abc"
+       :editor
+       (editor/compose
+         text-editor/default
+         {:paint (fn [styles text]
+                   (str "<" (count styles) ">" text "</>"))
+          :layers
+          [{:decorations
+            (fn [text-buffer]
+              [{:range {:start 0 :end (count (split (buffer/text text-buffer) ""))}
+                :role :example/value}])}
+           {:styling
+            (fn [context]
+              (for [decoration (:decorations context)]
+                {:range {:start (get-in decoration [:range :start])
+                         :end (inc (get-in decoration [:range :start]))}
+                 :styles [:marked]}))}]})}))
+
+  (p/when [widget]
+    (let [moved (:widget (prompt/on-event widget
+                                           {:type :keystroke
+                                            :key :key/left}))]
+      {:initial (select-keys widget [:buffer :text :cursor])
+       :moved (select-keys moved [:buffer :text :cursor])
+       :submitted (prompt/on-event moved
+                                   {:type :keystroke
+                                    :key :key/enter})}))
+
+  (p/then [result]
+    (is (= {:initial
+            {:buffer {:before ["a" "b" "c"]
+                      :after []}
+             :text "<1>a</>bc"
+             :cursor {:row 0
+                      :text-before "<1>a</>bc"}}
+            :moved
+            {:buffer {:before ["a" "b"]
+                      :after ["c"]}
+             :text "<1>a</>bc"
+             :cursor {:row 0
+                      :text-before "<1>a</>b"}}
+            :submitted
+            {:actions [{:type :submit
+                        :value "abc"}]}}
            result))))
 
 

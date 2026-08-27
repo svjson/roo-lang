@@ -5,14 +5,17 @@
             [voodoo.text.buffer :as buffer]))
 
 (deftest compose/preserves-base-to-overlay-layer-order
-  (is (= {:layers
+  (is (= {:paint :overlay
+          :layers
           [{:keymap {:key/left buffer/move-left}}
            {:keymap {:key/right buffer/move-right}}
            {:keymap {:key/home buffer/move-start}}]}
          (editor/compose
-           {:layers [{:keymap {:key/left buffer/move-left}}]}
+           {:paint :base
+            :layers [{:keymap {:key/left buffer/move-left}}]}
            {:layers [{:keymap {:key/right buffer/move-right}}]}
-           {:layers [{:keymap {:key/home buffer/move-start}}]}))))
+           {:paint :overlay
+            :layers [{:keymap {:key/home buffer/move-start}}]}))))
 
 (deftest dispatch/uses-overlays-first-and-falls-through-when-declined
   (p/given
