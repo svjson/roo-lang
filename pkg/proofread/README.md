@@ -32,6 +32,10 @@ Quote patterns when you want `proofread` to expand them instead of your shell.
 The default `simple` reporter prints style warnings as files are checked. When
 the run is complete, it prints a short summary:
 
+On a terminal, Proofread shows a transient spinner while discovering inputs and
+then shows the file currently being inspected. These status lines are omitted
+from redirected and non-terminal output.
+
 ```text
 ----------------------------------------
 proofread: 2 files, 0 warnings, 0 errors
@@ -215,7 +219,8 @@ From a Roo source checkout:
 make install-proofread
 ```
 
-This installs the `proofread` command under the configured installation prefix.
+This installs Proofread's versioned package through Loom and installs the
+generated `proofread` command under the configured installation prefix.
 
 ## Current Limitations
 

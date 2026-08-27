@@ -57,7 +57,8 @@ From the repository root:
 make install-loom
 ```
 
-This builds Loom with `rooc` and copies the executable to `$(PREFIX)/bin`.
+This installs Loom's versioned package through Loom and installs the generated
+command into `$(PREFIX)/bin` through the rooc-generated CMake install contract.
 
 The default `PREFIX` is:
 

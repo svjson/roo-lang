@@ -11,6 +11,7 @@ ROO_LANG_INDEX_DIR := $(CURDIR)/build/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_LANG_INDEX_PATH := $(ROO_LANG_INDEX_DIR)/symbols.edn
 ROO_LANG_INDEX_INSTALL_DIR = $(DESTDIR)$(PREFIX)/share/roo/indexes/roo-lang/$(ROO_LANG_INDEX_VERSION)
 ROO_REPOSITORY_PACKAGES := $(notdir $(patsubst %/package.edn,%,$(wildcard $(CURDIR)/pkg/*/package.edn)))
+ROO_PACKAGE_COMMANDS := boodle lookup loom proof proofread roopl
 GITHUB_PAGES_DOCS_DIR ?= $(CURDIR)/build/docs/github-pages
 GITHUB_PAGES_PACKAGE_INDEXES = $(foreach package,$(ROO_REPOSITORY_PACKAGES),$(wildcard $(PACKAGE_REPOSITORY)/$(package)/*/symbols.edn))
 GITHUB_PAGES_DOC_INDEXES = $(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn $(GITHUB_PAGES_PACKAGE_INDEXES)
@@ -20,8 +21,10 @@ PREFIX ?= $(LOCAL_PREFIX)
 PACKAGE_REPOSITORY = $(DESTDIR)$(PREFIX)/share/roo/pkg
 BOOTSTRAP_LOOM = $(CURDIR)/build/loom-bootstrap/build/$(LOOM_BINARY)
 
-ROO_BUILD_TARGETS := configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install install-packages build-proof build-lookup build-roopl build-roo-lang-index audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-wraparoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:wraparoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+ROO_BUILD_TARGETS := configure configure-server-tests build bootstrap-loom package-artifacts relink dev-native-packages dev-native-package-links stage-packages install install-packages install-package-commands build-proof build-proof-command build-lookup build-roopl build-roo-lang-index audit-roo-lang-index build-proofread build-boodle build-github-pages-docs install-loom install-proof install-inpoots install-lookup install-roopl install-roo-lang-index install-proofread install-boodle install-i18n install-moordown install-spool install-workbook install-footsteps install-zoology install-soot install-voodoo install-wraparoo install-cli-trooper release test test\:all test\:support test\:lang test\:package test\:proof test\:inpoots test\:roopl test\:proofread test\:boodle test\:moordown test\:workbook test\:footsteps test\:soot test\:voodoo test\:wraparoo test\:i18n test\:spool test\:zoology test\:lookup test\:loom test\:cli-trooper test\:rooc test\:cli test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli test\:benchmark test\:server clean
+ROO_PACKAGE_COMMAND_INSTALL_TARGETS := $(addprefix install-command-,$(ROO_PACKAGE_COMMANDS))
 .PHONY: $(ROO_BUILD_TARGETS)
+.PHONY: $(ROO_PACKAGE_COMMAND_INSTALL_TARGETS)
 
 ROO_BUILD_LOCK_PATH := $(CURDIR)/.roo-build.lock
 ROO_BUILD_LOCK_SCRIPT := $(CURDIR)/cmake/rooBuildLock.cmake
@@ -195,24 +198,41 @@ install-repository-package-%: bootstrap-loom
 		$(PACKAGE_ARTIFACT_DIR)/$* \
 		--package-repository $(PACKAGE_REPOSITORY)
 
+define INSTALL_PACKAGE_COMMAND
+	DESTDIR=$(DESTDIR) cmake --install $(CURDIR)/build/$(1)/build \
+		--config $(BUILD_TYPE) \
+		--prefix $(PREFIX)
+endef
+
+install-package-commands: $(ROO_PACKAGE_COMMAND_INSTALL_TARGETS)
+
 install: build
 	cmake --install build --config $(BUILD_TYPE) --prefix $(PREFIX) --component Unspecified
 	$(MAKE) install-packages
+	$(MAKE) install-package-commands
 	$(MAKE) install-roo-lang-index
 	@printf '\n'
 	@printf '%s\n' '==> Roo installation completed successfully'
 	@printf '    Install root: %s\n' '$(DESTDIR)$(PREFIX)'
 	@printf '    Package repository: %s\n' '$(PACKAGE_REPOSITORY)'
 	@printf '    Packages installed by Loom: %s\n' '$(words $(ROO_REPOSITORY_PACKAGES))'
+	@printf '    Package commands installed: %s\n' '$(words $(ROO_PACKAGE_COMMANDS))'
 	@printf '    Roo language index: %s\n' '$(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn'
 
-install-loom: install-repository-package-loom bootstrap-loom
-	cmake -E make_directory $(PREFIX)/bin
-	cmake -E copy_if_different $(CURDIR)/build/loom-bootstrap/build/$(LOOM_BINARY) $(PREFIX)/bin/$(LOOM_BINARY)
+install-command-loom: bootstrap-loom
+	$(call INSTALL_PACKAGE_COMMAND,loom-bootstrap)
+
+install-loom: install-repository-package-loom install-command-loom
 
 build-proof: build stage-packages
 
-install-proof: install-repository-package-proof
+build-proof-command: build stage-packages
+	./build/rooc build $(PACKAGE_STAGE)/proof --build-dir $(CURDIR)/build/proof-install --name proof
+
+install-command-proof: build-proof-command
+	$(call INSTALL_PACKAGE_COMMAND,proof-install)
+
+install-proof: install-repository-package-proof install-command-proof
 
 install-inpoots: install-repository-package-inpoots
 
@@ -251,9 +271,10 @@ build-github-pages-docs: install build-boodle
 audit-roo-lang-index: build-roo-lang-index
 	$(SHELL) $(CURDIR)/scripts/audit-roo-lang-index.sh $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(ROO_LANG_INDEX_PATH)
 
-install-lookup: install-repository-package-lookup build-lookup
-	cmake -E make_directory $(PREFIX)/bin
-	cmake -E copy_if_different $(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) $(PREFIX)/bin/$(LOOKUP_BINARY)
+install-command-lookup: build-lookup
+	$(call INSTALL_PACKAGE_COMMAND,lookup-install)
+
+install-lookup: install-repository-package-lookup install-command-lookup
 
 install-roo-lang-index: audit-roo-lang-index
 	cmake -E make_directory $(ROO_LANG_INDEX_INSTALL_DIR)
@@ -262,23 +283,26 @@ install-roo-lang-index: audit-roo-lang-index
 build-proofread: build stage-packages
 	./build/rooc build $(PACKAGE_STAGE)/proofread --build-dir $(CURDIR)/build/proofread-install --name proofread
 
-install-proofread: install-repository-package-proofread build-proofread
-	cmake -E make_directory $(PREFIX)/bin
-	cmake -E copy_if_different $(CURDIR)/build/proofread-install/build/$(PROOFREAD_BINARY) $(PREFIX)/bin/$(PROOFREAD_BINARY)
+install-command-proofread: build-proofread
+	$(call INSTALL_PACKAGE_COMMAND,proofread-install)
+
+install-proofread: install-repository-package-proofread install-command-proofread
 
 build-boodle: build stage-packages
 	./build/rooc build $(PACKAGE_STAGE)/boodle --build-dir $(CURDIR)/build/boodle-install --name boodle
 
-install-boodle: install-repository-package-boodle build-boodle
-	cmake -E make_directory $(PREFIX)/bin
-	cmake -E copy_if_different $(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) $(PREFIX)/bin/$(BOODLE_BINARY)
+install-command-boodle: build-boodle
+	$(call INSTALL_PACKAGE_COMMAND,boodle-install)
+
+install-boodle: install-repository-package-boodle install-command-boodle
 
 build-roopl: build stage-packages
 	./build/rooc build $(PACKAGE_STAGE)/roopl --build-dir $(CURDIR)/build/roopl-install --name roopl
 
-install-roopl: install-repository-package-roopl build-roopl
-	cmake -E make_directory $(PREFIX)/bin
-	cmake -E copy_if_different $(CURDIR)/build/roopl-install/build/$(ROOPL_BINARY) $(PREFIX)/bin/$(ROOPL_BINARY)
+install-command-roopl: build-roopl
+	$(call INSTALL_PACKAGE_COMMAND,roopl-install)
+
+install-roopl: install-repository-package-roopl install-command-roopl
 
 install-i18n: install-repository-package-i18n
 
