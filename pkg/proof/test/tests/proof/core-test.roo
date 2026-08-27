@@ -261,6 +261,38 @@
            (select-keys result [:name :status])))
     (is (= [:before :body :after] lifecycle-events))))
 
+(deftest deftest/runs-zero-arity-lambda-directives-around-the-body
+  (clear!)
+  (set! [lifecycle-events] [])
+  (deftest lambda-lifecycle
+    {:before (fn []
+               (set! [lifecycle-events] (append lifecycle-events :before)))
+     :after (fn []
+              (set! [lifecycle-events] (append lifecycle-events :after)))}
+    []
+    (set! [lifecycle-events] (append lifecycle-events :body)))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'lambda-lifecycle :status :pass}
+           (select-keys result [:name :status])))
+    (is (= [:before :body :after] lifecycle-events))))
+
+(deftest deftest/reports-the-normal-arity-error-for-a-lambda-requiring-arguments
+  (clear!)
+  (set! [lifecycle-events] [])
+  (deftest lambda-with-argument
+    {:before (fn [required]
+               (set! [lifecycle-events] (append lifecycle-events required)))
+     :after (set! [lifecycle-events] (append lifecycle-events :after))}
+    []
+    (set! [lifecycle-events] (append lifecycle-events :body)))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'lambda-with-argument :status :error}
+           (select-keys result [:name :status])))
+    (is (contains-all? (:message result) "No matching signature"))
+    (is (= [:after] lifecycle-events))))
+
 (deftest deftest/accepts-an-empty-directive-map
   (clear!)
   (deftest empty-directives

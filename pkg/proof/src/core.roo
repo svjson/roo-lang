@@ -13,6 +13,8 @@
   The body runs when the test suite selects the test. An optional directive map
   may supply per-test `:before` and `:after` forms, followed by a fixture vector
   (which may be empty). A fixture vector may also follow the name directly.
+  Bare function symbols and literal lambdas are invoked with zero arguments;
+  other directive forms are evaluated inline.
   Scenario tests may use
   `proof.scenario/given`, `proof.scenario/when`, and `proof.scenario/then` as
   top-level body phases.

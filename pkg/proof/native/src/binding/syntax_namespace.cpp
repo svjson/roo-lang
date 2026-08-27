@@ -227,7 +227,11 @@ namespace Roo::Proof
           }
 
           sptr_ast_node directive = directive_elements[i + 1];
-          if (directive->get_type() == Form::SYMBOL)
+          const bool lambda = directive->get_type() == Form::LIST &&
+                              !directive->get_children().empty() &&
+                              directive->get_children()[0]->get_type() == Form::SYMBOL &&
+                              directive->get_children()[0]->has_value("fn");
+          if (directive->get_type() == Form::SYMBOL || lambda)
           {
             directive = AST::List::make({directive});
           }

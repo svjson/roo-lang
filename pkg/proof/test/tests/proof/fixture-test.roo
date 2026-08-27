@@ -142,3 +142,25 @@
             [:body {:fixture :my-fixture}]
             [:after {:fixture :my-fixture}]]
            observed-fixture-values))))
+
+(deftest deftest/lets-lambda-directives-capture-fixture-bindings
+  (clear!)
+  (def lambda-fixture-values [])
+  (deftest fixture-lambda-lifecycle
+    {:before (fn []
+               (set! [lambda-fixture-values]
+                     (append lambda-fixture-values [:before my-fixture])))
+     :after (fn []
+              (set! [lambda-fixture-values]
+                    (append lambda-fixture-values [:after my-fixture])))}
+    [my-fixture]
+    (set! [lambda-fixture-values]
+          (append lambda-fixture-values [:body my-fixture])))
+  (let [result (head (run))]
+    (clear!)
+    (is (= {:name 'fixture-lambda-lifecycle :status :pass}
+           (select-keys result [:name :status])))
+    (is (= [[:before {:fixture :my-fixture}]
+            [:body {:fixture :my-fixture}]
+            [:after {:fixture :my-fixture}]]
+           lambda-fixture-values))))
