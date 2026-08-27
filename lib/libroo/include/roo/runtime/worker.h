@@ -1,6 +1,7 @@
 #ifndef ROO__RUNTIME__WORKER_H
 #define ROO__RUNTIME__WORKER_H
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -106,6 +107,15 @@ namespace Roo
      * @return Current queued, running, succeeded, or failed state.
      */
     WorkerExecutionStatus poll(const sptr_val& execution_handle) const;
+
+    /**
+     * @brief Wait for an execution report change and return its current state.
+     * @param execution_handle Runtime-local worker execution handle.
+     * @param timeout Maximum monotonic duration to wait; zero is nonblocking.
+     * @return State after the report changes or the timeout expires.
+     */
+    WorkerExecutionStatus poll(const sptr_val& execution_handle,
+                               std::chrono::milliseconds timeout) const;
 
     /**
      * @brief Consume a terminal execution's result or retained failure.

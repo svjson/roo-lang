@@ -120,6 +120,79 @@ TEST(WorkerRegistry, failed_job_does_not_stop_later_jobs)
   EXPECT_THROW(worker.collect(failed), std::runtime_error);
 }
 
+TEST(WorkerRegistry, timed_poll_returns_when_its_timeout_expires)
+{
+  Roo::Worker worker;
+  std::mutex gate_mutex;
+  std::condition_variable gate_changed;
+  bool release = false;
+  const uint64_t execution_id = worker.enqueue(
+    [&](Roo::Runtime&)
+    {
+      std::unique_lock lock(gate_mutex);
+      gate_changed.wait(lock, [&release]() { return release; });
+      return Roo::Constant::NIL;
+    });
+
+  while (worker.find_execution(execution_id)->status() ==
+         Roo::WorkerExecutionStatus::QUEUED)
+  {
+    std::this_thread::yield();
+  }
+  const auto started = std::chrono::steady_clock::now();
+  const Roo::WorkerExecutionStatus status =
+    worker.poll(execution_id, std::chrono::milliseconds(30));
+  const auto elapsed = std::chrono::steady_clock::now() - started;
+
+  EXPECT_EQ(status, Roo::WorkerExecutionStatus::RUNNING);
+  EXPECT_GE(elapsed, std::chrono::milliseconds(20));
+  {
+    std::lock_guard lock(gate_mutex);
+    release = true;
+  }
+  gate_changed.notify_one();
+}
+
+TEST(WorkerRegistry, timed_poll_wakes_when_the_execution_report_changes)
+{
+  Roo::Worker worker;
+  std::mutex gate_mutex;
+  std::condition_variable gate_changed;
+  bool release = false;
+  const uint64_t execution_id = worker.enqueue(
+    [&](Roo::Runtime&)
+    {
+      std::unique_lock lock(gate_mutex);
+      gate_changed.wait(lock, [&release]() { return release; });
+      return Roo::Constant::NIL;
+    });
+
+  while (worker.find_execution(execution_id)->status() ==
+         Roo::WorkerExecutionStatus::QUEUED)
+  {
+    std::this_thread::yield();
+  }
+  std::thread releaser(
+    [&]()
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      {
+        std::lock_guard lock(gate_mutex);
+        release = true;
+      }
+      gate_changed.notify_one();
+    });
+
+  const auto started = std::chrono::steady_clock::now();
+  const Roo::WorkerExecutionStatus status =
+    worker.poll(execution_id, std::chrono::seconds(1));
+  const auto elapsed = std::chrono::steady_clock::now() - started;
+  releaser.join();
+
+  EXPECT_EQ(status, Roo::WorkerExecutionStatus::SUCCEEDED);
+  EXPECT_LT(elapsed, std::chrono::milliseconds(500));
+}
+
 TEST(WorkerRegistry, roo_failure_is_reconstructed_from_its_transferred_error_map)
 {
   Roo::Worker worker;

@@ -6,7 +6,8 @@
   (let [report (roo.worker/poll! execution)]
     (while (or (= :queued (:status report))
                (= :running (:status report)))
-      (set! [report] (roo.worker/poll! execution)))
+      (set! [report]
+        (roo.worker/poll! execution {:timeout-ms 80})))
     (roo.worker/collect! execution)))
 
 (defun main []

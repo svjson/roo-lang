@@ -1,5 +1,6 @@
 #include "roo/lang/worker/worker.h"
 
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -16,6 +17,7 @@
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/lower.h>
 #include <roo/runtime/node.h>
+#include <roo/runtime/time.h>
 #include <roo/runtime/value.h>
 #include <roo/runtime/worker.h>
 
@@ -454,14 +456,28 @@ namespace Roo
 
   /** PollWorkerBangFunction - roo.worker/poll! */
   FUNC_IMPL(PollWorkerBangFunction,
-            SIG((FN_ARGS((&Type::ANY)),
-                 EXEC_DISPATCH(&PollWorkerBangFunction::exec_poll_worker))))
+            MULTI_SIG((FN_ARGS((&Type::ANY)),
+                       EXEC_DISPATCH(&PollWorkerBangFunction::exec_poll_worker)),
+                      (FN_ARGS((&Type::ANY), (&Type::MAP)),
+                       EXEC_DISPATCH(&PollWorkerBangFunction::exec_poll_worker))))
 
   EXEC_BODY(PollWorkerBangFunction, exec_poll_worker)
   {
     Runtime& runtime = ctx.get_runtime();
+    std::chrono::milliseconds timeout = std::chrono::milliseconds::zero();
+    if (args.size() == 2)
+    {
+      static MapSchema schema({}, {{"timeout-ms", &Type::NUMBER}});
+      MapSchema::Inspector options = schema.bind(ctx, *args[1]);
+      if (options.contains("timeout-ms"))
+      {
+        timeout = RuntimeTiming::read_milliseconds(options.val("timeout-ms"),
+                                                   "roo.worker/poll! :timeout-ms");
+      }
+    }
+
     sptr_val status;
-    switch (runtime.worker_registry().poll(args[0]))
+    switch (runtime.worker_registry().poll(args[0], timeout))
     {
     case WorkerExecutionStatus::QUEUED:
       status = Value::keyword("queued", runtime.keyword_pool());

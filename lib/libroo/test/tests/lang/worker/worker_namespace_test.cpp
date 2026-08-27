@@ -124,6 +124,36 @@ TEST_F(RuntimeTestFixture, worker_invoke_transfers_arguments_and_collects_the_re
   EXPECT_THROW(runtime.eval("(roo.worker/collect! execution)"), Roo::RooException);
 }
 
+TEST_F(RuntimeTestFixture, worker_poll_defaults_to_nonblocking_zero_timeout)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval(R"(
+    (def execution
+      (roo.worker/execute-let! :my-app/worker []
+        (sleep! 30)
+        42))
+  )");
+
+  EXPECT_EQ(runtime.eval("(roo.worker/poll! execution)")->type, Roo::Value::Type::MAP);
+  EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {})")->type,
+            Roo::Value::Type::MAP);
+  EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {:timeout-ms 0})")->type,
+            Roo::Value::Type::MAP);
+  EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {:timeout-ms 5})")->type,
+            Roo::Value::Type::MAP);
+}
+
+TEST_F(RuntimeTestFixture, worker_poll_rejects_invalid_timeout_options)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval("(def execution (roo.worker/execute-let! :my-app/worker [] 42))");
+
+  EXPECT_THROW(runtime.eval("(roo.worker/poll! execution {:timeout-ms -1})"),
+               Roo::RooException);
+  EXPECT_THROW(runtime.eval("(roo.worker/poll! execution {:timeout-ms 1.5})"),
+               Roo::RooException);
+}
+
 TEST_F(RuntimeTestFixture, worker_invoke_rejects_stateful_callable_before_enqueueing)
 {
   runtime.eval("(roo.worker/create! :my-app/worker)");

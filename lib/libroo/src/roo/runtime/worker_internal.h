@@ -24,6 +24,7 @@ namespace Roo
    private:
     uint64_t execution_id;
     std::atomic<WorkerExecutionStatus> execution_status = WorkerExecutionStatus::QUEUED;
+    std::atomic<uint64_t> report_revision = 0;
     sptr_val result;
     sptr_val roo_failure;
     std::exception_ptr non_roo_failure;
@@ -39,6 +40,7 @@ namespace Roo
     explicit WorkerExecution(uint64_t execution_id);
 
     uint64_t id() const;
+    uint64_t revision() const;
     WorkerExecutionStatus status() const;
     void rethrow_failure() const;
   };
@@ -77,6 +79,8 @@ namespace Roo
 
     uint64_t enqueue(WorkerTask task);
     std::shared_ptr<const WorkerExecution> find_execution(uint64_t execution_id);
+    WorkerExecutionStatus poll(uint64_t execution_id,
+                               std::chrono::milliseconds timeout);
     sptr_val collect(uint64_t execution_id);
   };
 

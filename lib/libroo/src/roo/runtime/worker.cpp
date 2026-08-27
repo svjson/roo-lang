@@ -163,6 +163,11 @@ namespace Roo
     return execution_id;
   }
 
+  uint64_t WorkerExecution::revision() const
+  {
+    return report_revision.load(std::memory_order_acquire);
+  }
+
   WorkerExecutionStatus WorkerExecution::status() const
   {
     return execution_status.load(std::memory_order_acquire);
@@ -182,24 +187,28 @@ namespace Roo
   void WorkerExecution::mark_running()
   {
     execution_status.store(WorkerExecutionStatus::RUNNING, std::memory_order_release);
+    report_revision.fetch_add(1, std::memory_order_release);
   }
 
   void WorkerExecution::mark_succeeded(sptr_val value)
   {
     result = std::move(value);
     execution_status.store(WorkerExecutionStatus::SUCCEEDED, std::memory_order_release);
+    report_revision.fetch_add(1, std::memory_order_release);
   }
 
   void WorkerExecution::mark_failed(sptr_val error_map)
   {
     roo_failure = std::move(error_map);
     execution_status.store(WorkerExecutionStatus::FAILED, std::memory_order_release);
+    report_revision.fetch_add(1, std::memory_order_release);
   }
 
   void WorkerExecution::mark_failed(std::exception_ptr error)
   {
     non_roo_failure = std::move(error);
     execution_status.store(WorkerExecutionStatus::FAILED, std::memory_order_release);
+    report_revision.fetch_add(1, std::memory_order_release);
   }
 
   Worker::Worker()
@@ -231,7 +240,7 @@ namespace Roo
       std::lock_guard lock(mutex);
       stopping = true;
     }
-    state_changed.notify_one();
+    state_changed.notify_all();
     execution_thread.join();
   }
 
@@ -259,20 +268,26 @@ namespace Roo
         queued.execution->mark_running();
 
         lock.unlock();
+        state_changed.notify_all();
         try
         {
           sptr_val result = queued.task(runtime);
-          queued.execution->mark_succeeded(deep_copy_for_runtime_transfer(result));
+          sptr_val transferred_result = deep_copy_for_runtime_transfer(result);
+          lock.lock();
+          queued.execution->mark_succeeded(std::move(transferred_result));
         }
         catch (const RooException& failure)
         {
-          queued.execution->mark_failed(transfer_roo_failure(failure));
+          sptr_val transferred_failure = transfer_roo_failure(failure);
+          lock.lock();
+          queued.execution->mark_failed(std::move(transferred_failure));
         }
         catch (...)
         {
-          queued.execution->mark_failed(std::current_exception());
+          std::exception_ptr failure = std::current_exception();
+          lock.lock();
+          queued.execution->mark_failed(std::move(failure));
         }
-        lock.lock();
         state_changed.notify_all();
       }
     }
@@ -281,7 +296,7 @@ namespace Roo
       std::lock_guard lock(mutex);
       startup_failure = std::current_exception();
       ready = true;
-      state_changed.notify_one();
+      state_changed.notify_all();
     }
   }
 
@@ -297,7 +312,7 @@ namespace Roo
     auto execution = std::make_shared<WorkerExecution>(execution_id);
     executions.emplace(execution_id, execution);
     queue.push_back({execution, std::move(task)});
-    state_changed.notify_one();
+    state_changed.notify_all();
     return execution_id;
   }
 
@@ -307,6 +322,38 @@ namespace Roo
     auto found = executions.find(execution_id);
     if (found == executions.end()) return nullptr;
     return found->second;
+  }
+
+  WorkerExecutionStatus Worker::poll(uint64_t execution_id,
+                                     std::chrono::milliseconds timeout)
+  {
+    if (timeout < std::chrono::milliseconds::zero())
+    {
+      throw RooException("Worker poll timeout must not be negative.");
+    }
+
+    std::unique_lock lock(mutex);
+    auto found = executions.find(execution_id);
+    if (found == executions.end())
+    {
+      throw RooException("Worker execution does not exist.");
+    }
+
+    const std::shared_ptr<WorkerExecution> execution = found->second;
+    const WorkerExecutionStatus initial_status = execution->status();
+    if (timeout == std::chrono::milliseconds::zero() ||
+        initial_status == WorkerExecutionStatus::SUCCEEDED ||
+        initial_status == WorkerExecutionStatus::FAILED)
+    {
+      return initial_status;
+    }
+
+    const uint64_t initial_revision = execution->revision();
+    state_changed.wait_for(lock,
+                           timeout,
+                           [&execution, initial_revision]()
+                           { return execution->revision() != initial_revision; });
+    return execution->status();
   }
 
   sptr_val Worker::collect(uint64_t execution_id)
@@ -417,6 +464,13 @@ namespace Roo
 
   WorkerExecutionStatus WorkerRegistry::poll(const sptr_val& execution_handle_value) const
   {
+    return poll(execution_handle_value, std::chrono::milliseconds::zero());
+  }
+
+  WorkerExecutionStatus WorkerRegistry::poll(
+    const sptr_val& execution_handle_value,
+    std::chrono::milliseconds timeout) const
+  {
     const auto& handle = execution_handle(execution_handle_value);
     auto found = impl->workers.find(handle.identity());
     auto handle_worker = handle.lock_worker();
@@ -425,12 +479,7 @@ namespace Roo
       throw RooException("Worker execution handle does not belong to this runtime.");
     }
 
-    auto execution = handle_worker->find_execution(handle.id());
-    if (!execution)
-    {
-      throw RooException("Worker execution does not exist.");
-    }
-    return execution->status();
+    return handle_worker->poll(handle.id(), timeout);
   }
 
   sptr_val WorkerRegistry::collect(const sptr_val& execution_handle_value)

@@ -120,14 +120,18 @@ namespace Roo
    * @code
    * (roo.worker/poll! execution)
    * => {:status :queued}
+   * (roo.worker/poll! execution {:timeout-ms 80})
+   * => {:status :running}
    * @endcode
    *
-   * | Arg       | Description                                                |
-   * | --------- | ---------------------------------------------------------- |
-   * | execution | Execution handle returned by a worker operation.           |
+   * | Arg       | Description                                                  |
+   * | --------- | ------------------------------------------------------------ |
+   * | execution | Execution handle returned by a worker operation.             |
+   * | options   | Optional map with a non-negative integer `:timeout-ms`.      |
    *
    * @return A report map whose `:status` is one of `:queued`, `:running`,
-   * `:succeeded`, or `:failed`.
+   * `:succeeded`, or `:failed`. Missing options or `:timeout-ms` default to
+   * zero and return immediately.
    */
   FUNC(PollWorkerBangFunction, poll_worker)
 } // namespace Roo
