@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <roo/export.h>
 #include <roo/runtime/value.h>
@@ -37,6 +38,19 @@ namespace Roo
   };
 
   using WorkerEnvironmentFactory = std::function<std::unique_ptr<WorkerEnvironment>()>;
+
+  /**
+   * @brief Configuration applied while creating one worker runtime.
+   * @since 0.1.0
+   */
+  struct WorkerCreationOptions
+  {
+    /** Namespaces loaded after the selected environment is constructed. */
+    std::vector<std::string> autoloads;
+
+    /** Registered environment name, or `vanilla`. */
+    std::string environment = "vanilla";
+  };
 
   enum class WorkerExecutionStatus : uint8_t
   {
@@ -89,6 +103,13 @@ namespace Roo
      * @param environment Registered environment name, or `vanilla`.
      */
     void create(const std::string& identity, const std::string& environment);
+
+    /**
+     * @brief Create and initialize a worker using explicit creation options.
+     * @param identity Worker identity, unique within this registry.
+     * @param options Environment and worker-local namespace autoloads.
+     */
+    void create(const std::string& identity, WorkerCreationOptions options);
 
     /**
      * @brief Transfer and asynchronously invoke a callable in a named worker.

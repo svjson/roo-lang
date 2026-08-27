@@ -12,6 +12,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <roo/runtime/worker.h>
 
@@ -59,6 +60,7 @@ namespace Roo
     std::mutex mutex;
     std::condition_variable state_changed;
     WorkerEnvironmentFactory environment_factory;
+    std::vector<std::string> autoloads;
     std::thread execution_thread;
     std::deque<QueuedExecution> queue;
     std::map<uint64_t, std::shared_ptr<WorkerExecution>> executions;
@@ -71,7 +73,8 @@ namespace Roo
 
    public:
     Worker();
-    explicit Worker(WorkerEnvironmentFactory environment_factory);
+    explicit Worker(WorkerEnvironmentFactory environment_factory,
+                    std::vector<std::string> autoloads = {});
     ~Worker();
 
     Worker(const Worker&) = delete;
@@ -79,8 +82,7 @@ namespace Roo
 
     uint64_t enqueue(WorkerTask task);
     std::shared_ptr<const WorkerExecution> find_execution(uint64_t execution_id);
-    WorkerExecutionStatus poll(uint64_t execution_id,
-                               std::chrono::milliseconds timeout);
+    WorkerExecutionStatus poll(uint64_t execution_id, std::chrono::milliseconds timeout);
     sptr_val collect(uint64_t execution_id);
   };
 

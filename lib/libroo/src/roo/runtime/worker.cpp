@@ -216,8 +216,10 @@ namespace Roo
   {
   }
 
-  Worker::Worker(WorkerEnvironmentFactory environment_factory)
+  Worker::Worker(WorkerEnvironmentFactory environment_factory,
+                 std::vector<std::string> autoloads)
     : environment_factory(std::move(environment_factory))
+    , autoloads(std::move(autoloads))
   {
     if (!this->environment_factory)
     {
@@ -254,6 +256,10 @@ namespace Roo
         throw RooException("Worker environment factory returned no environment.");
       }
       Runtime& runtime = environment->runtime();
+      for (const std::string& autoload : autoloads)
+      {
+        runtime.load_namespace(autoload);
+      }
       std::unique_lock lock(mutex);
       ready = true;
       state_changed.notify_one();
@@ -385,7 +391,7 @@ namespace Roo
 
   void WorkerRegistry::create(const std::string& identity)
   {
-    create(identity, "vanilla");
+    create(identity, WorkerCreationOptions{});
   }
 
   void WorkerRegistry::register_environment(const std::string& name,
@@ -405,27 +411,37 @@ namespace Roo
 
   void WorkerRegistry::create(const std::string& identity, const std::string& environment)
   {
+    WorkerCreationOptions options;
+    options.environment = environment;
+    create(identity, std::move(options));
+  }
+
+  void WorkerRegistry::create(const std::string& identity, WorkerCreationOptions options)
+  {
     if (impl->workers.contains(identity))
     {
       throw RooException("Worker :" + identity + " already exists.");
     }
 
     WorkerEnvironmentFactory factory;
-    if (environment == "vanilla")
+    if (options.environment == "vanilla")
     {
       factory = vanilla_environment_factory();
     }
     else
     {
-      auto found = impl->environment_factories.find(environment);
+      auto found = impl->environment_factories.find(options.environment);
       if (found == impl->environment_factories.end())
       {
-        throw RooException("Worker environment :" + environment + " is not available.");
+        throw RooException("Worker environment :" + options.environment +
+                           " is not available.");
       }
       factory = found->second;
     }
 
-    impl->workers.emplace(identity, std::make_shared<Worker>(std::move(factory)));
+    impl->workers.emplace(
+      identity,
+      std::make_shared<Worker>(std::move(factory), std::move(options.autoloads)));
   }
 
   sptr_val WorkerRegistry::enqueue(const std::string& identity, Task task)
@@ -467,9 +483,8 @@ namespace Roo
     return poll(execution_handle_value, std::chrono::milliseconds::zero());
   }
 
-  WorkerExecutionStatus WorkerRegistry::poll(
-    const sptr_val& execution_handle_value,
-    std::chrono::milliseconds timeout) const
+  WorkerExecutionStatus WorkerRegistry::poll(const sptr_val& execution_handle_value,
+                                             std::chrono::milliseconds timeout) const
   {
     const auto& handle = execution_handle(execution_handle_value);
     auto found = impl->workers.find(handle.identity());

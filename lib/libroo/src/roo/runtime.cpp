@@ -352,6 +352,15 @@ namespace Roo
     }
   }
 
+  void Runtime::load_namespace(const std::string& namespace_name)
+  {
+    ensure_namespace_loaded(namespace_name);
+    if (!ns(namespace_name))
+    {
+      throw NamespaceException("Namespace '" + namespace_name + "' does not exist.");
+    }
+  }
+
   bool Runtime::has_file_system_access() const
   {
     return file_system_access;

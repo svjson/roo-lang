@@ -306,16 +306,26 @@ namespace Roo
       return Constant::NIL;
     }
 
-    static MapSchema schema({}, {{"environment", &Type::KEYWORD}});
+    static MapSchema schema({},
+                            {{"autoloads", &Type::VECTOR}, {"environment", &Type::KEYWORD}});
     MapSchema::Inspector options = schema.bind(ctx, *args[1]);
+    WorkerCreationOptions creation_options;
+    if (options.contains("autoloads"))
+    {
+      for (const sptr_val& autoload : options.val("autoloads")->elements())
+      {
+        if (autoload->type != Value::Type::STRING)
+        {
+          throw TypeError("roo.worker/create!: :autoloads must contain Strings.");
+        }
+        creation_options.autoloads.push_back(autoload->str());
+      }
+    }
     if (options.contains("environment"))
     {
-      registry.create(args[0]->str(), options.val("environment")->str());
+      creation_options.environment = options.val("environment")->str();
     }
-    else
-    {
-      registry.create(args[0]->str());
-    }
+    registry.create(args[0]->str(), std::move(creation_options));
     return Constant::NIL;
   }
 

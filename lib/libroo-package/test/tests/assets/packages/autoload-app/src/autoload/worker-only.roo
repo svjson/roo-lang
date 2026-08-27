@@ -1,0 +1,3 @@
+(ns autoload.worker-only)
+
+(def value 84)

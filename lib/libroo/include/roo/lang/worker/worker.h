@@ -36,7 +36,9 @@ namespace Roo
    * application namespaces, namespace loading, or file-system access inherited
    * from the parent. A host may register an application environment that
    * reconstructs its runtime bootstrap without invoking its entry point. The
-   * call returns only after worker initialization succeeds.
+   * optional `:autoloads` vector names additional worker-local namespaces to
+   * load after environment initialization. The call returns only after worker
+   * initialization and these autoloads succeed.
    *
    * Creating another worker with the same identity in the current runtime is an
    * error. The same identity may be used independently by another runtime.
@@ -45,13 +47,14 @@ namespace Roo
    * @code
    * (roo.worker/create! :my-app/worker) => nil
    * (roo.worker/create! :my-app/application-worker
-   *                     {:environment :application}) => nil
+   *                     {:environment :application
+   *                      :autoloads ["my-app.worker"]}) => nil
    * @endcode
    *
    * | Arg      | Description                                                  |
    * | -------- | ------------------------------------------------------------ |
    * | identity | Keyword identifying the worker within the current runtime.   |
-   * | options  | Optional map containing a registered `:environment` keyword. |
+   * | options  | Optional map with `:environment` and String-vector `:autoloads`. |
    *
    * @return `nil` after the worker runtime has initialized successfully.
    */

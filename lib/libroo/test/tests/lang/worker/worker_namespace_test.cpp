@@ -1,7 +1,11 @@
+#include <atomic>
 #include <memory>
+#include <optional>
 #include <thread>
+#include <utility>
 
 #include <roo/exception.h>
+#include <roo/namespace_source.h>
 #include <roo/runtime.h>
 #include <roo/runtime/pretty_print.h>
 #include <roo/runtime/worker.h>
@@ -20,6 +24,42 @@ namespace
 
    public:
     SeededWorkerEnvironment() { instance.eval("(def application-value 42)"); }
+
+    Roo::Runtime& runtime() override { return instance; }
+  };
+
+  class TrackingNamespaceSource final : public Roo::NamespaceSource
+  {
+   private:
+    std::shared_ptr<std::atomic<int>> fetch_count;
+
+   public:
+    explicit TrackingNamespaceSource(std::shared_ptr<std::atomic<int>> fetch_count)
+      : fetch_count(std::move(fetch_count))
+    {
+    }
+
+    std::optional<Roo::NamespaceFetchResult> fetch(
+      const std::string& namespace_name,
+      const Roo::NamespaceResolutionContext&) override
+    {
+      if (namespace_name != "worker.bootstrap") return std::nullopt;
+      fetch_count->fetch_add(1);
+      return Roo::NamespaceFetchResult{"(ns worker.bootstrap) (def value 42)",
+                                       "worker/bootstrap.roo"};
+    }
+  };
+
+  class TrackingWorkerEnvironment final : public Roo::WorkerEnvironment
+  {
+   private:
+    Roo::Runtime instance;
+
+   public:
+    explicit TrackingWorkerEnvironment(std::shared_ptr<std::atomic<int>> fetch_count)
+      : instance(std::make_unique<TrackingNamespaceSource>(std::move(fetch_count)))
+    {
+    }
 
     Roo::Runtime& runtime() override { return instance; }
   };
@@ -90,6 +130,56 @@ TEST_F(RuntimeTestFixture, worker_create_uses_registered_environment_on_worker_t
   EXPECT_EQ(*runtime.eval("(roo.worker/collect! execution)"), *Roo::Value::number(42));
 }
 
+TEST_F(RuntimeTestFixture, worker_create_loads_worker_local_autoloads_before_returning)
+{
+  auto fetch_count = std::make_shared<std::atomic<int>>(0);
+  runtime.worker_registry().register_environment(
+    "tracked",
+    [fetch_count]() { return std::make_unique<TrackingWorkerEnvironment>(fetch_count); });
+
+  runtime.eval(R"(
+    (roo.worker/create! :my-app/worker
+      {:environment :tracked
+       :autoloads ["worker.bootstrap"]})
+  )");
+
+  EXPECT_EQ(fetch_count->load(), 1);
+  EXPECT_EQ(runtime.ns("worker.bootstrap"), nullptr);
+
+  runtime.eval(R"(
+    (def first-execution
+      (roo.worker/execute-let! :my-app/worker [] worker.bootstrap/value))
+    (def second-execution
+      (roo.worker/execute-let! :my-app/worker [] worker.bootstrap/value))
+  )");
+
+  ASSERT_EQ(wait_for_worker_execution(runtime, "first-execution")->str(), "succeeded");
+  ASSERT_EQ(wait_for_worker_execution(runtime, "second-execution")->str(), "succeeded");
+  EXPECT_EQ(*runtime.eval("(roo.worker/collect! first-execution)"), *Roo::Value::number(42));
+  EXPECT_EQ(*runtime.eval("(roo.worker/collect! second-execution)"),
+            *Roo::Value::number(42));
+  EXPECT_EQ(fetch_count->load(), 1);
+}
+
+TEST_F(RuntimeTestFixture, worker_create_releases_identity_after_autoload_failure)
+{
+  EXPECT_THROW(runtime.eval(R"(
+      (roo.worker/create! :my-app/worker
+        {:autoloads ["missing.namespace"]})
+    )"),
+               Roo::NamespaceException);
+
+  EXPECT_NO_THROW(runtime.eval("(roo.worker/create! :my-app/worker)"));
+}
+
+TEST_F(RuntimeTestFixture, worker_create_rejects_non_string_autoloads)
+{
+  EXPECT_THROW(runtime.eval(R"(
+      (roo.worker/create! :my-app/worker {:autoloads [:worker.bootstrap]})
+    )"),
+               Roo::TypeError);
+}
+
 TEST_F(RuntimeTestFixture, worker_namespace_is_immutable)
 {
   EXPECT_THROW(runtime.eval("(ns roo.worker) (def x 1)"), Roo::NamespaceException);
@@ -135,8 +225,7 @@ TEST_F(RuntimeTestFixture, worker_poll_defaults_to_nonblocking_zero_timeout)
   )");
 
   EXPECT_EQ(runtime.eval("(roo.worker/poll! execution)")->type, Roo::Value::Type::MAP);
-  EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {})")->type,
-            Roo::Value::Type::MAP);
+  EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {})")->type, Roo::Value::Type::MAP);
   EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {:timeout-ms 0})")->type,
             Roo::Value::Type::MAP);
   EXPECT_EQ(runtime.eval("(roo.worker/poll! execution {:timeout-ms 5})")->type,

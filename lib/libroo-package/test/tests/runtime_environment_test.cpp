@@ -48,10 +48,17 @@ TEST(ApplicationRuntimeEnvironment, replays_package_autoloads_in_application_wor
   Roo::Runtime& runtime = parent_environment->runtime();
   runtime.worker_registry().register_environment("application", environment_factory);
 
-  runtime.eval("(roo.worker/create! :test/worker {:environment :application})");
+  ASSERT_EQ(runtime.ns("autoload.worker-only"), nullptr);
+  runtime.eval(R"(
+    (roo.worker/create! :test/worker
+      {:environment :application
+       :autoloads ["autoload.worker-only"]})
+  )");
+  EXPECT_EQ(runtime.ns("autoload.worker-only"), nullptr);
   Roo::sptr_val execution = runtime.eval(R"(
     (roo.worker/execute-let! :test/worker []
       [autoload.bootstrap/value
+       autoload.worker-only/value
        (roo.io/slurp! "autoload/bootstrap.roo")
        (package.test.native/answer nil)])
   )");
@@ -59,8 +66,9 @@ TEST(ApplicationRuntimeEnvironment, replays_package_autoloads_in_application_wor
 
   Roo::sptr_val result = runtime.worker_registry().collect(execution);
   ASSERT_EQ(result->type, Roo::Value::Type::VECTOR);
-  ASSERT_EQ(result->elements().size(), 3u);
+  ASSERT_EQ(result->elements().size(), 4u);
   EXPECT_EQ(*result->elements()[0], *Roo::Value::number(42));
-  EXPECT_NE(result->elements()[1]->str().find("(def value 42)"), std::string::npos);
-  EXPECT_EQ(*result->elements()[2], *Roo::Value::number(42));
+  EXPECT_EQ(*result->elements()[1], *Roo::Value::number(84));
+  EXPECT_NE(result->elements()[2]->str().find("(def value 42)"), std::string::npos);
+  EXPECT_EQ(*result->elements()[3], *Roo::Value::number(42));
 }

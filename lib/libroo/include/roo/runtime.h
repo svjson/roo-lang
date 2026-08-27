@@ -203,6 +203,15 @@ namespace Roo
     void set_namespace_source(std::unique_ptr<NamespaceSource> namespace_source);
 
     /*!
+     * @brief Load a namespace into this runtime without importing it.
+     * @param namespace_name Namespace to load from the configured source.
+     *
+     * Already-loaded namespaces are left unchanged. An unavailable namespace
+     * is an error.
+     */
+    void load_namespace(const std::string& namespace_name);
+
+    /*!
      * @brief Returns a reference to the current namespace of the reader context
      */
     Namespace& get_current_namespace();
