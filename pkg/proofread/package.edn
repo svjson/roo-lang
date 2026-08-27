@@ -2,7 +2,8 @@
  :version "0.1.0"
  :description "Roo syntax and style checker."
  :dependencies {cli-trooper "0.1.0"
-                soot "0.1.0"}
+                soot "0.1.0"
+                voodoo "0.1.0"}
  :load-roots ["src"]
  :namespace-roots {proofread "src"}
  :native-libraries [{:name "proofread-native"

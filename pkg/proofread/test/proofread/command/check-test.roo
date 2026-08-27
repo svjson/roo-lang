@@ -4,7 +4,7 @@
             [proofread.cli :as proofread-cli]
             [proofread.native :as native]
             [proofread.command.check :as check-command]
-            [proofread.source :as source]))
+            [voodoo.session :as session]))
 
 
 
@@ -108,29 +108,18 @@
 
 
 
-;; proofread.command.check/parse-error-diagnostic
+;; proofread.command.check/await-execution!
 
-(deftest parse-error-diagnostic/builds-parse-error-diagnostics
-  (is (= {:rule :parse
-          :severity :error
-          :file "src/broken.roo"
-          :source {:path "src/broken.roo"}
-          :message "Unexpected end of input"}
-         (check-command/parse-error-diagnostic {:path "src/broken.roo"
-                                                :message "Unexpected end of input"}))))
-
-
-;; proofread.command.check/check-diagnostics
-
-(deftest check-diagnostics/returns-parse-error-diagnostics-for-unreadable-file
-  (is (= [{:rule :parse
-           :severity :error
-           :file "assets/invalid/broken.roo"
-           :source {:path "assets/invalid/broken.roo"}
-           :message "Unexpected end of input"}]
-         (check-command/check-diagnostics
-          "assets/invalid/broken.roo"
-          (native/check-files-result! ["assets/invalid/broken.roo"])))))
+(deftest await-execution!/guards-failed-worker-collection
+  (roo.worker/create! :proofread-test/failure)
+  (let [execution (roo.worker/execute-let! :proofread-test/failure []
+                    (raise :proofread.test/planned-failure "planned failure"))
+        outcome (check-command/await-execution! (session/make {:tty? false})
+                                                execution
+                                                "Scanning test input")]
+    (is (= :failed (:status outcome)))
+    (is (= :proofread.test/planned-failure (get-in outcome [:error :type])))
+    (is (= "planned failure" (get-in outcome [:error :detail])))))
 
 
 
@@ -150,5 +139,3 @@
 
     (is (= {:checked 1 :errors 0 :error-details []}
            (native/check-source-result! path "")))))
-
-

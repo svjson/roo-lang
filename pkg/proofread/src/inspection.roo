@@ -1,0 +1,53 @@
+(ns proofread.inspection
+  (:require [proofread.native :as native]
+            [proofread.source :as source]))
+
+(defun parse-error-diagnostic
+  "Build a diagnostic for a parse or read error.
+
+  Args:
+  - `error`: Error detail map returned by Proofread's native source checker.
+
+  Returns:
+  A diagnostic map with `:error` severity."
+  [error]
+  {:rule :parse
+   :severity :error
+   :file (:path error)
+   :source {:path (:path error)}
+   :message (:message error)})
+
+(defun diagnostics
+  "Return diagnostics for an input from a native check result.
+
+  Args:
+  - `file`: Source file identity.
+  - `check-result`: Native source-check result map.
+  - `options`: Source input options passed to `proofread.source/diagnostics`.
+
+  Returns:
+  A vector of rule diagnostics, including parse diagnostics when checking fails."
+  [file check-result options]
+  (case (:errors check-result)
+    0 (source/diagnostics file options)
+    :default (map (:error-details check-result) parse-error-diagnostic)))
+
+(defun file-result
+  "Inspect one file or in-memory source document.
+
+  Args:
+  - `file`: Filesystem path or logical source identity.
+  - `options`: Input options map. `:source` supplies in-memory source text;
+    otherwise `file` is read from the filesystem.
+
+  Returns:
+  A transferable map containing `:file`, `:checked`, `:errors`, and
+  `:diagnostics` for reporter and summary processing."
+  [file options]
+  (let [check-result (if (contains? options :source)
+                       (native/check-source-result! file (:source options))
+                       (native/check-files-result! [file]))]
+    {:file file
+     :checked (:checked check-result)
+     :errors (:errors check-result)
+     :diagnostics (diagnostics file check-result options)}))

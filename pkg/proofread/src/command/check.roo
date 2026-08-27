@@ -1,8 +1,9 @@
 (ns proofread.command.check
   (:require [proofread.native :as native]
-            [proofread.source.walk :as walk]
             [proofread.reporter :as reporter]
-            [proofread.source :as source]))
+            [soot :as soot]
+            [voodoo.session :as session]
+            [voodoo.widget.spinner :as spinner]))
 
 (defun validation-errors
   "Return semantic diagnostics for parsed check options.
@@ -29,36 +30,6 @@
     true
     []))
 
-(defun parse-error-diagnostic
-  "Build a diagnostic for a parse or read error.
-
-  Args:
-  - `error`: Error detail map returned by `proofread.native/check-files-result!`.
-
-  Returns:
-  A diagnostic map with `:error` severity."
-  [error]
-  {:rule :parse
-   :severity :error
-   :file (:path error)
-   :source {:path (:path error)}
-   :message (:message error)})
-
-(defun check-diagnostics
-  "Return diagnostics for an input from a native check result.
-
-  Args:
-  - `file`: Source file identity.
-  - `check-result`: Native check result map.
-  - `options`: Optional source input options passed to `proofread.source/diagnostics`.
-
-  Returns:
-  A vector of rule diagnostics, including parse diagnostics when checking fails."
-  [file check-result & options]
-  (case (:errors check-result)
-    0 (source/diagnostics file options)
-    :default (map (:error-details check-result) parse-error-diagnostic)))
-
 (defun diagnostic-count
   "Count diagnostics with a given severity.
 
@@ -73,6 +44,119 @@
                  (fn [diagnostic]
                    (= severity (:severity diagnostic))))))
 
+(defun await-execution!
+  "Animate a status widget until a worker execution becomes terminal.
+
+  Args:
+  - `widget-session`: Voodoo session owned by the parent runtime.
+  - `execution`: Worker execution handle returned by `roo.worker/execute-let!`.
+  - `label`: Status text rendered before the spinner frame.
+
+  Returns:
+  A terminal outcome map containing `:status` and either the collected `:value`
+  or a guarded worker `:error` map."
+  [widget-session execution label]
+  (let [indicator (spinner/make
+                    {:label label
+                     :shape :line
+                     :frames (for [frame (:line spinner/stock-shapes)]
+                               (soot/paint :cyan frame))})
+        handle (session/add! widget-session indicator)
+        report (roo.worker/poll! execution {:timeout-ms 80})]
+    (while (contains? [:queued :running] (:status report))
+      (set! [indicator] (spinner/tick indicator))
+      (session/update! widget-session handle indicator)
+      (set! [report] (roo.worker/poll! execution {:timeout-ms 80})))
+    (session/remove! widget-session handle)
+    (guard
+      (([error] {:status (:status report)
+                 :error error}))
+      {:status (:status report)
+       :value (roo.worker/collect! execution)})))
+
+(defun collect-files!
+  "Discover Proofread inputs on the application worker.
+
+  Args:
+  - `widget-session`: Voodoo session owned by the parent runtime.
+  - `patterns`: CLI file paths and patterns to resolve.
+
+  Returns:
+  The successful `proofread.source.walk/collect` result. Worker failures and
+  collection errors terminate the command with controlled diagnostics."
+  [widget-session patterns]
+  (let [outcome
+        (await-execution!
+          widget-session
+          (roo.worker/execute-let! :proofread/inspection
+            [patterns patterns]
+            (ns proofread.worker.discovery
+              (:require proofread.source.walk))
+            (proofread.source.walk/collect patterns))
+          (str (soot/paint :blue "=>") " Scanning directories"))]
+    (when-let [error (:error outcome)]
+      (native/fail! (str "proofread: file discovery failed: "
+                         (or (:detail error) (:message error)))))
+    (let [collection (:value outcome)]
+      (when (not-empty? (:errors collection))
+        (map (:errors collection) prn!)
+        (native/fail! "proofread: checks failed"))
+      collection)))
+
+(defun inspect-file!
+  "Inspect one file on the application worker.
+
+  Args:
+  - `widget-session`: Voodoo session owned by the parent runtime.
+  - `file`: Filesystem path or logical standard-input filename.
+  - `input-options`: Inspection options, optionally containing `:source`.
+
+  Returns:
+  A transferable `proofread.inspection/file-result` map. Worker failures
+  terminate the command with a controlled diagnostic."
+  [widget-session file input-options]
+  (let [outcome
+        (await-execution!
+          widget-session
+          (roo.worker/execute-let! :proofread/inspection
+            [file file
+             input-options input-options]
+            (ns proofread.worker.inspection
+              (:require proofread.inspection))
+            (proofread.inspection/file-result file input-options))
+          (str (soot/paint :blue "=>")
+               " Scanning "
+               (soot/paint :bold file)))]
+    (when-let [error (:error outcome)]
+      (native/fail! (str "proofread: failed while scanning "
+                         file
+                         ": "
+                         (or (:detail error) (:message error)))))
+    (:value outcome)))
+
+(defun record-file-result!
+  "Add a completed file result to a running summary and reporter.
+
+  Args:
+  - `run-result`: Map containing the current `:summary` and `:reporter`.
+  - `file-result`: Completed result returned by `inspect-file!`.
+
+  Returns:
+  The next run-result map after counting and reporting the file."
+  [{:keys [summary reporter]} file-result]
+  (let [file-errors (:errors file-result)
+        diagnostics (:diagnostics file-result)]
+    {:summary {:files (+ (:files summary)
+                         (:checked file-result)
+                         file-errors)
+               :warnings (+ (:warnings summary)
+                            (diagnostic-count diagnostics :warning))
+               :errors (+ (:errors summary)
+                          (case file-errors
+                            0 (diagnostic-count diagnostics :error)
+                            :default file-errors))}
+     :reporter (reporter/report-file! reporter file-result)}))
+
 (defun execute!
   "Run proofread checks with parsed command options.
 
@@ -85,45 +169,24 @@
   [_context options]
   (let [stdin-filename (:stdin-filename options)
         source-text (when stdin-filename (native/read-stdin!))
-        source-options (when stdin-filename {:source source-text})
-        collection (unless stdin-filename (walk/collect (:files options)))
-        files-to-check (if stdin-filename
-                         [stdin-filename]
-                         (:files collection))
-        collection-errors (:errors collection)]
-    (when (not-empty? collection-errors)
-      (map collection-errors prn)
-      (native/fail! "proofread: checks failed"))
-    (let [run-result (reduce files-to-check
+        source-options (if stdin-filename {:source source-text} {})
+        widget-session (session/make)]
+    (roo.worker/create! :proofread/inspection {:environment :application})
+    (let [files-to-check (if stdin-filename
+                           [stdin-filename]
+                           (:files (collect-files! widget-session
+                                                   (:files options))))
+          run-result (reduce files-to-check
                              {:summary {:files 0
                                         :warnings 0
                                         :errors 0}
                               :reporter (reporter/make options files-to-check)}
-                             (fn [{:keys [summary reporter]} file]
-                               (let [check-result (if stdin-filename
-                                                    (native/check-source-result! file source-text)
-                                                    (native/check-files-result! [file]))
-                                     file-errors (:errors check-result)
-                                     diagnostics (check-diagnostics file
-                                                                    check-result
-                                                                    source-options)
-                                     file-result {:file file
-                                                  :checked (:checked check-result)
-                                                  :errors file-errors
-                                                  :diagnostics diagnostics}]
-                                 {:summary {:files (+ (:files summary)
-                                                     (:checked check-result)
-                                                     file-errors)
-                                            :warnings (+ (:warnings summary)
-                                                         (diagnostic-count diagnostics
-                                                                           :warning))
-                                            :errors (+ (:errors summary)
-                                                      (case file-errors
-                                                        0 (diagnostic-count diagnostics
-                                                                            :error)
-                                                        :default file-errors))}
-                                  :reporter (reporter/report-file! reporter
-                                                                  file-result)})))
+                             (fn [result file]
+                               (record-file-result!
+                                 result
+                                 (inspect-file! widget-session
+                                                file
+                                                source-options))))
           summary (:summary run-result)]
       (reporter/report-summary! (:reporter run-result) summary)
       (case (:errors summary)

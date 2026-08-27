@@ -32,9 +32,6 @@ Quote patterns when you want `proofread` to expand them instead of your shell.
 The default `simple` reporter prints style warnings as files are checked. When
 the run is complete, it prints a short summary:
 
-On a terminal, Proofread shows a transient spinner while discovering inputs and
-then shows the file currently being inspected. These status lines are omitted
-from redirected and non-terminal output.
 
 ```text
 ----------------------------------------

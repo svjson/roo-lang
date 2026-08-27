@@ -1,0 +1,53 @@
+(ns proofread.inspection-test
+  (:require proof.core
+            [proofread.inspection :as inspection]
+            [proofread.native :as native]))
+
+
+
+;; proofread.inspection/parse-error-diagnostic
+
+(deftest parse-error-diagnostic/builds-parse-error-diagnostics
+  (is (= {:rule :parse
+          :severity :error
+          :file "src/broken.roo"
+          :source {:path "src/broken.roo"}
+          :message "Unexpected end of input"}
+         (inspection/parse-error-diagnostic {:path "src/broken.roo"
+                                             :message "Unexpected end of input"}))))
+
+
+
+;; proofread.inspection/diagnostics
+
+(deftest diagnostics/returns-parse-errors-for-an-unreadable-file
+  (is (= [{:rule :parse
+           :severity :error
+           :file "assets/invalid/broken.roo"
+           :source {:path "assets/invalid/broken.roo"}
+           :message "Unexpected end of input"}]
+         (inspection/diagnostics
+           "assets/invalid/broken.roo"
+           (native/check-files-result! ["assets/invalid/broken.roo"])
+           {}))))
+
+
+
+;; proofread.inspection/file-result
+
+(deftest file-result/builds-the-transferable-file-result
+  (is (= {:file "assets/valid/sample.roo"
+          :checked 1
+          :errors 0
+          :diagnostics []}
+         (inspection/file-result "assets/valid/sample.roo" {}))))
+
+(deftest file-result/checks-in-memory-source-under-its-logical-path
+  (let [result (inspection/file-result
+                 "assets/config/project/not-on-disk.roo"
+                 {:source "(ns proofread.stdin)\n(def first-item (nth items 0))"})]
+    (is (= {:file "assets/config/project/not-on-disk.roo"
+            :checked 1
+            :errors 0}
+           (select-keys result [:file :checked :errors])))
+    (is (= [:use-head] (map (:diagnostics result) :rule)))))
