@@ -19,7 +19,10 @@
     {:format :roo/source-forms
      :version 1
      :package (source/package-info manifest)
-     :sources (map files source/source-entry)}))
+     :sources (for [path files]
+                (source/source-entry-for-index
+                  path
+                  (source/package-relative-path package-dir path)))}))
 
 (defun symbol-index-with-roots
   "Build a package symbol index, optionally enriched with generic roots."

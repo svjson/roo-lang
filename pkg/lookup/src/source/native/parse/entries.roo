@@ -227,7 +227,10 @@
 (defun package-entries!
   "Extract native documentation entries from a package."
   [package-dir]
-  (flat-map (package-files package-dir) entries!))
+  (flat-map (package-files package-dir)
+            (fn [path]
+              (entries (lookup-source/package-relative-path package-dir path)
+                       (io/slurp! path)))))
 
 (defun root-entries!
   "Extract native documentation entries from generic source roots."

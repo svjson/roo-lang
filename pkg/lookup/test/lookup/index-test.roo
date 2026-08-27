@@ -16,29 +16,29 @@
           paths (for [source sources] (:path source))
           index-source (find-first sources
                                    (fn [source]
-                                     (= "../src/index/_index.roo" (:path source))))
+                                     (= "src/index/_index.roo" (:path source))))
           first-form (head (:forms index-source))]
       (is (= :roo/source-forms (:format source-index)))
       (is (= 1 (:version source-index)))
       (is (= "lookup" (:name (:package source-index))))
       (is (= "0.1.0" (:version (:package source-index))))
       (is (= 14 (count sources)))
-      (is (= ["../src/audit.roo"
-              "../src/cli.roo"
-              "../src/command/audit.roo"
-              "../src/command/index.roo"
-              "../src/command/thing-at.roo"
-              "../src/doc.roo"
-              "../src/index/_index.roo"
-              "../src/index/incremental.roo"
-              "../src/source.roo"
-              "../src/source/docstring/parse/content.roo"
-              "../src/source/docstring/symbols.roo"
-              "../src/source/native/parse/comment.roo"
-              "../src/source/native/parse/entries.roo"
-              "../src/source/native/symbols.roo"]
+      (is (= ["src/audit.roo"
+              "src/cli.roo"
+              "src/command/audit.roo"
+              "src/command/index.roo"
+              "src/command/thing-at.roo"
+              "src/doc.roo"
+              "src/index/_index.roo"
+              "src/index/incremental.roo"
+              "src/source.roo"
+              "src/source/docstring/parse/content.roo"
+              "src/source/docstring/symbols.roo"
+              "src/source/native/parse/comment.roo"
+              "src/source/native/parse/entries.roo"
+              "src/source/native/symbols.roo"]
              paths))
-      (is (= "../src/index/_index.roo" (:path index-source)))
+      (is (= "src/index/_index.roo" (:path index-source)))
       (is (= "ns" (str (head (:form first-form)))))
       (is (= "lookup.index" (str (nth (:form first-form) 1)))))))
 
@@ -70,8 +70,8 @@
       (is (= :roo/symbol-index (:format symbol-index)))
       (is (= 1 (:version symbol-index)))
       (is (= "lookup" (:name (:package symbol-index))))
-      (is (contains? sources {:path "../src/cli.roo"}))
-      (is (contains? sources {:path "../src/index/_index.roo"}))
+      (is (contains? sources {:path "src/cli.roo"}))
+      (is (contains? sources {:path "src/index/_index.roo"}))
       (is (any? namespaces (fn [namespace]
                              (= "lookup.cli" (:name namespace)))))
       (is (any? namespaces
@@ -108,7 +108,7 @@
       (is (= {:min 1 :max 1 :variadic false}
              (:arity symbol-index-signature)))
       (is (= :markdown (:format (:doc symbol-index-symbol))))
-      (is (= "../src/index/_index.roo"
+      (is (= "src/index/_index.roo"
              (:path (:source symbol-index-symbol)))))))
 
 
@@ -138,17 +138,17 @@
                :visibility :public
                :status :stable
                :source
-               {:path "assets/native-package/native/src/sample.cpp"
+               {:path "native/src/sample.cpp"
                 :line 5
                 :column 1}
                :declaration-source
-               {:path "assets/native-package/native/include/sample.h"
+               {:path "native/include/sample.h"
                 :line 21
                 :column 1}
                :doc-source
                {:kind :native-cpp-comment
                 :source
-                {:path "assets/native-package/native/include/sample.h"
+                {:path "native/include/sample.h"
                  :line 6
                  :column 1}}
                :doc {:summary "Read fixture data from a path."
@@ -184,14 +184,14 @@
                :visibility :public
                :status :stable
                :source
-               {:path "assets/native-package/native/src/sample.cpp"
+               {:path "native/src/sample.cpp"
                 :line 8
                 :column 1}
                :declaration-source nil
                :doc-source
                {:kind :native-cpp-comment
                 :source
-                {:path "assets/native-package/native/src/sample.cpp"
+                {:path "native/src/sample.cpp"
                  :line 8
                  :column 1}}
                :doc {:summary "Write fixture data to a path."

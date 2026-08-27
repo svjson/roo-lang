@@ -60,10 +60,47 @@
 (defun normalized-path [path]
   (string/replace (str path) "\\" "/"))
 
+(defun package-relative-path
+  "Return a source path relative to its package root.
+
+  Args:
+  - `package-dir`: Package root containing the source path.
+  - `path`: Source path beneath `package-dir`.
+
+  Returns:
+  A normalized package-relative path."
+  [package-dir path]
+  (let [package-root (normalized-path (io/absolute-path! package-dir))
+        package-root (cond-> package-root
+                             (string/ends-with? package-root "/")
+                             (substr 0 (- (count package-root) 1)))
+        package-prefix (str package-root "/")
+        absolute-path (normalized-path (io/absolute-path! path))]
+    (substr absolute-path (count package-prefix))))
+
+(defun source-form-entry-at [path entry]
+  (cond-> (assoc-in entry [:source :path] path)
+          (:path entry) (assoc :path path)))
+
 (defun source-form-entry [{:keys [source] :as entry}]
-  (if source
-    (assoc-in entry [:source :path] (normalized-path (:path source)))
-    (assoc entry :source {:path (normalized-path (:path entry))})))
+  (source-form-entry-at
+    (normalized-path (if source (:path source) (:path entry)))
+    entry))
+
+(defun source-entry-for-index
+  "Read one source file into an index under a separately supplied source path.
+
+  Args:
+  - `path`: Filesystem path used to read the Roo source file.
+  - `index-path`: Path recorded in the generated index.
+
+  Returns:
+  A map containing normalized `:path` and parsed top-level `:forms`."
+  [path index-path]
+  (let [index-path (normalized-path index-path)]
+    {:path index-path
+     :forms (for [entry (reader/read-file-forms! path)]
+              (source-form-entry-at index-path entry))}))
 
 (defun source-entry
   "Read one source file into a source-form index entry.
@@ -74,8 +111,7 @@
   Returns:
   A map containing normalized `:path` and parsed top-level `:forms`."
   [path]
-  {:path (normalized-path path)
-   :forms (map (reader/read-file-forms! path) source-form-entry)})
+  (source-entry-for-index path path))
 
 (defun package-source-files
   "Find all Roo source files declared by a package manifest.
