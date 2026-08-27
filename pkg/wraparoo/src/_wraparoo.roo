@@ -14,14 +14,17 @@
   (def analysis (wraparoo/analyze \"(map values\"))
 
   (:tokens analysis)
+  (:syntax-ranges analysis)
   (:delimiter-pairs analysis)
   (:unmatched-delimiters analysis)
   ```
 
-  Use `wraparoo.lex/scan` directly when only lexical tokens are needed, and
+  Use `wraparoo.lex/scan` directly when only lexical tokens are needed,
+  `wraparoo.syntax/classify` directly when tokens are already available, and
   `wraparoo.delimiter/pair-at` to find the delimiter pair adjacent to a cursor."
   (:require [wraparoo.delimiter :as delimiter]
-            [wraparoo.lex :as lex]))
+            [wraparoo.lex :as lex]
+            [wraparoo.syntax :as syntax]))
 
 (defun analyze
   "Analyze complete or incomplete Roo SOURCE without evaluating or repairing it.
@@ -30,16 +33,18 @@
   - `source`: Roo source string to analyze.
 
   Returns:
-  A map containing lossless `:tokens`, structurally valid
-  `:delimiter-pairs`, and source-ordered `:unmatched-delimiters`. Every range is
-  a half-open Unicode-scalar range into SOURCE.
+  A map containing lossless `:tokens`, neutral `:syntax-ranges`, structurally
+  valid `:delimiter-pairs`, and source-ordered `:unmatched-delimiters`. Every
+  range is a half-open Unicode-scalar range into SOURCE.
 
   ```roo
   {:tokens [...]
+   :syntax-ranges [...]
    :delimiter-pairs [...]
    :unmatched-delimiters [...]}
   ```"
   [source]
   (let [tokens (lex/scan source)]
-    (merge {:tokens tokens}
+    (merge {:tokens tokens
+            :syntax-ranges (syntax/classify tokens)}
            (delimiter/analyze tokens))))

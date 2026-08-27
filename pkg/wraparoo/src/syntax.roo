@@ -1,0 +1,235 @@
+(ns wraparoo.syntax
+  "Classify lexical tokens by their source-level Roo syntax roles.
+
+  `classify` works from Wraparoo's lossless token stream and returns neutral,
+  typed source ranges. It recognizes lexical roles and the structural roles
+  available from incomplete source, including call heads, definition names,
+  and docstrings. It does not resolve symbols or choose presentation styles.")
+
+(def special-forms
+  "Vector of unqualified Roo call-head strings with special-form semantics."
+  ["->"
+   "and"
+   "case"
+   "comment"
+   "cond"
+   "cond->"
+   "def"
+   "defun"
+   "do"
+   "doseq"
+   "dotimes"
+   "fn"
+   "for"
+   "for-indexed"
+   "if"
+   "if-let"
+   "let"
+   "ns"
+   "or"
+   "set!"
+   "unless"
+   "when"
+   "when-let"
+   "while"])
+
+(def constants
+  "Vector of unqualified Roo symbol strings that represent literal constants."
+  ["false" "nil" "true"])
+
+(defun lexical-ranges
+  "Classify TOKEN using lexical facts independent of its containing form.
+
+  Args:
+  - `token`: One token returned by `wraparoo.lex/scan`.
+
+  Returns:
+  A vector of typed ranges. Qualified keywords are split into keyword marker,
+  qualifier, and local-name ranges. Qualified symbols contribute a qualifier
+  range while their local name remains available for contextual classification."
+  [{:keys [kind text range]}]
+  (case kind
+      :comment
+      [{:range range
+        :role :roo.syntax/comment}]
+
+      :string
+      [{:range range
+        :role :roo.syntax/string}]
+
+      :character
+      [{:range range
+        :role :roo.syntax/character}]
+
+      :keyword
+      (let [scalars (split text "")
+            slash (index-of scalars "/")
+            start (:start range)]
+        (if (and (some? slash)
+                 (> slash 1)
+                 (< slash (dec (count scalars))))
+          [{:range {:start start
+                    :end (inc start)}
+            :role :roo.syntax/keyword}
+           {:range {:start (inc start)
+                    :end (+ start slash)}
+            :role :roo.syntax/qualifier}
+           {:range {:start (+ start slash)
+                    :end (:end range)}
+            :role :roo.syntax/keyword}]
+          [{:range range
+            :role :roo.syntax/keyword}]))
+
+      :symbol
+      (cond
+        (contains? constants text)
+        [{:range range
+          :role :roo.syntax/constant}]
+
+        true
+        (let [scalars (split text "")
+              slash (index-of scalars "/")]
+          (if (and (some? slash)
+                   (> slash 0)
+                   (< slash (dec (count scalars))))
+            [{:range {:start (:start range)
+                      :end (+ (:start range) slash)}
+              :role :roo.syntax/qualifier}]
+            [])))
+
+      :default []))
+
+(defun local-name-range
+  "Return the local-name portion of symbol TOKEN.
+
+  Args:
+  - `token`: Symbol token returned by `wraparoo.lex/scan`.
+
+  Returns:
+  TOKEN's complete range when unqualified, or the range beginning at the slash
+  and ending after the local name when qualified."
+  [token]
+  (let [scalars (split (:text token) "")
+        slash (index-of scalars "/")]
+    (if (and (some? slash)
+             (> slash 0)
+             (< slash (dec (count scalars))))
+      {:start (+ (get-in token [:range :start]) slash)
+       :end (get-in token [:range :end])}
+      (:range token))))
+
+(defun begin-element
+  "Record TOKEN as the next direct element of the current source container.
+
+  Args:
+  - `state`: Classification state containing `:stack` and accumulated `:ranges`.
+  - `token`: Token beginning the element.
+  - `data?`: Whether the element occurs in quoted or discarded data context.
+
+  Returns:
+  Updated classification state. Parentheses classify their first unquoted
+  symbol as a call head, definition forms classify their name, and a definition
+  string becomes a docstring once a following value or form begins."
+  [state token data?]
+  (if-let [frame (last (:stack state))]
+    (let [position (:element-position frame)
+          call-head? (and (= :paren (:delimiter frame))
+                          (= 0 position)
+                          (= :symbol (:kind token))
+                          (not data?))
+          definition-name? (and (= :paren (:delimiter frame))
+                                (= 1 position)
+                                (= :symbol (:kind token))
+                                (contains? ["def" "defun"] (:head frame))
+                                (not data?))
+          ranges
+          (concat (:ranges state)
+                  (if (and (= 3 position) (:docstring-candidate frame))
+                    [{:range (:docstring-candidate frame)
+                      :role :roo.syntax/docstring}]
+                    [])
+                  (if call-head?
+                    [{:range (local-name-range token)
+                      :role (if (contains? special-forms (:text token))
+                              :roo.syntax/special-form
+                              :roo.syntax/call-head)}]
+                    [])
+                  (if definition-name?
+                    [{:range (local-name-range token)
+                      :role :roo.syntax/definition-name}]
+                    []))
+          next-frame
+          (cond
+            call-head?
+            (assoc frame
+                   :element-position (inc position)
+                   :head (:text token))
+
+            (and (= 2 position)
+                 (= :string (:kind token))
+                 (contains? ["def" "defun"] (:head frame))
+                 (not (:data? frame)))
+            (assoc frame
+                   :element-position (inc position)
+                   :docstring-candidate (:range token))
+
+            true
+            (assoc frame :element-position (inc position)))]
+      (assoc (assoc-in state
+                       [:stack (dec (count (:stack state)))]
+                       next-frame)
+             :ranges
+             ranges))
+    state))
+
+(defun classify
+  "Classify complete or incomplete Roo TOKENS into typed syntax ranges.
+
+  Args:
+  - `tokens`: Lossless token vector returned by `wraparoo.lex/scan`.
+
+  Returns:
+  A vector of maps shaped as `{:range {:start n :end n} :role keyword}`.
+  Lexical ranges precede contextual overlays. Contextual roles include call
+  heads, special forms, definition names, and docstrings. Call heads are not
+  emitted inside quoted or discarded forms."
+  [tokens]
+  (:ranges
+   (reduce tokens
+           {:stack []
+            :data-next? false
+            :ranges (flat-map tokens lexical-ranges)}
+           (fn [{:keys [stack] :as state} token]
+             (let [frame (last stack)]
+               (cond
+                 (contains? [:whitespace :comment] (:kind token))
+                 state
+
+                 (contains? [:quote :discard-prefix] (:kind token))
+                 (assoc state :data-next? true)
+
+                 (and (= :delimiter (:kind token))
+                      (= :open (:side token)))
+                 (let [data? (or (:data-next? state) (:data? frame))
+                       element-state (begin-element state token data?)]
+                   (-> element-state
+                       (update :stack [append {:delimiter (:delimiter token)
+                                               :data? data?
+                                               :element-position 0
+                                               :head nil
+                                               :docstring-candidate nil}])
+                       (assoc :data-next? false)))
+
+                 (and (= :delimiter (:kind token))
+                      (= :close (:side token)))
+                 (-> state
+                     (cond->
+                       (and frame (= (:delimiter frame)
+                                     (:delimiter token)))
+                       (update :stack [slice 0 (dec (count stack))]))
+                     (assoc :data-next? false))
+
+                 true
+                 (-> state
+                     (begin-element token (or (:data-next? state) (:data? frame)))
+                     (assoc :data-next? false))))))))

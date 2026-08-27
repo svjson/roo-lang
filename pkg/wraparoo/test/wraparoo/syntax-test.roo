@@ -1,0 +1,88 @@
+(ns wraparoo.syntax-test
+  (:require proof.core
+            [proof.scenario :as p]
+            [wraparoo :as wraparoo]))
+
+(deftest analyze/classifies-lexical-syntax-ranges
+  (p/given
+    ":plain :status/new true \"text\" 'x' ; note")
+
+  (p/when [source]
+    (:syntax-ranges (wraparoo/analyze source)))
+
+  (p/then [ranges]
+    (is (= [{:range {:start 0 :end 6}
+             :role :roo.syntax/keyword}
+            {:range {:start 7 :end 8}
+             :role :roo.syntax/keyword}
+            {:range {:start 8 :end 14}
+             :role :roo.syntax/qualifier}
+            {:range {:start 14 :end 18}
+             :role :roo.syntax/keyword}
+            {:range {:start 19 :end 23}
+             :role :roo.syntax/constant}
+            {:range {:start 24 :end 30}
+             :role :roo.syntax/string}
+            {:range {:start 31 :end 34}
+             :role :roo.syntax/character}
+            {:range {:start 35 :end 41}
+             :role :roo.syntax/comment}]
+           ranges))))
+
+(deftest analyze/classifies-call-definition-and-docstring-ranges
+  (p/given
+    "(defun app/run \"Run.\" [x] (when true (service/call :status/new status/current)))")
+
+  (p/when [source]
+    (:syntax-ranges (wraparoo/analyze source)))
+
+  (p/then [ranges]
+    (is (= [{:range {:start 7 :end 10}
+             :role :roo.syntax/qualifier}
+            {:range {:start 15 :end 21}
+             :role :roo.syntax/string}
+            {:range {:start 32 :end 36}
+             :role :roo.syntax/constant}
+            {:range {:start 38 :end 45}
+             :role :roo.syntax/qualifier}
+            {:range {:start 51 :end 52}
+             :role :roo.syntax/keyword}
+            {:range {:start 52 :end 58}
+             :role :roo.syntax/qualifier}
+            {:range {:start 58 :end 62}
+             :role :roo.syntax/keyword}
+            {:range {:start 63 :end 69}
+             :role :roo.syntax/qualifier}
+            {:range {:start 1 :end 6}
+             :role :roo.syntax/special-form}
+            {:range {:start 10 :end 14}
+             :role :roo.syntax/definition-name}
+            {:range {:start 15 :end 21}
+             :role :roo.syntax/docstring}
+            {:range {:start 27 :end 31}
+             :role :roo.syntax/special-form}
+            {:range {:start 45 :end 50}
+             :role :roo.syntax/call-head}]
+           ranges))))
+
+(deftest analyze/excludes-call-heads-in-quoted-and-discarded-forms
+  (p/given
+    "'(ignored/call (nested/call)) [(real/call) (run)] # (discarded/call)")
+
+  (p/when [source]
+    (:syntax-ranges (wraparoo/analyze source)))
+
+  (p/then [ranges]
+    (is (= [{:range {:start 2 :end 9}
+             :role :roo.syntax/qualifier}
+            {:range {:start 16 :end 22}
+             :role :roo.syntax/qualifier}
+            {:range {:start 32 :end 36}
+             :role :roo.syntax/qualifier}
+            {:range {:start 53 :end 62}
+             :role :roo.syntax/qualifier}
+            {:range {:start 36 :end 41}
+             :role :roo.syntax/call-head}
+            {:range {:start 44 :end 47}
+             :role :roo.syntax/call-head}]
+           ranges))))
