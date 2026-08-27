@@ -187,6 +187,89 @@ namespace Rooc
       return path.lexically_normal().generic_string();
     }
 
+    std::filesystem::path logical_package_root(const Roo::Package::PackageInfo& package)
+    {
+      return std::filesystem::path("roo-packages") / package.name / package.version;
+    }
+
+    std::filesystem::path logical_plan_path(const Roo::Package::LoadPlan& plan,
+                                            const std::string& value)
+    {
+      if (value.empty())
+      {
+        return {};
+      }
+
+      const std::filesystem::path path(value);
+      if (!path.is_absolute())
+      {
+        return path.lexically_normal();
+      }
+
+      for (const auto& package : plan.packages)
+      {
+        const std::filesystem::path relative =
+          path.lexically_relative(std::filesystem::path(package.package_root));
+        if (!relative.empty() &&
+            (relative.begin() == relative.end() || *relative.begin() != ".."))
+        {
+          return (logical_package_root(package) / relative).lexically_normal();
+        }
+      }
+
+      throw Roo::RooException("Cannot embed path outside the resolved package plan: " +
+                              value);
+    }
+
+    GeneratedProject logical_embedded_project(const GeneratedProject& project)
+    {
+      GeneratedProject embedded = project;
+      for (auto& file : embedded.files)
+      {
+        file.key = logical_plan_path(project.plan, file.key).generic_string();
+      }
+      embedded.plan.package_root =
+        logical_plan_path(project.plan, project.plan.package_root).generic_string();
+      for (size_t i = 0; i < embedded.plan.package_roots.size(); ++i)
+      {
+        embedded.plan.package_roots[i] =
+          logical_plan_path(project.plan, project.plan.package_roots[i]).generic_string();
+      }
+      for (size_t i = 0; i < embedded.plan.load_paths.size(); ++i)
+      {
+        embedded.plan.load_paths[i] =
+          logical_plan_path(project.plan, project.plan.load_paths[i]).generic_string();
+      }
+      for (size_t i = 0; i < embedded.plan.namespace_roots.size(); ++i)
+      {
+        embedded.plan.namespace_roots[i].path =
+          logical_plan_path(project.plan, project.plan.namespace_roots[i].path)
+            .generic_string();
+      }
+      for (size_t i = 0; i < embedded.plan.native_libraries.size(); ++i)
+      {
+        embedded.plan.native_libraries[i].path =
+          logical_plan_path(project.plan, project.plan.native_libraries[i].path)
+            .generic_string();
+        embedded.plan.native_libraries[i].package_root =
+          logical_plan_path(project.plan, project.plan.native_libraries[i].package_root)
+            .generic_string();
+      }
+      for (size_t i = 0; i < embedded.plan.packages.size(); ++i)
+      {
+        embedded.plan.packages[i].package_root =
+          logical_plan_path(project.plan, project.plan.packages[i].package_root)
+            .generic_string();
+        for (size_t j = 0; j < embedded.plan.packages[i].load_roots.size(); ++j)
+        {
+          embedded.plan.packages[i].load_roots[j] =
+            logical_plan_path(project.plan, project.plan.packages[i].load_roots[j])
+              .generic_string();
+        }
+      }
+      return embedded;
+    }
+
     std::string generated_embedded_sources_h()
     {
       std::ostringstream out;
@@ -422,7 +505,9 @@ namespace Rooc
     {
       std::ostringstream out;
       out
-        << "#include <exception>\n"
+        << "#include <algorithm>\n"
+           "#include <cstdlib>\n"
+           "#include <exception>\n"
            "#include <filesystem>\n"
            "#include <iostream>\n"
            "#include <memory>\n"
@@ -439,6 +524,101 @@ namespace Rooc
            "#include \"embedded_sources.h\"\n\n"
            "namespace\n"
            "{\n"
+           "  std::filesystem::path executable_path(const char* argv0)\n"
+           "  {\n"
+           "    if (!argv0 || argv0[0] == '\\0')\n"
+           "    {\n"
+           "      return {};\n"
+           "    }\n"
+           "    const std::filesystem::path requested(argv0);\n"
+           "    if (requested.has_parent_path())\n"
+           "    {\n"
+           "      return std::filesystem::weakly_canonical(requested);\n"
+           "    }\n"
+           "    const char* path_value = std::getenv(\"PATH\");\n"
+           "    if (path_value)\n"
+           "    {\n"
+           "      const std::string paths(path_value);\n"
+           "#if defined(_WIN32)\n"
+           "      constexpr char delimiter = ';';\n"
+           "#else\n"
+           "      constexpr char delimiter = ':';\n"
+           "#endif\n"
+           "      std::size_t begin = 0;\n"
+           "      while (begin <= paths.size())\n"
+           "      {\n"
+           "        const std::size_t end = paths.find(delimiter, begin);\n"
+           "        const std::string directory = paths.substr(begin, end - begin);\n"
+           "        const std::filesystem::path candidate =\n"
+           "          (directory.empty() ? std::filesystem::path(\".\")\n"
+           "                             : std::filesystem::path(directory)) / requested;\n"
+           "        if (std::filesystem::exists(candidate))\n"
+           "        {\n"
+           "          return std::filesystem::weakly_canonical(candidate);\n"
+           "        }\n"
+           "        if (end == std::string::npos)\n"
+           "        {\n"
+           "          break;\n"
+           "        }\n"
+           "        begin = end + 1;\n"
+           "      }\n"
+           "    }\n"
+           "    return std::filesystem::absolute(requested);\n"
+           "  }\n\n"
+           "  void relocate_native_libraries(Roo::Package::LoadPlan& plan,\n"
+           "                                 const char* argv0)\n"
+           "  {\n"
+           "    const std::filesystem::path executable = executable_path(argv0);\n"
+           "    if (executable.empty())\n"
+           "    {\n"
+           "      return;\n"
+           "    }\n"
+           "    const std::filesystem::path repository =\n"
+           "      executable.parent_path().parent_path() / \"share/roo/pkg\";\n"
+           "    for (auto& library : plan.native_libraries)\n"
+           "    {\n"
+           "      const auto package = std::find_if(\n"
+           "        plan.packages.begin(), plan.packages.end(),\n"
+           "        [&library](const Roo::Package::PackageInfo& candidate)\n"
+           "        {\n"
+           "          return candidate.package_root == library.package_root;\n"
+           "        });\n"
+           "      if (package == plan.packages.end())\n"
+           "      {\n"
+           "        continue;\n"
+           "      }\n"
+           "      std::error_code error;\n"
+           "      const std::filesystem::path relative = library.path.empty()\n"
+           "        ? std::filesystem::path{}\n"
+           "        : std::filesystem::path(library.path).lexically_relative(\n"
+           "            library.package_root);\n"
+           "      const auto relocate_to = [&library, &relative, &error](\n"
+           "                                 const std::filesystem::path& root)\n"
+           "      {\n"
+           "        if (!std::filesystem::is_directory(root, error))\n"
+           "        {\n"
+           "          return false;\n"
+           "        }\n"
+           "        if (!library.path.empty())\n"
+           "        {\n"
+           "          const std::filesystem::path path = root / relative;\n"
+           "          if (!std::filesystem::exists(path, error))\n"
+           "          {\n"
+           "            return false;\n"
+           "          }\n"
+           "          library.path = path.string();\n"
+           "        }\n"
+           "        library.package_root = root.string();\n"
+           "        return true;\n"
+           "      };\n"
+           "      const std::filesystem::path installed_root =\n"
+           "        repository / package->name / package->version;\n"
+           "      if (!relocate_to(installed_root))\n"
+           "      {\n"
+           "        relocate_to(executable.parent_path() / package->package_root);\n"
+           "      }\n"
+           "    }\n"
+           "  }\n\n"
            "  void load_namespaces(Roo::Runtime& runtime,\n"
            "                       const std::vector<std::string>& namespaces,\n"
            "                       const std::string& loader_ns,\n"
@@ -457,6 +637,7 @@ namespace Rooc
            "  {\n"
            "    Roo::Package::LoadPlan package_plan =\n"
            "      RoocGenerated::embedded_load_plan();\n"
+           "    relocate_native_libraries(package_plan, argc > 0 ? argv[0] : nullptr);\n"
            "    Roo::Package::ApplicationRuntimeSpec runtime_spec;\n"
            "    runtime_spec.load_plan = package_plan;\n"
            "    runtime_spec.make_inputs = []()\n"
@@ -543,6 +724,13 @@ namespace Rooc
              "set(CMAKE_CXX_STANDARD 20)\n"
              "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
              "set(CMAKE_CXX_EXTENSIONS OFF)\n\n"
+             "if(APPLE)\n"
+             "  set(ROOC_INSTALL_RPATH \"@loader_path/../lib\")\n"
+             "elseif(UNIX)\n"
+             "  set(ROOC_INSTALL_RPATH \"$ORIGIN/../lib\")\n"
+             "else()\n"
+             "  set(ROOC_INSTALL_RPATH \"\")\n"
+             "endif()\n\n"
              "add_executable("
           << project.executable_name
           << "\n"
@@ -593,6 +781,23 @@ namespace Rooc
             << cpp_string_literal(cmake_path(path))
             << "\n"
                "  )\n\n";
+        const auto build_local_path = logical_plan_path(project.plan, path.string());
+        out << "add_custom_command(TARGET " << project.executable_name
+            << " POST_BUILD\n"
+               "  COMMAND ${CMAKE_COMMAND} -E make_directory\n"
+               "          \"$<TARGET_FILE_DIR:"
+            << project.executable_name << ">/"
+            << cmake_path(build_local_path.parent_path())
+            << "\"\n"
+               "  COMMAND ${CMAKE_COMMAND} -E copy_if_different\n"
+               "          "
+            << cpp_string_literal(cmake_path(path))
+            << "\n"
+               "          \"$<TARGET_FILE_DIR:"
+            << project.executable_name << ">/"
+            << cmake_path(build_local_path)
+            << "\"\n"
+               ")\n\n";
       }
       out << "  target_link_libraries(" << project.executable_name
           << " PRIVATE roo_shared_imported roo_package_shared_imported)\n"
@@ -625,6 +830,12 @@ namespace Rooc
                  return rpath;
                }())
           << "\n"
+             "  INSTALL_RPATH \"${ROOC_INSTALL_RPATH}\"\n"
+             ")\n\n"
+             "install(TARGETS "
+          << project.executable_name
+          << "\n"
+             "  RUNTIME DESTINATION bin\n"
              ")\n";
       return out.str();
     }
@@ -632,10 +843,11 @@ namespace Rooc
 
   void generate_project(const Options& options, const GeneratedProject& project)
   {
+    const GeneratedProject embedded_project = logical_embedded_project(project);
     write_file(options.build_dir / "CMakeLists.txt", generated_cmake(options, project));
     write_file(options.build_dir / "src/main.cpp", generated_main_cpp());
     write_file(options.build_dir / "src/embedded_sources.h", generated_embedded_sources_h());
     write_file(options.build_dir / "src/embedded_sources.cpp",
-               generated_embedded_sources_cpp(project));
+               generated_embedded_sources_cpp(embedded_project));
   }
 } // namespace Rooc

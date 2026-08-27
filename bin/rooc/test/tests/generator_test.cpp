@@ -212,6 +212,32 @@ TEST(RoocGenerator, writes_generated_project_files)
   EXPECT_TRUE(std::filesystem::is_regular_file(build_dir / "src/embedded_sources.cpp"));
 }
 
+TEST(RoocGenerator, generated_project_defines_distribution_install_contract)
+{
+  // Given
+  const auto build_dir = build_root() / "rooc-gtest-generated-install";
+  auto options = options_for(build_dir);
+  auto project = Rooc::prepare_project(options);
+
+  // When
+  Rooc::generate_project(options, project);
+
+  // Then
+  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
+              HasSubstr("INSTALL_RPATH \"${ROOC_INSTALL_RPATH}\""));
+  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
+              HasSubstr("install(TARGETS test_generated_cafe"));
+  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
+              HasSubstr("RUNTIME DESTINATION bin"));
+  EXPECT_THAT(read_file(build_dir / "src/main.cpp"),
+              HasSubstr("relocate_native_libraries(package_plan"));
+  EXPECT_THAT(read_file(build_dir / "src/main.cpp"), HasSubstr("share/roo/pkg"));
+  EXPECT_THAT(read_file(build_dir / "src/embedded_sources.cpp"),
+              HasSubstr("roo-packages/cafe-register/1.0.0"));
+  EXPECT_THAT(read_file(build_dir / "src/embedded_sources.cpp"),
+              ::testing::Not(HasSubstr(repo_root().generic_string())));
+}
+
 TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sources)
 {
   // Given
