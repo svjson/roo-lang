@@ -622,7 +622,7 @@ namespace Roo
 
   /** DissocBangFunction - roo/dissoc! */
   FUNC_IMPL(DissocBangFunction,
-            SIG((FN_ARGS((&Type::MAP), (&Type::ANY)),
+            SIG((FN_ARGS((&Type::MAP), (&Type::ANY), (VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&DissocBangFunction::exec_dissoc_bang))))
 
   EXEC_BODY(DissocBangFunction, exec_dissoc_bang)
@@ -632,7 +632,11 @@ namespace Roo
       return Constant::NIL;
     }
 
-    return Dict::remove_property(args[0], args[1]);
+    for (size_t i = 1; i < args.size(); i++)
+    {
+      Dict::remove_property(args[0], args[i]);
+    }
+    return args[0];
   }
 
   /** DissocInBangFunction - roo/dissoc-in! */

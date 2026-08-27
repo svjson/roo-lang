@@ -297,7 +297,7 @@ namespace Roo
   FUNC(DissocInFunction, dissoc_in)
 
   /*!
-   * @brief Remove a key from a map.
+   * @brief Remove one or more keys from a map.
    * @since 0.1.0
    *
    * Does nothing if the key does not exist in the map.
@@ -305,14 +305,15 @@ namespace Roo
    * Usage:
    * @code
    * (dissoc! my-map :key)
+   * (dissoc! my-map :key1 :key2)
    * @endcode
    *
-   * | Arg  | Description                                                        |
-   * | ---- | ------------------------------------------------------------------ |
-   * | map  | The map to mutate.                                                 |
-   * | key  | Key to remove.                                                     |
+   * | Arg     | Description                                                     |
+   * | ------- | --------------------------------------------------------------- |
+   * | map     | The map to mutate.                                              |
+   * | keys... | Keys to remove.                                                 |
    *
-   * @return The removed value, or `nil` when the key does not exist.
+   * @return The mutated map, or `nil` when the target is `nil`.
    */
   FUNC(DissocBangFunction, dissoc_bang)
 
