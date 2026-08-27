@@ -21,17 +21,57 @@
        (presentation/render roopl-editor/default away-from-delimiters)}))
 
   (p/then [result]
-    (let [rendered (str (soot/bold "(") "foo" (soot/bold ")"))]
+    (let [rendered (str (soot/bold "(")
+                        (soot/cyan "foo")
+                        (soot/bold ")"))]
       (is (= {:at-end
               {:decorations
-               [{:range {:start 0 :end 5}
+               [{:range {:start 1 :end 4}
+                 :role :roo.syntax/call-head}
+                {:range {:start 0 :end 5}
                  :role :roopl/matching-delimiters}]
                :rendered {:text rendered
                           :text-before rendered}}
               :before-closing
               {:text rendered
-               :text-before (str (soot/bold "(") "foo")}
+               :text-before (str (soot/bold "(") (soot/cyan "foo"))}
               :away-from-delimiters
-              {:text "(foo)"
-               :text-before "(fo"}}
+              {:text (str "(" (soot/cyan "foo") ")")
+               :text-before (str "(" (soot/cyan "fo"))}}
              result)))))
+
+(deftest default/styles-roo-syntax-and-composes-matching-delimiters
+  (p/given
+    (buffer/make
+      "(defun app/run \"Run.\" [x] (when true (service/call :status/new status/current)))"))
+
+  (p/when [text-buffer]
+    (presentation/render roopl-editor/default text-buffer))
+
+  (p/then [rendered]
+    (let [text
+          (str (soot/bold "(")
+               (soot/magenta "defun")
+               " "
+               (soot/blue "app")
+               (soot/paint [:bright-cyan] "/run")
+               " "
+               (soot/paint [:green :dim] "\"Run.\"")
+               " [x] ("
+               (soot/magenta "when")
+               " "
+               (soot/yellow "true")
+               " ("
+               (soot/blue "service")
+               (soot/cyan "/call")
+               " "
+               (soot/yellow ":")
+               (soot/blue "status")
+               (soot/yellow "/new")
+               " "
+               (soot/blue "status")
+               "/current))"
+               (soot/bold ")"))]
+      (is (= {:text text
+              :text-before text}
+             rendered)))))

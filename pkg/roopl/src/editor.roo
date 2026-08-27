@@ -6,24 +6,53 @@
             [wraparoo :as wraparoo]
             [wraparoo.delimiter :as delimiter]))
 
-(defun matching-delimiter-decorations
-  "Describe the matched delimiter pair touching BUFFER's cursor.
+(defun source-decorations
+  "Describe Roo syntax and the matched delimiter pair for BUFFER.
 
   Args:
   - `buffer`: Voodoo text buffer containing Roo source and a logical cursor.
 
   Returns:
-  A vector containing one `:roopl/matching-delimiters` typed range from the
-  opening delimiter through the closing delimiter, or an empty vector when no
-  complete pair touches the cursor."
+  Wraparoo's neutral syntax ranges followed by one
+  `:roopl/matching-delimiters` range when a complete pair touches the cursor."
   [buffer]
   (let [analysis (wraparoo/analyze (buffer/text buffer))
         pair (delimiter/pair-at analysis (buffer/position buffer))]
-    (if pair
-      [{:range {:start (get-in pair [:open :start])
-                :end (get-in pair [:close :end])}
-        :role :roopl/matching-delimiters}]
-      [])))
+    (concat (:syntax-ranges analysis)
+            (if pair
+              [{:range {:start (get-in pair [:open :start])
+                        :end (get-in pair [:close :end])}
+                :role :roopl/matching-delimiters}]
+              []))))
+
+(defun syntax-styling
+  "Map neutral Roo syntax decorations to Roopl's terminal palette.
+
+  Args:
+  - `context`: Voodoo presentation context containing ordered
+    `:decorations` over an editable Roo value.
+
+  Returns:
+  Concrete styled ranges for recognized `:roo.syntax/*` roles. Unknown roles
+  are omitted so other application layers can style them independently."
+  [context]
+  (keep (:decorations context)
+        (fn [decoration]
+          (when-let [styles
+                     (case (:role decoration)
+                       :roo.syntax/comment [:dim :gray]
+                       :roo.syntax/string [:green]
+                       :roo.syntax/character [:green]
+                       :roo.syntax/keyword [:yellow]
+                       :roo.syntax/constant [:yellow]
+                       :roo.syntax/qualifier [:blue]
+                       :roo.syntax/call-head [:cyan]
+                       :roo.syntax/special-form [:magenta]
+                       :roo.syntax/definition-name [:bright-cyan]
+                       :roo.syntax/docstring [:dim]
+                       :default nil)]
+            {:range (:range decoration)
+             :styles styles}))))
 
 (defun matching-delimiter-styling
   "Style the boundaries of matching-delimiter decorations.
@@ -51,14 +80,15 @@
                   :styles [:bold]}]))))
 
 (def default
-  "Default Roopl editor with plain-text editing and matched delimiters.
+  "Default Roopl editor with syntax presentation and matched delimiters.
 
   The value is a composed Voodoo editor. One presentation layer contributes a
-  typed matching-delimiter range from Wraparoo; another maps that semantic
-  range to bold boundary ranges. The top-level `:paint` function is
-  `soot/paint`."
+  neutral syntax and matching-delimiter ranges from Wraparoo. Separate styling
+  layers map syntax roles to Roopl's terminal palette and matched boundaries to
+  bold. The top-level `:paint` function is `soot/paint`."
   (assoc (editor/compose
            text-editor/default
-           {:layers [{:decorations matching-delimiter-decorations}]}
+           {:layers [{:decorations source-decorations}]}
+           {:layers [{:styling syntax-styling}]}
            {:layers [{:styling matching-delimiter-styling}]})
          :paint soot/paint))
