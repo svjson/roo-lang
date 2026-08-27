@@ -5,6 +5,7 @@ ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
 PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
 PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
+APPLICATION_WORKER_PACKAGE="$ROOT_DIR/lib/libroo-package/test/tests/assets/packages/autoload-app"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"
 OUTPUT_FILE="$RUN_DIR/main-ran.txt"
 
@@ -87,6 +88,14 @@ fi
 assert_eq "roo main app returns its integer result as the process exit code" \
   "7" \
   "$MAIN_EXIT_CODE"
+
+printf '%s\n' "==> Testing roo application worker bootstrap"
+if ! (
+  cd "$APPLICATION_WORKER_PACKAGE"
+  "$ROO" .
+); then
+  fail "roo application worker invocation failed"
+fi
 
 printf '%s\n' "==> Testing roo proof reporter/filter"
 if ! PROOF_OUTPUT="$(

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <roo/exception.h>
@@ -11,7 +12,7 @@
 
 #include <roo-package/application.h>
 #include <roo-package/manifest.h>
-#include <roo-package/native_loader.h>
+#include <roo-package/runtime_environment.h>
 
 namespace
 {
@@ -89,6 +90,37 @@ namespace
   {
     return Roo::Package::Application::exit_code(
       Roo::Package::Application::invoke_main(runtime, package_plan.main, args));
+  }
+
+  int run_target(Roo::Runtime& runtime,
+                 const std::optional<Roo::Package::LoadPlan>& package_plan,
+                 const std::string& file_path,
+                 const std::vector<std::string>& app_args,
+                 bool run_package,
+                 bool run_tool)
+  {
+    if (run_tool && package_plan)
+    {
+      return Roo::Package::Application::exit_code(
+        Roo::Package::Application::invoke_tool(runtime,
+                                               *package_plan,
+                                               file_path,
+                                               "run",
+                                               app_args));
+    }
+    if (run_package && package_plan && !package_plan->main.empty())
+    {
+      return run_package_main(runtime, *package_plan, app_args);
+    }
+    if (run_package)
+    {
+      run_package_entry_points(runtime, *package_plan, file_path);
+    }
+    else
+    {
+      runtime.read_file(file_path);
+    }
+    return 0;
   }
 
 } // namespace
@@ -177,7 +209,6 @@ int main(int argc, char** argv)
     if (package_root)
     {
       package_plan = Roo::Package::resolve_load_plan(manifest_fs, *package_root);
-      load_paths = Roo::Package::merge_load_paths(*package_plan, load_paths);
     }
     else if (run_package)
     {
@@ -185,37 +216,22 @@ int main(int argc, char** argv)
                               "' is not inside a package.");
     }
 
-    Roo::DirRootFileSystem roo_fs(load_paths);
-    Roo::Package::LoadedNativePackages native_packages;
-    Roo::Runtime runtime(&roo_fs);
     if (package_plan)
     {
-      Roo::Package::configure_runtime_namespace_roots(runtime, *package_plan);
-      native_packages = Roo::Package::load_native_libraries(runtime, *package_plan);
-      Roo::Package::load_autoloads(runtime, *package_plan);
+      Roo::Package::ApplicationRuntimeSpec runtime_spec =
+        Roo::Package::make_directory_application_runtime_spec(*package_plan, load_paths);
+      Roo::WorkerEnvironmentFactory environment_factory =
+        Roo::Package::make_application_runtime_factory(std::move(runtime_spec));
+      std::unique_ptr<Roo::WorkerEnvironment> environment = environment_factory();
+      Roo::Runtime& runtime = environment->runtime();
+      runtime.worker_registry().register_environment("application", environment_factory);
+      return run_target(runtime, package_plan, file_path, app_args, run_package, run_tool);
     }
+
+    Roo::DirRootFileSystem roo_fs(load_paths);
+    Roo::Runtime runtime(&roo_fs);
     runtime.set_call_stack_diagnostics(true);
-    if (run_tool && package_plan)
-    {
-      return Roo::Package::Application::exit_code(
-        Roo::Package::Application::invoke_tool(runtime,
-                                               *package_plan,
-                                               file_path,
-                                               "run",
-                                               app_args));
-    }
-    else if (run_package && package_plan && !package_plan->main.empty())
-    {
-      return run_package_main(runtime, *package_plan, app_args);
-    }
-    else if (run_package)
-    {
-      run_package_entry_points(runtime, *package_plan, file_path);
-    }
-    else
-    {
-      runtime.read_file(file_path);
-    }
+    return run_target(runtime, package_plan, file_path, app_args, run_package, run_tool);
   }
   catch (const std::exception& e)
   {
