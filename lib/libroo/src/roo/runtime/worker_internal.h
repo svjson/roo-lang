@@ -25,10 +25,12 @@ namespace Roo
     uint64_t execution_id;
     std::atomic<WorkerExecutionStatus> execution_status = WorkerExecutionStatus::QUEUED;
     sptr_val result;
-    std::exception_ptr failure;
+    sptr_val roo_failure;
+    std::exception_ptr non_roo_failure;
 
     void mark_running();
     void mark_succeeded(sptr_val value);
+    void mark_failed(sptr_val error_map);
     void mark_failed(std::exception_ptr error);
 
     friend class Worker;

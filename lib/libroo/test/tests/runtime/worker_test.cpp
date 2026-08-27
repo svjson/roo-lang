@@ -117,6 +117,32 @@ TEST(WorkerRegistry, failed_job_does_not_stop_later_jobs)
   EXPECT_EQ(worker.find_execution(failed)->status(), Roo::WorkerExecutionStatus::FAILED);
   EXPECT_EQ(worker.find_execution(later)->status(), Roo::WorkerExecutionStatus::SUCCEEDED);
   EXPECT_TRUE(later_job_ran);
+  EXPECT_THROW(worker.collect(failed), std::runtime_error);
+}
+
+TEST(WorkerRegistry, roo_failure_is_reconstructed_from_its_transferred_error_map)
+{
+  Roo::Worker worker;
+  uint64_t failed = worker.enqueue(
+    [](Roo::Runtime&) -> Roo::sptr_val
+    {
+      Roo::TypeError error("expected Roo failure");
+      error.set_form_site("worker-form", "worker-source.roo:4");
+      throw error;
+    });
+
+  wait_until_terminal(worker, failed);
+  try
+  {
+    worker.collect(failed);
+    FAIL() << "Expected collection to raise the worker failure.";
+  }
+  catch (const Roo::RaisedError& error)
+  {
+    EXPECT_EQ(error.roo_error_type(), "roo/type-error");
+    EXPECT_NE(error.to_error_map()->to_string().find("worker-source.roo:4"),
+              std::string::npos);
+  }
 }
 
 TEST(WorkerRegistry, execution_handle_routes_only_with_its_owning_registry)

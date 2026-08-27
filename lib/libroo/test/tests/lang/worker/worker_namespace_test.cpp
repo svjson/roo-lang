@@ -137,6 +137,48 @@ TEST_F(RuntimeTestFixture, worker_execute_let_does_not_resolve_parent_names_in_b
   EXPECT_THROW(runtime.eval("(roo.worker/collect! execution)"), Roo::RooException);
 }
 
+TEST_F(RuntimeTestFixture, worker_execute_let_rethrows_transferred_roo_error_map)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval(R"(
+    (def execution
+      (roo.worker/execute-let! :my-app/worker []
+        (raise :my-app/worker-failure "Expected worker failure" {:job-id 42})))
+  )");
+
+  ASSERT_EQ(wait_for_worker_execution(runtime, "execution")->str(), "failed");
+  EXPECT_EQ(*runtime.eval(R"(
+      (guard
+        ((:my-app/worker-failure [error] [(:type error) (:job-id error)]))
+        (roo.worker/collect! execution))
+    )"),
+            *Roo::Value::vector(
+              {Roo::Value::keyword("my-app/worker-failure"), Roo::Value::number(42)}));
+}
+
+TEST_F(RuntimeTestFixture, worker_failure_transfer_falls_back_without_stopping_worker)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval(R"(
+    (def failed
+      (roo.worker/execute-let! :my-app/worker []
+        (raise "Original failure" {:callback (fn [] nil)})))
+    (def later
+      (roo.worker/execute-let! :my-app/worker [] 42))
+  )");
+
+  ASSERT_EQ(wait_for_worker_execution(runtime, "failed")->str(), "failed");
+  ASSERT_EQ(wait_for_worker_execution(runtime, "later")->str(), "succeeded");
+  Roo::sptr_val message = runtime.eval(R"(
+    (guard
+      ((:roo/error [error] (:message error)))
+      (roo.worker/collect! failed))
+  )");
+  EXPECT_NE(message->str().find("Worker failure could not be transferred"),
+            std::string::npos);
+  EXPECT_EQ(*runtime.eval("(roo.worker/collect! later)"), *Roo::Value::number(42));
+}
+
 TEST_F(RuntimeTestFixture, worker_execute_let_rejects_unsafe_binding_before_enqueueing)
 {
   runtime.eval("(roo.worker/create! :my-app/worker)");
@@ -176,7 +218,7 @@ TEST_F(RuntimeTestFixture, worker_execute_let_preserves_source_for_persisted_wor
     runtime.eval("(roo.worker/collect! invocation)");
     FAIL() << "Expected the persisted worker function to fail.";
   }
-  catch (const Roo::RooException& error)
+  catch (const Roo::RaisedError& error)
   {
     EXPECT_NE(std::string(error.what()).find("worker-definition.roo:"), std::string::npos)
       << error.what();

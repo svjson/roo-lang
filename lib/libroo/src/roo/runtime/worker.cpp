@@ -18,6 +18,25 @@ namespace Roo
   {
     const HostTypeRef WORKER_EXECUTION_HANDLE_TYPE("roo.worker/execution");
 
+    sptr_val transfer_roo_failure(const RooException& failure)
+    {
+      try
+      {
+        return deep_copy_for_runtime_transfer(failure.to_error_map());
+      }
+      catch (const std::exception& transfer_error)
+      {
+        RooException fallback("Worker failure could not be transferred: " +
+                              std::string(transfer_error.what()));
+        return deep_copy_for_runtime_transfer(fallback.to_error_map());
+      }
+      catch (...)
+      {
+        RooException fallback("Worker failure could not be transferred.");
+        return deep_copy_for_runtime_transfer(fallback.to_error_map());
+      }
+    }
+
     class WorkerExecutionHandleAdapter : public NativeObjectBase,
                                          public RuntimeLocalNativeObject
     {
@@ -137,7 +156,9 @@ namespace Roo
     {
       throw RooException("Worker execution has not failed.");
     }
-    std::rethrow_exception(failure);
+    if (roo_failure) throw RaisedError(roo_failure);
+    if (non_roo_failure) std::rethrow_exception(non_roo_failure);
+    throw RooException("Worker execution has no retained failure.");
   }
 
   void WorkerExecution::mark_running()
@@ -151,9 +172,15 @@ namespace Roo
     execution_status.store(WorkerExecutionStatus::SUCCEEDED, std::memory_order_release);
   }
 
+  void WorkerExecution::mark_failed(sptr_val error_map)
+  {
+    roo_failure = std::move(error_map);
+    execution_status.store(WorkerExecutionStatus::FAILED, std::memory_order_release);
+  }
+
   void WorkerExecution::mark_failed(std::exception_ptr error)
   {
-    failure = std::move(error);
+    non_roo_failure = std::move(error);
     execution_status.store(WorkerExecutionStatus::FAILED, std::memory_order_release);
   }
 
@@ -203,6 +230,10 @@ namespace Roo
         {
           sptr_val result = queued.task(runtime);
           queued.execution->mark_succeeded(deep_copy_for_runtime_transfer(result));
+        }
+        catch (const RooException& failure)
+        {
+          queued.execution->mark_failed(transfer_roo_failure(failure));
         }
         catch (...)
         {
