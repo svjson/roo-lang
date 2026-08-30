@@ -1,0 +1,22 @@
+#ifndef SAMPLE_NATIVE_H
+#define SAMPLE_NATIVE_H
+
+namespace Sample
+{
+  /*!
+   * @brief Read fixture data from a path.
+   *
+   * Usage:
+   * @code
+   * (sample.native/read! "fixture.txt")
+   * => "contents"
+   * @endcode
+   *
+   * | Arg # | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | path  | Path to read.                                                      |
+   */
+  FUNC(SampleReadFunction, read)
+} // namespace Sample
+
+#endif

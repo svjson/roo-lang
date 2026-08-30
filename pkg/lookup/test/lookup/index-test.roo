@@ -266,13 +266,15 @@
   (p/when []
     (index/root-index
       {:roots ["assets"]
-       :excludes ["assets/native-package"]
+       :excludes ["assets/native-package"
+                  "assets/native-package-split-source"]
        :extractors [:native]}))
 
   (p/then [symbol-index]
     (is (= {:kind :roots
             :roots ["assets"]
-            :excludes ["assets/native-package"]
+            :excludes ["assets/native-package"
+                       "assets/native-package-split-source"]
             :extractors [:native]}
            (:origin symbol-index)))
     (is (= ["extra.native/read!"]

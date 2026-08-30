@@ -1,0 +1,8 @@
+{:name split-source-fixture
+ :version "0.1.0"
+ :description "Native documentation extraction fixture for a package whose native source lives apart from its compiled-artifact staging path."
+ :native-libraries [{:name "split-source-fixture"
+                     :version "0.1.0"
+                     :path "native"
+                     :source ["include" "src"]
+                     :namespaces [sample.native]}]}

@@ -142,6 +142,16 @@
           "assets/native-package/native/src/sample.cpp"]
          (native-entries/package-files "assets/native-package"))))
 
+(deftest package-files/prefers-a-declared-source-over-the-artifact-path
+  ;; `:path` here ("native") holds no source at all - a package whose
+  ;; native source lives apart from where the compiled artifact gets
+  ;; staged (pixils' own layout, discovered directly: its `:path "native"`
+  ;; only ever holds the built `.so`) declares `:source` to say where the
+  ;; real source is instead.
+  (is (= ["assets/native-package-split-source/include/sample.h"
+          "assets/native-package-split-source/src/sample.cpp"]
+         (native-entries/package-files "assets/native-package-split-source"))))
+
 
 
 ;; lookup.source.native.parse.entries/root-files
@@ -149,4 +159,6 @@
 (deftest root-files/excludes-native-source-subtrees
   (is (= ["assets/native-root-only/include/extra.h"
           "assets/native-root-only/src/extra.cpp"]
-         (native-entries/root-files "assets" ["assets/native-package"]))))
+         (native-entries/root-files "assets"
+                                    ["assets/native-package"
+                                     "assets/native-package-split-source"]))))

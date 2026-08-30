@@ -48,16 +48,33 @@
     []))
 
 (defun package-files
-  "Find native source and header files declared by a package."
+  "Find native source and header files declared by a package.
+
+  For each `:native-libraries` entry, scans `:source` when declared,
+  otherwise `:path`. `:path` names where the *compiled* payload lives
+  (what `loom install` copies) - for a package whose native source lives
+  alongside its build output, that's also where the source is, so `:path`
+  doubles as a reasonable default. A package with its own pre-existing
+  layout (source not under the same directory as the compiled artifact)
+  declares `:source` explicitly to override it - a vector of paths, since
+  headers and implementation commonly live in two separate trees.
+
+  Args:
+  - `package-dir`: Package root containing `package.edn`.
+
+  Returns:
+  A sorted vector of native source/header file paths."
   [package-dir]
   (let [manifest (lookup-source/read-manifest! package-dir)]
     (sort
       (map
         (flat-map (:native-libraries manifest)
                   (fn [native-library]
-                    (files-under-excluding
-                      (io/join-path package-dir (:path native-library))
-                      [])))
+                    (flat-map (or (:source native-library) [(:path native-library)])
+                              (fn [root]
+                                (files-under-excluding
+                                  (io/join-path package-dir root)
+                                  [])))))
         lookup-source/normalized-path)
       <)))
 
