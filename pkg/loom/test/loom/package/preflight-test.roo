@@ -56,3 +56,41 @@
   (s/then [result]
     (is (not (:ok? result)))
     (is (= :unsafe-package-path (:kind (head (:diagnostics result)))))))
+
+
+(deftest accepts-a-native-library-with-a-declared-source-root
+  (s/given
+    (let [package-dir (support/fresh-package!
+                       "loom-proof-preflight-native-source"
+                       "{:name sample\n :version \"1.0.0\"\n :load-roots [\"src\"]\n :native-libraries [{:name \"sample-native\" :path \"native\" :source [\"include\"]}]}")]
+      (io/spit! (io/join-path package-dir "src/sample.roo")
+                "(ns sample)\n")
+      (io/spit! (io/join-path package-dir "native/libsample.so") "native")
+      (io/spit! (io/join-path package-dir "include/sample.h") "")
+      package-dir))
+
+  (s/when [package-dir]
+    (preflight/check package-dir))
+
+  (s/then [result]
+    (is (:ok? result))
+    (is (empty? (:diagnostics result)))))
+
+
+(deftest reports-a-missing-declared-source-root
+  (s/given
+    (let [package-dir (support/fresh-package!
+                       "loom-proof-preflight-native-source-missing"
+                       "{:name sample\n :version \"1.0.0\"\n :load-roots [\"src\"]\n :native-libraries [{:name \"sample-native\" :path \"native\" :source [\"include\"]}]}")]
+      (io/spit! (io/join-path package-dir "src/sample.roo")
+                "(ns sample)\n")
+      (io/spit! (io/join-path package-dir "native/libsample.so") "native")
+      package-dir))
+
+  (s/when [package-dir]
+    (preflight/check package-dir))
+
+  (s/then [result]
+    (is (not (:ok? result)))
+    (is (= :missing-native-source (:kind (head (:diagnostics result)))))
+    (is (= "include" (:path (head (:diagnostics result)))))))

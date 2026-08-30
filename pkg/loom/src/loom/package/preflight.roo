@@ -51,6 +51,7 @@
         (not (io/exists? (io/join-path package-dir path)))
         {:kind (case field
                  :load-root :missing-load-root
+                 :native-source :missing-native-source
                  :default :missing-native-path)
          :field field
          :path path}
@@ -99,6 +100,32 @@
               diagnostics
               (payload-path-diagnostic package-dir :load-root root true)))))
 
+(defun native-library-source-diagnostics
+  "Validate a native-library entry's declared `:source` roots, if any.
+
+  `:source` names where a native library's actual source lives when that
+  differs from `:path` (the compiled-artifact location `loom install`
+  copies) - see `lookup.source.native.parse.entries/native-library-source-roots`.
+  A missing or invalid `:source` root fails preflight loudly rather than
+  silently producing an empty native documentation index, the failure mode
+  that motivated adding this validation in the first place.
+
+  Args:
+  - `package-dir`: Root directory of the package being checked.
+  - `library`: One `:native-libraries` entry map.
+
+  Returns:
+  A vector of diagnostics for invalid, unsafe, missing, or non-directory
+  source roots. The vector is empty when `:source` is absent or every
+  declared root is valid."
+  [package-dir library]
+  (reduce (or (:source library) [])
+          []
+          (fn [diagnostics source-root]
+            (collect-path-diagnostic
+              diagnostics
+              (payload-path-diagnostic package-dir :native-source source-root true)))))
+
 (defun native-library-diagnostics
   "Validate every native-library payload declared by a package manifest.
 
@@ -109,32 +136,36 @@
 
   Returns:
   A vector of diagnostics for malformed native-library declarations and invalid,
-  unsafe, or missing native payload paths. The vector is empty when no native
-  libraries are declared or every declaration is valid."
+  unsafe, or missing native payload or source paths. The vector is empty when
+  no native libraries are declared or every declaration is valid."
   [package-dir package-manifest]
   (let [libraries (manifest/native-libraries package-manifest)]
     (cond
       (nil? libraries)
         []
-      true
-        (case (type-of libraries)
-          "vector"
-            (reduce libraries
-                    []
-                    (fn [diagnostics library]
+
+      (sequential? libraries)
+        (reduce libraries
+                []
+                (fn [diagnostics library]
+                  (if (map? library)
+                    (concat
                       (collect-path-diagnostic
                         diagnostics
-                        (case (type-of library)
-                          "map" (payload-path-diagnostic package-dir
-                                                         :native-library
-                                                         (:path library)
-                                                         false)
-                          :default {:kind :invalid-native-library
-                                    :field :native-libraries
-                                    :path nil}))))
-          :default [{:kind :invalid-native-libraries
-                     :field :native-libraries
-                     :path nil}]))))
+                        (payload-path-diagnostic package-dir
+                                                 :native-library
+                                                 (:path library)
+                                                 false))
+                      (native-library-source-diagnostics package-dir library))
+                    (append diagnostics
+                            {:kind :invalid-native-library
+                             :field :native-libraries
+                             :path nil}))))
+
+      true
+        [{:kind :invalid-native-libraries
+          :field :native-libraries
+          :path nil}])))
 
 (defun check
   "Check whether a package directory contains a complete installable artifact.
