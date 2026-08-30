@@ -494,7 +494,11 @@ namespace Roo::Dict
     }
 
     sptr_val child = Dict::get_property(result, *key);
-    Dict::set_property(result, key, assoc_in_mutate(child, path, index + 1, value));
+    sptr_val new_child = assoc_in_mutate(child, path, index + 1, value);
+    if (new_child != child)
+    {
+      Dict::set_property(result, key, new_child);
+    }
     return result;
   }
 

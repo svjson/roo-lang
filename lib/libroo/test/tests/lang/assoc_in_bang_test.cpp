@@ -1,3 +1,4 @@
+#include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
 
@@ -95,4 +96,22 @@ TEST_F(AssocInBangFunction, accepts_sequential_paths)
   auto result = runtime.eval("(assoc-in! target '(:nested :value) 2)");
 
   EXPECT_EQ(*result, *runtime.eval("{:nested {:value 2}}"));
+}
+
+TEST_F(AssocInBangFunction, mutates_nested_object_through_read_only_native_property)
+{
+  std::vector<std::unique_ptr<Roo::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<RooTest::Native::VehicleNamespace>());
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
+  runtime.eval(R"(
+    (def vehicle
+      (vehicle/make-vehicle {:model {:model-name "Roadster" :seats 2}
+                             :reg-number {:letters "ABC" :numbers "123"}}))
+  )");
+  auto vehicle = runtime.lookup("vehicle");
+
+  auto result = runtime.eval("(assoc-in! vehicle [:model :seats] 4)");
+
+  EXPECT_EQ(result, vehicle);
+  EXPECT_EQ(runtime.eval("(:seats (:model vehicle))")->i64(), 4);
 }
