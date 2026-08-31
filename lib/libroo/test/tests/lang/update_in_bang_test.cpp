@@ -1,6 +1,7 @@
 #include <roo/exception.h>
 
 #include "gmock/gmock.h"
+#include "host/test_adapters/vehicle_native_adapters.h"
 #include "runtime_fixture.h"
 #include <gtest/gtest.h>
 
@@ -99,6 +100,54 @@ TEST_F(UpdateInBangFunction, creates_a_missing_intermediate_map)
 
   EXPECT_EQ(result, target);
   EXPECT_EQ(*result, *runtime.eval("{:a 1 :nested {:count 2}}"));
+}
+
+TEST_F(UpdateInBangFunction, creates_a_missing_path_when_updater_returns_nil)
+{
+  runtime.eval("(def target {})");
+
+  auto result = runtime.eval("(update-in! target [:missing] (fn [value] value))");
+
+  EXPECT_EQ(*result, *runtime.eval("{:missing nil}"));
+}
+
+TEST_F(UpdateInBangFunction, updates_through_read_only_native_property)
+{
+  std::vector<std::unique_ptr<Roo::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<RooTest::Native::VehicleNamespace>());
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
+  runtime.eval(R"(
+    (def vehicle
+      (vehicle/make-vehicle
+        {:model {:model-name "Roadster" :seats 2}
+         :reg-number {:letters "ABC" :numbers "123"}}))
+  )");
+  auto vehicle = runtime.lookup("vehicle");
+
+  auto result = runtime.eval("(update-in! vehicle [:model :seats] [+ 2])");
+
+  EXPECT_EQ(result, vehicle);
+  EXPECT_EQ(runtime.eval("(:seats (:model vehicle))")->i64(), 4);
+}
+
+TEST_F(UpdateInBangFunction, does_not_write_back_same_object_to_read_only_native_property)
+{
+  std::vector<std::unique_ptr<Roo::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<RooTest::Native::VehicleNamespace>());
+  auto& runtime = use_runtime_with(std::move(namespaces), nullptr);
+  runtime.eval(R"(
+    (def vehicle
+      (vehicle/make-vehicle
+        {:model {:model-name "Roadster" :seats 2}
+         :reg-number {:letters "ABC" :numbers "123"}}))
+  )");
+  auto vehicle = runtime.lookup("vehicle");
+
+  auto result = runtime.eval(
+    "(update-in! vehicle [:model] (fn [model] (assoc! model :seats 4)))");
+
+  EXPECT_EQ(result, vehicle);
+  EXPECT_EQ(runtime.eval("(:seats (:model vehicle))")->i64(), 4);
 }
 
 TEST_F(UpdateInBangFunction, throws_on_non_sequence_path)

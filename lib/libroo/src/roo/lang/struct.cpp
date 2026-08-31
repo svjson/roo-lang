@@ -237,7 +237,7 @@ namespace Roo
         if (mode == UpdateMode::COPY_PATH || mode == UpdateMode::MUTATE_PATH)
         {
           sptr_val_v path = require_update_path(key_or_path, function_name);
-          sptr_val current_value = Dict::get_property_path(result, path);
+          auto [path_found, current_value] = Dict::find_property_path(result, path);
           sptr_val updated_value =
             execute_update_body(ctx, snode, pair_i, current_value, function_name);
 
@@ -245,7 +245,7 @@ namespace Roo
           {
             result = Dict::assoc_in(result, path, updated_value);
           }
-          else
+          else if (!path_found || updated_value != current_value)
           {
             result = Dict::assoc_in_bang(result, path, updated_value);
           }
