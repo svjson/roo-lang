@@ -100,7 +100,7 @@ case "$OUT_CONTENT" in
     ;;
 esac
 
-if ! NATIVE_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index --root "$LOOKUP_PACKAGE"/test/assets --exclude "$LOOKUP_PACKAGE"/test/assets/native-package); then
+if ! NATIVE_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index --root "$LOOKUP_PACKAGE"/test/assets --exclude "$LOOKUP_PACKAGE"/test/assets/native-package --exclude "$LOOKUP_PACKAGE"/test/assets/native-package-split-source); then
   fail "lookup index --root command failed"
 fi
 case "$NATIVE_ROOT_OUTPUT" in
@@ -167,7 +167,7 @@ case "$AUDIT_TEXT_OUTPUT" in
     ;;
 esac
 
-if ! AUDIT_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit --require-summary --require-param-docs --require-signatures "$LOOKUP_PACKAGE"/test/assets --exclude "$LOOKUP_PACKAGE"/test/assets/native-package); then
+if ! AUDIT_ROOT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit --require-summary --require-param-docs --require-signatures "$LOOKUP_PACKAGE"/test/assets --exclude "$LOOKUP_PACKAGE"/test/assets/native-package --exclude "$LOOKUP_PACKAGE"/test/assets/native-package-split-source); then
   fail "lookup audit source-root command failed"
 fi
 case "$AUDIT_ROOT_OUTPUT" in
