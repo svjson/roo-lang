@@ -1,6 +1,7 @@
 
 #include "roo/lang/struct.h"
 
+#include <roo/host/object.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/seq.h>
@@ -13,6 +14,13 @@ namespace Roo
     bool is_exec_arg(const sptr_val& arg)
     {
       return arg->type == Value::Type::FUNCTION || arg->type == Value::Type::KEYWORD;
+    }
+
+    bool is_map_like(const sptr_val& value)
+    {
+      return value->type == Value::Type::MAP ||
+             (value->type == Value::Type::NATIVE_OBJECT &&
+              value->nobj()->structural_kind() == NativeObjectStructuralKind::MAP);
     }
 
     bool assoc_keys_are_integers(const sptr_val_v& args)
@@ -680,6 +688,7 @@ namespace Roo
 
   EXEC_BODY(KeysFunction, exec_keys)
   {
+    if (args[0]->type != Value::Type::NIL && !is_map_like(args[0])) return Constant::NIL;
     return Value::vector(Dict::map_sptr_keys(args[0]));
   }
 
@@ -783,6 +792,7 @@ namespace Roo
 
   EXEC_BODY(ValsFunction, exec_vals)
   {
+    if (args[0]->type != Value::Type::NIL && !is_map_like(args[0])) return Constant::NIL;
     return Value::vector(Dict::map_sptr_vals(args[0]));
   }
 

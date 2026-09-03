@@ -7,7 +7,7 @@
 namespace Roo
 {
   /*!
-   * @brief Appends one or more elements to a vector, returning a new vector.
+   * @brief Appends one or more elements to a sequential value, returning a new vector.
    * @since 0.1.0
    *
    * Usage:
@@ -19,10 +19,11 @@ namespace Roo
    *
    * | Arg       | Description                                                        |
    * | --------- | ------------------------------------------------------------------ |
-   * | vector    | The vector to append to (nil = empty)                              |
+   * | seq       | The sequential value to append to (`nil` = empty)                  |
    * | values... | Elements to append                                                 |
    *
    * @return A new vector containing the original elements followed by `values`.
+   *         Non-sequential targets are rejected.
    */
   FUNC(AppendFunction, append)
 

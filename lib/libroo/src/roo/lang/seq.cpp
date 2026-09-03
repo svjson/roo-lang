@@ -92,7 +92,7 @@ namespace Roo
 
   /** AppendFunction - roo/append */
   FUNC_IMPL(AppendFunction,
-            SIG((FN_ARGS((&Type::ANY), (&VARARG, &Type::ANY)),
+            SIG((FN_ARGS((&Type::STRICT_SEQ), (&VARARG, &Type::ANY)),
                  EXEC_DISPATCH(&AppendFunction::exec_append))))
 
   EXEC_BODY(AppendFunction, exec_append)

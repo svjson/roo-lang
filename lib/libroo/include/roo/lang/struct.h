@@ -348,13 +348,15 @@ namespace Roo
    * @code
    * (keys {:name "A name" :age 23}) => [:name :age]
    * (keys nil) => []
+   * (keys [1 2]) => nil
    * @endcode
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
    * | target | The map or complex object whose keys are returned.                 |
    *
-   * @return A vector containing the target's keys.
+   * @return A vector containing the target's keys, or `nil` when the target is
+   *         not map-like.
    */
   FUNC(KeysFunction, keys)
 
@@ -467,13 +469,15 @@ namespace Roo
    * @code
    * (vals {:name "A name" :age 23}) => ["A name" 23]
    * (vals nil) => []
+   * (vals [1 2]) => nil
    * @endcode
    *
    * | Arg    | Description                                                        |
    * | ------ | ------------------------------------------------------------------ |
-   * | target | The map or complex object whose keys are returned.                 |
+   * | target | The map or complex object whose values are returned.               |
    *
-   * @return A vector containing the target's values.
+   * @return A vector containing the target's values, or `nil` when the target is
+   *         not map-like.
    */
   FUNC(ValsFunction, vals)
 
