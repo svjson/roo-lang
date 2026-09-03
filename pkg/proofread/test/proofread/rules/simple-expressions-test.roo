@@ -513,6 +513,11 @@
                                              simple-expressions/rules
                                              :use-get-with-default))))
 
+(deftest use-get-with-default/ignores-computed-fallbacks
+  (is (= []
+         (produce-summary
+           "assets/rules/simple-expressions/use-get-with-default-non-candidates.roo"))))
+
 (deftest use-get-in-with-default/reports-structured-suggestions
   (is (= [{:rule :use-get-in-with-default
            :suggestions [{:title "Rewrite as get-in with default"

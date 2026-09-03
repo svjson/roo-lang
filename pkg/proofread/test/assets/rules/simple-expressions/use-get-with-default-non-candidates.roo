@@ -1,0 +1,5 @@
+(ns proofread.use-get-with-default-non-candidates)
+
+(def fallback-lookup
+  (or (get entries (:id modal-state))
+      (get entries (:type modal-state))))

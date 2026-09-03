@@ -131,8 +131,9 @@ Supported style warnings:
 - `redundant-empty-default`: reports empty collection defaults around arguments
   and binding values whose consumers treat `nil` as the corresponding empty
   collection.
-- `use-get-with-default`: reports `(or (get value key) default)` forms that
-  can be written as `(get value key default)`.
+- `use-get-with-default`: reports `(or (get value key) default)` forms with
+  simple value fallbacks that can be written as `(get value key default)`.
+  Computed fallbacks and lookup chains remain as `or`.
 - `use-keyword-lookup`: reports `(get value :key)` forms that can be written as
   `(:key value)`.
 - `kebab-case-name`: reports symbol identifiers containing underscores.

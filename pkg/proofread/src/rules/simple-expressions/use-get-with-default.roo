@@ -1,5 +1,6 @@
 (ns proofread.rules.simple-expressions.use-get-with-default
-  (:require [proofread.inspect.forms :as forms]
+  (:require [proofread.inspect.expressions :as expressions]
+            [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun get-form?
@@ -22,7 +23,7 @@
          (forms/form-string (nth (:children node) 2)) ")")))
 
 (defun check
-  "Report `(or (get value key) default)` forms.
+  "Report `(or (get value key) default)` forms with simple terminal defaults.
 
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
@@ -34,7 +35,9 @@
   `nil`."
   [parent {:keys [children] :as node} _options]
   (when (and (forms/call? node "or" 3)
-             (get-form? (nth children 1)))
+             (get-form? (nth children 1))
+             (or (expressions/literal? (nth children 2))
+                 (= :symbol (:type (nth children 2)))))
     (diagnostics/make-suggesting
       node
       :use-get-with-default
