@@ -110,6 +110,29 @@ namespace Roo
   FUNC(AssocInBangFunction, assoc_in_bang)
 
   /*!
+   * @brief Deep-copy the collection structure reachable from a value.
+   * @since 0.1.0
+   *
+   * Lists, vectors, maps, and structural native values are recursively rebuilt
+   * as ordinary Roo collections. Repeated references remain shared within the
+   * copied graph, while scalar, executable, and opaque native leaves retain
+   * their original identity. Cyclic collection graphs are rejected.
+   *
+   * Usage:
+   * @code
+   * (deep-copy {:items [{:name "one"}]})
+   * => {:items [{:name "one"}]}
+   * @endcode
+   *
+   * | Arg   | Description                                                        |
+   * | ----- | ------------------------------------------------------------------ |
+   * | value | Root of the value graph to copy.                                   |
+   *
+   * @return A value with independently mutable collection structure.
+   */
+  FUNC(DeepCopyFunction, deep_copy)
+
+  /*!
    * @brief Create a modified copy of a map-like structure or sequence by
    * applying a function to the current value at one or more keys or indices.
    * @since 0.1.0

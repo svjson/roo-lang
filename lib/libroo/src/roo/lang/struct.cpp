@@ -2,6 +2,7 @@
 #include "roo/lang/struct.h"
 
 #include <roo/host/object.h>
+#include <roo/runtime/deep_copy.h>
 #include <roo/runtime/dict.h>
 #include <roo/runtime/exec_node.h>
 #include <roo/runtime/seq.h>
@@ -463,6 +464,15 @@ namespace Roo
     }
 
     return result;
+  }
+
+  /** DeepCopyFunction - roo/deep-copy */
+  FUNC_IMPL(DeepCopyFunction,
+            SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&DeepCopyFunction::exec_deep_copy))))
+
+  EXEC_BODY(DeepCopyFunction, exec_deep_copy)
+  {
+    return Roo::deep_copy(args[0]);
   }
 
   /** UpdateForm - roo/update */
