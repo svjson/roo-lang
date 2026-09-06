@@ -319,7 +319,7 @@ TEST_F(RuntimeTestFixture, worker_execute_let_rethrows_transferred_roo_error_map
               {Roo::Value::keyword("my-app/worker-failure"), Roo::Value::number(42)}));
 }
 
-TEST_F(RuntimeTestFixture, worker_failure_transfer_falls_back_without_stopping_worker)
+TEST_F(RuntimeTestFixture, worker_failure_transfer_stringifies_unsafe_metadata)
 {
   runtime.eval("(roo.worker/create! :my-app/worker)");
   runtime.eval(R"(
@@ -332,14 +332,68 @@ TEST_F(RuntimeTestFixture, worker_failure_transfer_falls_back_without_stopping_w
 
   ASSERT_EQ(wait_for_worker_execution(runtime, "failed")->str(), "failed");
   ASSERT_EQ(wait_for_worker_execution(runtime, "later")->str(), "succeeded");
-  Roo::sptr_val message = runtime.eval(R"(
+  Roo::sptr_val error = runtime.eval(R"(
     (guard
-      ((:roo/error [error] (:message error)))
+      ((:roo/error [error] [(:type error) (:detail error) (:callback error)]))
       (roo.worker/collect! failed))
   )");
-  EXPECT_NE(message->str().find("Worker failure could not be transferred"),
-            std::string::npos);
+  EXPECT_EQ(*error,
+            *Roo::Value::vector(
+              {Roo::Value::keyword("roo/error"),
+               Roo::Value::string("Original failure"),
+               Roo::Value::string("<fn>")}));
   EXPECT_EQ(*runtime.eval("(roo.worker/collect! later)"), *Roo::Value::number(42));
+}
+
+TEST_F(RuntimeTestFixture, worker_failure_transfer_normalizes_runtime_local_metadata)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval(R"(
+    (def failed
+      (roo.worker/execute-let! :my-app/worker []
+        (roo.worker/create! :my-app/nested-worker)
+        (def nested-execution
+          (roo.worker/execute-let! :my-app/nested-worker [] 42))
+        (raise "Original failure" {:execution nested-execution})))
+  )");
+
+  ASSERT_EQ(wait_for_worker_execution(runtime, "failed")->str(), "failed");
+  EXPECT_EQ(*runtime.eval(R"(
+      (guard
+        ((:roo/error [error] (:execution error)))
+        (roo.worker/collect! failed))
+    )"),
+            *Roo::Value::map(
+              {Roo::Value::keyword("worker"),
+               Roo::Value::keyword("my-app/nested-worker"),
+               Roo::Value::keyword("id"),
+               Roo::Value::number(1)}));
+}
+
+TEST_F(RuntimeTestFixture, worker_failure_transfer_preserves_error_with_unsafe_frame_argument)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval(R"(
+    (def failed
+      (roo.worker/execute-let! :my-app/worker []
+        (def fail-with-callback (fn [callback] missing-worker-value))
+        (fail-with-callback (fn [] nil))))
+  )",
+               "worker-frame.roo");
+
+  ASSERT_EQ(wait_for_worker_execution(runtime, "failed")->str(), "failed");
+  Roo::sptr_val error = runtime.eval(R"(
+    (guard
+      ((:roo/identifier-error [error] error))
+      (roo.worker/collect! failed))
+  )");
+
+  const std::string rendered_error = error->to_string();
+  EXPECT_NE(rendered_error.find("missing-worker-value"), std::string::npos);
+  EXPECT_NE(rendered_error.find("worker-frame.roo:"), std::string::npos);
+  EXPECT_NE(rendered_error.find("\"<fn>\""), std::string::npos);
+  EXPECT_EQ(rendered_error.find("Worker failure could not be transferred"),
+            std::string::npos);
 }
 
 TEST_F(RuntimeTestFixture, worker_execute_let_rejects_unsafe_binding_before_enqueueing)

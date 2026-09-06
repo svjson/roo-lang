@@ -39,7 +39,7 @@ namespace Roo
     {
       try
       {
-        return deep_copy_for_runtime_transfer(failure.to_error_map());
+        return deep_copy_for_diagnostic_transfer(failure.to_error_map());
       }
       catch (const std::exception& transfer_error)
       {

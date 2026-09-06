@@ -60,6 +60,7 @@ namespace Roo
    * contains a cycle.
    */
   ROO_API sptr_val_v deep_copy_for_runtime_transfer(const sptr_val_v& roots);
+
 } // namespace Roo
 
 #endif

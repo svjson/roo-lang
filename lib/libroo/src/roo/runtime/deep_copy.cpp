@@ -1,5 +1,6 @@
 #include <roo/runtime/deep_copy.h>
 
+#include <limits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -8,6 +9,7 @@
 #include <roo/exec.h>
 #include <roo/host/object.h>
 #include <roo/lang/func.h>
+#include <roo/runtime/pretty_print.h>
 #include <roo/runtime/walk.h>
 
 #include "runtime_transfer.h"
@@ -72,6 +74,42 @@ namespace Roo
       }
 
       sptr_val copy_leaf(const sptr_val& value) const { return value; }
+    };
+
+    struct DiagnosticTransferPolicy
+    {
+      void inspect(const sptr_val&, Walk::Shape) const {}
+
+      sptr_val copy_leaf(const sptr_val& value) const
+      {
+        try
+        {
+          RuntimeTransferPolicy transfer_policy;
+          transfer_policy.inspect(value, Walk::Shape::LEAF);
+          return transfer_policy.copy_leaf(value);
+        }
+        catch (const RooException&)
+        {
+          try
+          {
+            std::string representation = Pretty::print(
+              *value,
+              {.indent_width = 2,
+               .width = std::numeric_limits<std::size_t>::max(),
+               .max_depth = 3,
+               .max_elements = 10});
+            if (representation.size() > 1024)
+            {
+              representation = representation.substr(0, 1021) + "...";
+            }
+            return Value::string(representation);
+          }
+          catch (...)
+          {
+            return Value::string("#<unprintable>");
+          }
+        }
+      }
     };
 
     template <typename Policy> class DeepCopyVisitor
@@ -207,5 +245,10 @@ namespace Roo
   sptr_val_v deep_copy_for_runtime_transfer(const sptr_val_v& roots)
   {
     return deep_copy_with_policy(roots, RuntimeTransferPolicy{});
+  }
+
+  sptr_val deep_copy_for_diagnostic_transfer(const sptr_val& root)
+  {
+    return deep_copy_root(root, DiagnosticTransferPolicy{});
   }
 } // namespace Roo
