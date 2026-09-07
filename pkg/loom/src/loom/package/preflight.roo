@@ -119,7 +119,7 @@
   source roots. The vector is empty when `:source` is absent or every
   declared root is valid."
   [package-dir library]
-  (reduce (or (:source library) [])
+  (reduce (:source library)
           []
           (fn [diagnostics source-root]
             (collect-path-diagnostic

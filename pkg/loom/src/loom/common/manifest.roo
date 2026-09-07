@@ -1,5 +1,6 @@
 (ns loom.common.manifest
   (:require [roo.io :as io]
+            [roo.string :as string]
             [loom.common.repository :as repository]))
 
 (defun manifest-path [package-dir]
@@ -22,8 +23,32 @@
 (defun package-id [manifest]
   (repository/package-id (package-name manifest) (package-version manifest)))
 
-(defun load-roots [manifest]
-  (:load-roots manifest))
+(defun load-roots
+  "Return the effective production source roots declared by a manifest.
+
+  Args:
+  - `manifest`: Parsed package manifest map.
+
+  Returns:
+  An ordered vector containing explicit load roots and uncovered namespace-root paths."
+  [manifest]
+  (let [roots (map (:load-roots manifest) io/normalize-path)
+        namespace-roots (flat-map (vals (:namespace-roots manifest))
+                                  (fn [value]
+                                    (map (case (type-of value)
+                                           "vector" value
+                                           :default [value])
+                                         io/normalize-path)))]
+    (reduce namespace-roots
+            roots
+            (fn [roots path]
+              (if (any? roots
+                        (fn [root]
+                          (or (= "." root)
+                              (= root path)
+                              (string/starts-with? path (str root "/")))))
+                roots
+                (append roots path))))))
 
 (defun native-libraries [manifest]
   (:native-libraries manifest))
@@ -43,11 +68,27 @@
 (defun add-load-roots-error! [errors manifest]
   (if-let [roots (:load-roots manifest)]
     (case (type-of roots)
-      "vector" (let [invalid-roots (filter roots (fn [root] (not (atom? root))))]
+      "vector" (let [invalid-roots (filter roots (fn [root] (not (string? root))))]
                  (unless (empty? invalid-roots)
-                   (append! errors ":load-roots must contain only strings, symbols, or keywords")))
+                   (append! errors ":load-roots must contain only strings")))
       :default (append! errors ":load-roots must be a vector"))
-    (append! errors "missing required field :load-roots")))
+    (when (empty? (:namespace-roots manifest))
+      (append! errors "missing required field :load-roots"))))
+
+(defun add-namespace-roots-errors! [errors manifest]
+  (when-let [roots (:namespace-roots manifest)]
+    (case (type-of roots)
+      "map" (reduce-kv roots
+                       nil
+                       (fn [result prefix paths]
+                         (unless (atom? prefix)
+                           (append! errors ":namespace-roots keys must be strings, symbols, or keywords"))
+                         (case (type-of paths)
+                           "vector" (unless (empty? (filter paths (fn [path] (not (string? path)))))
+                                      (append! errors ":namespace-roots paths must be strings"))
+                           :default (unless (string? paths)
+                                      (append! errors ":namespace-roots paths must be strings")))))
+      :default (append! errors ":namespace-roots must be a map"))))
 
 (defun validation-errors [manifest]
   (let [errors []]
@@ -55,7 +96,8 @@
       "map" (do
               (add-required-atom-error! errors manifest :name ":name")
               (add-required-atom-error! errors manifest :version ":version")
-              (add-load-roots-error! errors manifest))
+              (add-load-roots-error! errors manifest)
+              (add-namespace-roots-errors! errors manifest))
       :default (append! errors "package.edn must contain a map"))
     errors))
 

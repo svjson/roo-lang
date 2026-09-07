@@ -53,5 +53,62 @@
     (manifest/validation-errors invalid-load-roots))
 
   (s/then [invalid-load-root-errors]
-    (is (= [":load-roots must contain only strings, symbols, or keywords"]
+    (is (= [":load-roots must contain only strings"]
            invalid-load-root-errors))))
+
+(deftest accepts-namespace-roots-without-repeated-load-roots
+  (s/given
+    {:name "loom"
+     :version "0.1.0"
+     :namespace-roots {"loom" ["src" "src/support"]}})
+
+  (s/when [namespace-root-manifest]
+    {:errors (manifest/validation-errors namespace-root-manifest)
+     :load-roots (manifest/load-roots namespace-root-manifest)})
+
+  (s/then [result]
+    (is (= {:errors []
+            :load-roots ["src"]}
+           result))))
+
+(deftest combines-explicit-and-inferred-production-load-roots
+  (s/given
+    {:name "loom"
+     :version "0.1.0"
+     :load-roots ["src/../lib" "./assets"]
+     :namespace-roots {"loom" "lib/loom"
+                       "generated" "generated"
+                       "fixtures" "testing"}
+     :dev {:namespace-roots {"loom" "test"}}})
+
+  (s/when [package-manifest]
+    (manifest/load-roots package-manifest))
+
+  (s/then [roots]
+    (is (= ["lib" "assets" "generated" "testing"] roots))))
+
+(deftest reports-invalid-namespace-root-values
+  (s/given
+    {:name "loom"
+     :version "0.1.0"
+     :namespace-roots ["src"]})
+
+  (s/when [invalid-namespace-roots]
+    (manifest/validation-errors invalid-namespace-roots))
+
+  (s/then [invalid-namespace-root-errors]
+    (is (= [":namespace-roots must be a map"]
+           invalid-namespace-root-errors))))
+
+(deftest reports-non-string-namespace-root-paths
+  (s/given
+    {:name "loom"
+     :version "0.1.0"
+     :namespace-roots {"loom" :src}})
+
+  (s/when [invalid-namespace-roots]
+    (manifest/validation-errors invalid-namespace-roots))
+
+  (s/then [invalid-namespace-root-errors]
+    (is (= [":namespace-roots paths must be strings"]
+           invalid-namespace-root-errors))))

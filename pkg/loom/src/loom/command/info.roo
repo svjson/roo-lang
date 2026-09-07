@@ -14,7 +14,7 @@
           (prn package-id)
           (prn (str "path: " target-dir))
           (prn (str "description: " (manifest/field-text (:description package-manifest))))
-          (prn (str "load-roots: " (manifest/field-text (:load-roots package-manifest))))
+          (prn (str "load-roots: " (manifest/field-text (manifest/load-roots package-manifest))))
           (prn (str "dependencies: "
                     (manifest/field-text (:dependencies package-manifest))))
           (prn (str "native-libraries: "

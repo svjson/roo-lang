@@ -10,23 +10,20 @@
 
 (defun fresh-repo! [name]
   (let [path (build-path name)]
-    (if (io/exists? path)
-      (io/remove-tree! path)
-      nil)
+    (when (io/exists? path)
+      (io/remove-tree! path))
     path))
 
 (defun fresh-package! [name manifest-source]
   (let [path (build-path name)]
-    (if (io/exists? path)
-      (io/remove-tree! path)
-      nil)
+    (when (io/exists? path)
+      (io/remove-tree! path))
     (io/spit! (io/join-path path "package.edn") manifest-source)
     path))
 
 (defun fresh-package-at! [path manifest-source]
-  (if (io/exists? path)
-    (io/remove-tree! path)
-    nil)
+  (when (io/exists? path)
+    (io/remove-tree! path))
   (io/spit! (io/join-path path "package.edn") manifest-source)
   path)
 

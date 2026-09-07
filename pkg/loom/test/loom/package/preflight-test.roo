@@ -28,6 +28,24 @@
     (is (empty? (:diagnostics result)))))
 
 
+(deftest accepts-package-artifacts-with-namespace-root-only-sources
+  (s/given
+    (let [package-dir (support/fresh-package!
+                        "loom-proof-preflight-inferred-root"
+                        "{:name sample\n :version \"1.0.0\"\n :namespace-roots {sample \"lib\"}}")]
+      (io/spit! (io/join-path package-dir "lib/sample.roo")
+                "(ns sample)\n")
+      package-dir))
+
+  (s/when [package-dir]
+    (preflight/check package-dir))
+
+  (s/then [result]
+    (is (:ok? result))
+    (is (string? (:symbols result)))
+    (is (empty? (:diagnostics result)))))
+
+
 (deftest reports-every-missing-declared-payload
   (s/given
     (support/fresh-package!

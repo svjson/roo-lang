@@ -7,9 +7,8 @@
 
 (defun fresh-init-dir! [name]
   (let [path (support/build-path name)]
-    (if (io/exists? path)
-      (io/remove-tree! path)
-      nil)
+    (when (io/exists? path)
+      (io/remove-tree! path))
     path))
 
 (deftest initializes-package-manifest-using-directory-name

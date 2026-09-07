@@ -117,6 +117,10 @@ This reads `/path/to/package/package.edn`, validates the manifest, and installs 
 
 If that package version already exists, Loom removes the old installed version first. This prevents stale files from surviving reinstalls.
 
+Loom installs the manifest's effective production/non-dev/non-tool load roots. Paths declared 
+by `:namespace-roots` are included when no equal or ancestor `:load-roots` entry already covers
+them, so a namespace-root-only package is installable. The development overlay is not installed.
+
 ### link
 
 Install a package as a symlink to its source directory:
@@ -231,6 +235,16 @@ Minimal example:
  :version "0.1.0"
  :dependencies []
  :load-roots ["src"]}
+```
+
+`:load-roots` may be omitted when `:namespace-roots` describes every source
+directory the package exposes:
+
+```edn
+{:name my-package
+ :version "0.1.0"
+ :dependencies []
+ :namespace-roots {my-package "src"}}
 ```
 
 Versioned dependencies resolve through the local repository:
