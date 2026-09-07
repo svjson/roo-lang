@@ -210,6 +210,24 @@ TEST(PackageManifest, rejects_non_map_development_overlay)
                Roo::RooException);
 }
 
+TEST(PackageManifest, rejects_non_string_package_paths)
+{
+  EXPECT_THROW(
+    Roo::Package::parse_manifest("{:name app :load-roots [src]}", "bad/package.edn"),
+    Roo::RooException);
+  EXPECT_THROW(Roo::Package::parse_manifest("{:name app :namespace-roots {app :src}}",
+                                            "bad/package.edn"),
+               Roo::RooException);
+  EXPECT_THROW(
+    Roo::Package::parse_manifest("{:name app :dependencies {util {:path ../util}}}",
+                                 "bad/package.edn"),
+    Roo::RooException);
+  EXPECT_THROW(Roo::Package::parse_manifest(
+                 "{:name app :native-libraries [{:name native :path :native}]}",
+                 "bad/package.edn"),
+               Roo::RooException);
+}
+
 TEST(PackageManifest, parses_runtime_constraints)
 {
   auto manifest = Roo::Package::parse_manifest(

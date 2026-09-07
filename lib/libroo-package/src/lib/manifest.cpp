@@ -60,6 +60,18 @@ namespace Roo::Package
       }
     }
 
+    std::string string_value(const Roo::sptr_ast_node& node,
+                             const std::string& field,
+                             const std::string& source_name)
+    {
+      if (node->get_type() != Form::STRING)
+      {
+        throw RooException("Invalid package manifest '" + source_name + "': field :" +
+                           field + " expected string, got " + node->to_string());
+      }
+      return node->as<AST::String>().value;
+    }
+
     std::vector<std::string> vector_of_atoms(const Roo::sptr_ast_node& node,
                                              const std::string& field,
                                              const std::string& source_name)
@@ -76,6 +88,26 @@ namespace Roo::Package
       for (auto& child : children)
       {
         values.push_back(atom_string(child, field, source_name));
+      }
+      return values;
+    }
+
+    std::vector<std::string> vector_of_strings(const Roo::sptr_ast_node& node,
+                                               const std::string& field,
+                                               const std::string& source_name)
+    {
+      if (node->get_type() != Form::VECTOR)
+      {
+        throw RooException("Invalid package manifest '" + source_name + "': field :" +
+                           field + " expected vector, got " + node->to_string());
+      }
+
+      std::vector<std::string> values;
+      auto& children = node->get_children();
+      values.reserve(children.size());
+      for (auto& child : children)
+      {
+        values.push_back(string_value(child, field, source_name));
       }
       return values;
     }
@@ -105,7 +137,8 @@ namespace Roo::Package
         const auto& path_node = children[i + 1];
         if (path_node->get_type() == Form::VECTOR)
         {
-          for (const auto& path : vector_of_atoms(path_node, "namespace-roots", source_name))
+          for (const auto& path :
+               vector_of_strings(path_node, "namespace-roots", source_name))
           {
             roots.push_back(Roo::NamespaceRoot{prefix, path});
           }
@@ -114,7 +147,7 @@ namespace Roo::Package
         {
           roots.push_back(Roo::NamespaceRoot{
             prefix,
-            atom_string(path_node, "namespace-roots", source_name),
+            string_value(path_node, "namespace-roots", source_name),
           });
         }
       }
@@ -251,7 +284,8 @@ namespace Roo::Package
         std::string version_or_location = atom_string(value, "dependencies", source_name);
         if (version_or_location.rfind("file:", 0) == 0)
         {
-          dependency.path = version_or_location.substr(std::string("file:").size());
+          dependency.path = string_value(value, "dependencies path", source_name)
+                              .substr(std::string("file:").size());
         }
         else
         {
@@ -270,7 +304,8 @@ namespace Roo::Package
         }
         if (fields.count("path"))
         {
-          dependency.path = atom_string(fields.at("path"), "dependencies", source_name);
+          dependency.path =
+            string_value(fields.at("path"), "dependencies path", source_name);
         }
         return dependency;
       }
@@ -338,7 +373,7 @@ namespace Roo::Package
       }
       if (fields.count("path"))
       {
-        library.path = atom_string(fields.at("path"), "native-libraries", source_name);
+        library.path = string_value(fields.at("path"), "native-libraries path", source_name);
       }
       if (fields.count("namespaces"))
       {
@@ -923,7 +958,7 @@ namespace Roo::Package
     if (fields.count("load-roots"))
     {
       manifest.load_roots =
-        vector_of_atoms(fields.at("load-roots"), "load-roots", source_name);
+        vector_of_strings(fields.at("load-roots"), "load-roots", source_name);
     }
     if (fields.count("dev"))
     {
@@ -936,9 +971,9 @@ namespace Roo::Package
       if (development_fields.count("load-roots"))
       {
         manifest.development.load_roots =
-          vector_of_atoms(development_fields.at("load-roots"),
-                          "dev :load-roots",
-                          source_name);
+          vector_of_strings(development_fields.at("load-roots"),
+                            "dev :load-roots",
+                            source_name);
       }
       if (development_fields.count("namespace-roots"))
       {
