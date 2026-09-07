@@ -44,49 +44,12 @@ if(CMAKE_MATCH_1 STREQUAL "")
   )
 endif()
 
-string(REGEX MATCH
-  ":load-roots[ \t\r\n]+\\[([^]]*)\\]"
-  manifest_load_roots
-  "${manifest}"
-)
-if(manifest_load_roots STREQUAL "")
-  message(FATAL_ERROR
-    "Package artifact '${ROO_ARTIFACT_PACKAGE}' has no valid :load-roots in ${manifest_path}"
-  )
-endif()
-
-string(REGEX MATCHALL
-  "\"[^\"]+\""
-  declared_load_roots
-  "${CMAKE_MATCH_1}"
-)
 set(declared_payload_paths)
-foreach(quoted_load_root IN LISTS declared_load_roots)
-  string(REGEX REPLACE "^\"|\"$" "" load_root "${quoted_load_root}")
-  list(APPEND declared_payload_paths "${load_root}")
-  if(NOT EXISTS "${ROO_ARTIFACT_DIR}/${load_root}")
+foreach(payload_path IN LISTS ROO_ARTIFACT_PAYLOAD_PATHS)
+  list(APPEND declared_payload_paths "${payload_path}")
+  if(NOT EXISTS "${ROO_ARTIFACT_DIR}/${payload_path}")
     message(FATAL_ERROR
-      "Package artifact '${ROO_ARTIFACT_PACKAGE}' is missing declared load root '${load_root}'."
-    )
-  endif()
-endforeach()
-
-string(REGEX MATCHALL
-  ":path[ \t\r\n]+\"[^\"]+\""
-  declared_path_entries
-  "${manifest}"
-)
-foreach(path_entry IN LISTS declared_path_entries)
-  string(REGEX REPLACE
-    "^:path[ \t\r\n]+\"|\"$"
-    ""
-    declared_path
-    "${path_entry}"
-  )
-  list(APPEND declared_payload_paths "${declared_path}")
-  if(NOT EXISTS "${ROO_ARTIFACT_DIR}/${declared_path}")
-    message(FATAL_ERROR
-      "Package artifact '${ROO_ARTIFACT_PACKAGE}' is missing declared path '${declared_path}'."
+      "Package artifact '${ROO_ARTIFACT_PACKAGE}' is missing staged payload '${payload_path}'."
     )
   endif()
 endforeach()
@@ -107,7 +70,7 @@ foreach(required_file IN LISTS ROO_ARTIFACT_REQUIRED_FILES)
   endforeach()
   if(NOT payload_declared)
     message(FATAL_ERROR
-      "Generated payload '${required_file}' is not beneath a manifest-declared package path."
+      "Generated payload '${required_file}' is not beneath a staged package path."
     )
   endif()
 endforeach()

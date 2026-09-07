@@ -136,6 +136,10 @@ function(roo_add_stage_package_target package_name)
     set(package_artifact_required_files
       "${STAGE_PACKAGE_NATIVE_PATH}/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
     )
+    set(package_artifact_payload_paths
+      ${STAGE_PACKAGE_LOAD_ROOTS}
+      ${STAGE_PACKAGE_NATIVE_PATH}
+    )
     set(package_artifact_prepare_command
       COMMAND ${CMAKE_COMMAND}
               "-DROO_ARTIFACT_NATIVE_LIBRARY=${package_artifact_dir}/${STAGE_PACKAGE_NATIVE_PATH}/$<TARGET_FILE_NAME:${STAGE_PACKAGE_NATIVE_TARGET}>"
@@ -145,6 +149,7 @@ function(roo_add_stage_package_target package_name)
     )
   else()
     set(package_artifact_required_files)
+    set(package_artifact_payload_paths ${STAGE_PACKAGE_LOAD_ROOTS})
     set(package_artifact_prepare_command)
   endif()
 
@@ -159,6 +164,7 @@ function(roo_add_stage_package_target package_name)
     COMMAND ${CMAKE_COMMAND}
             "-DROO_ARTIFACT_DIR=${package_artifact_dir}"
             "-DROO_ARTIFACT_PACKAGE=${package_name}"
+            "-DROO_ARTIFACT_PAYLOAD_PATHS=${package_artifact_payload_paths}"
             "-DROO_ARTIFACT_REQUIRED_FILES=${package_artifact_required_files}"
             -P "${ROO_ROOT_DIR}/cmake/rooValidatePackageArtifact.cmake"
     VERBATIM
