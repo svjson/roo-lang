@@ -1,5 +1,6 @@
 (ns lookup.command.audit
   (:require [roo.io :as io]
+            [roo.string :as string]
             [lookup.audit :as audit]
             [lookup.index :as index]
             [lookup.source :as source]
@@ -33,62 +34,66 @@
       (if-let [format (nth args 1)
                format-key (keyword format)]
         (parse-args-step
-         (tail (tail args))
+         (slice args 2)
          (if (contains? [:edn :text] format-key)
            (assoc options :format format-key)
-           (assoc options :errors (concat (:errors options)
-                                          [(str "Unknown audit output format: "
-                                                format)]))))
-        (assoc options :errors (concat (:errors options)
-                                       [(str "Missing format after " arg)])))
+           (update options :errors
+                   (fn [errors]
+                     (append errors (str "Unknown audit output format: " format))))))
+        (update options :errors
+                (fn [errors]
+                  (append errors (str "Missing format after " arg)))))
 
       (= arg "--allow-zero-arity")
       (if-let [symbol (nth args 1)]
         (parse-args-step
-         (tail (tail args))
-         (assoc options
-                :allow-zero-arity
-                (concat (:allow-zero-arity options) [symbol])))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing symbol after --allow-zero-arity"])))
+         (slice args 2)
+         (update options :allow-zero-arity
+                 (fn [symbols]
+                   (append symbols symbol))))
+        (update options :errors
+                (fn [errors]
+                  (append errors "Missing symbol after --allow-zero-arity"))))
 
       (= arg "--root")
       (if-let [root (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options
-                                :roots
-                                (concat (:roots options) [root])))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing directory after --root"])))
+        (parse-args-step (slice args 2)
+                         (update options :roots
+                                 (fn [roots]
+                                   (append roots root))))
+        (update options :errors
+                (fn [errors]
+                  (append errors "Missing directory after --root"))))
 
       (= arg "--exclude")
       (if-let [path (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options
-                                :excludes
-                                (concat (:excludes options) [path])))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing path after --exclude"])))
+        (parse-args-step (slice args 2)
+                         (update options :excludes
+                                 (fn [excludes]
+                                   (append excludes path))))
+        (update options :errors
+                (fn [errors]
+                  (append errors "Missing path after --exclude"))))
 
       (= arg "--fail-on")
       (if-let [level (nth args 1)]
         (let [level-key (keyword level)]
           (parse-args-step
-           (tail (tail args))
+           (slice args 2)
            (if (contains? [:warning :error] level-key)
              (assoc options :fail-on level-key)
-             (assoc options :errors (concat (:errors options)
-                                            [(str "Unknown audit failure level: "
-                                                  level)])))))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing level after --fail-on"])))
+             (update options :errors
+                     (fn [errors]
+                       (append errors (str "Unknown audit failure level: " level)))))))
+        (update options :errors
+                (fn [errors]
+                  (append errors "Missing level after --fail-on"))))
 
-      (= "-" (substr arg 0 1))
+      (string/starts-with? arg "-")
       (parse-args-step (tail args)
-                       (assoc options
-                              :errors
-                              (concat (:errors options)
-                                      [(str "Unknown audit option: " arg)])))
+                       (update options :errors
+                               (fn [errors]
+                                 (append errors (str "Unknown audit option: " arg)))))
 
       (nil? (:input options))
       (parse-args-step (tail args)
@@ -96,11 +101,9 @@
 
       true
       (parse-args-step (tail args)
-                       (assoc options
-                              :errors
-                              (concat (:errors options)
-                                      [(str "Unexpected audit argument: "
-                                            arg)]))))))
+                       (update options :errors
+                               (fn [errors]
+                                 (append errors (str "Unexpected audit argument: " arg))))))))
 
 (defun parse-args
   "Parse arguments for the `lookup audit` command.
@@ -125,9 +128,9 @@
                                   :errors []})]
     (if (:input options)
       options
-      (assoc options
-             :errors
-             (concat (:errors options) ["Missing audit input"])))))
+      (update options :errors
+              (fn [errors]
+                (append errors "Missing audit input"))))))
 
 (defun audit-index! [{:keys [input] :as options}]
   (cond
@@ -136,7 +139,7 @@
     (io/slurp-edn! input)
 
     (and (io/directory? input)
-         (io/exists? (source/manifest-path input)))
+         (io/exists? (io/join-path input "package.edn")))
     (index/index-with-options {:extractors [:symbols]
                                :out nil
                                :package-dir input

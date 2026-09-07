@@ -12,3 +12,15 @@
                    :path "assets/broken-syntax.roo"
                    :source {:path "assets/broken-syntax.roo"}}]}
          (source/source-entry "assets/broken-syntax.roo"))))
+
+(deftest package-load-roots/combines-explicit-and-inferred-production-roots
+  (is (= ["lib" "assets" "generated" "testing"]
+         (source/package-load-roots
+           {:load-roots ["src/../lib" "./assets"]
+            :namespace-roots {"app" "lib/app"
+                              "generated" "generated"
+                              "fixtures" "testing"}
+            :dev {:namespace-roots {"app" "test"}}}))))
+
+(deftest package-load-roots/defaults-to-src-without-source-root-fields
+  (is (= ["src"] (source/package-load-roots {}))))

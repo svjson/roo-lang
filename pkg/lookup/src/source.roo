@@ -3,9 +3,6 @@
             [roo.string :as string]
             [lookup.reader :as reader]))
 
-(defun manifest-path [package-dir]
-  (io/join-path package-dir "package.edn"))
-
 (defun read-manifest!
   "Read a package manifest from a package directory.
 
@@ -15,7 +12,7 @@
   Returns:
   The parsed package manifest map."
   [package-dir]
-  (io/slurp-edn! (manifest-path package-dir)))
+  (io/slurp-edn! (io/join-path package-dir "package.edn")))
 
 (defun package-info
   "Build package metadata for lookup indexes.
@@ -30,10 +27,36 @@
    :version (:version manifest)
    :description (:description manifest)})
 
-(defun package-load-roots [manifest]
-  (if (nil? (:load-roots manifest))
-    ["src"]
-    (:load-roots manifest)))
+(defun package-load-roots
+  "Return the effective production source roots declared by a manifest.
+
+  Args:
+  - `manifest`: Parsed package manifest map.
+
+  Returns:
+  An ordered vector containing explicit load roots and uncovered namespace-root paths."
+  [manifest]
+  (let [roots (map (if (and (nil? (:load-roots manifest))
+                            (empty? (:namespace-roots manifest)))
+                     ["src"]
+                     (:load-roots manifest))
+                   io/normalize-path)
+        namespace-roots (flat-map (vals (:namespace-roots manifest))
+                                  (fn [value]
+                                    (map (case (type-of value)
+                                           "vector" value
+                                           :default [value])
+                                         io/normalize-path)))]
+    (reduce namespace-roots
+            roots
+            (fn [roots path]
+              (if (any? roots
+                        (fn [root]
+                          (or (= "." root)
+                              (= root path)
+                              (string/starts-with? path (str root "/")))))
+                roots
+                (append roots path))))))
 
 (defun source-file?
   "Test whether a path names a Roo source file.
