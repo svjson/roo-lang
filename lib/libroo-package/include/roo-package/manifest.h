@@ -24,6 +24,19 @@ namespace Roo::Package
     std::string path;
   };
 
+  struct DevelopmentOverlay
+  {
+    std::vector<Dependency> dependencies;
+    std::vector<std::string> load_roots;
+    std::vector<Roo::NamespaceRoot> namespace_roots;
+  };
+
+  enum class ManifestScope
+  {
+    Production,
+    Development,
+  };
+
   struct NativeLibrary
   {
     std::string name;
@@ -40,6 +53,7 @@ namespace Roo::Package
     std::string description;
     std::vector<Dependency> dependencies;
     std::vector<std::string> load_roots;
+    DevelopmentOverlay development;
     std::map<std::string, std::string> runtimes;
     std::vector<Roo::NamespaceRoot> namespace_roots;
     std::vector<std::string> native_namespaces;
@@ -82,6 +96,7 @@ namespace Roo::Package
   struct ResolveOptions
   {
     std::vector<std::string> package_search_roots;
+    ManifestScope root_scope = ManifestScope::Production;
   };
 
   std::string default_local_repository_root();
@@ -101,7 +116,9 @@ namespace Roo::Package
                           const std::string& source_name = "package.edn");
   Manifest read_manifest(Roo::FileSystem& fs,
                          const std::string& manifest_path = "package.edn");
-  LoadPlan build_load_plan(const Manifest& manifest, const std::string& package_root);
+  LoadPlan build_load_plan(const Manifest& manifest,
+                           const std::string& package_root,
+                           ManifestScope scope = ManifestScope::Production);
   LoadPlan resolve_load_plan(Roo::FileSystem& fs,
                              const std::string& package_root,
                              const ResolveOptions& options = {});

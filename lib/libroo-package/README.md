@@ -22,6 +22,8 @@ A package is a directory containing `package.edn`:
  :description "Example package."
  :dependencies {utility "file:../utility"
                 example-runner "file:../example-runner"}
+ :dev {:dependencies {proof "0.1.0"}
+       :namespace-roots {example-app "test"}}
  :runtimes {:roo ">=0.1.0-alpha.1 <0.2.0"}
  :load-roots ["src"]
  :autoloads [example.bootstrap]
@@ -37,6 +39,9 @@ Current fields:
 - `:version` is the package version string.
 - `:description` is optional descriptive text.
 - `:dependencies` maps dependency names to local package locations or metadata.
+- `:dev` contains development-only `:dependencies`, `:load-roots`, and
+  `:namespace-roots`. Other entries are left available for tools that consume
+  the manifest directly.
 - `:runtimes` maps runtime names to supported semantic version constraints.
 - `:load-roots` lists package-relative Roo source roots.
 - `:namespace-roots` maps namespace prefixes to one package-relative source
@@ -72,8 +77,8 @@ If both `:version` and `:path` are specified, the dependency manifest at that
 path must have the requested version.
 
 Dependency paths are resolved relative to the package that declares them. The
-load plan is dependency-first, so dependency `:load-roots` are added before the
-depending package's own `:load-roots`.
+load plan is dependency-first, so dependency source roots are added before the
+depending package's own effective load roots.
 
 Version-only dependencies are resolved from package search roots:
 
@@ -140,6 +145,31 @@ are tried in the order declared:
  :namespace-roots {mylib.stuff ["src/roo/main-stuff"
                                 "test/roo/main-stuff"]}}
 ```
+
+Namespace-root paths are also effective load roots. A manifest can omit
+`:load-roots` when its namespace roots describe every source directory it
+exposes. When an explicit load root already equals or contains a namespace-root
+path, Roo does not add a redundant path.
+
+## Development Overlay
+
+Development dependencies and sources can be declared without making them part
+of the installed or normally executed package:
+
+```lisp
+{:name example-app
+ :version "0.1.0"
+ :namespace-roots {example-app "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :namespace-roots {example-app "test"}}}
+```
+
+Only the root package's `:dev` map is selected, and only when a bare tool such
+as `roo proof` names a direct development dependency. Dependencies retain their
+production manifests. Development source and namespace roots precede the root
+package's production roots, allowing development sources to shadow production
+sources intentionally. Ordinary file and package execution use the production
+plan and ignore `:dev`.
 
 ## Native Libraries
 
@@ -477,9 +507,10 @@ Running a dependency-provided package tool:
 roo proof --reporter tree --filter '*checkout*'
 ```
 
-uses the nearest parent `package.edn`, resolves the package and dependencies,
-loads native libraries and autoloads, then invokes the dependency package's
-declared `run` tool with package context data and forwarded tool arguments.
+uses the nearest parent `package.edn`, selects the development plan when the
+tool is a direct `:dev :dependencies` entry and otherwise selects the production
+plan, then invokes the dependency package's declared `run` tool with package
+context data and forwarded tool arguments.
 
 ## Current Limitations
 

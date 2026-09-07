@@ -387,7 +387,7 @@ namespace Roo::Package
       {
         return child;
       }
-      if (child.empty())
+      if (child.empty() || child == ".")
       {
         return root;
       }
@@ -504,6 +504,91 @@ namespace Roo::Package
       }
     }
 
+    bool load_root_covers(const std::string& root, const std::string& path)
+    {
+      const std::filesystem::path normalized_root =
+        std::filesystem::path(root).lexically_normal();
+      const std::filesystem::path normalized_path =
+        std::filesystem::path(path).lexically_normal();
+      if (normalized_root.empty() || normalized_root == ".")
+      {
+        return true;
+      }
+
+      auto root_part = normalized_root.begin();
+      auto path_part = normalized_path.begin();
+      while (root_part != normalized_root.end() && path_part != normalized_path.end())
+      {
+        if (*root_part != *path_part)
+        {
+          return false;
+        }
+        ++root_part;
+        ++path_part;
+      }
+      return root_part == normalized_root.end();
+    }
+
+    std::vector<std::string> effective_load_roots(
+      const std::vector<std::string>& load_roots,
+      const std::vector<Roo::NamespaceRoot>& namespace_roots)
+    {
+      std::vector<std::string> roots;
+      roots.reserve(load_roots.size() + namespace_roots.size());
+      for (const auto& root : load_roots)
+      {
+        append_unique(roots, normalize_path(root));
+      }
+      for (const auto& namespace_root : namespace_roots)
+      {
+        const std::string path = normalize_path(namespace_root.path);
+        if (std::none_of(roots.begin(),
+                         roots.end(),
+                         [&](const std::string& root)
+                         { return load_root_covers(root, path); }))
+        {
+          roots.push_back(path);
+        }
+      }
+      return roots;
+    }
+
+    Manifest apply_development_overlay(Manifest manifest)
+    {
+      std::vector<Dependency> dependencies = manifest.development.dependencies;
+      std::set<std::string> development_dependency_names;
+      for (const auto& dependency : manifest.development.dependencies)
+      {
+        development_dependency_names.insert(dependency.name);
+      }
+      for (const auto& dependency : manifest.dependencies)
+      {
+        if (!development_dependency_names.count(dependency.name))
+        {
+          dependencies.push_back(dependency);
+        }
+      }
+      manifest.dependencies = std::move(dependencies);
+
+      std::vector<std::string> load_roots =
+        effective_load_roots(manifest.development.load_roots,
+                             manifest.development.namespace_roots);
+      for (const auto& root :
+           effective_load_roots(manifest.load_roots, manifest.namespace_roots))
+      {
+        append_unique(load_roots, root);
+      }
+      manifest.load_roots = std::move(load_roots);
+
+      std::vector<Roo::NamespaceRoot> namespace_roots = manifest.development.namespace_roots;
+      for (const auto& root : manifest.namespace_roots)
+      {
+        append_unique(namespace_roots, root);
+      }
+      manifest.namespace_roots = std::move(namespace_roots);
+      return manifest;
+    }
+
     std::string describe_roots(const std::vector<std::string>& roots)
     {
       std::string result;
@@ -602,6 +687,7 @@ namespace Roo::Package
     struct ResolveState
     {
       Roo::FileSystem& fs;
+      ManifestScope root_scope;
       std::vector<std::string> search_roots;
       std::set<std::string> visiting;
       std::set<std::string> visited;
@@ -656,8 +742,10 @@ namespace Roo::Package
       package_info.name = manifest.name;
       package_info.version = manifest.version;
       package_info.package_root = package_root;
-      package_info.load_roots.reserve(manifest.load_roots.size());
-      for (const auto& root : manifest.load_roots)
+      const auto load_roots =
+        effective_load_roots(manifest.load_roots, manifest.namespace_roots);
+      package_info.load_roots.reserve(load_roots.size());
+      for (const auto& root : load_roots)
       {
         const std::string resolved_root = normalize_path(join_path(package_root, root));
         append_unique(plan.load_paths, resolved_root);
@@ -729,6 +817,11 @@ namespace Roo::Package
 
       state.visiting.insert(package_root);
       Manifest manifest = read_manifest(state.fs, manifest_path(package_root));
+      if (package_root == state.plan.package_root &&
+          state.root_scope == ManifestScope::Development)
+      {
+        manifest = apply_development_overlay(std::move(manifest));
+      }
       if (already_resolved_package(state, manifest, package_root))
       {
         state.visiting.erase(package_root);
@@ -832,6 +925,27 @@ namespace Roo::Package
       manifest.load_roots =
         vector_of_atoms(fields.at("load-roots"), "load-roots", source_name);
     }
+    if (fields.count("dev"))
+    {
+      const auto development_fields = map_fields(fields.at("dev"), source_name);
+      if (development_fields.count("dependencies"))
+      {
+        manifest.development.dependencies =
+          dependency_list(development_fields.at("dependencies"), source_name);
+      }
+      if (development_fields.count("load-roots"))
+      {
+        manifest.development.load_roots =
+          vector_of_atoms(development_fields.at("load-roots"),
+                          "dev :load-roots",
+                          source_name);
+      }
+      if (development_fields.count("namespace-roots"))
+      {
+        manifest.development.namespace_roots =
+          namespace_root_list(development_fields.at("namespace-roots"), source_name);
+      }
+    }
     if (fields.count("namespace-roots"))
     {
       manifest.namespace_roots =
@@ -897,8 +1011,13 @@ namespace Roo::Package
     return {default_local_repository_root()};
   }
 
-  LoadPlan build_load_plan(const Manifest& manifest, const std::string& package_root)
+  LoadPlan build_load_plan(const Manifest& source_manifest,
+                           const std::string& package_root,
+                           ManifestScope scope)
   {
+    const Manifest manifest = scope == ManifestScope::Development
+                                ? apply_development_overlay(source_manifest)
+                                : source_manifest;
     const std::string normalized_package_root = normalize_path(package_root);
     LoadPlan plan;
     plan.package_root = normalized_package_root;
@@ -942,9 +1061,11 @@ namespace Roo::Package
       }
     }
 
-    plan.load_paths.reserve(manifest.load_roots.size());
-    package_info.load_roots.reserve(manifest.load_roots.size());
-    for (const auto& root : manifest.load_roots)
+    const auto load_roots =
+      effective_load_roots(manifest.load_roots, manifest.namespace_roots);
+    plan.load_paths.reserve(load_roots.size());
+    package_info.load_roots.reserve(load_roots.size());
+    for (const auto& root : load_roots)
     {
       const std::string resolved_root =
         normalize_path(join_path(normalized_package_root, root));
@@ -970,6 +1091,7 @@ namespace Roo::Package
 
     ResolveState state{
       fs,
+      options.root_scope,
       normalized_search_roots,
       {},
       {},

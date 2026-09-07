@@ -182,6 +182,34 @@ TEST(PackageManifest, parses_dependency_map_with_versions_and_paths)
   EXPECT_EQ(manifest.dependencies[3].path, "/opt/roo/ui");
 }
 
+TEST(PackageManifest, parses_recognized_development_overlay_fields)
+{
+  auto manifest = Roo::Package::parse_manifest(
+    R"({:name app
+        :dependencies {util "1.0.0"}
+        :dev {:dependencies {proof "0.1.0"}
+              :load-roots ["test"]
+              :namespace-roots {app ["test" "test/support"]}
+              :coverage {:minimum 90}}})",
+    "app/package.edn");
+
+  ASSERT_EQ(manifest.development.dependencies.size(), 1u);
+  EXPECT_EQ(manifest.development.dependencies[0].name, "proof");
+  EXPECT_EQ(manifest.development.dependencies[0].version, "0.1.0");
+  EXPECT_EQ(manifest.development.load_roots, std::vector<std::string>{"test"});
+  ASSERT_EQ(manifest.development.namespace_roots.size(), 2u);
+  EXPECT_EQ(manifest.development.namespace_roots[0].ns_prefix, "app");
+  EXPECT_EQ(manifest.development.namespace_roots[0].path, "test");
+  EXPECT_EQ(manifest.development.namespace_roots[1].ns_prefix, "app");
+  EXPECT_EQ(manifest.development.namespace_roots[1].path, "test/support");
+}
+
+TEST(PackageManifest, rejects_non_map_development_overlay)
+{
+  EXPECT_THROW(Roo::Package::parse_manifest("{:name app :dev [proof]}", "bad/package.edn"),
+               Roo::RooException);
+}
+
 TEST(PackageManifest, parses_runtime_constraints)
 {
   auto manifest = Roo::Package::parse_manifest(
@@ -262,6 +290,76 @@ TEST(PackageManifest, build_load_plan_propagates_runtime_constraints)
   EXPECT_EQ(plan.packages[0].runtimes.at("roo"), ">=0.1.0 <0.2.0");
 }
 
+TEST(PackageManifest, namespace_roots_contribute_effective_load_roots)
+{
+  auto manifest = Roo::Package::parse_manifest(
+    R"({:name app
+        :dependencies []
+        :load-roots ["src"]
+        :namespace-roots {app "src"
+                          app.support "src/support"
+                          app.test "test/support"
+                          app.test-root "test"
+                          app.testing "testing"}})",
+    "app/package.edn");
+
+  auto plan = Roo::Package::build_load_plan(manifest, "/repo/app");
+
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{
+              "/repo/app/src",
+              "/repo/app/test/support",
+              "/repo/app/test",
+              "/repo/app/testing",
+            }));
+  EXPECT_EQ(plan.packages[0].load_roots, plan.load_paths);
+}
+
+TEST(PackageManifest, package_root_load_path_covers_namespace_roots)
+{
+  auto manifest = Roo::Package::parse_manifest(
+    R"({:name app
+        :dependencies []
+        :load-roots ["."]
+        :namespace-roots {app "src" app.test "test"}})",
+    "app/package.edn");
+
+  auto plan = Roo::Package::build_load_plan(manifest, "/repo/app");
+
+  EXPECT_EQ(plan.load_paths, std::vector<std::string>{"/repo/app"});
+}
+
+TEST(PackageManifest, development_plan_places_development_sources_first)
+{
+  auto manifest = Roo::Package::parse_manifest(
+    R"({:name app
+        :dependencies []
+        :namespace-roots {app ["src" "shared"]}
+        :dev {:load-roots ["dev-support"]
+              :namespace-roots {app ["test" "src"]}}})",
+    "app/package.edn");
+
+  auto production_plan = Roo::Package::build_load_plan(manifest, "/repo/app");
+  auto development_plan =
+    Roo::Package::build_load_plan(manifest,
+                                  "/repo/app",
+                                  Roo::Package::ManifestScope::Development);
+
+  EXPECT_EQ(production_plan.load_paths,
+            (std::vector<std::string>{"/repo/app/src", "/repo/app/shared"}));
+  EXPECT_EQ(development_plan.load_paths,
+            (std::vector<std::string>{
+              "/repo/app/dev-support",
+              "/repo/app/test",
+              "/repo/app/src",
+              "/repo/app/shared",
+            }));
+  ASSERT_EQ(development_plan.namespace_roots.size(), 3u);
+  EXPECT_EQ(development_plan.namespace_roots[0].path, "/repo/app/test");
+  EXPECT_EQ(development_plan.namespace_roots[1].path, "/repo/app/src");
+  EXPECT_EQ(development_plan.namespace_roots[2].path, "/repo/app/shared");
+}
+
 TEST(PackageManifest, merges_extra_load_paths_before_resolved_package_paths)
 {
   auto manifest = Roo::Package::parse_manifest(proof_manifest, "proof/package.edn");
@@ -331,6 +429,90 @@ TEST(PackageManifest, resolves_pure_roo_dependencies_from_search_roots)
   EXPECT_EQ(plan.load_paths,
             (std::vector<std::string>{"/repo/pkg/util/src", "/repo/pkg/app/src"}));
   EXPECT_EQ(plan.entry_points, std::vector<std::string>{"app.core"});
+}
+
+TEST(PackageManifest, development_plan_merges_only_the_root_overlay)
+{
+  MemoryFileSystem fs;
+  fs.add("/repo/app/package.edn",
+         R"({:name app
+             :version "1.0.0"
+             :dependencies {shared "1.0.0" util "1.0.0"}
+             :namespace-roots {app "src"}
+             :dev {:dependencies {proof "1.0.0" shared "2.0.0"}
+                   :namespace-roots {app "test"}}})");
+  fs.add("/repo/proof/1.0.0/package.edn",
+         R"({:name proof
+             :version "1.0.0"
+             :dependencies {support "1.0.0"}
+             :namespace-roots {proof "src"}
+             :dev {:dependencies {missing "1.0.0"}}})");
+  fs.add("/repo/support/1.0.0/package.edn",
+         R"({:name support
+             :version "1.0.0"
+             :dependencies []
+             :namespace-roots {support "src"}})");
+  fs.add("/repo/shared/1.0.0/package.edn",
+         R"({:name shared
+             :version "1.0.0"
+             :dependencies []
+             :namespace-roots {shared "src"}})");
+  fs.add("/repo/shared/2.0.0/package.edn",
+         R"({:name shared
+             :version "2.0.0"
+             :dependencies []
+             :namespace-roots {shared "src"}})");
+  fs.add("/repo/util/1.0.0/package.edn",
+         R"({:name util
+             :version "1.0.0"
+             :dependencies []
+             :namespace-roots {util "src"}})");
+
+  Roo::Package::ResolveOptions options{{"/repo"}, Roo::Package::ManifestScope::Development};
+  auto plan = Roo::Package::resolve_load_plan(fs, "/repo/app", options);
+
+  ASSERT_EQ(plan.packages.size(), 5u);
+  EXPECT_EQ(plan.packages[0].name, "support");
+  EXPECT_EQ(plan.packages[1].name, "proof");
+  EXPECT_EQ(plan.packages[2].name, "shared");
+  EXPECT_EQ(plan.packages[2].version, "2.0.0");
+  EXPECT_EQ(plan.packages[3].name, "util");
+  EXPECT_EQ(plan.packages[4].name, "app");
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{
+              "/repo/support/1.0.0/src",
+              "/repo/proof/1.0.0/src",
+              "/repo/shared/2.0.0/src",
+              "/repo/util/1.0.0/src",
+              "/repo/app/test",
+              "/repo/app/src",
+            }));
+}
+
+TEST(PackageManifest, production_plan_ignores_the_root_development_overlay)
+{
+  MemoryFileSystem fs;
+  fs.add("/repo/app/package.edn",
+         R"({:name app
+             :dependencies {util "1.0.0"}
+             :namespace-roots {app "src"}
+             :dev {:dependencies {missing "1.0.0"}
+                   :namespace-roots {app "test"}}})");
+  fs.add("/repo/util/1.0.0/package.edn",
+         R"({:name util
+             :version "1.0.0"
+             :dependencies []
+             :namespace-roots {util "src"}})");
+
+  auto plan = Roo::Package::resolve_load_plan(fs,
+                                              "/repo/app",
+                                              Roo::Package::ResolveOptions{{"/repo"}});
+
+  ASSERT_EQ(plan.packages.size(), 2u);
+  EXPECT_EQ(plan.packages[0].name, "util");
+  EXPECT_EQ(plan.packages[1].name, "app");
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{"/repo/util/1.0.0/src", "/repo/app/src"}));
 }
 
 TEST(PackageManifest, resolves_versioned_dependencies_from_repository_layout)
