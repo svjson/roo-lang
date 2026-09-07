@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -208,7 +209,22 @@ int main(int argc, char** argv)
     const auto package_root = Roo::Package::find_package_root(manifest_fs, file_path);
     if (package_root)
     {
-      package_plan = Roo::Package::resolve_load_plan(manifest_fs, *package_root);
+      Roo::Package::ResolveOptions resolve_options;
+      if (run_tool)
+      {
+        const Roo::Package::Manifest manifest = Roo::Package::read_manifest(
+          manifest_fs,
+          (std::filesystem::path(*package_root) / "package.edn").string());
+        if (std::any_of(manifest.development.dependencies.begin(),
+                        manifest.development.dependencies.end(),
+                        [&](const Roo::Package::Dependency& dependency)
+                        { return dependency.name == file_path; }))
+        {
+          resolve_options.root_scope = Roo::Package::ManifestScope::Development;
+        }
+      }
+      package_plan =
+        Roo::Package::resolve_load_plan(manifest_fs, *package_root, resolve_options);
     }
     else if (run_package)
     {

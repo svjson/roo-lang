@@ -1,0 +1,7 @@
+{:name dev-scope-package
+ :version "0.1.0"
+ :dependencies {}
+ :namespace-roots {dev-scope "src"}
+ :main dev-scope.main/main
+ :dev {:dependencies {proof "0.1.0"}
+       :namespace-roots {dev-scope "test"}}}

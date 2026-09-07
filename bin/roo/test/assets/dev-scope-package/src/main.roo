@@ -1,0 +1,7 @@
+(ns dev-scope.main
+  (:require dev-scope.value))
+
+(defun main [args]
+  (case dev-scope.value/source
+    :production 0
+    :default 7))

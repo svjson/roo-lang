@@ -7,6 +7,7 @@ PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}
 PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
 APPLICATION_WORKER_PACKAGE="$ROOT_DIR/lib/libroo-package/test/tests/assets/packages/autoload-app"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"
+DEV_SCOPE_PACKAGE="$PACKAGE_STAGE_ROOT/roo-cli-dev-scope"
 OUTPUT_FILE="$RUN_DIR/main-ran.txt"
 
 fail()
@@ -137,3 +138,30 @@ assert_not_contains "roo proof help does not run tests" "$PROOF_HELP_OUTPUT" "te
 assert_not_contains "roo proof help does not report passes" "$PROOF_HELP_OUTPUT" "PASS "
 assert_not_contains "roo proof help does not report failures" "$PROOF_HELP_OUTPUT" "FAIL "
 assert_not_contains "roo proof help does not report errors" "$PROOF_HELP_OUTPUT" "ERROR "
+
+printf '%s\n' "==> Testing roo development tool scope"
+cmake -E remove_directory "$DEV_SCOPE_PACKAGE"
+cmake -E copy_directory \
+  "$ROOT_DIR/bin/roo/test/assets/dev-scope-package" \
+  "$DEV_SCOPE_PACKAGE"
+
+if ! (
+  cd "$DEV_SCOPE_PACKAGE"
+  "$ROO" .
+); then
+  fail "roo package invocation activated development sources"
+fi
+
+if ! DEV_SCOPE_OUTPUT="$(
+  cd "$DEV_SCOPE_PACKAGE"
+  "$ROO" proof --reporter simple --filter development-source-precedes-production-source
+)"; then
+  fail "roo development tool invocation failed"
+fi
+
+assert_contains "roo development tool discovers development-first namespace test" \
+  "$DEV_SCOPE_OUTPUT" \
+  "development-source-precedes-production-source"
+assert_contains "roo development tool passes with development-first namespace roots" \
+  "$DEV_SCOPE_OUTPUT" \
+  "1 passed, 0 failed"

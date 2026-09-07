@@ -1,0 +1,6 @@
+(ns dev-scope.scope-test
+  (:require proof.core
+            dev-scope.value))
+
+(deftest development-source-precedes-production-source
+  (is (= :development dev-scope.value/source)))
