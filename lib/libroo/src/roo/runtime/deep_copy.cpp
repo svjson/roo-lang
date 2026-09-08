@@ -26,6 +26,50 @@ namespace Roo
       }
     };
 
+    std::string bounded_representation(const Value& value)
+    {
+      try
+      {
+        std::string representation = Pretty::print(
+          value,
+          {.indent_width = 2,
+           .width = std::numeric_limits<std::size_t>::max(),
+           .max_depth = 3,
+           .max_elements = 10});
+        if (representation.size() > 1024)
+        {
+          representation = representation.substr(0, 1021) + "...";
+        }
+        return representation;
+      }
+      catch (...)
+      {
+        return "#<unprintable>";
+      }
+    }
+
+    class RuntimeTransferException : public RooException
+    {
+     private:
+      std::string rejected_type;
+      std::string rejected_value;
+
+     public:
+      RuntimeTransferException(const std::string& reason, const sptr_val& value)
+        : RooException(reason)
+        , rejected_type(type_string(*value))
+        , rejected_value(bounded_representation(*value))
+      {
+      }
+
+     protected:
+      void append_error_fields(ErrorMapBuilder& builder) const override
+      {
+        builder.add("rejected-type", Value::string(rejected_type));
+        builder.add("rejected-value", Value::string(rejected_value));
+      }
+    };
+
     struct PermissiveDeepCopyPolicy
     {
       void inspect(const sptr_val&, Walk::Shape) const {}
@@ -40,7 +84,7 @@ namespace Roo
         if (value->type == Value::Type::NATIVE_OBJECT &&
             dynamic_cast<RuntimeLocalNativeObject*>(value->nobj().get()))
         {
-          throw RooException("Native value belongs to its current runtime.");
+          throw RuntimeTransferException("Native value belongs to its current runtime.", value);
         }
 
         if (shape != Walk::Shape::LEAF) return;
@@ -62,14 +106,15 @@ namespace Roo
               std::dynamic_pointer_cast<DetachedFunction>(executable) ||
               std::dynamic_pointer_cast<JuxtedFunction>(executable))
           {
-            throw RooException("Executable value retains runtime state.");
+            throw RuntimeTransferException("Executable value retains runtime state.", value);
           }
           return;
         }
         case Value::Type::OBJECT:
-          throw RooException("AST runtime values cannot be transferred between runtimes.");
+          throw RuntimeTransferException(
+            "AST runtime values cannot be transferred between runtimes.", value);
         default:
-          throw RooException("Value cannot be transferred between runtimes.");
+          throw RuntimeTransferException("Value cannot be transferred between runtimes.", value);
         }
       }
 
@@ -90,24 +135,7 @@ namespace Roo
         }
         catch (const RooException&)
         {
-          try
-          {
-            std::string representation = Pretty::print(
-              *value,
-              {.indent_width = 2,
-               .width = std::numeric_limits<std::size_t>::max(),
-               .max_depth = 3,
-               .max_elements = 10});
-            if (representation.size() > 1024)
-            {
-              representation = representation.substr(0, 1021) + "...";
-            }
-            return Value::string(representation);
-          }
-          catch (...)
-          {
-            return Value::string("#<unprintable>");
-          }
+          return Value::string(bounded_representation(*value));
         }
       }
     };

@@ -396,6 +396,28 @@ TEST_F(RuntimeTestFixture, worker_failure_transfer_preserves_error_with_unsafe_f
             std::string::npos);
 }
 
+TEST_F(RuntimeTestFixture, worker_result_transfer_reports_rejected_type_and_value)
+{
+  runtime.eval("(roo.worker/create! :my-app/worker)");
+  runtime.eval(R"(
+    (def rejected
+      (roo.worker/execute-let! :my-app/worker [] (fn [] nil)))
+    (def later
+      (roo.worker/execute-let! :my-app/worker [] 42))
+  )");
+
+  ASSERT_EQ(wait_for_worker_execution(runtime, "rejected")->str(), "failed");
+  ASSERT_EQ(wait_for_worker_execution(runtime, "later")->str(), "succeeded");
+  EXPECT_EQ(*runtime.eval(R"(
+      (guard
+        ((:roo/error [error] [(:rejected-type error) (:rejected-value error)]))
+        (roo.worker/collect! rejected))
+    )"),
+            *Roo::Value::vector(
+              {Roo::Value::string("executable"), Roo::Value::string("<fn>")}));
+  EXPECT_EQ(*runtime.eval("(roo.worker/collect! later)"), *Roo::Value::number(42));
+}
+
 TEST_F(RuntimeTestFixture, worker_execute_let_rejects_unsafe_binding_before_enqueueing)
 {
   runtime.eval("(roo.worker/create! :my-app/worker)");
