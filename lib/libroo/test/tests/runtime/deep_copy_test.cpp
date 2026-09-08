@@ -8,6 +8,8 @@
 
 #include <gtest/gtest.h>
 
+#include <optional>
+
 namespace
 {
   const Roo::HostTypeRef NATIVE_GRAPH_VALUE_TYPE("test/native-graph-value");
@@ -49,6 +51,63 @@ namespace
     return Roo::Value::native_object(
       std::make_shared<NativeGraphValue>(kind, std::move(children)));
   }
+
+  class ReusedNativeValueSlot
+  {
+   private:
+    std::optional<Roo::Value> slot;
+
+   public:
+    Roo::sptr_val make(const Roo::sptr_native_obj& native)
+    {
+      if (slot) return Roo::Value::native_object(native);
+
+      slot.emplace();
+      slot->type = Roo::Value::Type::NATIVE_OBJECT;
+      slot->value = native;
+      return Roo::sptr_val(&*slot, [this](Roo::Value*) { slot.reset(); });
+    }
+  };
+
+  class GeneratedNativeBranch final : public Roo::NativeObjectBase
+  {
+   private:
+    ReusedNativeValueSlot& slot;
+    std::string key;
+    int number;
+
+   public:
+    GeneratedNativeBranch(ReusedNativeValueSlot& slot, std::string key, int number)
+      : slot(slot)
+      , key(std::move(key))
+      , number(number)
+    {
+    }
+
+    const Roo::NativeObjectTraits* get_traits() const override
+    {
+      static const Roo::NAccessorTable accessors;
+      static const Roo::NativeObjectTraits traits(&NATIVE_GRAPH_VALUE_TYPE, accessors);
+      return &traits;
+    }
+
+    Roo::sptr_val_v native_children() const override
+    {
+      return {slot.make(std::make_shared<NativeGraphValue>(
+        Roo::NativeObjectStructuralKind::MAP,
+        Roo::sptr_val_v{Roo::Value::keyword(key), Roo::Value::number(number)}))};
+    }
+
+    Roo::NativeObjectStructuralKind structural_kind() const override
+    {
+      return Roo::NativeObjectStructuralKind::VECTOR;
+    }
+
+    void* self_object_ptr() const override
+    {
+      return const_cast<GeneratedNativeBranch*>(this);
+    }
+  };
 } // namespace
 
 TEST(DeepCopy, rebuilds_roo_collections_and_preserves_aliases_across_roots)
@@ -106,6 +165,18 @@ TEST(DeepCopy, demotes_native_maps_and_sequences_to_roo_shapes)
   EXPECT_NE(copied->elements()[1], native_sequence);
   EXPECT_EQ(copied->elements()[1]->elements()[0],
             native_sequence->nobj()->native_children()[0]);
+}
+
+TEST(DeepCopy, retains_generated_native_sources_used_as_memoization_keys)
+{
+  ReusedNativeValueSlot slot;
+  Roo::sptr_val source = Roo::Value::vector(
+    {Roo::Value::native_object(
+       std::make_shared<GeneratedNativeBranch>(slot, "types", 1)),
+     Roo::Value::native_object(
+       std::make_shared<GeneratedNativeBranch>(slot, "intensity", 2))});
+
+  EXPECT_EQ(Roo::deep_copy(source)->to_string(), "[[{:types 1}] [{:intensity 2}]]");
 }
 
 TEST(DeepCopy, rejects_cycles)

@@ -151,7 +151,7 @@ namespace Roo
       };
 
       Policy policy;
-      std::unordered_map<const Value*, sptr_val> completed;
+      std::unordered_map<sptr_val, sptr_val> completed;
       std::unordered_set<const Value*> active;
       std::vector<Frame> frames;
       sptr_val_v copied_roots;
@@ -183,7 +183,7 @@ namespace Roo
           throw RooException("Cannot deep-copy a cyclic value graph.");
         }
 
-        auto existing = completed.find(source.get());
+        auto existing = completed.find(source);
         if (existing != completed.end())
         {
           append(existing->second);
@@ -196,7 +196,7 @@ namespace Roo
         if (shape == Walk::Shape::LEAF)
         {
           sptr_val copied = policy.copy_leaf(source);
-          completed.emplace(source.get(), copied);
+          completed.emplace(source, copied);
           append(std::move(copied));
           return Walk::Control::SKIP;
         }
@@ -230,7 +230,7 @@ namespace Roo
         }
 
         active.erase(source.get());
-        completed.emplace(source.get(), copied);
+        completed.emplace(source, copied);
         append(std::move(copied));
       }
 
