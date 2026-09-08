@@ -1,5 +1,8 @@
 {:name soot
  :version "0.1.0"
  :description "Small ANSI SGR styling functions for Roo strings."
+ :load-roots ["src"]
  :dependencies []
- :load-roots ["src"]}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}
+ :config {proof {:test-roots ["test"]}}}
