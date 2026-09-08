@@ -2,7 +2,11 @@
   (:require proof.core
             [proof.scenario :as p]
             [proof.reporter.tree :as tree]
-            [soot.core :as soot-core]))
+            [soot :as soot]))
+
+(def esc
+  "ANSI escape character derived from Soot's public SGR API."
+  (substr (soot/sgr ["0"]) 0 1))
 
 (def two-tests
   [{:name "t1" :display-file "file.roo"}
@@ -24,9 +28,9 @@
 ;; proof.reporter.tree/pending-text
 
 (deftest pending-text/is-entirely-gray-except-the-bullet
-  (is (= (str "├── " soot-core/esc "[90m         - "
-              soot-core/esc "[1mmy-fun" soot-core/esc "[22m/description"
-              soot-core/esc "[39m")
+  (is (= (str "├── " esc "[90m         - "
+              esc "[1mmy-fun" esc "[22m/description"
+              esc "[39m")
          (tree/pending-text "├──" {:name "my-fun/description"}))))
 
 
@@ -34,8 +38,8 @@
 ;; proof.reporter.tree/running-text
 
 (deftest running-text/grays-only-the-status-word
-  (is (= (str "├── " soot-core/esc "[90mRUNNING" soot-core/esc "[39m - "
-              soot-core/esc "[1mmy-fun" soot-core/esc "[22m/description")
+  (is (= (str "├── " esc "[90mRUNNING" esc "[39m - "
+              esc "[1mmy-fun" esc "[22m/description")
          (tree/running-text "├──" {:name "my-fun/description"}))))
 
 
@@ -43,15 +47,15 @@
 ;; proof.reporter.tree/result-text
 
 (deftest result-text/passing-result-is-a-single-line
-  (is (= (str "├── " soot-core/esc "[32mPASS" soot-core/esc "[39m - t1")
+  (is (= (str "├── " esc "[32mPASS" esc "[39m - t1")
          (tree/result-text "├──" {:name "t1" :status :pass} {}))))
 
 (deftest result-text/appends-durations-when-enabled
-  (is (= (str "├── " soot-core/esc "[32mPASS" soot-core/esc "[39m - t1 (12ms)")
+  (is (= (str "├── " esc "[32mPASS" esc "[39m - t1 (12ms)")
          (tree/result-text "├──" {:name "t1" :status :pass :elapsed-ms 12} {:durations? true}))))
 
 (deftest result-text/failing-result-folds-in-its-failure-messages
-  (is (= (str "├── " soot-core/esc "[91mFAIL" soot-core/esc "[39m - t1"
+  (is (= (str "├── " esc "[91mFAIL" esc "[39m - t1"
               "\n    - Expected 1, got 2.")
          (tree/result-text "├──"
                            {:name "t1"
@@ -60,12 +64,12 @@
                            {}))))
 
 (deftest result-text/erroring-result-folds-in-its-message
-  (is (= (str "├── " soot-core/esc "[38;5;88mERROR" soot-core/esc "[39m - t1"
+  (is (= (str "├── " esc "[38;5;88mERROR" esc "[39m - t1"
               "\n    - boom")
          (tree/result-text "├──" {:name "t1" :status :error :message "boom"} {}))))
 
 (deftest result-text/appends-after-errors-without-changing-the-status-line
-  (is (= (str "├── " soot-core/esc "[32mPASS" soot-core/esc "[39m - t1"
+  (is (= (str "├── " esc "[32mPASS" esc "[39m - t1"
               "\n    - After error: cleanup failed")
          (tree/result-text "├──"
                            {:name "t1"

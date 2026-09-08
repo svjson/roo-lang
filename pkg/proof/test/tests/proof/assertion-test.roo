@@ -1,11 +1,11 @@
 (ns proof.assertion-test
   (:require proof.core
             [proof.assertion :as assertion]
-            [soot.core :as soot-core]))
+            [soot :as soot]))
 
 (def esc
-  "ANSI escape character used by soot."
-  soot-core/esc)
+  "ANSI escape character derived from Soot's public SGR API."
+  (substr (soot/sgr ["0"]) 0 1))
 
 (deftest keeps-single-line-equality-message
   (is (= "Expected 5, got 4."

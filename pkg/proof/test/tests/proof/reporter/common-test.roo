@@ -1,7 +1,11 @@
 (ns proof.reporter.common-test
   (:require proof.core
             [proof.reporter.common :as common]
-            [soot.core :as soot-core]))
+            [soot :as soot]))
+
+(def esc
+  "ANSI escape character derived from Soot's public SGR API."
+  (substr (soot/sgr ["0"]) 0 1))
 
 
 ;;; proof.reporter.common/highlight-test
@@ -11,16 +15,16 @@
          (common/highlight-test-name "addition"))))
 
 (deftest highlight-test-name/wraps-the-subject-before-the-slash-in-bold
-  (is (= (str soot-core/esc
+  (is (= (str esc
               "[1mmake"
-              soot-core/esc
+              esc
               "[22m/creates-a-session")
          (common/highlight-test-name "make/creates-a-session"))))
 
 (deftest highlight-test-name/only-wraps-up-to-the-first-slash
-  (is (= (str soot-core/esc
+  (is (= (str esc
               "[1mparse"
-              soot-core/esc
+              esc
               "[22m/handles-a/b-paths")
          (common/highlight-test-name "parse/handles-a/b-paths"))))
 
@@ -42,9 +46,9 @@
 ;;; proof.reporter.common/padded-status-label
 
 (deftest padded-status-label/colors-and-pads-pass
-  (is (= (str soot-core/esc "[32m    PASS" soot-core/esc "[39m")
+  (is (= (str esc "[32m    PASS" esc "[39m")
          (common/padded-status-label :pass))))
 
 (deftest padded-status-label/colors-running-gray-and-pads-it
-  (is (= (str soot-core/esc "[90m RUNNING" soot-core/esc "[39m")
+  (is (= (str esc "[90m RUNNING" esc "[39m")
          (common/padded-status-label :running))))
