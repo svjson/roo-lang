@@ -507,6 +507,38 @@ TEST(PackageManifest, development_plan_merges_only_the_root_overlay)
             }));
 }
 
+TEST(PackageManifest, development_plan_reuses_root_across_a_tool_dependency_cycle)
+{
+  MemoryFileSystem fs;
+  fs.add("/repo/soot/package.edn",
+         R"({:name soot
+             :version "0.1.0"
+             :dependencies []
+             :namespace-roots {soot "src"}
+             :dev {:dependencies {proof "1.0.0"}
+                   :namespace-roots {soot "test"}}})");
+  fs.add("/repo/proof/1.0.0/package.edn",
+         R"({:name proof
+             :version "1.0.0"
+             :dependencies {soot "0.1.0"}
+             :namespace-roots {proof "src"}})");
+
+  Roo::Package::ResolveOptions options{{"/repo"}, Roo::Package::ManifestScope::Development};
+  auto plan = Roo::Package::resolve_load_plan(fs, "/repo/soot", options);
+
+  EXPECT_EQ(plan.package_roots,
+            (std::vector<std::string>{"/repo/proof/1.0.0", "/repo/soot"}));
+  ASSERT_EQ(plan.packages.size(), 2u);
+  EXPECT_EQ(plan.packages[0].name, "proof");
+  EXPECT_EQ(plan.packages[1].name, "soot");
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{
+              "/repo/proof/1.0.0/src",
+              "/repo/soot/test",
+              "/repo/soot/src",
+            }));
+}
+
 TEST(PackageManifest, production_plan_ignores_the_root_development_overlay)
 {
   MemoryFileSystem fs;
@@ -801,11 +833,27 @@ TEST(PackageManifest, reports_missing_dependencies)
     Roo::RooException);
 }
 
-TEST(PackageManifest, detects_dependency_cycles)
+TEST(PackageManifest, resolves_each_package_once_across_dependency_cycles)
 {
   MemoryFileSystem fs;
   fs.add("pkg/app/package.edn", R"({:name app :dependencies [util] :load-roots ["src"]})");
   fs.add("pkg/util/package.edn", R"({:name util :dependencies [app] :load-roots ["src"]})");
+
+  auto plan =
+    Roo::Package::resolve_load_plan(fs, "pkg/app", Roo::Package::ResolveOptions{{"pkg"}});
+
+  EXPECT_EQ(plan.package_roots, (std::vector<std::string>{"pkg/util", "pkg/app"}));
+  EXPECT_EQ(plan.load_paths,
+            (std::vector<std::string>{"pkg/util/src", "pkg/app/src"}));
+}
+
+TEST(PackageManifest, rejects_a_cycle_back_edge_with_a_mismatched_version)
+{
+  MemoryFileSystem fs;
+  fs.add("pkg/app/package.edn",
+         R"({:name app :version "1.0.0" :dependencies [util] :load-roots ["src"]})");
+  fs.add("pkg/util/package.edn",
+         R"({:name util :dependencies {app "2.0.0"} :load-roots ["src"]})");
 
   EXPECT_THROW(
     Roo::Package::resolve_load_plan(fs, "pkg/app", Roo::Package::ResolveOptions{{"pkg"}}),

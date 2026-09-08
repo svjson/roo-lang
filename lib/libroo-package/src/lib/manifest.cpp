@@ -847,7 +847,7 @@ namespace Roo::Package
       }
       if (state.visiting.count(package_root))
       {
-        throw RooException("Cyclic package dependency involving '" + package_root + "'.");
+        return;
       }
 
       state.visiting.insert(package_root);
