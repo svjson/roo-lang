@@ -1,9 +1,10 @@
 (ns soot-test
   (:require proof.core
-            [soot :as soot]
-            [soot.core :as soot-core]))
+            [soot :as soot]))
 
-(def esc soot-core/esc)
+(def esc
+  "ANSI escape character derived from Soot's public SGR API."
+  (substr (soot/sgr ["0"]) 0 1))
 
 (deftest named-color-wraps-raw-string
   (is (= (str esc "[31merror" esc "[39m")
