@@ -1,9 +1,11 @@
 (ns proofread.reporter.common-test
   (:require proof.core
             [proofread.reporter.common :as common]
-            [soot.core :as soot-core]))
+            [soot :as soot]))
 
-(def esc soot-core/esc)
+(def esc
+  "ANSI escape character derived from Soot's public SGR API."
+  (substr (soot/sgr ["0"]) 0 1))
 
 (deftest styles-location-segments
   (is (= (str "world-map/src/"
