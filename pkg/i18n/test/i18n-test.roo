@@ -1,6 +1,6 @@
-(ns i18n.core-test
+(ns i18n-test
   (:require proof.core
-            [i18n.core :as i18n]))
+            [i18n :as i18n]))
 
 (def sample-catalog
   (i18n/catalog :en

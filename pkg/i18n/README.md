@@ -4,9 +4,9 @@
 
 Catalogs are ordinary maps with a default locale and a nested translation table:
 
-```lisp
+```roo
 (ns app.copy
-  (:require [i18n.core :as i18n]))
+  (:require [i18n :as i18n]))
 
 (def copy
   (i18n/catalog :en

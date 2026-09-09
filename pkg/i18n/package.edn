@@ -2,4 +2,7 @@
  :version "0.1.0"
  :description "Translation catalog library for Roo programs."
  :dependencies []
- :load-roots ["src"]}
+ :load-roots ["src"]
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}
+ :config {proof {:test-roots ["test"]}}}

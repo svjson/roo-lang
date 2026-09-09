@@ -1,0 +1,116 @@
+(ns i18n)
+
+(defun catalog
+  "Create a translation catalog.
+
+  Args:
+  - `default-locale`: Locale identifier used for fallback lookup.
+  - `translations`: Map from locale identifiers to message maps.
+
+  Returns:
+  A catalog map containing the default locale and translation table."
+  [default-locale translations]
+  {:default-locale default-locale
+   :translations translations})
+
+(defun default-locale
+  "Return a catalog's fallback locale.
+
+  Args:
+  - `catalog`: Translation catalog map.
+
+  Returns:
+  The locale identifier stored as the catalog's default."
+  [catalog]
+  (:default-locale catalog))
+
+(defun translations
+  "Return a catalog's translation table.
+
+  Args:
+  - `catalog`: Translation catalog map.
+
+  Returns:
+  A map from locale identifiers to message maps, or an empty map when absent."
+  [catalog]
+  (get catalog :translations {}))
+
+(defun locale-messages
+  "Return every message declared for a locale.
+
+  Args:
+  - `catalog`: Translation catalog map.
+  - `locale`: Locale identifier to look up.
+
+  Returns:
+  The locale's message map, or an empty map when the locale is absent."
+  [catalog locale]
+  (get (translations catalog) locale {}))
+
+(defun message
+  "Look up one message without applying fallback behavior.
+
+  Args:
+  - `catalog`: Translation catalog map.
+  - `locale`: Locale identifier to look up.
+  - `key`: Message key to look up.
+
+  Returns:
+  The exact localized value, or nil when it is absent."
+  [catalog locale key]
+  (get (locale-messages catalog locale) key))
+
+(defun translated?
+  "Test whether a locale contains an exact translation.
+
+  Args:
+  - `catalog`: Translation catalog map.
+  - `locale`: Locale identifier to inspect.
+  - `key`: Message key to inspect.
+
+  Returns:
+  True when the locale contains a non-nil message; otherwise false."
+  [catalog locale key]
+  (some? (message catalog locale key)))
+
+(defun fallback-message
+  "Look up a message in the catalog's default locale.
+
+  Args:
+  - `catalog`: Translation catalog map.
+  - `key`: Message key to look up.
+
+  Returns:
+  The default-locale value, or nil when it is absent."
+  [catalog key]
+  (message catalog (default-locale catalog) key))
+
+(defun translate
+  "Translate a key using locale, default-locale, and key-text fallback order.
+
+  Args:
+  - `catalog`: Translation catalog map.
+  - `locale`: Preferred locale identifier.
+  - `key`: Message key to translate.
+
+  Returns:
+  The localized value, the default-locale value, or the key converted to a string."
+  [catalog locale key]
+  (if-let [localized (message catalog locale key)]
+    localized
+    (if-let [fallback (fallback-message catalog key)]
+      fallback
+      (str key))))
+
+(defun missing?
+  "Test whether a locale lacks an exact translation.
+
+  Args:
+  - `catalog`: Translation catalog map.
+  - `locale`: Locale identifier to inspect.
+  - `key`: Message key to inspect.
+
+  Returns:
+  True when the exact localized value is nil; otherwise false."
+  [catalog locale key]
+  (nil? (message catalog locale key)))
