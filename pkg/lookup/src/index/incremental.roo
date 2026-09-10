@@ -1,9 +1,11 @@
 (ns lookup.index.incremental
   (:require [roo.io :as io]
             [lookup.source :as source]
-            [lookup.source.docstring.symbols :as docstring-symbols]
-            [lookup.source.native.parse.entries :as native-entries]
-            [lookup.source.native.symbols :as native-symbols]))
+            [lookup.source.path :as path]))
+
+
+
+;;; Constants
 
 (def INDEX-METADATA
   "Format identities and schema version for persisted incremental index data."
@@ -11,15 +13,10 @@
    :delta-format :roo/index-delta
    :schema-version 2})
 
-(defun canonical-path
-  "Return PATH as a normalized absolute path."
-  [path]
-  (source/normalized-path (io/absolute-path! path)))
-
 (defun state-options
   "Select and normalize the index options that identify compatible state."
   [options]
-  {:package-dir (canonical-path (:package-dir options))
+  {:package-dir (path/canonical (:package-dir options))
    :extractors (:extractors options)})
 
 (defun manifest-path
@@ -27,20 +24,10 @@
   [state-dir]
   (io/join-path state-dir "manifest.edn"))
 
-(defun package-manifest-path
-  "Return the package manifest path beneath PACKAGE-DIR."
-  [package-dir]
-  (io/join-path package-dir "package.edn"))
-
 (defun modified-ms
   "Return PATH's filesystem modification time in milliseconds."
   [path]
   (:modified-ms (io/stat! path)))
-
-(defun write-edn-atomically!
-  "Serialize VALUE as EDN and atomically publish it at PATH."
-  [path value]
-  (io/spit-edn! path value {:atomic? true}))
 
 (defun unique-paths
   "Return PATHS in encounter order with duplicate paths removed."
@@ -51,72 +38,6 @@
             (if (contains? result path)
               result
               (append result path)))))
-
-(defun empty-contribution
-  "Create an empty source contribution.
-
-  Args:
-  - `path`: Absolute filesystem path used by incremental state.
-  - `index-path`: Package-relative path published to index consumers.
-
-  Returns:
-  An empty contribution retaining both path identities."
-  [path index-path]
-  {:path path
-   :index-path index-path
-   :namespaces []
-   :symbols []})
-
-(defun roo-contribution
-  "Index one Roo source at PATH as a replaceable package contribution."
-  [package-dir package-name path]
-  (let [index-path (source/package-relative-path package-dir path)
-        source-entry (source/source-entry-for-index path index-path)
-        namespace-entry (docstring-symbols/source-namespace-entry source-entry)]
-    {:path path
-     :index-path index-path
-     :namespaces (if namespace-entry [namespace-entry] [])
-     :symbols (docstring-symbols/source-symbols package-name source-entry)}))
-
-(defun native-contributions
-  "Index native package sources and group symbols by their owning source path."
-  [package-dir package-name]
-  (let [paths (native-entries/package-files package-dir)
-        entries (native-entries/package-entries! package-dir)
-        symbols (native-symbols/entries package-name entries)
-        initial (reduce paths
-                        {}
-                        (fn [result path]
-                          (let [index-path
-                                (source/package-relative-path package-dir path)]
-                            (assoc result
-                                   index-path
-                                   (empty-contribution path index-path)))))
-        grouped (reduce symbols
-                        initial
-                        (fn [result symbol]
-                          (let [index-path (:path (:source symbol))
-                                contribution (get result
-                                                  index-path)]
-                            (assoc result
-                                   index-path
-                                   (update contribution
-                                           :symbols
-                                           [append
-                                            symbol])))))]
-    (for [index-path (sort (keys grouped) <)]
-      (get grouped index-path))))
-
-(defun package-contributions
-  "Build independently replaceable Roo and native contributions for PACKAGE."
-  [package-dir package]
-  (let [manifest (source/read-manifest! package-dir)
-        package-name (:name package)
-        roo-files (source/package-source-files package-dir manifest)]
-    (concat
-      (for [path roo-files]
-        (roo-contribution package-dir package-name path))
-      (native-contributions package-dir package-name))))
 
 (defun published-contribution
   "Remove incremental path bookkeeping from a source contribution.
@@ -160,9 +81,7 @@
 (defun shard-relative-path
   "Return the state-relative shard path for source ID at REVISION."
   [id revision]
-  (source/normalized-path
-    (io/join-path "sources"
-                  (str "source-" id "-r" revision ".edn"))))
+  (io/join-path "sources" (str "source-" id "-r" revision ".edn")))
 
 (defun persist-contributions!
   "Persist CONTRIBUTIONS as revisioned shards and return their manifest entries."
@@ -174,8 +93,9 @@
             (let [id (:next-source-id result)
                   path (:path contribution)
                   shard (shard-relative-path id revision)]
-              (write-edn-atomically! (io/join-path state-dir shard)
-                                     contribution)
+              (io/spit-edn! (io/join-path state-dir shard)
+                            contribution
+                            {:atomic? true})
               {:sources (assoc (:sources result)
                                path
                                {:id id
@@ -184,25 +104,15 @@
                                 :shard shard})
                :next-source-id (+ id 1)}))))
 
-(defun reset-delta
-  "Build a delta that replaces consumer state with FULL-SNAPSHOT."
-  [metadata base-revision revision full-snapshot]
-  {:format (:delta-format metadata)
-   :schema-version (:schema-version metadata)
-   :base-revision base-revision
-   :revision revision
-   :reset full-snapshot
-   :replace {}
-   :remove []})
-
 (defun full-build!
   "Rebuild, persist, and publish complete incremental index state."
   [metadata options state-dir base-revision]
-  (let [package-dir (canonical-path (:package-dir options))
+  (let [package-dir (path/canonical (:package-dir options))
+        package-manifest-path (io/join-path package-dir "package.edn")
         package-manifest (source/read-manifest! package-dir)
         package (source/package-info package-manifest)
         revision (if (nil? base-revision) 1 (+ base-revision 1))
-        contributions (package-contributions package-dir package)
+        contributions (source/package-contributions package-dir package)
         persisted (persist-contributions! state-dir revision contributions)
         full-snapshot (snapshot package contributions)
         manifest {:format (:state-format metadata)
@@ -211,30 +121,28 @@
                   :options (state-options options)
                   :package package
                   :package-manifest
-                  {:path (package-manifest-path package-dir)
-                   :mtime-ms (modified-ms
-                               (package-manifest-path package-dir))}
+                  {:path package-manifest-path
+                   :mtime-ms (modified-ms package-manifest-path)}
                   :sources (:sources persisted)
                   :next-source-id (:next-source-id persisted)}]
-    (write-edn-atomically! (manifest-path state-dir) manifest)
+    (io/spit-edn! (manifest-path state-dir) manifest {:atomic? true})
     {:manifest manifest
      :snapshot full-snapshot
-     :delta (reset-delta metadata
-                         base-revision
-                         revision
-                         full-snapshot)}))
-
-(defun read-contributions
-  "Read the source contributions referenced by MANIFEST in stable path order."
-  [state-dir manifest]
-  (for [path (sort (keys (:sources manifest)) <)]
-    (io/slurp-edn!
-      (io/join-path state-dir (:shard (get (:sources manifest) path))))))
+     :delta {:format (:delta-format metadata)
+             :schema-version (:schema-version metadata)
+             :base-revision base-revision
+             :revision revision
+             :reset full-snapshot
+             :replace {}
+             :remove []}}))
 
 (defun manifest-snapshot
   "Assemble a complete snapshot from the shards referenced by MANIFEST."
   [state-dir manifest]
-  (snapshot (:package manifest) (read-contributions state-dir manifest)))
+  (snapshot (:package manifest)
+            (for [path (sort (keys (:sources manifest)) <)]
+              (io/slurp-edn! (io/join-path state-dir
+                                           (:shard (get (:sources manifest) path)))))))
 
 (defun compatible-state?
   "Test whether MANIFEST can be reused for OPTIONS and METADATA."
@@ -249,14 +157,6 @@
   (and (io/file? (:path package-manifest))
        (= (:mtime-ms package-manifest)
           (modified-ms (:path package-manifest)))))
-
-(defun new-source-entry
-  "Build a manifest entry for a newly persisted Roo source shard."
-  [id path shard]
-  {:id id
-   :kind :roo
-   :mtime-ms (modified-ms path)
-   :shard shard})
 
 (defun update-roo-sources!
   "Replace or remove Roo source contributions and publish one revision delta."
@@ -279,22 +179,22 @@
                                  (:id existing)
                                  (:next-source-id current-manifest))
                             shard (shard-relative-path id next-revision)
-                            contribution (roo-contribution
-                                           (:package-dir
-                                             (:options current-manifest))
-                                           (:name (:package current-manifest))
-                                           path)
+                            contribution (source/roo-contribution (:package-dir (:options current-manifest)) (:name (:package current-manifest)) path)
                             next-id (if existing
                                       (:next-source-id current-manifest)
                                       (+ id 1))]
-                        (write-edn-atomically! (io/join-path state-dir shard)
-                                               contribution)
+                        (io/spit-edn! (io/join-path state-dir shard)
+                                      contribution
+                                      {:atomic? true})
                         {:manifest
                          (assoc current-manifest
                                 :sources
                                 (assoc current-sources
                                        path
-                                       (new-source-entry id path shard))
+                                       {:id id
+                                        :kind :roo
+                                        :mtime-ms (modified-ms path)
+                                        :shard shard})
                                 :next-source-id next-id)
                          :replace (assoc (:replace result)
                                          (:index-path contribution)
@@ -303,10 +203,7 @@
                          :changed? true})
 
                       existing
-                      (let [index-path
-                            (source/package-relative-path
-                              (:package-dir (:options current-manifest))
-                              path)]
+                      (let [index-path (path/package-relative (:package-dir (:options current-manifest)) path)]
                         {:manifest (assoc current-manifest
                                           :sources
                                           (dissoc current-sources path))
@@ -328,25 +225,12 @@
                :replace (:replace result)
                :remove (:remove result)}]
     (when changed?
-      (write-edn-atomically! (manifest-path state-dir) published-manifest))
+      (io/spit-edn! (manifest-path state-dir)
+                    published-manifest
+                    {:atomic? true}))
     {:manifest published-manifest
      :snapshot nil
      :delta delta}))
-
-(defun current-inputs
-  "Discover the current Roo and native package inputs for OPTIONS."
-  [options]
-  (let [package-dir (canonical-path (:package-dir options))
-        manifest (source/read-manifest! package-dir)]
-    {:roo (source/package-source-files package-dir manifest)
-     :native (native-entries/package-files package-dir)}))
-
-(defun changed-path?
-  "Test whether PATH is new or has a different mtime than MANIFEST records."
-  [manifest path]
-  (let [entry (get (:sources manifest) path)]
-    (or (nil? entry)
-        (not= (:mtime-ms entry) (modified-ms path)))))
 
 (defun native-path?
   "Test whether PATH is recorded or classified as a native source."
@@ -357,33 +241,34 @@
 (defun reconcile!
   "Reconcile persisted state against all current package inputs by mtime."
   [metadata options state-dir manifest]
-  (let [inputs (current-inputs options)
+  (let [inputs (source/package-inputs (path/canonical (:package-dir options)))
         current (unique-paths (concat (:roo inputs) (:native inputs)))
         existing (keys (:sources manifest))
-        changed (filter current (fn [path] (changed-path? manifest path)))
+        changed (filter current
+                        (fn [path]
+                          (let [entry (get (:sources manifest) path)]
+                            (or (nil? entry)
+                                (not= (:mtime-ms entry) (modified-ms path))))))
         removed (filter existing (fn [path] (not (contains? current path))))
         affected (unique-paths (concat changed removed))]
     (if (any? affected (fn [path] (native-path? manifest path)))
       (full-build! metadata options state-dir (:revision manifest))
       (update-roo-sources! metadata state-dir manifest affected))))
 
-(defun normalize-updates
-  "Canonicalize PATHS and remove duplicates while preserving encounter order."
-  [paths]
-  (unique-paths (map paths canonical-path)))
+(defun index-with-state
+  "Update or initialize a dynamic lookup index state store.
 
-(defun update-native?
-  "Test whether any explicitly updated path is a native source."
-  [manifest paths]
-  (any? paths (fn [path] (native-path? manifest path))))
+  Args:
+  - `options`: Parsed index command options.
 
-(defun index-with-state-config
-  "Update dynamic index state using explicit format METADATA and CLI OPTIONS."
-  [metadata options]
-  (let [state-dir (canonical-path (:state options))
+  Returns:
+  Published manifest, optional snapshot, and revision delta."
+  [options]
+  (let [metadata INDEX-METADATA
+        state-dir (path/canonical (:state options))
         state-file (manifest-path state-dir)
         existing (when (io/file? state-file) (io/slurp-edn! state-file))
-        updates (normalize-updates (or (:updates options) []))
+        updates (unique-paths (map (:updates options) path/canonical))
         result
         (cond
           (nil? existing)
@@ -396,7 +281,7 @@
           (full-build! metadata options state-dir (:revision existing))
 
           (not-empty? updates)
-          (if (update-native? existing updates)
+          (if (any? updates (fn [path] (native-path? existing path)))
             (full-build! metadata options state-dir (:revision existing))
             (update-roo-sources! metadata state-dir existing updates))
 
@@ -408,14 +293,3 @@
                           (when need-snapshot?
                             (manifest-snapshot state-dir (:manifest result))))]
     (assoc result :snapshot full-snapshot)))
-
-(defun index-with-state
-  "Update or initialize a dynamic lookup index state store.
-
-  Args:
-  - `options`: Parsed index command options.
-
-  Returns:
-  Published manifest, optional snapshot, and revision delta."
-  [options]
-  (index-with-state-config INDEX-METADATA options))

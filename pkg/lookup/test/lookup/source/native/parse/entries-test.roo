@@ -9,35 +9,18 @@
 (deftest entries/extracts-annotations-without-interpreting-cpp-registrations
   (is (= [{:kind :native-annotated-symbol
            :doc {:summary "Seed scenario state."
-                 :body nil
-                 :format :markdown
-                 :params {"body..." {:type nil
-                                     :doc "State-producing forms."}}
-                 :param-order ["body..."]
+                 :content [{:kind :text :content "Seed scenario state."}
+                           {:kind :sig-args :index 0}]
                  :signature-docs
-                 [{:params {"body..." {:type nil
-                                       :doc "State-producing forms."}}
-                   :param-order ["body..."]}]
-                 :returns nil
-                 :examples []
-                 :see []
-                 :since nil
-                 :deprecated nil}
+                 [{:params {"body..." {:content [{:kind :text
+                                                  :content "State-producing forms."}]}}
+                   :param-order ["body..."]}]}
            :source {:path "native.cpp" :line 1 :column 1}
            :qualified-name "proof.syntax/given"
            :native-kind :special-form}
           {:kind :native-annotated-symbol
            :doc {:summary "Advance scenario state."
-                 :body nil
-                 :format :markdown
-                 :params {}
-                 :param-order []
-                 :signature-docs []
-                 :returns nil
-                 :examples []
-                 :see []
-                 :since nil
-                 :deprecated nil}
+                 :content [{:kind :text :content "Advance scenario state."}]}
            :source {:path "native.cpp" :line 12 :column 1}
            :qualified-name "proof.syntax/when"
            :native-kind :special-form}]
@@ -70,6 +53,19 @@
            "operator.cpp"
            "// MultiplyFunction - roo/*\nFUNC_IMPL(MultiplyFunction, nil)"))))
 
+(deftest entries/extracts-native-namespace-annotations
+  (is (= [{:kind :native-annotated-namespace
+           :doc {:summary "Read Roo syntax trees."
+                 :content [{:kind :text :content "Read Roo syntax trees."}]}
+           :source {:path "ast.cpp" :line 1 :column 1}
+           :name "roo.ast"}]
+         (native-entries/entries
+           "ast.cpp"
+           "/*!
+            * @roo.namespace roo.ast
+            * @brief Read Roo syntax trees.
+            */"))))
+
 
 
 ;; lookup.source.native.parse.entries/entries!
@@ -79,21 +75,19 @@
            :native-class "SampleReadFunction"
            :native-kind :function
            :doc {:summary "Read fixture data from a path."
-                 :body "The fixture keeps this as a separate paragraph."
-                 :format :markdown
-                 :params {"path" {:type nil :doc "Path to read."}}
-                 :param-order ["path"]
+                 :content [{:kind :text
+                            :content "Read fixture data from a path."}
+                           {:kind :text
+                            :content "The fixture keeps this as a separate paragraph."}
+                           {:kind :header :content "Usage:"}
+                           {:kind :code
+                            :content
+                            "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}
+                           {:kind :sig-args :index 0}]
                  :signature-docs
-                 [{:params {"path" {:type nil :doc "Path to read."}}
-                   :param-order ["path"]}]
-                 :returns nil
-                 :examples
-                 [{:format :roo
-                   :source
-                   "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}]
-                 :see []
-                 :since nil
-                 :deprecated nil}
+                 [{:params {"path" {:content [{:kind :text
+                                               :content "Path to read."}]}}
+                   :param-order ["path"]}]}
            :source {:path "assets/native-package/native/include/sample.h"
                     :line 6
                     :column 1}
@@ -113,18 +107,13 @@
            :qualified-name "sample.native/read!"}
           {:kind :native-annotated-symbol
            :doc {:summary "Write fixture data to a path."
-                 :body nil
-                 :format :markdown
-                 :params {"path" {:type nil :doc "Path to write."}}
-                 :param-order ["path"]
+                 :content [{:kind :text
+                            :content "Write fixture data to a path."}
+                           {:kind :sig-args :index 0}]
                  :signature-docs
-                 [{:params {"path" {:type nil :doc "Path to write."}}
-                   :param-order ["path"]}]
-                 :returns nil
-                 :examples []
-                 :see []
-                 :since nil
-                 :deprecated nil}
+                 [{:params {"path" {:content [{:kind :text
+                                               :content "Path to write."}]}}
+                   :param-order ["path"]}]}
            :source {:path "assets/native-package/native/src/sample.cpp"
                     :line 8
                     :column 1}

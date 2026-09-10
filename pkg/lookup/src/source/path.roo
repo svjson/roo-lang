@@ -1,0 +1,60 @@
+(ns lookup.source.path
+  (:require [roo.io :as io]
+            [roo.string :as string]))
+
+(defun canonical
+  "Return PATH as a normalized absolute path.
+
+  Args:
+  - `path`: Path to resolve through the active filesystem.
+
+  Returns:
+  An absolute path using platform-neutral separators."
+  [path]
+  (io/normalize-path (io/absolute-path! path)))
+
+(defun package-relative
+  "Return PATH relative to PACKAGE-DIR.
+
+  Args:
+  - `package-dir`: Package root containing the source path.
+  - `path`: Source path beneath `package-dir`.
+
+  Returns:
+  A normalized package-relative path."
+  [package-dir path]
+  (let [package-root (canonical package-dir)
+        package-root (cond-> package-root
+                             (string/ends-with? package-root "/")
+                             (substr 0 (- (count package-root) 1)))
+        package-prefix (str package-root "/")
+        absolute-path (canonical path)]
+    (substr absolute-path (count package-prefix))))
+
+(defun within?
+  "Test whether PATH equals or descends from ROOT.
+
+  Args:
+  - `path`: Path to test.
+  - `root`: Candidate containing path.
+
+  Returns:
+  `true` when ROOT covers PATH; otherwise `false`."
+  [path root]
+  (let [path (io/normalize-path path)
+        root (io/normalize-path root)]
+    (or (= "." root)
+        (= root path)
+        (string/starts-with? path (str root "/")))))
+
+(defun excluded?
+  "Test whether PATH equals or descends from an excluded path.
+
+  Args:
+  - `path`: Path to compare against the exclusions.
+  - `excludes`: Paths excluded individually or as directory roots.
+
+  Returns:
+  `true` when PATH is excluded; otherwise `false`."
+  [path excludes]
+  (any? excludes (fn [exclude] (within? path exclude))))

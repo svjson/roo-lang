@@ -8,7 +8,6 @@
 
 (defun strip-suffix [text suffix]
   (cond-> text
-
           (string/ends-with? text suffix)
           (substr 0 (- (count text) (count suffix)))))
 
@@ -30,7 +29,7 @@
 
 
 
-;; Symbol Annotations
+;; Roo Annotations
 
 (defun directive-value [line directive]
   (let [trimmed (trim line)
@@ -38,19 +37,15 @@
     (when (string/starts-with? trimmed prefix)
       (trim (substr trimmed (count prefix) (count trimmed))))))
 
-(defun append-annotation-text [current value]
-  (cond
-    (nil? current) value
-    (blank? value) current
-    (blank? current) value
-    true (str current " " value)))
-
 (defun annotation
   "Parse an explicit Roo symbol annotation from a native block comment.
 
-  A recognized comment contains both `@roo.symbol namespace/name` and
-  `@roo.kind kind`. Returns nil when either directive is missing, empty, or the
-  kind is unsupported."
+  Args:
+  - `text`: Complete native block-comment text.
+
+  Returns:
+  The annotated symbol identity and kind, or `nil` when the annotation is
+  incomplete or invalid."
   [text]
   (let [comment-lines (lines text)
         qualified-name (find-first
@@ -76,41 +71,32 @@
       {:qualified-name qualified-name
        :native-kind native-kind})))
 
+(defun namespace-annotation
+  "Parse an explicit Roo namespace annotation from a native block comment.
+
+  Args:
+  - `text`: Complete native block-comment text.
+
+  Returns:
+  The annotated namespace name, or `nil` when none is declared."
+  [text]
+  (when-let [name (find-first
+                    (keep (lines text)
+                          (fn [line]
+                            (directive-value line "@roo.namespace")))
+                    not-empty?)]
+    {:name name}))
+
 
 
-;; Documentation
+;; Source Recognition
 
-(defun join-lines [separator values]
-  (unless (empty? values)
-    (apply join (concat [separator] values))))
-
-(defun body-line? [line]
-  (let [trimmed (trim line)]
-    (not (or (string/starts-with? trimmed "@")
-             (= "Usage:" trimmed)
-             (string/starts-with? trimmed "|")))))
-
-(defun brief-text [line]
-  (let [trimmed (trim line)]
-    (when (string/starts-with? trimmed "@brief")
-      (trim (substr trimmed 6 (count trimmed))))))
-
-(defun start-code [state line]
-  (let [trimmed (trim line)
-        format-name (trim (substr trimmed 5 (count trimmed)))]
-    (assoc state
-           :section :code
-           :code-format (if (blank? format-name) :roo (keyword format-name))
-           :code-lines [])))
-
-(defun finish-code [state]
-  (assoc state
-         :section nil
-         :examples (append (:examples state)
-                           {:format (or (:code-format state) :roo)
-                            :source (join-lines "\n" (:code-lines state))})
-         :code-format nil
-         :code-lines []))
+(defun append-annotation-text [current value]
+  (cond
+    (nil? current) value
+    (blank? value) current
+    (blank? current) value
+    true (str current "\n" value)))
 
 (defun arg-row [line]
   (let [trimmed (trim line)]
@@ -119,183 +105,335 @@
             separator (find-index content
                                   (fn [character]
                                     (= "|" (str character))))]
-        (unless (nil? separator)
+        (when separator
           (let [arg (trim (substr content 0 separator))
-                doc (trim (substr content (+ separator 1) (count content)))]
+                content (trim (substr content (+ separator 1) (count content)))]
             (cond
               (contains? ["Arg #" "Arg" "Param" "Parameter" "Name"] arg)
-              {:header? true}
+              {:kind :header}
 
               (string/starts-with? arg "---")
-              {:separator? true}
+              {:kind :separator}
 
               (blank? arg)
-              (unless (blank? doc)
-                {:continuation? true
-                 :doc doc})
+              (unless (blank? content)
+                {:kind :continuation
+                 :content content})
 
               true
-              {:key arg
-               :doc {:type nil :doc doc}})))))))
+              {:kind :param
+               :name arg
+               :content content})))))))
+
+(defun param-directive [line]
+  (when-let [content (directive-value line "@param")]
+    (if-let [separator (find-index content
+                                  (fn [character]
+                                    (contains? [" " "\t"] (str character))))]
+      {:name (doc/strip-backticks (substr content 0 separator))
+       :content (trim (substr content (+ separator 1) (count content)))}
+      {:name (doc/strip-backticks content)
+       :content ""})))
 
 (defun return-text [line]
+  (or (directive-value line "@returns")
+      (directive-value line "@return")
+      (when (contains? ["@return" "@returns"] (trim line)) "")))
+
+(defun header? [line]
   (let [trimmed (trim line)]
-    (cond
-      (string/starts-with? trimmed "@returns")
-      (trim (substr trimmed 8 (count trimmed)))
+    (and (not (blank? trimmed))
+         (string/ends-with? trimmed ":"))))
 
-      (string/starts-with? trimmed "@return")
-      (trim (substr trimmed 7 (count trimmed)))
+(defun code-language [line offset]
+  (let [language (trim (substr (trim line) offset))]
+    (unless (or (blank? language) (= "roo" language))
+      (keyword language))))
 
-      true
-      nil)))
 
-(defun finish-signature [state]
-  (if (empty? (:param-order state))
+
+;; Ordered Content
+
+(defun append-target-block [state block]
+  (case (:target state)
+    :param (update-in state
+                      [:signature-docs (:signature-index state)
+                       :params (:target-name state) :content]
+                      [append block])
+    :return (update-in state
+                       [:signature-docs (:signature-index state) :returns :content]
+                       [append block])
+    :default (update state :content [append block])))
+
+(defun finish-text [{:keys [text-lines] :as state}]
+  (if (empty? text-lines)
     state
-    (assoc state
-           :signature-docs
-           (append (:signature-docs state)
-                   {:params (:params state)
-                    :param-order (:param-order state)})
-           :params {}
-           :param-order []
-           :last-param-key nil)))
+    (let [block {:kind :text
+                 :content (apply join (concat ["\n"] text-lines))}]
+      (cond-> (assoc (append-target-block state block)
+                     :text-lines []
+                     :brief? false)
+              (or (:brief? state)
+                  (and (= :root (:target state))
+                       (nil? (:summary state))))
+              (assoc :summary (:content block))))))
 
-(defun step [{:keys [body
-                     section
-                     code-lines
-                     summary
-                     params
-                     param-order
-                     returns
-                     see
-                     since
-                     deprecated] :as state}
-             line]
+(defun append-header [state line]
+  (append-target-block (finish-text state)
+                       {:kind :header
+                        :content (trim line)}))
+
+(defun start-code [state language end-marker]
+  (assoc (finish-text state)
+         :code {:language language
+                :end-marker end-marker
+                :lines []}))
+
+(defun finish-code [state]
+  (let [code (:code state)
+        source (apply join (concat ["\n"] (:lines code)))
+        block (if (:language code)
+                {:kind :code
+                 :language (:language code)
+                 :content source}
+                {:kind :code
+                 :content source})]
+    (assoc (append-target-block state block) :code nil)))
+
+(defun finish-block [state]
+  (-> state
+      finish-text
+      (assoc :target (case (:target state) :return :return :default :root)
+             :target-name nil
+             :boundary? true
+             :param-sequence? false
+             :table? false)))
+
+(defun start-args [state]
+  (let [current-index (:signature-index state)
+        current (when current-index
+                  (nth (:signature-docs state) current-index))
+        new? (or (nil? current-index)
+                 (contains? current :params))
+        index (if new?
+                (count (:signature-docs state))
+                current-index)
+        started (if new?
+                  (update state :signature-docs
+                          [append {:params {}
+                                   :param-order []}])
+                  (assoc-in state
+                            [:signature-docs index :params] {}
+                            [:signature-docs index :param-order] []))]
+    (assoc started
+           :signature-index index
+           :content (append (:content state) {:kind :sig-args :index index}))))
+
+(defun start-param [state name content]
+  (let [state (finish-text state)
+        index (:signature-index state)
+        order (get-in state [:signature-docs index :param-order])]
+    (assoc-in state
+              [:signature-docs index :param-order]
+              (cond-> order
+                      (not (contains? order name))
+                      (append name))
+              [:target] :param
+              [:target-name] name
+              [:text-lines] (cond-> []
+                                    (not (blank? content))
+                                    (append content))
+              [:boundary?] false)))
+
+(defun start-return [state content]
+  (let [state (finish-text state)
+        current-index (:signature-index state)
+        current (when current-index
+                  (nth (:signature-docs state) current-index))
+        new? (or (nil? current-index)
+                 (contains? current :returns))
+        index (if new?
+                (count (:signature-docs state))
+                current-index)
+        started (if new?
+                  (update state :signature-docs
+                          [append {:returns {:content []}}])
+                  (assoc-in state
+                            [:signature-docs index :returns] {:content []}))]
+    (assoc started
+           :signature-index index
+           :content (append (:content state) {:kind :sig-ret :index index})
+           :return-index index
+           :return-count (+ (:return-count state) 1)
+           :target :return
+           :target-name nil
+           :text-lines (cond-> []
+                               (not (blank? content))
+                               (append content))
+           :boundary? false
+           :param-sequence? false)))
+
+
+
+;; Parsing
+
+(defun step [{:keys [code boundary? target] :as state} line]
   (let [trimmed (trim line)
-        brief (brief-text trimmed)
-        return (return-text trimmed)
-        see-reference (directive-value trimmed "@see")
-        since-value (directive-value trimmed "@since")
-        deprecated-value (directive-value trimmed "@deprecated")
-        deprecated? (or (= trimmed "@deprecated")
-                        (some? deprecated-value))
-        row (arg-row trimmed)]
+        row (arg-row line)
+        param (param-directive line)
+        return (return-text line)
+        brief (directive-value line "@brief")
+        see (directive-value line "@see")
+        since (directive-value line "@since")
+        deprecated (directive-value line "@deprecated")]
     (cond
-      (= :code section)
-      (case trimmed
-        "@endcode" (finish-code state)
-        :default (assoc state :code-lines (append code-lines trimmed)))
+      code
+      (if (or (and (= :directive (:end-marker code)) (= "@endcode" trimmed))
+              (and (= :fence (:end-marker code))
+                   (string/starts-with? trimmed "```")))
+        (assoc (finish-code state) :boundary? false)
+        (assoc-in state [:code :lines] (append (:lines code) trimmed)))
+
+      (blank? trimmed)
+      (finish-block state)
 
       (string/starts-with? trimmed "@code")
-      (start-code state trimmed)
+      (start-code state (code-language line 5) :directive)
+
+      (string/starts-with? trimmed "```")
+      (start-code state (code-language line 3) :fence)
 
       brief
-      (assoc state
-             :summary (append summary brief)
-             :brief? true)
-
-      (and (:brief? state)
-           (not (blank? trimmed))
-           (body-line? trimmed))
-      (assoc state :summary (append summary trimmed))
-
-      (:brief? state)
-      (step (assoc state :brief? false) line)
-
-      return
-      (assoc state :returns (append returns return))
-
-      see-reference
-      (assoc state :see (append see (doc/strip-backticks see-reference)))
-
-      since-value
-      (assoc state :since (append-annotation-text since since-value))
-
-      deprecated?
-      (assoc state
-             :deprecated
-             (append-annotation-text deprecated (or deprecated-value "")))
+      (assoc (finish-text state)
+             :target :root
+             :text-lines [brief]
+             :brief? true
+             :boundary? false
+             :param-sequence? false)
 
       row
-      (let [key (:key row)]
-        (cond
-          (:header? row)
-          (finish-signature state)
+      (case (:kind row)
+        :header (assoc (start-args (finish-text state))
+                       :target :args
+                       :target-name nil
+                       :boundary? true
+                       :param-sequence? false
+                       :table? true)
+        :separator state
+        :continuation (cond-> state
+                             (and (:table? state) (= :param target))
+                             (assoc :text-lines
+                                    (append (:text-lines state) (:content row))
+                                    :boundary? false))
+        :param (let [state (if (:table? state)
+                             state
+                             (start-args (finish-text state)))]
+                 (assoc (start-param state (:name row) (:content row))
+                        :table? true
+                        :param-sequence? false)))
 
-          (:separator? row)
-          state
+      param
+      (let [state (if (:param-sequence? state)
+                    state
+                    (start-args (finish-text state)))]
+        (assoc (start-param state (:name param) (:content param))
+               :param-sequence? true
+               :table? false))
 
-          (:continuation? row)
-          (if-let [last-key (:last-param-key state)]
-            (let [param-doc (get params last-key)]
-              (assoc state
-                     :params
-                     (assoc params
-                            last-key
-                            (assoc param-doc
-                                   :doc
-                                   (trim
-                                     (str (or (:doc param-doc) "")
-                                          " "
-                                          (:doc row)))))))
-            state)
+      return
+      (start-return state return)
 
-          true
-          (assoc-in state
-                    [:params key] (:doc row)
-                    [:param-order] (if (contains? param-order key)
-                                     param-order
-                                     (append param-order key))
-                    [:last-param-key] key)))
+      see
+      (assoc (finish-text state)
+             :target :see
+             :see (append (:see state) (doc/strip-backticks see))
+             :boundary? false
+             :param-sequence? false)
 
-      (body-line? trimmed)
-      (assoc state :body (append body line))
+      since
+      (assoc (finish-text state)
+             :target :since
+             :since (append-annotation-text (:since state) since)
+             :boundary? false
+             :param-sequence? false)
+
+      (or deprecated (= "@deprecated" trimmed))
+      (assoc (finish-text state)
+             :target :deprecated
+             :deprecated (append-annotation-text (:deprecated state)
+                                                 (or deprecated ""))
+             :boundary? false
+             :param-sequence? false)
+
+      (string/starts-with? trimmed "@")
+      (assoc (finish-text state)
+             :target :root
+             :target-name nil
+             :boundary? true
+             :param-sequence? false)
+
+      (and boundary? (header? line))
+      (assoc (append-header (cond-> state
+                                   (= :return target)
+                                   (assoc :target :root))
+                            line)
+             :boundary? false)
 
       true
-      state)))
+      (assoc state
+             :text-lines (append (:text-lines state) trimmed)
+             :boundary? false))))
+
+(defun reuse-single-return [state]
+  (case (:return-count state)
+    1 (let [returns (get-in state
+                            [:signature-docs (:return-index state) :returns])]
+        (assoc state
+               :signature-docs
+               (for [signature (:signature-docs state)]
+                 (assoc signature :returns returns))))
+    :default state))
 
 (defun parse
   "Parse a Roo native C++ documentation comment.
 
-  Argument table rows may use numeric keys such as `0` and `1`, or named
-  keys such as `path` and `contents`."
+  Args:
+  - `text`: Complete native block-comment text.
+
+  Returns:
+  Ordered documentation fields and internal per-signature documentation used by
+  native symbol normalization."
   [text]
-  (let [state (reduce (lines text)
-                      {:summary []
-                       :body []
-                       :params {}
-                       :param-order []
-                       :signature-docs []
-                       :last-param-key nil
-                       :returns []
-                       :examples []
-                       :see []
-                       :since nil
-                       :deprecated nil
-                       :section nil
-                       :code-format nil
-                       :code-lines []
-                       :brief? false}
-                      step)
-        state (finish-signature state)
-        first-signature (head (:signature-docs state))]
-    {:summary (join-lines " " (:summary state))
-     :body (doc/paragraph-text
-             (doc/paragraphs (:body state)))
-     :format :markdown
-     :params (or (:params first-signature) {})
-     :param-order (or (:param-order first-signature) [])
-     :signature-docs (:signature-docs state)
-     :returns (unless (empty? (:returns state))
-                {:type nil
-                 :doc (doc/paragraph-text
-                        (doc/paragraphs (:returns state)))})
-     :examples (:examples state)
-     :see (:see state)
-     :since (:since state)
-     :deprecated (:deprecated state)}))
+  (let [state (-> (reduce (lines text)
+                          {:summary nil
+                           :content []
+                           :signature-docs []
+                           :signature-index nil
+                           :return-index nil
+                           :return-count 0
+                           :see []
+                           :since nil
+                           :deprecated nil
+                           :target :root
+                           :target-name nil
+                           :text-lines []
+                           :code nil
+                           :brief? false
+                           :boundary? true
+                           :param-sequence? false
+                           :table? false}
+                          step)
+                  finish-text)
+        state (cond-> state (:code state) finish-code)
+        state (reuse-single-return state)]
+    (cond-> (select-keys state [:summary :content :signature-docs
+                                :see :since :deprecated])
+            (nil? (:summary state)) (dissoc :summary)
+            (empty? (:content state)) (dissoc :content)
+            (empty? (:signature-docs state)) (dissoc :signature-docs)
+            (empty? (:see state)) (dissoc :see)
+            (nil? (:since state)) (dissoc :since)
+            (nil? (:deprecated state)) (dissoc :deprecated))))
 
 
 

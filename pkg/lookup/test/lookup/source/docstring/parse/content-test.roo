@@ -6,16 +6,20 @@
 
 ;; lookup.source.docstring.parse.content/parse
 
-(deftest parse/returns-the-complete-documentation-model
+(deftest parse/returns-ordered-documentation
   (is (= {:summary "Build a greeting for `name`."
-          :body "Uses a friendly default format."
-          :format :markdown
-          :params {"name" {:type nil
-                           :doc "Person to greet."}}
-          :returns {:type nil
-                    :doc "A greeting string."}
-          :examples [{:format :roo
-                      :source "(greet \"Ada\")"}]
+          :content [{:kind :text
+                     :content "Build a greeting for `name`."}
+                    {:kind :text
+                     :content "Uses a friendly default format."}
+                    {:kind :sig-args :index 0}
+                    {:kind :sig-ret :index 0}
+                    {:kind :header :content "Examples:"}
+                    {:kind :code :content "(greet \"Ada\")"}]
+          :params {"name" {:content [{:kind :text
+                                      :content "Person to greet."}]}}
+          :returns {:content [{:kind :text
+                               :content "A greeting string."}]}
           :see ["str"]
           :since "0.1.0"
           :deprecated "Use `welcome` instead."}
@@ -42,4 +46,73 @@
               0.1.0
 
               Deprecated:
-              Use `welcome` instead."))))
+              Use `welcome` instead."
+           ["name"]))))
+
+(deftest parse/accepts-argument-heading-and-declaration-variants
+  (is (= {:content [{:kind :sig-args :index 0}]
+          :params {"path" {:content [{:kind :text
+                                      :content "The path to open.\nMay be relative."}]}
+                   "mode" {:content [{:kind :text
+                                      :content "Opening mode."}]}}}
+         (content/parse
+           "Parameters:
+            path: The path to open.
+            May be relative.
+            - mode: Opening mode."
+           ["path" "mode"]))))
+
+(deftest parse/retains-arbitrary-headers-and-explicit-code-languages
+  (is (= {:content [{:kind :header :content "Usage:"}
+                    {:kind :code
+                     :language :shell
+                     :content "roo run example.roo"}
+                    {:kind :code :content "(run)"}]}
+         (content/parse
+           "Usage:
+            ```shell
+            roo run example.roo
+            ```
+            ```
+            (run)"
+           []))))
+
+(deftest parse/uses-blank-lines-as-content-dividers
+  (is (= {:summary "General explanation."
+          :content [{:kind :sig-args :index 0}
+                    {:kind :text :content "General explanation."}
+                    {:kind :sig-ret :index 0}]
+          :params {"value" {:content [{:kind :text
+                                       :content "First line.\nSecond line."}]}}
+          :returns {:content [{:kind :text
+                               :content "Result line one.\nResult line two."}]}}
+         (content/parse
+           "Args:
+            value: First line.
+            Second line.
+
+            General explanation.
+
+            Returns:
+            Result line one.
+            Result line two."
+           ["value"]))))
+
+(deftest parse/preserves-multiple-return-blocks
+  (is (= {:content [{:kind :sig-ret :index 0}
+                    {:kind :header :content "Usage:"}]
+          :returns {:content [{:kind :text :content "Result text."}
+                              {:kind :text :content "More result detail."}
+                              {:kind :code :content "{:ok true}"}]}}
+         (content/parse
+           "Returns:
+            Result text.
+
+            More result detail.
+
+            ```roo
+            {:ok true}
+            ```
+
+            Usage:"
+           []))))

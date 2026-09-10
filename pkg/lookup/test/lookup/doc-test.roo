@@ -4,16 +4,8 @@
 
 
 
-;; lookup.doc/empty
+;; lookup.doc/strip-backticks
 
-(deftest empty/returns-the-empty-documentation-model
-  (is (= {:summary nil
-          :body nil
-          :format :plain
-          :params {}
-          :returns nil
-          :examples []
-          :see []
-          :since nil
-          :deprecated nil}
-         (doc/empty))))
+(deftest strip-backticks/removes-one-surrounding-pair
+  (is (= "name" (doc/strip-backticks " `name` ")))
+  (is (= "name" (doc/strip-backticks "name"))))

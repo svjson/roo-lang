@@ -1,8 +1,5 @@
 (ns lookup.index
-  (:require [lookup.source.native.parse.entries :as native-entries]
-            [lookup.source.native.symbols :as native-symbols]
-            [lookup.source :as source]
-            [lookup.source.docstring.symbols :as docstring-symbols]))
+  (:require [lookup.source :as source]))
 
 (defun source-form-index
   "Build a source-form index for a package.
@@ -14,37 +11,24 @@
   A `:roo/source-forms` index map with package metadata and parsed top-level
   forms."
   [package-dir]
-  (let [manifest (source/read-manifest! package-dir)
-        files (source/package-source-files package-dir manifest)]
+  (let [forms (source/package-forms package-dir)]
     {:format :roo/source-forms
      :version 1
-     :package (source/package-info manifest)
-     :sources (for [path files]
-                (source/source-entry-for-index
-                  path
-                  (source/package-relative-path package-dir path)))}))
+     :package (:package forms)
+     :sources (:sources forms)}))
 
 (defun symbol-index-with-roots
   "Build a package symbol index, optionally enriched with generic roots."
   [package-dir roots excludes]
-  (let [source-index (source-form-index package-dir)
-        package-name (:name (:package source-index))
-        sources (:sources source-index)]
+  (let [symbols (source/extract-pkg-symbols package-dir
+                                            roots
+                                            excludes)]
     {:format :roo/symbol-index
      :version 1
-     :package (:package source-index)
-     :sources (for [source sources] {:path (:path source)})
-     :namespaces (keep sources docstring-symbols/source-namespace-entry)
-     :symbols (concat
-                (flat-map sources
-                          (fn [source]
-                            (docstring-symbols/source-symbols package-name source)))
-                (native-symbols/entries
-                  package-name
-                  (native-entries/package-entries! package-dir))
-                (native-symbols/entries
-                  package-name
-                  (native-entries/root-entries! roots excludes)))}))
+     :package (:package symbols)
+     :sources (:sources symbols)
+     :namespaces (:namespaces symbols)
+     :symbols (:symbols symbols)}))
 
 (defun symbol-index
   "Build a symbol index for a package.
@@ -72,32 +56,17 @@
   Returns:
   A `:roo/symbol-index` map."
   [options]
-  (let [roots (:roots options)
-        excludes (:excludes options)
-        extractors (:extractors options)
-        package (:package options)
-        normalized-roots (map roots source/normalized-path)
-        normalized-excludes (map excludes source/normalized-path)
-        native-files (sort
-                       (flat-map roots
-                                 (fn [root]
-                                   (native-entries/root-files root excludes)))
-                       <)
-        native-symbols (if (contains? extractors :native)
-                         (native-symbols/entries
-                           (:name package)
-                           (native-entries/root-entries! roots excludes))
-                         [])]
+  (let [symbols (source/root-symbols options)]
     {:format :roo/symbol-index
      :version 1
-     :package package
+     :package (:package options)
      :origin {:kind :roots
-              :roots normalized-roots
-              :excludes normalized-excludes
-              :extractors extractors}
-     :sources (for [path native-files] {:path path})
-     :namespaces []
-     :symbols native-symbols}))
+              :roots (:roots symbols)
+              :excludes (:excludes symbols)
+              :extractors (:extractors options)}
+     :sources (:sources symbols)
+     :namespaces (:namespaces symbols)
+     :symbols (:symbols symbols)}))
 
 (defun explicit-package
   "Return explicit package metadata from OPTIONS.

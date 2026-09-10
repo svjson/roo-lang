@@ -13,16 +13,18 @@
 
   (p/then [source-index]
     (let [sources (:sources source-index)
-          paths (for [source sources] (:path source))
           index-source (find-first sources
                                    (fn [source]
                                      (= "src/index/_index.roo" (:path source))))
           first-form (head (:forms index-source))]
-      (is (= :roo/source-forms (:format source-index)))
-      (is (= 1 (:version source-index)))
-      (is (= "lookup" (:name (:package source-index))))
-      (is (= "0.1.0" (:version (:package source-index))))
-      (is (= 14 (count sources)))
+      (is (= {:format :roo/source-forms
+              :version 1
+              :package {:name "lookup"
+                        :version "0.1.0"
+                        :description "Roo symbol index generator."}}
+             (merge (select-keys source-index [:format
+                                               :version
+                                               :package]))))
       (is (= ["src/audit.roo"
               "src/cli.roo"
               "src/command/audit.roo"
@@ -31,13 +33,15 @@
               "src/doc.roo"
               "src/index/_index.roo"
               "src/index/incremental.roo"
-              "src/source.roo"
+              "src/source/_source.roo"
               "src/source/docstring/parse/content.roo"
               "src/source/docstring/symbols.roo"
               "src/source/native/parse/comment.roo"
               "src/source/native/parse/entries.roo"
-              "src/source/native/symbols.roo"]
-             paths))
+              "src/source/native/symbols.roo"
+              "src/source/path.roo"]
+             (map sources :path)))
+
       (is (= "src/index/_index.roo" (:path index-source)))
       (is (= "ns" (str (head (:form first-form)))))
       (is (= "lookup.index" (str (nth (:form first-form) 1)))))))
@@ -88,26 +92,28 @@
       (is (= :source (:origin version-symbol)))
       (is (= :public (:visibility version-symbol)))
       (is (= [] (:signatures version-symbol)))
-      (is (= "Lookup command version." (:summary (:doc version-symbol))))
+      (is (= "Lookup command version." (:summary version-symbol)))
       (is (= :function (:kind symbol-index-symbol)))
       (is (= "Build a symbol index for a package."
-             (:summary (:doc symbol-index-symbol))))
+             (:summary symbol-index-symbol)))
       (is (= "(symbol-index package-dir)" (:display symbol-index-signature)))
       (is (= [{:name "args"
+               :display "args"
                :optional? false
                :rest? false
-               :type nil
-               :doc "Command line argument vector."}]
+               :content [{:kind :text
+                          :content "Command line argument vector."}]}]
              (:params (head (:signatures command-symbol)))))
       (is (= [{:name "package-dir"
+               :display "package-dir"
                :optional? false
                :rest? false
-               :type nil
-               :doc "Package root containing `package.edn`."}]
+               :content [{:kind :text
+                          :content "Package root containing `package.edn`."}]}]
              (:params symbol-index-signature)))
       (is (= {:min 1 :max 1 :variadic false}
              (:arity symbol-index-signature)))
-      (is (= :markdown (:format (:doc symbol-index-symbol))))
+      (is (nil? (:format (head (:content symbol-index-symbol)))))
       (is (= "src/index/_index.roo"
              (:path (:source symbol-index-symbol)))))))
 
@@ -130,92 +136,23 @@
       (is (= :roo/symbol-index (:format symbol-index)))
       (is (= "native-fixture" (:name (:package symbol-index))))
       (is (= [{:id "sample.native/read!"
-               :name "read!"
-               :qualified-name "sample.native/read!"
-               :namespace "sample.native"
-               :kind :function
-               :origin :native
-               :visibility :public
-               :status :stable
-               :source
-               {:path "native/src/sample.cpp"
-                :line 5
-                :column 1}
-               :declaration-source
-               {:path "native/include/sample.h"
-                :line 21
-                :column 1}
-               :doc-source
-               {:kind :native-cpp-comment
-                :source
-                {:path "native/include/sample.h"
-                 :line 6
-                 :column 1}}
-               :doc {:summary "Read fixture data from a path."
-                     :body "The fixture keeps this as a separate paragraph."
-                     :format :markdown
-                     :params {"path" {:type nil :doc "Path to read."}}
-                     :returns nil
-                     :examples
-                     [{:format :roo
-                       :source
-                       "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}]
-                     :see []
-                     :since nil
-                     :deprecated nil}
-               :signatures
-               [{:display "(read! path)"
-                 :params [{:name "path"
-                           :display "path"
-                           :type nil
-                           :doc "Path to read."
-                           :optional? false
-                           :rest? false
-                           :group? false}]
-                 :returns {:type nil :doc nil}
-                 :arity {:min 1 :max 1 :variadic false}}]
-               :package "native-fixture"}
+               :summary "Read fixture data from a path."
+               :content [{:kind :text
+                          :content "Read fixture data from a path."}
+                         {:kind :text
+                          :content "The fixture keeps this as a separate paragraph."}
+                         {:kind :header :content "Usage:"}
+                         {:kind :code
+                          :content
+                          "(sample.native/read! \"fixture.txt\")\n=> \"contents\""}
+                         {:kind :sig-args :index 0}]}
               {:id "sample.native/write!"
-               :name "write!"
-               :qualified-name "sample.native/write!"
-               :namespace "sample.native"
-               :kind :function
-               :origin :native
-               :visibility :public
-               :status :stable
-               :source
-               {:path "native/src/sample.cpp"
-                :line 8
-                :column 1}
-               :declaration-source nil
-               :doc-source
-               {:kind :native-cpp-comment
-                :source
-                {:path "native/src/sample.cpp"
-                 :line 8
-                 :column 1}}
-               :doc {:summary "Write fixture data to a path."
-                     :body nil
-                     :format :markdown
-                     :params {"path" {:type nil :doc "Path to write."}}
-                     :returns nil
-                     :examples []
-                     :see []
-                     :since nil
-                     :deprecated nil}
-               :signatures
-               [{:display "(write! path)"
-                 :params [{:name "path"
-                           :display "path"
-                           :type nil
-                           :doc "Path to write."
-                           :optional? false
-                           :rest? false
-                           :group? false}]
-                 :returns {:type nil :doc nil}
-                 :arity {:min 1 :max 1 :variadic false}}]
-               :package "native-fixture"}]
-             [native-symbol annotated-symbol])))))
+               :summary "Write fixture data to a path."
+               :content [{:kind :text
+                          :content "Write fixture data to a path."}
+                         {:kind :sig-args :index 0}]}]
+             (for [symbol [native-symbol annotated-symbol]]
+               (select-keys symbol [:id :summary :content])))))))
 
 
 
@@ -229,7 +166,8 @@
        :extractors [:native]}))
 
   (p/then [symbol-index]
-    (let [native-symbol (head (:symbols symbol-index))]
+    (let [native-symbol (head (:symbols symbol-index))
+          native-namespace (head (:namespaces symbol-index))]
       (is (= :roo/symbol-index (:format symbol-index)))
       (is (= {:kind :roots
               :roots ["assets/native-root-only"]
@@ -243,7 +181,12 @@
       (is (= "extra.native/read!" (:id native-symbol)))
       (is (nil? (:package native-symbol)))
       (is (= "Read data from an external native source root."
-             (:summary (:doc native-symbol)))))))
+             (:summary native-symbol)))
+      (is (= {:name "extra.native"
+              :summary "Read data from an external native source root."
+              :content [{:kind :text
+                         :content "Read data from an external native source root."}]}
+             (select-keys native-namespace [:name :summary :content]))))))
 
 (deftest root-index/includes-package-metadata
   (p/when []
@@ -299,4 +242,4 @@
       (is (= :roo/symbol-index (:format symbol-index)))
       (is (= "extra.native/read!" (:id native-symbol)))
       (is (= "Read data from an external native source root."
-             (:summary (:doc native-symbol)))))))
+             (:summary native-symbol))))))

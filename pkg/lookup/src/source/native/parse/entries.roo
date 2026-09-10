@@ -1,6 +1,6 @@
 (ns lookup.source.native.parse.entries
   (:require [lookup.source.native.parse.comment :as comment]
-            [lookup.source :as lookup-source]
+            [lookup.source.path :as path]
             [roo.io :as io]
             [roo.string :as string]))
 
@@ -12,19 +12,9 @@
   (contains? [".c" ".cc" ".cpp" ".cxx" ".h" ".hh" ".hpp" ".hxx"]
              (io/extension path)))
 
-(defun excluded-path? [path excludes]
-  (let [normalized-path (lookup-source/normalized-path path)]
-    (any? excludes
-          (fn [exclude]
-            (let [normalized-exclude (lookup-source/normalized-path exclude)]
-              (or (= normalized-path normalized-exclude)
-                  (string/starts-with?
-                    normalized-path
-                    (str normalized-exclude "/"))))))))
-
 (defun files-under-excluding [root excludes]
   (cond
-    (excluded-path? root excludes)
+    (path/excluded? root excludes)
     []
 
     (io/directory? root)
@@ -33,12 +23,12 @@
                       (fn [{:keys [type path]}]
                         (when (and (= type :file)
                                    (source-file? path)
-                                   (not (excluded-path? path excludes)))
+                                   (not (path/excluded? path excludes)))
                           path)))
           directories (filter entries
                               (fn [{:keys [type path]}]
                                 (and (= type :directory)
-                                     (not (excluded-path? path excludes)))))]
+                                     (not (path/excluded? path excludes)))))]
       (concat files
               (flat-map directories
                         (fn [entry]
@@ -65,7 +55,7 @@
   Returns:
   A sorted vector of native source/header file paths."
   [package-dir]
-  (let [manifest (lookup-source/read-manifest! package-dir)]
+  (let [manifest (io/slurp-edn! (io/join-path package-dir "package.edn"))]
     (sort
       (map
         (flat-map (:native-libraries manifest)
@@ -75,14 +65,14 @@
                                 (files-under-excluding
                                   (io/join-path package-dir root)
                                   [])))))
-        lookup-source/normalized-path)
+        io/normalize-path)
       <)))
 
 (defun root-files
   "Find native source and header files beneath ROOT, excluding EXCLUDES."
   [root excludes]
   (sort (map (files-under-excluding root excludes)
-             lookup-source/normalized-path)
+             io/normalize-path)
         <))
 
 
@@ -133,7 +123,7 @@
           (substr tail 0 separator))))))
 
 (defun location [path line]
-  {:path (lookup-source/normalized-path path)
+  {:path (io/normalize-path path)
    :line line
    :column 1})
 
@@ -145,6 +135,7 @@
   (let [text (comment-text native-comment)
         identity (comment/identity text)
         annotation (comment/annotation text)
+        namespace-annotation (comment/namespace-annotation text)
         entries (cond-> (:entries state)
 
                         identity
@@ -160,7 +151,15 @@
                                   :doc (comment/parse text)
                                   :source (location (:path state)
                                                     (:start-line native-comment))}
-                                 annotation)))]
+                                 annotation))
+
+                        namespace-annotation
+                        (append
+                          (merge {:kind :native-annotated-namespace
+                                  :doc (comment/parse text)
+                                  :source (location (:path state)
+                                                    (:start-line native-comment))}
+                                 namespace-annotation)))]
     (assoc state
            :comment nil
            :pending-comment native-comment
@@ -246,7 +245,7 @@
   [package-dir]
   (flat-map (package-files package-dir)
             (fn [path]
-              (entries (lookup-source/package-relative-path package-dir path)
+              (entries (path/package-relative package-dir path)
                        (io/slurp! path)))))
 
 (defun root-entries!

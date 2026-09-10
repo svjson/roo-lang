@@ -6,24 +6,18 @@
 
 ;; lookup.source.native.parse.comment/parse
 
-(deftest parse/returns-the-complete-documentation-model
+(deftest parse/returns-ordered-documentation
   (is (= {:summary "Read the complete contents of a text file as a string."
-          :body nil
-          :format :markdown
-          :params {"0" {:type nil
-                        :doc "The path of the file to read."}}
-          :param-order ["0"]
+          :content [{:kind :text
+                     :content "Read the complete contents of a text file as a string."}
+                    {:kind :header :content "Usage:"}
+                    {:kind :code
+                     :content "(roo.io/slurp! \"notes.txt\") => \"file contents\""}
+                    {:kind :sig-args :index 0}]
           :signature-docs
-          [{:params {"0" {:type nil
-                          :doc "The path of the file to read."}}
-            :param-order ["0"]}]
-          :returns nil
-          :examples
-          [{:format :roo
-            :source "(roo.io/slurp! \"notes.txt\") => \"file contents\""}]
-          :see []
-          :since nil
-          :deprecated nil}
+          [{:params {"0" {:content [{:kind :text
+                                     :content "The path of the file to read."}]}}
+            :param-order ["0"]}]}
          (comment/parse
            "/*!
             * @brief Read the complete contents of a text file as a string.
@@ -33,95 +27,179 @@
             * (roo.io/slurp! \"notes.txt\") => \"file contents\"
             * @endcode
             *
-            * | Arg # | Description                                                        |
-            * | ----- | ------------------------------------------------------------------ |
-            * | 0     | The path of the file to read.                                      |
+            * | Arg # | Description                           |
+            * | ----- | ------------------------------------- |
+            * | 0     | The path of the file to read.         |
             */"))))
 
-(deftest parse/retains-body-brief-continuations-and-multiple-parameters
+(deftest parse/retains-multiline-brief-parameters-and-table-rows
   (is (= {:summary
-          "Shifts an integer value right by one bit, or by the given number of bits."
-          :body
-          "`>>` is the signed/arithmetic right shift operator. Negative values\nkeep their sign through the shift."
-          :format :markdown
-          :params {"0" {:type nil :doc "Integer value to shift."}
-                   "1" {:type nil
-                        :doc
-                        "Optional integer number of bits to shift by. Defaults to 1."}}
-          :param-order ["0" "1"]
+          "Shift an integer value right by one bit, or by the given\nnumber of bits."
+          :content [{:kind :text
+                     :content
+                     "Shift an integer value right by one bit, or by the given\nnumber of bits."}
+                    {:kind :sig-args :index 0}]
           :signature-docs
-          [{:params {"0" {:type nil :doc "Integer value to shift."}
-                     "1" {:type nil
-                          :doc
-                          "Optional integer number of bits to shift by. Defaults to 1."}}
-            :param-order ["0" "1"]}]
-          :returns nil
-          :examples [{:format :roo :source "(>> 8)\n=> 4"}]
-          :see []
-          :since nil
-          :deprecated nil}
+          [{:params
+            {"0" {:content [{:kind :text
+                             :content "Integer value to shift."}]}
+             "1" {:content [{:kind :text
+                             :content
+                             "Optional number of bits to shift by.\nDefaults to 1."}]}}
+            :param-order ["0" "1"]}]}
          (comment/parse
            "/**
-            * @brief Shifts an integer value right by one bit, or by the given
+            * @brief Shift an integer value right by one bit, or by the given
             * number of bits.
             *
-            * `>>` is the signed/arithmetic right shift operator. Negative values
-            * keep their sign through the shift.
-            *
-            * Usage:
-            * @code
-            * (>> 8)
-            * => 4
-            * @endcode
-            *
-            * | Arg # | Description                                                        |
-            * | ----- | ------------------------------------------------------------------ |
-            * | 0     | Integer value to shift.                                            |
-            * | 1     | Optional integer number of bits to shift by. Defaults to 1.        |
+            * | Arg # | Description                               |
+            * | ----- | ----------------------------------------- |
+            * | 0     | Integer value to shift.                   |
+            * | 1     | Optional number of bits to shift by.      |
+            * |       | Defaults to 1.                            |
             */"))))
 
-(deftest parse/appends-argument-table-continuation-lines
-  (is (= {:summary "Read a path."
-          :body nil
-          :format :markdown
-          :params {"path" {:type nil
-                           :doc "Path to read from. a fixture."}}
-          :param-order ["path"]
+(deftest parse/keeps-return-before-grouped-args-in-one-signature
+  (is (= {:summary "Choose the result for the first truthy condition."
+          :content [{:kind :text
+                     :content "Choose the result for the first truthy condition."}
+                    {:kind :sig-ret :index 0}
+                    {:kind :sig-args :index 0}]
           :signature-docs
-          [{:params {"path" {:type nil
-                             :doc "Path to read from. a fixture."}}
-            :param-order ["path"]}]
-          :returns nil
-          :examples []
-          :see []
-          :since nil
-          :deprecated nil}
+          [{:returns {:content [{:kind :text
+                                 :content "The selected result."}]}
+            :params
+            {"(condition result)..."
+             {:content [{:kind :text
+                         :content "Repeated condition/result pairs."}]}}
+            :param-order ["(condition result)..."]}]}
+         (comment/parse
+           "/*!
+            * @brief Choose the result for the first truthy condition.
+            *
+            * @return The selected result.
+            *
+            * | Arg                    | Description                      |
+            * |------------------------|----------------------------------|
+            * | (condition result)...  | Repeated condition/result pairs. |
+            */"))))
+
+(deftest parse/reuses-one-return-across-signatures-without-adding-an-occurrence
+  (is (= {:summary "Open a resource."
+          :content [{:kind :text :content "Open a resource."}
+                    {:kind :sig-args :index 0}
+                    {:kind :text :content "An explicit mode is also accepted."}
+                    {:kind :sig-args :index 1}
+                    {:kind :sig-ret :index 1}]
+          :signature-docs
+          [{:params {"path" {:content [{:kind :text
+                                        :content "Resource path."}]}}
+            :param-order ["path"]
+            :returns {:content [{:kind :text
+                                 :content "The opened resource.\nOr an error."}]}}
+           {:params {"path" {:content [{:kind :text
+                                        :content "Resource path."}]}
+                     "mode" {:content [{:kind :text
+                                        :content "Opening mode."}]}}
+            :param-order ["path" "mode"]
+            :returns {:content [{:kind :text
+                                 :content "The opened resource.\nOr an error."}]}}]}
          (comment/parse
            "/**
-            * @brief Read a path.
+            * @brief Open a resource.
             *
-            * | Arg   | Description                                                        |
-            * | ----- | ------------------------------------------------------------------ |
-            * | path  | Path to read from.                                                 |
-            * |       | a fixture.                                                        |
+            * | Arg  | Description   |
+            * | ---- | ------------- |
+            * | path | Resource path.|
+            *
+            * An explicit mode is also accepted.
+            *
+            * | Arg  | Description   |
+            * | ---- | ------------- |
+            * | path | Resource path.|
+            * | mode | Opening mode. |
+            *
+            * @returns The opened resource.
+            * Or an error.
             */"))))
 
-(deftest parse/extracts-native-roo-symbol-annotations
+(deftest parse/accepts-param-sequences
+  (is (= {:content [{:kind :sig-args :index 0}
+                    {:kind :sig-ret :index 0}]
+          :signature-docs
+          [{:params {"path" {:content [{:kind :text
+                                        :content "Path to read.\nMay be relative."}]}
+                     "fallback" {:content [{:kind :text
+                                            :content "Value used when absent."}]}}
+            :param-order ["path" "fallback"]
+            :returns {:content [{:kind :text
+                                 :content "The value."}]}}]}
+         (comment/parse
+           "/*!
+            * @param path Path to read.
+            * May be relative.
+            * @param fallback Value used when absent.
+            * @return The value.
+            */"))))
+
+(deftest parse/keeps-repeated-returns-on-distinct-signatures
+  (is (= {:content [{:kind :sig-ret :index 0}
+                    {:kind :sig-args :index 0}
+                    {:kind :sig-ret :index 1}
+                    {:kind :sig-args :index 1}]
+          :signature-docs
+          [{:returns {:content [{:kind :text :content "First result."}]}
+            :params {"first" {:content [{:kind :text
+                                          :content "First input."}]}}
+            :param-order ["first"]}
+           {:returns {:content [{:kind :text :content "Second result."}]}
+            :params {"second" {:content [{:kind :text
+                                           :content "Second input."}]}}
+            :param-order ["second"]}]}
+         (comment/parse
+           "/*!
+            * @return First result.
+            *
+            * | Arg   | Description  |
+            * |-------|--------------|
+            * | first | First input. |
+            *
+            * @return Second result.
+            *
+            * | Arg    | Description   |
+            * |--------|---------------|
+            * | second | Second input. |
+            */"))))
+
+(deftest parse/preserves-multiple-return-blocks
+  (is (= {:content [{:kind :sig-ret :index 0}
+                    {:kind :header :content "Usage:"}]
+          :signature-docs
+          [{:returns {:content [{:kind :text :content "Result text."}
+                                {:kind :text :content "More result detail."}
+                                {:kind :code :content "{:ok true}"}]}}]}
+         (comment/parse
+           "/*!
+            * @return Result text.
+            *
+            * More result detail.
+            *
+            * @code
+            * {:ok true}
+            * @endcode
+            *
+            * Usage:
+            */"))))
+
+(deftest parse/retains-native-documentation-metadata
   (is (= {:summary "Read a legacy value."
-          :body nil
-          :format :markdown
-          :params {}
-          :param-order []
-          :signature-docs []
-          :returns {:type nil :doc "The migrated value."}
-          :examples []
+          :content [{:kind :text :content "Read a legacy value."}]
           :see ["sample.native/read" "sample.native/migrate"]
           :since "0.2.0"
           :deprecated "Use `sample.native/read` instead."}
          (comment/parse
            "/*!
             * @brief Read a legacy value.
-            * @return The migrated value.
             * @see `sample.native/read`
             * @see sample.native/migrate
             * @since 0.2.0
@@ -139,7 +217,7 @@
 
 
 
-;; lookup.source.native.parse.comment/annotation
+;; Roo Annotations
 
 (deftest annotation/returns-the-declared-native-symbol
   (is (= {:qualified-name "proof.syntax/given"
@@ -167,6 +245,14 @@
                * @roo.symbol given
                * @roo.kind special-form
                */"))))
+
+(deftest namespace-annotation/returns-the-declared-namespace
+  (is (= {:name "roo.ast"}
+         (comment/namespace-annotation
+           "/*!
+            * @roo.namespace roo.ast
+            * @brief Read Roo abstract syntax trees.
+            */"))))
 
 
 

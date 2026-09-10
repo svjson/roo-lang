@@ -3,7 +3,8 @@
             proof.fixture
             [proof.syntax :as p]
             [roo.io :as io]
-            [lookup.index.incremental :as incremental]))
+            [lookup.index.incremental :as incremental]
+            [lookup.source.path :as path]))
 
 
 
@@ -71,8 +72,7 @@
     (is (= (:snapshot result)
            (:reset (:delta result))))
     (is (contains? (:sources (:manifest result))
-                   (incremental/canonical-path
-                     (:source-path new-index-state))))))
+                   (path/canonical (:source-path new-index-state))))))
 
 (deftest index-with-state/publishes-package-relative-native-paths
   {:after (io/remove-tree! (:state-dir new-native-index-state))}

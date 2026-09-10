@@ -122,7 +122,7 @@ esac
 printf '%s\n' "==> Testing lookup audit"
 AUDIT_FILE="/tmp/lookup-audit-input-$$.edn"
 AUDIT_ERROR_FILE="/tmp/lookup-audit-error-$$.txt"
-printf '%s\n' '{:format :roo/symbol-index :version 1 :symbols [{:id "sample/missing" :qualified-name "sample/missing" :kind :function :doc {:summary nil} :signatures [{:display "(missing value)" :params [{:name "value" :doc nil}]}]}]}' > "$AUDIT_FILE"
+printf '%s\n' '{:format :roo/symbol-index :version 1 :symbols [{:id "sample/missing" :qualified-name "sample/missing" :kind :function :summary nil :signatures [{:display "(missing value)" :params [{:name "value"}]}]}]}' > "$AUDIT_FILE"
 if AUDIT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit --require-summary --require-param-docs --require-signatures --fail-on warning "$AUDIT_FILE" 2>"$AUDIT_ERROR_FILE"); then
   rm -f "$AUDIT_FILE"
   rm -f "$AUDIT_ERROR_FILE"
@@ -149,7 +149,7 @@ case "$AUDIT_ERROR" in
 esac
 
 AUDIT_FILE="/tmp/lookup-audit-input-$$.edn"
-printf '%s\n' '{:format :roo/symbol-index :version 1 :symbols [{:id "sample/missing" :qualified-name "sample/missing" :kind :function :doc {:summary nil} :signatures [{:display "(missing value)" :params [{:name "value" :doc nil}]}]}]}' > "$AUDIT_FILE"
+printf '%s\n' '{:format :roo/symbol-index :version 1 :symbols [{:id "sample/missing" :qualified-name "sample/missing" :kind :function :summary nil :signatures [{:display "(missing value)" :params [{:name "value"}]}]}]}' > "$AUDIT_FILE"
 if ! AUDIT_TEXT_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" audit -o text --require-summary --require-param-docs --require-signatures "$AUDIT_FILE"); then
   rm -f "$AUDIT_FILE"
   fail "lookup audit text command failed"

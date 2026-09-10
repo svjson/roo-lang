@@ -1,25 +1,29 @@
 (ns lookup.audit)
 
-(def audit-format :roo/lookup-audit)
-(def audit-version 1)
 
-(def default-options
+
+;; Option Constants
+
+(def DEFAULT-OPTIONS
+  "Default validation requirements for a Lookup audit."
   {:require-summary? false
    :require-param-docs? false
    :require-signatures? false
    :allow-zero-arity []
    :fail-on nil})
 
-(defun blank-text? [text]
-  (or (nil? text) (blank? text)))
+
+
+;; Utility functions
 
 (defun symbol-id [symbol]
   (or (:qualified-name symbol)
       (:id symbol)
       (:name symbol)))
 
-(defun function-symbol? [symbol]
-  (contains? [:function :special-form] (:kind symbol)))
+
+
+;; Diagnostic construction
 
 (defun diagnostic [kind symbol message details]
   (merge {:severity :warning
@@ -28,67 +32,50 @@
           :message message}
          details))
 
-(defun missing-summary-diagnostic [symbol]
-  (diagnostic :missing-doc-summary
-              symbol
-              "Missing documentation summary."
-              {}))
-
-(defun missing-signatures-diagnostic [symbol]
-  (diagnostic :missing-signatures
-              symbol
-              "Function or special form has no documented signatures."
-              {}))
-
-(defun zero-arity-signature-diagnostic [symbol signature]
-  (diagnostic :zero-arity-signature
-              symbol
-              "Documented signature has no parameters."
-              {:signature (:display signature)}))
-
-(defun missing-param-doc-diagnostic [symbol signature param]
-  (diagnostic :missing-param-doc
-              symbol
-              "Missing parameter documentation."
-              {:signature (:display signature)
-               :param (:name param)}))
-
 (defun summary-diagnostics [symbol options]
-  (if (and (:require-summary? options)
-           (blank-text? (:summary (:doc symbol))))
-    [(missing-summary-diagnostic symbol)]
-    []))
-
-(defun zero-arity-allowed? [symbol options]
-  (contains? (:allow-zero-arity options) (symbol-id symbol)))
+  (cond-> []
+    (and (:require-summary? options)
+         (blank? (:summary symbol)))
+    (append (diagnostic :missing-doc-summary symbol
+                   "Missing documentation summary." {}))))
 
 (defun signature-diagnostics [symbol {:keys [params] :as signature} options]
-  (concat
-   (if (and (:require-signatures? options)
-            (empty? params)
-            (not (zero-arity-allowed? symbol options)))
-     [(zero-arity-signature-diagnostic symbol signature)]
-     [])
-   (if (:require-param-docs? options)
-     (keep params
-           (fn [param] (when (blank-text? (:doc param))
-                         (missing-param-doc-diagnostic symbol signature param))))
-     [])))
+  (cond-> []
 
-(defun signatures-diagnostics [symbol options]
-  (if (not (function-symbol? symbol))
+    (and (:require-signatures? options)
+         (empty? params)
+         (not (contains? (:allow-zero-arity options) (symbol-id symbol))))
+    (append (diagnostic :zero-arity-signature symbol
+                        "Documented signature has no parameters."
+                        {:signature (:display signature)}))
+
+    (:require-param-docs? options)
+    (concat (keep params
+                  (fn [param] (when (empty? (:content param))
+                                (diagnostic :missing-param-doc symbol
+                                            "Missing parameter documentation."
+                                            {:signature (:display signature)
+                                             :param (:name param)})))))))
+
+(defun signatures-diagnostics [{:keys [signatures] :as symbol} options]
+  (cond
+    (not (contains? [:function :special-form] (:kind symbol)))
     []
-    (let [symbol-signatures (:signatures symbol)]
-      (if (and (:require-signatures? options)
-               (empty? symbol-signatures))
-        [(missing-signatures-diagnostic symbol)]
-        (flat-map symbol-signatures
-                  (fn [signature]
-                    (signature-diagnostics symbol signature options)))))))
 
-(defun symbol-diagnostics [symbol options]
-  (concat (summary-diagnostics symbol options)
-          (signatures-diagnostics symbol options)))
+    (and (:require-signatures? options)
+         (empty? signatures))
+    [(diagnostic :missing-signatures symbol
+                 "Function or special form has no documented signatures."
+                 {})]
+
+    :default
+    (flat-map signatures
+              (fn [signature]
+                (signature-diagnostics symbol signature options)))))
+
+
+
+;; Severity & pass/fail
 
 (defun severity-rank [severity]
   (case severity
@@ -97,7 +84,7 @@
     :default 0))
 
 (defun diagnostic-fails? [diagnostic fail-on]
-  (and (some? fail-on)
+  (and (keyword? fail-on)
        (>= (severity-rank (:severity diagnostic))
            (severity-rank fail-on))))
 
@@ -106,23 +93,30 @@
         (fn [diagnostic]
           (diagnostic-fails? diagnostic (:fail-on options)))))
 
+
+
+;; Public API
+
 (defun symbol-index
   "Audit a lookup symbol index and return diagnostic data.
 
-  Args:
-  - `index`: A lookup symbol index map.
-  - `options`: Audit options. Supported keys are `:require-summary?`,
-    `:require-param-docs?`, `:require-signatures?`, `:allow-zero-arity`,
-    and `:fail-on`.
+   Args:
+   - `index`: A lookup symbol index map.
+   - `options`: Audit options. Supported keys are `:require-summary?`,
+     `:require-param-docs?`, `:require-signatures?`, `:allow-zero-arity`,
+     and `:fail-on`.
 
-  Returns:
-  A `:roo/lookup-audit` map with diagnostics."
+   Returns:
+   A `:roo/lookup-audit` map with diagnostics."
   [index options]
-  (let [effective-options (merge default-options options)
+  (let [effective-options (merge DEFAULT-OPTIONS options)
         diagnostics (flat-map (:symbols index)
                               (fn [symbol]
-                                (symbol-diagnostics symbol effective-options)))]
-    {:format audit-format
-     :version audit-version
+                                (concat
+                                 (summary-diagnostics symbol effective-options)
+                                 (signatures-diagnostics symbol
+                                                         effective-options))))]
+    {:format :roo/lookup-audit
+     :version 1
      :diagnostics diagnostics
      :failed? (audit-failed? diagnostics effective-options)}))

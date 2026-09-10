@@ -1,6 +1,5 @@
 (ns lookup.source.docstring.symbols
-  (:require [lookup.doc :as doc]
-            [lookup.source.docstring.parse.content :as content]
+  (:require [lookup.source.docstring.parse.content :as content]
             [roo.string :as string]))
 
 
@@ -25,14 +24,12 @@
                                  (= "ns" (form-head-name (:form entry)))))]
     (let [form (:form entry)
           docstring (when (string? (nth form 2)) (nth form 2))]
-      {:name (str (nth form 1))
-       :doc (if (nil? docstring)
-              (doc/empty)
-              (content/parse docstring))
-       :doc-source (when docstring
-                     {:kind :roo-docstring
-                      :source (:source entry)})
-       :source (:source entry)})))
+      (cond-> {:name (str (nth form 1))
+               :source (:source entry)}
+              docstring
+              (merge (content/parse docstring [])
+                     {:doc-source {:kind :roo-docstring
+                                   :source (:source entry)}})))))
 
 (defun source-namespace-name [source]
   (or (:name (source-namespace-entry source)) "user"))
@@ -61,8 +58,6 @@
                 :params (append (:params state)
                                 {:name (clean-param-name display-name)
                                  :display display-name
-                                 :type nil
-                                 :doc nil
                                  :optional? (or (:optional? state) rest?)
                                  :rest? rest?})})))
 
@@ -94,30 +89,24 @@
   - `raw-params`: Roo parameter vector from a `defun` form.
 
   Returns:
-  A signature map with display text, parameters, return placeholder, and arity."
+  A signature map with display text, parameters, and arity."
   [name raw-params]
   (let [params (params-info raw-params)]
     {:display (signature-display name raw-params)
-     :params (for [p params]
-               (select-keys p [:name :type :doc :optional? :rest?]))
-     :returns {:type nil
-               :doc nil}
+     :params params
      :arity (signature-arity params)}))
 
 (defun function-signature-with-doc [name raw-params {:keys [params returns]}]
   (let [signature (function-signature name raw-params)]
-    (assoc signature :params
-                     (for [p (:params signature)]
-                       (if-let [param-doc (get params (:name p))]
-                         (assoc p
-                                :type (:type param-doc)
-                                :doc (:doc param-doc))
-                         p))
-
-                     :returns
-                     (if (nil? returns)
-                       (:returns signature)
-                       returns))))
+    (if returns
+      {:display (:display signature)
+       :params (for [p (:params signature)]
+                 (if-let [param-doc (get params (:name p))]
+                   (merge p param-doc)
+                   p))
+       :returns returns
+       :arity (:arity signature)}
+      signature)))
 
 
 
@@ -134,38 +123,37 @@
      :origin :source
      :visibility :public
      :status :stable
-     :source source
-     :doc-source nil
-     :doc (doc/empty)}))
+     :source source}))
 
 (defun def-symbol-entry [package namespace entry]
   (let [form (:form entry)
         name (str (nth form 1))
         docstring (when (string? (nth form 2)) (nth form 2))
-        doc (if (nil? docstring)
-              (doc/empty)
-              (content/parse docstring))]
-    (merge (base-symbol-entry package namespace name :var (:source entry))
-           {:doc doc
-            :doc-source (when docstring
-                          {:kind :roo-docstring
-                           :source (:source entry)})
-            :signatures []})))
+        doc (when docstring (content/parse docstring []))]
+    (if docstring
+      (merge (base-symbol-entry package namespace name :var (:source entry))
+             (dissoc doc :params :returns)
+             {:doc-source {:kind :roo-docstring
+                           :source (:source entry)}
+              :signatures []})
+      (assoc (base-symbol-entry package namespace name :var (:source entry))
+             :signatures []))))
 
 (defun defun-symbol-entry [package namespace entry]
   (let [form (:form entry)
         name (str (nth form 1))
         docstring (when (string? (nth form 2)) (nth form 2))
         params (if (nil? docstring) (nth form 2) (nth form 3))
-        doc (if (nil? docstring)
-              (doc/empty)
-              (content/parse docstring))]
-    (merge (base-symbol-entry package namespace name :function (:source entry))
-           {:doc doc
-            :doc-source (when docstring
-                          {:kind :roo-docstring
-                           :source (:source entry)})
-            :signatures [(function-signature-with-doc name params doc)]})))
+        param-names (for [param params] (clean-param-name (str param)))
+        doc (when docstring (content/parse docstring param-names))]
+    (if docstring
+      (merge (base-symbol-entry package namespace name :function (:source entry))
+             (dissoc doc :params :returns)
+             {:doc-source {:kind :roo-docstring
+                           :source (:source entry)}
+              :signatures [(function-signature-with-doc name params doc)]})
+      (assoc (base-symbol-entry package namespace name :function (:source entry))
+             :signatures [(function-signature name params)]))))
 
 (defun symbol-entry [package namespace {:keys [form] :as entry}]
   (let [head-name (form-head-name form)]

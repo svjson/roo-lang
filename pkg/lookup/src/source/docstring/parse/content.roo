@@ -2,139 +2,211 @@
   (:require [lookup.doc :as doc]
             [roo.string :as string]))
 
+
+;; docstring syntax
+
+(def SECTION-TARGETS
+  {"Args:" :args
+   "Arguments:" :args
+   "Params:" :args
+   "Parameters:" :args
+   "Returns:" :returns
+   "See Also:" :see
+   "Since:" :since
+   "Deprecated:" :deprecated})
+
+(defun arg-declaration [line param-names]
+  (let [trimmed (trim line)
+        declaration (cond-> trimmed
+                      (string/starts-with? trimmed "- ")
+                      (substr 2))
+        colon (index-of declaration ':')]
+    (when colon
+      (let [name (doc/strip-backticks (substr declaration 0 colon))]
+        (when (contains? param-names name)
+          {:name name
+           :content (trim (substr declaration (+ colon 1)))})))))
+
+(defun header? [line]
+  (let [trimmed (trim line)]
+    (and (not (blank? trimmed))
+         (string/ends-with? trimmed ":"))))
+
+(defun fence-language [line]
+  (let [language (trim (substr (trim line) 3))]
+    (unless (or (blank? language) (= "roo" language))
+      (keyword language))))
+
 
 
-;; Docstring Parsing
+;; Content Accumulation
 
-(defun section [line]
-  (case (trim line)
-    "Args:" :args
-    "Returns:" :returns
-    "Examples:" :examples
-    "See Also:" :see
-    "Since:" :since
-    "Deprecated:" :deprecated
-    :default nil))
+(defun append-target-block [state block]
+  (case (:target state)
+    :param (update-in state [:params (:target-name state) :content] [append block])
+    :return (update-in state [:returns :content] [append block])
+    :default (update state :content [append block])))
 
-(defun arg-line [state line]
-  (let [trimmed (trim line)
-        colon (index-of trimmed ':')]
-    (if (and (string/starts-with? trimmed "- ")
-             (some? colon))
-      (let [name (doc/strip-backticks (substr trimmed 2 (- colon 2)))
-            doc (trim (substr trimmed (+ colon 1)))]
-        (assoc-in state [:params name] {:type nil :doc doc}))
-      state)))
+(defun append-header [state line]
+  (append-target-block (finish-text state)
+                       {:kind :header
+                        :content (trim line)}))
 
-(defun see-line [{:keys [see] :as state} line]
-  (let [trimmed (trim line)]
-    (if (blank? trimmed)
-      state
-      (assoc state
-             :see
-             (append see
-                     (doc/strip-backticks
-                       (cond-> trimmed
-                               (string/starts-with? trimmed "- ")
-                               (substr 2))))))))
-
-(defun single-line-section [state key line]
-  (if (blank? line)
+(defun finish-text [{:keys [text-lines] :as state}]
+  (if (empty? text-lines)
     state
-    (assoc state
-           key
-           (if (nil? (get state key))
-             (trim line)
-             (str (get state key) " " (trim line))))))
+    (let [block {:kind :text
+                 :content (apply join (concat ["\n"] text-lines))}]
+      (cond-> (assoc (append-target-block state block) :text-lines [])
+        (and (= :root (:target state))
+             (nil? (:summary state)))
+        (assoc :summary (:content block))))))
 
-(defun example-line [{:keys [fence examples] :as state} line]
-  (let [trimmed (trim line)]
+(defun start-fence [state line]
+  (assoc (finish-text state)
+         :fence {:language (fence-language line)
+                 :lines []}))
+
+(defun finish-fence [{:keys [fence] :as state}]
+  (let [source (apply join (concat ["\n"] (:lines fence)))]
+    (-> state
+        (append-target-block (cond-> {:kind :code
+                                      :language (:language fence)
+                                      :content source}
+                               (nil? (:language fence))
+                               (dissoc :language)))
+        (dissoc :fence))))
+
+(defun append-metadata [state key line]
+  (let [text (trim line)]
+    (cond-> state
+      (not (blank? text))
+      (update key (fn [current]
+                    (if (nil? current)
+                      text
+                      (str current "\n" text)))))))
+
+(defun finish-block [state]
+  (-> state
+      finish-text
+      (assoc :target (case (:target state) :return :return :default :root)
+             :target-name nil
+             :boundary? true)))
+
+
+
+;; Parsing
+
+(defun step [{:keys [fence target boundary?] :as state} line]
+  (let [trimmed (trim line)
+        section (get SECTION-TARGETS trimmed)
+        arg (when (contains? [:args :param] target)
+              (arg-declaration line (:param-names state)))]
     (cond
-
-      (and (nil? fence)
-           (string/starts-with? trimmed "```"))
-      (assoc state
-             :fence
-             {:format (let [language (trim (substr trimmed 3))]
-                        (if (blank? language)
-                          :text
-                          (keyword language)))
-              :lines []})
-
-      (and fence
-           (string/starts-with? trimmed "```"))
-      (assoc state
-             :examples
-             (append examples
-                     {:format (:format fence)
-                      :source (apply join
-                                     (concat ["\n"] (:lines fence)))})
-             :fence nil)
-
       fence
-      (assoc-in state [:fence :lines] (append (:lines fence) (trim line)))
+      (if (string/starts-with? trimmed "```")
+        (assoc (finish-fence state) :boundary? false)
+        (assoc-in state [:fence :lines] (append (:lines fence) (trim line))))
+
+      (blank? trimmed)
+      (finish-block state)
+
+      (string/starts-with? trimmed "```")
+      (assoc (start-fence state line) :boundary? false)
+
+      (= :args section)
+      (-> state
+          finish-text
+          (update :content [append {:kind :sig-args :index 0}])
+          (assoc :target :args
+                 :target-name nil
+                 :boundary? true))
+
+      (= :returns section)
+      (-> state
+          finish-text
+          (update :content [append {:kind :sig-ret :index 0}])
+          (assoc :target :return
+                 :target-name nil
+                 :returns {:content []}
+                 :boundary? true))
+
+      (= :see section)
+      (assoc (finish-text state) :target :see :boundary? true)
+
+      (= :since section)
+      (assoc (finish-text state) :target :since :boundary? true)
+
+      (= :deprecated section)
+      (assoc (finish-text state) :target :deprecated :boundary? true)
+
+      arg
+      (assoc (finish-text state)
+             :target :param
+             :target-name (:name arg)
+             :text-lines (cond-> []
+                           (not (blank? (:content arg)))
+                           (append (:content arg)))
+             :boundary? false)
+
+      (= :see target)
+      (let [reference (doc/strip-backticks
+                       (cond-> trimmed
+                         (string/starts-with? trimmed "- ")
+                         (substr 2)))]
+        (assoc state :see (append (:see state) reference) :boundary? false))
+
+      (= :since target)
+      (assoc (append-metadata state :since line) :boundary? false)
+
+      (= :deprecated target)
+      (assoc (append-metadata state :deprecated line) :boundary? false)
+
+      (and boundary? (header? line))
+      (assoc (append-header (cond-> state
+                              (= :return target)
+                              (assoc :target :root))
+                            line)
+             :boundary? false)
 
       true
-      state)))
-
-(defun step [state line]
-  (if-let [section (section line)]
-    (assoc state :section section)
-    (case (:section state)
-      :args
-      (arg-line state line)
-
-      :returns
-      (if (blank? line)
-        state
-        (update state :returns [append line]))
-
-      :examples
-      (example-line state line)
-
-      :see
-      (see-line state line)
-
-      :since
-      (single-line-section state :since line)
-
-      :deprecated
-      (single-line-section state :deprecated line)
-
-      :default
-      (update state :prose [append line]))))
+      (assoc state :text-lines (append (:text-lines state) (trim line))
+                   :boundary? false))))
 
 (defun parse
-  "Parse a Roo docstring into lookup documentation data.
+  "Parse a Roo docstring into ordered lookup documentation data.
 
   Args:
   - `text`: Docstring text from a `def` or `defun` form.
+  - `param-names`: Actual parameter names accepted by the documented signature.
 
   Returns:
-  A documentation map with summary, body, params, returns,
-  examples, see-also, since, and deprecated fields."
-  [text]
-  (let [state (reduce (split text "\n")
-                      {:section nil
-                       :prose []
-                       :params {}
-                       :returns []
-                       :examples []
-                       :see []
-                       :since nil
-                       :deprecated nil
-                       :fence nil}
-                      step)
-        prose (doc/paragraphs (:prose state))]
-    {:summary (head prose)
-     :body (doc/paragraph-text (tail prose))
-     :format :markdown
-     :params (:params state)
-     :returns (unless (empty? (:returns state))
-                {:type nil
-                 :doc (doc/paragraph-text
-                        (doc/paragraphs (:returns state)))})
-     :examples (:examples state)
-     :see (:see state)
-     :since (:since state)
-     :deprecated (:deprecated state)}))
+  Documentation fields plus parsed parameter and return data used to construct
+  the signature."
+  [text param-names]
+  (let [state (-> (reduce (split text "\n")
+                          {:summary nil
+                           :content []
+                           :params {}
+                           :returns nil
+                           :see []
+                           :since nil
+                           :deprecated nil
+                           :param-names param-names
+                           :target :root
+                           :target-name nil
+                           :text-lines []
+                           :fence nil
+                           :boundary? true}
+                          step)
+                  finish-text)
+        state (cond-> state (:fence state) finish-fence)]
+    (cond-> (select-keys state [:summary :content :params :returns
+                                :see :since :deprecated])
+            (empty? (:content state)) (dissoc :content)
+            (empty? (:params state)) (dissoc :params)
+            (nil? (:returns state)) (dissoc :returns)
+            (empty? (:see state)) (dissoc :see)
+            (nil? (:since state)) (dissoc :since)
+            (nil? (:deprecated state)) (dissoc :deprecated)
+            (nil? (:summary state)) (dissoc :summary))))

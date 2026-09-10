@@ -11,15 +11,16 @@
 (deftest source-namespace-entry/extracts-namespace-docstrings
   (let [source-location {:path "src/sample/docs.roo"
                          :line 1
-                         :column 1}
-        entry (docstring-symbols/source-namespace-entry
-                {:forms [{:form '(ns sample.docs "Sample namespace.")
-                          :source source-location}]})]
-    (is (= "sample.docs" (:name entry)))
-    (is (= "Sample namespace." (:summary (:doc entry))))
-    (is (= {:kind :roo-docstring
-            :source source-location}
-           (:doc-source entry)))))
+                         :column 1}]
+    (is (= {:name "sample.docs"
+            :source source-location
+            :summary "Sample namespace."
+            :content [{:kind :text :content "Sample namespace."}]
+            :doc-source {:kind :roo-docstring
+                         :source source-location}}
+           (docstring-symbols/source-namespace-entry
+             {:forms [{:form '(ns sample.docs "Sample namespace.")
+                       :source source-location}]})))))
 
 
 
@@ -46,27 +47,18 @@
              :source {:path "assets/docstrings-sample.roo"
                       :line 3
                       :column 1
-                      :start {:line 3
-                              :column 1}
-                      :end {:line 8
-                            :column 5}}
+                      :start {:line 3 :column 1}
+                      :end {:line 8 :column 5}}
+             :summary "The answer used by examples."
+             :content [{:kind :text
+                        :content "The answer used by examples."}]
+             :since "0.1.0"
              :doc-source {:kind :roo-docstring
                           :source {:path "assets/docstrings-sample.roo"
                                    :line 3
                                    :column 1
-                                   :start {:line 3
-                                           :column 1}
-                                   :end {:line 8
-                                         :column 5}}}
-             :doc {:summary "The answer used by examples."
-                   :body nil
-                   :format :markdown
-                   :params {}
-                   :returns nil
-                   :examples []
-                   :see []
-                   :since "0.1.0"
-                   :deprecated nil}
+                                   :start {:line 3 :column 1}
+                                   :end {:line 8 :column 5}}}
              :signatures []}
             {:id "sample.docs/greet"
              :name "greet"
@@ -80,46 +72,38 @@
              :source {:path "assets/docstrings-sample.roo"
                       :line 10
                       :column 1
-                      :start {:line 10
-                              :column 1}
-                      :end {:line 32
-                            :column 25}}
+                      :start {:line 10 :column 1}
+                      :end {:line 32 :column 25}}
+             :summary "Build a greeting for `name`."
+             :content [{:kind :text
+                        :content "Build a greeting for `name`."}
+                       {:kind :text
+                        :content "Uses a friendly default format."}
+                       {:kind :sig-args :index 0}
+                       {:kind :sig-ret :index 0}
+                       {:kind :header :content "Examples:"}
+                       {:kind :code :content "(greet \"Ada\" \"Dr.\")"}]
+             :see ["str"]
              :doc-source {:kind :roo-docstring
                           :source {:path "assets/docstrings-sample.roo"
                                    :line 10
                                    :column 1
-                                   :start {:line 10
-                                           :column 1}
-                                   :end {:line 32
-                                         :column 25}}}
-             :doc {:summary "Build a greeting for `name`."
-                   :body "Uses a friendly default format."
-                   :format :markdown
-                   :params {"name" {:type nil
-                                    :doc "Person to greet."}
-                            "title" {:type nil
-                                     :doc "Optional title."}}
-                   :returns {:type nil
-                             :doc "A greeting string."}
-                   :examples [{:format :roo
-                               :source "(greet \"Ada\" \"Dr.\")"}]
-                   :see ["str"]
-                   :since nil
-                   :deprecated nil}
+                                   :start {:line 10 :column 1}
+                                   :end {:line 32 :column 25}}}
              :signatures [{:display "(greet name & title)"
                            :params [{:name "name"
+                                     :display "name"
                                      :optional? false
                                      :rest? false
-                                     :type nil
-                                     :doc "Person to greet."}
+                                     :content [{:kind :text
+                                                :content "Person to greet."}]}
                                     {:name "title"
+                                     :display "title"
                                      :optional? true
                                      :rest? false
-                                     :type nil
-                                     :doc "Optional title."}]
-                           :returns {:type nil
-                                     :doc "A greeting string."}
-                           :arity {:min 1
-                                   :max 2
-                                   :variadic false}}]}]
+                                     :content [{:kind :text
+                                                :content "Optional title."}]}]
+                           :returns {:content [{:kind :text
+                                               :content "A greeting string."}]}
+                           :arity {:min 1 :max 2 :variadic false}}]}]
            entries))))

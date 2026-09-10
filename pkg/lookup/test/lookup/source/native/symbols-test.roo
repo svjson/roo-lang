@@ -12,297 +12,183 @@
   (is (= {:display "(collect path values...)"
           :params [{:name "path"
                     :display "path"
-                    :type nil
-                    :doc "Path to read."
                     :optional? false
                     :rest? false
-                    :group? false}
+                    :group? false
+                    :content [{:kind :text :content "Path to read."}]}
                    {:name "values"
                     :display "values..."
-                    :type nil
-                    :doc "Additional values."
                     :optional? true
                     :rest? true
-                    :group? false}]
-          :returns {:type nil :doc nil}
+                    :group? false
+                    :content [{:kind :text :content "Additional values."}]}]
+          :returns {:content [{:kind :text :content "Collected values."}]}
           :arity {:min 1 :max nil :variadic true}}
          (native-symbols/signature
            "collect"
-           {:params {"path" {:type nil :doc "Path to read."}
-                     "values..." {:type nil :doc "Additional values."}}
+           {:params {"path" {:content [{:kind :text :content "Path to read."}]}
+                     "values..." {:content [{:kind :text
+                                             :content "Additional values."}]}}
             :param-order ["path" "values..."]
-            :returns nil}))))
+            :returns {:content [{:kind :text :content "Collected values."}]}}))))
 
 (deftest signature/describes-repeating-parameter-groups
   (is (= {:display "(cond value (condition result)...)"
           :params [{:name "value"
                     :display "value"
-                    :type nil
-                    :doc "Value to match."
                     :optional? false
                     :rest? false
                     :group? false}
                    {:name "condition result"
                     :display "(condition result)..."
-                    :type nil
-                    :doc "Repeated condition/result pairs."
                     :optional? true
                     :rest? true
                     :group? true
                     :group {:params ["condition" "result"]}}]
-          :returns {:type nil :doc nil}
           :arity {:min 1 :max nil :variadic true}}
          (native-symbols/signature
            "cond"
-           {:params {"value" {:type nil :doc "Value to match."}
-                     "(condition result)..."
-                     {:type nil :doc "Repeated condition/result pairs."}}
-            :param-order ["value" "(condition result)..."]
-            :returns nil}))))
+           {:params {"value" {}
+                     "(condition result)..." {}}
+            :param-order ["value" "(condition result)..."]}))))
 
 
 
 ;; lookup.source.native.symbols/signatures
 
-(deftest signatures/builds-one-complete-model-per-argument-table
+(deftest signatures/normalizes-return-before-repeating-group
+  (is (= [{:display "(cond (condition result)...)"
+           :params [{:name "condition result"
+                     :display "(condition result)..."
+                     :optional? true
+                     :rest? true
+                     :group? true
+                     :content [{:kind :text
+                                :content "Repeated condition/result pairs."}]
+                     :group {:params ["condition" "result"]}}]
+           :returns {:content [{:kind :text
+                                :content "The selected result."}]}
+           :arity {:min 0 :max nil :variadic true}}]
+         (native-symbols/signatures
+           "cond"
+           (native-comment/parse
+             "/*!
+              * @brief Choose the result for the first truthy condition.
+              *
+              * @return The selected result.
+              *
+              * | Arg                    | Description                      |
+              * |------------------------|----------------------------------|
+              * | (condition result)...  | Repeated condition/result pairs. |
+              */")))))
+
+(deftest signatures/preserves-per-signature-documentation
   (is (= [{:display "(read path)"
            :params [{:name "path"
                      :display "path"
-                     :type nil
-                     :doc "Path to read."
                      :optional? false
                      :rest? false
-                     :group? false}]
-           :returns {:type nil :doc "Read value."}
+                     :group? false
+                     :content [{:kind :text :content "Path to read."}]}]
+           :returns {:content [{:kind :text :content "Read value."}]}
            :arity {:min 1 :max 1 :variadic false}}
           {:display "(read path fallback)"
            :params [{:name "path"
                      :display "path"
-                     :type nil
-                     :doc "Path to read."
                      :optional? false
                      :rest? false
-                     :group? false}
+                     :group? false
+                     :content [{:kind :text :content "Path to read."}]}
                     {:name "fallback"
                      :display "fallback"
-                     :type nil
-                     :doc "Value returned when the path is missing."
                      :optional? false
                      :rest? false
-                     :group? false}]
-           :returns {:type nil :doc "Read value."}
+                     :group? false
+                     :content [{:kind :text
+                                :content "Value used when absent."}]}]
+           :returns {:content [{:kind :text :content "Read value."}]}
            :arity {:min 2 :max 2 :variadic false}}]
          (native-symbols/signatures
            "read"
            {:signature-docs
-            [{:params {"path" {:type nil :doc "Path to read."}}
-              :param-order ["path"]}
-             {:params
-              {"path" {:type nil :doc "Path to read."}
-               "fallback"
-               {:type nil :doc "Value returned when the path is missing."}}
-              :param-order ["path" "fallback"]}]
-            :returns {:type nil :doc "Read value."}}))))
+            [{:params {"path" {:content [{:kind :text
+                                          :content "Path to read."}]}}
+              :param-order ["path"]
+              :returns {:content [{:kind :text :content "Read value."}]}}
+             {:params {"path" {:content [{:kind :text
+                                          :content "Path to read."}]}
+                       "fallback" {:content [{:kind :text
+                                              :content "Value used when absent."}]}}
+              :param-order ["path" "fallback"]
+              :returns {:content [{:kind :text :content "Read value."}]}}]}))))
 
 
 
-;; lookup.source.native.symbols/entries
+;; Public Entries
 
-(deftest entries/builds-complete-legacy-and-annotated-symbol-models
-  (is (= [{:id "sample.native/read!"
-           :name "read!"
-           :qualified-name "sample.native/read!"
-           :namespace "sample.native"
-           :kind :function
-           :origin :native
-           :visibility :public
-           :status :stable
-           :source {:path "native/src/sample.cpp" :line 5 :column 1}
-           :declaration-source
-           {:path "native/include/sample.h" :line 21 :column 1}
-           :doc-source
-           {:kind :native-cpp-comment
-            :source {:path "native/include/sample.h" :line 6 :column 1}}
-           :doc {:summary "Read fixture data from a path."
-                 :body nil
-                 :format :markdown
-                 :params {"path" {:type nil :doc "Path to read."}}
-                 :returns nil
-                 :examples []
-                 :see []
-                 :since nil
-                 :deprecated nil}
-           :signatures
-           [{:display "(read! path)"
-             :params [{:name "path"
-                       :display "path"
-                       :type nil
-                       :doc "Path to read."
-                       :optional? false
-                       :rest? false
-                       :group? false}]
-             :returns {:type nil :doc nil}
-             :arity {:min 1 :max 1 :variadic false}}]
-           :package "native-fixture"}
-          {:id "sample.native/write!"
-           :name "write!"
-           :qualified-name "sample.native/write!"
-           :namespace "sample.native"
-           :kind :function
-           :origin :native
-           :visibility :public
-           :status :stable
-           :source {:path "native/src/sample.cpp" :line 8 :column 1}
-           :declaration-source nil
-           :doc-source
-           {:kind :native-cpp-comment
-            :source {:path "native/src/sample.cpp" :line 8 :column 1}}
-           :doc {:summary "Write fixture data to a path."
-                 :body nil
-                 :format :markdown
-                 :params {"path" {:type nil :doc "Path to write."}}
-                 :returns nil
-                 :examples []
-                 :see []
-                 :since nil
-                 :deprecated nil}
-           :signatures
-           [{:display "(write! path)"
-             :params [{:name "path"
-                       :display "path"
-                       :type nil
-                       :doc "Path to write."
-                       :optional? false
-                       :rest? false
-                       :group? false}]
-             :returns {:type nil :doc nil}
-             :arity {:min 1 :max 1 :variadic false}}]
-           :package "native-fixture"}]
-         (native-symbols/entries
-           "native-fixture"
-           [{:kind :native-doc-comment
-             :native-class "SampleReadFunction"
-             :native-kind :function
-             :doc {:summary "Read fixture data from a path."
-                   :body nil
-                   :format :markdown
-                   :params {"path" {:type nil :doc "Path to read."}}
-                   :param-order ["path"]
-                   :signature-docs
-                   [{:params {"path" {:type nil :doc "Path to read."}}
-                     :param-order ["path"]}]
-                   :returns nil
-                   :examples []
-                   :see []
-                   :since nil
-                   :deprecated nil}
-             :source {:path "native/include/sample.h" :line 6 :column 1}
-             :declaration-source
-             {:path "native/include/sample.h" :line 21 :column 1}}
-            {:kind :native-identity-comment
-             :source {:path "native/src/sample.cpp" :line 5 :column 1}
-             :native-class "SampleReadFunction"
-             :qualified-name "sample.native/read!"}
-            {:kind :native-annotated-symbol
-             :native-kind :function
-             :qualified-name "sample.native/write!"
-             :source {:path "native/src/sample.cpp" :line 8 :column 1}
-             :doc {:summary "Write fixture data to a path."
-                   :body nil
-                   :format :markdown
-                   :params {"path" {:type nil :doc "Path to write."}}
-                   :param-order ["path"]
-                   :signature-docs
-                   [{:params {"path" {:type nil :doc "Path to write."}}
-                     :param-order ["path"]}]
-                   :returns nil
-                   :examples []
-                   :see []
-                   :since nil
-                   :deprecated nil}}]))))
-
-(deftest entries/prefers-an-annotation-over-a-legacy-identity
-  (is (= [{:id "sample.native/read!"
-           :name "read!"
-           :qualified-name "sample.native/read!"
-           :namespace "sample.native"
-           :kind :function
-           :origin :native
-           :visibility :public
-           :status :stable
-           :source {:path "native.cpp" :line 1 :column 1}
-           :declaration-source nil
-           :doc-source
-           {:kind :native-cpp-comment
-            :source {:path "native.cpp" :line 1 :column 1}}
-           :doc {:summary "Explicit documentation."
-                 :body nil
-                 :format :markdown
-                 :params {}
-                 :returns nil
-                 :examples []
-                 :see []
-                 :since nil
-                 :deprecated nil}
-           :signatures
-           [{:display "(read!)"
-             :params []
-             :returns {:type nil :doc nil}
-             :arity {:min 0 :max 0 :variadic false}}]
-           :package "sample"}]
-         (native-symbols/entries
-           "sample"
-           [{:kind :native-annotated-symbol
-             :native-kind :function
-             :qualified-name "sample.native/read!"
-             :source {:path "native.cpp" :line 1 :column 1}
-             :doc {:summary "Explicit documentation."
-                   :body nil
-                   :format :markdown
-                   :params {}
-                   :param-order []
-                   :signature-docs []
-                   :returns nil
-                   :examples []
-                   :see []
-                   :since nil
-                   :deprecated nil}}
-            {:kind :native-identity-comment
-             :source {:path "native.cpp" :line 8 :column 1}
-             :native-class "ReadFunction"
-             :qualified-name "sample.native/read!"}]))))
-
-(deftest entries/preserves-native-roo-symbol-annotations
+(deftest entries/builds-direct-documentation-fields
   (p/given
     (native-comment/parse
       "/*!
        * @brief Read a legacy value.
+       * @param path Path to read.
        * @return The migrated value.
        * @see sample.native/read
-       * @since 0.2.0
-       * @deprecated Use `sample.native/read` instead.
        */"))
 
-  (p/when [doc]
+  (p/when [documentation]
     (head
       (native-symbols/entries
-        nil
+        "sample"
         [{:kind :native-annotated-symbol
           :native-kind :function
           :qualified-name "sample.native/legacy-read"
           :source {:path "native.cpp" :line 1 :column 1}
-          :doc doc}])))
+          :doc documentation}])))
 
   (p/then [symbol]
-    (is (= {:summary "Read a legacy value."
-            :body nil
-            :format :markdown
-            :params {}
-            :returns {:type nil :doc "The migrated value."}
-            :examples []
+    (is (= {:id "sample.native/legacy-read"
+            :name "legacy-read"
+            :qualified-name "sample.native/legacy-read"
+            :namespace "sample.native"
+            :kind :function
+            :origin :native
+            :visibility :public
+            :status :stable
+            :source {:path "native.cpp" :line 1 :column 1}
+            :summary "Read a legacy value."
+            :content [{:kind :text :content "Read a legacy value."}
+                      {:kind :sig-args :index 0}
+                      {:kind :sig-ret :index 0}]
             :see ["sample.native/read"]
-            :since "0.2.0"
-            :deprecated "Use `sample.native/read` instead."}
-           (:doc symbol)))
-    (is (= {:type nil :doc "The migrated value."}
-           (:returns (head (:signatures symbol)))))))
+            :signatures
+            [{:display "(legacy-read path)"
+              :params [{:name "path"
+                        :display "path"
+                        :optional? false
+                        :rest? false
+                        :group? false
+                        :content [{:kind :text :content "Path to read."}]}]
+              :returns {:content [{:kind :text :content "The migrated value."}]}
+              :arity {:min 1 :max 1 :variadic false}}]
+            :package "sample"
+            :doc-source {:kind :native-cpp-comment
+                         :source {:path "native.cpp" :line 1 :column 1}}}
+           symbol))))
+
+(deftest namespaces/builds-native-namespace-documentation
+  (is (= [{:name "roo.ast"
+           :source {:path "ast.cpp" :line 3 :column 1}
+           :summary "Read Roo syntax trees."
+           :content [{:kind :text :content "Read Roo syntax trees."}]
+           :doc-source {:kind :native-cpp-comment
+                        :source {:path "ast.cpp" :line 3 :column 1}}
+           :package "roo"}]
+         (native-symbols/namespaces
+           "roo"
+           [{:kind :native-annotated-namespace
+             :name "roo.ast"
+             :source {:path "ast.cpp" :line 3 :column 1}
+             :doc {:summary "Read Roo syntax trees."
+                   :content [{:kind :text
+                              :content "Read Roo syntax trees."}]}}]))))
