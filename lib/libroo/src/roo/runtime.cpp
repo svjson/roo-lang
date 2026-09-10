@@ -302,22 +302,34 @@ namespace Roo
 
   void Runtime::register_namespace(std::unique_ptr<Namespace> ns)
   {
-    if (!ns)
+    std::vector<std::unique_ptr<Namespace>> additions;
+    additions.push_back(std::move(ns));
+    register_namespaces(std::move(additions));
+  }
+
+  void Runtime::register_namespaces(std::vector<std::unique_ptr<Namespace>> additions)
+  {
+    std::map<const std::string, Namespace> staged;
+    for (auto& ns : additions)
     {
-      throw RooException("Cannot register null namespace.");
-    }
-    if (ns->get_type() != Namespace::Type::USER)
-    {
-      throw RooException("Provided namespace '" + ns->get_name() +
-                         "' is of an invalid type.");
+      if (!ns)
+      {
+        throw RooException("Cannot register null namespace.");
+      }
+      if (ns->get_type() != Namespace::Type::USER)
+      {
+        throw RooException("Provided namespace '" + ns->get_name() +
+                           "' is of an invalid type.");
+      }
+
+      const std::string name = ns->get_name();
+      if (namespaces.count(name) || !staged.emplace(name, std::move(*ns)).second)
+      {
+        throw RooException("Namespace '" + name + "' is already registered.");
+      }
     }
 
-    const std::string name = ns->get_name();
-    auto result = namespaces.emplace(name, std::move(*ns));
-    if (!result.second)
-    {
-      throw RooException("Namespace '" + name + "' is already registered.");
-    }
+    namespaces.merge(staged);
   }
 
   void Runtime::set_namespace_roots(std::vector<NamespaceRoot> namespace_roots)

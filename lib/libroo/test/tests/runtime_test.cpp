@@ -242,3 +242,18 @@ TEST_F(Runtime, no_matching_signature_exception_bubbles_up_to_client)
   EXPECT_FALSE(result.get());
   EXPECT_THAT(msg, HasSubstr("No matching signature"));
 }
+
+TEST_F(Runtime, register_namespaces_is_atomic)
+{
+  // Given
+  auto& runtime = use_bare_runtime();
+  runtime.register_namespace(std::make_unique<Roo::Namespace>("already.loaded"));
+  std::vector<std::unique_ptr<Roo::Namespace>> namespaces;
+  namespaces.push_back(std::make_unique<Roo::Namespace>("new.namespace"));
+  namespaces.push_back(std::make_unique<Roo::Namespace>("already.loaded"));
+
+  // When / Then
+  EXPECT_THROW(runtime.register_namespaces(std::move(namespaces)), Roo::RooException);
+  EXPECT_EQ(runtime.ns("new.namespace"), nullptr);
+  EXPECT_NE(runtime.ns("already.loaded"), nullptr);
+}

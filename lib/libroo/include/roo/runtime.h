@@ -187,6 +187,14 @@ namespace Roo
     void register_namespace(std::unique_ptr<Namespace> ns);
 
     /*!
+     * @brief Atomically register fully constructed user namespaces.
+     *
+     * Every namespace is validated before any namespace is added. If validation
+     * fails, this runtime remains unchanged.
+     */
+    void register_namespaces(std::vector<std::unique_ptr<Namespace>> namespaces);
+
+    /*!
      * @brief Configure explicit namespace prefix roots for file namespace loading.
      *
      * Namespace roots are consulted before relative inference and before the
