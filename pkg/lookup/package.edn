@@ -4,6 +4,9 @@
  :dependencies []
  :load-roots ["src"]
  :namespace-roots {lookup "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :namespace-roots {lookup "test/lookup"}}
+ :config {proof {:test-roots ["test/lookup"]}}
  :native-libraries [{:name "lookup-native"
                      :version "0.1.0"
                      :path "native"
