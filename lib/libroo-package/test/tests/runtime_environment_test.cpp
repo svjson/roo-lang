@@ -1,3 +1,5 @@
+#include <barrier>
+#include <exception>
 #include <filesystem>
 #include <memory>
 #include <thread>
@@ -28,7 +30,7 @@ namespace
   }
 } // namespace
 
-TEST(ApplicationRuntimeEnvironment, replays_package_autoloads_in_application_worker)
+TEST(ApplicationRuntime, replays_package_autoloads_in_application_worker)
 {
   const std::filesystem::path package_root =
     std::filesystem::path(ROO_PACKAGE_TEST_DIR) / "tests/assets/packages/autoload-app";
@@ -40,12 +42,13 @@ TEST(ApplicationRuntimeEnvironment, replays_package_autoloads_in_application_wor
                                    ROO_PACKAGE_TEST_NATIVE_LIBRARY,
                                    package_root.string(),
                                    {"package.test.native"}});
+  Roo::Package::ApplicationRuntimeSpec runtime_spec =
+    Roo::Package::make_directory_application_runtime_spec(plan);
+  Roo::Package::ApplicationRuntime parent(runtime_spec);
   Roo::WorkerEnvironmentFactory environment_factory =
-    Roo::Package::make_application_runtime_factory(
-      Roo::Package::make_directory_application_runtime_spec(plan));
+    Roo::Package::make_application_runtime_factory(runtime_spec);
 
-  std::unique_ptr<Roo::WorkerEnvironment> parent_environment = environment_factory();
-  Roo::Runtime& runtime = parent_environment->runtime();
+  Roo::Runtime& runtime = parent.runtime();
   runtime.worker_registry().register_environment("application", environment_factory);
 
   ASSERT_EQ(runtime.ns("autoload.worker-only"), nullptr);
@@ -71,4 +74,65 @@ TEST(ApplicationRuntimeEnvironment, replays_package_autoloads_in_application_wor
   EXPECT_EQ(*result->elements()[1], *Roo::Value::number(84));
   EXPECT_NE(result->elements()[2]->str().find("(def value 42)"), std::string::npos);
   EXPECT_EQ(*result->elements()[3], *Roo::Value::number(42));
+}
+
+TEST(ApplicationRuntime, serializes_native_activation_per_generation)
+{
+  Roo::Package::LoadPlan plan;
+  plan.native_libraries.push_back({"roo-package-test-native",
+                                   "0.1.0",
+                                   ROO_PACKAGE_TEST_NATIVE_LIBRARY,
+                                   "",
+                                   {"package.test.native"}});
+  Roo::Package::ApplicationRuntimeSpec runtime_spec =
+    Roo::Package::make_directory_application_runtime_spec(plan);
+  std::barrier start(3);
+  std::exception_ptr first_failure;
+  std::exception_ptr second_failure;
+  auto construct = [&](std::exception_ptr& failure)
+  {
+    start.arrive_and_wait();
+    try
+    {
+      Roo::Package::ApplicationRuntime application(runtime_spec);
+      application.runtime().eval("(package.test.native/answer nil)");
+    }
+    catch (...)
+    {
+      failure = std::current_exception();
+    }
+  };
+
+  std::thread first(construct, std::ref(first_failure));
+  std::thread second(construct, std::ref(second_failure));
+  start.arrive_and_wait();
+  first.join();
+  second.join();
+
+  EXPECT_EQ(first_failure, nullptr);
+  EXPECT_EQ(second_failure, nullptr);
+}
+
+TEST(ApplicationRuntime, worker_startup_retains_autoload_error_after_native_load)
+{
+  Roo::Package::LoadPlan plan;
+  plan.native_libraries.push_back({"roo-package-test-native",
+                                   "0.1.0",
+                                   ROO_PACKAGE_TEST_NATIVE_LIBRARY,
+                                   "",
+                                   {"package.test.native"}});
+  plan.autoloads.push_back("missing.autoload");
+  Roo::WorkerEnvironmentFactory environment_factory =
+    Roo::Package::make_application_runtime_factory(
+      Roo::Package::make_directory_application_runtime_spec(plan));
+
+  try
+  {
+    environment_factory();
+    FAIL() << "Expected application worker construction to fail.";
+  }
+  catch (const Roo::RooException& e)
+  {
+    EXPECT_NE(std::string(e.what()).find("missing.autoload"), std::string::npos);
+  }
 }

@@ -21,36 +21,58 @@ namespace Roo::Package
       return spec.make_inputs();
     }
 
-    class ApplicationRuntimeEnvironment final : public WorkerEnvironment
+    class ApplicationWorkerEnvironment final : public WorkerEnvironment
     {
      private:
-      RuntimeEnvironmentInputs inputs;
-      LoadedNativePackages native_packages;
-      Runtime instance;
+      ApplicationRuntime application;
 
      public:
-      explicit ApplicationRuntimeEnvironment(const ApplicationRuntimeSpec& spec)
-        : inputs(make_inputs(spec))
-        , instance(inputs.file_system.get(), std::move(inputs.namespace_source))
+      explicit ApplicationWorkerEnvironment(const ApplicationRuntimeSpec& spec)
+        : application(spec)
       {
-        instance.get_options() = spec.runtime_options;
-        configure_runtime_namespace_roots(instance, spec.load_plan);
-        native_packages = load_native_libraries(instance, spec.load_plan);
-        load_autoloads(instance,
-                       spec.load_plan,
-                       spec.autoload_loader_namespace,
-                       spec.autoload_source_name);
       }
 
-      Runtime& runtime() override { return instance; }
+      Runtime& runtime() override { return application.runtime(); }
     };
   } // namespace
+
+  struct ApplicationRuntime::Impl
+  {
+    RuntimeEnvironmentInputs inputs;
+    LoadedNativePackages native_packages;
+    Runtime instance;
+
+    explicit Impl(const ApplicationRuntimeSpec& spec)
+      : inputs(make_inputs(spec))
+      , instance(inputs.file_system.get(), std::move(inputs.namespace_source))
+    {
+      instance.get_options() = spec.runtime_options;
+      configure_runtime_namespace_roots(instance, spec.load_plan);
+      native_packages = load_native_libraries(instance, spec.load_plan);
+      load_autoloads(instance,
+                     spec.load_plan,
+                     spec.autoload_loader_namespace,
+                     spec.autoload_source_name);
+    }
+  };
+
+  ApplicationRuntime::ApplicationRuntime(const ApplicationRuntimeSpec& spec)
+    : impl(std::make_unique<Impl>(spec))
+  {
+  }
+
+  ApplicationRuntime::~ApplicationRuntime() = default;
+
+  Runtime& ApplicationRuntime::runtime()
+  {
+    return impl->instance;
+  }
 
   WorkerEnvironmentFactory make_application_runtime_factory(ApplicationRuntimeSpec spec)
   {
     return [spec = std::move(spec)]()
     {
-      return std::make_unique<ApplicationRuntimeEnvironment>(spec);
+      return std::make_unique<ApplicationWorkerEnvironment>(spec);
     };
   }
 

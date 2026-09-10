@@ -49,6 +49,32 @@ namespace Roo::Package
   };
 
   /**
+   * @brief Own one package-configured application Runtime and its host inputs.
+   *
+   * Runtime-bound values must be destroyed before this owner. Current-ABI native
+   * libraries remain mapped for process lifetime, including after this owner is
+   * destroyed.
+   */
+  class ApplicationRuntime
+  {
+   public:
+    explicit ApplicationRuntime(const ApplicationRuntimeSpec& spec);
+    ~ApplicationRuntime();
+
+    ApplicationRuntime(const ApplicationRuntime&) = delete;
+    ApplicationRuntime& operator=(const ApplicationRuntime&) = delete;
+    ApplicationRuntime(ApplicationRuntime&&) = delete;
+    ApplicationRuntime& operator=(ApplicationRuntime&&) = delete;
+
+    /** @brief Return the owned application Runtime. */
+    Runtime& runtime();
+
+   private:
+    struct Impl;
+    std::unique_ptr<Impl> impl;
+  };
+
+  /**
    * @brief Create a reusable factory from an application runtime specification.
    * @param spec Replayable package runtime specification.
    * @return Factory suitable for parent construction and worker registration.

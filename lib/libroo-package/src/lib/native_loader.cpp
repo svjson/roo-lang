@@ -1,5 +1,7 @@
 #include <filesystem>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -122,9 +124,39 @@ namespace Roo::Package
       return join_path(library.package_root, file_name);
     }
 
+    std::string canonical_library_path(const std::string& path)
+    {
+      std::error_code ec;
+      std::filesystem::path absolute = std::filesystem::absolute(path, ec);
+      if (ec)
+      {
+        return std::filesystem::path(path).lexically_normal().string();
+      }
+
+      std::filesystem::path canonical = std::filesystem::weakly_canonical(absolute, ec);
+      return ec ? absolute.lexically_normal().string() : canonical.string();
+    }
+
+    std::string loaded_library_path(LibraryHandle handle,
+                                    void* symbol,
+                                    const std::string& requested_path)
+    {
+#if defined(_WIN32)
+      std::vector<char> buffer(32768);
+      const DWORD size =
+        GetModuleFileNameA(handle, buffer.data(), static_cast<DWORD>(buffer.size()));
+      return size == 0 || size == buffer.size() ? requested_path
+                                                : std::string(buffer.data(), size);
+#else
+      (void)handle;
+      Dl_info info{};
+      return dladdr(symbol, &info) != 0 && info.dli_fname ? info.dli_fname : requested_path;
+#endif
+    }
+
     struct NativeLoadContext
     {
-      Runtime& runtime;
+      std::vector<std::unique_ptr<Namespace>> namespaces;
       std::string error;
     };
 
@@ -134,7 +166,7 @@ namespace Roo::Package
       try
       {
         std::unique_ptr<Namespace> ns(raw_ns);
-        context->runtime.register_namespace(std::move(ns));
+        context->namespaces.push_back(std::move(ns));
         return 0;
       }
       catch (const std::exception& e)
@@ -159,108 +191,17 @@ namespace Roo::Package
       return "native package load failed";
     }
 
-    struct LoadedLibrary
+    void validate_package(const std::string& path,
+                          const NativeLibrary& library,
+                          const RooNativePackageV1* package)
     {
-      LibraryHandle handle = nullptr;
-      const RooNativePackageV1* package = nullptr;
-
-      LoadedLibrary() = default;
-
-      LoadedLibrary(LibraryHandle handle, const RooNativePackageV1* package)
-        : handle(handle)
-        , package(package)
-      {
-      }
-
-      LoadedLibrary(LoadedLibrary&& other) noexcept
-        : handle(std::exchange(other.handle, nullptr))
-        , package(std::exchange(other.package, nullptr))
-      {
-      }
-
-      LoadedLibrary& operator=(LoadedLibrary&& other) noexcept
-      {
-        if (this != &other)
-        {
-          close();
-          handle = std::exchange(other.handle, nullptr);
-          package = std::exchange(other.package, nullptr);
-        }
-        return *this;
-      }
-
-      LoadedLibrary(const LoadedLibrary&) = delete;
-      LoadedLibrary& operator=(const LoadedLibrary&) = delete;
-
-      ~LoadedLibrary() { close(); }
-
-      void close()
-      {
-        if (package && package->unload)
-        {
-          package->unload();
-        }
-        package = nullptr;
-        close_library(handle);
-        handle = nullptr;
-      }
-    };
-  } // namespace
-
-  struct LoadedNativePackages::Impl
-  {
-    std::vector<LoadedLibrary> libraries;
-  };
-
-  LoadedNativePackages::LoadedNativePackages()
-    : impl(std::make_unique<Impl>())
-  {
-  }
-
-  LoadedNativePackages::LoadedNativePackages(std::unique_ptr<Impl> impl)
-    : impl(std::move(impl))
-  {
-  }
-
-  LoadedNativePackages::~LoadedNativePackages() = default;
-  LoadedNativePackages::LoadedNativePackages(LoadedNativePackages&&) noexcept = default;
-  LoadedNativePackages& LoadedNativePackages::operator=(LoadedNativePackages&&) noexcept =
-    default;
-
-  LoadedNativePackages load_native_libraries(Runtime& runtime, const LoadPlan& plan)
-  {
-    auto impl = std::make_unique<LoadedNativePackages::Impl>();
-
-    for (const auto& library : plan.native_libraries)
-    {
-      const std::string path = native_library_path(library);
-      LibraryHandle handle = open_library(path);
-      if (!handle)
-      {
-        throw RooException("Could not load native package library '" + path +
-                           "': " + platform_error());
-      }
-
-      auto close_on_error = std::unique_ptr<void, void (*)(void*)>(
-        handle,
-        [](void* value) { close_library(static_cast<LibraryHandle>(value)); });
-
-      auto* symbol = find_symbol(handle, ROO_NATIVE_ABI_SYMBOL);
-      if (!symbol)
-      {
-        throw RooException("Native package library '" + path + "' does not export " +
-                           ROO_NATIVE_ABI_SYMBOL + ": " + platform_error());
-      }
-
-      auto package_fn = reinterpret_cast<RooNativePackageV1Fn>(symbol);
-      const RooNativePackageV1* package = package_fn();
       if (!package)
       {
         throw RooException("Native package library '" + path +
                            "' returned a null package descriptor.");
       }
       if (package->abi_version != ROO_NATIVE_ABI_VERSION ||
-          package->struct_size < sizeof(RooNativePackageV1))
+          package->struct_size != sizeof(RooNativePackageV1))
       {
         throw RooException("Native package library '" + path +
                            "' uses an incompatible native ABI.");
@@ -286,8 +227,155 @@ namespace Roo::Package
       {
         throw RooException("Native package library '" + path + "' has no load function.");
       }
+    }
 
-      NativeLoadContext context{runtime, ""};
+    struct NativeLibraryGeneration
+    {
+      LibraryHandle handle;
+      const RooNativePackageV1* package;
+      std::string path;
+      std::string package_name;
+      std::string package_version;
+      std::mutex load_mutex;
+
+      NativeLibraryGeneration(LibraryHandle handle,
+                              const RooNativePackageV1* package,
+                              std::string path,
+                              std::string package_name,
+                              std::string package_version)
+        : handle(handle)
+        , package(package)
+        , path(std::move(path))
+        , package_name(std::move(package_name))
+        , package_version(std::move(package_version))
+      {
+      }
+
+      void validate(const std::string& requested_path, const NativeLibrary& library) const
+      {
+        validate_package(requested_path, library, package);
+        if (library.name != package_name)
+        {
+          throw RooException("Native package library '" + requested_path +
+                             "' is already pinned as '" + package_name + "'.");
+        }
+        if (!library.version.empty() && !package_version.empty() &&
+            library.version != package_version)
+        {
+          throw RooException("Native package library '" + requested_path +
+                             "' is already pinned at version '" + package_version + "'.");
+        }
+      }
+    };
+
+    struct NativeLibraryRegistry
+    {
+      std::mutex mutex;
+      std::map<std::string, std::unique_ptr<NativeLibraryGeneration>> generations;
+      std::map<std::string, NativeLibraryGeneration*> aliases;
+    };
+
+    NativeLibraryRegistry& native_library_registry()
+    {
+      static auto* registry = new NativeLibraryRegistry();
+      return *registry;
+    }
+
+    NativeLibraryGeneration& native_library_generation(const NativeLibrary& library)
+    {
+      const std::string path = native_library_path(library);
+      const std::string canonical_path = canonical_library_path(path);
+      NativeLibraryRegistry& registry = native_library_registry();
+      std::lock_guard<std::mutex> lock(registry.mutex);
+
+      auto alias = registry.aliases.find(canonical_path);
+      if (alias != registry.aliases.end())
+      {
+        alias->second->validate(path, library);
+        return *alias->second;
+      }
+      if (auto pinned = registry.generations.find(canonical_path);
+          pinned != registry.generations.end())
+      {
+        pinned->second->validate(path, library);
+        return *pinned->second;
+      }
+
+      LibraryHandle handle = open_library(path);
+      if (!handle)
+      {
+        throw RooException("Could not load native package library '" + path +
+                           "': " + platform_error());
+      }
+
+      auto close_on_error = std::unique_ptr<void, void (*)(void*)>(
+        handle,
+        [](void* value) { close_library(static_cast<LibraryHandle>(value)); });
+
+      auto* symbol = find_symbol(handle, ROO_NATIVE_ABI_SYMBOL);
+      if (!symbol)
+      {
+        throw RooException("Native package library '" + path + "' does not export " +
+                           ROO_NATIVE_ABI_SYMBOL + ": " + platform_error());
+      }
+
+      auto package_fn = reinterpret_cast<RooNativePackageV1Fn>(symbol);
+      const RooNativePackageV1* package = package_fn();
+      validate_package(path, library, package);
+
+      const std::string resolved_path =
+        canonical_library_path(loaded_library_path(handle, symbol, path));
+      auto existing = registry.generations.find(resolved_path);
+      if (existing != registry.generations.end())
+      {
+        existing->second->validate(path, library);
+        registry.aliases.emplace(canonical_path, existing->second.get());
+        return *existing->second;
+      }
+
+      auto generation = std::make_unique<NativeLibraryGeneration>(
+        handle,
+        package,
+        resolved_path,
+        package->package_name ? package->package_name : library.name,
+        package->package_version ? package->package_version : library.version);
+      NativeLibraryGeneration& result = *generation;
+      registry.generations.emplace(resolved_path, std::move(generation));
+      close_on_error.release();
+      registry.aliases.emplace(canonical_path, &result);
+      return result;
+    }
+  } // namespace
+
+  struct LoadedNativePackages::Impl
+  {
+    std::vector<const NativeLibraryGeneration*> generations;
+  };
+
+  LoadedNativePackages::LoadedNativePackages()
+    : impl(std::make_unique<Impl>())
+  {
+  }
+
+  LoadedNativePackages::LoadedNativePackages(std::unique_ptr<Impl> impl)
+    : impl(std::move(impl))
+  {
+  }
+
+  LoadedNativePackages::~LoadedNativePackages() = default;
+  LoadedNativePackages::LoadedNativePackages(LoadedNativePackages&&) noexcept = default;
+  LoadedNativePackages& LoadedNativePackages::operator=(LoadedNativePackages&&) noexcept =
+    default;
+
+  LoadedNativePackages load_native_libraries(Runtime& runtime, const LoadPlan& plan)
+  {
+    auto impl = std::make_unique<LoadedNativePackages::Impl>();
+    NativeLoadContext context;
+
+    for (const auto& library : plan.native_libraries)
+    {
+      const std::string path = native_library_path(library);
+      NativeLibraryGeneration& generation = native_library_generation(library);
       RooNativeHostV1 host{
         ROO_NATIVE_ABI_VERSION,
         sizeof(RooNativeHostV1),
@@ -296,17 +384,19 @@ namespace Roo::Package
         note,
       };
 
-      if (package->load(&host) != 0)
+      std::lock_guard<std::mutex> lock(generation.load_mutex);
+      context.error.clear();
+      if (generation.package->load(&host) != 0)
       {
         const std::string error =
-          context.error.empty() ? package_error(package) : context.error;
+          context.error.empty() ? package_error(generation.package) : context.error;
         throw RooException("Native package library '" + path + "' failed to load: " + error);
       }
 
-      close_on_error.release();
-      impl->libraries.emplace_back(handle, package);
+      impl->generations.push_back(&generation);
     }
 
+    runtime.register_namespaces(std::move(context.namespaces));
     return LoadedNativePackages(std::move(impl));
   }
 } // namespace Roo::Package

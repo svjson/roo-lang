@@ -1,3 +1,4 @@
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -843,8 +844,7 @@ TEST(PackageManifest, resolves_each_package_once_across_dependency_cycles)
     Roo::Package::resolve_load_plan(fs, "pkg/app", Roo::Package::ResolveOptions{{"pkg"}});
 
   EXPECT_EQ(plan.package_roots, (std::vector<std::string>{"pkg/util", "pkg/app"}));
-  EXPECT_EQ(plan.load_paths,
-            (std::vector<std::string>{"pkg/util/src", "pkg/app/src"}));
+  EXPECT_EQ(plan.load_paths, (std::vector<std::string>{"pkg/util/src", "pkg/app/src"}));
 }
 
 TEST(PackageManifest, rejects_a_cycle_back_edge_with_a_mismatched_version)
@@ -1078,6 +1078,69 @@ TEST(PackageManifest, loads_native_library_namespaces_into_runtime)
   }
 
   std::filesystem::remove_all(root);
+}
+
+TEST(PackageManifest, native_exception_outlives_runtime_and_activation_result)
+{
+  Roo::Package::LoadPlan plan;
+  plan.native_libraries.push_back({"roo-package-test-native",
+                                   "0.1.0",
+                                   ROO_PACKAGE_TEST_NATIVE_LIBRARY,
+                                   "",
+                                   {"package.test.native"}});
+  std::exception_ptr failure;
+  {
+    Roo::Runtime runtime;
+    Roo::Package::LoadedNativePackages native_packages =
+      Roo::Package::load_native_libraries(runtime, plan);
+    try
+    {
+      runtime.eval("(package.test.native/fail nil)");
+    }
+    catch (...)
+    {
+      failure = std::current_exception();
+    }
+  }
+
+  ASSERT_NE(failure, nullptr);
+  try
+  {
+    std::rethrow_exception(failure);
+  }
+  catch (const std::exception& e)
+  {
+    EXPECT_NE(std::string(e.what()).find("native test failure"), std::string::npos);
+  }
+  failure = nullptr;
+}
+
+TEST(PackageManifest, failed_native_namespace_batch_leaves_runtime_unchanged)
+{
+  Roo::Package::NativeLibrary library{"roo-package-test-native",
+                                      "0.1.0",
+                                      ROO_PACKAGE_TEST_NATIVE_LIBRARY,
+                                      "",
+                                      {"package.test.native"}};
+  Roo::Package::LoadPlan plan;
+  plan.native_libraries = {library, library};
+  Roo::Runtime runtime;
+
+  EXPECT_THROW(Roo::Package::load_native_libraries(runtime, plan), Roo::RooException);
+  EXPECT_EQ(runtime.ns("package.test.native"), nullptr);
+}
+
+TEST(PackageManifest, rejects_native_descriptor_with_nonmatching_layout)
+{
+  Roo::Package::LoadPlan plan;
+  plan.native_libraries.push_back({"roo-package-test-incompatible-native",
+                                   "0.1.0",
+                                   ROO_PACKAGE_TEST_INCOMPATIBLE_NATIVE_LIBRARY,
+                                   "",
+                                   {}});
+  Roo::Runtime runtime;
+
+  EXPECT_THROW(Roo::Package::load_native_libraries(runtime, plan), Roo::RooException);
 }
 
 TEST(PackageManifest, autoloads_run_after_native_libraries_are_available)

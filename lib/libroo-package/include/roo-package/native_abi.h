@@ -39,7 +39,6 @@ struct RooNativePackageV1
   const char* roo_abi;
 
   int (*load)(const RooNativeHostV1* host);
-  void (*unload)();
   const char* (*last_error)();
 };
 

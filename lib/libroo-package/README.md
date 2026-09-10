@@ -280,7 +280,6 @@ static const RooNativePackageV1 package{
   "0.1.0",
   ROO_NATIVE_CXX_ABI,
   load_native_package,
-  unload_native_package,
   last_error,
 };
 ```
@@ -307,7 +306,11 @@ int load_native_package(const RooNativeHostV1* host)
 ```
 
 After `register_namespace` succeeds, ownership of the namespace has moved to the
-runtime.
+host. Roo publishes all namespaces to the runtime only after every native load
+entry point succeeds.
+
+The V1 ABI has no unload callback. Validated V1 libraries remain mapped until
+process exit.
 
 ## Building a Native Library
 
@@ -368,8 +371,8 @@ writing generated binaries back into the source package.
 
 ## Loading From an Embedded Application
 
-Applications that embed `libroo` and construct `Roo::Runtime` themselves
-can use `roo-package` directly.
+Applications that embed Roo can use `roo-package` to own a package-configured
+runtime directly.
 
 Link the host application against both libraries:
 
@@ -387,52 +390,45 @@ Use the package headers alongside the normal Roo runtime headers:
 
 ```c++
 #include <roo/io/dir_root_file_system.h>
-#include <roo/runtime.h>
 #include <roo-package/manifest.h>
-#include <roo-package/native_loader.h>
+#include <roo-package/runtime_environment.h>
 ```
 
 The standard sequence is:
 
 1. Create a filesystem that can read package manifests.
 2. Resolve a load plan from the root package directory.
-3. Merge the package load paths with any host-provided load paths.
-4. Construct the runtime with a filesystem that uses those load paths.
-5. Configure package namespace roots on the runtime.
-6. Load native libraries into the runtime.
-7. Load package autoload namespaces.
-8. Keep the filesystem and loaded native package handles alive while the runtime
-   is alive.
-9. Read a file or load the package entry point namespaces.
+3. Construct an `ApplicationRuntime` from a replayable specification.
+4. Register the specification as a worker environment when the application uses
+   workers.
+5. Read a file or load the package entry point namespaces.
 
 Minimal example:
 
 ```c++
 Roo::DirRootFileSystem manifest_fs("/");
 auto plan = Roo::Package::resolve_load_plan(manifest_fs, "/path/to/package");
-
-auto fs = Roo::Package::make_load_path_file_system(
-  plan,
-  {"/host/app/roo"});
-Roo::Runtime runtime(fs.get());
-
-Roo::Package::configure_runtime_namespace_roots(runtime, plan);
-auto native_packages = Roo::Package::load_native_libraries(runtime, plan);
-Roo::Package::load_autoloads(runtime, plan);
+auto spec = Roo::Package::make_directory_application_runtime_spec(
+  plan, {"/host/app/roo"});
+Roo::Package::ApplicationRuntime application(spec);
+Roo::Runtime& runtime = application.runtime();
 runtime.read_file("example/app.roo");
 ```
 
-Keep both the filesystem and `LoadedNativePackages` alive for as long as the
-runtime may need them. `LoadedNativePackages` keeps dynamic library handles open.
+Keep runtime-bound values and exceptions within the `ApplicationRuntime`
+lifetime. Native V1 code remains mapped after this owner is destroyed, but
+pointers into the destroyed runtime do not become valid detached values.
 
 If the application already has its own load paths, use `merge_load_paths` or
 `make_load_path_file_system(plan, extra_load_paths)`. Extra load paths come
 first, then package source roots are appended in dependency-first order.
 
-If the application already has its own filesystem abstraction, it can still use
-`resolve_load_plan` and `merge_load_paths`, then build its own `FileSystem`
-implementation from the returned paths. `make_load_path_file_system` is only the
-convenience bridge for the common directory-root case.
+If the application has its own filesystem abstraction, populate
+`ApplicationRuntimeSpec::make_inputs` with a factory that returns its owned file
+system, namespace source, and any supporting filesystems. Advanced hosts that
+must populate an existing `Runtime` can still call `load_native_libraries`
+directly. Its `LoadedNativePackages` result records the activation but does not
+control V1 library residency.
 
 To run package entry point namespaces, load each namespace listed in
 `plan.entry_points` through an `ns` form:
@@ -525,8 +521,8 @@ context data and forwarded tool arguments.
   namespaces by itself. The native library must register them when loaded.
 - There is no mixed namespace merge story yet. A namespace is currently provided
   by Roo source or by a native library.
-- Native library unload behavior is intentionally simple. Keep loaded package
-  handles alive while the runtime may call into registered native code.
+- Validated V1 native libraries remain mapped until process exit. Package
+  deactivation and physical unloading are not currently supported.
 - Package tool dispatch currently runs the dependency package's `run` tool only.
 
 ## Existing Examples
