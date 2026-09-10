@@ -31,8 +31,6 @@ namespace
     return 0;
   }
 
-  void unload_lookup_native() {}
-
   const char* lookup_native_last_error()
   {
     return "";
@@ -48,7 +46,6 @@ extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
     "0.1.0",
     ROO_NATIVE_CXX_ABI,
     load_lookup_native,
-    unload_lookup_native,
     lookup_native_last_error,
   };
   return &package;
