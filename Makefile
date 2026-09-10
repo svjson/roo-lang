@@ -40,6 +40,10 @@ define ROO_RUN_WITH_BUILD_LOCK
 		-P "$(ROO_BUILD_LOCK_SCRIPT)"
 endef
 
+.PHONY: serve-github-pages-docs
+serve-github-pages-docs:
+	jekyll serve --source $(GITHUB_PAGES_DOCS_DIR) --destination $(CURDIR)/build/docs/github-pages-site
+
 SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport
 TEST_BINARY := lib/libroo/test/testroo
 BENCHMARK_TEST_BINARY := lib/libroo/test/benchmarkroo
@@ -247,7 +251,7 @@ build-roo-lang-index: build-lookup
 	cmake -E make_directory $(ROO_LANG_INDEX_DIR)
 	$(CURDIR)/build/lookup-install/build/$(LOOKUP_BINARY) index --root lib/libroo/include/roo/lang --root lib/libroo/src/roo/lang --package-name roo --package-version $(ROO_LANG_INDEX_VERSION) -o $(ROO_LANG_INDEX_PATH)
 
-build-github-pages-docs: install build-boodle
+build-github-pages-docs:
 	@test -f $(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn || { \
 		printf 'Missing installed Roo language index: %s\n' '$(ROO_LANG_INDEX_INSTALL_DIR)/symbols.edn' >&2; \
 		exit 1; \
