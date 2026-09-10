@@ -17,7 +17,13 @@
                        {:name "roo"
                         :summary "Implicit runtime namespace."
                         :content [{:kind :text
-                                   :content "Implicit runtime namespace."}]
+                                   :content "Implicit runtime namespace."}
+                                  {:kind :text
+                                   :content "Provides Roo's fundamental operations."}
+                                  {:kind :header
+                                   :content "Examples:"}
+                                  {:kind :code
+                                   :content "(+ 1 2)"}]
                         :entries [(model/entry
                                     {:id "roo/+"
                                      :name "+"
@@ -99,13 +105,15 @@
             "packages/zoology/index.md"
             "packages/zoology/versions/0.1.0/index.md"]
            paths))
-    (is (= (str "title: Reference\n"
+    (is (= (str "title: roo-lang - Reference\n"
                 "markdown: kramdown\n"
                 "kramdown:\n"
                 "  syntax_highlighter_opts:\n"
                 "    formatter: HTML\n")
            (:content (head files))))
     (is (string/starts-with? (:content layout-file) "<!doctype html>\n"))
+    (is (contains? (split (:content layout-file) "\n")
+                   "  <header class=\"site-header\"><a href=\"{{ '/' | relative_url }}\">roo-lang - Reference</a></header>"))
     (is (string/starts-with?
           (:content stylesheet-file)
           (str ":root { color-scheme: light; }\n"
@@ -119,11 +127,21 @@
                "body > h2 { padding: 0 24px; margin-top: 28px; }\n"
                "body > .reference-breadcrumbs, body > .reference-up, body > .version-context { box-sizing: border-box; margin-left: auto; margin-right: auto; margin-top: 32px; max-width: 1008px; padding-left: 24px; padding-right: 24px; }\n"
                "body > .reference-breadcrumbs + .version-context, body > .reference-up + .version-context { margin-top: 0; }\n")))
+    (is (contains? (split (:content stylesheet-file) "\n")
+                   ".symbol-heading { margin: 0 0 24px; }"))
+    (is (contains? (split (:content stylesheet-file) "\n")
+                   ".version-context + .symbol-heading { border-top: 1px solid #d7dde5; padding-top: 12px; }"))
+    (is (contains? (split (:content stylesheet-file) "\n")
+                   ".symbol-heading + p { font-size: 1.125rem; line-height: 1.5; }"))
+    (is (contains? (split (:content stylesheet-file) "\n")
+                   ".symbol-heading h1 { line-height: 1.1; margin: 0; }"))
+    (is (contains? (split (:content stylesheet-file) "\n")
+                   ".symbol-namespace { color: #6b7280; font-size: 13px; line-height: 1; overflow-wrap: anywhere; }"))
     (is (= (str "---\n"
                 "layout: reference\n"
                 "title: Reference\n"
                 "---\n\n"
-                "# Reference\n\n"
+                "# roo-lang - Reference\n\n"
                 "| Package                                     | Versions | Description           |\n"
                 "| ------------------------------------------- | -------- | --------------------- |\n"
                 "| [roo](packages/roo/versions/0.1.0/)         | 0.1.0    | Roo standard library. |\n"
@@ -191,6 +209,11 @@
                 "</div>\n"
                 "# roo\n\n"
                 "Implicit runtime namespace.\n\n"
+                "Provides Roo's fundamental operations.\n\n"
+                "### Examples:\n\n"
+                "```roo\n"
+                "(+ 1 2)\n"
+                "```\n\n"
                 "| Symbol               | Summary      |\n"
                 "| -------------------- | ------------ |\n"
                 "| [`+`](roo/plus.html) | Add numbers. |"
@@ -225,18 +248,28 @@
                 "<option value=\"../../../0.1.0/namespaces/roo/plus.html\" selected>0.1.0</option>\n"
                 "</select></label>\n"
                 "</div>\n"
-                "# `+`\n\n"
+                "<header class=\"symbol-heading\">\n"
+                "<div class=\"symbol-namespace\"><a href=\"../roo.html\">roo</a>/</div>\n"
+                "<h1><code>+</code></h1>\n"
+                "</header>\n\n"
                 "Add numbers.\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "```roo\n"
+                "(+ numbers...)\n"
+                "```\n\n"
+                "<hr class=\"signature-divider\">\n\n"
                 "Returns the numeric sum.\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "## Signature:\n\n"
                 "```roo\n"
                 "(+ numbers...)\n"
                 "```\n\n"
                 "| Arg        | Description     |\n"
                 "| ---------- | --------------- |\n"
                 "| numbers... | Numbers to add. |\n\n"
-                "## Returns:\n\n"
+                "### Returns:\n\n"
                 "The sum.\n\n"
-                "## Examples:\n\n"
+                "### Examples:\n\n"
                 "```roo\n"
                 "(+ 1 2)\n"
                 "=> 3\n"
@@ -277,46 +310,158 @@
                     (assoc sample-catalog :navigation-style :none)))))))
 
 (deftest renders-ordered-documentation-blocks
-  (is (= (str "# `sample`\n\n"
-              "Opening text.\n\n"
-              "```shell\n"
-              "roo run sample.roo\n"
-              "```\n\n"
-              "Text after code.\n\n"
-              "```roo\n"
-              "(first)\n"
-              "```\n\n"
-              "```roo\n"
-              "(second)\n"
-              "```\n\n"
-              "```roo\n"
-              "(sample)\n"
-              "```\n\n"
-              "## Returns:\n\n"
-              "Result text.\n\n"
-              "```roo\n"
-              "{:ok true}\n"
-              "```\n")
-         (markdown/render-block
-           (github-pages/symbol-document
-             {:entry
-              (model/entry
-                {:name "sample"
-                 :content [{:kind :text :content "Opening text."}
-                           {:kind :code
-                            :language :shell
-                            :content "roo run sample.roo"}
-                           {:kind :text :content "Text after code."}
-                           {:kind :code :content "(first)"}
-                           {:kind :code :content "(second)"}
-                           {:kind :sig-args :index 0}
-                           {:kind :sig-ret :index 0}]
-                 :signatures [{:display "(sample)"
-                               :params []
-                               :returns {:content [{:kind :text
-                                                   :content "Result text."}
-                                                  {:kind :code
-                                                   :content "{:ok true}"}]}}]})})))))
+  (let [entry (model/entry {:name "sample"
+                            :namespace "sample"
+                            :summary "Opening text."
+                            :since "0.1.0"
+                            :deprecated "Use `replacement` instead."
+                            :see ["other" "sample/related"]
+                            :content [{:kind :text
+                                       :content "Opening text."}
+                                      {:kind :code
+                                       :language :shell
+                                       :content "roo run sample.roo"}
+                                      {:kind :text
+                                       :content "Text after code."}
+                                      {:kind :code
+                                       :content "(first)"}
+                                      {:kind :code
+                                       :content "(second)"}
+                                      {:kind :sig-args
+                                       :index 0}
+                                      {:kind :sig-ret
+                                       :index 0}]
+                            :signatures [{:display "(sample)"
+                                          :params []
+                                          :returns {:content [{:kind :text
+                                                              :content "Result text."}
+                                                             {:kind :code
+                                                              :content "{:ok true}"}]}}]})
+        page {:namespace (model/namespace {:name "sample"})
+              :entry entry}]
+    (is (= (str "<header class=\"symbol-heading\">\n"
+                "<div class=\"symbol-namespace\"><a href=\"../sample.html\">sample</a>/</div>\n"
+                "<h1><code>sample</code></h1>\n"
+                "<div class=\"symbol-metadata\"><span>Since <code>0.1.0</code></span> "
+                "<span class=\"symbol-metadata-separator\" aria-hidden=\"true\">·</span> "
+                "<span>Deprecated: Use `replacement` instead.</span> "
+                "<span class=\"symbol-metadata-separator\" aria-hidden=\"true\">·</span> "
+                "<span>See also: <code>other</code>, <code>sample/related</code></span></div>\n"
+                "</header>\n\n"
+                "Opening text.\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "```roo\n"
+                "(sample)\n"
+                "```\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "```shell\n"
+                "roo run sample.roo\n"
+                "```\n\n"
+                "Text after code.\n\n"
+                "```roo\n"
+                "(first)\n"
+                "```\n\n"
+                "```roo\n"
+                "(second)\n"
+                "```\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "## Signature:\n\n"
+                "```roo\n"
+                "(sample)\n"
+                "```\n\n"
+                "### Returns:\n\n"
+                "Result text.\n\n"
+                "```roo\n"
+                "{:ok true}\n"
+                "```\n")
+           (markdown/render-block (github-pages/symbol-document page))))))
+
+(deftest preserves-signature-and-return-occurrence-order
+  (let [returns {:content [{:kind :text
+                            :content "The opened resource."}]}
+        entry (model/entry {:name "open"
+                            :namespace "sample"
+                            :summary "Open a resource."
+                            :content [{:kind :text
+                                       :content "Open a resource."}
+                                      {:kind :sig-args
+                                       :index 0}
+                                      {:kind :text
+                                       :content "An explicit mode may also be supplied."}
+                                      {:kind :sig-args
+                                       :index 1}
+                                      {:kind :sig-ret
+                                       :index 1}]
+                            :signatures [{:display "(open path)"
+                                          :params []
+                                          :returns returns}
+                                         {:display "(open path mode)"
+                                          :params []
+                                          :returns returns}]})
+        page {:namespace (model/namespace {:name "sample"})
+              :entry entry}]
+    (is (= (str "<header class=\"symbol-heading\">\n"
+                "<div class=\"symbol-namespace\"><a href=\"../sample.html\">sample</a>/</div>\n"
+                "<h1><code>open</code></h1>\n"
+                "</header>\n\n"
+                "Open a resource.\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "```roo\n"
+                "(open path)\n"
+                "(open path mode)\n"
+                "```\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "## Signature:\n\n"
+                "```roo\n"
+                "(open path)\n"
+                "```\n\n"
+                "### Returns:\n\n"
+                "The opened resource.\n\n"
+                "An explicit mode may also be supplied.\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "## Signature:\n\n"
+                "```roo\n"
+                "(open path mode)\n"
+                "```\n\n"
+                "### Returns:\n\n"
+                "The opened resource.\n")
+           (markdown/render-block (github-pages/symbol-document page))))))
+
+(deftest duplicates-nonadjacent-return-after-signature
+  (let [entry (model/entry {:name "open"
+                            :namespace "sample"
+                            :summary "Open a resource."
+                            :content [{:kind :sig-args
+                                       :index 0}
+                                      {:kind :text
+                                       :content "Details between declarations."}
+                                      {:kind :sig-ret
+                                       :index 0}]
+                            :signatures [{:display "(open path)"
+                                          :params []
+                                          :returns {:content [{:kind :text
+                                                              :content "The opened resource."}]}}]})
+        page {:namespace (model/namespace {:name "sample"})
+              :entry entry}]
+    (is (= (str "<header class=\"symbol-heading\">\n"
+                "<div class=\"symbol-namespace\"><a href=\"../sample.html\">sample</a>/</div>\n"
+                "<h1><code>open</code></h1>\n"
+                "</header>\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "```roo\n"
+                "(open path)\n"
+                "```\n\n"
+                "<hr class=\"signature-divider\">\n\n"
+                "## Signature:\n\n"
+                "```roo\n"
+                "(open path)\n"
+                "```\n\n"
+                "### Returns:\n\n"
+                "The opened resource.\n\n"
+                "Details between declarations.\n\n"
+                "### Returns:\n\n"
+                "The opened resource.\n")
+           (markdown/render-block (github-pages/symbol-document page))))))
 
 (deftest renders-grouped-root-package-index
   (let [catalog (assoc sample-catalog
@@ -335,7 +480,7 @@
                 "layout: reference\n"
                 "title: Reference\n"
                 "---\n\n"
-                "# Reference\n\n"
+                "# roo-lang - Reference\n\n"
                 "## The Roo Language\n\n"
                 "| Package                             | Versions | Description           |\n"
                 "| ----------------------------------- | -------- | --------------------- |\n"

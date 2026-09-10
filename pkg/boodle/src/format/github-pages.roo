@@ -111,10 +111,27 @@
   - `signature`: Lookup-style signature map.
 
   Returns:
-  Blocks containing the rendered call shape and parameter table."
+  Blocks containing a Signature heading, rendered call shape, and parameter
+  table."
   [signature]
-  (concat [(md/code-block "roo" (:display signature))]
+  (concat [(md/heading 2 "Signature:")
+           (md/code-block "roo" (:display signature))]
           (signature-params signature)))
+
+(defun signature-return-blocks
+  "Return Markdown blocks for a signature's documented return value.
+
+  Args:
+  - `entry`: Boodle entry containing the signature.
+  - `signature`: Lookup-style signature map.
+
+  Returns:
+  A Returns heading and its ordered content, or an empty vector."
+  [entry signature]
+  (if-let [returns (:returns signature)]
+    (concat [(md/heading 3 "Returns:")]
+            (content-blocks entry (:content returns)))
+    []))
 
 (defun content-blocks
   "Convert ordered documentation blocks to Moordown blocks.
@@ -126,24 +143,30 @@
   Returns:
   Moordown blocks in source order."
   [entry blocks]
-  (flat-map blocks
-            (fn [block]
-              (case (:kind block)
-                :text [(md/paragraph (:content block))]
-                :header [(md/heading 2 (:content block))]
-                :code [(md/code-block (name (or (:language block) :roo))
-                                      (:content block))]
-                :sig-args
-                (when (< (:index block) (count (:signatures entry)))
-                  (signature-args-blocks
-                    (nth (:signatures entry) (:index block))))
-                :sig-ret
-                (when (< (:index block) (count (:signatures entry)))
-                  (when-let [returns (:returns
-                                       (nth (:signatures entry) (:index block)))]
-                    (concat [(md/heading 2 "Returns:")]
-                            (content-blocks entry (:content returns)))))
-                :default []))))
+  (flat-map (range 0 (- (count blocks) 1))
+            (fn [position]
+              (let [block (nth blocks position)
+                    following (when (< position (- (count blocks) 1))
+                                (nth blocks (+ position 1)))]
+                (case (:kind block)
+                  :text [(md/paragraph (:content block))]
+                  :header [(md/heading 3 (:content block))]
+                  :code [(md/code-block (name (or (:language block) :roo))
+                                        (:content block))]
+                  :sig-args
+                  (when (< (:index block) (count (:signatures entry)))
+                    (let [signature (nth (:signatures entry) (:index block))]
+                      (concat ["<hr class=\"signature-divider\">"]
+                              (signature-args-blocks signature)
+                              (if (and (= :sig-ret (:kind following))
+                                       (= (:index block) (:index following)))
+                                []
+                                (signature-return-blocks entry signature)))))
+                  :sig-ret
+                  (when (< (:index block) (count (:signatures entry)))
+                    (signature-return-blocks entry
+                                             (nth (:signatures entry) (:index block))))
+                  :default [])))))
 
 (defun unplaced-signature-blocks
   "Render signature arguments that have no source occurrence block.
@@ -162,7 +185,10 @@
       (flat-map (range 0 (- (count signatures) 1))
                 (fn [index]
                   (unless (contains? placed index)
-                    (signature-args-blocks (nth signatures index))))))))
+                    (let [signature (nth signatures index)]
+                      (concat ["<hr class=\"signature-divider\">"]
+                              (signature-args-blocks signature)
+                              (signature-return-blocks entry signature)))))))))
 
 (defun entry-title
   "Return the display title for ENTRY.
@@ -186,19 +212,51 @@
   [entry]
   (str "`" (entry-title entry) "`"))
 
-(defun entry-detail-blocks
-  "Return Markdown blocks for ENTRY with HEADING-LEVEL.
+(defun symbol-heading-html
+  "Return the symbol heading and compact metadata for PAGE.
 
   Args:
-  - `entry`: Boodle entry map.
-  - `heading-level`: Markdown heading level for the symbol heading.
+  - `page`: Boodle symbol page map.
 
   Returns:
-  Blocks documenting one symbol."
-  [entry heading-level]
-  (concat [(md/heading heading-level (entry-title-code entry))]
-          (content-blocks entry (:content entry))
-          (unplaced-signature-blocks entry)))
+  HTML containing a linked namespace eyebrow, symbol title, and any `:since`
+  or `:see` metadata."
+  [{:keys [entry namespace]}]
+  (let [metadata (keep [(when-let [since (:since entry)]
+                          (str "<span>Since <code>"
+                               (html-text since)
+                               "</code></span>"))
+                        (when-let [deprecated (:deprecated entry)]
+                          (str "<span>Deprecated: "
+                               (html-text deprecated)
+                               "</span>"))
+                        (unless (empty? (:see entry))
+                          (str "<span>See also: "
+                               (apply join
+                                      (concat [", "]
+                                              (for [reference (:see entry)]
+                                                (str "<code>"
+                                                     (html-text reference)
+                                                     "</code>"))))
+                               "</span>"))]
+                       identity)]
+    (str "<header class=\"symbol-heading\">\n"
+         "<div class=\"symbol-namespace\"><a href=\"../"
+         (html-text (:name namespace))
+         ".html\">"
+         (html-text (:name namespace))
+         "</a>/</div>\n"
+         "<h1><code>"
+         (html-text (entry-title entry))
+         "</code></h1>\n"
+         (if (empty? metadata)
+           ""
+           (str "<div class=\"symbol-metadata\">"
+                (apply join
+                       (concat [" <span class=\"symbol-metadata-separator\" aria-hidden=\"true\">·</span> "]
+                               metadata))
+                "</div>\n"))
+         "</header>")))
 
 (defun package-url
   "Return the root index URL for PACKAGE.
@@ -317,7 +375,7 @@
   A Moordown document."
   [{:keys [catalog]}]
   (md/document
-    (concat [(md/heading 1 "Reference")]
+    (concat [(md/heading 1 "roo-lang - Reference")]
             (package-index-blocks (:packages catalog)
                                   (:package-groups catalog)))))
 
@@ -405,8 +463,35 @@
 
   Returns:
   A Moordown document."
-  [page]
-  (md/document (entry-detail-blocks (:entry page) 1)))
+  [{:keys [entry] :as page}]
+  (let [content (:content entry)
+        first-block (head content)
+        signature-overview (unless (empty? (:signatures entry))
+                             ["<hr class=\"signature-divider\">"
+                              (md/code-block "roo"
+                                             (apply join
+                                                    (concat ["\n"]
+                                                            (for [signature (:signatures entry)]
+                                                              (:display signature)))))
+                              "<hr class=\"signature-divider\">"])
+        blocks (if (and (= :text (:kind first-block))
+                        (= (:summary entry) (:content first-block)))
+                 (concat [(symbol-heading-html page)]
+                         (content-blocks entry [first-block])
+                         signature-overview
+                         (content-blocks entry (tail content))
+                         (unplaced-signature-blocks entry))
+                 (concat [(symbol-heading-html page)]
+                         signature-overview
+                         (content-blocks entry content)
+                         (unplaced-signature-blocks entry)))]
+    (md/document (reduce blocks
+                         []
+                         (fn [document block]
+                           (if (and (= "<hr class=\"signature-divider\">" block)
+                                    (= "<hr class=\"signature-divider\">" (last document)))
+                             document
+                             (append document block)))))))
 
 (defun page-document
   "Return the Moordown document for PAGE.
@@ -746,7 +831,7 @@
        "  <link rel=\"stylesheet\" href=\"{{ '/assets/boodle.css' | relative_url }}\">\n"
        "</head>\n"
        "<body>\n"
-       "  <header class=\"site-header\"><a href=\"{{ '/' | relative_url }}\">{{ site.title }}</a></header>\n"
+       "  <header class=\"site-header\"><a href=\"{{ '/' | relative_url }}\">roo-lang - Reference</a></header>\n"
        "  {{ content }}\n"
        "</body>\n"
        "</html>\n"))
@@ -786,6 +871,15 @@
        ".reference-content { min-width: 0; }\n"
        ".reference-content h1 { margin-top: 0; }\n"
        ".reference-content table { width: 100%; }\n"
+       ".symbol-heading { margin: 0 0 24px; }\n"
+       ".version-context + .symbol-heading { border-top: 1px solid #d7dde5; padding-top: 12px; }\n"
+       ".symbol-heading + p { font-size: 1.125rem; line-height: 1.5; }\n"
+       ".symbol-heading h1 { line-height: 1.1; margin: 0; }\n"
+       ".symbol-namespace { color: #6b7280; font-size: 13px; line-height: 1; overflow-wrap: anywhere; }\n"
+       ".symbol-namespace a { color: inherit; }\n"
+       ".symbol-metadata { color: #6b7280; font-size: 14px; margin-top: 8px; }\n"
+       ".symbol-metadata-separator { color: #9ca3af; }\n"
+       ".signature-divider { border: 0; border-top: 1px solid #d7dde5; margin: 32px 0 20px; }\n"
        "@media (max-width: 760px) {\n"
        "  .reference-page { display: block; padding: 16px; }\n"
        "  .reference-sidebar { position: static; max-height: none; border-right: 0; border-bottom: 1px solid #d7dde5; padding: 0 0 16px; margin-bottom: 24px; }\n"
@@ -801,7 +895,7 @@
   File maps with `:path` and Markdown `:content`."
   [catalog]
   (concat [{:path "_config.yml"
-            :content (str "title: Reference\n"
+            :content (str "title: roo-lang - Reference\n"
                           "markdown: kramdown\n"
                           "kramdown:\n"
                           "  syntax_highlighter_opts:\n"

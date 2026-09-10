@@ -12,7 +12,13 @@
    :namespaces [{:name "zoology.schema"
                  :summary "Schema implementation."
                  :content [{:kind :text
-                            :content "Schema implementation."}]}]
+                            :content "Schema implementation."}
+                           {:kind :text
+                            :content "Schemas may reference other schemas."}
+                           {:kind :header
+                            :content "Examples:"}
+                           {:kind :code
+                            :content "(resolve schema)"}]}]
    :symbols [{:id "zoology.schema/resolve"
               :name "resolve"
               :qualified-name "zoology.schema/resolve"
@@ -69,6 +75,15 @@
     (is (= "Schema tools." (:summary package)))
     (is (= "zoology.schema" (:name namespace)))
     (is (= "Schema implementation." (:summary namespace)))
+    (is (= [{:kind :text
+             :content "Schema implementation."}
+            {:kind :text
+             :content "Schemas may reference other schemas."}
+            {:kind :header
+             :content "Examples:"}
+            {:kind :code
+             :content "(resolve schema)"}]
+           (:content namespace)))
     (is (= "zoology.schema/resolve" (:qualified-name entry)))
     (is (= :function (:entry-kind entry)))
     (is (= "Resolve schema references." (:summary entry)))
