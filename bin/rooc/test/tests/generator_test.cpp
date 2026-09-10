@@ -172,6 +172,31 @@ namespace
     write_file(root / "app/src/run/app.roo", "(ns run.app)\n");
   }
 
+  void create_native_failure_app_fixture(const std::filesystem::path& package_dir)
+  {
+    std::filesystem::remove_all(package_dir);
+    const std::filesystem::path native_library = ROOC_TEST_NATIVE_LIBRARY;
+    std::filesystem::create_directories(package_dir / "native");
+    std::filesystem::copy_file(native_library,
+                               package_dir / "native" / native_library.filename());
+    write_file(package_dir / "package.edn",
+               R"({:name native-failure-app
+ :version "0.1.0"
+ :load-roots ["src"]
+ :native-libraries [{:name "roo-package-test-native"
+                     :version "0.1.0"
+                     :path "native"
+                     :namespaces [package.test.native]}]
+ :main native-failure.app/main})");
+    write_file(package_dir / "src/native-failure/app.roo",
+               R"((ns native-failure.app
+  (:require package.test.native))
+
+(defun main [args]
+  (package.test.native/fail nil))
+)");
+  }
+
   void run_generated_executable(const Rooc::GeneratedProject& project,
                                 const std::filesystem::path& build_dir,
                                 const std::filesystem::path& run_dir,
@@ -227,8 +252,7 @@ TEST(RoocGenerator, generated_project_defines_distribution_install_contract)
               HasSubstr("INSTALL_RPATH \"${ROOC_INSTALL_RPATH}\""));
   EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
               HasSubstr("install(TARGETS test_generated_cafe"));
-  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
-              HasSubstr("RUNTIME DESTINATION bin"));
+  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"), HasSubstr("RUNTIME DESTINATION bin"));
   EXPECT_THAT(read_file(build_dir / "src/main.cpp"),
               HasSubstr("relocate_native_libraries(package_plan"));
   EXPECT_THAT(read_file(build_dir / "src/main.cpp"), HasSubstr("share/roo/pkg"));
@@ -255,6 +279,7 @@ TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sour
   EXPECT_THAT(main_cpp, HasSubstr("Roo::Package::ApplicationRuntimeSpec runtime_spec"));
   EXPECT_THAT(main_cpp, HasSubstr("std::make_unique<Roo::EmbeddedFileSystem>"));
   EXPECT_THAT(main_cpp, HasSubstr("FileSystemNamespaceSource"));
+  EXPECT_THAT(main_cpp, HasSubstr("ApplicationRuntime application(runtime_spec)"));
   EXPECT_THAT(main_cpp, HasSubstr("make_application_runtime_factory"));
   EXPECT_THAT(main_cpp, HasSubstr("register_environment"));
   EXPECT_THAT(main_cpp, HasSubstr("roo.compiled.autoload"));
@@ -439,4 +464,23 @@ TEST(RoocGenerator, generated_executable_loads_native_package_dependencies)
 
   // Then
   SUCCEED();
+}
+
+TEST(RoocGenerator, generated_executable_reports_native_failure_without_teardown_crash)
+{
+  // Given
+  const auto fixture_root = build_root() / "rooc-gtest-native-failure-fixture";
+  const auto build_dir = build_root() / "rooc-gtest-native-failure-build";
+  const auto run_dir = build_root() / "rooc-gtest-native-failure-run";
+  create_native_failure_app_fixture(fixture_root);
+  auto options = main_app_options_for(build_dir, fixture_root);
+  auto project = Rooc::prepare_project(options);
+  std::filesystem::create_directories(run_dir);
+
+  // When
+  Rooc::generate_project(options, project);
+  Rooc::build_project(options, project);
+
+  // Then
+  run_generated_executable(project, build_dir, run_dir, {}, 1);
 }

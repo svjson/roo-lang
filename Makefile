@@ -57,6 +57,7 @@ INPOOTS_NATIVE_LIBRARY := libinpoots-native.so
 ROOPL_NATIVE_LIBRARY := libroopl-native.so
 LOOKUP_NATIVE_LIBRARY := liblookup-native.so
 PROOFREAD_NATIVE_LIBRARY := libproofread-native.so
+PACKAGE_TEST_NATIVE_LIBRARY := libroo-package-test-native.so
 PROOFREAD_BINARY := proofread
 ifeq ($(OS),Windows_NT)
   SUPPORT_TEST_BINARY := lib/libroo-support/test/testsupport.exe
@@ -76,6 +77,7 @@ ifeq ($(OS),Windows_NT)
   ROOPL_NATIVE_LIBRARY := roopl-native.dll
   LOOKUP_NATIVE_LIBRARY := lookup-native.dll
   PROOFREAD_NATIVE_LIBRARY := proofread-native.dll
+  PACKAGE_TEST_NATIVE_LIBRARY := roo-package-test-native.dll
   PROOFREAD_BINARY := proofread.exe
 endif
 ifeq ($(shell uname -s),Darwin)
@@ -84,6 +86,7 @@ ifeq ($(shell uname -s),Darwin)
   ROOPL_NATIVE_LIBRARY := libroopl-native.dylib
   LOOKUP_NATIVE_LIBRARY := liblookup-native.dylib
   PROOFREAD_NATIVE_LIBRARY := libproofread-native.dylib
+  PACKAGE_TEST_NATIVE_LIBRARY := libroo-package-test-native.dylib
 endif
 
 ifeq ($(OS),Windows_NT)
@@ -408,7 +411,9 @@ test\:rooc: build stage-packages
 test\:cli: test\:roo-cli test\:loom-cli test\:lookup-cli test\:boodle-cli
 
 test\:roo-cli: build stage-packages
-	ROO_PACKAGE_STAGE_ROOT=$(PACKAGE_STAGE) sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
+	ROO_PACKAGE_STAGE_ROOT=$(PACKAGE_STAGE) \
+	ROO_TEST_NATIVE_LIBRARY=$(CURDIR)/build/lib/libroo-package/test/$(PACKAGE_TEST_NATIVE_LIBRARY) \
+	sh $(CURDIR)/bin/roo/test/run-cli-tests.sh $(CURDIR)
 
 test\:loom-cli: build stage-packages
 	ROO_PACKAGE_STAGE_ROOT=$(PACKAGE_STAGE) sh $(CURDIR)/pkg/loom/test/run-cli-tests.sh $(CURDIR)
