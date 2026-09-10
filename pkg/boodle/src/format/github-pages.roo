@@ -66,16 +66,27 @@
   Returns:
   HTML-safe text."
   [value]
-  (string/replace
-    (string/replace
-      (string/replace
-        (string/replace (str value) "&" "&amp;")
-        "<"
-        "&lt;")
-      ">"
-      "&gt;")
-    "\""
-    "&quot;"))
+  (-> (str value)
+      (string/replace "&" "&amp;")
+      (string/replace "<" "&lt;")
+      (string/replace ">" "&gt;")
+      (string/replace "\"" "&quot;")))
+
+(defun documentation-text
+  "Return block content as text for compact documentation contexts.
+
+  Args:
+  - `blocks`: Ordered documentation blocks.
+
+  Returns:
+  Nonempty block content joined by blank lines."
+  [blocks]
+  (apply join
+         (concat ["\n\n"]
+                 (keep blocks
+                       (fn [block]
+                         (when-let [content (:content block)]
+                           (unless (blank? content) content)))))))
 
 (defun signature-params
   "Return a Markdown parameter table for SIGNATURE when it has parameters.
@@ -89,53 +100,69 @@
   (if (empty? (:params signature))
     []
     [(md/table ["Arg" "Description"]
-               (map (:params signature)
-                    (fn [param]
-                      [(or (:display param) (:name param)) (:doc param)])))]))
+               (for [param (:params signature)]
+                 [(or (:display param) (:name param))
+                  (documentation-text (:content param))]))]))
 
-(defun signature-blocks
-  "Return Markdown blocks for SIGNATURE.
+(defun signature-args-blocks
+  "Return Markdown blocks for a signature's argument declaration.
 
   Args:
   - `signature`: Lookup-style signature map.
 
   Returns:
-  Blocks containing the rendered call shape, parameter table, and return docs."
+  Blocks containing the rendered call shape and parameter table."
   [signature]
   (concat [(md/code-block "roo" (:display signature))]
-          (signature-params signature)
-          (if-let [return-doc (:doc (:returns signature))]
-            [(md/paragraph (str "Returns: " return-doc))]
-            [])))
+          (signature-params signature)))
 
-(defun example-format-name
-  "Return the Markdown code fence language name for EXAMPLE.
+(defun content-blocks
+  "Convert ordered documentation blocks to Moordown blocks.
 
   Args:
-  - `example`: Lookup documentation example map.
+  - `entry`: Boodle entry or namespace containing any referenced signatures.
+  - `blocks`: Ordered documentation blocks.
 
   Returns:
-  Code fence language name."
-  [example]
-  (name (or (:format example) :roo)))
+  Moordown blocks in source order."
+  [entry blocks]
+  (flat-map blocks
+            (fn [block]
+              (case (:kind block)
+                :text [(md/paragraph (:content block))]
+                :header [(md/heading 2 (:content block))]
+                :code [(md/code-block (name (or (:language block) :roo))
+                                      (:content block))]
+                :sig-args
+                (when (< (:index block) (count (:signatures entry)))
+                  (signature-args-blocks
+                    (nth (:signatures entry) (:index block))))
+                :sig-ret
+                (when (< (:index block) (count (:signatures entry)))
+                  (when-let [returns (:returns
+                                       (nth (:signatures entry) (:index block)))]
+                    (concat [(md/heading 2 "Returns:")]
+                            (content-blocks entry (:content returns)))))
+                :default []))))
 
-(defun example-blocks
-  "Return Markdown blocks for documentation examples in ENTRY.
+(defun unplaced-signature-blocks
+  "Render signature arguments that have no source occurrence block.
 
   Args:
-  - `entry`: Boodle entry map.
+  - `entry`: Boodle entry with signatures and ordered content.
 
   Returns:
-  Blocks containing an examples heading and fenced code blocks."
+  Moordown blocks for signatures not selected by any `:sig-args` block."
   [entry]
-  (let [examples (:examples (:doc entry))]
-    (unless (empty? examples)
-      (concat [(md/heading 2 "Examples")]
-              (keep examples
-                    (fn [example]
-                      (when-let [source (:source example)]
-                        (md/code-block (example-format-name example)
-                                       source))))))))
+  (let [placed (keep (:content entry)
+                     (fn [block]
+                       (when (= :sig-args (:kind block)) (:index block))))
+        signatures (:signatures entry)]
+    (unless (empty? signatures)
+      (flat-map (range 0 (- (count signatures) 1))
+                (fn [index]
+                  (unless (contains? placed index)
+                    (signature-args-blocks (nth signatures index))))))))
 
 (defun entry-title
   "Return the display title for ENTRY.
@@ -170,12 +197,8 @@
   Blocks documenting one symbol."
   [entry heading-level]
   (concat [(md/heading heading-level (entry-title-code entry))]
-          (keep [(:summary entry) (:body entry)]
-                (fn [text]
-                  (when text
-                    (md/paragraph text))))
-          (flat-map (:signatures entry) signature-blocks)
-          (example-blocks entry)))
+          (content-blocks entry (:content entry))
+          (unplaced-signature-blocks entry)))
 
 (defun package-url
   "Return the root index URL for PACKAGE.
@@ -292,12 +315,11 @@
 
   Returns:
   A Moordown document."
-  [page]
-  (let [catalog (:catalog page)
-        packages (:packages catalog)]
-    (md/document
-      (concat [(md/heading 1 "Reference")]
-              (package-index-blocks packages (:package-groups catalog))))))
+  [{:keys [catalog]}]
+  (md/document
+    (concat [(md/heading 1 "Reference")]
+            (package-index-blocks (:packages catalog)
+                                  (:package-groups catalog)))))
 
 (defun package-index-url
   "Return the current-version URL from a package index redirect page.
@@ -318,11 +340,10 @@
 
   Returns:
   A Moordown document linking to the current package version."
-  [page]
-  (let [package (:package page)]
-    (md/document
-      [(md/paragraph
-         (md/link (package-title package) (package-index-url package)))])))
+  [{:keys [package]}]
+  (md/document
+    [(md/paragraph
+       (md/link (package-title package) (package-index-url package)))]))
 
 (defun package-document
   "Return the GitHub Pages package document for PAGE.
@@ -332,21 +353,19 @@
 
   Returns:
   A Moordown document."
-  [page]
-  (let [package (:package page)]
-    (md/document
-      (concat [(md/heading 1 (package-title package))]
-              (if-let [summary (:summary package)]
-                [(md/paragraph summary)]
-                [])
-              [(md/table ["Namespace" "Symbols"]
-                         (map (:namespaces package)
-                              (fn [namespace]
-                                [(md/link (:name namespace)
-                                          (str "namespaces/"
-                                               (:name namespace)
-                                               ".html"))
-                                 (count (:entries namespace))])))]))))
+  [{:keys [package]}]
+  (md/document
+    (concat [(md/heading 1 (package-title package))]
+            (if-let [summary (:summary package)]
+              [(md/paragraph summary)]
+              [])
+            [(md/table ["Namespace" "Symbols"]
+                       (for [namespace (:namespaces package)]
+                         [(md/link (:name namespace)
+                                   (str "namespaces/"
+                                        (:name namespace)
+                                        ".html"))
+                          (count (:entries namespace))]))])))
 
 (defun namespace-symbol-url
   "Return the symbol page URL from a namespace overview page.
@@ -368,19 +387,15 @@
 
   Returns:
   A Moordown document."
-  [page]
-  (let [namespace (:namespace page)]
-    (md/document
-      (concat [(md/heading 1 (:name namespace))]
-              (if-let [summary (:summary namespace)]
-                [(md/paragraph summary)]
-                [])
-              [(md/table ["Symbol" "Summary"]
-                         (map (:entries namespace)
-                              (fn [entry]
-                                [(md/link (entry-title-code entry)
-                                          (namespace-symbol-url namespace entry))
-                                 (:summary entry)])))]))))
+  [{:keys [namespace]}]
+  (md/document
+    (concat [(md/heading 1 (:name namespace))]
+            (content-blocks namespace (:content namespace))
+            [(md/table ["Symbol" "Summary"]
+                       (for [entry (:entries namespace)]
+                         [(md/link (entry-title-code entry)
+                                   (namespace-symbol-url namespace entry))
+                          (:summary entry)]))])))
 
 (defun symbol-document
   "Return the GitHub Pages symbol document for PAGE.
@@ -480,9 +495,8 @@
 
   Returns:
   HTML navigation listing all symbols in the page namespace."
-  [page]
-  (let [namespace (:namespace page)]
-    (str "<nav class=\"reference-sidebar\">\n"
+  [{:keys [namespace] :as page}]
+  (str "<nav class=\"reference-sidebar\">\n"
          "<a class=\""
          (case (:kind page)
            :namespace "namespace-link active"
@@ -494,11 +508,10 @@
          "</a>\n"
          "<ol>\n"
          (apply join (concat [""]
-                             (map (:entries namespace)
-                                  (fn [entry]
-                                    (sidebar-symbol-link page entry)))))
+                             (for [entry (:entries namespace)]
+                               (sidebar-symbol-link page entry))))
          "</ol>\n"
-         "</nav>\n")))
+         "</nav>\n"))
 
 (defun navigation-link-html
   "Return an HTML link for navigation ITEM.
@@ -627,17 +640,16 @@
 
   Returns:
   HTML option element for VERSION."
-  [page version]
-  (let [package (:package page)]
-    (str "<option value=\""
+  [{:keys [package] :as page} version]
+  (str "<option value=\""
          (html-text (version-page-url page version))
          "\""
          (if (= version (package-version package))
            " selected"
            "")
          ">"
-         (html-text version)
-         "</option>\n")))
+       (html-text version)
+       "</option>\n"))
 
 (defun version-selector-html
   "Return package version selector HTML for PAGE.
@@ -647,20 +659,18 @@
 
   Returns:
   HTML allowing navigation between materialized package versions."
-  [page]
-  (let [package (:package page)]
-    (str "<div class=\"version-context\">\n"
-         "<span class=\"version-package\">"
-         (html-text (:name package))
-         "</span>\n"
-         "<label class=\"version-select-label\">Version "
-         "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
-         (apply join (concat [""]
-                             (map (package-versions package)
-                                  (fn [version]
-                                    (version-option-html page version)))))
-         "</select></label>\n"
-         "</div>\n")))
+  [{:keys [package] :as page}]
+  (str "<div class=\"version-context\">\n"
+       "<span class=\"version-package\">"
+       (html-text (:name package))
+       "</span>\n"
+       "<label class=\"version-select-label\">Version "
+       "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
+       (apply join (concat [""]
+                           (for [version (package-versions package)]
+                             (version-option-html page version))))
+       "</select></label>\n"
+       "</div>\n"))
 
 (defun version-context-html
   "Return visible package version context for PAGE.
@@ -684,8 +694,7 @@
   Returns:
   HTML and fallback Markdown linking to the current package version."
   [page]
-  (let [package (:package page)
-        url (package-index-url package)]
+  (let [url (package-index-url (:package page))]
     (str "<meta http-equiv=\"refresh\" content=\"0; url="
          (html-text url)
          "\">\n"
@@ -801,8 +810,7 @@
             :content layout-content}
            {:path "assets/boodle.css"
             :content stylesheet-content}]
-          (map (reference/pages catalog)
-               (fn [page]
-                 (let [page (assoc page :catalog catalog)]
-                   {:path (:path page)
-                    :content (render-page page)})))))
+          (for [source-page (reference/pages catalog)]
+            (let [page (assoc source-page :catalog catalog)]
+              {:path (:path page)
+               :content (render-page page)}))))

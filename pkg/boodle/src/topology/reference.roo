@@ -46,9 +46,9 @@
   Returns:
   Package name with version when available."
   [package]
-  (if (:version package)
-    (str (:name package) " " (:version package))
-    (:name package)))
+  (cond-> (:name package)
+    (:version package)
+    (str " " (:version package))))
 
 (defun navigation-style
   "Return the reference navigation style for CATALOG.
@@ -294,10 +294,9 @@
                                         :path (namespace-path package namespace)
                                         :package package
                                         :namespace namespace}]
-                                      (map (:entries namespace)
-                                           (fn [entry]
-                                             {:kind :symbol
-                                              :path (symbol-path package namespace entry)
-                                              :package package
-                                              :namespace namespace
-                                              :entry entry}))))))))))
+                                      (for [entry (:entries namespace)]
+                                        {:kind :symbol
+                                         :path (symbol-path package namespace entry)
+                                         :package package
+                                         :namespace namespace
+                                         :entry entry})))))))))

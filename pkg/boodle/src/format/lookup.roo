@@ -26,11 +26,10 @@
   [index]
   (or (:name (:package index))
       (:package (head (:symbols index)))
-      (if-let [namespace (:namespace (head (:symbols index)))]
+      (when-let [namespace (:namespace (head (:symbols index)))]
         (if-let [separator (index-of namespace '.')]
           (substr namespace 0 separator)
-          namespace)
-        nil)
+          namespace))
       "unknown"))
 
 (defun symbol-entry
@@ -42,19 +41,21 @@
   Returns:
   A `:boodle/entry` map."
   [symbol]
-  (let [doc (:doc symbol)]
-    (model/entry {:id (:id symbol)
-                  :name (:name symbol)
-                  :qualified-name (:qualified-name symbol)
-                  :namespace (:namespace symbol)
-                  :entry-kind (:kind symbol)
-                  :origin (:origin symbol)
-                  :summary (:summary doc)
-                  :body (:body doc)
-                  :doc doc
-                  :signatures (or (:signatures symbol) [])
-                  :source (:source symbol)
-                  :declaration-source (:declaration-source symbol)})))
+  (model/entry {:id (:id symbol)
+                :name (:name symbol)
+                :qualified-name (:qualified-name symbol)
+                :namespace (:namespace symbol)
+                :entry-kind (:kind symbol)
+                :origin (:origin symbol)
+                :summary (:summary symbol)
+                :content (or (:content symbol) [])
+                :see (or (:see symbol) [])
+                :since (:since symbol)
+                :deprecated (:deprecated symbol)
+                :doc-source (:doc-source symbol)
+                :signatures (or (:signatures symbol) [])
+                :source (:source symbol)
+                :declaration-source (:declaration-source symbol)}))
 
 (defun append-name
   "Append NAME to NAMES when NAME has not already been seen.
@@ -130,9 +131,13 @@
   Returns:
   A `:boodle/namespace` map."
   [index name]
-  (model/namespace {:name name
-                    :summary (:summary (:doc (lookup-namespace index name)))
-                    :entries (entries-in-namespace index name)}))
+  (let [namespace (lookup-namespace index name)]
+    (model/namespace {:name name
+                      :summary (:summary namespace)
+                      :content (or (:content namespace) [])
+                      :doc-source (:doc-source namespace)
+                      :source (:source namespace)
+                      :entries (entries-in-namespace index name)})))
 
 (defun package-entry
   "Convert one lookup index to a Boodle package entry.
@@ -149,9 +154,8 @@
                     :name (package-id index)
                     :version (:version package)
                     :summary (:description package)
-                    :namespaces (map (namespace-names index)
-                                     (fn [name]
-                                       (namespace-entry index name)))
+                    :namespaces (for [name (namespace-names index)]
+                                  (namespace-entry index name))
                     :entries (sort (map (:symbols index) symbol-entry)
                                    (fn [left right]
                                      (< (:qualified-name left)

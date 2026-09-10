@@ -10,7 +10,9 @@
              :description "Schema tools."}
    :sources [{:path "src/schema.roo"}]
    :namespaces [{:name "zoology.schema"
-                 :doc {:summary "Schema implementation."}}]
+                 :summary "Schema implementation."
+                 :content [{:kind :text
+                            :content "Schema implementation."}]}]
    :symbols [{:id "zoology.schema/resolve"
               :name "resolve"
               :qualified-name "zoology.schema/resolve"
@@ -18,8 +20,11 @@
               :package "zoology"
               :kind :function
               :origin :source
-              :doc {:summary "Resolve schema references."
-                    :body "Returns a fully resolved schema."}
+              :summary "Resolve schema references."
+              :content [{:kind :text
+                         :content "Resolve schema references."}
+                        {:kind :text
+                         :content "Returns a fully resolved schema."}]
               :signatures [{:display "(resolve schema)"}]
               :source {:path "src/schema.roo" :line 10 :column 1}}]})
 
@@ -34,7 +39,8 @@
               :namespace "roo"
               :kind :function
               :origin :native
-              :doc {:summary "Adds numbers."}
+              :summary "Adds numbers."
+              :content [{:kind :text :content "Adds numbers."}]
               :signatures [{:display "(+ values...)"}]}]})
 
 (def native-root-index
@@ -48,7 +54,8 @@
               :namespace "zoology.native"
               :kind :function
               :origin :native
-              :doc {:summary "Read native data."}
+              :summary "Read native data."
+              :content [{:kind :text :content "Read native data."}]
               :signatures [{:display "(read! path)"}]}]})
 
 (deftest imports-package-indexes
@@ -65,7 +72,9 @@
     (is (= "zoology.schema/resolve" (:qualified-name entry)))
     (is (= :function (:entry-kind entry)))
     (is (= "Resolve schema references." (:summary entry)))
-    (is (= "Returns a fully resolved schema." (:body entry)))
+    (is (= [{:kind :text :content "Resolve schema references."}
+            {:kind :text :content "Returns a fully resolved schema."}]
+           (:content entry)))
     (is (= [{:display "(resolve schema)"}] (:signatures entry)))))
 
 (deftest imports-combined-lookup-indexes
@@ -93,7 +102,5 @@
 
 (deftest imports-multiple-packages-in-one-catalog
   (let [catalog (lookup/catalog [sample-index roo-index])
-        package-ids (map (:packages catalog)
-                         (fn [package]
-                           (:id package)))]
+        package-ids (for [package (:packages catalog)] (:id package))]
     (is (= ["roo" "zoology"] package-ids))))

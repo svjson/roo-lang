@@ -50,7 +50,7 @@
   "Create a namespace documentation entry.
 
   Args:
-  - `data`: Map containing `:name`, `:summary`, and `:entries`.
+  - `data`: Map containing `:name`, documentation fields, and `:entries`.
 
   Returns:
   A `:boodle/namespace` map."
@@ -58,6 +58,9 @@
   (merge {:kind :boodle/namespace
           :name nil
           :summary nil
+          :content []
+          :doc-source nil
+          :source nil
           :entries []}
          data))
 
@@ -79,8 +82,11 @@
           :entry-kind nil
           :origin nil
           :summary nil
-          :body nil
-          :doc nil
+          :content []
+          :see []
+          :since nil
+          :deprecated nil
+          :doc-source nil
           :signatures []
           :source nil
           :declaration-source nil}
