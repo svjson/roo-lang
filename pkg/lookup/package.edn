@@ -1,7 +1,7 @@
 {:name lookup
  :version "0.1.0"
  :description "Roo symbol index generator."
- :dependencies []
+ :dependencies {cli-trooper "0.1.0"}
  :load-roots ["src"]
  :namespace-roots {lookup "src"}
  :dev {:dependencies {proof "0.1.0"}

@@ -3,237 +3,122 @@
             [lookup.index :as index]
             [lookup.index.incremental :as incremental]))
 
-(def usage-line
-  "Usage line for the `lookup index` command."
-  "       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta edn] [-o <file>] [<package-dir>]")
-
-(defun parse-args-step [args options]
-  (let [arg (head args)]
-    (cond
-
-      (nil? arg)
-      options
-
-      (= arg "-x")
-      (if-let [extractor (nth args 1)]
-        (let [extractor-key (keyword extractor)]
-          (parse-args-step
-           (tail (tail args))
-           (if (contains? [:forms :symbols :native] extractor-key)
-             (assoc options :extractors (concat (:extractors options)
-                                                [extractor-key]))
-             (assoc options :errors (concat (:errors options)
-                                            [(str "Unknown index extractor: "
-                                                  extractor)])))))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing extractor after -x"])))
-
-      (= arg "--root")
-      (if-let [root (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options
-                                :roots
-                                (concat (:roots options) [root])))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing directory after --root"])))
-
-      (= arg "--package-name")
-      (if-let [name (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options :package-name name))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing name after --package-name"])))
-
-      (= arg "--package-version")
-      (if-let [version (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options :package-version version))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing version after --package-version"])))
-
-      (= arg "--package-description")
-      (if-let [description (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options :package-description description))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing description after --package-description"])))
-
-      (= arg "--exclude")
-      (if-let [path (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options
-                                :excludes
-                                (concat (:excludes options) [path])))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing path after --exclude"])))
-
-      (= arg "--state")
-      (if-let [state (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options :state state))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing directory after --state"])))
-
-      (= arg "--update")
-      (if-let [path (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options
-                                :updates
-                                (concat (or (:updates options) []) [path])))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing file after --update"])))
-
-      (= arg "--emit-delta")
-      (if-let [format (nth args 1)]
-        (parse-args-step
-          (tail (tail args))
-          (if (= format "edn")
-            (assoc options :emit-delta :edn)
-            (assoc options
-                   :errors
-                   (concat (:errors options)
-                           [(str "Unknown delta format: " format)]))))
-        (assoc options :errors (concat (:errors options)
-                                       ["Missing format after --emit-delta"])))
-
-      (or (= arg "-o")
-          (= arg "--out"))
-      (if-let [out (nth args 1)]
-        (parse-args-step (tail (tail args))
-                         (assoc options :out out))
-        (assoc options :errors (concat (:errors options)
-                                       [(str "Missing file after " arg)])))
-
-      (= "-" (substr arg 0 1))
-      (parse-args-step (tail args)
-                       (assoc options
-                              :errors
-                              (concat (:errors options)
-                                      [(str "Unknown index option: " arg)])))
-
-      (nil? (:package-dir options))
-      (parse-args-step (tail args)
-                       (assoc options :package-dir arg))
-
-      true
-      (parse-args-step (tail args)
-                       (assoc options
-                              :errors
-                              (concat (:errors options)
-                                      [(str "Unexpected index argument: "
-                                            arg)]))))))
-
-(defun parse-args
-  "Parse arguments for the `lookup index` command.
+(defun validation-errors
+  "Validate semantic constraints between lookup index options.
 
   Args:
-  - `args`: Arguments after the `index` command name.
+  - `options`: Fully parsed index command options.
 
   Returns:
-  An options map with `:extractors`, `:out`, `:package-dir`, `:roots`,
-  `:excludes`, package metadata options, and `:errors`."
-  [args]
-  (let [options (parse-args-step args
-                                 {:extractors []
-                                  :out nil
-                                  :package-dir nil
-                                  :roots []
-                                  :excludes []
-                                  :state nil
-                                  :updates []
-                                  :emit-delta nil
-                                  :package-name nil
-                                  :package-version nil
-                                  :package-description nil
-                                  :errors []})
-        has-package? (some? (:package-dir options))
+  A vector containing the first semantic diagnostic, or an empty vector when
+  the options describe a supported indexing operation."
+  [options]
+  (let [has-package? (some? (:package-dir options))
         has-roots? (not-empty? (:roots options))
-        with-default-extractors (if (empty? (:extractors options))
-                                  (assoc options
-                                         :extractors
-                                         (if has-package? [:symbols] [:native]))
-                                  options)
-        forms? (contains? (:extractors with-default-extractors) :forms)
-        native? (contains? (:extractors with-default-extractors) :native)
-        state? (some? (:state with-default-extractors))
-        updates? (not-empty? (:updates with-default-extractors))
-        emit-delta? (some? (:emit-delta with-default-extractors))
-        has-package-metadata? (or (:package-version with-default-extractors)
-                                  (:package-description with-default-extractors))]
+        state? (some? (:state options))]
     (cond
-
-      (and has-package-metadata? (nil? (:package-name with-default-extractors)))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Package name required for package metadata"]))
+      (and (or (:package-version options)
+               (:package-description options))
+           (nil? (:package-name options)))
+      [{:kind :package-name-required
+        :message "Package name required for package metadata"}]
 
       (and (not has-package?) (not has-roots?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Missing package directory or root"]))
+      [{:kind :index-input-required
+        :message "Missing package directory or root"}]
 
-      (and forms? (not has-package?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Package directory required for forms extractor"]))
+      (and (contains? (:extractors options) :forms)
+           (not has-package?))
+      [{:kind :package-dir-required
+        :extractor :forms
+        :message "Package directory required for forms extractor"}]
 
-      (and native? (not has-roots?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Root required for native extractor"]))
+      (and (contains? (:extractors options) :native)
+           (not has-roots?))
+      [{:kind :root-required
+        :extractor :native
+        :message "Root required for native extractor"}]
 
-      (and updates? (not state?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["--update requires --state"]))
+      (and (not-empty? (:updates options)) (not state?))
+      [{:kind :state-required
+        :argument "--update"
+        :message "--update requires --state"}]
 
-      (and emit-delta? (not state?))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["--emit-delta requires --state"]))
+      (and (some? (:emit-delta options)) (not state?))
+      [{:kind :state-required
+        :argument "--emit-delta"
+        :message "--emit-delta requires --state"}]
 
       (and state?
            (or (not has-package?)
                has-roots?
-               (not= [:symbols] (:extractors with-default-extractors))))
-      (assoc with-default-extractors
-             :errors
-             (concat (:errors with-default-extractors)
-                     ["Incremental state currently requires one package directory and the symbols extractor"]))
+               (not= [:symbols] (:extractors options))))
+      [{:kind :invalid-incremental-options
+        :message "Incremental state currently requires one package directory and the symbols extractor"}]
 
       true
-      with-default-extractors)))
+      [])))
 
-(defun run! [args]
-  "Run the `lookup index` command.
+(defun execute!
+  "Build an index artifact and print or write the requested representation.
 
   Args:
-  - `args`: Arguments after the `index` command name.
+  - `context`: CLI invocation context; index execution does not inspect it.
+  - `options`: Validated index command options.
 
   Returns:
-  A map containing either `:errors` or the generated `:value`."
-  [args]
-  (let [options (parse-args args)]
-    (if (not-empty? (:errors options))
-      {:errors (:errors options)}
-      (if (:state options)
-        (let [result (incremental/index-with-state options)
-              snapshot (:snapshot result)
-              value (if (:emit-delta options) (:delta result) snapshot)]
-          (when-let [out (:out options)]
-            (io/spit! out (str snapshot "\n")))
-          {:value (if (and (:out options) (nil? (:emit-delta options)))
-                    nil
-                    value)})
-        (let [value (index/index-with-options options)]
-          (if (nil? (:out options))
-            {:value value}
-            (do
-              (io/spit! (:out options) (str value "\n"))
-              {:value nil})))))))
+  The generated index snapshot or delta."
+  [_context options]
+  (if (:state options)
+    (let [result (incremental/index-with-state options)
+          snapshot (:snapshot result)
+          value (if (:emit-delta options) (:delta result) snapshot)]
+      (when-let [out (:out options)]
+        (io/spit! out (str snapshot "\n")))
+      (when (or (nil? (:out options)) (:emit-delta options))
+        (prn! value))
+      value)
+    (let [value (index/index-with-options options)]
+      (if-let [out (:out options)]
+        (io/spit! out (str value "\n"))
+        (prn! value))
+      value)))
+
+(def command
+  "cli-trooper declaration for the `lookup index` command."
+  {:description "Build a Roo index artifact."
+   :mixin :source-paths
+   :execute! execute!
+   :validate validation-errors
+   :flags {"x" {:type :enum
+                 :name "extractor"
+                 :values ["forms" "symbols" "native"]
+                 :repeatable? true
+                 :destination :extractors
+                 :default (fn [options]
+                            (if (:package-dir options)
+                              [:symbols]
+                              [:native]))}
+           ["o" "out"] {:type :file
+                         :default nil}
+           "package-name" {:type :string
+                           :name "name"
+                           :default nil}
+           "package-version" {:type :string
+                              :name "version"
+                              :default nil}
+           "package-description" {:type :text
+                                  :default nil}
+           "state" {:type :dir
+                    :default nil}
+           "update" {:type :file
+                     :repeatable? true
+                     :destination :updates
+                     :default []}
+           "emit-delta" {:type :enum
+                         :values ["edn"]
+                         :default nil}}
+   :positional [{:type :dir
+                 :name "package-dir"
+                 :optional? true
+                 :default nil}]})

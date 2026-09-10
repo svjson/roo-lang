@@ -88,19 +88,19 @@
                  [{:params {"path" {:content [{:kind :text
                                                :content "Path to read."}]}}
                    :param-order ["path"]}]}
-           :source {:path "assets/native-package/native/include/sample.h"
+           :source {:path "test/assets/native-package/native/include/sample.h"
                     :line 6
                     :column 1}
            :declaration-source
-           {:path "assets/native-package/native/include/sample.h"
+           {:path "test/assets/native-package/native/include/sample.h"
             :line 21
             :column 1}}]
          (native-entries/entries!
-           "assets/native-package/native/include/sample.h"))))
+           "test/assets/native-package/native/include/sample.h"))))
 
 (deftest entries!/returns-every-entry-from-an-implementation-file
   (is (= [{:kind :native-identity-comment
-           :source {:path "assets/native-package/native/src/sample.cpp"
+           :source {:path "test/assets/native-package/native/src/sample.cpp"
                     :line 5
                     :column 1}
            :native-class "SampleReadFunction"
@@ -114,22 +114,22 @@
                  [{:params {"path" {:content [{:kind :text
                                                :content "Path to write."}]}}
                    :param-order ["path"]}]}
-           :source {:path "assets/native-package/native/src/sample.cpp"
+           :source {:path "test/assets/native-package/native/src/sample.cpp"
                     :line 8
                     :column 1}
            :qualified-name "sample.native/write!"
            :native-kind :function}]
          (native-entries/entries!
-           "assets/native-package/native/src/sample.cpp"))))
+           "test/assets/native-package/native/src/sample.cpp"))))
 
 
 
 ;; lookup.source.native.parse.entries/package-files
 
 (deftest package-files/returns-declared-native-source-files
-  (is (= ["assets/native-package/native/include/sample.h"
-          "assets/native-package/native/src/sample.cpp"]
-         (native-entries/package-files "assets/native-package"))))
+  (is (= ["test/assets/native-package/native/include/sample.h"
+          "test/assets/native-package/native/src/sample.cpp"]
+         (native-entries/package-files "test/assets/native-package"))))
 
 (deftest package-files/prefers-a-declared-source-over-the-artifact-path
   ;; `:path` here ("native") holds no source at all - a package whose
@@ -137,17 +137,17 @@
   ;; staged (pixils' own layout, discovered directly: its `:path "native"`
   ;; only ever holds the built `.so`) declares `:source` to say where the
   ;; real source is instead.
-  (is (= ["assets/native-package-split-source/include/sample.h"
-          "assets/native-package-split-source/src/sample.cpp"]
-         (native-entries/package-files "assets/native-package-split-source"))))
+  (is (= ["test/assets/native-package-split-source/include/sample.h"
+          "test/assets/native-package-split-source/src/sample.cpp"]
+         (native-entries/package-files "test/assets/native-package-split-source"))))
 
 
 
 ;; lookup.source.native.parse.entries/root-files
 
 (deftest root-files/excludes-native-source-subtrees
-  (is (= ["assets/native-root-only/include/extra.h"
-          "assets/native-root-only/src/extra.cpp"]
-         (native-entries/root-files "assets"
-                                    ["assets/native-package"
-                                     "assets/native-package-split-source"]))))
+  (is (= ["test/assets/native-root-only/include/extra.h"
+          "test/assets/native-root-only/src/extra.cpp"]
+         (native-entries/root-files "test/assets"
+                                    ["test/assets/native-package"
+                                     "test/assets/native-package-split-source"]))))

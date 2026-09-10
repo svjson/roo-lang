@@ -9,7 +9,7 @@
 
 (deftest source-form-index/builds-source-form-index
   (p/when []
-    (index/source-form-index ".."))
+    (index/source-form-index "."))
 
   (p/then [source-index]
     (let [sources (:sources source-index)
@@ -52,24 +52,20 @@
 
 (deftest symbol-index/builds-symbol-index-v1
   (p/when []
-    (index/symbol-index ".."))
+    (index/symbol-index "."))
 
   (p/then [symbol-index]
     (let [sources (:sources symbol-index)
           namespaces (:namespaces symbol-index)
           symbols (:symbols symbol-index)
-          version-symbol (find-first symbols
-                                     (fn [symbol]
-                                       (= "lookup.cli/version"
-                                          (:qualified-name symbol))))
           symbol-index-symbol (find-first symbols
                                           (fn [symbol]
                                             (= "lookup.index/symbol-index"
                                                (:qualified-name symbol))))
-          command-symbol (find-first symbols
-                                     (fn [symbol]
-                                       (= "lookup.cli/command"
-                                          (:qualified-name symbol))))
+          main-symbol (find-first symbols
+                                  (fn [symbol]
+                                    (= "lookup.cli/main"
+                                       (:qualified-name symbol))))
           symbol-index-signature (head (:signatures symbol-index-symbol))]
       (is (= :roo/symbol-index (:format symbol-index)))
       (is (= 1 (:version symbol-index)))
@@ -88,11 +84,6 @@
       (is (any? namespaces
                 (fn [namespace]
                   (= "lookup.source" (:name namespace)))))
-      (is (= :var (:kind version-symbol)))
-      (is (= :source (:origin version-symbol)))
-      (is (= :public (:visibility version-symbol)))
-      (is (= [] (:signatures version-symbol)))
-      (is (= "Lookup command version." (:summary version-symbol)))
       (is (= :function (:kind symbol-index-symbol)))
       (is (= "Build a symbol index for a package."
              (:summary symbol-index-symbol)))
@@ -102,8 +93,8 @@
                :optional? false
                :rest? false
                :content [{:kind :text
-                          :content "Command line argument vector."}]}]
-             (:params (head (:signatures command-symbol)))))
+                          :content "Command-line argument vector."}]}]
+             (:params (head (:signatures main-symbol)))))
       (is (= [{:name "package-dir"
                :display "package-dir"
                :optional? false
@@ -121,7 +112,7 @@
 
 (deftest symbol-index/builds-native-symbols
   (p/when []
-    (index/symbol-index "assets/native-package"))
+    (index/symbol-index "test/assets/native-package"))
 
   (p/then [symbol-index]
     (let [symbols (:symbols symbol-index)
@@ -161,7 +152,7 @@
 (deftest root-index/builds-native-only-symbol-index-from-generic-root
   (p/when []
     (index/root-index
-      {:roots ["assets/native-root-only"]
+      {:roots ["test/assets/native-root-only"]
        :excludes []
        :extractors [:native]}))
 
@@ -170,13 +161,13 @@
           native-namespace (head (:namespaces symbol-index))]
       (is (= :roo/symbol-index (:format symbol-index)))
       (is (= {:kind :roots
-              :roots ["assets/native-root-only"]
+              :roots ["test/assets/native-root-only"]
               :excludes []
               :extractors [:native]}
              (:origin symbol-index)))
       (is (nil? (:package symbol-index)))
-      (is (= [{:path "assets/native-root-only/include/extra.h"}
-              {:path "assets/native-root-only/src/extra.cpp"}]
+      (is (= [{:path "test/assets/native-root-only/include/extra.h"}
+              {:path "test/assets/native-root-only/src/extra.cpp"}]
              (:sources symbol-index)))
       (is (= "extra.native/read!" (:id native-symbol)))
       (is (nil? (:package native-symbol)))
@@ -191,7 +182,7 @@
 (deftest root-index/includes-package-metadata
   (p/when []
     (index/root-index
-      {:roots ["assets/native-root-only"]
+      {:roots ["test/assets/native-root-only"]
        :excludes []
        :extractors [:native]
        :package {:name "roo"
@@ -208,16 +199,16 @@
 (deftest root-index/honors-native-source-excludes
   (p/when []
     (index/root-index
-      {:roots ["assets"]
-       :excludes ["assets/native-package"
-                  "assets/native-package-split-source"]
+      {:roots ["test/assets"]
+       :excludes ["test/assets/native-package"
+                  "test/assets/native-package-split-source"]
        :extractors [:native]}))
 
   (p/then [symbol-index]
     (is (= {:kind :roots
-            :roots ["assets"]
-            :excludes ["assets/native-package"
-                       "assets/native-package-split-source"]
+            :roots ["test/assets"]
+            :excludes ["test/assets/native-package"
+                       "test/assets/native-package-split-source"]
             :extractors [:native]}
            (:origin symbol-index)))
     (is (= ["extra.native/read!"]
@@ -230,8 +221,8 @@
 (deftest symbol-index-with-roots/includes-symbols-from-generic-roots
   (p/when []
     (index/symbol-index-with-roots
-      "assets/native-package"
-      ["assets/native-root-only"]
+      "test/assets/native-package"
+      ["test/assets/native-root-only"]
       []))
 
   (p/then [symbol-index]

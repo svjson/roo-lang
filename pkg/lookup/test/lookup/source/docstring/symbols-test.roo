@@ -28,8 +28,8 @@
 
 (deftest source-symbols/extracts-docstrings-from-def-and-defun
   (p/given
-    {:path "assets/docstrings-sample.roo"
-     :forms (reader/read-file-forms! "assets/docstrings-sample.roo")})
+    {:path "test/assets/docstrings-sample.roo"
+     :forms (reader/read-file-forms! "test/assets/docstrings-sample.roo")})
 
   (p/when [source]
     (docstring-symbols/source-symbols "sample" source))
@@ -44,7 +44,7 @@
              :origin :source
              :visibility :public
              :status :stable
-             :source {:path "assets/docstrings-sample.roo"
+             :source {:path "test/assets/docstrings-sample.roo"
                       :line 3
                       :column 1
                       :start {:line 3 :column 1}
@@ -54,7 +54,7 @@
                         :content "The answer used by examples."}]
              :since "0.1.0"
              :doc-source {:kind :roo-docstring
-                          :source {:path "assets/docstrings-sample.roo"
+                          :source {:path "test/assets/docstrings-sample.roo"
                                    :line 3
                                    :column 1
                                    :start {:line 3 :column 1}
@@ -69,7 +69,7 @@
              :origin :source
              :visibility :public
              :status :stable
-             :source {:path "assets/docstrings-sample.roo"
+             :source {:path "test/assets/docstrings-sample.roo"
                       :line 10
                       :column 1
                       :start {:line 10 :column 1}
@@ -85,7 +85,7 @@
                        {:kind :code :content "(greet \"Ada\" \"Dr.\")"}]
              :see ["str"]
              :doc-source {:kind :roo-docstring
-                          :source {:path "assets/docstrings-sample.roo"
+                          :source {:path "test/assets/docstrings-sample.roo"
                                    :line 10
                                    :column 1
                                    :start {:line 10 :column 1}

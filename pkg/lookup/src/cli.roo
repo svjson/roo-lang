@@ -1,131 +1,39 @@
 (ns lookup.cli
-  (:require [lookup.analysis :as analysis]
+  (:require [cli-trooper :as cli]
             [lookup.command.audit :as audit]
             [lookup.command.index :as index]
-            [lookup.command.thing-at :as thing-at]
-            [lookup.system :as system]))
+            [lookup.command.thing-at :as thing-at]))
 
-(def usage-lines
-  "Command usage lines printed by `lookup --help` and parse errors."
-  ["Usage: lookup [--help|--version]"
-   index/usage-line
-   audit/usage-line
-   thing-at/usage-line])
-
-(def version
-  "Lookup command version."
-  "0.1.0")
-
-(defun help-lines
-  "Build the full help text for the lookup command.
-
-  Returns:
-  A vector of lines for `lookup --help`."
-  []
-  (concat ["lookup: build Roo symbol index artifacts"]
-          usage-lines
-          [""
-           "Extractors: forms, symbols, native"
-           "Default: symbols for packages, native for roots"
-           "Roots are scanned by applicable extractors; excludes skip paths and subtrees"]))
-
-(defun version-text
-  "Build the lookup version output.
-
-  Returns:
-  Version text printed by `lookup --version`."
-  []
-  (str "lookup " version))
-
-(defun command
-  "Resolve CLI arguments to a lookup command.
-
-  Args:
-  - `args`: Command line argument vector.
-
-  Returns:
-  One of `:help`, `:version`, `:index`, `:audit`, `:thing-at`, or `:usage`."
-  [args]
-  (let [first-arg (head args)]
-    (cond
-
-      (or (nil? first-arg)
-          (contains? ["--help" "-h"] first-arg))
-      :help
-
-      (= first-arg "--version")
-      :version
-
-      (= first-arg "index")
-      :index
-
-      (= first-arg "audit")
-      :audit
-
-      (= first-arg "thing-at")
-      :thing-at
-
-      true
-      :usage)))
-
-(defun print-lines! [lines]
-  (map lines prn!))
-
-(defun print-usage! []
-  (print-lines! usage-lines))
-
-(defun print-help! []
-  (print-lines! (help-lines)))
-
-(defun print-version! []
-  (prn! (version-text)))
-
-(defun print-errors-and-usage! [errors]
-  (map errors prn!)
-  (print-usage!))
-
-(defun print-command-result! [result]
-  (let [errors (or (:errors result) [])]
-    (if (not-empty? errors)
-      (print-errors-and-usage! errors)
-      (case (:format result)
-        :text (print-lines! (:output result))
-        :default (when-let [value (:value result)]
-                   (prn! value))))))
-
-(defun print-index! [args]
-  (let [result (index/run! (tail args))
-        errors (:errors result)]
-    (if (not-empty? errors)
-      (system/fail!
-        (str (apply join (concat ["\n"] errors))
-             "\n"
-             index/usage-line))
-      (print-command-result! result))))
-
-(defun print-audit! [args]
-  (let [result (audit/run! (tail args))]
-    (print-command-result! result)
-    (if (:failed? result)
-      (system/fail! "lookup audit failed")
-      result)))
-
-(defun print-thing-at! [args]
-  (print-command-result! (thing-at/run! args)))
+(def application
+  "cli-trooper declaration for the Lookup command-line application."
+  {:application "lookup"
+   :version "0.1.0"
+   :description "build Roo symbol index artifacts"
+   :features {:help {:after [""
+                              "Extractors: forms, symbols, native"
+                              "Default: symbols for packages, native for roots"
+                              "Roots are scanned by applicable extractors; excludes skip paths and subtrees"]}}
+   :mixins {:source-paths
+            {:flags {"root" {:type :dir
+                              :name "dir"
+                              :repeatable? true
+                              :destination :roots
+                              :default []}
+                     "exclude" {:type :path
+                                :repeatable? true
+                                :destination :excludes
+                                :default []}}}}
+   :commands {"index" index/command
+              "audit" audit/command
+              "thing-at" thing-at/command}})
 
 (defun main
-  "Run the lookup command line entry point.
+  "Run the Lookup command-line application.
 
   Args:
-  - `args`: Command line argument vector.
+  - `args`: Command-line argument vector.
 
   Returns:
-  The result of printing or writing the selected lookup command output."
+  A process-compatible exit code."
   [args]
-  (case (command args)
-    :help (print-help!)
-    :version (print-version!)
-    :index (print-index! args)
-    :audit (print-audit! args)
-    :thing-at (print-thing-at! args)
-    :default (print-usage!)))
+  (cli/run! application {:args args}))

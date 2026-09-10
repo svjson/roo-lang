@@ -29,7 +29,7 @@ assert_eq()
 
 printf '%s\n' "==> Testing lookup proof suite"
 (
-  cd "$LOOKUP_PACKAGE/test"
+  cd "$LOOKUP_PACKAGE"
   "$ROO" proof
 )
 
@@ -39,9 +39,9 @@ if ! HELP_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" --help); then
 fi
 assert_eq "lookup --help output" \
   "lookup: build Roo symbol index artifacts
-Usage: lookup [--help|--version]
-       lookup index [-x extractor]... [--root <dir>]... [--exclude <path>]... [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta edn] [-o <file>] [<package-dir>]
-       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>
+
+Usage: lookup index [<package-dir>] [--root <dir>]... [--exclude <path>]... [-x <extractor>]... [-o,--out <file>] [--package-name <name>] [--package-version <version>] [--package-description <text>] [--state <dir>] [--update <file>]... [--emit-delta <edn>]
+       lookup audit <index-file|source-root|package-dir> [--root <dir>]... [--exclude <path>]... [-o,--output-format <edn|text>] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--fail-on <warning|error>]
        lookup thing-at <package-dir> <file> <line> <column>
 
 Extractors: forms, symbols, native
@@ -61,7 +61,7 @@ if ! INDEX_OUTPUT=$("$ROO" "$LOOKUP_PACKAGE" index "$LOOKUP_PACKAGE"); then
   fail "lookup index command failed"
 fi
 case "$INDEX_OUTPUT" in
-  *":format :roo/symbol-index"*":package {:name \"lookup\""*":qualified-name \"lookup.cli/command\""*) ;;
+  *":format :roo/symbol-index"*":package {:name \"lookup\""*":qualified-name \"lookup.cli/main\""*) ;;
   *)
     printf '%s\n' "unexpected lookup index output:" >&2
     printf '%s\n' "$INDEX_OUTPUT" >&2

@@ -3,10 +3,6 @@
             [lookup.reader :as reader]
             [lookup.index :as index]))
 
-(def usage-line
-  "Usage line for the `lookup thing-at` command."
-  "       lookup thing-at <package-dir> <file> <line> <column>")
-
 (defun resolve-namespace [package-dir name]
   "Look up NAME as a namespace declared in PACKAGE-DIR's own symbol index -
   the fallback for a namespace reference (e.g. in a `:require` clause) that
@@ -52,29 +48,34 @@
         result)
       result)))
 
-(defun run! [args]
-  "Run the `lookup thing-at` command.
+(defun execute!
+  "Resolve and print the Roo entity at a source position.
 
   Args:
-  - `args`: Arguments after the `thing-at` command name.
+  - `context`: CLI invocation context; thing-at execution does not inspect it.
+  - `options`: Parsed thing-at command options.
 
   Returns:
-  A map containing either `:errors` or the generated `:value`."
-  (let [package-dir (nth args 1)
-        file (nth args 2)
-        line (nth args 3)
-        column (nth args 4)]
-    (if (or (nil? package-dir)
-            (nil? file)
-            (nil? line)
-            (nil? column))
-      {:errors ["Missing argument"]}
-      {:format :default
-       :value (with-namespace-fallback
-                package-dir
-                (analysis/thing-at! package-dir
-                                    file
-                                    line
-                                    column
-                                    (reader/read-stdin!)))
-       :errors []})))
+  The analysis result, with namespace fallback resolution applied."
+  [_context options]
+  (let [result (with-namespace-fallback (:package-dir options)
+                 (analysis/thing-at! (:package-dir options)
+                                     (:file options)
+                                     (:line options)
+                                     (:column options)
+                                     (reader/read-stdin!)))]
+    (prn! result)
+    result))
+
+(def command
+  "cli-trooper declaration for the `lookup thing-at` command."
+  {:description "Resolve the Roo entity at a source position."
+   :execute! execute!
+   :positional [{:type :dir
+                 :name "package-dir"}
+                {:type :file
+                 :name "file"}
+                {:type :string
+                 :name "line"}
+                {:type :string
+                 :name "column"}]})

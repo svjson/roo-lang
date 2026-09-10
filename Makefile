@@ -393,7 +393,7 @@ test\:zoology: build stage-packages
 	cd $(PACKAGE_STAGE)/zoology/test && $(CURDIR)/build/roo proof
 
 test\:lookup: build stage-packages
-	cd $(PACKAGE_STAGE)/lookup/test && $(CURDIR)/build/roo proof
+	cd $(PACKAGE_STAGE)/lookup && $(CURDIR)/build/roo proof
 
 test\:loom: build stage-packages
 	cd $(PACKAGE_STAGE)/loom/test && $(CURDIR)/build/roo proof

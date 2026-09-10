@@ -37,7 +37,7 @@
 (deffixture new-native-index-state {:storage :cache}
   (let [state-dir (io/join-path "build" "lookup-incremental-native-state")]
     {:state-dir state-dir
-     :options {:package-dir "assets/native-package"
+     :options {:package-dir "test/assets/native-package"
                :extractors [:symbols]
                :state state-dir}}))
 

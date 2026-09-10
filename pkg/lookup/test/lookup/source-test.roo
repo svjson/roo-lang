@@ -7,11 +7,11 @@
   (is (= false (source/source-file? "package.edn"))))
 
 (deftest source-entry/reads-broken-source-file-into-error-entry
-  (is (= {:path "assets/broken-syntax.roo"
-          :forms [{:error "Could not read Roo forms from assets/broken-syntax.roo: Unexpected end of input"
-                   :path "assets/broken-syntax.roo"
-                   :source {:path "assets/broken-syntax.roo"}}]}
-         (source/source-entry "assets/broken-syntax.roo"))))
+  (is (= {:path "test/assets/broken-syntax.roo"
+          :forms [{:error "Could not read Roo forms from test/assets/broken-syntax.roo: Unexpected end of input"
+                   :path "test/assets/broken-syntax.roo"
+                   :source {:path "test/assets/broken-syntax.roo"}}]}
+         (source/source-entry "test/assets/broken-syntax.roo"))))
 
 (deftest package-load-roots/combines-explicit-and-inferred-production-roots
   (is (= ["lib" "assets" "generated" "testing"]

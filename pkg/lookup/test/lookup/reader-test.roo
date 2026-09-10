@@ -3,7 +3,7 @@
             [lookup.reader :as reader]))
 
 (deftest read-file-forms!/reads-top-level-forms-with-source-locations
-  (let [forms (reader/read-file-forms! "assets/read-forms-sample.roo")
+  (let [forms (reader/read-file-forms! "test/assets/read-forms-sample.roo")
         ns-entry (head forms)
         def-entry (nth forms 1)
         defun-entry (nth forms 2)
@@ -18,7 +18,7 @@
     (is (= "answer" (str (nth def-form 1))))
     (is (= "defun" (str (head defun-form))))
     (is (= "greet" (str (nth defun-form 1))))
-    (is (= "assets/read-forms-sample.roo" (:path ns-source)))
+    (is (= "test/assets/read-forms-sample.roo" (:path ns-source)))
     (is (= 1 (:line ns-source)))
     (is (= 1 (:column ns-source)))
     (is (= 3 (:line (:source def-entry))))

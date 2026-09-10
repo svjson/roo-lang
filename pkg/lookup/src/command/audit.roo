@@ -1,140 +1,19 @@
 (ns lookup.command.audit
   (:require [roo.io :as io]
-            [roo.string :as string]
             [lookup.audit :as audit]
             [lookup.index :as index]
-            [lookup.source :as source]
             [lookup.system :as system]))
 
-(def usage-line
-  "Usage line for the `lookup audit` command."
-  "       lookup audit [-o|--output-format edn|text] [--require-summary] [--require-param-docs] [--require-signatures] [--allow-zero-arity <symbol>]... [--root <dir>]... [--exclude <path>]... [--fail-on warning|error] <index-file|source-root|package-dir>")
-
-(defun parse-args-step [args options]
-  (let [arg (head args)]
-    (cond
-
-      (nil? arg)
-      options
-
-      (= arg "--require-summary")
-      (parse-args-step (tail args)
-                       (assoc options :require-summary? true))
-
-      (= arg "--require-param-docs")
-      (parse-args-step (tail args)
-                       (assoc options :require-param-docs? true))
-
-      (= arg "--require-signatures")
-      (parse-args-step (tail args)
-                       (assoc options :require-signatures? true))
-
-      (or (= arg "-o")
-          (= arg "--output-format"))
-      (if-let [format (nth args 1)
-               format-key (keyword format)]
-        (parse-args-step
-         (slice args 2)
-         (if (contains? [:edn :text] format-key)
-           (assoc options :format format-key)
-           (update options :errors
-                   (fn [errors]
-                     (append errors (str "Unknown audit output format: " format))))))
-        (update options :errors
-                (fn [errors]
-                  (append errors (str "Missing format after " arg)))))
-
-      (= arg "--allow-zero-arity")
-      (if-let [symbol (nth args 1)]
-        (parse-args-step
-         (slice args 2)
-         (update options :allow-zero-arity
-                 (fn [symbols]
-                   (append symbols symbol))))
-        (update options :errors
-                (fn [errors]
-                  (append errors "Missing symbol after --allow-zero-arity"))))
-
-      (= arg "--root")
-      (if-let [root (nth args 1)]
-        (parse-args-step (slice args 2)
-                         (update options :roots
-                                 (fn [roots]
-                                   (append roots root))))
-        (update options :errors
-                (fn [errors]
-                  (append errors "Missing directory after --root"))))
-
-      (= arg "--exclude")
-      (if-let [path (nth args 1)]
-        (parse-args-step (slice args 2)
-                         (update options :excludes
-                                 (fn [excludes]
-                                   (append excludes path))))
-        (update options :errors
-                (fn [errors]
-                  (append errors "Missing path after --exclude"))))
-
-      (= arg "--fail-on")
-      (if-let [level (nth args 1)]
-        (let [level-key (keyword level)]
-          (parse-args-step
-           (slice args 2)
-           (if (contains? [:warning :error] level-key)
-             (assoc options :fail-on level-key)
-             (update options :errors
-                     (fn [errors]
-                       (append errors (str "Unknown audit failure level: " level)))))))
-        (update options :errors
-                (fn [errors]
-                  (append errors "Missing level after --fail-on"))))
-
-      (string/starts-with? arg "-")
-      (parse-args-step (tail args)
-                       (update options :errors
-                               (fn [errors]
-                                 (append errors (str "Unknown audit option: " arg)))))
-
-      (nil? (:input options))
-      (parse-args-step (tail args)
-                       (assoc options :input arg))
-
-      true
-      (parse-args-step (tail args)
-                       (update options :errors
-                               (fn [errors]
-                                 (append errors (str "Unexpected audit argument: " arg))))))))
-
-(defun parse-args
-  "Parse arguments for the `lookup audit` command.
+(defun audit-index!
+  "Load or build the symbol index selected by audit options.
 
   Args:
-  - `args`: Arguments after the `audit` command name.
+  - `options`: Audit options containing `:input`, source roots, and exclusions.
 
   Returns:
-  An audit options map with `:input`, requirement toggles, source roots,
-  excludes, `:allow-zero-arity`, `:format`, `:fail-on`, and `:errors`."
-  [args]
-  (let [options (parse-args-step args
-                                 {:input nil
-                                  :require-summary? false
-                                  :require-param-docs? false
-                                  :require-signatures? false
-                                  :allow-zero-arity []
-                                  :roots []
-                                  :excludes []
-                                  :format :edn
-                                  :fail-on nil
-                                  :errors []})]
-    (if (:input options)
-      options
-      (update options :errors
-              (fn [errors]
-                (append errors "Missing audit input"))))))
-
-(defun audit-index! [{:keys [input] :as options}]
+  A Roo symbol index artifact. Raises an error when the input does not exist."
+  [{:keys [input] :as options}]
   (cond
-
     (io/file? input)
     (io/slurp-edn! input)
 
@@ -155,9 +34,16 @@
     true
     (system/fail! (str "lookup audit input does not exist: " input))))
 
-(defun diagnostic-extra [diagnostic]
-  (cond
+(defun diagnostic-extra
+  "Format optional signature and parameter context for an audit diagnostic.
 
+  Args:
+  - `diagnostic`: One audit diagnostic map.
+
+  Returns:
+  A bracketed context suffix, or an empty string when no context is present."
+  [diagnostic]
+  (cond
     (and (:signature diagnostic)
          (:param diagnostic))
     (str " [" (:signature diagnostic) ", param: " (:param diagnostic) "]")
@@ -171,7 +57,15 @@
     true
     ""))
 
-(defun diagnostic-line [diagnostic]
+(defun diagnostic-line
+  "Render one audit diagnostic as a text line.
+
+  Args:
+  - `diagnostic`: One audit diagnostic map.
+
+  Returns:
+  A human-readable diagnostic string."
+  [diagnostic]
   (str (name (:severity diagnostic))
        " "
        (name (:kind diagnostic))
@@ -181,45 +75,76 @@
        (:message diagnostic)
        (diagnostic-extra diagnostic)))
 
-(defun diagnostic-count-line [diagnostic-count]
-  (str "lookup audit: "
-       diagnostic-count
-       " "
-       (case diagnostic-count
-         1 "diagnostic"
-         :default "diagnostics")))
+(defun text-lines
+  "Render an audit result as text output.
 
-(defun text-lines [result]
+  Args:
+  - `result`: Roo lookup-audit artifact.
+
+  Returns:
+  A vector of human-readable audit output lines."
+  [result]
   (let [diagnostics (:diagnostics result)
         diagnostic-count (count diagnostics)]
     (case diagnostic-count
       0 ["lookup audit: no diagnostics"]
-      :default (concat [(diagnostic-count-line diagnostic-count)]
+      :default (concat [(str "lookup audit: "
+                             diagnostic-count
+                             " "
+                             (case diagnostic-count
+                               1 "diagnostic"
+                               :default "diagnostics"))]
                        (map diagnostics diagnostic-line)
                        [(if (:failed? result)
                           "lookup audit: failed"
                           "lookup audit: passed")]))))
 
-(defun format-result [result format]
-  (case format
-    :text (text-lines result)
-    :default result))
-
-(defun run! [args]
-  "Run the `lookup audit` command.
+(defun execute!
+  "Audit the selected index or source input and emit the requested format.
 
   Args:
-  - `args`: Arguments after the `audit` command name.
+  - `context`: CLI invocation context; audit execution does not inspect it.
+  - `options`: Validated audit command options.
 
   Returns:
-  A map containing either `:errors` or the audit result and formatted output."
-  [args]
-  (let [options (parse-args args)]
-    (if (not-empty? (:errors options))
-      {:errors (:errors options)}
-      (let [result (audit/symbol-index (audit-index! options)
-                                       options)]
-        {:value result
-         :format (:format options)
-         :output (format-result result (:format options))
-         :failed? (:failed? result)}))))
+  The Roo lookup-audit artifact. Raises a process failure when its configured
+  threshold is reached."
+  [_context options]
+  (let [result (audit/symbol-index (audit-index! options) options)
+        output (case (:format options)
+                 :text (text-lines result)
+                 :default result)]
+    (case (:format options)
+      :text (map output prn!)
+      :default (prn! output))
+    (when (:failed? result)
+      (system/fail! "lookup audit failed"))
+    result))
+
+(def command
+  "cli-trooper declaration for the `lookup audit` command."
+  {:description "Audit documentation in a Roo index or source tree."
+   :mixin :source-paths
+   :execute! execute!
+   :flags {["o" "output-format"] {:type :enum
+                                   :values ["edn" "text"]
+                                   :destination :format
+                                   :default :edn}
+           "require-summary" {:type :flag
+                              :destination :require-summary?
+                              :default false}
+           "require-param-docs" {:type :flag
+                                 :destination :require-param-docs?
+                                 :default false}
+           "require-signatures" {:type :flag
+                                 :destination :require-signatures?
+                                 :default false}
+           "allow-zero-arity" {:type :symbol
+                               :repeatable? true
+                               :default []}
+           "fail-on" {:type :enum
+                      :values ["warning" "error"]
+                      :default nil}}
+   :positional [{:type :path
+                 :name "index-file|source-root|package-dir"
+                 :destination :input}]})
