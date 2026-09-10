@@ -16,8 +16,6 @@ namespace
     return 0;
   }
 
-  void unload_roopl_native() {}
-
   const char* roopl_native_last_error()
   {
     return "";
@@ -33,7 +31,6 @@ extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
     "0.1.0",
     ROO_NATIVE_CXX_ABI,
     load_roopl_native,
-    unload_roopl_native,
     roopl_native_last_error,
   };
   return &package;

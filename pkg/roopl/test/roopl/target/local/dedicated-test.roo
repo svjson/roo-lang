@@ -68,3 +68,13 @@
                             :source-name "<dedicated-test:print-width>"
                             :print-width 80}))))
     (target/close! evaluation-target)))
+
+(deftest close!/destroys-a-package-aware-runtime-after-native-namespace-use
+  (let [evaluation-target (dedicated/make {})]
+    (is (= ":loaded"
+           (:display
+             (target/eval! evaluation-target
+                           {:source "(ns native-check (:require proof.syntax)) :loaded"
+                            :namespace "user"
+                            :source-name "<dedicated-test:native-close>"}))))
+    (target/close! evaluation-target)))

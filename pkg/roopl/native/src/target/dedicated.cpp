@@ -12,7 +12,7 @@
 #include <roo/runtime/value.h>
 
 #include <roo-package/manifest.h>
-#include <roo-package/native_loader.h>
+#include <roo-package/runtime_environment.h>
 #include <target/dedicated.h>
 
 namespace Roo::Roopl::Target
@@ -90,22 +90,11 @@ namespace Roo::Roopl::Target
 
   struct Dedicated::State
   {
-    std::unique_ptr<FileSystem> file_system;
-    Runtime runtime;
-    Package::LoadedNativePackages native_packages;
+    Package::ApplicationRuntime application;
 
-    State(std::unique_ptr<FileSystem> target_file_system,
-          std::optional<Package::LoadPlan> package_plan)
-      : file_system(std::move(target_file_system))
-      , runtime(file_system.get())
+    explicit State(const Package::ApplicationRuntimeSpec& spec)
+      : application(spec)
     {
-      runtime.set_call_stack_diagnostics(true);
-      if (package_plan)
-      {
-        Package::configure_runtime_namespace_roots(runtime, *package_plan);
-        native_packages = Package::load_native_libraries(runtime, *package_plan);
-        Package::load_autoloads(runtime, *package_plan);
-      }
     }
   };
 
@@ -117,16 +106,11 @@ namespace Roo::Roopl::Target
       options.load_paths = {std::filesystem::current_path().string(), "/"};
     }
 
-    std::unique_ptr<FileSystem> file_system;
-    if (package_plan)
-    {
-      file_system = Package::make_load_path_file_system(*package_plan, options.load_paths);
-    }
-    else
-    {
-      file_system = std::make_unique<DirRootFileSystem>(options.load_paths);
-    }
-    state = std::make_unique<State>(std::move(file_system), std::move(package_plan));
+    Package::ApplicationRuntimeSpec runtime_spec =
+      Package::make_directory_application_runtime_spec(
+        package_plan.value_or(Package::LoadPlan{}),
+        options.load_paths);
+    state = std::make_unique<State>(runtime_spec);
   }
 
   Dedicated::~Dedicated() = default;
@@ -140,25 +124,28 @@ namespace Roo::Roopl::Target
 
     try
     {
-      state->runtime.switch_namespace(request.namespace_name);
-      const auto value = state->runtime.eval(request.source, request.source_name);
+      Runtime& runtime = state->application.runtime();
+      runtime.switch_namespace(request.namespace_name);
+      const auto value = runtime.eval(request.source, request.source_name);
       Pretty::PrintOptions print_options;
       if (request.print_width)
       {
         print_options.width = *request.print_width;
       }
-      return success(state->runtime.get_current_namespace().get_name(),
+      return success(runtime.get_current_namespace().get_name(),
                      Pretty::print(*value, print_options));
     }
     catch (const RooException& e)
     {
-      return failure(state->runtime.get_current_namespace().get_name(),
+      return failure(state->application.runtime().get_current_namespace().get_name(),
                      error_kind(e.get_diagnostic().category),
                      e.what());
     }
     catch (const std::exception& e)
     {
-      return failure(state->runtime.get_current_namespace().get_name(), "general", e.what());
+      return failure(state->application.runtime().get_current_namespace().get_name(),
+                     "general",
+                     e.what());
     }
   }
 
