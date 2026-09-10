@@ -267,8 +267,6 @@ namespace
     return host->register_namespace(host->user, ns.release());
   }
 
-  void unload_proofread_native() {}
-
   const char* proofread_native_last_error()
   {
     return "";
@@ -284,7 +282,6 @@ extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
     "0.1.0",
     ROO_NATIVE_CXX_ABI,
     load_proofread_native,
-    unload_proofread_native,
     proofread_native_last_error,
   };
   return &package;
