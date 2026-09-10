@@ -124,6 +124,24 @@ namespace
     return 0;
   }
 
+  int run_target_reporting_errors(Roo::Runtime& runtime,
+                                  const std::optional<Roo::Package::LoadPlan>& package_plan,
+                                  const std::string& file_path,
+                                  const std::vector<std::string>& app_args,
+                                  bool run_package,
+                                  bool run_tool)
+  {
+    try
+    {
+      return run_target(runtime, package_plan, file_path, app_args, run_package, run_tool);
+    }
+    catch (const std::exception& e)
+    {
+      std::cerr << e.what() << std::endl;
+      return 1;
+    }
+  }
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -236,18 +254,28 @@ int main(int argc, char** argv)
     {
       Roo::Package::ApplicationRuntimeSpec runtime_spec =
         Roo::Package::make_directory_application_runtime_spec(*package_plan, load_paths);
+      Roo::Package::ApplicationRuntime application(runtime_spec);
       Roo::WorkerEnvironmentFactory environment_factory =
         Roo::Package::make_application_runtime_factory(std::move(runtime_spec));
-      std::unique_ptr<Roo::WorkerEnvironment> environment = environment_factory();
-      Roo::Runtime& runtime = environment->runtime();
+      Roo::Runtime& runtime = application.runtime();
       runtime.worker_registry().register_environment("application", environment_factory);
-      return run_target(runtime, package_plan, file_path, app_args, run_package, run_tool);
+      return run_target_reporting_errors(runtime,
+                                         package_plan,
+                                         file_path,
+                                         app_args,
+                                         run_package,
+                                         run_tool);
     }
 
     Roo::DirRootFileSystem roo_fs(load_paths);
     Roo::Runtime runtime(&roo_fs);
     runtime.set_call_stack_diagnostics(true);
-    return run_target(runtime, package_plan, file_path, app_args, run_package, run_tool);
+    return run_target_reporting_errors(runtime,
+                                       package_plan,
+                                       file_path,
+                                       app_args,
+                                       run_package,
+                                       run_tool);
   }
   catch (const std::exception& e)
   {

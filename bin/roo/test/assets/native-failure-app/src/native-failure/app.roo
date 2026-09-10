@@ -1,0 +1,13 @@
+(ns native-failure.app
+  (:require package.test.native))
+
+(defun main
+  "Raise a native-backed error for launcher teardown testing.
+
+  Args:
+  - `args`: Command line arguments, which are unused by this fixture.
+
+  Returns:
+  Never returns; raises the native test error."
+  [args]
+  (package.test.native/fail nil))

@@ -7,6 +7,8 @@ PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}
 PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
 APPLICATION_WORKER_PACKAGE="$ROOT_DIR/lib/libroo-package/test/tests/assets/packages/autoload-app"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"
+NATIVE_FAILURE_SOURCE="$ROOT_DIR/bin/roo/test/assets/native-failure-app"
+NATIVE_FAILURE_PACKAGE="$RUN_DIR/native-failure-app"
 DEV_SCOPE_PACKAGE="$PACKAGE_STAGE_ROOT/roo-cli-dev-scope"
 OUTPUT_FILE="$RUN_DIR/main-ran.txt"
 
@@ -89,6 +91,25 @@ fi
 assert_eq "roo main app returns its integer result as the process exit code" \
   "7" \
   "$MAIN_EXIT_CODE"
+
+printf '%s\n' "==> Testing roo native-backed failure teardown"
+cmake -E remove_directory "$NATIVE_FAILURE_PACKAGE"
+cmake -E copy_directory "$NATIVE_FAILURE_SOURCE" "$NATIVE_FAILURE_PACKAGE"
+cmake -E make_directory "$NATIVE_FAILURE_PACKAGE/native"
+cmake -E copy "${ROO_TEST_NATIVE_LIBRARY:?native test library required}" \
+  "$NATIVE_FAILURE_PACKAGE/native/"
+
+if NATIVE_FAILURE_OUTPUT="$("$ROO" "$NATIVE_FAILURE_PACKAGE" 2>&1)"; then
+  fail "roo native-backed failure returned success"
+else
+  NATIVE_FAILURE_EXIT_CODE=$?
+fi
+assert_eq "roo native-backed failure returns status one" \
+  "1" \
+  "$NATIVE_FAILURE_EXIT_CODE"
+assert_contains "roo native-backed failure retains the original diagnostic" \
+  "$NATIVE_FAILURE_OUTPUT" \
+  "native test failure"
 
 printf '%s\n' "==> Testing roo application worker bootstrap"
 if ! (
