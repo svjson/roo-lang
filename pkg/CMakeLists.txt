@@ -200,6 +200,7 @@ roo_add_stage_package_target(i18n)
 roo_add_stage_package_target(spool)
 roo_add_stage_package_target(cli-trooper)
 
+add_dependencies(stage_lookup_package stage_cli-trooper_package)
 add_dependencies(stage_loom_package stage_lookup_package)
 
 get_property(package_artifact_targets GLOBAL
