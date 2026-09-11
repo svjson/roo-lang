@@ -7,6 +7,8 @@
                 wraparoo "0.1.0"}
  :load-roots ["src"]
  :namespace-roots {roopl "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}
  :native-libraries [{:name "roopl-native"
                      :version "0.1.0"
                      :path "native"

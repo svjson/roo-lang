@@ -74,7 +74,7 @@
     (is (= ":loaded"
            (:display
              (target/eval! evaluation-target
-                           {:source "(ns native-check (:require proof.syntax)) :loaded"
+                           {:source "(ns native-check (:require inpoots.input)) :loaded"
                             :namespace "user"
                             :source-name "<dedicated-test:native-close>"}))))
     (target/close! evaluation-target)))
