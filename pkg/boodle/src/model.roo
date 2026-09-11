@@ -31,8 +31,8 @@
   "Create a package documentation entry.
 
   Args:
-  - `data`: Map containing `:id`, `:name`, `:version`, `:summary`,
-  `:namespaces`, and `:entries`.
+  - `data`: Map containing package identity, declared source version,
+  publication metadata, documentation, namespaces, and entries.
 
   Returns:
   A `:boodle/package` map."
@@ -41,6 +41,9 @@
           :id nil
           :name nil
           :version nil
+          :publication nil
+          :publications []
+          :default-publication nil
           :summary nil
           :namespaces []
           :entries []}

@@ -1,5 +1,6 @@
 (ns boodle.format.github-pages
-  (:require [boodle.topology.reference :as reference]
+  (:require [boodle.publication :as publication]
+            [boodle.topology.reference :as reference]
             [moordown.ast :as md]
             [moordown.render :as markdown]
             [roo.string :as string]))
@@ -26,22 +27,65 @@
   [package]
   (reference/package-version package))
 
-(defun package-versions
-  "Return known versions for PACKAGE.
+(defun package-publications
+  "Return known publications for PACKAGE.
 
   Args:
   - `package`: Boodle package map.
 
   Returns:
-  Sorted version labels, including the package version."
+  Classified publication maps in public navigation order."
   [package]
-  (sort (reduce (concat [(package-version package)] (:versions package))
-                []
-                (fn [versions version]
-                  (if (or (nil? version) (contains? versions version))
-                    versions
-                    (append versions version))))
-        <))
+  (if (not-empty? (:publications package))
+    (:publications package)
+    (publication/ordered
+      (concat [(package-version package)] (:versions package)))))
+
+(defun yaml-text
+  "Quote TEXT for the generated publication-data YAML.
+
+  Args:
+  - `text`: Scalar text to quote.
+
+  Returns:
+  A double-quoted YAML scalar."
+  [text]
+  (str "\""
+       (-> text
+           (string/replace "\\" "\\\\")
+           (string/replace "\"" "\\\""))
+       "\""))
+
+(defun publication-data-content
+  "Render the shared publication catalog as Jekyll data.
+
+  Args:
+  - `catalog`: Boodle catalog with classified package publications.
+
+  Returns:
+  YAML containing ordered publications and automatic selections by package."
+  [catalog]
+  (str "packages:\n"
+       (apply join
+              (concat [""]
+                      (for [package (:packages catalog)]
+                        (let [publications (package-publications package)
+                              selected (or (:default-publication package)
+                                           (publication/automatic publications))]
+                          (str "  " (yaml-text (:id package)) ":\n"
+                               "    default: "
+                               (if selected (yaml-text (:identity selected)) "null")
+                               "\n"
+                               "    publications:\n"
+                               (apply join
+                                      (concat [""]
+                                              (for [entry publications]
+                                                (str "      - identity: "
+                                                     (yaml-text (:identity entry))
+                                                     "\n"
+                                                     "        mode: "
+                                                     (yaml-text (name (:mode entry)))
+                                                     "\n")))))))))))
 
 (defun front-matter
   "Return Jekyll front matter for TITLE.
@@ -265,9 +309,12 @@
   - `package`: Boodle package map.
 
   Returns:
-  URL to the current package version page."
+  URL to the package entrypoint for publication-aware catalogs, otherwise the
+  directly rendered package version."
   [package]
-  (str "packages/" (:id package) "/versions/" (package-version package) "/"))
+  (if (:publication package)
+    (str "packages/" (:id package) "/")
+    (str "packages/" (:id package) "/versions/" (package-version package) "/")))
 
 (defun package-row
   "Return the root index table row for PACKAGE.
@@ -279,7 +326,8 @@
   A Markdown table row vector."
   [package]
   [(md/link (:name package) (package-url package))
-   (apply join (concat [", "] (package-versions package)))
+   (apply join (concat [", "]
+                       (map (package-publications package) :identity)))
    (:summary package)])
 
 (defun package-table
@@ -386,9 +434,12 @@
   - `package`: Boodle package map.
 
   Returns:
-  Relative URL to the current package version page."
+  Relative URL to the automatically selected package version page, or nil."
   [package]
-  (str "versions/" (package-version package) "/"))
+  (if (:publication package)
+    (when-let [selected (:default-publication package)]
+      (str "versions/" (:identity selected) "/"))
+    (str "versions/" (package-version package) "/")))
 
 (defun package-index-document
   "Return the GitHub Pages package redirect document for PAGE.
@@ -397,11 +448,28 @@
   - `page`: Boodle package index page map.
 
   Returns:
-  A Moordown document linking to the current package version."
+  A redirect fallback linking to the selected release, or a neutral development
+  landing page when no release exists."
   [{:keys [package]}]
-  (md/document
-    [(md/paragraph
-       (md/link (package-title package) (package-index-url package)))]))
+  (if-let [url (package-index-url package)]
+    (let [selected (:default-publication package)]
+      (md/document [(md/paragraph
+                       (md/link (if selected
+                                  (str (:name package) " " (:identity selected))
+                                  (package-title package))
+                                url))]))
+    (let [development (find-first (:publications package)
+                                  (fn [publication]
+                                    (= :development (:mode publication))))]
+      (md/document (concat [(md/heading 1 (:name package))
+                            (md/paragraph
+                              "No stable or prerelease documentation has been published.")]
+                           (when development
+                             [(md/paragraph
+                                (md/link "View next development documentation"
+                                         (str "versions/"
+                                              (:identity development)
+                                              "/")))]))))))
 
 (defun package-document
   "Return the GitHub Pages package document for PAGE.
@@ -716,26 +784,6 @@
                  (reference/slug-text (:name (:entry page)))
                  ".html")))
 
-(defun version-option-html
-  "Return one package version selector option.
-
-  Args:
-  - `page`: Boodle versioned reference page.
-  - `version`: Package version label.
-
-  Returns:
-  HTML option element for VERSION."
-  [{:keys [package] :as page} version]
-  (str "<option value=\""
-         (html-text (version-page-url page version))
-         "\""
-         (if (= version (package-version package))
-           " selected"
-           "")
-         ">"
-       (html-text version)
-       "</option>\n"))
-
 (defun version-selector-html
   "Return package version selector HTML for PAGE.
 
@@ -751,9 +799,16 @@
        "</span>\n"
        "<label class=\"version-select-label\">Version "
        "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
-       (apply join (concat [""]
-                           (for [version (package-versions package)]
-                             (version-option-html page version))))
+       "{% assign package_publications = site.data.publications.packages[\""
+       (html-text (:id package))
+       "\"].publications %}\n"
+       "{% for publication in package_publications %}\n"
+       "<option value=\""
+       (html-text (version-page-url page "{{ publication.identity }}"))
+       "\"{% if publication.identity == \""
+       (html-text (package-version package))
+       "\" %} selected{% endif %}>{{ publication.identity }}</option>\n"
+       "{% endfor %}\n"
        "</select></label>\n"
        "</div>\n"))
 
@@ -779,11 +834,12 @@
   Returns:
   HTML and fallback Markdown linking to the current package version."
   [page]
-  (let [url (package-index-url (:package page))]
+  (if-let [url (package-index-url (:package page))]
     (str "<meta http-equiv=\"refresh\" content=\"0; url="
          (html-text url)
          "\">\n"
-         (markdown/render-block (page-document page)))))
+         (markdown/render-block (page-document page)))
+    (markdown/render-block (page-document page))))
 
 (defun reference-content
   "Return rendered content for PAGE.
@@ -903,7 +959,9 @@
            {:path "_layouts/reference.html"
             :content layout-content}
            {:path "assets/boodle.css"
-            :content stylesheet-content}]
+            :content stylesheet-content}
+           {:path "_data/publications.yml"
+            :content (publication-data-content catalog)}]
           (for [source-page (reference/pages catalog)]
             (let [page (assoc source-page :catalog catalog)]
               {:path (:path page)

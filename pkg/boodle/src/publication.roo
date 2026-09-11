@@ -1,0 +1,365 @@
+(ns boodle.publication
+  (:require [roo.string :as string]))
+
+(defun numeric-identifier?
+  "Query whether TEXT is a valid SemVer numeric identifier.
+
+  Args:
+  - `text`: Candidate identifier text.
+
+  Returns:
+  True when the text contains only decimal digits and has no leading zero."
+  [text]
+  (and (not (blank? text))
+       (every? text digit?)
+       (or (= "0" text)
+           (not (string/starts-with? text "0")))))
+
+(defun identifier-character?
+  "Query whether CHARACTER is allowed in a SemVer identifier.
+
+  Args:
+  - `character`: Character to inspect.
+
+  Returns:
+  True for an ASCII letter, decimal digit, or hyphen."
+  [character]
+  (let [point (codepoint character)]
+    (or (digit? character)
+        (= "-" (str character))
+        (and (>= point 65) (<= point 90))
+        (and (>= point 97) (<= point 122)))))
+
+(defun identifier?
+  "Query whether TEXT is a valid SemVer prerelease identifier.
+
+  Args:
+  - `text`: Candidate identifier text.
+
+  Returns:
+  True when the identifier uses valid characters and numeric identifiers have
+  no leading zero."
+  [text]
+  (and (not (blank? text))
+       (every? text identifier-character?)
+       (or (not (every? text digit?))
+           (numeric-identifier? text))))
+
+(defun build-identifier?
+  "Query whether TEXT is a valid SemVer build identifier.
+
+  Args:
+  - `text`: Candidate identifier text.
+
+  Returns:
+  True when the nonempty identifier contains only ASCII letters, digits, and
+  hyphens."
+  [text]
+  (and (not (blank? text))
+       (every? text identifier-character?)))
+
+(defun parse-version
+  "Parse a semantic version.
+
+  Args:
+  - `text`: Candidate SemVer text.
+
+  Returns:
+  A parsed version map, or `nil` when the text is not valid SemVer."
+  [text]
+  (when (and (string? text) (not (blank? text)))
+    (let [build-separator (find-index text
+                                      (fn [character]
+                                        (= "+" (str character))))
+          version-text (if (nil? build-separator)
+                         text
+                         (substr text 0 build-separator))
+          build-text (unless (nil? build-separator)
+                       (substr text (+ build-separator 1) (count text)))
+          prerelease-separator (find-index version-text
+                                           (fn [character]
+                                             (= "-" (str character))))
+          core-text (if (nil? prerelease-separator)
+                      version-text
+                      (substr version-text 0 prerelease-separator))
+          prerelease-text (unless (nil? prerelease-separator)
+                            (substr version-text
+                                    (+ prerelease-separator 1)
+                                    (count version-text)))
+          core (split core-text ".")
+          prerelease (if (nil? prerelease-text) [] (split prerelease-text "."))
+          build (if (nil? build-text) [] (split build-text "."))]
+      (when (and (= 3 (count core))
+                 (every? core numeric-identifier?)
+                 (or (nil? prerelease-separator)
+                     (and (not (blank? prerelease-text))
+                          (every? prerelease identifier?)))
+                 (or (nil? build-separator)
+                     (and (not (blank? build-text))
+                          (not (any? build-text
+                                     (fn [character]
+                                       (= "+" (str character)))))
+                          (every? build build-identifier?))))
+        {:text text
+         :major (int (head core))
+         :minor (int (nth core 1))
+         :patch (int (nth core 2))
+         :prerelease prerelease
+         :build build}))))
+
+(defun compare-prerelease
+  "Compare two SemVer prerelease identifier vectors.
+
+  Args:
+  - `left`: Left prerelease identifier vector.
+  - `right`: Right prerelease identifier vector.
+
+  Returns:
+  A negative number, zero, or a positive number according to SemVer precedence."
+  [left right]
+  (cond
+    (and (empty? left) (empty? right)) 0
+    (empty? left) -1
+    (empty? right) 1
+    :else
+    (let [left-id (head left)
+          right-id (head right)
+          left-numeric? (numeric-identifier? left-id)
+          right-numeric? (numeric-identifier? right-id)]
+      (cond
+        (= left-id right-id) (compare-prerelease (tail left) (tail right))
+        (and left-numeric? right-numeric?) (- (int left-id) (int right-id))
+        left-numeric? -1
+        right-numeric? 1
+        (< left-id right-id) -1
+        :else 1))))
+
+(defun compare-versions
+  "Compare two parsed semantic versions.
+
+  Args:
+  - `left`: Parsed version map returned by `parse-version`.
+  - `right`: Parsed version map returned by `parse-version`.
+
+  Returns:
+  A negative number, zero, or a positive number according to SemVer precedence."
+  [left right]
+  (cond
+    (not= (:major left) (:major right)) (- (:major left) (:major right))
+    (not= (:minor left) (:minor right)) (- (:minor left) (:minor right))
+    (not= (:patch left) (:patch right)) (- (:patch left) (:patch right))
+    (and (empty? (:prerelease left)) (empty? (:prerelease right))) 0
+    (empty? (:prerelease left)) 1
+    (empty? (:prerelease right)) -1
+    :else (compare-prerelease (:prerelease left) (:prerelease right))))
+
+(defun version-core
+  "Return the major, minor, and patch identity of VERSION.
+
+  Args:
+  - `version`: Parsed version map returned by `parse-version`.
+
+  Returns:
+  Core SemVer text without prerelease or build metadata."
+  [version]
+  (str (:major version) "." (:minor version) "." (:patch version)))
+
+(defun make
+  "Create a validated documentation publication identity.
+
+  Args:
+  - `mode`: One of `:development`, `:prerelease`, or `:stable`.
+  - `identity`: `next` for development or a compatible SemVer identity.
+
+  Returns:
+  A publication map, or `nil` when the mode and identity are incompatible."
+  [mode identity]
+  (let [version (parse-version identity)]
+    (case mode
+      :development (when (= "next" identity)
+                     {:mode mode
+                      :identity identity})
+      :prerelease (when (and version (not-empty? (:prerelease version)))
+                    {:mode mode
+                     :identity identity
+                     :version version})
+      :stable (when (and version (empty? (:prerelease version)))
+                {:mode mode
+                 :identity identity
+                 :version version})
+      :default nil)))
+
+(defun validation-errors
+  "Validate parsed publication command options.
+
+  Args:
+  - `options`: Generate options containing `:publication-mode` and
+  `:publication-identity`.
+
+  Returns:
+  An invalid-publication diagnostic, or an empty vector."
+  [options]
+  (if (make (:publication-mode options) (:publication-identity options))
+    []
+    [{:kind :invalid-publication
+      :argument "--publication-identity"
+      :value (:publication-identity options)
+      :expected (case (:publication-mode options)
+                  :development "next"
+                  :prerelease "a semantic prerelease version"
+                  :stable "a stable semantic version"
+                  :default "an identity compatible with the publication mode")}]))
+
+(defun classify
+  "Classify a materialized public documentation identity.
+
+  Args:
+  - `identity`: Directory identity such as `next` or a semantic version.
+
+  Returns:
+  A publication map, or `nil` when the identity is not recognized."
+  [identity]
+  (case identity
+    "next" (make :development identity)
+    :default (when-let [version (parse-version identity)]
+               (make (if (empty? (:prerelease version)) :stable :prerelease)
+                     identity))))
+
+(defun ordered
+  "Return classified publication identities in selector order.
+
+  Stable releases are ordered newest first, followed by the newest prerelease
+  and then development documentation.
+
+  Args:
+  - `identities`: Materialized public directory identities.
+
+  Returns:
+  Deduplicated publication maps in public navigation order."
+  [identities]
+  (let [publications (reduce identities
+                             []
+                             (fn [publications identity]
+                               (if-let [candidate (classify identity)]
+                                 (if (find-first publications
+                                                 (fn [publication]
+                                                   (= identity (:identity publication))))
+                                   publications
+                                   (append publications candidate))
+                                 publications)))
+        stable (sort (filter publications
+                             (fn [publication]
+                               (= :stable (:mode publication))))
+                     (fn [left right]
+                       (let [precedence (compare-versions (:version left)
+                                                          (:version right))]
+                         (case precedence
+                           0 (> (:identity left) (:identity right))
+                           :default (> precedence 0)))))
+        prerelease (sort (filter publications
+                                 (fn [publication]
+                                   (= :prerelease (:mode publication))))
+                         (fn [left right]
+                           (let [precedence (compare-versions (:version left)
+                                                              (:version right))]
+                             (case precedence
+                               0 (> (:identity left) (:identity right))
+                               :default (> precedence 0)))))
+        development (filter publications
+                            (fn [publication]
+                              (= :development (:mode publication))))]
+    (concat stable
+            (if (empty? prerelease) [] [(head prerelease)])
+            development)))
+
+(defun automatic
+  "Select the automatic release publication.
+
+  Args:
+  - `publications`: Classified publication maps.
+
+  Returns:
+  The newest stable publication, otherwise the retained prerelease, otherwise
+  `nil`. Development documentation is never selected automatically."
+  [publications]
+  (let [publications (ordered (map publications :identity))]
+    (or (find-first publications
+                    (fn [publication]
+                      (= :stable (:mode publication))))
+        (find-first publications
+                    (fn [publication]
+                      (= :prerelease (:mode publication)))))))
+
+(defun retention-errors
+  "Validate a publication against already materialized identities.
+
+  Args:
+  - `publication`: Publication being generated.
+  - `identities`: Existing public directory identities.
+
+  Returns:
+  A diagnostic when a prerelease would replace a newer prerelease, otherwise an
+  empty vector."
+  [publication identities]
+  (case (:mode publication)
+    :prerelease
+    (if-let [newer (find-first (ordered identities)
+                               (fn [existing]
+                                 (and (= :prerelease (:mode existing))
+                                      (not= (:identity publication)
+                                            (:identity existing))
+                                      (>= (compare-versions (:version existing)
+                                                            (:version publication))
+                                          0))))]
+      [{:kind :newer-prerelease-exists
+        :identity (:identity publication)
+        :existing (:identity newer)
+        :message (str "Cannot publish prerelease "
+                      (:identity publication)
+                      " over newer prerelease "
+                      (:identity newer)
+                      ".")}]
+      [])
+    :default []))
+
+(defun obsolete-identities
+  "Return materialized identities removed by PUBLICATION.
+
+  Args:
+  - `publication`: Publication being generated.
+  - `identities`: Existing public directory identities.
+
+  Returns:
+  Other prereleases for a prerelease publication, or a matching-core
+  prerelease for a stable publication. Development removes nothing."
+  [publication identities]
+  (keep identities
+        (fn [identity]
+          (when-let [existing (classify identity)]
+            (case (:mode publication)
+              :prerelease (when (and (= :prerelease (:mode existing))
+                                     (not= (:identity publication) identity))
+                            identity)
+              :stable (when (and (= :prerelease (:mode existing))
+                                 (= (version-core (:version publication))
+                                    (version-core (:version existing))))
+                        identity)
+              :default nil)))))
+
+(defun apply-to-catalog
+  "Apply a public documentation identity to every package in CATALOG.
+
+  Args:
+  - `catalog`: Imported Boodle catalog.
+  - `publication`: Validated publication map returned by `make`.
+
+  Returns:
+  Catalog carrying publication metadata while package versions remain unchanged
+  as source metadata."
+  [catalog publication]
+  (assoc catalog
+         :publication publication
+         :packages
+         (for [package (:packages catalog)]
+           (assoc package
+                  :publication publication))))

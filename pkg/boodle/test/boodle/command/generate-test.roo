@@ -101,21 +101,50 @@
                {:format :github-pages
                 :out output-dir
                 :navigation-style :breadcrumbs
+                :publication-mode :development
+                :publication-identity "next"
                 :package-groups []
                 :indexes [index-file]})
               [:format :output])
      :package-page-prefix
      (substr (io/slurp! (io/join-path
                          output-dir
-                         "packages/roo/versions/0.1.0/index.md"))
+                         "packages/roo/versions/next/index.md"))
              0
-             12)})
+             12)
+     :package-index (io/slurp! (io/join-path output-dir
+                                             "packages/roo/index.md"))
+     :root-index (io/slurp! (io/join-path output-dir "index.md"))
+     :publication-data (io/slurp! (io/join-path output-dir
+                                                "_data/publications.yml"))
+     :declared-version-path?
+     (io/exists? (io/join-path output-dir
+                               "packages/roo/versions/0.1.0"))})
 
-  (p/then [{:keys [root result package-page-prefix]}]
+  (p/then [{:keys [root result package-page-prefix package-index root-index publication-data
+                   declared-version-path?]}]
     (is (= {:format :text
-            :output ["boodle: wrote 8 files to boodle-generate-test/docs"]}
+            :output ["boodle: wrote 9 files to boodle-generate-test/docs"]}
            result))
     (is (= "---\nlayout: " package-page-prefix))
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: roo\n"
+                "---\n\n"
+                "# roo\n\n"
+                "No stable or prerelease documentation has been published.\n\n"
+                "[View next development documentation](versions/next/)\n")
+           package-index))
+    (is (contains? (split root-index "\n")
+                   "| [roo](packages/roo/) | next     | Roo standard library. |"))
+    (is (= (str "packages:\n"
+                "  \"roo\":\n"
+                "    default: null\n"
+                "    publications:\n"
+                "      - identity: \"next\"\n"
+                "        mode: \"development\"\n")
+           publication-data))
+    (is (= false declared-version-path?))
     (io/remove-tree! root)))
 
 (deftest execute!/includes-materialized-package-versions
@@ -139,36 +168,139 @@
      {:format :github-pages
       :out output-dir
       :navigation-style :breadcrumbs
+      :publication-mode :development
+      :publication-identity "next"
       :package-groups []
       :indexes [index-file]})
     {:root root
      :package-page
      (io/slurp! (io/join-path output-dir
-                              "packages/roo/versions/0.1.0/index.md"))})
+                              "packages/roo/versions/next/index.md"))
+     :package-index (io/slurp! (io/join-path output-dir
+                                             "packages/roo/index.md"))})
 
-  (p/then [{:keys [root package-page]}]
+  (p/then [{:keys [root package-page package-index]}]
     (is (= (str "---\n"
                 "layout: reference\n"
-                "title: roo 0.1.0\n"
+                "title: roo next\n"
                 "---\n\n"
                 "<nav class=\"reference-breadcrumbs\" aria-label=\"Breadcrumbs\">\n"
                 "<a href=\"../../../../\">Reference</a>\n"
                 "<span class=\"breadcrumb-separator\" aria-hidden=\"true\">/</span>\n"
-                "<span aria-current=\"page\">roo 0.1.0</span>\n"
+                "<span aria-current=\"page\">roo next</span>\n"
                 "</nav>\n"
                 "<div class=\"version-context\">\n"
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
                 "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
-                "<option value=\"../0.0.9/\">0.0.9</option>\n"
-                "<option value=\"../0.1.0/\" selected>0.1.0</option>\n"
+                "{% assign package_publications = site.data.publications.packages[\"roo\"].publications %}\n"
+                "{% for publication in package_publications %}\n"
+                "<option value=\"../{{ publication.identity }}/\"{% if publication.identity == \"next\" %} selected{% endif %}>{{ publication.identity }}</option>\n"
+                "{% endfor %}\n"
                 "</select></label>\n"
                 "</div>\n"
-                "# roo 0.1.0\n\n"
+                "# roo next\n\n"
                 "Roo standard library.\n\n"
                 "| Namespace                  | Symbols |\n"
                 "| -------------------------- | ------- |\n"
                 "| [roo](namespaces/roo.html) | 1       |"
                 "\n")
            package-page))
+    (is (= (str "---\n"
+                "layout: reference\n"
+                "title: roo\n"
+                "---\n\n"
+                "<meta http-equiv=\"refresh\" content=\"0; url=versions/0.0.9/\">\n"
+                "[roo 0.0.9](versions/0.0.9/)\n")
+           package-index))
+    (io/remove-tree! root)))
+
+(deftest execute!/replaces-the-retained-prerelease
+  (p/given
+    (let [root "boodle-generate-prerelease-test"
+          index-file (io/join-path root "roo.edn")
+          output-dir (io/join-path root "docs")
+          versions-dir (io/join-path output-dir "packages/roo/versions")]
+      (when (io/exists? root)
+        (io/remove-tree! root))
+      (doseq [identity ["0.1.0" "0.2.0-alpha.1" "next"]]
+        (io/spit! (io/join-path (io/join-path versions-dir identity) "index.md")
+                  identity))
+      (io/spit-edn! index-file lookup-index)
+      {:root root
+       :index-file index-file
+       :output-dir output-dir
+       :versions-dir versions-dir}))
+
+  (p/when [{:keys [root index-file output-dir versions-dir]}]
+    (generate/execute! {:cli-trooper/print! (fn [line] nil)}
+                       {:format :github-pages
+                        :out output-dir
+                        :navigation-style :breadcrumbs
+                        :publication-mode :prerelease
+                        :publication-identity "0.2.0-beta.1"
+                        :package-groups []
+                        :indexes [index-file]})
+    {:root root
+     :paths {:stable (io/exists? (io/join-path versions-dir "0.1.0"))
+             :old-prerelease (io/exists? (io/join-path versions-dir
+                                                       "0.2.0-alpha.1"))
+             :prerelease (io/exists? (io/join-path versions-dir
+                                                   "0.2.0-beta.1"))
+             :development (io/exists? (io/join-path versions-dir "next"))}
+     :package-index (io/slurp! (io/join-path output-dir
+                                             "packages/roo/index.md"))})
+
+  (p/then [{:keys [root paths package-index]}]
+    (is (= {:stable true
+            :old-prerelease false
+            :prerelease true
+            :development true}
+           paths))
+    (is (contains? (split package-index "\n")
+                   "<meta http-equiv=\"refresh\" content=\"0; url=versions/0.1.0/\">"))
+    (io/remove-tree! root)))
+
+(deftest execute!/removes-a-prerelease-when-its-stable-version-is-published
+  (p/given
+    (let [root "boodle-generate-stable-test"
+          index-file (io/join-path root "roo.edn")
+          output-dir (io/join-path root "docs")
+          versions-dir (io/join-path output-dir "packages/roo/versions")]
+      (when (io/exists? root)
+        (io/remove-tree! root))
+      (doseq [identity ["0.1.0" "0.2.0-rc.1" "next"]]
+        (io/spit! (io/join-path (io/join-path versions-dir identity) "index.md")
+                  identity))
+      (io/spit-edn! index-file lookup-index)
+      {:root root
+       :index-file index-file
+       :output-dir output-dir
+       :versions-dir versions-dir}))
+
+  (p/when [{:keys [root index-file output-dir versions-dir]}]
+    (generate/execute! {:cli-trooper/print! (fn [line] nil)}
+                       {:format :github-pages
+                        :out output-dir
+                        :navigation-style :breadcrumbs
+                        :publication-mode :stable
+                        :publication-identity "0.2.0"
+                        :package-groups []
+                        :indexes [index-file]})
+    {:root root
+     :paths {:previous-stable (io/exists? (io/join-path versions-dir "0.1.0"))
+             :prerelease (io/exists? (io/join-path versions-dir "0.2.0-rc.1"))
+             :stable (io/exists? (io/join-path versions-dir "0.2.0"))
+             :development (io/exists? (io/join-path versions-dir "next"))}
+     :package-index (io/slurp! (io/join-path output-dir
+                                             "packages/roo/index.md"))})
+
+  (p/then [{:keys [root paths package-index]}]
+    (is (= {:previous-stable true
+            :prerelease false
+            :stable true
+            :development true}
+           paths))
+    (is (contains? (split package-index "\n")
+                   "<meta http-equiv=\"refresh\" content=\"0; url=versions/0.2.0/\">"))
     (io/remove-tree! root)))

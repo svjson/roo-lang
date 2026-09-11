@@ -3,7 +3,7 @@
             [boodle.format.lookup :as lookup]
             [boodle.model :as model]
             [boodle.output.files :as files]
-            [boodle.topology.reference :as reference]
+            [boodle.publication :as publication]
             [roo.io :as io]))
 
 (defun parse-package-group
@@ -77,15 +77,15 @@
       (:id package))
     "versions"))
 
-(defun existing-package-versions
-  "Return already materialized documentation versions for PACKAGE.
+(defun existing-package-identities
+  "Return already materialized documentation identities for PACKAGE.
 
   Args:
   - `output-dir`: Documentation output directory.
   - `package`: Boodle package map.
 
   Returns:
-  Sorted version directory names."
+  Sorted version-directory names."
   [output-dir package]
   (let [dir (versions-dir output-dir package)]
     (if (io/directory? dir)
@@ -95,41 +95,37 @@
             <)
       [])))
 
-(defun package-with-known-versions
-  "Return PACKAGE with generated and materialized versions attached.
+(defun package-with-known-publications
+  "Return PACKAGE with generated and materialized publications attached.
 
   Args:
   - `output-dir`: Documentation output directory.
   - `package`: Boodle package map.
 
   Returns:
-  Package map with `:versions` containing known version names."
+  Package map with classified publications and its automatic release selection."
   [output-dir package]
-  (assoc package
-         :versions
-         (sort (reduce (concat [(reference/package-version package)]
-                               (existing-package-versions output-dir package))
-                       []
-                       (fn [versions version]
-                         (if (contains? versions version)
-                           versions
-                           (append versions version))))
-               <)))
+  (let [publications (publication/ordered
+                       (concat [(:identity (:publication package))]
+                               (existing-package-identities output-dir package)))]
+    (assoc package
+           :publications publications
+           :default-publication (publication/automatic publications))))
 
-(defun catalog-with-known-versions
-  "Return CATALOG annotated with already materialized versions.
+(defun catalog-with-known-publications
+  "Return CATALOG annotated with already materialized publications.
 
   Args:
   - `output-dir`: Documentation output directory.
   - `catalog`: Boodle catalog map.
 
   Returns:
-  Catalog with package `:versions` metadata."
+  Catalog with classified package publication metadata."
   [output-dir catalog]
   (assoc catalog
          :packages
          (for [package (:packages catalog)]
-           (package-with-known-versions output-dir package))))
+           (package-with-known-publications output-dir package))))
 
 (defun catalog-package-ids
   "Return package ids in CATALOG order.
@@ -230,17 +226,46 @@
   [catalog style]
   (assoc catalog :navigation-style style))
 
+(defun apply-retention!
+  "Remove publication directories made obsolete by PUBLICATION.
+
+  Args:
+  - `output-dir`: Documentation output directory.
+  - `catalog`: Imported Boodle catalog.
+  - `publication`: Validated publication being generated.
+
+  Returns:
+  Nil after validating the transition and removing obsolete prereleases."
+  [output-dir catalog publication]
+  (let [packages (for [package (:packages catalog)]
+                   {:package package
+                    :identities (existing-package-identities output-dir package)})
+        errors (flat-map packages
+                         (fn [package]
+                           (publication/retention-errors publication
+                                                         (:identities package))))]
+    (when-let [error (head errors)]
+      (raise (:message error)))
+    (doseq [package packages]
+      (doseq [identity (publication/obsolete-identities publication
+                                                        (:identities package))]
+        (io/remove-tree! (io/join-path
+                           (versions-dir output-dir (:package package))
+                           identity))))))
+
 (defun generated-files
   "Return documentation files for OPTIONS.
 
   Args:
   - `options`: Parsed generate options.
+  - `catalog`: Imported Boodle catalog.
+  - `publication`: Validated publication being generated.
 
   Returns:
   File maps for the selected output format."
-  [options]
-  (let [catalog (catalog-with-known-versions (:out options)
-                                             (read-catalog (:indexes options)))
+  [options catalog publication]
+  (let [catalog (publication/apply-to-catalog catalog publication)
+        catalog (catalog-with-known-publications (:out options) catalog)
         catalog (catalog-with-package-groups catalog
                                              (:package-groups options))
         catalog (catalog-with-navigation-style catalog
@@ -259,18 +284,24 @@
   Returns:
   A result map containing the output line and written file maps."
   [context options]
-  (let [written (files/write! (:out options) (generated-files options))
-        output (str "boodle: wrote " (count written) " files to " (:out options))
-        print! (get context :cli-trooper/print! prn!)]
-    (print! output)
-    {:format :text
-     :output [output]
-     :files written}))
+  (let [catalog (read-catalog (:indexes options))
+        publication (publication/make (:publication-mode options)
+                                      (:publication-identity options))]
+    (apply-retention! (:out options) catalog publication)
+    (let [written (files/write! (:out options)
+                                (generated-files options catalog publication))
+          output (str "boodle: wrote " (count written) " files to " (:out options))
+          print! (get context :cli-trooper/print! prn!)]
+      (print! output)
+      {:format :text
+       :output [output]
+       :files written})))
 
 (def command
   "cli-trooper declaration for Boodle's `generate` command."
   {:description "Generate reference documentation."
    :execute! execute!
+   :validate publication/validation-errors
    :flags {["f" "format"] {:type :enum
                               :values ["github-pages"]
                               :default :github-pages}
@@ -284,6 +315,12 @@
                             :parse parse-package-group
                             :repeatable? true
                             :destination :package-groups}
+           "publication-mode" {:type :enum
+                                :values ["development" "prerelease" "stable"]
+                                :required? true}
+           "publication-identity" {:type :string
+                                    :name "identity"
+                                    :required? true}
            ["o" "out"] {:type :dir
                           :required? true}}
    :positional [{:type :file

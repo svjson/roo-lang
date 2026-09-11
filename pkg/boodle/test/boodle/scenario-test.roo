@@ -16,6 +16,10 @@
              "github-pages"
              "generate"
              "roo.edn"
+             "--publication-mode"
+             "development"
+             "--publication-identity"
+             "next"
              "--package-group"
              "The Roo Language:roo,lookup"
              "lookup.edn"
@@ -37,6 +41,8 @@
                        {:kind :boodle/package-group
                         :title "Packages"
                         :package-ids ["*"]}]
+                      :publication-mode :development
+                      :publication-identity "next"
                       :out "build/docs"
                       :indexes ["roo.edn" "lookup.edn"]}
             :errors []}
@@ -58,6 +64,8 @@
   (p/then [parsed]
     (is (= {:command "generate"
             :options {:navigation-style :breadcrumbs
+                      :publication-mode nil
+                      :publication-identity nil
                       :out nil
                       :indexes []}
             :errors [{:kind :invalid-enum-value
@@ -72,8 +80,42 @@
                       :expected "title:id[,id]"}
                      {:kind :missing-required-option
                       :command "generate"
+                      :argument "--publication-mode"}
+                     {:kind :missing-required-option
+                      :command "generate"
+                      :argument "--publication-identity"}
+                     {:kind :missing-required-option
+                      :command "generate"
                       :argument "--out"}
                      {:kind :missing-positional
                       :command "generate"
                       :argument "index-file"}]}
+           parsed))))
+
+(deftest generate/rejects-an-identity-incompatible-with-publication-mode
+  (p/when []
+    (cli-trooper/parse boodle/application
+                       {:args ["generate"
+                               "--publication-mode"
+                               "stable"
+                               "--publication-identity"
+                               "next"
+                               "--out"
+                               "build/docs"
+                               "roo.edn"]}))
+
+  (p/then [parsed]
+    (is (= {:command "generate"
+            :options {:format :github-pages
+                      :navigation-style :breadcrumbs
+                      :package-groups []
+                      :publication-mode :stable
+                      :publication-identity "next"
+                      :out "build/docs"
+                      :indexes ["roo.edn"]}
+            :errors [{:kind :invalid-publication
+                      :argument "--publication-identity"
+                      :value "next"
+                      :expected "a stable semantic version"
+                      :command "generate"}]}
            parsed))))

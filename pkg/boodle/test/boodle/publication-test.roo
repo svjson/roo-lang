@@ -1,0 +1,106 @@
+(ns boodle.publication-test
+  (:require proof.core
+            [boodle.model :as model]
+            [boodle.publication :as publication]))
+
+(deftest parses-semantic-versions
+  (is (= {:text "1.20.3-alpha.2+build.7"
+          :major 1
+          :minor 20
+          :patch 3
+          :prerelease ["alpha" "2"]
+          :build ["build" "7"]}
+         (publication/parse-version "1.20.3-alpha.2+build.7")))
+  (is (= {:text "0.1.0"
+          :major 0
+          :minor 1
+          :patch 0
+          :prerelease []
+          :build []}
+         (publication/parse-version "0.1.0"))))
+
+(deftest rejects-invalid-semantic-versions
+  (doseq [version [nil "" "1.2" "01.2.3" "1.02.3" "1.2.03"
+                   "1.2.3-" "1.2.3-alpha..1" "1.2.3-alpha.01"
+                   "1.2.3+" "1.2.3+build..1" "1.2.3+build+again"]]
+    (is (nil? (publication/parse-version version)))))
+
+(deftest compares-semantic-version-precedence
+  (let [versions (map ["1.0.0-alpha"
+                       "1.0.0-alpha.1"
+                       "1.0.0-alpha.beta"
+                       "1.0.0-beta"
+                       "1.0.0-beta.2"
+                       "1.0.0-beta.11"
+                       "1.0.0-rc.1"
+                       "1.0.0"]
+                      publication/parse-version)]
+    (doseq [index (range 0 (- (count versions) 2))]
+      (is (< (publication/compare-versions (nth versions index)
+                                           (nth versions (+ index 1)))
+             0)))))
+
+(deftest validates-publication-modes
+  (is (= {:mode :development :identity "next"}
+         (publication/make :development "next")))
+  (is (= :prerelease (:mode (publication/make :prerelease "0.2.0-beta.1"))))
+  (is (= :stable (:mode (publication/make :stable "0.2.0"))))
+  (is (nil? (publication/make :development "0.2.0")))
+  (is (nil? (publication/make :prerelease "0.2.0")))
+  (is (nil? (publication/make :stable "0.2.0-rc.1"))))
+
+(deftest separates-publication-and-declared-versions
+  (let [catalog (publication/apply-to-catalog
+                  (model/catalog [(model/package {:id "roo"
+                                                  :name "roo"
+                                                  :version "0.1.0"})])
+                  (publication/make :development "next"))
+        package (head (:packages catalog))]
+    (is (= {:mode :development :identity "next"} (:publication catalog)))
+    (is (= "0.1.0" (:version package)))
+    (is (= {:mode :development :identity "next"} (:publication package)))))
+
+(deftest orders-and-selects-publications
+  (let [publications (publication/ordered ["next"
+                                           "0.1.0-alpha.1"
+                                           "0.2.0-beta.1"
+                                           "0.1.0"
+                                           "2.0.0"
+                                           "1.4.0"
+                                           "not-a-version"
+                                           "2.0.0"])]
+    (is (= [[:stable "2.0.0"]
+            [:stable "1.4.0"]
+            [:stable "0.1.0"]
+            [:prerelease "0.2.0-beta.1"]
+            [:development "next"]]
+           (for [publication publications]
+             [(:mode publication) (:identity publication)])))
+    (is (= "2.0.0" (:identity (publication/automatic publications))))))
+
+(deftest selects-prerelease-only-when-no-stable-release-exists
+  (is (= "0.2.0-beta.1"
+         (:identity (publication/automatic
+                      (publication/ordered ["next" "0.2.0-beta.1"])))))
+  (is (nil? (publication/automatic (publication/ordered ["next"])))))
+
+(deftest applies-prerelease-retention-policy
+  (let [current (publication/make :prerelease "0.2.0-beta.2")]
+    (is (= []
+           (publication/retention-errors current ["0.2.0-beta.1" "0.1.0"])))
+    (is (= ["0.2.0-beta.1" "0.3.0-alpha.1"]
+           (publication/obsolete-identities current
+                                            ["next"
+                                             "0.1.0"
+                                             "0.2.0-beta.1"
+                                             "0.3.0-alpha.1"]))))
+  (is (= :newer-prerelease-exists
+         (:kind (head (publication/retention-errors
+                        (publication/make :prerelease "0.2.0-beta.1")
+                        ["0.2.0-beta.2"]))))))
+
+(deftest stable-publication-removes-only-matching-prerelease
+  (is (= ["0.2.0-rc.1"]
+         (publication/obsolete-identities
+           (publication/make :stable "0.2.0")
+           ["next" "0.1.0" "0.2.0-rc.1" "0.3.0-alpha.1"]))))

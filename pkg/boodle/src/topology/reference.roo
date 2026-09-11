@@ -46,9 +46,10 @@
   Returns:
   Package name with version when available."
   [package]
-  (cond-> (:name package)
-    (:version package)
-    (str " " (:version package))))
+  (let [version (or (:identity (:publication package)) (:version package))]
+    (cond-> (:name package)
+      version
+      (str " " version))))
 
 (defun navigation-style
   "Return the reference navigation style for CATALOG.
@@ -199,7 +200,7 @@
   Returns:
   Package version, or `unversioned` when no version is available."
   [package]
-  (or (:version package) "unversioned"))
+  (or (:identity (:publication package)) (:version package) "unversioned"))
 
 (defun package-index-path
   "Return the compatibility package index path for PACKAGE.

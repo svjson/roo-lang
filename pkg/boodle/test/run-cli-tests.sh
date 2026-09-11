@@ -44,7 +44,7 @@ fi
 assert_eq "boodle --help output" \
   "boodle: generate reference documentation
 
-Usage: boodle generate <index-file>... [-f,--format <github-pages>] [--navigation <breadcrumbs|up|none>] [--package-group <title:id[,id]>]... -o,--out <dir>" \
+Usage: boodle generate <index-file>... [-f,--format <github-pages>] [--navigation <breadcrumbs|up|none>] [--package-group <title:id[,id]>]... --publication-mode <development|prerelease|stable> --publication-identity <identity> -o,--out <dir>" \
   "$HELP_OUTPUT"
 
 if ! VERSION_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" --version); then
@@ -66,6 +66,8 @@ assert_eq "boodle invalid invocation exit status" \
   "$INVALID_STATUS"
 assert_eq "boodle invalid invocation diagnostics" \
   "Invalid value for --format: html. Expected: github-pages.
+Missing required option: --publication-mode.
+Missing required option: --publication-identity.
 Missing required option: --out.
 Missing required argument: index-file." \
   "$INVALID_OUTPUT"
@@ -84,7 +86,7 @@ cat > "$INDEX_FILE" <<'EOF'
  :symbols [{:id "roo/+" :name "+" :qualified-name "roo/+" :namespace "roo" :kind :function :origin :native :summary "Add numbers." :content [{:kind :text :content "Add numbers."} {:kind :sig-args :index 0} {:kind :sig-ret :index 0}] :signatures [{:display "(+ numbers...)" :params [{:name "numbers" :display "numbers..." :content [{:kind :text :content "Numbers to add."}]}] :returns {:content [{:kind :text :content "The sum."}]}}]}]}
 EOF
 
-if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" --package-group "The Roo Language:roo" "$INDEX_FILE"); then
+if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" --publication-mode development --publication-identity next --package-group "The Roo Language:roo" "$INDEX_FILE"); then
   rm -rf "$ROOT"
   fail "boodle generate command failed"
 fi
@@ -102,8 +104,8 @@ for generated_file in \
   "index.md:index" \
   "_layouts/reference.html:reference layout" \
   "assets/boodle.css:stylesheet" \
-  "packages/roo/versions/0.1.0/index.md:package page" \
-  "packages/roo/versions/0.1.0/namespaces/roo/plus.md:symbol page"
+  "packages/roo/versions/next/index.md:package page" \
+  "packages/roo/versions/next/namespaces/roo/plus.md:symbol page"
 do
   path=${generated_file%%:*}
   label=${generated_file#*:}

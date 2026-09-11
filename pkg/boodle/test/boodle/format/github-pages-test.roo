@@ -71,6 +71,10 @@
         stylesheet-file (find-first files
                                     (fn [file]
                                       (= "assets/boodle.css" (:path file))))
+        publication-data-file (find-first files
+                                          (fn [file]
+                                            (= "_data/publications.yml"
+                                               (:path file))))
         index-page (find-first files
                                (fn [file]
                                  (= "index.md" (:path file))))
@@ -93,6 +97,7 @@
     (is (= ["_config.yml"
             "_layouts/reference.html"
             "assets/boodle.css"
+            "_data/publications.yml"
             "index.md"
             "packages/roo/index.md"
             "packages/roo/versions/0.1.0/index.md"
@@ -105,6 +110,28 @@
             "packages/zoology/index.md"
             "packages/zoology/versions/0.1.0/index.md"]
            paths))
+    (is (= (str "packages:\n"
+                "  \"roo\":\n"
+                "    default: \"0.1.0\"\n"
+                "    publications:\n"
+                "      - identity: \"0.1.0\"\n"
+                "        mode: \"stable\"\n"
+                "  \"loom\":\n"
+                "    default: \"0.1.0\"\n"
+                "    publications:\n"
+                "      - identity: \"0.1.0\"\n"
+                "        mode: \"stable\"\n"
+                "  \"proof\":\n"
+                "    default: \"0.1.0\"\n"
+                "    publications:\n"
+                "      - identity: \"0.1.0\"\n"
+                "        mode: \"stable\"\n"
+                "  \"zoology\":\n"
+                "    default: \"0.1.0\"\n"
+                "    publications:\n"
+                "      - identity: \"0.1.0\"\n"
+                "        mode: \"stable\"\n")
+           (:content publication-data-file)))
     (is (= (str "title: roo-lang - Reference\n"
                 "markdown: kramdown\n"
                 "kramdown:\n"
@@ -171,7 +198,10 @@
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
                 "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
-                "<option value=\"../0.1.0/\" selected>0.1.0</option>\n"
+                "{% assign package_publications = site.data.publications.packages[\"roo\"].publications %}\n"
+                "{% for publication in package_publications %}\n"
+                "<option value=\"../{{ publication.identity }}/\"{% if publication.identity == \"0.1.0\" %} selected{% endif %}>{{ publication.identity }}</option>\n"
+                "{% endfor %}\n"
                 "</select></label>\n"
                 "</div>\n"
                 "# roo 0.1.0\n\n"
@@ -204,7 +234,10 @@
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
                 "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
-                "<option value=\"../../0.1.0/namespaces/roo.html\" selected>0.1.0</option>\n"
+                "{% assign package_publications = site.data.publications.packages[\"roo\"].publications %}\n"
+                "{% for publication in package_publications %}\n"
+                "<option value=\"../../{{ publication.identity }}/namespaces/roo.html\"{% if publication.identity == \"0.1.0\" %} selected{% endif %}>{{ publication.identity }}</option>\n"
+                "{% endfor %}\n"
                 "</select></label>\n"
                 "</div>\n"
                 "# roo\n\n"
@@ -245,7 +278,10 @@
                 "<span class=\"version-package\">roo</span>\n"
                 "<label class=\"version-select-label\">Version "
                 "<select class=\"version-select\" onchange=\"if (this.value) window.location.href = this.value;\">\n"
-                "<option value=\"../../../0.1.0/namespaces/roo/plus.html\" selected>0.1.0</option>\n"
+                "{% assign package_publications = site.data.publications.packages[\"roo\"].publications %}\n"
+                "{% for publication in package_publications %}\n"
+                "<option value=\"../../../{{ publication.identity }}/namespaces/roo/plus.html\"{% if publication.identity == \"0.1.0\" %} selected{% endif %}>{{ publication.identity }}</option>\n"
+                "{% endfor %}\n"
                 "</select></label>\n"
                 "</div>\n"
                 "<header class=\"symbol-heading\">\n"
