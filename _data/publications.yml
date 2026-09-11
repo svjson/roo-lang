@@ -1,0 +1,91 @@
+packages:
+  "boodle":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "cli-trooper":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "footsteps":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "i18n":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "inpoots":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "lookup":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "loom":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "moordown":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "proof":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "proofread":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "roo":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "roopl":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "soot":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "spool":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "voodoo":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "workbook":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "wraparoo":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"
+  "zoology":
+    default: null
+    publications:
+      - identity: "next"
+        mode: "development"

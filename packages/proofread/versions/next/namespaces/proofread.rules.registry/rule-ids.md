@@ -1,0 +1,69 @@
+---
+layout: reference
+title: proofread.rules.registry/rule-ids
+---
+
+<div class="reference-page">
+<nav class="reference-sidebar">
+<a class="namespace-link" href="../proofread.rules.registry.html">proofread.rules.registry</a>
+<ol>
+<li><a href="check.html">check</a></li>
+<li><a href="check-node.html">check-node</a></li>
+<li><a href="descriptors.html">descriptors</a></li>
+<li><a href="known-rule-p.html">known-rule?</a></li>
+<li><a href="node-diagnostic.html">node-diagnostic</a></li>
+<li><a class="active" href="rule-ids.html">rule-ids</a></li>
+<li><a href="scoped.html">scoped</a></li>
+</ol>
+</nav>
+<main class="reference-content" markdown="block">
+
+<nav class="reference-breadcrumbs" aria-label="Breadcrumbs">
+<a href="../../../../../../">Reference</a>
+<span class="breadcrumb-separator" aria-hidden="true">/</span>
+<a href="../../">proofread next</a>
+<span class="breadcrumb-separator" aria-hidden="true">/</span>
+<a href="../proofread.rules.registry.html">proofread.rules.registry</a>
+<span class="breadcrumb-separator" aria-hidden="true">/</span>
+<span aria-current="page">rule-ids</span>
+</nav>
+<div class="version-context">
+<span class="version-package">proofread</span>
+<label class="version-select-label">Version <select class="version-select" onchange="if (this.value) window.location.href = this.value;">
+{% assign package_publications = site.data.publications.packages["proofread"].publications %}
+{% for publication in package_publications %}
+<option value="../../../{{ publication.identity }}/namespaces/proofread.rules.registry/rule-ids.html"{% if publication.identity == "next" %} selected{% endif %}>{{ publication.identity }}</option>
+{% endfor %}
+</select></label>
+</div>
+<header class="symbol-heading">
+<div class="symbol-namespace"><a href="../proofread.rules.registry.html">proofread.rules.registry</a>/</div>
+<h1><code>rule-ids</code></h1>
+</header>
+
+Return rule IDs from descriptors.
+
+<hr class="signature-divider">
+
+```roo
+(rule-ids rules)
+```
+
+<hr class="signature-divider">
+
+## Signature:
+
+```roo
+(rule-ids rules)
+```
+
+| Arg   | Description           |
+| ----- | --------------------- |
+| rules | Rule descriptor maps. |
+
+### Returns:
+
+A vector of rule ID keywords.
+
+</main>
+</div>

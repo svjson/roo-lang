@@ -1,0 +1,73 @@
+---
+layout: reference
+title: proofread.inspect.bindings/first-single-use-simple-binding
+---
+
+<div class="reference-page">
+<nav class="reference-sidebar">
+<a class="namespace-link" href="../proofread.inspect.bindings.html">proofread.inspect.bindings</a>
+<ol>
+<li><a href="binding-use-count.html">binding-use-count</a></li>
+<li><a href="body-use-count.html">body-use-count</a></li>
+<li><a class="active" href="first-single-use-simple-binding.html">first-single-use-simple-binding</a></li>
+<li><a href="later-binding-use-count.html">later-binding-use-count</a></li>
+<li><a href="let-bindings.html">let-bindings</a></li>
+<li><a href="let-body-forms.html">let-body-forms</a></li>
+<li><a href="single-use-simple-binding-p.html">single-use-simple-binding?</a></li>
+<li><a href="symbol-use-count.html">symbol-use-count</a></li>
+</ol>
+</nav>
+<main class="reference-content" markdown="block">
+
+<nav class="reference-breadcrumbs" aria-label="Breadcrumbs">
+<a href="../../../../../../">Reference</a>
+<span class="breadcrumb-separator" aria-hidden="true">/</span>
+<a href="../../">proofread next</a>
+<span class="breadcrumb-separator" aria-hidden="true">/</span>
+<a href="../proofread.inspect.bindings.html">proofread.inspect.bindings</a>
+<span class="breadcrumb-separator" aria-hidden="true">/</span>
+<span aria-current="page">first-single-use-simple-binding</span>
+</nav>
+<div class="version-context">
+<span class="version-package">proofread</span>
+<label class="version-select-label">Version <select class="version-select" onchange="if (this.value) window.location.href = this.value;">
+{% assign package_publications = site.data.publications.packages["proofread"].publications %}
+{% for publication in package_publications %}
+<option value="../../../{{ publication.identity }}/namespaces/proofread.inspect.bindings/first-single-use-simple-binding.html"{% if publication.identity == "next" %} selected{% endif %}>{{ publication.identity }}</option>
+{% endfor %}
+</select></label>
+</div>
+<header class="symbol-heading">
+<div class="symbol-namespace"><a href="../proofread.inspect.bindings.html">proofread.inspect.bindings</a>/</div>
+<h1><code>first-single-use-simple-binding</code></h1>
+</header>
+
+Return the first single-use simple binding symbol node.
+
+<hr class="signature-divider">
+
+```roo
+(first-single-use-simple-binding bindings binding-index body options)
+```
+
+<hr class="signature-divider">
+
+## Signature:
+
+```roo
+(first-single-use-simple-binding bindings binding-index body options)
+```
+
+| Arg           | Description                            |
+| ------------- | -------------------------------------- |
+| bindings      | Let binding vector children.           |
+| binding-index | First binding symbol index to inspect. |
+| body          | Let body forms.                        |
+| options       | Rule options map.                      |
+
+### Returns:
+
+A binding symbol node, or `nil` when no binding matches.
+
+</main>
+</div>
