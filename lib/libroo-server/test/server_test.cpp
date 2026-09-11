@@ -1,3 +1,4 @@
+#include <chrono>
 #include <string>
 #include <variant>
 
@@ -36,7 +37,7 @@ namespace
 
   void set_receive_timeout(ClientSocket socket)
   {
-    DWORD timeout = 1000;
+    DWORD timeout = 10;
     setsockopt(socket,
                SOL_SOCKET,
                SO_RCVTIMEO,
@@ -54,7 +55,7 @@ namespace
 
   void set_receive_timeout(ClientSocket socket)
   {
-    timeval timeout{1, 0};
+    timeval timeout{0, 10000};
     setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   }
 #endif
@@ -155,17 +156,30 @@ TEST(Server, buffers_a_request_until_the_complete_message_arrives)
   ASSERT_TRUE(send_all(client, request.substr(0, split)));
   server.query_sockets();
   ASSERT_TRUE(send_all(client, request.substr(split)));
-  server.query_sockets();
 
-  char response_buffer[4096];
-  const int received =
-    recv(client, response_buffer, static_cast<int>(sizeof(response_buffer)), 0);
-  ASSERT_GT(received, 0);
+  std::string raw_response;
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+  while (raw_response.find("/MSG\x1E") == std::string::npos &&
+         std::chrono::steady_clock::now() < deadline)
+  {
+    server.query_sockets();
+    char response_buffer[4096];
+    const int received =
+      recv(client, response_buffer, static_cast<int>(sizeof(response_buffer)), 0);
+    if (received > 0)
+    {
+      raw_response.append(response_buffer, static_cast<size_t>(received));
+    }
+    else if (received == 0)
+    {
+      break;
+    }
+  }
+  ASSERT_NE(raw_response.find("/MSG\x1E"), std::string::npos);
   close_client_socket(client);
 
   Roo::Server::MessageParser parser;
-  auto parsed =
-    parser.parse_message(std::string(response_buffer, static_cast<size_t>(received)));
+  auto parsed = parser.parse_message(raw_response);
   ASSERT_TRUE(std::holds_alternative<Roo::Server::Message>(parsed));
   const auto& response =
     std::get<Roo::Server::Message>(parsed).get_block(Roo::Server::_RESP);
