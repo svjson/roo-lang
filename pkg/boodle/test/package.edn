@@ -1,7 +1,0 @@
-{:name boodle-tests
- :version "0.1.0"
- :dependencies {boodle "file:.."
-                proof "file:../../proof"}
- :load-roots ["."]
- :namespace-roots {boodle "."}
- :config {proof {:test-roots ["boodle"]}}}

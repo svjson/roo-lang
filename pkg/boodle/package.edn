@@ -5,4 +5,6 @@
                 moordown "0.1.0"}
  :load-roots ["src"]
  :namespace-roots {boodle "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}
  :main boodle.cli/main}
