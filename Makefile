@@ -269,8 +269,10 @@ build-github-pages-docs:
 	cmake -E make_directory $(GITHUB_PAGES_DOCS_DIR)
 	$(CURDIR)/build/boodle-install/build/$(BOODLE_BINARY) generate \
 		--format github-pages \
+		--publication-mode development \
+		--publication-identity next \
 		--package-group "The Roo Language:roo" \
-		--package-group "Core Libraries:loom,proof" \
+		--package-group "Core Libraries:loom,lookup,proof,proofread,roopl" \
 		--package-group "Packages:*" \
 		--out $(GITHUB_PAGES_DOCS_DIR) \
 		$(GITHUB_PAGES_DOC_INDEXES)

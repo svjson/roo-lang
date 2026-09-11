@@ -1,0 +1,122 @@
+name: Publish next documentation
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages-publication
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build next documentation
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v5
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Build and install Roo
+        run: make install PREFIX="$RUNNER_TEMP/roo"
+
+      - name: Check out proof publication branch
+        run: |
+          pages_dir="$GITHUB_WORKSPACE/github-pages"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages
+            git worktree add --detach "$pages_dir" origin/gh-pages
+          else
+            git worktree add --detach "$pages_dir"
+            git -C "$pages_dir" switch --orphan gh-pages
+          fi
+          git -C "$pages_dir" rm -r --ignore-unmatch .
+
+      - name: Generate next documentation
+        run: |
+          make build-github-pages-docs \
+            PREFIX="$RUNNER_TEMP/roo" \
+            GITHUB_PAGES_DOCS_DIR="$GITHUB_WORKSPACE/github-pages"
+
+      - name: Validate proof publication
+        shell: bash
+        run: |
+          pages_dir="$GITHUB_WORKSPACE/github-pages"
+          git -C "$pages_dir" add --all
+
+          invalid=0
+          while IFS= read -r -d '' path; do
+            if [[ "$path" == "_config.yml" ||
+                  "$path" == "_data/publications.yml" ||
+                  "$path" == "_layouts/reference.html" ||
+                  "$path" == "assets/boodle.css" ||
+                  "$path" == "index.md" ||
+                  "$path" =~ ^packages/[^/]+/index\.md$ ||
+                  "$path" =~ ^packages/[^/]+/versions/next/.+$ ]]; then
+              continue
+            fi
+            printf 'Proof publication changed forbidden path: %s\n' "$path" >&2
+            invalid=1
+          done < <(git -C "$pages_dir" diff --cached --name-only -z)
+
+          if [ "$invalid" -ne 0 ]; then
+            exit 1
+          fi
+
+          test -f "$pages_dir/packages/roo/versions/next/index.md"
+          for manifest in pkg/*/package.edn; do
+            package="${manifest#pkg/}"
+            package="${package%/package.edn}"
+            if [ ! -f "$pages_dir/packages/$package/versions/next/index.md" ]; then
+              printf 'Missing next documentation for package: %s\n' "$package" >&2
+              exit 1
+            fi
+          done
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build GitHub Pages site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./github-pages
+          destination: ./github-pages-site
+
+      - name: Update proof publication branch
+        run: |
+          pages_dir="$GITHUB_WORKSPACE/github-pages"
+          if git -C "$pages_dir" diff --cached --quiet; then
+            exit 0
+          fi
+          git -C "$pages_dir" config user.name github-actions[bot]
+          git -C "$pages_dir" config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C "$pages_dir" commit -m "Publish next documentation for $GITHUB_SHA"
+          git -C "$pages_dir" push origin HEAD:gh-pages
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./github-pages-site
+
+  deploy:
+    name: Deploy next documentation
+    runs-on: ubuntu-24.04
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5
