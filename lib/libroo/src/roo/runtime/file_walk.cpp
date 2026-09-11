@@ -204,14 +204,15 @@ namespace Roo::FileWalk
       DirectoryEntry entry;
       entry.name = root_path.filename().string();
       if (entry.name.empty()) entry.name = root_path.root_path().string();
-      entry.path = root_path.lexically_normal().string();
+      entry.path = root_path.lexically_normal().generic_string();
       entry.type = stat.type;
       entry.hidden = hidden_path_name(root_path);
       entry.symlink = file_system.is_symlink(root);
       const bool root_symlink = entry.symlink;
 
-      return {std::move(entry),
-              Metadata{root_path.lexically_normal().string(), ".", 0, true, root_symlink}};
+      return {
+        std::move(entry),
+        Metadata{root_path.lexically_normal().generic_string(), ".", 0, true, root_symlink}};
     }
   } // namespace
 
