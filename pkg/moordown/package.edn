@@ -3,4 +3,6 @@
  :description "Markdown construction and rendering functionality for Roo."
  :dependencies []
  :load-roots ["src"]
- :namespace-roots {moordown "src"}}
+ :namespace-roots {moordown "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}}
