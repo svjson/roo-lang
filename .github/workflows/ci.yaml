@@ -1037,7 +1037,7 @@ jobs:
           cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run lookup tests
-        run: cd build/package-stage/pkg/lookup/test && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
+        run: cd build/package-stage/pkg/lookup && "$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" proof
 
   test-loom:
     name: Test loom ${{ matrix.platform }}
