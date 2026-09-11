@@ -899,7 +899,7 @@ namespace Roo::Package
     {
       if (fs.is_file((current / "package.edn").string()))
       {
-        return current.lexically_normal().string();
+        return current.lexically_normal().generic_string();
       }
 
       const auto parent = current.parent_path();
