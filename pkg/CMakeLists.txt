@@ -200,8 +200,29 @@ roo_add_stage_package_target(i18n)
 roo_add_stage_package_target(spool)
 roo_add_stage_package_target(cli-trooper)
 
+add_dependencies(stage_boodle_package
+  stage_cli-trooper_package
+  stage_moordown_package
+)
 add_dependencies(stage_lookup_package stage_cli-trooper_package)
 add_dependencies(stage_loom_package stage_lookup_package)
+add_dependencies(stage_proof_package
+  stage_cli-trooper_package
+  stage_soot_package
+  stage_voodoo_package
+)
+add_dependencies(stage_proofread_package
+  stage_cli-trooper_package
+  stage_soot_package
+  stage_voodoo_package
+)
+add_dependencies(stage_roopl_package
+  stage_inpoots_package
+  stage_soot_package
+  stage_voodoo_package
+  stage_wraparoo_package
+)
+add_dependencies(stage_voodoo_package stage_inpoots_package)
 
 get_property(package_artifact_targets GLOBAL
   PROPERTY ROO_PACKAGE_ARTIFACT_TARGETS
