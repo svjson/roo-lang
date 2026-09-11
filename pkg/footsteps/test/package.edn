@@ -1,6 +1,0 @@
-{:name footsteps-tests
- :version "0.1.0"
- :dependencies {footsteps "file:.."
-                proof "file:../../proof"}
- :load-roots ["."]
- :config {proof {:test-roots ["footsteps"]}}}
