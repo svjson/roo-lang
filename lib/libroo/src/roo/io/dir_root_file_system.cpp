@@ -378,7 +378,8 @@ namespace Roo
     {
       DirectoryEntry result;
       result.name = entry.path().filename().string();
-      result.path = (std::filesystem::path(path) / result.name).lexically_normal().string();
+      result.path =
+        (std::filesystem::path(path) / result.name).lexically_normal().generic_string();
       result.type = entry_type(entry.status());
       result.hidden = hidden_name(entry.path());
       result.symlink = std::filesystem::is_symlink(entry.symlink_status());
