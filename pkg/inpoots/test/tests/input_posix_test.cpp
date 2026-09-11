@@ -18,6 +18,13 @@
 
 namespace
 {
+  // Kernels may set PENDIN when tcsetattr re-enables canonical mode.
+#ifdef PENDIN
+  constexpr tcflag_t TRANSIENT_LOCAL_FLAGS = PENDIN;
+#else
+  constexpr tcflag_t TRANSIENT_LOCAL_FLAGS = 0;
+#endif
+
   class FileDescriptor
   {
    private:
@@ -150,7 +157,8 @@ TEST(InpootsInput, RawModeIsRestoredWhenTheInputCloses)
   EXPECT_EQ(restored.c_iflag, original.c_iflag);
   EXPECT_EQ(restored.c_oflag, original.c_oflag);
   EXPECT_EQ(restored.c_cflag, original.c_cflag);
-  EXPECT_EQ(restored.c_lflag, original.c_lflag);
+  EXPECT_EQ(restored.c_lflag & static_cast<tcflag_t>(~TRANSIENT_LOCAL_FLAGS),
+            original.c_lflag & static_cast<tcflag_t>(~TRANSIENT_LOCAL_FLAGS));
   EXPECT_EQ(std::memcmp(restored.c_cc, original.c_cc, NCCS), 0);
 }
 
@@ -204,7 +212,8 @@ TEST(InpootsInput, NativeApiRestoresRawModeWhenCallbackThrows)
   EXPECT_EQ(restored.c_iflag, original.c_iflag);
   EXPECT_EQ(restored.c_oflag, original.c_oflag);
   EXPECT_EQ(restored.c_cflag, original.c_cflag);
-  EXPECT_EQ(restored.c_lflag, original.c_lflag);
+  EXPECT_EQ(restored.c_lflag & static_cast<tcflag_t>(~TRANSIENT_LOCAL_FLAGS),
+            original.c_lflag & static_cast<tcflag_t>(~TRANSIENT_LOCAL_FLAGS));
   EXPECT_EQ(std::memcmp(restored.c_cc, original.c_cc, NCCS), 0);
 }
 
