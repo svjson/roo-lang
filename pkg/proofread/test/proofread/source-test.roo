@@ -17,7 +17,7 @@
   (s/then [diagnostic]
     (is (= {:file "assets/style/redundant-do.roo"
             :namespace "proofread.style-sample"
-            :package "proofread-tests"}
+            :package "proofread"}
            (select-keys diagnostic [:file
                                     :namespace
                                     :package])))))

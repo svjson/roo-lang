@@ -6,6 +6,9 @@
                 voodoo "0.1.0"}
  :load-roots ["src"]
  :namespace-roots {proofread "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}
+ :config {proof {:test-roots ["test/proofread"]}}
  :native-libraries [{:name "proofread-native"
                      :version "0.1.0"
                      :path "native"
