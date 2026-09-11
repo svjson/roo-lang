@@ -3,4 +3,6 @@
  :description "Frontend-neutral analysis and structural editing of Roo source."
  :dependencies []
  :load-roots ["src"]
- :namespace-roots {wraparoo "src"}}
+ :namespace-roots {wraparoo "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}}
