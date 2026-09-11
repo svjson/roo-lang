@@ -3,4 +3,6 @@
  :description "CLI argument parser and dispatcher"
  :dependencies []
  :load-roots ["src"]
- :namespace-roots {cli-trooper "src"}}
+ :namespace-roots {cli-trooper "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}}
