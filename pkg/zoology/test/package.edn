@@ -1,8 +1,0 @@
-{:name zoology-test
- :version "0.1.0"
- :description "Tests for zoology."
- :dependencies {zoology {:path ".."}
-                proof "0.1.0"}
- :load-roots ["."]
- :namespace-roots {zoology "."}
- :config {proof {:test-roots ["."]}}}

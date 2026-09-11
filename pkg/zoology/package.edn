@@ -3,4 +3,6 @@
  :description "Generic schema resolution, canonicalization, and validation for Roo data."
  :dependencies []
  :load-roots ["src"]
- :namespace-roots {zoology "src"}}
+ :namespace-roots {zoology "src"}
+ :dev {:dependencies {proof "0.1.0"}
+       :namespace-roots {zoology "test"}}}
