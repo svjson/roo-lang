@@ -3,6 +3,8 @@
  :description "Terminal input and event handling for Roo."
  :dependencies []
  :load-roots ["src"]
+ :dev {:dependencies {proof "0.1.0"}
+       :load-roots ["test"]}
  :native-libraries [{:name "inpoots-native"
                      :version "0.1.0"
                      :path "native"
