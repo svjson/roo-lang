@@ -28,9 +28,9 @@ Every generation declares its publication role explicitly:
 - `--publication-mode stable --publication-identity <version>` accepts a stable
   SemVer release and retains earlier stable releases.
 
-Stable releases are selected automatically ahead of a retained prerelease.
-When only `next` exists, package entrypoints remain neutral and link to the
-development documentation explicitly.
+Version selectors list `next` first, followed by the retained prerelease and
+stable releases from newest to oldest. Package entrypoints select the newest
+stable release, otherwise the retained prerelease, otherwise `next`.
 
 Root package listings can be grouped with repeatable `--package-group` options.
 Use `*` to include packages not listed by any exact group:

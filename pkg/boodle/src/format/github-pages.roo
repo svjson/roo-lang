@@ -434,7 +434,7 @@
   - `package`: Boodle package map.
 
   Returns:
-  Relative URL to the automatically selected package version page, or nil."
+  Relative URL to the automatically selected package version page."
   [package]
   (if (:publication package)
     (when-let [selected (:default-publication package)]
@@ -448,28 +448,14 @@
   - `page`: Boodle package index page map.
 
   Returns:
-  A redirect fallback linking to the selected release, or a neutral development
-  landing page when no release exists."
+  A redirect fallback linking to the selected publication."
   [{:keys [package]}]
-  (if-let [url (package-index-url package)]
-    (let [selected (:default-publication package)]
-      (md/document [(md/paragraph
-                       (md/link (if selected
-                                  (str (:name package) " " (:identity selected))
-                                  (package-title package))
-                                url))]))
-    (let [development (find-first (:publications package)
-                                  (fn [publication]
-                                    (= :development (:mode publication))))]
-      (md/document (concat [(md/heading 1 (:name package))
-                            (md/paragraph
-                              "No stable or prerelease documentation has been published.")]
-                           (when development
-                             [(md/paragraph
-                                (md/link "View next development documentation"
-                                         (str "versions/"
-                                              (:identity development)
-                                              "/")))]))))))
+  (let [selected (:default-publication package)]
+    (md/document [(md/paragraph
+                     (md/link (if selected
+                                (str (:name package) " " (:identity selected))
+                                (package-title package))
+                              (package-index-url package)))])))
 
 (defun package-document
   "Return the GitHub Pages package document for PAGE.

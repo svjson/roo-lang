@@ -131,15 +131,14 @@
                 "layout: reference\n"
                 "title: roo\n"
                 "---\n\n"
-                "# roo\n\n"
-                "No stable or prerelease documentation has been published.\n\n"
-                "[View next development documentation](versions/next/)\n")
+                "<meta http-equiv=\"refresh\" content=\"0; url=versions/next/\">\n"
+                "[roo next](versions/next/)\n")
            package-index))
     (is (contains? (split root-index "\n")
                    "| [roo](packages/roo/) | next     | Roo standard library. |"))
     (is (= (str "packages:\n"
                 "  \"roo\":\n"
-                "    default: null\n"
+                "    default: \"next\"\n"
                 "    publications:\n"
                 "      - identity: \"next\"\n"
                 "        mode: \"development\"\n")

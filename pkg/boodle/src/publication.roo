@@ -228,8 +228,8 @@
 (defun ordered
   "Return classified publication identities in selector order.
 
-  Stable releases are ordered newest first, followed by the newest prerelease
-  and then development documentation.
+  Development documentation appears first, followed by the newest prerelease
+  and stable releases ordered newest first.
 
   Args:
   - `identities`: Materialized public directory identities.
@@ -268,19 +268,19 @@
         development (filter publications
                             (fn [publication]
                               (= :development (:mode publication))))]
-    (concat stable
+    (concat development
             (if (empty? prerelease) [] [(head prerelease)])
-            development)))
+            stable)))
 
 (defun automatic
-  "Select the automatic release publication.
+  "Select the automatic publication.
 
   Args:
   - `publications`: Classified publication maps.
 
   Returns:
   The newest stable publication, otherwise the retained prerelease, otherwise
-  `nil`. Development documentation is never selected automatically."
+  development documentation."
   [publications]
   (let [publications (ordered (map publications :identity))]
     (or (find-first publications
@@ -288,7 +288,10 @@
                       (= :stable (:mode publication))))
         (find-first publications
                     (fn [publication]
-                      (= :prerelease (:mode publication)))))))
+                      (= :prerelease (:mode publication))))
+        (find-first publications
+                    (fn [publication]
+                      (= :development (:mode publication)))))))
 
 (defun retention-errors
   "Validate a publication against already materialized identities.
