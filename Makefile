@@ -410,7 +410,7 @@ test\:loom: build stage-packages
 test\:cli-trooper: build stage-packages
 	cd $(PACKAGE_STAGE)/cli-trooper/test && $(CURDIR)/build/roo proof
 
-test\:rooc: build stage-packages
+test\:rooc: configure
 	cmake --build build --target testrooc
 	./build/$(ROOC_TEST_BINARY) $(GTEST_FILTER_ARG)
 

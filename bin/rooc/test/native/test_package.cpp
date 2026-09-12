@@ -1,0 +1,79 @@
+#include <memory>
+
+#include <roo/context.h>
+#include <roo/exception.h>
+#include <roo/exec.h>
+#include <roo/namespace.h>
+#include <roo/runtime/value.h>
+
+#include <roo-package/native_abi.h>
+
+namespace
+{
+  class AnswerFunction : public Roo::Function
+  {
+   public:
+    AnswerFunction()
+      : Function(
+          SIG((FN_ARGS((&Roo::Type::ANY)), EXEC_DISPATCH(&AnswerFunction::exec_answer))))
+    {
+    }
+
+    static Roo::sptr_val make()
+    {
+      return Roo::Value::executable(std::make_shared<AnswerFunction>());
+    }
+
+    Roo::sptr_val exec_answer(Roo::Context&, Roo::sptr_val_v&)
+    {
+      return Roo::Value::number(42);
+    }
+  };
+
+  class FailFunction : public Roo::Function
+  {
+   public:
+    FailFunction()
+      : Function(SIG((FN_ARGS((&Roo::Type::ANY)), EXEC_DISPATCH(&FailFunction::exec_fail))))
+    {
+    }
+
+    static Roo::sptr_val make()
+    {
+      return Roo::Value::executable(std::make_shared<FailFunction>());
+    }
+
+    Roo::sptr_val exec_fail(Roo::Context&, Roo::sptr_val_v&)
+    {
+      throw Roo::RooException("native test failure");
+    }
+  };
+
+  int load_native_package(const RooNativeHostV1* host)
+  {
+    auto ns = std::make_unique<Roo::Namespace>("rooc.test.native");
+    ns->set_origin(Roo::Namespace::Origin::native());
+    ns->store("answer", AnswerFunction::make());
+    ns->store("fail", FailFunction::make());
+    return host->register_namespace(host->user, ns.release());
+  }
+
+  const char* last_error()
+  {
+    return "Could not load rooc native test package";
+  }
+} // namespace
+
+extern "C" ROO_NATIVE_EXPORT const RooNativePackageV1* roo_native_package_v1()
+{
+  static const RooNativePackageV1 package{
+    ROO_NATIVE_ABI_VERSION,
+    sizeof(RooNativePackageV1),
+    "rooc-test-native",
+    "0.1.0",
+    ROO_NATIVE_CXX_ABI,
+    load_native_package,
+    last_error,
+  };
+  return &package;
+}

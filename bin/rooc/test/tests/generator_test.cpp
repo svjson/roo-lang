@@ -20,9 +20,9 @@ using ::testing::HasSubstr;
 
 namespace
 {
-  std::filesystem::path repo_root()
+  std::filesystem::path test_root()
   {
-    return std::filesystem::path(ROOC_TEST_REPO_ROOT);
+    return std::filesystem::path(ROOC_TEST_ROOT);
   }
 
   std::filesystem::path build_root()
@@ -30,9 +30,9 @@ namespace
     return std::filesystem::path(ROOC_TEST_BUILD_ROOT);
   }
 
-  std::filesystem::path package_stage_root()
+  std::filesystem::path staged_package_repository_root()
   {
-    return std::filesystem::path(ROOC_TEST_PACKAGE_STAGE_ROOT);
+    return std::filesystem::path(ROOC_TEST_STAGED_PACKAGE_REPOSITORY_ROOT);
   }
 
   std::string read_file(const std::filesystem::path& path)
@@ -54,12 +54,11 @@ namespace
     file << source;
   }
 
-  Rooc::Options options_for(const std::filesystem::path& build_dir)
+  Rooc::Options cafe_register_options_for(const std::filesystem::path& build_dir)
   {
     Rooc::Options options;
     options.command = "generate";
-    options.package_dir =
-      repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register";
+    options.package_dir = test_root() / "assets/packages/cafe-register";
     options.build_dir = build_dir;
     options.executable_name = "test_generated_cafe";
     return options;
@@ -69,7 +68,7 @@ namespace
   {
     Rooc::Options options;
     options.command = "build";
-    options.package_dir = repo_root() / "bin/rooc/test/assets/main-app";
+    options.package_dir = test_root() / "assets/main-app";
     options.build_dir = build_dir;
     return options;
   }
@@ -84,13 +83,15 @@ namespace
     return options;
   }
 
-  Rooc::Options dynamic_smoke_options_for(const std::filesystem::path& build_dir)
+  Rooc::Options staged_proof_options_for(const std::filesystem::path& build_dir)
   {
     Rooc::Options options;
     options.command = "build";
-    options.package_dir = package_stage_root() / "proof/test/assets/dynamic-smoke";
+    options.package_dir =
+      staged_package_repository_root() / "proof/test/assets/dynamic-smoke";
     options.build_dir = build_dir;
     options.executable_name = "dynamic_smoke_compiled";
+    options.package_repository_roots.push_back(staged_package_repository_root().string());
     return options;
   }
 
@@ -183,17 +184,17 @@ namespace
                R"({:name native-failure-app
  :version "0.1.0"
  :load-roots ["src"]
- :native-libraries [{:name "roo-package-test-native"
+ :native-libraries [{:name "rooc-test-native"
                      :version "0.1.0"
                      :path "native"
-                     :namespaces [package.test.native]}]
+                     :namespaces [rooc.test.native]}]
  :main native-failure.app/main})");
     write_file(package_dir / "src/native-failure/app.roo",
                R"((ns native-failure.app
-  (:require package.test.native))
+  (:require rooc.test.native))
 
 (defun main [args]
-  (package.test.native/fail nil))
+  (rooc.test.native/fail nil))
 )");
   }
 
@@ -224,7 +225,7 @@ TEST(RoocGenerator, writes_generated_project_files)
 {
   // Given
   const auto build_dir = build_root() / "rooc-gtest-generated";
-  auto options = options_for(build_dir);
+  auto options = cafe_register_options_for(build_dir);
   auto project = Rooc::prepare_project(options);
 
   // When
@@ -241,7 +242,7 @@ TEST(RoocGenerator, generated_project_defines_distribution_install_contract)
 {
   // Given
   const auto build_dir = build_root() / "rooc-gtest-generated-install";
-  auto options = options_for(build_dir);
+  auto options = cafe_register_options_for(build_dir);
   auto project = Rooc::prepare_project(options);
 
   // When
@@ -259,14 +260,14 @@ TEST(RoocGenerator, generated_project_defines_distribution_install_contract)
   EXPECT_THAT(read_file(build_dir / "src/embedded_sources.cpp"),
               HasSubstr("roo-packages/cafe-register/1.0.0"));
   EXPECT_THAT(read_file(build_dir / "src/embedded_sources.cpp"),
-              ::testing::Not(HasSubstr(repo_root().generic_string())));
+              ::testing::Not(HasSubstr(test_root().generic_string())));
 }
 
 TEST(RoocGenerator, generated_project_splits_bootstrap_runtime_and_embedded_sources)
 {
   // Given
   const auto build_dir = build_root() / "rooc-gtest-generated";
-  auto options = options_for(build_dir);
+  auto options = cafe_register_options_for(build_dir);
   auto project = Rooc::prepare_project(options);
 
   // When
@@ -448,12 +449,14 @@ TEST(RoocGenerator, generated_executable_invokes_run_tool)
   EXPECT_EQ(read_file(run_dir / "run-tool.txt"), "run-app:runner:run:ok");
 }
 
-TEST(RoocGenerator, generated_executable_loads_native_package_dependencies)
+// This test intentionally consumes Proof and its dependencies from the repository package
+// stage prepared by stage_proof_package.
+TEST(RoocStagedPackageIntegration, generated_executable_runs_proof_with_native_dependencies)
 {
   // Given
   const auto build_dir = build_root() / "rooc-gtest-native-build";
   const auto run_dir = build_root() / "rooc-gtest-native-run";
-  auto options = dynamic_smoke_options_for(build_dir);
+  auto options = staged_proof_options_for(build_dir);
   auto project = Rooc::prepare_project(options);
   std::filesystem::create_directories(run_dir);
 

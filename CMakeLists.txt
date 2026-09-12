@@ -238,7 +238,7 @@ if(ROO_BUILD_TESTS)
     NAME rooc_cli_generates_cafe_register
     COMMAND $<TARGET_FILE:rooc_cli>
             generate
-            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
+            ${CMAKE_CURRENT_SOURCE_DIR}/bin/rooc/test/assets/packages/cafe-register
             --build-dir
             ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-generate
             --name
@@ -248,7 +248,7 @@ if(ROO_BUILD_TESTS)
     NAME rooc_cli_builds_cafe_register
     COMMAND $<TARGET_FILE:rooc_cli>
             build
-            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/cafe-register
+            ${CMAKE_CURRENT_SOURCE_DIR}/bin/rooc/test/assets/packages/cafe-register
             --build-dir
             ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe
             --name

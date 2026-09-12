@@ -1,0 +1,17 @@
+(ns cafe.register
+  (:require [recipe.book :as recipes]))
+
+(def service-fee
+  "Service fee added to each fixture sale total."
+  8)
+
+(defun morning-sale-total
+  "Return the fixture's breakfast price with its service fee.
+
+  Args:
+  None.
+
+  Returns:
+  The numeric morning sale total."
+  []
+  (+ (recipes/breakfast-total) service-fee))

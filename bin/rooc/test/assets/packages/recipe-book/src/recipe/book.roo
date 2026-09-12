@@ -1,0 +1,20 @@
+(ns recipe.book)
+
+(def coffee-price
+  "Price of coffee in the fixture menu."
+  30)
+
+(def pastry-price
+  "Price of a pastry in the fixture menu."
+  12)
+
+(defun breakfast-total
+  "Return the combined fixture breakfast price.
+
+  Args:
+  None.
+
+  Returns:
+  The numeric breakfast price."
+  []
+  (+ coffee-price pastry-price))

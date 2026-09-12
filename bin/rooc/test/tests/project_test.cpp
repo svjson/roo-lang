@@ -11,14 +11,14 @@ using ::testing::Field;
 
 namespace
 {
-  std::filesystem::path repo_root()
+  std::filesystem::path test_root()
   {
-    return std::filesystem::path(ROOC_TEST_REPO_ROOT);
+    return std::filesystem::path(ROOC_TEST_ROOT);
   }
 
-  std::filesystem::path package_stage_root()
+  std::filesystem::path staged_package_repository_root()
   {
-    return std::filesystem::path(ROOC_TEST_PACKAGE_STAGE_ROOT);
+    return std::filesystem::path(ROOC_TEST_STAGED_PACKAGE_REPOSITORY_ROOT);
   }
 
   Rooc::Options options_for(const std::filesystem::path& package_dir)
@@ -41,8 +41,7 @@ namespace
 TEST(RoocProject, prepares_pure_package_with_file_dependency)
 {
   // Given
-  auto options =
-    options_for(repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register");
+  auto options = options_for(test_root() / "assets/packages/cafe-register");
 
   // When
   auto project = Rooc::prepare_project(options);
@@ -103,8 +102,7 @@ TEST(RoocProject, resolves_versioned_dependency_from_explicit_repository)
 TEST(RoocProject, sanitizes_explicit_executable_name)
 {
   // Given
-  auto options =
-    options_for(repo_root() / "lib/libroo-package/test/tests/assets/packages/cafe-register");
+  auto options = options_for(test_root() / "assets/packages/cafe-register");
   options.executable_name = "123 cafe-register";
 
   // When
@@ -114,10 +112,14 @@ TEST(RoocProject, sanitizes_explicit_executable_name)
   EXPECT_EQ(project.executable_name, "_123_cafe_register");
 }
 
-TEST(RoocProject, prepares_package_with_native_dependency)
+// This test intentionally consumes Proof and its dependencies from the repository package
+// stage prepared by stage_proof_package.
+TEST(RoocStagedPackageIntegration, prepares_proof_with_native_dependencies)
 {
   // Given
-  auto options = options_for(package_stage_root() / "proof/test/assets/dynamic-smoke");
+  auto options =
+    options_for(staged_package_repository_root() / "proof/test/assets/dynamic-smoke");
+  options.package_repository_roots.push_back(staged_package_repository_root().string());
 
   // When
   auto project = Rooc::prepare_project(options);
@@ -126,5 +128,7 @@ TEST(RoocProject, prepares_package_with_native_dependency)
   EXPECT_THAT(project.plan.native_libraries,
               Contains(Field(&Roo::Package::NativeLibrary::name, "proof-native")));
   EXPECT_THAT(project.plan.native_namespaces, Contains("proof.syntax"));
+  EXPECT_THAT(project.plan.package_roots,
+              Contains((staged_package_repository_root() / "cli-trooper").generic_string()));
   EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key, "core.roo")));
 }
