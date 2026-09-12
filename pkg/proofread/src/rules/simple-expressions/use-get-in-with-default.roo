@@ -1,9 +1,16 @@
 (ns proofread.rules.simple-expressions.use-get-in-with-default
-  (:require [proofread.inspect.forms :as forms]
+  (:require [proofread.inspect.expressions :as expressions]
+            [proofread.inspect.forms :as forms]
             [proofread.rules.diagnostics :as diagnostics]))
 
 (defun replacement
-  "Return the replacement for `or` plus `get-in` usage."
+  "Build the replacement for `or` plus `get-in` usage.
+
+  Args:
+  - `node`: Matched `or` form as a `roo.ast` node map.
+
+  Returns:
+  A Roo source string using the three-argument `get-in` form."
   [node]
   (let [get-in-form (nth (:children node) 1)]
     (str "(get-in " (forms/form-string (nth (:children get-in-form) 1)) " "
@@ -11,7 +18,7 @@
          (forms/form-string (nth (:children node) 2)) ")")))
 
 (defun check
-  "Report `(or (get-in value path) default)` forms.
+  "Report `(or (get-in value path) default)` forms with simple terminal defaults.
 
   Args:
   - `parent`: Parent `roo.ast` node map, or `nil` for a root node.
@@ -22,7 +29,10 @@
   A diagnostic map when `node` matches this rule, otherwise `nil`."
   [parent {:keys [children] :as node} _options]
   (when (and (forms/call? node "or" 3)
-             (forms/call? (nth children 1) "get-in" 3))
+             (forms/call? (nth children 1) "get-in" 3)
+             (or (expressions/literal? (nth children 2))
+                 (= :symbol (:type (nth children 2)))
+                 (forms/empty-vector? (nth children 2))))
     (diagnostics/make-suggesting
       node
       :use-get-in-with-default

@@ -134,6 +134,8 @@ Supported style warnings:
 - `use-get-with-default`: reports `(or (get value key) default)` forms with
   simple value fallbacks that can be written as `(get value key default)`.
   Computed fallbacks and lookup chains remain as `or`.
+- `use-get-in-with-default`: reports `(or (get-in value path) default)` forms
+  with terminal fallbacks. Computed fallbacks and lookup chains remain as `or`.
 - `use-keyword-lookup`: reports `(get value :key)` forms that can be written as
   `(:key value)`.
 - `kebab-case-name`: reports symbol identifiers containing underscores.

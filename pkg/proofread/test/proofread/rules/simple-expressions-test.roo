@@ -528,6 +528,11 @@
                                              simple-expressions/rules
                                              :use-get-in-with-default))))
 
+(deftest use-get-in-with-default/ignores-computed-fallbacks
+  (is (= []
+         (produce-summary
+           "assets/rules/simple-expressions/use-get-in-with-default-non-candidates.roo"))))
+
 (deftest use-keyword-lookup/reports-structured-suggestions
   (is (= [{:rule :use-keyword-lookup
            :suggestions [{:title "Rewrite as keyword lookup"

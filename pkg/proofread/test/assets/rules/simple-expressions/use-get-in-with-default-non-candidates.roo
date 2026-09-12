@@ -1,0 +1,5 @@
+(ns proofread.use-get-in-with-default-non-candidates)
+
+(def content-size
+  (or (get-in state [:content-size-spec key])
+      (get-in state [:content-size key] 0)))
