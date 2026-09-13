@@ -234,38 +234,7 @@ if(ROO_BUILD_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/lib/libroo-package/test/tests/assets/packages/autoload-app
   )
 
-  add_test(
-    NAME rooc_cli_generates_cafe_register
-    COMMAND $<TARGET_FILE:rooc_cli>
-            generate
-            ${CMAKE_CURRENT_SOURCE_DIR}/bin/rooc/test/assets/packages/cafe-register
-            --build-dir
-            ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-generate
-            --name
-            cafe_register_compiled
-  )
-  add_test(
-    NAME rooc_cli_builds_cafe_register
-    COMMAND $<TARGET_FILE:rooc_cli>
-            build
-            ${CMAKE_CURRENT_SOURCE_DIR}/bin/rooc/test/assets/packages/cafe-register
-            --build-dir
-            ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe
-            --name
-            cafe_register_compiled
-  )
-  add_test(
-    NAME rooc_cli_runs_compiled_cafe_register
-    COMMAND
-      ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}
-  )
-  set_tests_properties(
-    rooc_cli_runs_compiled_cafe_register
-    PROPERTIES
-      DEPENDS rooc_cli_builds_cafe_register
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
-
+  add_subdirectory(bin/roo/test)
   add_subdirectory(bin/rooc/test)
 endif()
 

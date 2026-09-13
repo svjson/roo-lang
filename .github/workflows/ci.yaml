@@ -1178,7 +1178,17 @@ jobs:
           cmake -E tar xzf "artifacts/package-stage-${{ matrix.platform }}.tar.gz"
 
       - name: Run roo CLI tests
-        run: ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/package-stage/pkg" sh bin/roo/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
+        run: |
+          cmake --build build --config "$ROO_CI_CONFIG" --parallel "$ROO_CI_JOBS" --target roo-cli-test-native
+          case "$RUNNER_OS" in
+            Windows) native_library="$GITHUB_WORKSPACE/build/bin/roo/test/roo-cli-test-native.dll" ;;
+            macOS) native_library="$GITHUB_WORKSPACE/build/bin/roo/test/libroo-cli-test-native.dylib" ;;
+            *) native_library="$GITHUB_WORKSPACE/build/bin/roo/test/libroo-cli-test-native.so" ;;
+          esac
+          ROO_BIN="$GITHUB_WORKSPACE/build/roo${{ runner.os == 'Windows' && '.exe' || '' }}" \
+          ROO_PACKAGE_STAGE_ROOT="$GITHUB_WORKSPACE/build/package-stage/pkg" \
+          ROO_TEST_NATIVE_LIBRARY="$native_library" \
+          sh bin/roo/test/run-cli-tests.sh "$GITHUB_WORKSPACE"
 
   test-loom-cli:
     name: Test loom CLI ${{ matrix.platform }}

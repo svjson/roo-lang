@@ -1,8 +1,8 @@
 {:name roo-native-failure-app
  :version "0.1.0"
  :load-roots ["src"]
- :native-libraries [{:name "roo-package-test-native"
+ :native-libraries [{:name "roo-cli-test-native"
                      :version "0.1.0"
                      :path "native"
-                     :namespaces [package.test.native]}]
+                     :namespaces [roo.cli.test.native]}]
  :main native-failure.app/main}

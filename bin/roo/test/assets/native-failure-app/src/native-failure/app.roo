@@ -1,5 +1,5 @@
 (ns native-failure.app
-  (:require package.test.native))
+  (:require roo.cli.test.native))
 
 (defun main
   "Raise a native-backed error for launcher teardown testing.
@@ -10,4 +10,4 @@
   Returns:
   Never returns; raises the native test error."
   [args]
-  (package.test.native/fail nil))
+  (roo.cli.test.native/fail nil))
