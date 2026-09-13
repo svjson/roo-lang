@@ -254,19 +254,10 @@ if(ROO_BUILD_TESTS)
             --name
             cafe_register_compiled
   )
-  if(CMAKE_CONFIGURATION_TYPES)
-    set(rooc_test_cafe_executable
-      "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/$<CONFIG>/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
-    )
-  else()
-    set(rooc_test_cafe_executable
-      "${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}"
-    )
-  endif()
   add_test(
     NAME rooc_cli_runs_compiled_cafe_register
     COMMAND
-      ${rooc_test_cafe_executable}
+      ${CMAKE_CURRENT_BINARY_DIR}/rooc-test-cafe/build/cafe_register_compiled${CMAKE_EXECUTABLE_SUFFIX}
   )
   set_tests_properties(
     rooc_cli_runs_compiled_cafe_register

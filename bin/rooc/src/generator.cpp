@@ -822,6 +822,8 @@ namespace Rooc
              "set_target_properties("
           << project.executable_name
           << " PROPERTIES\n"
+             "  RUNTIME_OUTPUT_DIRECTORY \"${CMAKE_BINARY_DIR}\"\n"
+             "  RUNTIME_OUTPUT_DIRECTORY_RELEASE \"${CMAKE_BINARY_DIR}\"\n"
              "  BUILD_RPATH "
           << cpp_string_literal(
                [&]()

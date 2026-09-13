@@ -204,13 +204,9 @@ namespace
                                 const std::vector<std::string>& args = {},
                                 int expected_exit_code = 0)
   {
-    auto executable = build_dir / "build" /
-                      (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
-    if (!std::filesystem::exists(executable))
-    {
-      executable = build_dir / "build" / "Release" /
-                   (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
-    }
+    const auto executable =
+      build_dir / "build" /
+      (project.executable_name + std::string(ROOC_TEST_EXECUTABLE_SUFFIX));
     std::string command = shell_arg(std::string(ROOC_TEST_CMAKE_COMMAND)) + " -E chdir " +
                           shell_arg(run_dir) + " " + shell_arg(executable);
     for (const auto& arg : args)
@@ -251,6 +247,10 @@ TEST(RoocGenerator, generated_project_defines_distribution_install_contract)
   // Then
   EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
               HasSubstr("INSTALL_RPATH \"${ROOC_INSTALL_RPATH}\""));
+  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
+              HasSubstr("RUNTIME_OUTPUT_DIRECTORY \"${CMAKE_BINARY_DIR}\""));
+  EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
+              HasSubstr("RUNTIME_OUTPUT_DIRECTORY_RELEASE \"${CMAKE_BINARY_DIR}\""));
   EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"),
               HasSubstr("install(TARGETS test_generated_cafe"));
   EXPECT_THAT(read_file(build_dir / "CMakeLists.txt"), HasSubstr("RUNTIME DESTINATION bin"));
