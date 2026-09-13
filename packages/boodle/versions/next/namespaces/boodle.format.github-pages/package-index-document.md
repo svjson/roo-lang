@@ -108,15 +108,13 @@ Return the GitHub Pages package redirect document for PAGE.
 
 ### Returns:
 
-A redirect fallback linking to the selected release, or a neutral development
-landing page when no release exists.
+A redirect fallback linking to the selected publication.
 
 - `page`: Boodle package index page map.
 
 ### Returns:
 
-A redirect fallback linking to the selected release, or a neutral development
-landing page when no release exists.
+A redirect fallback linking to the selected publication.
 
 </main>
 </div>

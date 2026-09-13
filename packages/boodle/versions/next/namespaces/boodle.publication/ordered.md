@@ -60,8 +60,8 @@ Return classified publication identities in selector order.
 
 <hr class="signature-divider">
 
-Stable releases are ordered newest first, followed by the newest prerelease
-and then development documentation.
+Development documentation appears first, followed by the newest prerelease
+and stable releases ordered newest first.
 
 <hr class="signature-divider">
 

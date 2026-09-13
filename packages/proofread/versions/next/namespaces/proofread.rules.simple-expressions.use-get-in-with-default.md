@@ -31,10 +31,10 @@ title: proofread.rules.simple-expressions.use-get-in-with-default
 </div>
 # proofread.rules.simple-expressions.use-get-in-with-default
 
-| Symbol                                                                                       | Summary                                              |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| [`check`](proofread.rules.simple-expressions.use-get-in-with-default/check.html)             | Report `(or (get-in value path) default)` forms.     |
-| [`replacement`](proofread.rules.simple-expressions.use-get-in-with-default/replacement.html) | Return the replacement for `or` plus `get-in` usage. |
+| Symbol                                                                                       | Summary                                                                        |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [`check`](proofread.rules.simple-expressions.use-get-in-with-default/check.html)             | Report `(or (get-in value path) default)` forms with simple terminal defaults. |
+| [`replacement`](proofread.rules.simple-expressions.use-get-in-with-default/replacement.html) | Build the replacement for `or` plus `get-in` usage.                            |
 
 </main>
 </div>

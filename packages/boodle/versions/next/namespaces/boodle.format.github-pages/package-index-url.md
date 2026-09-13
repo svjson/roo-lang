@@ -108,7 +108,7 @@ Return the current-version URL from a package index redirect page.
 
 ### Returns:
 
-Relative URL to the automatically selected package version page, or nil.
+Relative URL to the automatically selected package version page.
 
 </main>
 </div>

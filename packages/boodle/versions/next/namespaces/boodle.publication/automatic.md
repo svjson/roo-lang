@@ -50,7 +50,7 @@ title: boodle.publication/automatic
 <h1><code>automatic</code></h1>
 </header>
 
-Select the automatic release publication.
+Select the automatic publication.
 
 <hr class="signature-divider">
 
@@ -73,7 +73,7 @@ Select the automatic release publication.
 ### Returns:
 
 The newest stable publication, otherwise the retained prerelease, otherwise
-`nil`. Development documentation is never selected automatically.
+development documentation.
 
 </main>
 </div>

@@ -36,7 +36,7 @@ title: proofread.rules.simple-expressions.use-get-in-with-default/replacement
 <h1><code>replacement</code></h1>
 </header>
 
-Return the replacement for `or` plus `get-in` usage.
+Build the replacement for `or` plus `get-in` usage.
 
 <hr class="signature-divider">
 
@@ -52,9 +52,13 @@ Return the replacement for `or` plus `get-in` usage.
 (replacement node)
 ```
 
-| Arg  | Description |
-| ---- | ----------- |
-| node |             |
+| Arg  | Description                                |
+| ---- | ------------------------------------------ |
+| node | Matched `or` form as a `roo.ast` node map. |
+
+### Returns:
+
+A Roo source string using the three-argument `get-in` form.
 
 </main>
 </div>

@@ -3,8 +3,5 @@ layout: reference
 title: loom
 ---
 
-# loom
-
-No stable or prerelease documentation has been published.
-
-[View next development documentation](versions/next/)
+<meta http-equiv="refresh" content="0; url=versions/next/">
+[loom next](versions/next/)

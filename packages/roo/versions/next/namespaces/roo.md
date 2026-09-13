@@ -55,6 +55,7 @@ title: roo
 <li><a href="roo/cond-let.html">cond-let</a></li>
 <li><a href="roo/contains-all-p.html">contains-all?</a></li>
 <li><a href="roo/contains-any-p.html">contains-any?</a></li>
+<li><a href="roo/contains-key-p.html">contains-key?</a></li>
 <li><a href="roo/contains-p.html">contains?</a></li>
 <li><a href="roo/cos.html">cos</a></li>
 <li><a href="roo/count.html">count</a></li>
@@ -267,6 +268,7 @@ title: roo
 | [`cond-let`](roo/cond-let.html)                          | Multi-branch conditional with optional per-clause let bindings.                                                                                                                                                 |
 | [`contains-all?`](roo/contains-all-p.html)               | Tests if a Seq contains all elements from another Seq.                                                                                                                                                          |
 | [`contains-any?`](roo/contains-any-p.html)               | Tests if a Seq contains at least one element from another Seq.                                                                                                                                                  |
+| [`contains-key?`](roo/contains-key-p.html)               | Tests whether a map or map-like object contains a key.                                                                                                                                                          |
 | [`contains?`](roo/contains-p.html)                       | Tests if a Seq contains a specific value                                                                                                                                                                        |
 | [`cos`](roo/cos.html)                                    | Return the cosine of a number.                                                                                                                                                                                  |
 | [`count`](roo/count.html)                                | Return the number of elements in a sequence or map.                                                                                                                                                             |

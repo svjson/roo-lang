@@ -48,7 +48,7 @@ title: boodle.publication
 | Symbol                                                                    | Summary                                                            |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | [`apply-to-catalog`](boodle.publication/apply-to-catalog.html)            | Apply a public documentation identity to every package in CATALOG. |
-| [`automatic`](boodle.publication/automatic.html)                          | Select the automatic release publication.                          |
+| [`automatic`](boodle.publication/automatic.html)                          | Select the automatic publication.                                  |
 | [`build-identifier?`](boodle.publication/build-identifier-p.html)         | Query whether TEXT is a valid SemVer build identifier.             |
 | [`classify`](boodle.publication/classify.html)                            | Classify a materialized public documentation identity.             |
 | [`compare-prerelease`](boodle.publication/compare-prerelease.html)        | Compare two SemVer prerelease identifier vectors.                  |

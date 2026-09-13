@@ -36,7 +36,7 @@ title: proofread.rules.simple-expressions.use-get-in-with-default/check
 <h1><code>check</code></h1>
 </header>
 
-Report `(or (get-in value path) default)` forms.
+Report `(or (get-in value path) default)` forms with simple terminal defaults.
 
 <hr class="signature-divider">
 

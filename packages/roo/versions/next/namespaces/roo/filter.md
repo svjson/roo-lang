@@ -55,6 +55,7 @@ title: roo/filter
 <li><a href="cond-let.html">cond-let</a></li>
 <li><a href="contains-all-p.html">contains-all?</a></li>
 <li><a href="contains-any-p.html">contains-any?</a></li>
+<li><a href="contains-key-p.html">contains-key?</a></li>
 <li><a href="contains-p.html">contains?</a></li>
 <li><a href="cos.html">cos</a></li>
 <li><a href="count.html">count</a></li>

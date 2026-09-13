@@ -21,7 +21,7 @@ title: roo next
 
 | Namespace                                | Symbols |
 | ---------------------------------------- | ------- |
-| [roo](namespaces/roo.html)               | 188     |
+| [roo](namespaces/roo.html)               | 189     |
 | [roo.ast](namespaces/roo.ast.html)       | 2       |
 | [roo.io](namespaces/roo.io.html)         | 24      |
 | [roo.string](namespaces/roo.string.html) | 4       |

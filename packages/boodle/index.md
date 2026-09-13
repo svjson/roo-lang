@@ -3,8 +3,5 @@ layout: reference
 title: boodle
 ---
 
-# boodle
-
-No stable or prerelease documentation has been published.
-
-[View next development documentation](versions/next/)
+<meta http-equiv="refresh" content="0; url=versions/next/">
+[boodle next](versions/next/)

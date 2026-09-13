@@ -1,6 +1,6 @@
 ---
 layout: reference
-title: roo/doseq
+title: roo/contains-key?
 ---
 
 <div class="reference-page">
@@ -55,7 +55,7 @@ title: roo/doseq
 <li><a href="cond-let.html">cond-let</a></li>
 <li><a href="contains-all-p.html">contains-all?</a></li>
 <li><a href="contains-any-p.html">contains-any?</a></li>
-<li><a href="contains-key-p.html">contains-key?</a></li>
+<li><a class="active" href="contains-key-p.html">contains-key?</a></li>
 <li><a href="contains-p.html">contains?</a></li>
 <li><a href="cos.html">cos</a></li>
 <li><a href="count.html">count</a></li>
@@ -69,7 +69,7 @@ title: roo/doseq
 <li><a href="dissoc-in.html">dissoc-in</a></li>
 <li><a href="dissoc-in-bang.html">dissoc-in!</a></li>
 <li><a href="do.html">do</a></li>
-<li><a class="active" href="doseq.html">doseq</a></li>
+<li><a href="doseq.html">doseq</a></li>
 <li><a href="dotimes.html">dotimes</a></li>
 <li><a href="drop.html">drop</a></li>
 <li><a href="empty-p.html">empty?</a></li>
@@ -207,38 +207,42 @@ title: roo/doseq
 <span class="breadcrumb-separator" aria-hidden="true">/</span>
 <a href="../roo.html">roo</a>
 <span class="breadcrumb-separator" aria-hidden="true">/</span>
-<span aria-current="page">doseq</span>
+<span aria-current="page">contains-key?</span>
 </nav>
 <div class="version-context">
 <span class="version-package">roo</span>
 <label class="version-select-label">Version <select class="version-select" onchange="if (this.value) window.location.href = this.value;">
 {% assign package_publications = site.data.publications.packages["roo"].publications %}
 {% for publication in package_publications %}
-<option value="../../../{{ publication.identity }}/namespaces/roo/doseq.html"{% if publication.identity == "next" %} selected{% endif %}>{{ publication.identity }}</option>
+<option value="../../../{{ publication.identity }}/namespaces/roo/contains-key-p.html"{% if publication.identity == "next" %} selected{% endif %}>{{ publication.identity }}</option>
 {% endfor %}
 </select></label>
 </div>
 <header class="symbol-heading">
 <div class="symbol-namespace"><a href="../roo.html">roo</a>/</div>
-<h1><code>doseq</code></h1>
+<h1><code>contains-key?</code></h1>
+<div class="symbol-metadata"><span>Since <code>0.1.0</code></span></div>
 </header>
 
-Executes body forms for every element in a sequence, binding the
-element to the local scope. Returns nil and does not retain per-iteration
-return values.
+Tests whether a map or map-like object contains a key.
 
 <hr class="signature-divider">
 
 ```roo
-(doseq binding body...)
+(contains-key? target key)
 ```
 
 <hr class="signature-divider">
 
+Test for the presence of the key, but makes no assumptions about its value,
+meaning that present keys with nil values will return `true`.
+
 ### Usage:
 
 ```roo
-(doseq [num [1 2 3 4]] (prn num)) => nil
+(contains-key? {:name "Roo"} :name) => true
+(contains-key? {:name nil} :name) => true
+(contains-key? nil :name) => false
 ```
 
 <hr class="signature-divider">
@@ -246,13 +250,17 @@ return values.
 ## Signature:
 
 ```roo
-(doseq binding body...)
+(contains-key? target key)
 ```
 
-| Arg     | Description                      |
-| ------- | -------------------------------- |
-| binding | Binding form, [<var-name> <seq>] |
-| body... | Form body to execute             |
+| Arg    | Description                            |
+| ------ | -------------------------------------- |
+| target | The map or map-like object to inspect. |
+| key    | The key whose presence to test.        |
+
+### Returns:
+
+`true` when `target` contains `key`, otherwise `false`.
 
 </main>
 </div>
