@@ -466,6 +466,19 @@ namespace Roo
     return result;
   }
 
+  /** ContainsKeyPFunction - roo/contains-key? */
+  FUNC_IMPL(ContainsKeyPFunction,
+            SIG((FN_ARGS((&Type::COMPLEX), (&Type::ANY)),
+                 EXEC_DISPATCH(&ContainsKeyPFunction::exec_contains_key))))
+
+  EXEC_BODY(ContainsKeyPFunction, exec_contains_key)
+  {
+    const bool found = args[0]->type == Value::Type::NATIVE_OBJECT
+                         ? args[0]->nobj()->has_property(*args[1])
+                         : Dict::find_property(args[0], args[1]).first;
+    return found ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+  }
+
   /** DeepCopyFunction - roo/deep-copy */
   FUNC_IMPL(DeepCopyFunction,
             SIG((FN_ARGS((&Type::ANY)), EXEC_DISPATCH(&DeepCopyFunction::exec_deep_copy))))

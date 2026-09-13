@@ -89,6 +89,7 @@ namespace Roo
     lang_symbols.emplace("cond-let", CondLetForm::make());
     lang_symbols.emplace("contains-all?", ContainsAllPFunction::make());
     lang_symbols.emplace("contains-any?", ContainsAnyPFunction::make());
+    lang_symbols.emplace("contains-key?", ContainsKeyPFunction::make());
     lang_symbols.emplace("contains?", ContainsPFunction::make());
     lang_symbols.emplace("cos", CosFunction::make());
     lang_symbols.emplace("count", CountFunction::make());

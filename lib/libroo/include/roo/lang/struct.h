@@ -110,6 +110,29 @@ namespace Roo
   FUNC(AssocInBangFunction, assoc_in_bang)
 
   /*!
+   * @brief Tests whether a map or map-like object contains a key.
+   * @since 0.1.0
+   *
+   * Test for the presence of the key, but makes no assumptions about its value,
+   * meaning that present keys with nil values will return `true`.
+   *
+   * Usage:
+   * @code
+   * (contains-key? {:name "Roo"} :name) => true
+   * (contains-key? {:name nil} :name) => true
+   * (contains-key? nil :name) => false
+   * @endcode
+   *
+   * | Arg    | Description                                                        |
+   * | ------ | ------------------------------------------------------------------ |
+   * | target | The map or map-like object to inspect.                             |
+   * | key    | The key whose presence to test.                                    |
+   *
+   * @return `true` when `target` contains `key`, otherwise `false`.
+   */
+  FUNC(ContainsKeyPFunction, contains_key)
+
+  /*!
    * @brief Deep-copy the collection structure reachable from a value.
    * @since 0.1.0
    *
