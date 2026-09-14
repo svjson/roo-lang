@@ -1,5 +1,8 @@
 #ifndef _WIN32
 
+#if defined(__APPLE__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE
+#endif
 #define _XOPEN_SOURCE 600
 
 #include <cstdlib>
