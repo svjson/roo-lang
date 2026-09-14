@@ -96,7 +96,7 @@ TEST(RoocProject, resolves_versioned_dependency_from_explicit_repository)
   // Then
   EXPECT_THAT(project.files, Contains(Field(&Rooc::EmbeddedFile::key, "util.roo")));
   EXPECT_THAT(project.plan.package_roots,
-              Contains((root / "repository/util/1.0.0").string()));
+              Contains((root / "repository/util/1.0.0").generic_string()));
 }
 
 TEST(RoocProject, sanitizes_explicit_executable_name)
