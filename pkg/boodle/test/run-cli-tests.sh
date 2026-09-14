@@ -76,6 +76,14 @@ printf '%s\n' "==> Testing boodle generate"
 ROOT="/tmp/boodle-cli-$$"
 INDEX_FILE="$ROOT/roo.edn"
 OUTPUT_DIR="$ROOT/docs"
+OUTPUT_DISPLAY_DIR="$OUTPUT_DIR"
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*)
+    if command -v cygpath >/dev/null 2>&1; then
+      OUTPUT_DISPLAY_DIR=$(cygpath -m "$OUTPUT_DIR")
+    fi
+    ;;
+esac
 rm -rf "$ROOT"
 mkdir -p "$ROOT"
 cat > "$INDEX_FILE" <<'EOF'
@@ -91,7 +99,7 @@ if ! GENERATE_OUTPUT=$("$ROO" "$BOODLE_PACKAGE" generate -o "$OUTPUT_DIR" --publ
   fail "boodle generate command failed"
 fi
 case "$GENERATE_OUTPUT" in
-  "boodle: wrote "*" files to $OUTPUT_DIR") ;;
+  "boodle: wrote "*" files to $OUTPUT_DISPLAY_DIR") ;;
   *)
     printf '%s\n' "unexpected boodle generate output:" >&2
     printf '%s\n' "$GENERATE_OUTPUT" >&2
