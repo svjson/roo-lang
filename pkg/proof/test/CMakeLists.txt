@@ -29,7 +29,9 @@ roo_copy_runtime_dlls(testproof
 )
 
 target_compile_definitions(testproof
-  PRIVATE PROOF_PACKAGE_DIR="${ROO_PACKAGE_STAGE_DIR}/proof"
+  PRIVATE
+    PROOF_PACKAGE_DIR="${ROO_PACKAGE_STAGE_DIR}/proof"
+    PROOF_PACKAGE_REPOSITORY_ROOT="${ROO_PACKAGE_STAGE_DIR}"
 )
 
 gtest_discover_tests(testproof)

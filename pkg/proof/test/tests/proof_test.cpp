@@ -99,7 +99,10 @@ namespace
     static const auto plan = []
     {
       Roo::DirRootFileSystem manifest_fs("/");
-      return Roo::Package::resolve_load_plan(manifest_fs, PROOF_PACKAGE_DIR);
+      return Roo::Package::resolve_load_plan(
+        manifest_fs,
+        PROOF_PACKAGE_DIR,
+        Roo::Package::ResolveOptions{{PROOF_PACKAGE_REPOSITORY_ROOT}});
     }();
     return plan;
   }
@@ -678,12 +681,17 @@ TEST(ProofPackage, direct_cli_prints_help_without_loading_tests)
   EXPECT_EQ(output.find("FAIL"), std::string::npos);
 }
 
+// These package-tool integration tests intentionally resolve Proof and its dependencies
+// from the repository package stage prepared for the test target.
 TEST(ProofPackage, package_tool_forwards_cli_args_to_proof)
 {
   const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-smoke";
 
   Roo::DirRootFileSystem manifest_fs("/");
-  auto plan = Roo::Package::resolve_load_plan(manifest_fs, root.string());
+  auto plan = Roo::Package::resolve_load_plan(
+    manifest_fs,
+    root.string(),
+    Roo::Package::ResolveOptions{{PROOF_PACKAGE_REPOSITORY_ROOT}});
 
   auto fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Package::LoadedNativePackages native_packages;
@@ -711,7 +719,10 @@ TEST(ProofPackage, package_tool_returns_one_for_a_failing_test_run)
   const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-failure";
 
   Roo::DirRootFileSystem manifest_fs("/");
-  auto plan = Roo::Package::resolve_load_plan(manifest_fs, root.string());
+  auto plan = Roo::Package::resolve_load_plan(
+    manifest_fs,
+    root.string(),
+    Roo::Package::ResolveOptions{{PROOF_PACKAGE_REPOSITORY_ROOT}});
 
   auto fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Package::LoadedNativePackages native_packages;
@@ -733,7 +744,10 @@ TEST(ProofPackage, package_tool_returns_two_for_invalid_arguments)
   const auto root = std::filesystem::path(PROOF_PACKAGE_DIR) / "test/assets/dynamic-smoke";
 
   Roo::DirRootFileSystem manifest_fs("/");
-  auto plan = Roo::Package::resolve_load_plan(manifest_fs, root.string());
+  auto plan = Roo::Package::resolve_load_plan(
+    manifest_fs,
+    root.string(),
+    Roo::Package::ResolveOptions{{PROOF_PACKAGE_REPOSITORY_ROOT}});
 
   auto fs = Roo::Package::make_load_path_file_system(plan);
   Roo::Package::LoadedNativePackages native_packages;
