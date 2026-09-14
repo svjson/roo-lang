@@ -1,0 +1,8 @@
+(ns smoke.discovered
+  (:require proof.core))
+
+(deftest discovered-proof
+  (is (= 4 (+ 2 2))))
+
+(deftest excluded-proof
+  (is false))

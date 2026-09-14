@@ -4,12 +4,14 @@ set -eu
 ROOT_DIR="${1:?repo root required}"
 ROO="${ROO_BIN:-$ROOT_DIR/build/roo}"
 PACKAGE_STAGE_ROOT="${ROO_PACKAGE_STAGE_ROOT:-$ROOT_DIR/build/package-stage/pkg}"
-PROOF_SMOKE_PACKAGE="$PACKAGE_STAGE_ROOT/proof/test/assets/dynamic-smoke"
 APPLICATION_WORKER_PACKAGE="$ROOT_DIR/lib/libroo-package/test/tests/assets/packages/autoload-app"
 RUN_DIR="$ROOT_DIR/build/roo-cli-main-run"
 NATIVE_FAILURE_SOURCE="$ROOT_DIR/bin/roo/test/assets/native-failure-app"
 NATIVE_FAILURE_PACKAGE="$RUN_DIR/native-failure-app"
-DEV_SCOPE_PACKAGE="$PACKAGE_STAGE_ROOT/roo-cli-dev-scope"
+# These integration fixtures intentionally exercise real Proof package loading
+# from the wider repository stage through Roo's explicit repository option.
+PROOF_SMOKE_PACKAGE="$ROOT_DIR/bin/roo/test/assets/proof-smoke-package"
+DEV_SCOPE_PACKAGE="$ROOT_DIR/bin/roo/test/assets/dev-scope-package"
 OUTPUT_FILE="$RUN_DIR/main-ran.txt"
 
 fail()
@@ -92,6 +94,11 @@ assert_eq "roo main app returns its integer result as the process exit code" \
   "7" \
   "$MAIN_EXIT_CODE"
 
+ROO_HELP_OUTPUT=$("$ROO" --help)
+assert_contains "roo help documents explicit package repositories" \
+  "$ROO_HELP_OUTPUT" \
+  "--package-repository <dir>"
+
 printf '%s\n' "==> Testing roo native-backed failure teardown"
 cmake -E remove_directory "$NATIVE_FAILURE_PACKAGE"
 cmake -E copy_directory "$NATIVE_FAILURE_SOURCE" "$NATIVE_FAILURE_PACKAGE"
@@ -119,31 +126,28 @@ if ! (
   fail "roo application worker invocation failed"
 fi
 
-printf '%s\n' "==> Testing roo proof reporter/filter"
+printf '%s\n' "==> Testing roo package tool argument forwarding"
 if ! PROOF_OUTPUT="$(
   cd "$PROOF_SMOKE_PACKAGE"
-  "$ROO" proof --reporter tree --filter discovered-proof
+  "$ROO" \
+    -R "$RUN_DIR/missing-package-repository" \
+    -R "$PACKAGE_STAGE_ROOT" \
+    proof --filter discovered-proof
 )"; then
-  fail "roo proof reporter/filter command failed"
+  fail "roo package tool argument forwarding failed"
 fi
 
-assert_contains "roo proof output includes discovered file" \
-  "$PROOF_OUTPUT" \
-  "test/smoke/discovered.roo"
-assert_contains "roo proof output includes tree pass" \
-  "$PROOF_OUTPUT" \
-  "└──"
-assert_contains "roo proof output includes pass status" \
-  "$PROOF_OUTPUT" \
-  "PASS"
-assert_contains "roo proof output includes test name" \
+assert_contains "roo package tool runs the selected test" \
   "$PROOF_OUTPUT" \
   "discovered-proof"
+assert_not_contains "roo package tool forwards the filter" \
+  "$PROOF_OUTPUT" \
+  "excluded-proof"
 
 printf '%s\n' "==> Testing roo proof help"
 if ! PROOF_HELP_OUTPUT="$(
   cd "$PROOF_SMOKE_PACKAGE"
-  "$ROO" proof --help
+  "$ROO" --package-repository="$PACKAGE_STAGE_ROOT" proof --help
 )"; then
   fail "roo proof help command failed"
 fi
@@ -151,9 +155,6 @@ fi
 assert_contains "roo proof help includes usage" \
   "$PROOF_HELP_OUTPUT" \
   "Usage: roo proof [<test-path>...]"
-assert_contains "roo proof help includes reporter option" \
-  "$PROOF_HELP_OUTPUT" \
-  "--reporter <simple|tree>"
 
 assert_not_contains "roo proof help does not run tests" "$PROOF_HELP_OUTPUT" "test/smoke/discovered.roo"
 assert_not_contains "roo proof help does not report passes" "$PROOF_HELP_OUTPUT" "PASS "
@@ -161,11 +162,6 @@ assert_not_contains "roo proof help does not report failures" "$PROOF_HELP_OUTPU
 assert_not_contains "roo proof help does not report errors" "$PROOF_HELP_OUTPUT" "ERROR "
 
 printf '%s\n' "==> Testing roo development tool scope"
-cmake -E remove_directory "$DEV_SCOPE_PACKAGE"
-cmake -E copy_directory \
-  "$ROOT_DIR/bin/roo/test/assets/dev-scope-package" \
-  "$DEV_SCOPE_PACKAGE"
-
 if ! (
   cd "$DEV_SCOPE_PACKAGE"
   "$ROO" .
@@ -175,7 +171,9 @@ fi
 
 if ! DEV_SCOPE_OUTPUT="$(
   cd "$DEV_SCOPE_PACKAGE"
-  "$ROO" proof --reporter simple --filter development-source-precedes-production-source
+  "$ROO" -R "$PACKAGE_STAGE_ROOT" proof \
+    --reporter simple \
+    --filter development-source-precedes-production-source
 )"; then
   fail "roo development tool invocation failed"
 fi

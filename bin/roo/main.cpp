@@ -19,8 +19,8 @@ namespace
 {
   void print_usage()
   {
-    std::cout << "Usage: roo [--help|--version] [--load-path <path>] <file|package-tool> "
-                 "[args...]\n";
+    std::cout << "Usage: roo [--help|--version] [--load-path <path>] "
+                 "[-R|--package-repository <dir>]... <file|package-tool> [args...]\n";
   }
 
   void print_help()
@@ -32,7 +32,12 @@ namespace
                  "  roo --version\n"
                  "  roo --load-path <path> <file>\n"
                  "  roo --load-path <path1> --load-path <path2> <file>\n"
-                 "  roo <dependency-name>\n"
+                 "  roo [-R|--package-repository <dir>]... <dependency-name>\n"
+                 "\n"
+                 "Options:\n"
+                 "  -R, --package-repository <dir>\n"
+                 "      Search this package repository before sibling packages and the "
+                 "user-local repository. Repeatable.\n"
                  "\n"
                  "Arguments after <file|package-tool> are forwarded to that target.\n";
   }
@@ -149,6 +154,7 @@ int main(int argc, char** argv)
   std::string file_path;
   std::vector<std::string> app_args;
   std::vector<std::string> load_paths{std::filesystem::current_path().string(), "/"};
+  std::vector<std::string> package_repository_roots;
 
   for (int i = 1; i < argc; ++i)
   {
@@ -202,6 +208,38 @@ int main(int argc, char** argv)
       continue;
     }
 
+    if (arg == "-R" || arg == "--package-repository")
+    {
+      if (i + 1 >= argc)
+      {
+        print_error_and_usage("Missing value for --package-repository.");
+        return 1;
+      }
+
+      const std::string package_repository = argv[++i];
+      if (package_repository.empty() || package_repository[0] == '-')
+      {
+        print_error_and_usage("Invalid value for --package-repository: " +
+                              package_repository);
+        return 1;
+      }
+      package_repository_roots.push_back(package_repository);
+      continue;
+    }
+
+    if (arg.rfind("--package-repository=", 0) == 0)
+    {
+      const std::string package_repository =
+        arg.substr(std::string("--package-repository=").size());
+      if (package_repository.empty())
+      {
+        print_error_and_usage("Invalid value for --package-repository.");
+        return 1;
+      }
+      package_repository_roots.push_back(package_repository);
+      continue;
+    }
+
     if (arg.rfind("-", 0) == 0)
     {
       print_error_and_usage("Unknown option: " + arg);
@@ -227,7 +265,7 @@ int main(int argc, char** argv)
     const auto package_root = Roo::Package::find_package_root(manifest_fs, file_path);
     if (package_root)
     {
-      Roo::Package::ResolveOptions resolve_options;
+      Roo::Package::ResolveOptions resolve_options{package_repository_roots};
       if (run_tool)
       {
         const Roo::Package::Manifest manifest = Roo::Package::read_manifest(

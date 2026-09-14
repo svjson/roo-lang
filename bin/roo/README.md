@@ -15,11 +15,16 @@ roo file.roo
 roo .
 roo proof
 roo --load-path src file.roo
+roo -R vendor/packages proof
 ```
 
 Arguments after the file or package target are forwarded to that target. Global
-`roo` options such as `--help`, `--version`, and `--load-path` must appear
-before the target.
+`roo` options such as `--help`, `--version`, `--load-path`, and
+`--package-repository` must appear before the target.
+
+Use `-R <dir>` or `--package-repository <dir>` to search an additional package
+repository before sibling packages and the user-local repository. The option is
+repeatable.
 
 When a package `:main` returns an integer from `0` through `255`, `roo` uses it
 as the process exit code. Other return values mean success. Generated package
