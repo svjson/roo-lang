@@ -1,17 +1,33 @@
-add_library(inpoots_native SHARED
-  src/native.cpp
-  src/native_package.cpp
-  src/binding/input_namespace.cpp
-  src/binding/input/input_adapter.cpp
+set(INPOOTS_TERMINAL_SOURCES
   src/terminal/decoder.cpp
   src/terminal/event.cpp
 )
 
 if(WIN32)
-  target_sources(inpoots_native PRIVATE src/terminal/input_windows.cpp)
+  list(APPEND INPOOTS_TERMINAL_SOURCES src/terminal/input_windows.cpp)
 else()
-  target_sources(inpoots_native PRIVATE src/terminal/input_posix.cpp)
+  list(APPEND INPOOTS_TERMINAL_SOURCES src/terminal/input_posix.cpp)
 endif()
+
+add_library(inpoots_terminal STATIC ${INPOOTS_TERMINAL_SOURCES})
+set_target_properties(inpoots_terminal PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+)
+target_include_directories(inpoots_terminal
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+target_link_libraries(inpoots_terminal
+  PUBLIC
+    Roo::roo_shared
+)
+
+add_library(inpoots_native SHARED
+  src/native.cpp
+  src/native_package.cpp
+  src/binding/input_namespace.cpp
+  src/binding/input/input_adapter.cpp
+)
 
 set_target_properties(inpoots_native PROPERTIES
   OUTPUT_NAME inpoots-native
@@ -34,6 +50,8 @@ target_link_libraries(inpoots_native
   PUBLIC
     Roo::roo_shared
     Roo::package_shared
+  PRIVATE
+    inpoots_terminal
 )
 
 install(TARGETS inpoots_native
