@@ -81,20 +81,30 @@ namespace Roo
   FUNC(ConcatBangFunction, concat_bang)
 
   /*!
-   * @brief Tests if a Seq contains a specific value
+   * @brief Tests whether a sequence contains a value or a string contains text.
    * @since 0.1.0
+   *
+   * Sequences use element equality. Strings search for a substring when the
+   * needle is a string, or for one character when the needle is a character.
+   * An empty string is a substring of every string. Other needle types do not
+   * match strings. A `nil` target is treated as an empty collection.
+   *
+   * For maps, both keys and values can match. Use `contains-key?` when only
+   * keys should match.
    *
    * Usage:
    * @code
-   * (contains? my-vector "a value")
+   * (contains? [1 2 3] 2) => true
+   * (contains? "this is my grand string" "grand") => true
+   * (contains? "grand" 'g') => true
    * @endcode
    *
-   * | Arg   | Description                                                        |
-   * | ----- | ------------------------------------------------------------------ |
-   * | seq   | The seq to test.                                                   |
-   * | value | The value to test for.                                             |
+   * | Arg    | Description                                                       |
+   * | ------ | ----------------------------------------------------------------- |
+   * | target | The sequence or string to search.                                 |
+   * | needle | The element, substring, or character to find.                    |
    *
-   * @return `true` when `seq` contains `value`, otherwise `false`.
+   * @return `true` when `target` contains `needle`, otherwise `false`.
    */
   FUNC(ContainsPFunction, contains)
 

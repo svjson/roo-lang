@@ -30,14 +30,36 @@ TEST_F(ContainsPredicateFunction, contains_vector)
   EXPECT_EQ(*runtime.eval("(contains? my-vec 10)"), *Roo::Constant::BOOL_FALSE);
 }
 
-TEST_F(ContainsPredicateFunction, contains_string_as_char_sequence)
+TEST_F(ContainsPredicateFunction, finds_character_in_string)
 {
   EXPECT_EQ(*runtime.eval("(contains? \"abc\" 'b')"), *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? \"abc\" 'z')"), *Roo::Constant::BOOL_FALSE);
+}
+
+TEST_F(ContainsPredicateFunction, contains_string_substring)
+{
+  EXPECT_EQ(*runtime.eval("(contains? \"this is my grand string\" \"grand\")"),
+            *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? \"grand\" \"g\")"), *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? \"grand\" \"other\")"), *Roo::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? \"grand\" \"\")"), *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? \"\" \"\")"), *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? \"\" \"g\")"), *Roo::Constant::BOOL_FALSE);
+  EXPECT_EQ(*runtime.eval("(contains? \"café crème\" \"fé cr\")"),
+            *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? \"grand\" 1)"), *Roo::Constant::BOOL_FALSE);
+}
+
+TEST_F(ContainsPredicateFunction, sequence_values_remain_exact_matches)
+{
+  EXPECT_EQ(*runtime.eval("(contains? [\"grand\"] \"grand\")"), *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? [\"grand\"] \"ran\")"), *Roo::Constant::BOOL_FALSE);
 }
 
 TEST_F(ContainsPredicateFunction, contains_map_as_interleaved_sequence)
 {
   EXPECT_EQ(*runtime.eval("(contains? {:a 1 :b 2} :b)"), *Roo::Constant::BOOL_TRUE);
+  EXPECT_EQ(*runtime.eval("(contains? {:a :b} :b)"), *Roo::Constant::BOOL_TRUE);
 }
 
 TEST_F(ContainsPredicateFunction, contains_native_vector_adapter_as_sequence)

@@ -206,6 +206,22 @@ namespace Roo
   {
     if (*Constant::NIL == *args[0]) return Constant::BOOL_FALSE;
 
+    if (args[0]->type == Value::Type::STRING)
+    {
+      const Value& needle = *args[1];
+      if (needle.type == Value::Type::STRING)
+      {
+        const bool found = args[0]->str().find(needle.str()) != std::string::npos;
+        return found ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+      }
+      if (needle.type == Value::Type::CHAR)
+      {
+        const bool found = args[0]->str().find(needle.ch()) != std::string::npos;
+        return found ? Constant::BOOL_TRUE : Constant::BOOL_FALSE;
+      }
+      return Constant::BOOL_FALSE;
+    }
+
     if (Roo::has_indexed_children(*args[0]))
     {
       const size_t n_children = Roo::child_count(*args[0]);
